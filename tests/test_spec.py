@@ -183,6 +183,87 @@ class TestCheck(unittest.TestCase):
         self.assertEqual(p.check(), [])
 
 
+class TestControlTypes(unittest.TestCase):
+    """The four types beyond panel/button/label/line, and their own fields."""
+
+    def _ops(self, control):
+        return _spec([control]).plan()['pages'][0]['controls'][0]
+
+    def test_slider_carries_orientation_track_and_thumb(self):
+        op = self._ops({'kind': 'slider', 'rect': [0, 0, 60, 300],
+                        'orientation': 'down', 'track': 14, 'thumb': 40})
+        self.assertEqual(op['donor_type'], 'PBSlider')
+        f = op['fields']
+        self.assertEqual(f['orientationField'], 3)          # down
+        self.assertEqual(f['sliderTrackWidthField'], 14)
+        self.assertEqual(f['sliderIndicatorWidthField'], 40)
+
+    def test_line_endpoints_are_the_eight_position_enum(self):
+        # A diagonal is TopLeft -> BottomRight; the angle comes from the rect.
+        op = self._ops({'kind': 'line', 'rect': [0, 0, 600, 200],
+                        'from': 'TopLeft', 'to': 'BottomRight', 'thickness': 3})
+        f = op['fields']
+        self.assertEqual(f['startPointField'], 7)
+        self.assertEqual(f['endPointField'], 3)
+        self.assertEqual(f['thicknessField'], 3)
+
+    def test_level_and_image_and_datetime_map_to_their_classes(self):
+        self.assertEqual(self._ops({'kind': 'level', 'rect': [0, 0, 40, 300]})['donor_type'],
+                         'PBLevel')
+        self.assertEqual(self._ops({'kind': 'image', 'rect': [0, 0, 40, 40]})['donor_type'],
+                         'PBImage')
+        self.assertEqual(self._ops({'kind': 'datetime', 'rect': [0, 0, 200, 40]})['donor_type'],
+                         'PBDateTime')
+
+    def test_type_fields_survive_into_the_plan(self):
+        # They are computed in layout(), where the spec control is in scope.
+        # Computing them in plan() silently yielded defaults, because plan()
+        # iterates the layout model which has no 'thumb' or 'from'.
+        op = self._ops({'kind': 'slider', 'rect': [0, 0, 60, 300], 'thumb': 33})
+        self.assertEqual(op['fields']['sliderIndicatorWidthField'], 33)
+
+    def test_a_slider_is_a_touch_target_but_a_level_is_not(self):
+        small = {'rect': [0, 0, 20, 20]}
+        self.assertTrue(any('touch target' in m
+                            for m in _spec([dict(small, kind='slider')]).check()))
+        self.assertFalse(any('touch target' in m
+                             for m in _spec([dict(small, kind='level')]).check()))
+
+
+class TestDonorAvailability(unittest.TestCase):
+    """Clone-never-construct means a type absent from the donor is unauthorable."""
+
+    def _path(self, *parts):
+        import os
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.join(here, *parts)
+
+    def test_needs_lists_every_class_the_spec_uses(self):
+        p = _spec([{'kind': 'button', 'rect': [0, 0, 60, 60], 'text': 'a'},
+                   {'kind': 'level', 'rect': [0, 0, 40, 300]}])
+        self.assertEqual(p.needs(), {'PBButton', 'PBLevel'})
+
+    def test_a_donor_without_the_type_is_reported(self):
+        p = _spec([{'kind': 'level', 'rect': [0, 0, 40, 300]}])
+        alt = self._path('fixtures', 'gdl',
+                         'Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl')
+        problems = p.check_donor(alt)
+        self.assertTrue(any('PBLevel' in m for m in problems))
+
+    def test_a_donor_with_the_type_is_accepted(self):
+        p = _spec([{'kind': 'level', 'rect': [0, 0, 40, 300]}])
+        archived = self._path('fixtures', 'gdl',
+                              'Interface_Archived_J26450039_Liberty_Bank_Boardroom_TLP1025.gdl')
+        self.assertEqual(p.check_donor(archived), [])
+
+    def test_the_worked_example_is_satisfiable_by_the_main_fixture(self):
+        import os
+        p = Panel.load(self._path('examples', 'panel.json'))
+        alt = self._path('fixtures', 'gdl',
+                         'Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl')
+        self.assertEqual(p.check_donor(alt), [])
+
+
 class TestBuildPlan(unittest.TestCase):
     """The plan is what the Windows applier consumes, so it needs its own tests.
 

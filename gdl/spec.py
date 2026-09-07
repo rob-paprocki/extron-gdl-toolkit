@@ -117,7 +117,37 @@ def touch_minimums(size):
 
 
 KIND_TYPE = {'panel': 'PBShape', 'shape': 'PBShape', 'button': 'PBButton',
-             'label': 'PBLabel', 'line': 'PBLine'}
+             'label': 'PBLabel', 'line': 'PBLine', 'image': 'PBImage',
+             'slider': 'PBSlider', 'level': 'PBLevel', 'datetime': 'PBDateTime'}
+# Interactive kinds are the ones held to the 9mm touch-target rule.
+TOUCHABLE = {'button', 'slider'}
+
+# Orientation, as gdl/compose.py decodes it when clipping a level's value fill.
+ORIENT = {'right': 0, 'left': 1, 'up': 2, 'down': 3}
+
+# Fields that only some control types carry. A generator has to emit these or
+# the cloned donor's own values ride along - the same trap as captions and
+# icons, just less visible.
+def _type_fields(kind, c):
+    out = {}
+    if kind in ('slider', 'level'):
+        out['orientationField'] = ORIENT.get(c.get('orientation', 'up'), 2)
+        if kind == 'slider':
+            out['sliderTrackWidthField'] = c.get('track', 10)
+            out['sliderIndicatorWidthField'] = c.get('thumb', 50)
+            out['sliderIndicatorHeightField'] = c.get('thumb', 50)
+    if kind == 'line':
+        # Endpoints are an eight-position enum on the control's own rect, so a
+        # diagonal is TopLeft -> BottomRight at whatever angle the rect gives.
+        out['startPointField'] = LINE_POS.get(c.get('from', 'MiddleLeft'), 6)
+        out['endPointField'] = LINE_POS.get(c.get('to', 'MiddleRight'), 2)
+        out['thicknessField'] = c.get('thickness', 2)
+    return out
+
+
+# Extron.GUICPro.ControlLinePositionEnum, read out of the assemblies.
+LINE_POS = {'TopCenter': 0, 'TopRight': 1, 'MiddleRight': 2, 'BottomRight': 3,
+            'BottomCenter': 4, 'BottomLeft': 5, 'MiddleLeft': 6, 'TopLeft': 7}
 
 
 def _argb(c):
@@ -322,6 +352,12 @@ class Panel:
                 font = c.get('font') or self.theme.get('font') or 'Arial'
                 out = {
                     '__type': kind,
+                    'kind': c.get('kind', 'panel'),
+                    # Type-specific backing fields must be computed HERE, where
+                    # the spec control is in scope. plan() iterates the layout
+                    # model, which does not carry 'thumb', 'from', 'thickness'
+                    # and friends - reading them there silently yields defaults.
+                    'TypeFields': _type_fields(c.get('kind', 'panel'), c),
                     'ID': len(controls),
                     'UserId': c.get('id'),
                     'Name': c.get('name') or c.get('text') or kind,
@@ -399,6 +435,7 @@ class Panel:
                         'leftField': c['Left'], 'topField': c['Top'],
                         'widthField': c['Width'], 'heightField': c['Height'],
                         '<TLPImageID>k__BackingField': -1,
+                        **(c.get('TypeFields') or {}),
                     },
                     'fill': _argb(spec.get('fill')),
                     'stroke': _argb(spec.get('stroke')),
@@ -482,7 +519,7 @@ class Panel:
             x, y, w, h = (int(v) for v in c['rect'])
             where = f"page {pg['number']} {c.get('name') or c.get('text') or '?'}"
             # Only interactive controls have a touch target to meet.
-            if target and c.get('kind') == 'button' and (w < target or h < target):
+            if target and c.get('kind') in TOUCHABLE and (w < target or h < target):
                 out.append(f'{where}: {w}x{h} is below the {target}x{target} px touch '
                            f'target for a {self.size[0]}x{self.size[1]} panel '
                            f'(9mm, GUI Design Standards p.55)')
@@ -521,6 +558,29 @@ class Panel:
                                    f'below the {spacing}px minimum (2mm, p.56)')
         return out
 
+    def needs(self):
+        """Every control class this spec requires a donor for."""
+        return {KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
+                for pg in self.pages for c in pg['controls']}
+
+    def check_donor(self, path):
+        """Can this donor project supply every control type the spec uses?
+
+        Clone-never-construct means a type absent from the donor cannot be
+        authored at all, and donors differ: the _alt fixture has no PBLevel,
+        Extron's Afterburn 1020 template has no PBLevel either, its 300 Portrait
+        template has Levels but no Slider, and Mach 1020 has neither Level nor
+        Line. Worth knowing before a trip to the Windows box, not after.
+        """
+        from .project import Project
+        have = set()
+        for pg in Project.open(path).pages():
+            for c in pg['controls']:
+                have.add(c['type'])
+        missing = sorted(self.needs() - have)
+        return [f'donor {path} has no {t} to clone - that control type cannot '
+                f'be authored from it' for t in missing]
+
     def palette(self):
         """Every distinct colour the spec uses. p.49 caps a project at six."""
         seen = set()
@@ -539,7 +599,8 @@ def main(argv):
         print(__doc__.strip().split('\n\n')[0])
         print('\n  python -m gdl.spec render <spec.json> <out.png> [page]'
               '\n  python -m gdl.spec check  <spec.json>'
-              '\n  python -m gdl.spec plan   <spec.json> <plan.json>')
+              '\n  python -m gdl.spec plan   <spec.json> <plan.json>'
+              '\n  python -m gdl.spec donors <spec.json> <donor.gdl|template.glt>')
         return 2
     cmd, path = argv[1], argv[2]
     panel = Panel.load(path)
@@ -549,6 +610,14 @@ def main(argv):
             print('  ' + p)
         print(f'{len(problems)} problem(s); {len(panel.pages)} page(s), '
               f'{sum(len(p["controls"]) for p in panel.pages)} controls')
+        return 1 if problems else 0
+    if cmd == 'donors':
+        problems = panel.check_donor(argv[3])
+        for p in problems:
+            print('  ' + p)
+        print(f'{len(panel.needs())} control type(s) needed: '
+              f'{", ".join(sorted(panel.needs()))}')
+        print(f'{len(problems)} unavailable')
         return 1 if problems else 0
     if cmd == 'plan':
         if problems:
