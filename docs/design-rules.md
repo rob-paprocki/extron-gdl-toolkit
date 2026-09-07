@@ -1,0 +1,226 @@
+# Extron's own design rules, as far as they can be encoded
+
+Sources, all primary:
+
+- **GUI Design Standards rev E** (94pp) — Extron's design guide. Page numbers below
+  are its printed page numbers.
+- **Afterburn Theme Guide** (16pp, 79-607-24 rev A) — the theme's colour system.
+- **GUI Designer 1.27.0.9 itself** — platform classes and control fields, read out
+  of the installed assemblies.
+
+The point of this file is to separate three things that are easy to blur: what
+Extron **documents**, what the Liberty Bank fixture happens to **do**, and what we
+**guessed**. Only the first is authoritative. Anything marked *extrapolated* must
+never be presented to a client as an Extron requirement.
+
+---
+
+## 1. Panels and resolutions
+
+The canvas is **not** fixed. GUI Designer 1.27.0.9 carries **63 platform classes**
+spanning **eight** resolutions:
+
+| Resolution | Example models |
+|---|---|
+| 320 × 240 | TLP Pro 320 series |
+| 320 × 480 | TLP Pro 300M (portrait) |
+| 800 × 480 | TLP Pro 520/521/525/526M, 720 series |
+| 1024 × 600 | TLP Pro 1020/1022, 725/726M, TLC 726M |
+| 1280 × 720 | — |
+| 1280 × 800 | TLP Pro 1025/1035, 1220/1225, TLC 1026M |
+| 1366 × 768 | TLP Pro 1520/1525 |
+| 1920 × 1080 | TLP Pro 1720/1725, TLI 100/201 |
+
+Read straight from each platform's `Resolution` property, and independently
+confirmed by the control geometry inside Extron's own `.glt` templates (Afterburn
+1020 Series lays out to 1024×600, 1720 Series to 1920×1080, 300 Portrait to
+320×480).
+
+**Touch-target minimums are keyed to physical PPI, not to pixel resolution.** Three
+resolutions correspond to two different panel families at different PPI, so the
+same pixel resolution has two different documented minimums. 1280×720 has no row
+in Extron's own Quick Reference table at all.
+
+## 2. Hard rules — stated as musts
+
+**Touch targets and spacing** (pp. 22–25, 55–56, 90)
+
+- A touch target must be **9 mm × 9 mm (3/8″)** or larger. Restated identically for
+  every panel size category. 7 mm is called the absolute floor for *phones*;
+  touchpanels need more because the user is further away.
+- Leave at least **2 mm (1/16″)** between touchable elements.
+- "As a general rule for small buttons of **72 pixels or less**, there should be at
+  least **5 to 10 pixels** between them." (p. 56)
+- GUI Designer 1.7+ nudges by **10 px** per arrow key press — a de facto grid unit.
+- Spacing must be uniform horizontally and vertically.
+
+**Density** (pp. 49, 58) — the two numeric caps in the document:
+
+- **No more than nine buttons in a control group.** (p. 58)
+- **No more than six colours in a project.** (p. 49)
+
+**Contrast** (p. 43)
+
+- Minimum **4.5 : 1** for all text and objects needed for interaction.
+- ~12.63 : 1 is called optimum; the 19.22 : 1 example is shown *reducing*
+  readability, so treat ~16 : 1 as a soft ceiling.
+
+**Keypads** (p. 59)
+
+- The **telephone** layout (1-2-3 on the top row) is the standard and must be used.
+  The calculator/ten-key layout (7-8-9 top) is explicitly "do not use".
+
+**Typography** (pp. 65–67, 84)
+
+- At most **2 fonts** per project. Named: Arial, Verdana, Calibri, Open Sans.
+- Body text **14 pt or larger**.
+- **Never** italic or bold-italic; never underline, small caps, subscript,
+  strikethrough, outline, embossed, superscript or narrow; no serif fonts; no
+  script faces, Chalkduster or Papyrus.
+- Label text must fill its button without touching the border. If it does not fit,
+  resize the **whole group** — never mix font sizes within one button group.
+- Different font sizes *between* group label and sub-label are required, to create
+  hierarchy (p. 63).
+
+**Behaviour** (pp. 8, 13, 15, 70, 71)
+
+- Respond within **1 second**. (A progress indicator is required past 5 s per the
+  p. 13 table, or past 10 s per the p. 8 body text — the document contradicts
+  itself; take the conservative 5 s.)
+- Every tap must give obvious feedback that the request was recognised *and*
+  whether it succeeded.
+- Any costly or irreversible action needs a **modal confirmation with a cancel
+  path**. Press-and-hold with no escape is called out as a failure.
+- Every action needs a reachable inverse (end call, unmute, stop presenting).
+- All popups on a given Popup Page Reference **inherit that reference's exact
+  dimensions**, and only one can show at a time. To swap between them they must be
+  in a named **Popup Page Group**. (p. 70 — this matches what the format enforces.)
+- A modal covers the page and any active non-modal popups with a translucent
+  overlay, disabling them. (p. 71)
+
+## 3. Don'ts
+
+- Don't signal "selected" with a border alone — change colour *and* add a text cue.
+- Don't use flip-flop buttons (one button whose label swaps between On/Off): the
+  user cannot tell whether it shows current state or the action. Separate control
+  from status. (p. 54)
+- Don't label things by room-relative direction — "left display", "front sources".
+  Panel orientation is ambiguous; use a room diagram. (p. 33)
+- Don't hyphenate to achieve word wrap. (p. 60)
+- Don't repeat a group's noun on every button — label the group "Volume" and the
+  buttons "Up"/"Down", not "Volume Up"/"Volume Down". (p. 64)
+- Don't use ALL CAPS or all lowercase except sparingly; mixed case reads fastest.
+- Don't use "Yes"/"No" on a confirmation — use the verb ("End Call" / "Cancel").
+- Don't style a non-interactive label with button affordance.
+- Don't rely on colour alone; GUI Designer has a monochrome test mode for this.
+- Don't use acronyms the audience may not share (VTC, ALC). HDMI/DVD/DVR/AUX are
+  fine.
+
+## 4. The Afterburn colour system — fully encodable
+
+Straight from the theme guide. This is a complete token set.
+
+| Token | Hex | Use |
+|---|---|---|
+| page background | `#242634` | pages |
+| modal background | `#242634` @ 20% transparency | modal scrim |
+| primary text | `#FFFFFF` | headings, button labels, paragraphs |
+| secondary text | `#BABCCE` | subheadings, date/time |
+| button border (idle) | `#BABCCE` | outlined buttons |
+| button border (pressed/selected) | `#FFFFFF` | |
+| button fill (idle) | `#37394E` | |
+| button fill (pressed/selected) | `#242634` | |
+| icon primary | `#BABCCE` | single-colour icons, strokes |
+| icon secondary | `#767789` | de-emphasised icon parts |
+| icon background | `#414459` | |
+| divider lines | `#BABCCE` | |
+| shapes | `#6A6E89` | container shapes |
+| slider/level track | `#242634` (over image) or `#37394E` (over colour) | |
+| slider fill | `#BABCCE` | |
+| toggle thumb (off) | `#6A6E89` | |
+
+Four accent schemes; pick one per project and keep it:
+
+| Scheme | Primary (selection lines, icon selection) | Secondary (toggle/slider thumb, level fill) |
+|---|---|---|
+| 1 (default) | Orange `#D69B61` | Periwinkle `#626ACF` |
+| 2 | Light Blue `#6ACFE8` | Light Green `#84B266` |
+| 3 | Gold `#D6B961` | Light Green `#84B266` |
+| 4 | Medium Blue `#4695D6` | Gold `#D6B961` |
+
+**Note the discrepancy:** the guide specifies the modal background as `#242634` at
+20% transparency. The Liberty Bank fixture instead uses **opaque black** on every
+modal, with the dimming baked into artwork asset 36 at alpha 166 (~65% opacity).
+So the fixture deviates from the theme, which is why the scrim rule in
+`research/final_patch.py` was unobservable there — see `docs/render-fidelity.md`.
+
+## 5. Four button archetypes
+
+The theme guide defines these, and they map cleanly onto generator output:
+
+| Type | Border | Fill | Selection indicator |
+|---|---|---|---|
+| Icon | none | pressed state only | — |
+| Outlined | yes | yes | border + fill change |
+| Vertical list | none | pressed/selected only | **line on the left** |
+| Horizontal list | none | pressed/selected only | **line on the bottom** |
+
+States: Not Selected, Selected, Pressed, Multi-state Status.
+
+## 6. Icons come from a font, not from images
+
+The single most useful thing in the theme guide for a generator: *"Use the
+Afterburn font to quickly add single color icons to buttons."*
+
+Verified against the fonts already extracted into `gdl/fonts/`:
+
+- `afterburn_modified.ttf` — **136 icon glyphs** at U+E900–U+E98C
+- `extron_guic_video_conference_1.ttf` — **203 glyphs** at U+F008–U+F0FF
+
+So ~339 icons are placeable as **text**: any colour, any size, no image resource,
+and none of the resource-append machinery. The Resource Kit's 1,316 icon PNGs and
+1,985 button images are only needed for *multi-colour* icons.
+
+## 7. Extron ships the donor library
+
+`C:\Users\Public\Documents\Extron\GUI Designer Templates` contains per-series
+`.glt` templates — Afterburn and Mach for the 300/320/520/535/1020/1220/1230/1520/
+1720 families, plus Zoom Rooms and Teams Rooms variants — and the full Afterburn
+resource kit.
+
+A `.glt` is the same container as a `.gdl` (KP-mangled ZIP, one `ProjectGCP`) but
+has **no `PBProject`** — it is a bare library of pages and popups. `gdl/project.py`
+reads them. This answers "where does a generator get donor objects to clone" with
+an official per-panel-model answer.
+
+## 8. What the standards do NOT specify
+
+A generator has to decide these itself, and should say so rather than implying
+Extron blessed them:
+
+- Page or popup **numbering/naming** conventions. Nothing, anywhere.
+- **Margins / safe area** from the screen edge. Only inter-object spacing is given.
+- Any **grid system**. The document's "zones" are qualitative (top-left, footer),
+  not coordinates.
+- A **pt → px** basis. Sizes are in points with no stated DPI.
+- Default **popup/modal dimensions** — only that a popup inherits its reference's.
+- A **formula** for touch targets on panels absent from the table. p. 90 says
+  third-party devices must be "calculated manually" and gives no formula.
+  `9 mm × PPI` and `2 mm × PPI` reproduce every documented row closely, but that is
+  our reverse-engineering, *not* a stated rule.
+- Corner radius, bevel width, shadow depth; animation timings; icon-specific size
+  minimums.
+
+## 9. Where the Liberty Bank fixture sits
+
+Useful because it is a real shipped panel, but it is evidence of one integrator's
+taste, not of the standard:
+
+- Its 1280×800 buttons (200×70, 320×120) and 16–20 px gutters **comfortably exceed**
+  every documented minimum for that resolution. Over-compliant, not in conflict.
+- Its 96 px header band and 232 px left nav rail correspond to **no documented
+  number** — the standards give no header height or rail width at all.
+- Its single-left-rail layout **diverges from** the canonical medium/large pattern
+  (pp. 34–37), which puts environmental controls on *both* side bars with source
+  selection top-right. Not wrong — the standards describe one canonical scheme, they
+  do not forbid others — but it should not be cited as "the" Extron layout.

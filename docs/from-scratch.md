@@ -5,10 +5,12 @@ generated layout — and turn it into a real `.gdl` that GUI Designer opens and
 builds? This is the answer as far as it can be established without Windows,
 which is further than expected.
 
-**Short version.** Yes, as a constrained layout-and-theming generator. The
-binding constraint is real — *Build owns the artwork* — but the design space it
-leaves is much wider than "seven border resources", and the risky step everyone
-assumes is necessary turns out to be avoidable.
+**Short version.** Yes, and the design space is considerably wider than early
+drafts of this file claimed. *Build owns the artwork* is real, but: the canvas is
+one of eight resolutions rather than fixed, lines can be diagonal, ~339 icons are
+available as font glyphs needing no image resource, new border resources can be
+appended (§5), and Extron ships per-panel `.glt` template libraries to clone from.
+`docs/design-rules.md` holds Extron's own rules, separated from what we guessed.
 
 ## 1. What actually bounds the design space
 
@@ -75,11 +77,19 @@ rather than by the resource list.
 
 **Impossible without new resources, and possibly impossible at all.**
 
-- `PBLine` endpoints are an enum of anchor positions on the control's own rect,
-  not coordinates — no diagonal or freehand line.
-- Canvas size is fixed by the panel model (1280×800 across every fixture).
-- Arbitrary raster art: unless the bitmap is already a `PBImageResource`, or can
-  be drawn from the two embedded icon fonts, it needs the resource-append step.
+- `PBLine` cannot be **freehand or polyline**. Its `startPoint`/`endPoint` are an
+  eight-value enum (TopLeft, TopCenter, TopRight, MiddleRight, BottomRight,
+  BottomCenter, BottomLeft, MiddleLeft) plus start/end caps and thickness — so
+  TopLeft→BottomRight *is* a diagonal, and since the bounding rect is arbitrary so
+  is the angle. Earlier drafts of this file said "no diagonal line"; that was wrong.
+- Canvas size is set by the panel model, **not fixed**: GUI Designer supports eight
+  resolutions from 320×240 to 1920×1080 across 63 platform classes. The fixtures are
+  all 1280×800, which is a property of this client's hardware, not of the format.
+  See `docs/design-rules.md` §1.
+- Arbitrary raster art: unless the bitmap is already a `PBImageResource` it needs
+  the resource-append step (which §5 showed works). But note this is rarely the
+  binding constraint — ~339 icons are available as *font glyphs* and need no image
+  at all. See `docs/design-rules.md` §6.
 - Gradients beyond what `depth`/`surfaceHeight`/`lightAngle`/`lightBrightness`
   produce.
 

@@ -12,6 +12,13 @@ boundary.
 
 Read `docs/gdl-format.md` before changing anything that touches the format. It
 is the accumulated findings, and most of them were expensive to discover.
+`docs/design-rules.md` is Extron's own design standards reduced to encodable
+rules, with what is documented kept strictly separate from what we extrapolated —
+never quote an extrapolated number to a client as an Extron requirement.
+
+**The canvas is not 1280x800.** GUI Designer supports eight resolutions across 63
+panel models; the fixtures are all one model. Assume nothing about panel geometry
+from them.
 
 ## Environment
 

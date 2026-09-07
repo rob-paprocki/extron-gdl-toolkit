@@ -27,6 +27,7 @@ spec instead of clicking it together. This toolkit opens the format up.
 | `docs/gdl-format.md` | **the format writeup — read this first** |
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/from-scratch.md` | designing a panel from a spec — what is possible, and what needs Windows |
+| `docs/design-rules.md` | Extron's own design standards + Afterburn tokens, encodable, with provenance |
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
 | `powershell/Apply-GdlPlan.ps1` | applies a build plan to a real project — **unverified** |
 | `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |
