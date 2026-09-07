@@ -147,6 +147,23 @@ class TestCheck(unittest.TestCase):
                     'fill': '#FFFFFF', 'border': 'Invented - 3 Radius'}])
         self.assertTrue(any('unknown border' in m for m in p.check()))
 
+    def test_identical_type_and_rect_is_caught(self):
+        # compose.py's fill join keys on (type, rect) and drops collisions, so
+        # a duplicate would leave BOTH controls unfilled with no other symptom.
+        p = _spec([
+            {'kind': 'panel', 'rect': [0, 0, 10, 10], 'fill': '#242634'},
+            {'kind': 'panel', 'rect': [0, 0, 10, 10], 'fill': '#FF0000'},
+        ])
+        self.assertTrue(any('fill join drops' in m for m in p.check()))
+
+    def test_same_rect_different_type_is_fine(self):
+        # A label sitting exactly on its panel is normal design, not an error.
+        p = _spec([
+            {'kind': 'panel', 'rect': [0, 0, 10, 10], 'fill': '#242634'},
+            {'kind': 'label', 'rect': [0, 0, 10, 10], 'text': 'hi'},
+        ])
+        self.assertEqual(p.check(), [])
+
     def test_a_clean_spec_has_no_complaints(self):
         p = _spec([{'kind': 'panel', 'rect': [0, 0, 100, 50],
                     'fill': '#242634', 'border': 'rounded'}])

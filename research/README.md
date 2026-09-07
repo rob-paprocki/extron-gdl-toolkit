@@ -1,5 +1,25 @@
 # research/
 
+> **Status, 2026-09-07 — read this before acting on anything below.**
+>
+> Most of this file has been **resolved**, and two of its recommendations were
+> resolved *against*. It is kept as the record of how the measurements were
+> obtained; it is no longer a to-do list.
+>
+> | Below | Now |
+> |---|---|
+> | §1 `borderFillColor` fill | **shipped** (`fill_index`/`draw_fill`) |
+> | §1 modal scrim, `SCRIM_ALPHA` | **not shipped** — unobservable in this corpus |
+> | §2 bilevel/antialiased text | **shipped, but differently** — structurally, per pixel, not via the probe or the fitted 8-knob bundle |
+> | §3 `v3.py` "the strongest result reached" | **architecture rejected**; only its fractional advances were ported |
+>
+> In particular, §3's claim that per-control layering "is the clearest direction
+> for further fidelity work" is **wrong**, and following it would undo finding 4.
+> Its blit re-binarises the whole merged layer's alpha, which is only correct
+> where a control sits over a transparent backdrop — on its own two tuning pages
+> only 18/50 and 17/50 controls qualify. See `docs/render-fidelity.md`, which is
+> the current record.
+
 Measured but unshipped work. These scripts are **not** part of the toolkit —
 they carry hardcoded paths from the session that produced them and will not run
 unmodified. They are kept because each one encodes a result that cost real time
