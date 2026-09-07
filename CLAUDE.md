@@ -136,6 +136,8 @@ handle and means nothing to a programmer.
   finding 7.
 - Every text finding is validated against **one** typeface: the scored fixture
   only ever draws Forma DJR Display.
-- Generating a panel from a spec, rather than by cloning an existing one, is
-  not built yet. The parts exist; the missing pieces are ID allocation, group
-  registration and a layout pass.
+- Generating a panel from a spec is partly built — `gdl/spec.py` has the layout
+  pass, control ID allocation and a preview render. Still missing: writing a
+  spec into `ProjectGCP`. **Group registration was never actually missing**;
+  `Register-GdlPopupGroup` is complete. See `docs/from-scratch.md`, which also
+  lists the six questions that need one session on a Windows box.

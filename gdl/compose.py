@@ -279,15 +279,28 @@ def fill_index(path):
 def draw_fill(canvas, box, spec):
     """Paint the rounded rectangle Build would have baked into a PNG."""
     fill = rgba(spec['fill'])
+    stroke = rgba(spec.get('stroke'))
     if not fill or not fill[3]:
+        fill = None
+    if not stroke or not stroke[3]:
+        stroke = None
+    if not fill and not stroke:
         return
-    radius = (spec.get('border') or {}).get('radius', 0)
+    border = spec.get('border') or {}
+    radius = border.get('radius', 0)
+    thickness = border.get('thickness', 0) if stroke else 0
+    x0, y0 = box[0], box[1]
+    x1, y1 = box[0] + box[2] - 1, box[1] + box[3] - 1
+    # A capsule is stored as radius 9999 rather than a shape flag, so clamp
+    # rather than hand Pillow a radius larger than the box.
+    radius = min(radius, min(box[2], box[3]) // 2)
     d = ImageDraw.Draw(canvas)
-    if radius:
-        d.rounded_rectangle([box[0], box[1], box[0] + box[2] - 1, box[1] + box[3] - 1],
-                            radius=radius, fill=fill)
+    if radius > 0:
+        d.rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=fill,
+                            outline=stroke, width=max(1, thickness) if stroke else 0)
     else:
-        d.rectangle([box[0], box[1], box[0] + box[2] - 1, box[1] + box[3] - 1], fill=fill)
+        d.rectangle([x0, y0, x1, y1], fill=fill,
+                    outline=stroke, width=max(1, thickness) if stroke else 0)
 
 
 def group_members(layout):
