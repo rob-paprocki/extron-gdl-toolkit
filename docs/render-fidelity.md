@@ -154,6 +154,70 @@ Worth recording because it redirects effort: state choice accounts for none of
 the residual, so what remains on text-heavy pages is text metrics and glyph
 rasterisation.
 
+## 7. Text metrics: Pillow rounds what GDI does not
+
+Implemented, in `gdl/sfnt.py` + `gdl/compose.py`. Three separate roundings, all
+Pillow's, each measured on its own:
+
+**Glyph advances.** FreeType grid-fits every advance to a whole pixel, whatever
+you pass for `mode` or `layout_engine` — on Open Sans at 22px every glyph comes
+back an integer. GDI+ lays out fractionally. `gdl/sfnt.py` reads `hmtx` scaled
+by `head.unitsPerEm` directly, with `cmap` for the glyph lookup, in stdlib
+only rather than taking on `fontTools`.
+
+Measuring and placing must move **together** — either alone is a regression:
+
+| | measure | place | mean |
+|---|---|---|---|
+| shipped before | Pillow | Pillow | 2.328% |
+| | fractional | Pillow | 2.360% |
+| | Pillow | fractional | 2.343% |
+| **both** | fractional | fractional | **2.279%** |
+
+**Vertical metrics.** `getmetrics()` returns FreeType's *rounded* ascent and
+descent. Open Sans at 22px: ascent 24 against a true `usWinAscent` of 23.51, and
+a line box of 31 against 29.96. That is a whole pixel per line, which a
+vertically centred block splits in half and a two-line block pays in full — and
+it is why a naive fit wants a ~1.5px downward correction. Reading OS/2
+`usWinAscent`/`usWinDescent` fractionally and anchoring on the baseline (`ls`,
+not `la`) fixes the cause rather than the symptom.
+
+**Horizontal registration.** `DX = -0.5`, the usual pixel-corner vs pixel-centre
+convention difference. A clean minimum over the corpus, and
+`research/compose2.py`'s independent fit landed on the same value.
+
+Together: mean **2.33% → 2.19%**, median 1.85% → 1.65%, worst 8.15% → 7.68%.
+24 pages improved, 3 regressed (Presentation Matrix +0.21, Teams Confirmation
++0.06, Display Controls +0.03).
+
+**A negative result worth keeping:** `PT = 1.375` was re-swept from 93 to 100
+DPI on the theory that a size-proportional error might be the DPI factor. It is
+not — 99 DPI scores 2.194% and the best neighbour (98 DPI) 2.186%, inside the
+noise. The existing constant is right.
+
+### What is left, and why it is not shipped
+
+A size-dependent vertical residual remains. Per-control best-shift analysis over
+67 text controls shows it **scales with point size** (13pt wants ~1.0–1.5px,
+16–38pt want ≥2.5px), so it is a metrics error rather than a constant offset.
+Fitting an ascent multiplier `A` and line-height multiplier `L` on top reaches
+**mean 1.724%** at `A=0.90, L=0.97`.
+
+That is deliberately **not shipped.** The optimum is flat and degenerate —
+`(0.90, 0.97)`, `(0.92, 1.00)` and `(0.90, 1.00)` all land within 0.02 of each
+other — which is the signature of fitting noise, and `A`/`L` are precisely
+`research/compose2.py`'s `ak`/`lhk`, the global line-height change this
+document's closing caution already warns about. The next person should find the
+*cause* of the size-dependent residual, not refit these two numbers.
+
+### Scope limit on all of the above
+
+The scored fixture only ever draws **one** family: instrumenting `face()` across
+a full harness run shows 576 calls, all Forma DJR Display. Every text finding
+here is therefore validated against a single typeface; the corpus's Arial,
+Open Sans and Afterburn text is flattened into artwork on these pages. Treat the
+constants as measured for Forma and plausible elsewhere.
+
 ## Where it stands
 
 | | mean | median | worst |
@@ -161,32 +225,35 @@ rasterisation.
 | baseline | 4.57% | 2.28% | 40.22% |
 | binary alpha + group popups | 4.04% | 2.07% | 40.22% |
 | + borderFillColor fill | 2.60% | 2.02% | 8.99% |
-| **+ transparent canvas / bilevel text (current)** | **2.33%** | **1.85%** | **8.15%** |
+| + transparent canvas / bilevel text | 2.33% | 1.85% | 8.15% |
+| **+ fractional text metrics (current)** | **2.19%** | **1.65%** | **7.68%** |
 
-Implemented in `gdl/compose.py`: findings 1 (fill only), 2, 3 and 4.
+Implemented in `gdl/compose.py`: findings 1 (fill only), 2, 3, 4 and 7.
 
-With the Offline page no longer an outlier, the mean is now a fair summary of
-the corpus rather than one page's error — every remaining page is between 0.63%
-and 8.99%, and what is left is almost entirely text.
+With the Offline page no longer an outlier, the mean is a fair summary of the
+corpus rather than one page's error — every page is now between 0.54% and 7.68%.
 
-Not implemented, but **written and measured** — the code is in `research/`,
-with `research/README.md` giving the numbers and the fitted constants:
+Not implemented, but **written and measured**:
 
 | Candidate | Measured | Where |
 |---|---|---|
-| bilevel/antialiased text decision (finding 4) | mean 4.57% → 3.50%, median 2.28% → 1.23% | `research/compose2.py`, `q_final.py` |
-| fractional glyph advances + per-control layering | worst two pages 9.39% → 3.67%, 8.02% → 3.38% | `research/v3.py`, `frac.py` |
-| modal scrim at 65% opacity | no observable effect in this corpus — see above | `research/final_patch.py` |
+| ascent / line-height multipliers | mean 2.19% → 1.72%, but a degenerate fit | see above; `research/q_final.py` |
+| per-control RGBA layering | **rejected** — see below | `research/v3.py` |
+| modal scrim at 65% opacity | no observable effect in this corpus | `research/final_patch.py` |
 
-The second is the strongest result the project reached and is the clearest
-direction for further work; nothing in `gdl/` implements it. The constants
-behind both cost hours of sweeps, so re-derive nothing before reading
-`research/README.md`.
+### Why `research/v3.py`'s architecture was rejected
 
-Note that those two candidates' "before" numbers are against the 4.57%
-baseline, which predates the binary-alpha and group-popup work as well as the
-fill. Their *deltas* remain informative; their absolute afters do not stack
-onto 2.60%.
+`research/README.md` calls it "the clearest direction for further fidelity
+work". Two independent reviews of this repo concluded the opposite, and the
+measurement backs them: v3's per-control blit re-binarises the **whole** merged
+layer's alpha on every merge, which is only correct where the control sits over
+a transparent backdrop. On v3's own two tuning pages only 18 of 50 and 17 of 50
+controls qualify — so roughly two-thirds need genuine antialiasing that its
+architecture cannot produce, contradicting finding 4.
+
+Its measured win is attributable to its *other*, orthogonal contribution —
+fractional advances — which is what was ported here, into the existing shared
+canvas, without the layering.
 
 A caution carried over from the measurements: do **not** "fix" the line-height
 rule globally. Keeping `px = PointSize * 1.375` with PIL's `ascent + descent`

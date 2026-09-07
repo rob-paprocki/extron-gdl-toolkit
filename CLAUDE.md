@@ -56,7 +56,7 @@ There is ground truth, so use it rather than eyeballing:
 python tests/compare_snapshots.py fixtures/gdl/<file>.gdl fixtures/snapshots/Individual
 ```
 
-Current baseline: **mean 2.33%, median 1.85%, worst 8.15%** differing pixels
+Current baseline: **mean 2.19%, median 1.65%, worst 7.68%** differing pixels
 across 27 pages.
 
 A render change must report its before and after across **all** pages —
@@ -130,9 +130,12 @@ handle and means nothing to a programmer.
 
 - `referenceCountField` on a popup group: semantics unknown. A plausible value
   causes no visible problem.
-- One measured but unimplemented render fix: the text work — the
-  bilevel-vs-antialiased decision and fractional glyph advances. Everything
-  left in the corpus is text. See `docs/render-fidelity.md`.
+- A size-dependent vertical text residual. Fitting an ascent and
+  line-height multiplier reaches 1.72% mean, but the optimum is degenerate, so
+  the cause is wanted rather than the fit. See `docs/render-fidelity.md`
+  finding 7.
+- Every text finding is validated against **one** typeface: the scored fixture
+  only ever draws Forma DJR Display.
 - Generating a panel from a spec, rather than by cloning an existing one, is
   not built yet. The parts exist; the missing pieces are ID allocation, group
   registration and a layout pass.

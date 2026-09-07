@@ -15,6 +15,7 @@ import zipfile
 
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
+from . import sfnt
 from .container import open_gdl
 from .data import popup_ref  # noqa: E402
 
@@ -38,9 +39,45 @@ FILES = {
 # these and the face silently falls back to Arial, which is easy not to notice.
 ALIASES = {
     'afterburn_modified.ttf': ['extron_-_afterburn_1a.ttf'],
+    # The system faces ship under Windows 8.3-ish names on Windows and spelled-out
+    # ones on macOS. Without these, every Arial variant quietly resolves to plain
+    # Arial off Windows - the bold and the black would render as regular.
+    'arial.ttf': ['Arial.ttf'],
+    'arialbd.ttf': ['Arial Bold.ttf'],
+    'ariali.ttf': ['Arial Italic.ttf'],
+    'arialbi.ttf': ['Arial Bold Italic.ttf'],
+    'ariblk.ttf': ['Arial Black.ttf'],
 }
-WINFONTS = 'C:/Windows/Fonts'
+# Where the *system* faces live. Arial and Arial Black are not embedded in a
+# .gdl - on Windows they come from C:/Windows/Fonts, and off Windows they have
+# to be found somewhere else or the render dies rather than degrades.
+SYSFONTS = (
+    'C:/Windows/Fonts',
+    '/System/Library/Fonts/Supplemental', '/System/Library/Fonts', '/Library/Fonts',
+    os.path.expanduser('~/Library/Fonts'),
+    '/usr/share/fonts', '/usr/local/share/fonts', os.path.expanduser('~/.fonts'),
+)
+WINFONTS = SYSFONTS[0]          # kept: referenced by name elsewhere
 _cache = {}
+_sysindex = None
+
+
+def _system_fonts():
+    """lowercased filename -> full path, for every system font dir that exists.
+
+    Indexed case-insensitively because the same face is `arial.ttf` on Windows
+    and `Arial.ttf` on macOS, and an exact-name lookup silently misses it.
+    """
+    global _sysindex
+    if _sysindex is None:
+        _sysindex = {}
+        for base in SYSFONTS:
+            if not os.path.isdir(base):
+                continue
+            for root, _, names in os.walk(base):
+                for n in names:
+                    _sysindex.setdefault(n.lower(), os.path.join(root, n))
+    return _sysindex
 
 
 def face(name, bold, italic, px):
@@ -48,22 +85,70 @@ def face(name, bold, italic, px):
     if key in _cache:
         return _cache[key]
     primary = FILES.get((name, bold, italic)) or FILES.get((name, 0, 0))
-    candidates = [primary] + ALIASES.get(primary, []) + ['arial.ttf']
-    for base, fn in ((b, c) for b in (FONTDIR, WINFONTS) for c in candidates if c):
-        p = os.path.join(base, fn)
+    candidates = [c for c in [primary] + ALIASES.get(primary or '', []) + ['arial.ttf'] if c]
+    for fn in candidates:
+        p = os.path.join(FONTDIR, fn)
         if os.path.exists(p):
-            f = ImageFont.truetype(p, size=px)
-            _cache[key] = f
+            f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
-    f = ImageFont.truetype(os.path.join(WINFONTS, 'arial.ttf'), size=px)
-    _cache[key] = f
-    return f
+    index = _system_fonts()
+    for fn in candidates:
+        p = index.get(fn.lower())
+        if p:
+            f = _cache[key] = ImageFont.truetype(p, size=px)
+            return f
+    raise LookupError(
+        f'no font file for {name!r} (bold={bold} italic={italic}). Embedded faces '
+        f'come from `python -m gdl.fonts <file.gdl> gdl/fonts/`; system faces like '
+        f'Arial must exist in one of {SYSFONTS}.')
 
 
 def metrics(f):
-    """(ascent, descent) from the OS/2 winAscent/winDescent GDI actually uses."""
-    a, d = f.getmetrics()
-    return a, d
+    """(ascent, descent) from the OS/2 winAscent/winDescent GDI actually uses.
+
+    Read from the font rather than via Pillow: getmetrics() rounds both to
+    whole pixels, which costs a pixel of line box per line and pushes a
+    vertically centred block off by half of it. See gdl/sfnt.py.
+    """
+    a = advances(f)
+    if a is not None:
+        return a.vmetrics(f.size)
+    return f.getmetrics()
+
+
+# Lay text out with the font's own fractional advances instead of Pillow's
+# grid-fitted integer ones, and place each glyph at its own fractional x.
+# See docs/render-fidelity.md finding 7 for what each is worth.
+FRAC_MEASURE = True
+FRAC_PLACE = True
+# Horizontal registration. Pillow's rasteriser and GDI+ disagree by the usual
+# half pixel (sample at the pixel corner vs at its centre). Measured as a clean
+# minimum over the corpus, and research/compose2.py's independent fit landed on
+# the same -0.5, which is the reason to believe it rather than the sweep alone.
+DX = -0.5
+_adv = {}
+
+
+def advances(fnt):
+    """The sfnt advance table for a Pillow font, or None if it will not parse."""
+    path = getattr(fnt, 'path', None)
+    if path not in _adv:
+        try:
+            _adv[path] = sfnt.Advances(path)
+        except Exception:
+            # A face we cannot parse falls back to Pillow's own measurement
+            # rather than failing the render.
+            _adv[path] = None
+    return _adv[path]
+
+
+def measure(s, fnt, draw=None):
+    """Text width in pixels, fractional where the font lets us read it."""
+    if FRAC_MEASURE:
+        a = advances(fnt)
+        if a is not None:
+            return a.length(s, fnt.size)
+    return (draw or ImageDraw.Draw(Image.new('RGBA', (1, 1)))).textlength(s, font=fnt)
 
 
 def rgba(c):
@@ -106,7 +191,7 @@ def draw_text(img, box, text, fnt, color, alignv):
     vert = alignv // 3          # 0 bottom, 1 middle, 2 top
     horz = alignv % 3           # 0 centre, 1 left, 2 right
     d0 = ImageDraw.Draw(img)
-    lines = wrap(text, fnt, w, lambda s, f: d0.textlength(s, font=f))
+    lines = wrap(text, fnt, w, lambda s, f: measure(s, f, d0))
     asc, desc = metrics(fnt)
     lh = asc + desc
     block = lh * len(lines)
@@ -117,15 +202,28 @@ def draw_text(img, box, text, fnt, color, alignv):
     else:
         top = y + h - block
     d = ImageDraw.Draw(img)
+    adv = advances(fnt) if FRAC_PLACE else None
     for i, ln in enumerate(lines):
-        tw = d.textlength(ln, font=fnt)
+        tw = measure(ln, fnt, d)
         if horz == 1:
             tx = x
         elif horz == 2:
             tx = x + w - tw
         else:
             tx = x + (w - tw) / 2
-        d.text((tx, top + i * lh), ln, font=fnt, fill=color, anchor='la')
+        # Anchor on the baseline: 'la' would re-introduce Pillow's own rounded
+        # ascender, which is the thing metrics() exists to avoid.
+        tx += DX
+        ty = top + i * lh + asc
+        if adv is None:
+            d.text((tx, ty), ln, font=fnt, fill=color, anchor='ls')
+            continue
+        # Draw glyph by glyph so each lands on its own fractional x. Pillow
+        # advances by whole pixels within a string, which drifts a line's
+        # interior apart from GDI+'s layout even when the total width agrees.
+        for ch in ln:
+            d.text((tx, ty), ch, font=fnt, fill=color, anchor='ls')
+            tx += adv.advance(ch, fnt.size)
 
 
 def paste(canvas, assets, img_id, x, y, clip=None, binary=True):
