@@ -1,0 +1,70 @@
+name: ci
+
+# What CI can and cannot cover here:
+#
+#   CAN  - the layout maths, ID allocation and Extron's numeric design rules.
+#          gdl/spec.py is stdlib-only at module level and tests/test_spec.py
+#          needs no Pillow, so this runs on a bare runner.
+#   CAN  - reading the authoring model out of the fixtures (gdl/project.py,
+#          gdl/nrbf.py, gdl/container.py are all stdlib).
+#   CANNOT - the render fidelity harness. It needs gdl/fonts/, which is
+#          deliberately not in git (commercial font binaries). Without those
+#          faces text falls back to Arial and the score is quietly wrong, so a
+#          CI run of it would report a confident meaningless number. Fidelity
+#          stays a local gate - see CLAUDE.md.
+#   CANNOT - anything that authors a .gdl. That needs 32-bit Windows PowerShell
+#          and an installed GUI Designer.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: spec tests (layout, IDs, Extron design rules)
+        run: python tests/test_spec.py
+
+      - name: the worked example still checks clean
+        run: python -m gdl.spec check examples/panel.json
+
+      - name: the worked example still emits a plan
+        run: python -m gdl.spec plan examples/panel.json /tmp/plan.json
+
+      - name: every fixture and template still parses
+        run: |
+          python - <<'PY'
+          import glob
+          from gdl.project import Project
+          files = sorted(glob.glob('fixtures/gdl/*.gdl'))
+          assert files, 'no fixtures found'
+          for f in files:
+              p = Project.open(f)
+              pages = list(p.pages())
+              ctl = sum(len(x['controls']) for x in pages)
+              assert pages and ctl, f'{f} parsed to nothing'
+              print(f'  ok {len(pages):>3} pages {ctl:>5} controls  {f.split("/")[-1][:48]}')
+          PY
+
+      - name: theme extraction still agrees with the published Afterburn guide
+        run: |
+          python - <<'PY'
+          from gdl.themes import extract, AFTERBURN
+          t = extract('fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl')
+          observed = {k.upper() for k, _ in t['fills'] + t['strokes']}
+          doc = {v.upper() for v in AFTERBURN.values()
+                 if isinstance(v, str) and v.startswith('#')}
+          doc = {('#FF' + c[1:]) if len(c) == 7 else c for c in doc}
+          extra = observed - doc
+          assert not extra, f'colours not in the Afterburn guide: {sorted(extra)}'
+          print(f'  {len(observed)} colours observed, all in the guide')
+          PY
