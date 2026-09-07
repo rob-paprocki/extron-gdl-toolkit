@@ -378,8 +378,12 @@ class Panel:
         for pg in model['Pages']:
             controls = []
             for c in pg['Controls']:
-                rect = (c['Left'], c['Top'], c['Width'], c['Height'])
-                spec = fills.get((c['__type'], rect)) or {}
+                # Keyed the way layout() emits and compose.py looks up:
+                # (page id, control id). This used to key on (type, rect) and
+                # silently produced fill=None on every op after the join
+                # changed - which is exactly the sort of break a plan-level
+                # test catches and an end-to-end render does not.
+                spec = fills.get((pg['ID'], c['ID'])) or {}
                 border = (spec.get('border') or {}).get('resource')
                 controls.append({
                     'op': 'clone-control',

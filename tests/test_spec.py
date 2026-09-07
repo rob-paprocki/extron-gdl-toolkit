@@ -183,6 +183,43 @@ class TestCheck(unittest.TestCase):
         self.assertEqual(p.check(), [])
 
 
+class TestBuildPlan(unittest.TestCase):
+    """The plan is what the Windows applier consumes, so it needs its own tests.
+
+    layout() and plan() look fills up by the same key, and when that key changed
+    only layout() was updated - so every plan carried fill=None and every
+    generated panel came out uncoloured. Nothing caught it, because the preview
+    renders from layout() and the tests only exercised layout().
+    """
+
+    def test_fills_reach_the_plan(self):
+        p = _spec([{'kind': 'panel', 'rect': [0, 0, 100, 50], 'fill': '#242634'}])
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['fill'], 0xFF242634)
+
+    def test_borders_reach_the_plan(self):
+        p = _spec([{'kind': 'panel', 'rect': [0, 0, 100, 50],
+                    'fill': '#242634', 'border': 'capsule'}])
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['border'], '2D Capsule')
+
+    def test_text_colour_reaches_the_plan(self):
+        p = _spec([{'kind': 'label', 'rect': [0, 0, 100, 50],
+                    'text': 'x', 'color': '#FF0000'}])
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['text_color'], 0xFFFF0000)
+
+    def test_the_worked_example_carries_its_colours_into_the_plan(self):
+        import os
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        p = Panel.load(os.path.join(here, 'examples', 'panel.json'))
+        ops = p.plan()['pages'][0]['controls']
+        filled = [o for o in ops if o['fill']]
+        self.assertGreater(len(filled), 15, 'most controls in the example are filled')
+        accent = [o for o in ops if o['fields']['nameField'] == 'Presets']
+        self.assertEqual(accent[0]['fill'], 0xFF3D8BFD, 'the accent colour must survive')
+
+
 class TestExtronRules(unittest.TestCase):
     """Extron's own numeric standards. See docs/design-rules.md for provenance."""
 

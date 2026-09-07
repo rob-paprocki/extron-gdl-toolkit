@@ -150,6 +150,27 @@ function Set-GdlColour {
     Set-GdlFieldIfPresent $Control $Field $c | Out-Null
 }
 
+$script:BorderDonor = $null
+function Find-BorderDonor {
+    param($Project)
+    if ($script:BorderDonor) { return , $script:BorderDonor }
+    foreach ($pg in @($Project.Pages) + @($Project.PopupPages)) {
+        foreach ($c in $pg.Controls) {
+            $v = Get-GdlField $c 'borderField'
+            if ($v) { $script:BorderDonor = $v; return , $v }
+            $sts = Get-GdlField $c 'statesField'
+            if ($sts -and $sts.Count) {
+                for ($i = 0; $i -lt $sts.Count; $i++) {
+                    if ($null -eq $sts[$i]) { continue }
+                    $v2 = Get-GdlField $sts[$i] 'borderField'
+                    if ($v2) { $script:BorderDonor = $v2; return , $v2 }
+                }
+            }
+        }
+    }
+    return $null
+}
+
 function Set-GdlBorder {
     <#  Point a control's border at a named resource that already exists.
 
@@ -165,8 +186,12 @@ function Set-GdlBorder {
         Note-Problem "border resource '$Name' is not in the donor project; a plan may only reference existing resources"
         return
     }
+    # Same null-vs-missing trap as colours: a button's own borderField is
+    # usually null and the border lives on its state, so clone a reference from
+    # wherever one exists rather than reporting a field that is right there.
     $existing = Get-GdlField $Control 'borderField'
-    if (-not $existing) { Note-Problem "no borderField on $($Control.GetType().Name)"; return }
+    if (-not $existing) { $existing = Find-BorderDonor $Project }
+    if (-not $existing) { Note-Problem "no PBResourceReferenceBorder anywhere to clone"; return }
     $ref = Copy-GdlObject $existing
     Set-GdlFieldIfPresent $ref 'resourceNameField' $Name | Out-Null
     Set-GdlFieldIfPresent $Control 'borderField' $ref | Out-Null
@@ -196,8 +221,12 @@ foreach ($pg in $spec.pages) {
     Set-GdlFieldIfPresent $newPage 'userIdField' ([uint16]$pg.number) | Out-Null
     Set-GdlColour $project $newPage 'backgroundFillColorField' $pg.background
     # A cloned page keeps the DONOR's page-level artwork, which then paints
-    # underneath everything the plan authors. Clear it and let Build redraw.
+    # underneath everything the plan authors. Clearing <TLPImageID> is not
+    # enough: backgroundImageField is a separate reference to the donor's
+    # background IMAGE, and Build re-rasterises fill + image together into a new
+    # page asset, so the donor's art comes back looking like a stray tint.
     Set-GdlFieldIfPresent $newPage '<TLPImageID>k__BackingField' -1 | Out-Null
+    Set-GdlFieldIfPresent $newPage 'backgroundImageField' $null | Out-Null
 
     # Start from an empty page: the donor's controls carry its ids and popup
     # references, and inherited references are the documented way to end up
@@ -259,6 +288,7 @@ foreach ($pg in $spec.pages) {
                     Set-GdlColour $project $st 'textColorField' $op.text_color
                     Set-GdlColour $project $st 'borderFillColorField' $op.fill
                     Set-GdlColour $project $st 'borderColorField' $op.stroke
+                    Set-GdlBorder $project $st $op.border
                 }
             }
 
