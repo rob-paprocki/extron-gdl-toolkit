@@ -17,29 +17,37 @@ never be presented to a client as an Extron requirement.
 
 ## 1. Panels and resolutions
 
-The canvas is **not** fixed. GUI Designer 1.27.0.9 carries **63 platform classes**
-spanning **eight** resolutions:
+The canvas is **not** fixed. GUI Designer 1.27.0.9's Project Create Wizard offers
+**55 panel types**. Model names below are read from that dropdown — the shipped,
+authoritative list — and resolutions from the matching platform class.
 
-| Resolution | Example models |
+| Resolution | Models |
 |---|---|
-| 320 × 240 | TLP Pro 320 series |
-| 320 × 480 | TLP Pro 300M (portrait) |
-| 800 × 480 | TLP Pro 520/521/525/526M, 720 series |
-| 1024 × 600 | TLP Pro 1020/1022, 725/726M, TLC 726M |
-| 1280 × 720 | — |
-| 1280 × 800 | TLP Pro 1025/1035, 1220/1225, TLC 1026M |
-| 1366 × 768 | TLP Pro 1520/1525 |
-| 1920 × 1080 | TLP Pro 1720/1725, TLI 100/201 |
+| 320 × 240 | CCI Pro 700, TLP Pro 320C, TLP Pro 320M |
+| 320 × 480 | TLP Pro 300M |
+| 800 × 480 | **TLC** Pro 521M, **TLC** Pro 526M, TLP Pro 525C/M/T |
+| 1024 × 600 | **TLC** Pro 726M, TLP Pro 725C/M/T, TLP Pro 1022M/T, ZRTP Pro 725M/T |
+| 1280 × 720 | TLP Pro 535M, TLP Pro 535T |
+| 1280 × 800 | **TLC** Pro 1026M, TLP Pro 835C/M/T, TLP Pro 1025M/T, TLP Pro 1035M/T, TLP Pro 1220MG/TG, TLP Pro 1225MG/TG, ZRTP Pro 1025M/T |
+| 1366 × 768 | TLP Pro 1520MG/TG, TLP Pro 1525MG/TG |
+| 1920 × 1080 | TLI Pro 201, TLP Pro 1535M/T, TLP Pro 1720MG/TG, TLP Pro 1725MG/TG |
 
-Read straight from each platform's `Resolution` property, and independently
-confirmed by the control geometry inside Extron's own `.glt` templates (Afterburn
-1020 Series lays out to 1024×600, 1720 Series to 1920×1080, 300 Portrait to
-320×480).
+Resolution not determined by this probe: TLP Pro 520M, 720C/M/T, 1020M/T,
+1230WTG, TLI Pro 101 (the class-name match failed and was not guessed at). The
+three "Extron Control for Android / iOS / Web" entries are soft clients with no
+fixed panel class.
 
-**Touch-target minimums are keyed to physical PPI, not to pixel resolution.** Three
-resolutions correspond to two different panel families at different PPI, so the
-same pixel resolution has two different documented minimums. 1280×720 has no row
-in Extron's own Quick Reference table at all.
+**TLC and TLP are different product lines** — TLC Pro 521M/526M/726M/1026M are
+not TLP panels. An earlier version of this table conflated them, because the
+names were reconstructed from internal class symbols like `PBTLP1720MGPlatform`
+rather than read from the shipped list. Don't do that; models get retired and
+class names outlive them.
+
+**Touch-target minimums are keyed to physical PPI, not to pixel resolution.** The
+same resolution spans several models at different physical sizes, so one
+resolution can have more than one documented minimum. Note also that 1280 × 720
+*does* have models (TLP Pro 535M/T) — what it lacks is a row in Extron's
+touch-target Quick Reference table, which is a different thing.
 
 ## 2. Hard rules — stated as musts
 

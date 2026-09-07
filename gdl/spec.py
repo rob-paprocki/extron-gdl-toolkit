@@ -72,20 +72,23 @@ BORDER_GEOMETRY = {
     'Afterburn - 14 Radius 0 Thick': (14, 0),
     'Afterburn - Elipse 3 Thick': (10, 3),
 }
-# Panel models by resolution, with the PPI Extron's Quick Reference table keys
-# its touch-target minimums to. Three resolutions match two families at
-# different PPI; the higher PPI is listed first and is what `panel()` picks,
-# because the conservative choice is the larger minimum. 1280x720 has no row in
-# Extron's table at all - see docs/design-rules.md section 1.
+# Panel models by resolution. Names are read from GUI Designer's own Project
+# Create Wizard (55 entries), not reconstructed from class symbols - TLC and TLP
+# are different product lines and class names outlive retired models.
+#
+# PPI is what Extron's touch-target Quick Reference table keys its minimums to.
+# Where a resolution spans models of different physical size the conservative
+# (higher PPI, larger minimum) value is used. 1280x720 HAS models - TLP Pro
+# 535M/535T - but no row in that table, so it has no documented minimum.
 PANELS = {
-    (320, 240): ('TLP Pro 320 series', 114),
-    (320, 480): ('TLP Pro 300M portrait', 165),
-    (800, 480): ('TLP Pro 520/521/525/526M', 187),
-    (1024, 600): ('TLP Pro 725/726M', 170),
-    (1280, 720): (None, None),
-    (1280, 800): ('TLP Pro 1025/1035', 149),
-    (1366, 768): ('TLP Pro 1520/1525', 100),
-    (1920, 1080): ('TLP Pro 1720/1725', 128),
+    (320, 240): ('CCI Pro 700, TLP Pro 320C/M', 114),
+    (320, 480): ('TLP Pro 300M', 165),
+    (800, 480): ('TLC Pro 521M/526M, TLP Pro 525C/M/T', 187),
+    (1024, 600): ('TLC Pro 726M, TLP Pro 725C/M/T, 1022M/T, ZRTP Pro 725M/T', 170),
+    (1280, 720): ('TLP Pro 535M/T', None),
+    (1280, 800): ('TLC Pro 1026M, TLP Pro 835/1025/1035/1220/1225, ZRTP Pro 1025', 149),
+    (1366, 768): ('TLP Pro 1520MG/TG, 1525MG/TG', 100),
+    (1920, 1080): ('TLI Pro 201, TLP Pro 1535M/T, 1720MG/TG, 1725MG/TG', 128),
 }
 # Extron's own numbers, GUI Design Standards rev E pp.55-56: a touch target must
 # be 9mm square, and touchable elements must be 2mm apart. Converting to pixels
