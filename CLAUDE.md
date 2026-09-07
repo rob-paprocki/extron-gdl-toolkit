@@ -43,6 +43,38 @@ Writing is the constrained one, for two independent reasons:
 A 64-bit PowerShell will load 34 of 39 assemblies and then fail on
 `GUI Designer.exe` specifically. If you see that, you are in the wrong host.
 
+### Working in a cloud session (Linux, no Windows)
+
+Measured 2026-09-07 in a Claude Code cloud container. Everything except the
+PowerShell half runs, and the render harness reproduces `tests/baseline.json`
+**exactly** — mean 2.19%, median 1.65%, worst 7.68%, every page within 0.01%.
+Treat the cloud as the normal place to work and the Windows trip as one batched
+step at the end, not a per-iteration cost.
+
+| Runs in the cloud | Needs the Windows box |
+|---|---|
+| `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` | `powershell/*.ps1`, all eight |
+| `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` | File > Save and Build |
+| `gdl.spec` check / render / plan / donors | driving the VM — `prlctl` is host-side |
+| `gdl.edit` check / plan | `examples/add-page-and-popup.ps1` |
+| `tests/test_spec.py` (72 tests), `tests/test_edit.py` (23) | |
+| `tests/verify_built.py`, once the built file is carried back | |
+
+Setup is two commands:
+
+```bash
+pip install -r requirements.txt
+for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
+```
+
+Only two files need to cross the boundary: `out/plan.json` over, the built
+`.gdl` back. Nothing in the repo is blocked on Windows for *reading* a project,
+previewing a design, or scoring a render change.
+
+Before working here, note that `fixtures/` is real client material — see
+*Working on the fixtures* below. A cloud session clones it into a managed
+container, and anything pushed goes to GitHub.
+
 ## Three things that will waste your time if you don't know them
 
 1. **Clone, never construct.** `PBPage(PBProject)` and friends throw
@@ -147,6 +179,17 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
   `-ExecutionPolicy Bypass` on a machine that has not set it.
 - `gdl/fonts/` must be extracted from **all six** fixtures — no single one
   embeds every face.
+- **There is no Arial on Linux, and `face()` raises rather than degrading.**
+  Arial and Arial Black are system faces, not embedded ones, so on a cloud box
+  they resolve nowhere and the render dies with `LookupError`. The scored `_alt`
+  fixture never draws Arial — it is Forma DJR Display throughout, so the 2.19%
+  baseline reproduces with no Arial present at all — but the `TLP1035-1.1.0`
+  fixture does, and hard-fails. Substituting metric-compatible Liberation Sans
+  (copy `LiberationSans-*.ttf` over `arial.ttf` / `arialbd.ttf` / `ariali.ttf` /
+  `arialbi.ttf` / `ariblk.ttf` in `gdl/fonts/`) gets it to render, but at 5.88%
+  mean and 23.51% worst against ground truth. That is good enough to look at and
+  **not** good enough to score or to record a baseline from. If you do it, know
+  that you have put a file named `arial.ttf` on disk that is not Arial.
 
 ## Things deliberately not in git
 
