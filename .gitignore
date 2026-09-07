@@ -1,0 +1,15 @@
+# Commercial font binaries recovered from the fixtures. Regenerate with:
+#   for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
+# Without them text renders in fallback Arial and the harness score quietly worsens.
+gdl/fonts/
+
+# Scratch output: extracted ProjectGCP, repacked .gdl, authored results.
+out/
+
+# Built viewer artefacts (regenerate with gdl.data + viewer/build_viewer.py).
+panel-data.json
+panel-atlas.html
+
+__pycache__/
+*.pyc
+.DS_Store

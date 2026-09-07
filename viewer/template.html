@@ -1,0 +1,728 @@
+<title>Boardroom Panel Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&display=swap">
+
+<style>
+:root {
+  --ground: #eaeef0;
+  --surface: #ffffff;
+  --surface-2: #f2f5f7;
+  --line: #d3dce1;
+  --line-soft: #e4eaee;
+  --ink: #16232a;
+  --ink-2: #46606d;
+  --ink-3: #7b929e;
+  --accent: #b96a05;
+  --accent-soft: #fbead3;
+  --stage: #10171b;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0b1013;
+    --surface: #141c21;
+    --surface-2: #1a242a;
+    --line: #263640;
+    --line-soft: #1e2b33;
+    --ink: #dde6ea;
+    --ink-2: #9fb4bf;
+    --ink-3: #6f8794;
+    --accent: #f0a63c;
+    --accent-soft: #33270f;
+    --stage: #06090b;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0b1013;
+  --surface: #141c21;
+  --surface-2: #1a242a;
+  --line: #263640;
+  --line-soft: #1e2b33;
+  --ink: #dde6ea;
+  --ink-2: #9fb4bf;
+  --ink-3: #6f8794;
+  --accent: #f0a63c;
+  --accent-soft: #33270f;
+  --stage: #06090b;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 14px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+/* ---------- shell ---------- */
+.app {
+  display: grid;
+  grid-template-columns: 268px minmax(0, 1fr) 300px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1px;
+  background: var(--line-soft);
+  height: 100vh;
+  min-height: 640px;
+}
+.bar {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 13px 20px;
+  flex-wrap: wrap;
+}
+.bar h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.bar .job {
+  font: 500 11px/1 var(--mono);
+  letter-spacing: .06em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 4px 7px;
+  border-radius: 3px;
+}
+.bar .meta {
+  font: 400 12px/1 var(--mono);
+  color: var(--ink-3);
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ---------- rail ---------- */
+.rail, .inspector {
+  background: var(--surface);
+  overflow-y: auto;
+  padding: 16px 0 28px;
+}
+.grp {
+  font: 600 10px/1 var(--sans);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 18px 20px 8px;
+  display: flex;
+  justify-content: space-between;
+}
+.grp:first-child { padding-top: 4px; }
+.pick {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  padding: 7px 20px 7px 18px;
+  cursor: pointer;
+  color: var(--ink-2);
+  line-height: 1.35;
+}
+.pick:hover { background: var(--surface-2); color: var(--ink); }
+.pick[aria-current="true"] {
+  border-left-color: var(--accent);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 500;
+}
+.pick .num {
+  font: 500 11px/1 var(--mono);
+  color: var(--ink-3);
+  margin-right: 8px;
+}
+.pick[aria-current="true"] .num { color: var(--accent); }
+.pick .sz {
+  float: right;
+  font: 400 10px/1.6 var(--mono);
+  color: var(--ink-3);
+}
+
+/* ---------- stage ---------- */
+.stage {
+  background: var(--stage);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.tools {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.tog {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  color: #b7c6ce;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.tog:hover { background: rgba(255,255,255,.1); color: #fff; }
+.tog[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #12181b;
+  font-weight: 600;
+}
+.tools select {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  color: #b7c6ce;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 12px;
+  max-width: 240px;
+}
+.tools .spacer { margin-left: auto; }
+.tools .zoom { font: 400 11px/1 var(--mono); color: #6f8794; }
+
+.frame {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  overflow: auto;
+  min-height: 0;
+}
+.bezel {
+  padding: 10px;
+  border-radius: 9px;
+  background: linear-gradient(#2b3841, #171f25);
+  box-shadow: 0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+  flex: none;
+}
+.panel {
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  transform-origin: top left;
+}
+.panel img { display: block; position: absolute; }
+.ctl { position: absolute; }
+.ctl .tx {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  white-space: pre-wrap;
+  overflow: hidden;
+  padding: 0 2px;
+  line-height: 1.16;
+}
+
+/* overlay layers */
+.panel.show-ports .ctl[data-u]::after {
+  content: attr(data-u);
+  position: absolute;
+  top: 0; left: 0;
+  font: 600 10px/1 var(--mono);
+  background: var(--accent);
+  color: #12181b;
+  padding: 2px 3px;
+  border-radius: 0 0 3px 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.panel.show-rects .ctl {
+  outline: 1px solid rgba(240,166,60,.55);
+  outline-offset: -1px;
+}
+/* Controls with no port are pure decoration; fade them so the addressable
+   ones stand out while the overlay is up. */
+.panel.show-ports .ctl.decor { opacity: .3; }
+.panel.show-ports .ctl.stale::after {
+  content: attr(data-u) " !";
+  background: #d13b2e;
+  color: #fff;
+}
+.ctl.sel { outline: 2px solid var(--accent) !important; outline-offset: -1px; z-index: 4; }
+.ctl.hot { cursor: pointer; }
+.popup-host {
+  position: absolute;
+  z-index: 11;
+  box-shadow: 0 10px 40px rgba(0,0,0,.7);
+  overflow: hidden;
+}
+.slot {
+  position: absolute;
+  border: 1px dashed rgba(240,166,60,.5);
+  background: rgba(240,166,60,.07);
+  z-index: 2;
+  display: none;
+}
+.panel.show-slots .slot { display: block; }
+.slot span {
+  position: absolute;
+  top: 2px; left: 4px;
+  font: 500 10px/1.4 var(--mono);
+  color: var(--accent);
+}
+
+/* ---------- inspector ---------- */
+.inspector { padding: 0 0 28px; }
+.ins-head {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+.ins-head .kind {
+  font: 600 10px/1 var(--sans);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ins-head .name {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 6px;
+  word-break: break-word;
+}
+dl.kv {
+  margin: 0;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 7px 10px;
+  align-items: baseline;
+}
+dl.kv dt {
+  font: 500 11px/1.4 var(--sans);
+  color: var(--ink-3);
+  letter-spacing: .02em;
+}
+dl.kv dd {
+  margin: 0;
+  font: 400 12px/1.45 var(--mono);
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+dl.kv dd.port {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 14px;
+}
+.swatch {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  vertical-align: -1px;
+  margin-right: 5px;
+}
+.states { padding: 4px 18px 0; }
+.states .st {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line-soft);
+  font-size: 12px;
+}
+.states .st img {
+  max-width: 46px; max-height: 34px;
+  background: #10171b;
+  border-radius: 2px;
+}
+.states .st .lab { font-weight: 500; }
+.states .st .id { font: 400 11px/1 var(--mono); color: var(--ink-3); margin-left: auto; }
+.hint {
+  padding: 28px 18px;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.hint b { color: var(--ink-2); font-weight: 600; }
+
+.note {
+  margin: 10px 18px 0;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+@media (max-width: 1180px) {
+  .app { grid-template-columns: 232px minmax(0, 1fr); }
+  .inspector { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <h1 id="projName">Liberty Bank Boardroom</h1>
+    <span class="job" id="projJob">J26450039</span>
+    <div class="meta" id="projMeta"></div>
+  </header>
+
+  <nav class="rail" id="rail" aria-label="Pages"></nav>
+
+  <section class="stage">
+    <div class="tools">
+      <select id="projSel" aria-label="Project"></select>
+      <button class="tog" id="tPorts" aria-pressed="false" title="Label every control with its UserId (the port the control processor addresses)">Port numbers</button>
+      <button class="tog" id="tRects" aria-pressed="false">Hit areas</button>
+      <button class="tog" id="tSlots" aria-pressed="false" title="Show where popup pages are allowed to land">Popup slots</button>
+      <button class="tog" id="tState" aria-pressed="false" title="Draw every multi-state button in its second (active) state">Active states</button>
+      <select id="popSel" aria-label="Overlay popup page"></select>
+      <span class="spacer"></span>
+      <span class="zoom" id="zoom"></span>
+    </div>
+    <div class="frame" id="frame">
+      <div class="bezel"><div class="panel" id="panel"></div></div>
+    </div>
+  </section>
+
+  <aside class="inspector" id="inspector"></aside>
+</div>
+
+<script>
+const PROJECTS = /*__DATA__*/;
+
+/* Extron.GUICPro.Layout.Contracts AlignmentEnum: value = 3*vertical + horizontal,
+   vertical {bottom 0, middle 1, top 2}, horizontal {centre 0, left 1, right 2}
+   — alphabetical ordering of the nine concatenated names. */
+const VERT = ['flex-end', 'center', 'flex-start'];
+const HORZ = ['center', 'flex-start', 'flex-end'];
+const align = (v) => (v === undefined || v === null || v === 9)
+  ? ['center', 'center']
+  : [VERT[Math.floor(v / 3)] || 'center', HORZ[v % 3] || 'center'];
+
+const FONTS = {
+  'Arial': 'Arial, Helvetica, sans-serif',
+  'Arial Black': '"Arial Black", Arial, sans-serif',
+  'Open Sans': '"Open Sans", Arial, sans-serif',
+  'Open Sans Light': '"Open Sans", Arial, sans-serif',
+  'Forma DJR Display': '"Open Sans", Arial, sans-serif',
+  'Extron-Afterburn': '"Open Sans", Arial, sans-serif',
+};
+
+/* .NET DateTime pattern -> a fixed sample instant, so the clock reads as a
+   clock rather than as whatever second the page happened to load. */
+const SAMPLE = new Date(2026, 8, 6, 14, 25, 0);
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function fmtDate(pat) {
+  const d = SAMPLE, h12 = d.getHours() % 12 || 12, p2 = (n) => String(n).padStart(2, '0');
+  return pat.replace(/dddd|ddd|dd|MMMM|MMM|MM|yyyy|yy|hh|h|HH|mm|ss|tt/g, (t) => ({
+    dddd: DAYS[d.getDay()], ddd: DAYS[d.getDay()].slice(0, 3), dd: p2(d.getDate()),
+    MMMM: MONTHS[d.getMonth()], MMM: MONTHS[d.getMonth()].slice(0, 3), MM: p2(d.getMonth() + 1),
+    yyyy: d.getFullYear(), yy: String(d.getFullYear()).slice(2),
+    hh: p2(h12), h: h12, HH: p2(d.getHours()), mm: p2(d.getMinutes()), ss: p2(d.getSeconds()),
+    tt: d.getHours() < 12 ? 'AM' : 'PM',
+  }[t]));
+}
+
+const $ = (id) => document.getElementById(id);
+const state = { p: 0, page: null, popup: '', sel: null };
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+/* ---------- page index ---------- */
+function buildRail() {
+  const pr = PROJECTS[state.p];
+  const row = (pg, kind) => {
+    const m = pg.n.match(/^(\d+)\s*-\s*(.*)$/);
+    return `<button class="pick" data-kind="${kind}" data-id="${pg.id}"
+      aria-current="${state.page && state.page.id === pg.id && state.page.kind === kind}">
+      <span class="num">${m ? m[1] : '—'}</span>${esc(m ? m[2] : pg.n)}
+      <span class="sz">${pg.c.length}</span></button>`;
+  };
+  $('rail').innerHTML =
+    `<div class="grp"><span>Pages</span><span>${pr.pages.length}</span></div>` +
+    pr.pages.map((p) => row(p, 'page')).join('') +
+    `<div class="grp"><span>Popup pages</span><span>${pr.popups.length}</span></div>` +
+    pr.popups.map((p) => row(p, 'popup')).join('');
+
+  $('rail').querySelectorAll('.pick').forEach((b) => {
+    b.onclick = () => {
+      const pr2 = PROJECTS[state.p];
+      const list = b.dataset.kind === 'page' ? pr2.pages : pr2.popups;
+      const pg = list.find((x) => String(x.id) === b.dataset.id);
+      state.page = { ...pg, kind: b.dataset.kind };
+      state.popup = '';
+      state.sel = null;
+      buildRail(); buildPopupSel(); draw(); inspect(null);
+    };
+  });
+}
+
+/* ---------- popups available on the current page ---------- */
+function slotsFor(pg) {
+  const pr = PROJECTS[state.p];
+  const out = [];
+  for (const c of pg.c) {
+    if (!c.pp) continue;
+    const fits = c.pp.id !== undefined
+      ? pr.popups.filter((q) => q.id === c.pp.id)
+      : pr.popups.filter((q) => q.w === c.w && q.h === c.h);
+    out.push({ rect: c, popups: fits, group: c.pp.group });
+  }
+  return out;
+}
+
+function buildPopupSel() {
+  const sel = $('popSel');
+  if (!state.page) { sel.innerHTML = ''; return; }
+  const slots = slotsFor(state.page);
+  const seen = new Map();
+  slots.forEach((s, i) => s.popups.forEach((q) => { if (!seen.has(q.id)) seen.set(q.id, i); }));
+  sel.innerHTML = '<option value="">No popup shown</option>' +
+    [...seen.entries()].map(([id, si]) => {
+      const q = PROJECTS[state.p].popups.find((x) => x.id === id);
+      return `<option value="${id}:${si}">${esc(q.n)}</option>`;
+    }).join('');
+  sel.value = state.popup;
+  sel.disabled = seen.size === 0;
+  sel.onchange = () => { state.popup = sel.value; draw(); };
+}
+
+/* ---------- control rendering ---------- */
+/* Orientation is a fill DIRECTION, not an axis:
+   0 left-to-right, 1 right-to-left, 2 bottom-to-top, 3 top-to-bottom. */
+function fillClip(dir, w, h, f) {
+  const g = 1 - f;
+  if (dir === 1) return `inset(0 0 0 ${w * g}px)`;
+  if (dir === 2) return `inset(${h * g}px 0 0 0)`;
+  if (dir === 3) return `inset(0 0 ${h * g}px 0)`;
+  return `inset(0 ${w * g}px 0 0)`;
+}
+
+function ctlHTML(c, assets, useActive) {
+  // A popup-page reference paints nothing and must not swallow clicks.
+  if (c.anchor) return '';
+
+  let img = c.i, tx = c.tx || '', col = c.c, fnt = c.f, al = c.a;
+  if (useActive && c.st && c.st.length > 1) {
+    const s = c.st[1];
+    if (s.i !== null && s.i !== undefined) img = s.i;
+    if (s.tx) tx = s.tx;
+    if (s.c) col = s.c;
+    if (s.f) fnt = s.f;
+    if (s.a !== null && s.a !== undefined) al = s.a;
+  }
+  if (c.t === 'DateTime' && c.pat) tx = fmtDate(c.pat);
+
+  let inner = '';
+  if (img !== undefined && assets[img]) {
+    inner += `<img src="${assets[img]}" alt="" width="${c.w}" height="${c.h}">`;
+  }
+  // Sliders and levels are a trough plus a fill clipped to the value, parked
+  // at half travel so the artwork reads without inventing feedback.
+  const F = 0.5;
+  if (c.mx !== undefined && assets[c.mx] && c.mx !== img) {
+    inner += `<img src="${assets[c.mx]}" alt="" width="${c.w}" height="${c.h}" `
+      + `style="clip-path:${fillClip(c.io, c.w, c.h, F)}">`;
+  }
+  if (c.ind !== undefined && assets[c.ind]) {
+    const iw = c.iw || c.w, ih = c.ih || c.h;
+    const vert = c.io === 2 || c.io === 3;
+    const x = vert ? Math.round((c.w - iw) / 2) : Math.round((c.w - iw) * F);
+    const y = vert ? Math.round((c.h - ih) * (c.io === 2 ? 1 - F : F)) : Math.round((c.h - ih) / 2);
+    inner += `<img src="${assets[c.ind]}" alt="" width="${iw}" height="${ih}" style="left:${x}px;top:${y}px">`;
+  }
+  if (tx) {
+    const [ai, ji] = align(al);
+    const f = fnt || {};
+    const px = f.p || 16;
+    const st = [
+      `align-items:${ai}`, `justify-content:${ji}`,
+      `color:${col || '#fff'}`,
+      `font-family:${FONTS[f.n] || 'Arial, Helvetica, sans-serif'}`,
+      `font-size:${px}px`,
+      `line-height:${(px * (f.lh || 1.2)).toFixed(2)}px`,
+      f.n && f.n.endsWith('Light') ? 'font-weight:300' : (f.b ? 'font-weight:700' : 'font-weight:400'),
+      f.i ? 'font-style:italic' : '',
+      f.u || f.s ? `text-decoration:${[f.u ? 'underline' : '', f.s ? 'line-through' : ''].filter(Boolean).join(' ')}` : '',
+      `text-align:${ji === 'center' ? 'center' : ji === 'flex-end' ? 'right' : 'left'}`,
+    ].filter(Boolean).join(';');
+    inner += `<span class="tx" style="${st}">${esc(tx)}</span>`;
+  }
+  const port = c.u ? ` data-u="${c.u}"` : '';
+  const cls = 'ctl hot' + (c.u ? '' : ' decor') + (c.stale ? ' stale' : '');
+  return `<div class="${cls}" style="left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px"${port}>${inner}</div>`;
+}
+
+function pageHTML(pg, assets, useActive) {
+  let h = '';
+  if (pg.bg !== null && pg.bg !== undefined && assets[pg.bg]) {
+    h += `<img src="${assets[pg.bg]}" alt="" width="${pg.w}" height="${pg.h}" style="left:0;top:0">`;
+  }
+  h += pg.c.map((c) => ctlHTML(c, assets, useActive)).join('');
+  return h;
+}
+
+function draw() {
+  const pr = PROJECTS[state.p];
+  const pg = state.page;
+  const panel = $('panel');
+  if (!pg) { panel.innerHTML = ''; return; }
+
+  const useActive = $('tState').getAttribute('aria-pressed') === 'true';
+  panel.style.width = pg.w + 'px';
+  panel.style.height = pg.h + 'px';
+  panel.style.background = pg.fill || '#000';
+
+  let html = pageHTML(pg, pr.assets, useActive);
+
+  // popup landing zones
+  slotsFor(pg).forEach((s, i) => {
+    const lbl = s.group !== undefined ? `group ${s.group}` : `popup ${s.rect.pp.id}`;
+    html += `<div class="slot" style="left:${s.rect.x}px;top:${s.rect.y}px;width:${s.rect.w}px;height:${s.rect.h}px"><span>${lbl}</span></div>`;
+  });
+
+  if (state.popup) {
+    const [pid, si] = state.popup.split(':');
+    const q = pr.popups.find((x) => String(x.id) === pid);
+    const slot = slotsFor(pg)[+si];
+    if (q && slot) {
+      // A modal popup carries its own dimming scrim inside its page image, so
+      // adding a shade layer here would double-darken the page underneath.
+      html += `<div class="popup-host" style="left:${slot.rect.x}px;top:${slot.rect.y}px;width:${q.w}px;height:${q.h}px">`
+        + pageHTML(q, pr.assets, useActive) + `</div>`;
+    }
+  }
+
+  panel.innerHTML = html;
+  panel.classList.toggle('show-ports', $('tPorts').getAttribute('aria-pressed') === 'true');
+  panel.classList.toggle('show-rects', $('tRects').getAttribute('aria-pressed') === 'true');
+  panel.classList.toggle('show-slots', $('tSlots').getAttribute('aria-pressed') === 'true');
+
+  // click-to-inspect: the flat list must match DOM order, so it skips the
+  // anchors exactly as ctlHTML does.
+  const flat = [];
+  pg.c.forEach((c) => { if (!c.anchor) flat.push({ c, pg }); });
+  if (state.popup) {
+    const [pid, si] = state.popup.split(':');
+    const q = pr.popups.find((x) => String(x.id) === pid);
+    if (q && slotsFor(pg)[+si]) q.c.forEach((c) => { if (!c.anchor) flat.push({ c, pg: q }); });
+  }
+  panel.querySelectorAll('.ctl').forEach((el, i) => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      panel.querySelectorAll('.ctl.sel').forEach((x) => x.classList.remove('sel'));
+      el.classList.add('sel');
+      if (flat[i]) inspect(flat[i].c, flat[i].pg);
+    };
+  });
+  fit();
+}
+
+function fit() {
+  const pg = state.page;
+  if (!pg) return;
+  const box = $('frame').getBoundingClientRect();
+  const s = Math.min((box.width - 68) / pg.w, (box.height - 68) / pg.h, 1);
+  const panel = $('panel');
+  panel.style.transform = `scale(${s})`;
+  panel.parentElement.style.width = Math.round(pg.w * s) + 'px';
+  panel.parentElement.style.height = Math.round(pg.h * s) + 'px';
+  $('zoom').textContent = `${pg.w}×${pg.h} · ${Math.round(s * 100)}%`;
+}
+
+/* ---------- inspector ---------- */
+function inspect(c, pg) {
+  const box = $('inspector');
+  if (!c) {
+    box.innerHTML = `<div class="hint">Click any control on the panel to read its
+      <b>port number</b>, geometry, caption and states.
+      <div class="note">Every asset in a .gdl is pre-rendered at its control's exact pixel size,
+      so the artwork here is the panel's own, blitted 1:1. Captions are drawn by this page from
+      the layout data, because one asset backs many captions.</div></div>`;
+    return;
+  }
+  const pr = PROJECTS[state.p];
+  const f = c.f || {};
+  const rows = [];
+  const add = (k, v, cls) => rows.push(`<dt>${k}</dt><dd${cls ? ` class="${cls}"` : ''}>${v}</dd>`);
+
+  add('Port', c.u ? c.u : '<span style="color:var(--ink-3)">decoration</span>', c.u ? 'port' : '');
+  if (c.stale) add('Stale name', `<span style="color:var(--accent)">was port ${c.stale}</span>`);
+  add('Rect', `${c.x}, ${c.y} · ${c.w}×${c.h}`);
+  if (c.n) add('Name', esc(c.n));
+  if (c.id !== undefined) add('Object ID', c.id);
+  if (c.ft) add('Caption', 'baked into artwork');
+  else if (c.tx) add('Caption', `“${esc(c.tx.replace(/\r\n/g, ' ↵ '))}”`);
+  if (f.n) add('Font', `${esc(f.n)} ${f.p}px${f.b ? ' bold' : ''}${f.i ? ' italic' : ''}`);
+  if (c.c) add('Colour', `<span class="swatch" style="background:${c.c}"></span>${c.c}`);
+  if (c.a !== undefined) add('Align', ['bottom-centre', 'bottom-left', 'bottom-right', 'middle-centre', 'middle-left', 'middle-right', 'top-centre', 'top-left', 'top-right', 'none'][c.a] ?? c.a);
+  if (c.pat) add('Pattern', esc(c.pat));
+  if (c.i !== undefined) add('Asset', `${c.i}.png`);
+  if (c.pp) add('Opens', c.pp.id !== undefined
+    ? esc((pr.popups.find((q) => q.id === c.pp.id) || {}).n || `popup ${c.pp.id}`)
+    : `popup group ${c.pp.group}`);
+  if (c.cm) add('Comment', esc(c.cm));
+
+  let states = '';
+  if (c.st && c.st.length) {
+    states = `<div class="grp" style="padding-left:18px">States</div><div class="states">` +
+      c.st.map((s) => `<div class="st">
+        ${s.i !== null && s.i !== undefined && pr.assets[s.i] ? `<img src="${pr.assets[s.i]}" alt="">` : ''}
+        <span class="lab">${esc(s.n || '—')}</span>
+        <span class="id">${s.id === c.ds ? 'default · ' : ''}${s.i !== null ? s.i + '.png' : 'no art'}</span>
+      </div>`).join('') + `</div>`;
+  }
+
+  box.innerHTML = `<div class="ins-head">
+      <div class="kind">${esc(c.t)}${pg && pg !== state.page ? ' · in popup' : ''}</div>
+      <div class="name">${esc(c.n || c.tx || c.t)}</div>
+    </div><dl class="kv">${rows.join('')}</dl>${states}`;
+}
+
+/* ---------- project switching ---------- */
+function loadProject(i) {
+  state.p = i;
+  const pr = PROJECTS[i];
+  $('projName').textContent = pr.name || pr.label;
+  $('projJob').textContent = pr.job || '';
+  $('projMeta').innerHTML = [
+    pr.panel, `${pr.screen[0]}×${pr.screen[1]}`,
+    pr.skin ? `${pr.skin} skin` : '', pr.ver ? `build ${pr.ver}` : '',
+    pr.app ? `GUI Designer ${pr.app}` : '',
+  ].filter(Boolean).map((s) => `<span>${esc(s)}</span>`).join('');
+  const first = pr.pages.find((p) => p.id === pr.default) || pr.pages[0] || pr.popups[0];
+  state.page = { ...first, kind: pr.pages.includes(first) ? 'page' : 'popup' };
+  state.popup = '';
+  buildRail(); buildPopupSel(); draw(); inspect(null);
+}
+
+$('projSel').innerHTML = PROJECTS.map((p, i) => `<option value="${i}">${esc(p.label)}</option>`).join('');
+$('projSel').onchange = (e) => loadProject(+e.target.value);
+
+['tPorts', 'tRects', 'tSlots', 'tState'].forEach((id) => {
+  $(id).onclick = () => {
+    const b = $(id);
+    b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    draw();
+  };
+});
+
+addEventListener('resize', fit);
+loadProject(0);
+</script>
