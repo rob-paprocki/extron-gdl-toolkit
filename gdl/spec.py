@@ -72,6 +72,47 @@ BORDER_GEOMETRY = {
     'Afterburn - 14 Radius 0 Thick': (14, 0),
     'Afterburn - Elipse 3 Thick': (10, 3),
 }
+# Panel models by resolution, with the PPI Extron's Quick Reference table keys
+# its touch-target minimums to. Three resolutions match two families at
+# different PPI; the higher PPI is listed first and is what `panel()` picks,
+# because the conservative choice is the larger minimum. 1280x720 has no row in
+# Extron's table at all - see docs/design-rules.md section 1.
+PANELS = {
+    (320, 240): ('TLP Pro 320 series', 114),
+    (320, 480): ('TLP Pro 300M portrait', 165),
+    (800, 480): ('TLP Pro 520/521/525/526M', 187),
+    (1024, 600): ('TLP Pro 725/726M', 170),
+    (1280, 720): (None, None),
+    (1280, 800): ('TLP Pro 1025/1035', 149),
+    (1366, 768): ('TLP Pro 1520/1525', 100),
+    (1920, 1080): ('TLP Pro 1720/1725', 128),
+}
+# Extron's own numbers, GUI Design Standards rev E pp.55-56: a touch target must
+# be 9mm square, and touchable elements must be 2mm apart. Converting to pixels
+# needs the panel's PPI, which is why PANELS carries it.
+MM_TOUCH_TARGET = 9.0
+MM_SPACING = 2.0
+MAX_BUTTONS_PER_GROUP = 9        # p.58
+MAX_COLOURS_PER_PROJECT = 6      # p.49
+MIN_BODY_POINT_SIZE = 14         # pp.65-67
+
+
+def touch_minimums(size):
+    """(min target px, min spacing px) for a canvas size, or (None, None).
+
+    Derived as mm x PPI. Extron publishes the resulting table but not this
+    formula - p.90 says third-party panels must be "calculated manually" and
+    gives no formula - so treat these as reproducing the documented rows rather
+    than as a documented rule in their own right.
+    """
+    _, ppi = PANELS.get(tuple(size), (None, None))
+    if not ppi:
+        return None, None
+    mm_per_inch = 25.4
+    return (round(MM_TOUCH_TARGET * ppi / mm_per_inch),
+            round(MM_SPACING * ppi / mm_per_inch))
+
+
 KIND_TYPE = {'panel': 'PBShape', 'shape': 'PBShape', 'button': 'PBButton',
              'label': 'PBLabel', 'line': 'PBLine'}
 
@@ -144,6 +185,7 @@ class Panel:
         self.theme = dict(spec.get('theme') or {})
         self.size = tuple(spec.get('size') or (1280, 800))
         self.pages = []
+        self._groups = {}
         self._build()
 
     @classmethod
@@ -177,6 +219,14 @@ class Panel:
                 shared = {k: v for k, v in spread.items()
                           if k not in ('rect', 'cols', 'rows', 'gap', 'gap_y',
                                        'pad', 'items', 'count', 'horizontal')}
+                # p.58 caps a control GROUP at nine buttons. "Group" is not a
+                # spec concept, so treat one layout directive as one group -
+                # which is what a designer means by it.
+                kinds = [sub.get('kind', shared.get('kind')) for sub in items]
+                nbtn = sum(1 for k in kinds if k == 'button')
+                if nbtn:
+                    label = spread.get('name') or (items[0].get('text') if items else '?')
+                    self._groups[str(label)] = self._groups.get(str(label), 0) + nbtn
                 for cell, sub in zip(cells, items):
                     merged = dict(shared)
                     merged.update(sub)
@@ -230,6 +280,7 @@ class Panel:
     def _build(self):
         page_no = None
         for i, pg in enumerate(self.spec.get('pages') or []):
+            self._groups = {}
             controls = self._controls(pg.get('controls') or [], [])
             page_no = pg.get('number')
             if page_no is None:
@@ -242,6 +293,7 @@ class Panel:
                 'background': colour(pg.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
                 'controls': controls,
+                'group_sizes': dict(self._groups),
             })
 
     # -- emit --------------------------------------------------------------
@@ -402,7 +454,77 @@ class Panel:
                 if b and b not in BORDERS and b not in BORDER_GEOMETRY:
                     out.append(f'{where}: unknown border resource {b!r} - a generator may '
                                f'only reference resources the project already carries')
+            out += self._house_rules(pg)
+        n = len(self.palette())
+        if n > MAX_COLOURS_PER_PROJECT:
+            out.append(f'project uses {n} distinct colours, above the '
+                       f'{MAX_COLOURS_PER_PROJECT}-colour maximum '
+                       f'(GUI Design Standards p.49)')
         return out
+
+    def _house_rules(self, pg):
+        """Extron's own numeric rules. See docs/design-rules.md for provenance.
+
+        Deliberately separate from the structural checks above: these are
+        Extron's design standards, not correctness. A spec that trips one of
+        these will still build - it just will not meet the standard.
+        """
+        out = []
+        target, spacing = touch_minimums(self.size)
+        for c in pg['controls']:
+            x, y, w, h = (int(v) for v in c['rect'])
+            where = f"page {pg['number']} {c.get('name') or c.get('text') or '?'}"
+            # Only interactive controls have a touch target to meet.
+            if target and c.get('kind') == 'button' and (w < target or h < target):
+                out.append(f'{where}: {w}x{h} is below the {target}x{target} px touch '
+                           f'target for a {self.size[0]}x{self.size[1]} panel '
+                           f'(9mm, GUI Design Standards p.55)')
+            size = c.get('size') or self.theme.get('size') or 0
+            if c.get('kind') in ('button', 'label') and size and size < MIN_BODY_POINT_SIZE:
+                out.append(f'{where}: {size}pt is below the {MIN_BODY_POINT_SIZE}pt '
+                           f'body-text minimum (p.65)')
+
+        # p.58: no more than nine buttons in a control group. "Group" is not a
+        # spec concept, so approximate it by the layout directive that produced
+        # them - which is exactly what a designer means by a group.
+        for name, n in (pg.get('group_sizes') or {}).items():
+            if n > MAX_BUTTONS_PER_GROUP:
+                out.append(f"page {pg['number']} group {name!r}: {n} buttons exceeds the "
+                           f'{MAX_BUTTONS_PER_GROUP}-per-group maximum (p.58)')
+
+        # Adjacent-button spacing, p.56: at least 5-10px for buttons of 72px or
+        # less, and 2mm between touchable targets generally.
+        if spacing:
+            btns = [c for c in pg['controls'] if c.get('kind') == 'button']
+            for i, a in enumerate(btns):
+                ax, ay, aw, ah = (int(v) for v in a['rect'])
+                for b2 in btns[i + 1:]:
+                    bx, by, bw, bh = (int(v) for v in b2['rect'])
+                    gap_x = max(bx - (ax + aw), ax - (bx + bw))
+                    gap_y = max(by - (ay + ah), ay - (by + bh))
+                    # Only complain about neighbours: overlapping on one axis
+                    # and separated on the other.
+                    if gap_x < 0 and 0 <= gap_y < spacing:
+                        out.append(f"page {pg['number']} {a.get('text') or '?'} / "
+                                   f"{b2.get('text') or '?'}: {gap_y}px vertical gap is "
+                                   f'below the {spacing}px minimum (2mm, p.56)')
+                    elif gap_y < 0 and 0 <= gap_x < spacing:
+                        out.append(f"page {pg['number']} {a.get('text') or '?'} / "
+                                   f"{b2.get('text') or '?'}: {gap_x}px horizontal gap is "
+                                   f'below the {spacing}px minimum (2mm, p.56)')
+        return out
+
+    def palette(self):
+        """Every distinct colour the spec uses. p.49 caps a project at six."""
+        seen = set()
+        for pg in self.pages:
+            seen.add(tuple(sorted((pg['background'] or {}).items())))
+            for c in pg['controls']:
+                for key in ('fill', 'stroke', 'color'):
+                    v = colour(c.get(key), self.theme)
+                    if v:
+                        seen.add(tuple(sorted(v.items())))
+        return {s for s in seen if s}
 
 
 def main(argv):

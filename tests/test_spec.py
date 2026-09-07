@@ -183,6 +183,81 @@ class TestCheck(unittest.TestCase):
         self.assertEqual(p.check(), [])
 
 
+class TestExtronRules(unittest.TestCase):
+    """Extron's own numeric standards. See docs/design-rules.md for provenance."""
+
+    def test_touch_minimums_reproduce_extrons_published_rows(self):
+        from gdl.spec import touch_minimums
+        # Values Extron publishes in its Quick Reference table (p.90).
+        self.assertEqual(touch_minimums((1280, 800)), (53, 12))
+        self.assertEqual(touch_minimums((320, 480)), (58, 13))
+        self.assertEqual(touch_minimums((320, 240)), (40, 9))
+
+    def test_1280x720_has_no_documented_minimum(self):
+        # Extron's table has no row for it; inventing one would be a guess
+        # presented as a requirement.
+        from gdl.spec import touch_minimums
+        self.assertEqual(touch_minimums((1280, 720)), (None, None))
+
+    def test_undersized_button_is_caught(self):
+        p = _spec([{'kind': 'button', 'rect': [0, 0, 40, 40], 'text': 'tiny'}])
+        self.assertTrue(any('touch target' in m for m in p.check()))
+
+    def test_button_at_the_minimum_passes(self):
+        p = _spec([{'kind': 'button', 'rect': [0, 0, 53, 53], 'text': 'ok'}])
+        self.assertFalse(any('touch target' in m for m in p.check()))
+
+    def test_labels_are_not_touch_targets(self):
+        # Only interactive controls need to meet 9mm.
+        p = _spec([{'kind': 'label', 'rect': [0, 0, 20, 20], 'text': 'hi'}])
+        self.assertFalse(any('touch target' in m for m in p.check()))
+
+    def test_more_than_nine_buttons_in_a_group_is_caught(self):
+        p = _spec([{'grid': {'rect': [0, 0, 1200, 100], 'cols': 10, 'kind': 'button',
+                             'name': 'toomany',
+                             'items': [{'text': str(i)} for i in range(10)]}}])
+        self.assertTrue(any('per-group maximum' in m for m in p.check()))
+
+    def test_nine_buttons_in_a_group_passes(self):
+        p = _spec([{'grid': {'rect': [0, 0, 1200, 100], 'cols': 9, 'kind': 'button',
+                             'name': 'ok',
+                             'items': [{'text': str(i)} for i in range(9)]}}])
+        self.assertFalse(any('per-group maximum' in m for m in p.check()))
+
+    def test_too_many_colours_is_caught(self):
+        hues = ['#111111', '#222222', '#333333', '#444444',
+                '#555555', '#666666', '#777777', '#888888']
+        p = _spec([{'kind': 'panel', 'rect': [i * 60, 0, 50, 50], 'fill': h}
+                   for i, h in enumerate(hues)])
+        self.assertTrue(any('colour' in m and 'maximum' in m for m in p.check()))
+
+    def test_small_body_text_is_caught(self):
+        p = _spec([{'kind': 'label', 'rect': [0, 0, 100, 40], 'text': 'x', 'size': 10}])
+        self.assertTrue(any('body-text minimum' in m for m in p.check()))
+
+    def test_buttons_too_close_together_are_caught(self):
+        # 12px is the 1280x800 minimum; 4px is well under it.
+        p = _spec([
+            {'kind': 'button', 'rect': [0, 0, 100, 60], 'text': 'a'},
+            {'kind': 'button', 'rect': [0, 64, 100, 60], 'text': 'b'},
+        ])
+        self.assertTrue(any('below the 12px minimum' in m for m in p.check()))
+
+    def test_adequately_spaced_buttons_pass(self):
+        p = _spec([
+            {'kind': 'button', 'rect': [0, 0, 100, 60], 'text': 'a'},
+            {'kind': 'button', 'rect': [0, 80, 100, 60], 'text': 'b'},
+        ])
+        self.assertFalse(any('minimum (2mm' in m for m in p.check()))
+
+    def test_the_worked_example_meets_the_standards(self):
+        # examples/panel.json is what docs/from-scratch.md shows being built.
+        import os
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        p = Panel.load(os.path.join(here, 'examples', 'panel.json'))
+        self.assertEqual(p.check(), [])
+
+
 class TestLayoutModel(unittest.TestCase):
     def test_controls_are_authored_without_artwork(self):
         # TLPImageID = -1 is what makes this a spec for Build rather than a
