@@ -269,17 +269,37 @@ def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None, fills=
               fnt, col, src.get('TextAlignment', c.get('TextAlignment', 3)))
 
 
+def flatten(canvas):
+    """Put the finished page on opaque black, the way the panel displays it.
+
+    Deliberately the same binary rule paste() uses rather than an alpha
+    composite: a pixel that was painted keeps its own colour at full strength,
+    an untouched one stays black. That reproduces the previous
+    opaque-canvas-from-the-start behaviour exactly.
+    """
+    bg = Image.new('RGBA', canvas.size, (0, 0, 0, 255))
+    bg.paste(canvas, (0, 0), canvas.getchannel('A').point(lambda a: 255 if a else 0))
+    return bg
+
+
 def render_page(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True, groups=None,
-                fills=None):
-    if canvas is None:
-        canvas = Image.new('RGBA', size, (0, 0, 0, 255))
+                fills=None, flat=True):
+    # The canvas starts *transparent* and is flattened onto black once, at the
+    # end of the outermost call. An opaque-from-the-start canvas destroys the
+    # only signal that says whether a control sits over real artwork or over
+    # nothing, and that signal is what finding 4's bilevel/antialiased text
+    # decision reads. Nested calls (popup-group members) are handed the live
+    # canvas and must not flatten it.
+    outermost = canvas is None
+    if outermost:
+        canvas = Image.new('RGBA', size, (0, 0, 0, 0))
         fill = rgba(pg.get('BackgroundFillColor'))
         if pg.get('TLPImageID', -1) == -1 and fill and fill[3]:
             canvas.paste(fill, [0, 0, *size])
     paste(canvas, assets, pg.get('TLPImageID'), ox, oy)
     for c in (pg.get('Controls') or []):
         render_control(canvas, c, assets, ox, oy, draw_txt, groups, fills)
-    return canvas
+    return flatten(canvas) if outermost and flat else canvas
 
 
 def popup_groups(j):
@@ -307,7 +327,7 @@ def render_snapshot(j, pid, assets, size, shown=None, draw_txt=True, fills=None)
     pages = {p['ID']: p for p in j['Pages'] + j['PopupPages']}
     groups = popup_groups(j)
     pg = pages[pid]
-    canvas = render_page(pg, assets, size, draw_txt=draw_txt, fills=fills)
+    canvas = render_page(pg, assets, size, draw_txt=draw_txt, fills=fills, flat=False)
     for c in (pg.get('Controls') or []):
         pp = c.get('PopupPageID')
         if not isinstance(pp, dict) or not pp.get('IsPopupGroupIdValid'):
@@ -320,7 +340,7 @@ def render_snapshot(j, pid, assets, size, shown=None, draw_txt=True, fills=None)
             continue
         render_page(pages[mid], assets, size, ox=c['Left'], oy=c['Top'],
                     canvas=canvas, draw_txt=draw_txt, fills=fills)
-    return canvas
+    return flatten(canvas)
 
 
 def load(path):

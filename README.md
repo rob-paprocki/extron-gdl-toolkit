@@ -111,10 +111,10 @@ Known gaps:
 
 - `referenceCountField` on a popup group — semantics unknown, a plausible value
   causes no visible problem.
-- The Pillow compositor sits at a **2.60% mean / 2.02% median** pixel
-  difference across 27 pages, worst page 8.99%. What remains is almost entirely
-  text: the bilevel-vs-antialiased decision and fractional glyph advances are
-  measured but unimplemented. See `docs/render-fidelity.md`.
+- The Pillow compositor sits at a **2.33% mean / 1.85% median** pixel
+  difference across 27 pages, worst page 8.15%. What remains is almost entirely
+  text metrics: fractional glyph advances are measured but unimplemented.
+  See `docs/render-fidelity.md`.
 - Generating a panel from a spec, rather than by cloning an existing one, is
   not built yet.
 

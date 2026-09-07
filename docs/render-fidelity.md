@@ -89,6 +89,37 @@ Tech and Main-Presentation.
 
 ## 4. Text is bilevel or antialiased depending on the backdrop
 
+**Implemented — but structurally, not as a per-control probe.** The compositor
+now starts each page canvas *transparent* and flattens it onto black once, at
+the end of the outermost `render_page`, with the same binary alpha rule
+`paste()` uses. That alone produces finding 4's behaviour, per pixel rather
+than per control:
+
+- Pillow's `ImageDraw.text` does source-over. Onto a **transparent**
+  destination the glyph's coverage lands in the *alpha* channel while RGB stays
+  the undiluted ink colour, so the binary flatten writes every covered pixel at
+  full strength — hard edges, i.e. **bilevel**.
+- Over **opaque** artwork the destination alpha is already 255, so the glyph
+  blends normally — **antialiased**.
+
+So the backdrop decides, exactly as measured, without needing the `frac <=
+0.152` probe. Measured across all 27 pages: mean 2.60% → 2.33%, median 2.02% →
+1.85%, worst 8.99% → 8.15%, **nine pages improved and none regressed**.
+
+The flatten threshold was swept, and `alpha > 0` is the corpus optimum by a
+clear margin — it is monotonic, so a "truer" 50%-coverage bilevel is worse:
+
+| threshold | 1 | 32 | 64 | 96 | 128 | 160 | 192 | 224 |
+|---|---|---|---|---|---|---|---|---|
+| mean | **2.328%** | 2.348% | 2.378% | 2.384% | 2.400% | 2.435% | 2.445% | 2.486% |
+
+Treat that as measured, not understood: "any coverage becomes full ink" fattens
+glyphs, and it may be winning partly by compensating for glyph advances that
+are still slightly narrow (see the fractional-advance work below) rather than
+because GDI does precisely this. If advances are ever fixed, re-run this sweep.
+
+### The original measurement
+
 GUI Designer renders text **bilevel** — no antialiasing, hard edges,
 grid-fitted — when the composited artwork under the control is transparent, and
 grayscale-antialiased when it is opaque. Proven over 382 isolated text controls
@@ -98,6 +129,13 @@ one is far above.
 
 So the residual floor is **not** antialiasing physics: only ~55% of it is
 genuine GDI+-vs-FreeType rasterisation difference.
+
+`research/compose2.py` implements this as an explicit per-control probe with a
+threshold of 0.5 — looser than the 0.152 the measurement actually establishes —
+bundled with seven other fitted knobs (`aagamma`, `dx`, `wrapk`, bold smear,
+`lhk`, `ak`). None of that was ported: the structural rule above achieves the
+same decision per pixel, and `lhk`/`ak` are exactly the global line-height
+change this document's closing caution warns against.
 
 ## 5. Popup placement was already correct
 
@@ -122,9 +160,10 @@ rasterisation.
 |---|---|---|---|
 | baseline | 4.57% | 2.28% | 40.22% |
 | binary alpha + group popups | 4.04% | 2.07% | 40.22% |
-| **+ borderFillColor fill (current)** | **2.60%** | **2.02%** | **8.99%** |
+| + borderFillColor fill | 2.60% | 2.02% | 8.99% |
+| **+ transparent canvas / bilevel text (current)** | **2.33%** | **1.85%** | **8.15%** |
 
-Implemented in `gdl/compose.py`: findings 1 (fill only), 2 and 3.
+Implemented in `gdl/compose.py`: findings 1 (fill only), 2, 3 and 4.
 
 With the Offline page no longer an outlier, the mean is now a fair summary of
 the corpus rather than one page's error — every remaining page is between 0.63%

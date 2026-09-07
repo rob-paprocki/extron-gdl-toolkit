@@ -56,7 +56,7 @@ There is ground truth, so use it rather than eyeballing:
 python tests/compare_snapshots.py fixtures/gdl/<file>.gdl fixtures/snapshots/Individual
 ```
 
-Current baseline: **mean 2.60%, median 2.02%, worst 8.99%** differing pixels
+Current baseline: **mean 2.33%, median 1.85%, worst 8.15%** differing pixels
 across 27 pages.
 
 A render change must report its before and after across **all** pages —
