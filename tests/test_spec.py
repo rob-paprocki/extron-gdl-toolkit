@@ -162,13 +162,12 @@ class TestCheck(unittest.TestCase):
         self.assertTrue(any('unknown border' in m for m in p.check()))
 
     def test_identical_type_and_rect_is_caught(self):
-        # compose.py's fill join keys on (type, rect) and drops collisions, so
-        # a duplicate would leave BOTH controls unfilled with no other symptom.
+        # One control is invisible behind the other - almost always a mistake.
         p = _spec([
             {'kind': 'panel', 'rect': [0, 0, 10, 10], 'fill': '#242634'},
             {'kind': 'panel', 'rect': [0, 0, 10, 10], 'fill': '#FF0000'},
         ])
-        self.assertTrue(any('fill join drops' in m for m in p.check()))
+        self.assertTrue(any('hidden behind' in m for m in p.check()))
 
     def test_same_rect_different_type_is_fine(self):
         # A label sitting exactly on its panel is normal design, not an error.
@@ -201,10 +200,11 @@ class TestLayoutModel(unittest.TestCase):
         self.assertEqual(len(set(ids)), len(ids))
 
     def test_fills_key_matches_what_the_compositor_looks_up(self):
+        # compose.render_control looks up (page id, control id).
         p = _spec([{'kind': 'panel', 'rect': [3, 4, 10, 20], 'fill': '#242634'}])
         model, fills = p.layout()
-        c = model['Pages'][0]['Controls'][0]
-        self.assertIn((c['__type'], (c['Left'], c['Top'], c['Width'], c['Height'])), fills)
+        pg = model['Pages'][0]
+        self.assertIn((pg['ID'], pg['Controls'][0]['ID']), fills)
 
     def test_grid_directive_expands_to_controls(self):
         p = _spec([{'grid': {'rect': [0, 0, 300, 100], 'cols': 3, 'kind': 'button',

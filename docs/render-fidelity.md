@@ -38,20 +38,25 @@ name (`"Afterburn - 10 Radius 2 Thick"`), so a generator picks named resources
 rather than inventing geometry. Seven are *referenced* by this project — but 34
 are **defined** in it; see `docs/from-scratch.md`.
 
-**Implemented** in `gdl/compose.py` as `fill_index()` + `draw_fill()`. The join
-between the two models is on `(type, rect)`, because the authoring model is read
-as a flat object graph with no page association — there is no id to join on. A
-duplicate key on the *source* side is dropped rather than guessed at. Measured:
-Offline Page 40.22% → 1.28%, all 26 other pages ±0.00%.
+**Implemented** in `gdl/compose.py` as `fill_index()` + `draw_fill()`, joined on
+`(page id, control id)` — the pair both models already share. A page's
+`idField` is layout.json's `Page.ID` and a control's `idField` is its
+`Control.ID`; verified equal across all six fixtures (157 pages, 3,744
+controls). `gdl/project.py`'s `pages()` walks the authoring model's page tree to
+supply it. Measured: Offline Page 40.22% → 1.28%, all 26 other pages ±0.00%.
 
-Be precise about how strong that key is: `(type, rect)` is **not** unique over
-controls generally — each fixture has 127–132 colliding groups. It is unique
-only over the eligible subset (no artwork *and* a real fill), which is exactly
-one control in every fixture. The destination side is unchecked, so two
-same-typed, same-positioned controls on different pages would both be filled.
-Safe here by the shape of this corpus, not by construction. `gdl/spec.py`'s
-`check()` refuses to generate such a pair; a real `(page.ID, control.ID)` join —
-both already in `layout.json` — is the durable fix if a project ever needs it.
+The first version keyed on `(type, rect)` instead, because the authoring model
+was only read as a flat object graph. It scored identically — but only because
+the eligible subset (no artwork *and* a real fill) is a single control per file.
+`(type, rect)` is **not** unique over controls generally: each fixture has
+127–132 colliding groups, and nothing checked the destination side, so two
+same-typed, same-positioned controls on different pages would both have been
+filled. Recorded because "it scored the same" is exactly how a key like that
+survives review.
+
+One trap in the page walk: a serialised `List<T>`'s `_items` is over-allocated —
+32 slots holding 4 pages — so it must be sliced to `_size`, or the tail of
+`None`s reads as real empty objects.
 
 The index holds exactly **one** entry in each of the six fixtures — the same
 `PBShape "Offline Window"` — so this rule is narrow in this corpus even though

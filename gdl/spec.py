@@ -284,7 +284,9 @@ class Panel:
                 controls.append(out)
                 if fill:
                     radius, thickness = BORDER_GEOMETRY.get(border, (0, 0))
-                    fills[(kind, tuple(rect))] = {
+                    # Keyed the way gdl/compose.py looks it up: (page id,
+                    # control id), the pair both models share.
+                    fills[(pg['number'], out['ID'])] = {
                         'fill': fill,
                         'stroke': colour(c.get('stroke'), self.theme),
                         'border': {'resource': border, 'radius': radius,
@@ -374,10 +376,9 @@ class Panel:
         out = []
         for pg in self.pages:
             seen = {}
-            # gdl/compose.py joins the authoring model to layout.json on
-            # (type, rect) and DROPS colliding keys rather than guessing, so
-            # two identical controls would both silently lose their fill.
-            # Cheap to catch here; invisible until someone looks at a preview.
+            # Two controls with identical type and rect are almost always a
+            # layout mistake - one is invisible behind the other. Harmless to
+            # the compositor now that fills join on ids, but worth saying.
             geometry = {}
             for c in pg['controls']:
                 key = (KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape'),
@@ -385,8 +386,7 @@ class Panel:
                 label = c.get('name') or c.get('text') or '?'
                 if key in geometry:
                     out.append(f"page {pg['number']} {label}: same type and rect as "
-                               f"{geometry[key]} - the compositor's fill join drops "
-                               f"collisions, so neither would be filled")
+                               f"{geometry[key]} - one is hidden behind the other")
                 geometry[key] = label
             for c in pg['controls']:
                 x, y, w, h = (int(v) for v in c['rect'])

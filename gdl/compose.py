@@ -250,7 +250,7 @@ def paste(canvas, assets, img_id, x, y, clip=None, binary=True):
 
 
 def fill_index(path):
-    """(type, rect) -> the fill Build would have rasterised, for controls it did not.
+    """(page id, control id) -> the fill Build would have rasterised.
 
     A control authored with TLPImageID == -1 has no artwork in the payload, and
     its real interior colour - borderFillColor plus a *named* border resource
@@ -258,35 +258,18 @@ def fill_index(path):
     neither, so the compositor cannot draw the control at all without going
     back to the authoring model. See docs/render-fidelity.md finding 1.
 
-    Keying on (type, rect) rather than an id is deliberate: the authoring model
-    is read as a flat object graph with no page association, so there is no id
-    to join on. A duplicate key on the SOURCE side is dropped rather than
-    guessed at - painting the wrong fill is worse than painting none.
-
-    Be clear about how much that guarantees, which is less than it looks:
-    (type, rect) is *not* a unique key over controls generally - the fixtures
-    have 127-132 colliding groups each. It is unique only over the eligible
-    subset (no artwork AND a real fill), which happens to be exactly one
-    control in every one of the six fixtures. The DESTINATION side is not
-    checked at all, so two same-typed, same-positioned controls on different
-    pages would both receive the fill. That is safe in this corpus by luck of
-    its shape, not by construction. gdl/spec.py's check() refuses to generate
-    such a pair; a real id join (page.ID + control.ID, both already in
-    layout.json) is the durable fix if a project ever needs it.
+    The key is the pair of ids both models already share: a page's `idField` is
+    layout.json's `Page.ID`, and a control's `idField` is its `Control.ID`
+    (verified equal across all six fixtures). An earlier version keyed on
+    (type, rect) because the authoring model was only read as a flat object
+    graph - that worked here, but only because the eligible set is a single
+    control per file. (type, rect) is not unique over controls generally, and
+    nothing checked the destination side, so two same-typed same-positioned
+    controls on different pages would both have been filled.
     """
     from .project import Project
 
-    idx, seen = {}, set()
-    for c in Project.open(path).controls():
-        if c['tlp_image'] != -1 or not c['fill']:
-            continue
-        key = (c['type'], tuple(c['rect']))
-        if key in seen:
-            idx.pop(key, None)
-            continue
-        seen.add(key)
-        idx[key] = {'fill': c['fill'], 'border': c['border']}
-    return idx
+    return Project.open(path).fill_map()
 
 
 def draw_fill(canvas, box, spec):
@@ -326,7 +309,8 @@ def group_members(layout):
     return out
 
 
-def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None, fills=None):
+def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None, fills=None,
+                   page_id=None):
     ref = popup_ref(c)
     if ref:
         # A reference bound to one popup paints nothing. A reference bound to a
@@ -352,7 +336,7 @@ def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None, fills=
     if base in (None, -1) or base not in assets:
         # Build never rasterised this one, so there is no PNG to blit. Its fill
         # lives in the authoring model; synthesise what Build would have baked.
-        spec = (fills or {}).get((kind, (c['Left'], c['Top'], w, h)))
+        spec = (fills or {}).get((page_id, c.get('ID')))
         if spec:
             draw_fill(canvas, (x, y, w, h), spec)
     paste(canvas, assets, base, x, y)
@@ -431,7 +415,7 @@ def render_page(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True, groups
             canvas.paste(fill, [0, 0, *size])
     paste(canvas, assets, pg.get('TLPImageID'), ox, oy)
     for c in (pg.get('Controls') or []):
-        render_control(canvas, c, assets, ox, oy, draw_txt, groups, fills)
+        render_control(canvas, c, assets, ox, oy, draw_txt, groups, fills, pg.get('ID'))
     return flatten(canvas) if outermost and flat else canvas
 
 
