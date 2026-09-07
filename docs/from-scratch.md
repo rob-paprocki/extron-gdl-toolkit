@@ -190,6 +190,38 @@ constructor taking just a `PBProject` — but calling it throws
 well as a service one. It needs state only a properly-initialised GUI Designer
 process has. Driving the real UI (§7) is the working route.
 
+## 5b. The whole loop, closed
+
+`examples/panel.json` — a spec written on a Mac — was taken end to end:
+
+    spec -> layout pass + ID allocation -> build plan -> Apply-GdlPlan.ps1
+         -> ProjectGCP -> gdl.container pack -> GUI Designer -> Save and Build
+
+GUI Designer opened it and built with **0 errors, 0 warnings**, producing a page
+of 34 controls with 28 rasterised assets. `docs/generated-built.png` is that
+page rendered from GUI Designer's *own* built payload — not a preview:
+
+![generated and built](generated-built.png)
+
+Every rect came from `grid()`/`stack()`, every id from the allocator, every
+caption from the spec.
+
+Three defects had to be fixed along the way, all of them the same shape - a
+clone inherits things you did not ask for:
+
+1. **The page kept the donor's page-level artwork**, which painted underneath
+   everything. Clear `<TLPImageID>` on the cloned page.
+2. **Buttons kept the donor's icon.** Clear `buttonImageField`.
+3. **`flattenText` bakes the caption INTO the artwork at build time**, and the
+   clone inherited it - so Build deduplicated all five nav buttons to a single
+   asset carrying the donor's word "Audio", with the correct captions sitting
+   unused in `layout.json`. Set `flattenTextField = false` and the firmware
+   draws captions live, which is what it does for hand-authored panels anyway.
+
+That third one is worth remembering: the file was *correct* the whole time -
+`layout.json` had the right text - and only the rendered artwork was wrong.
+Checking the model would have said everything was fine.
+
 ## 6. Honest limits of everything above
 
 - Questions 5 and 6 are untested.
@@ -197,9 +229,10 @@ process has. Driving the real UI (§7) is the working route.
   nobody has looked at whether it *rasterises* correctly. The control used was
   the Offline Window, which Build legitimately leaves unrasterised, so there is
   no artwork to inspect. Redo it against a visible control.
-- `gdl/spec.py`'s own output has **not** been through GUI Designer yet. What was
-  proven is that headless PowerShell edits survive; the spec → plan → apply path
-  (`powershell/Apply-GdlPlan.ps1`) is still unrun.
+- Colour fidelity is not there yet: the accent button and some panel fills did
+  not survive, and the generated page still shows a band of donor page artwork
+  behind the content area. Geometry, captions, IDs and structure are correct;
+  colour plumbing needs another pass.
 - The resource counts are from the `_alt 2_0_0` fixture. The two archived
   fixtures carry 36 border resources, so the number is project-specific.
 - The preview's fidelity is measured against pages made of *built* artwork. A
