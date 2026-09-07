@@ -230,6 +230,40 @@ class TestLayoutModel(unittest.TestCase):
         self.assertEqual(len(reds), 1)
 
 
+class TestNestedLayout(unittest.TestCase):
+    def test_nested_grid_lays_out_inside_its_parent_cell(self):
+        # Without this, a nested directive positions against the page origin -
+        # it looks like it worked and is off by wherever the parent cell is.
+        p = _spec([{'stack': {'rect': [0, 0, 1280, 800], 'count': 2,
+                              'items': [
+                                  {'grid': {'cols': 2, 'kind': 'button',
+                                            'items': [{'text': 'a'}, {'text': 'b'}]}},
+                                  {'kind': 'label', 'text': 'bottom'},
+                              ]}}])
+        model, _ = p.layout()
+        cs = {c['Text']: c for c in model['Pages'][0]['Controls']}
+        # top cell is [0,0,1280,400]; two columns inside it
+        self.assertEqual((cs['a']['Left'], cs['a']['Top'], cs['a']['Width']), (0, 0, 640))
+        self.assertEqual((cs['b']['Left'], cs['b']['Top'], cs['b']['Width']), (640, 0, 640))
+        self.assertEqual(cs['a']['Height'], 400)
+        # the sibling still gets the second cell
+        self.assertEqual((cs['bottom']['Left'], cs['bottom']['Top']), (0, 400))
+
+    def test_rect_inside_a_cell_is_an_offset_not_page_coordinates(self):
+        p = _spec([{'stack': {'rect': [100, 200, 400, 400], 'count': 1,
+                              'items': [{'kind': 'label', 'text': 'x',
+                                         'rect': [10, 20, 50, 30]}]}}])
+        model, _ = p.layout()
+        c = model['Pages'][0]['Controls'][0]
+        self.assertEqual((c['Left'], c['Top'], c['Width'], c['Height']), (110, 220, 50, 30))
+
+    def test_unnested_rects_are_still_page_coordinates(self):
+        p = _spec([{'kind': 'label', 'text': 'x', 'rect': [10, 20, 50, 30]}])
+        model, _ = p.layout()
+        c = model['Pages'][0]['Controls'][0]
+        self.assertEqual((c['Left'], c['Top']), (10, 20))
+
+
 class TestBorderGeometry(unittest.TestCase):
     def test_every_alias_resolves_to_known_geometry(self):
         from gdl.spec import BORDERS

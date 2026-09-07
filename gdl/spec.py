@@ -152,18 +152,26 @@ class Panel:
             return cls(json.load(fh))
 
     # -- layout ------------------------------------------------------------
-    def _controls(self, node, out):
-        """Flatten a page's control tree, expanding any layout directive."""
+    def _controls(self, node, out, region=None):
+        """Flatten a page's control tree, expanding any layout directive.
+
+        `region` is the cell a nested directive sits in. A grid inside a stack
+        lays out within its parent's cell, and a `rect` given at that depth is
+        read as an offset into the cell rather than as page coordinates -
+        otherwise nesting silently positions against the page origin, which
+        looks like it worked and is off by wherever the parent cell is.
+        """
         for item in node:
             if 'grid' in item or 'stack' in item:
                 spread = item.get('grid') or item.get('stack')
                 items = spread.get('items') or []
+                rect = self._region(spread.get('rect'), region)
                 if 'grid' in item:
-                    cells = grid(spread['rect'], spread.get('cols', len(items)),
+                    cells = grid(rect, spread.get('cols', len(items)),
                                  spread.get('rows', 1), spread.get('gap', 0),
                                  spread.get('gap_y'), spread.get('pad', 0))
                 else:
-                    cells = stack(spread['rect'], spread.get('count', len(items)),
+                    cells = stack(rect, spread.get('count', len(items)),
                                   spread.get('gap', 0), spread.get('horizontal', False),
                                   spread.get('pad', 0))
                 shared = {k: v for k, v in spread.items()
@@ -172,11 +180,30 @@ class Panel:
                 for cell, sub in zip(cells, items):
                     merged = dict(shared)
                     merged.update(sub)
-                    merged['rect'] = cell
-                    self._controls([merged], out)
+                    if 'grid' in sub or 'stack' in sub:
+                        # Hand the cell down; the child positions inside it.
+                        merged.pop('rect', None)
+                        self._controls([merged], out, region=cell)
+                    else:
+                        merged['rect'] = self._region(sub.get('rect'), cell) \
+                            if 'rect' in sub else cell
+                        self._controls([merged], out)
             else:
+                if region is not None and 'rect' in item:
+                    item = dict(item, rect=self._region(item['rect'], region))
+                elif region is not None:
+                    item = dict(item, rect=region)
                 out.append(item)
         return out
+
+    @staticmethod
+    def _region(rect, parent):
+        """Resolve a rect that may be relative to an enclosing cell."""
+        if parent is None:
+            return rect
+        if rect is None:
+            return list(parent)
+        return [parent[0] + rect[0], parent[1] + rect[1], rect[2], rect[3]]
 
     # -- ids ---------------------------------------------------------------
     def _allocate(self, page, controls, base):
