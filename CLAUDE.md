@@ -193,9 +193,16 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
 
 ## Things deliberately not in git
 
-- `gdl/fonts/` — commercial font binaries, regenerated with
-  `python -m gdl.fonts <file.gdl> gdl/fonts/`. Skip it and text renders in
-  fallback Arial, which quietly worsens the harness score.
+- **Five of the seven faces in `gdl/fonts/`**, regenerated with
+  `python -m gdl.fonts <file.gdl> gdl/fonts/`. Skip that and the harness does
+  not degrade, it stops — `face()` raises `LookupError` on the first face it
+  cannot resolve. The ignore is per file, not a class: Open Sans is Apache 2.0
+  and is tracked with its licence; Forma DJR Display is a retail typeface; the
+  four Extron and Crestron icon fonts carry no licence grant at all.
+  `gdl/fonts/README.md` has the per-file detail.
+  Note this keeps out a *convenient* copy, not the bytes — every face is
+  embedded in the tracked `.gdl` fixtures and recoverable from them exactly. If
+  the concern is distribution, `fixtures/` is the thing to look at.
 - `out/`, `__pycache__/`, built viewer HTML.
 
 ## Working on the fixtures
