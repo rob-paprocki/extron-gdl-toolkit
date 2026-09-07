@@ -462,7 +462,18 @@ def render_snapshot(j, pid, assets, size, shown=None, draw_txt=True, fills=None)
 
 def load(path):
     z = open_gdl(path)
-    inner = zipfile.ZipFile(io.BytesIO(z.read(next(n for n in z.namelist() if n != 'ProjectGCP'))))
+    # A .gdl saved by GUI Designer *without* building carries only ProjectGCP -
+    # the stale payload is dropped rather than kept. That is a legitimate state
+    # (an unbuilt project), so say so instead of failing with a bare
+    # StopIteration from the generator below.
+    payload = next((n for n in z.namelist() if n != 'ProjectGCP'), None)
+    if payload is None:
+        raise ValueError(
+            f'{path} has no built payload - only ProjectGCP. GUI Designer drops the '
+            f'payload when a project is saved without building; open it and use '
+            f'File > Save and Build (Ctrl+Shift+B). The authoring model is still '
+            f'readable with gdl.project.')
+    inner = zipfile.ZipFile(io.BytesIO(z.read(payload)))
     j = json.loads(inner.read('layout.json'))
     assets = {int(n[:-4]): inner.read(n) for n in inner.namelist() if n.endswith('.png')}
     return j, assets

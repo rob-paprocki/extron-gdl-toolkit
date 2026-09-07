@@ -41,7 +41,20 @@ Measured by diffing a project before and after a build:
    these — the app manages them.
 6. Bumps `VersionInfo` (one increment per save/build), updates `RevisionDate`,
    sets `BuildStatus=Done`, and renames the payload member to the file name
-   lowercased with underscores.
+   lowercased with underscores. Confirmed 2026-09-07: building `testB.gdl`
+   produced a member named `testb.tgz4`.
+
+**`Project > Verify` (Ctrl+B) is NOT this.** It validates and reports
+"Build Complete - 0 error(s), 0 warning(s)", which reads exactly like a build,
+but produces no payload - and saving after it writes a `.gdl` containing only
+`ProjectGCP`, the stale payload dropped. The build above is
+**File > Save and Build (Ctrl+Shift+B)**.
+
+`PBProject.BuildProject()` is the method that does the work, and `BuildManager`
+has a public `(PBProject)` constructor, but calling it outside the running
+application throws `NullReferenceException` - in an interactive session too. The
+build is not reachable headlessly; drive the UI instead
+(`docs/from-scratch.md` section 7).
 
 The practical consequence: **an authoring tool never makes artwork.** It sets
 semantic properties (border, fill, icon, corner radius) and Build makes pixels.
@@ -58,12 +71,21 @@ Preload every DLL plus `GUI Designer.exe` from
 from an `AssemblyResolve` handler. Calling `LoadFrom` *inside* the handler
 recurses until the stack overflows.
 
-Re-serialising an untouched project in memory is byte-identical. An
-open-then-save round trip through a *file* is not: it differs by a few thousand
-bytes, because deserialisation materialises lazily-built state that then gets
-written back. Use the in-memory comparison as the regression test, and compare
-semantics (page/popup/control counts and fields) rather than bytes across a
-save.
+**Corrected 2026-09-07, measured against 1.27.0.9.** Re-serialising an
+untouched project is **not** byte-identical to the original: it differs by
+**5,900 bytes** on the `_alt` fixture. But it is *stable* from the first pass
+onward - pass1 vs pass2 and pass2 vs pass3 are both **zero** differing bytes.
+
+The difference is not "lazily-built state" as previously supposed. It is
+**every `TLPImageID` being reset to -1**: 654 of 654 controls, where the
+original had 624 assigned and 30 unassigned. A save through the bridge
+therefore invalidates all artwork assignments and correctly flips
+`BuildStatus` to `Needed`. GUI Designer's own Save-and-Build restores exactly
+the original 624/30 split.
+
+This is harmless - Build reassigns everything - but it means a bridge-saved
+`.gdl` always needs rebuilding, and it is why the byte comparison fails. Use
+**pass1 vs pass2** as the regression test, or compare semantics.
 
 `GdlProject.ps1` wraps all of this.
 

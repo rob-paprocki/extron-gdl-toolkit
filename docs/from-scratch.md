@@ -135,40 +135,103 @@ The preview is honest about what it is drawing: every control is emitted with
 preview draws from the same fill-plus-named-border properties a writer would
 set.
 
-## 5. What still needs a Windows box
+## 5. Tested against GUI Designer 1.27.0.9 — results
 
-These are batched deliberately. Each needs the same setup — 32-bit PowerShell
-5.1, `Initialize-Gdl`, a donor project — and the expensive part is the human
-open-and-build round trip, so do them in one session rather than one at a time.
+Run on 2026-09-07 in a Parallels Windows 11 VM with GUI Designer installed.
+Each test project was authored **headlessly** by PowerShell, packed with
+`gdl.container pack`, then opened and built in the real application. See §7 for
+how that was driven, which is fully scriptable.
 
-1. **Does referencing an unused-but-present border resource work?** Take a
-   control, repoint its `PBResourceReferenceBorder` at a System template the
-   project does not currently use (say `3D Capsule`), build. *This is the one
-   that decides whether §1's conclusion holds.* Cheapest and highest value.
-2. **Can a `PBBorderResource` be appended?** Clone an entry from
-   `resourceSetField`, set a new `nameField` and an out-of-corpus
-   `cornerRadius`/`thickness` (e.g. 20/1), `.Add()` it the way
-   `Register-GdlPopupGroup` appends to `popupPageGroupsField`, bind a control to
-   it, build. If this works the design space is fully parametric; if not, §1's
-   34 are the ceiling.
-3. **Does an out-of-corpus `PBBorderInfo` combination rasterise sanely,** or get
-   clamped/garbled?
-4. **Cross-graph cloning.** Can `Copy-GdlObject` move an object between two
-   separately-deserialised projects? Decides whether a shared component library
-   is possible, or whether every generated panel is limited to its own donor.
-5. **What ID uniqueness does GUI Designer enforce** on open/Build? Decides how
-   defensive the allocator must be.
-6. **`referenceCountField` semantics** — `Register-GdlPopupGroup` hardcodes 2.
-   Does a group with more or fewer members misbehave?
+| | Question | Answer |
+|---|---|---|
+| 1 | Reference an existing but never-referenced border resource? | **YES** |
+| 2 | Append a *new* `PBBorderResource` and bind to it? | **YES** |
+| 3 | Out-of-corpus `PBBorderInfo` values? | **Builds clean** (visual check still open) |
+| 4 | Cross-graph `Copy-GdlObject`? | **YES** |
+| 5 | ID uniqueness enforcement | not yet tested |
+| 6 | `referenceCountField` semantics | not yet tested |
+
+**1 — referencing an unused resource works.** A `PBShape` was repointed from
+`Afterburn - 10 Radius 0 Thick` to `3D Capsule`, a System template no control in
+any fixture binds. GUI Designer opened it and built with **0 errors, 0
+warnings**. So §1's conclusion holds: the usable palette is all **34** defined
+resources, not the 6 this project happens to reference.
+
+**2 — appending a new resource works, so the design space is fully
+parametric.** A `PBBorderResource` was cloned, renamed
+`Claude - 20 Radius 1 Thick`, given `cornerRadius = 20` and `thickness = 1`
+(a combination present nowhere in the corpus), appended to
+`resourceSetField.resourcesField` with `.Add()`, and bound to a control. It
+opened, built with 0 errors, and the new resource **survived into the built
+file** — still present, still bound, verified afterwards with `gdl/project.py`.
+
+This was the biggest open question and it is the more permissive answer: a
+generator is not limited to a donor's existing resources.
+
+**4 — cross-graph cloning works.** A control was cloned out of one
+independently-deserialised project into another with `Copy-GdlObject`, and the
+result opened, built clean, and rendered correctly (the cloned popup reference
+paints its group member, per render finding 3). A curated component library in a
+separate `.gdl` is therefore viable.
+
+### Two things the run corrected
+
+**`Project > Verify` (Ctrl+B) is not the build.** It reports "Build Complete -
+0 error(s), 0 warning(s)", which reads exactly like a build, but it only
+validates. Saving after it writes a `.gdl` containing **only `ProjectGCP`** —
+GUI Designer drops the stale payload rather than regenerating it. The real build
+is **File > Save and Build (Ctrl+Shift+B)**, which emits the payload member,
+named after the file lowercased (`testb.tgz4`).
+
+**`BuildProject()` cannot be driven headlessly.** `PBProject.BuildProject()` is
+the method the build dialog's worker calls, and `BuildManager` has a public
+constructor taking just a `PBProject` — but calling it throws
+`NullReferenceException` inside `BuildProject()`, in an interactive session as
+well as a service one. It needs state only a properly-initialised GUI Designer
+process has. Driving the real UI (§7) is the working route.
 
 ## 6. Honest limits of everything above
 
-- Nothing here has been through GUI Designer. `gdl/spec.py` produces a render
-  and a model; it does not write a `.gdl`. A file that merely serialises proves
-  nothing — that is this project's own standard and it still applies.
-- The resource counts and parameters are from the `_alt 2_0_0` fixture. The two
-  archived fixtures carry 36 border resources, so the number is project-specific.
+- Questions 5 and 6 are untested.
+- Test 3 is only half-answered: an out-of-corpus radius/thickness *builds*, but
+  nobody has looked at whether it *rasterises* correctly. The control used was
+  the Offline Window, which Build legitimately leaves unrasterised, so there is
+  no artwork to inspect. Redo it against a visible control.
+- `gdl/spec.py`'s own output has **not** been through GUI Designer yet. What was
+  proven is that headless PowerShell edits survive; the spec → plan → apply path
+  (`powershell/Apply-GdlPlan.ps1`) is still unrun.
+- The resource counts are from the `_alt 2_0_0` fixture. The two archived
+  fixtures carry 36 border resources, so the number is project-specific.
 - The preview's fidelity is measured against pages made of *built* artwork. A
   page of `TLPImageID = -1` controls is exercised by exactly one control in the
   whole corpus (the Offline Window), so the preview's accuracy on a fully
   synthetic page is inferred from that one data point, not measured.
+
+## 7. Driving GUI Designer from the host
+
+The round trip is scriptable end to end from macOS against a Parallels VM, which
+is what made §5 cheap enough to do properly.
+
+```bash
+# runs as SYSTEM, non-interactive - fine for authoring, no UI
+prlctl exec "Windows 11" 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe' \
+    -NoProfile -ExecutionPolicy Bypass -File '\\Mac\Home\...\out\make-tests.ps1'
+
+# runs as the logged-on user WITH a desktop - needed for anything that draws
+prlctl exec "Windows 11" --current-user ... -File '...\out\sendkeys.ps1' -Keys '^+b'
+
+prlctl capture "Windows 11" --file /tmp/vm.png     # read the result back
+```
+
+Two things to know:
+
+- **`--current-user` is the whole trick.** Without it `prlctl exec` runs as
+  `nt authority\system` with `UserInteractive = False`, and anything that shows
+  a form dies with "Showing a modal dialog box or form when the application is
+  not running in UserInteractive mode".
+- The host filesystem is reachable in the guest at `\\Mac\Home\...`. The `Z:`
+  mapping is per-interactive-session and is **not** visible to `prlctl exec`;
+  use the UNC path.
+
+`out/sendkeys.ps1` activates GUI Designer's window and sends keystrokes, which is
+enough to drive Open / Verify / Save and Build.

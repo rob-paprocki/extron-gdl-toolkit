@@ -20,6 +20,7 @@ is the accumulated findings, and most of them were expensive to discover.
 | Reading a `.gdl`, incl. the authoring model | Python 3 only |
 | Rendering / the snapshot harness | Pillow (`pip install -r requirements.txt`) |
 | **Writing** a `.gdl` | 32-bit Windows PowerShell 5.1 **and** an install of GUI Designer |
+| Proving GUI Designer accepts it | the same, driven through its UI — see `docs/from-scratch.md` §7 |
 
 Writing is the constrained one, for two independent reasons:
 
@@ -76,6 +77,24 @@ change lands.
 For authoring changes, the end-to-end check is `examples/add-page-and-popup.ps1`,
 which self-asserts. A file that merely serialises proves nothing; the real test
 is that GUI Designer opens *and builds* it, and that needs a human.
+
+## Driving the Windows VM from macOS
+
+This is scripted, not manual — `docs/from-scratch.md` §7 has the detail. The two
+things that cost time to discover:
+
+- `prlctl exec` runs as `nt authority\system` with `UserInteractive = False`, so
+  anything that draws a form dies. Add **`--current-user`** and it runs as the
+  logged-on user with a desktop.
+- The host is at `\\Mac\Home\...` inside the guest. The `Z:` drive mapping is
+  per-interactive-session and is **not** visible to `prlctl exec`.
+
+`prlctl capture "Windows 11" --file x.png` reads the screen back, and
+`powershell/Send-GdlKeys.ps1` drives GUI Designer's menus.
+
+**`Project > Verify` (Ctrl+B) is not a build.** It says "Build Complete - 0
+errors" and produces no payload; saving after it drops the payload entirely.
+The real build is **File > Save and Build (Ctrl+Shift+B)**.
 
 ## Conventions
 
