@@ -20,8 +20,9 @@ rasterised it yet - and the compositor already knows how to draw those from
 their `borderFillColor` plus a named border resource. A spec is exactly a
 description of those properties.
 
-    python -m gdl.spec render examples/panel.json out/preview.png
     python -m gdl.spec check  examples/panel.json
+    python -m gdl.spec render examples/panel.json out/preview.png
+    python -m gdl.spec plan   examples/panel.json out/plan.json
 
 What it cannot do is prove GUI Designer will accept the result. Nothing here
 touches a real `.gdl`; see docs/from-scratch.md for what still needs a human.
@@ -69,6 +70,15 @@ BORDER_GEOMETRY = {
 }
 KIND_TYPE = {'panel': 'PBShape', 'shape': 'PBShape', 'button': 'PBButton',
              'label': 'PBLabel', 'line': 'PBLine'}
+
+
+def _argb(c):
+    """{'A','R','G','B'} -> the packed 0xAARRGGBB int System.Drawing.Color holds."""
+    if not c:
+        return None
+    return (c['A'] << 24) | (c['R'] << 16) | (c['G'] << 8) | c['B']
+
+
 HEX = re.compile(r'^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
 
 
@@ -256,6 +266,71 @@ class Panel:
         model, fills = self.layout()
         return render_page(model['Pages'][page], {}, self.size, fills=fills)
 
+    def plan(self):
+        """A build plan: the clone-and-set operations that would write this spec.
+
+        Deliberately *data*, not code. Writing the authoring model needs 32-bit
+        Windows PowerShell and GUI Designer, which cannot be tested here - so
+        the split is: Python decides everything (layout, ids, colours, which
+        donor object to clone), and `powershell/Apply-GdlPlan.ps1` does nothing
+        but apply the ops. That keeps the untestable half thin and mechanical
+        rather than putting a generator in a language this machine cannot run.
+
+        Every op is clone-then-set-backing-field, because constructors and
+        property setters both throw headless - see docs/gdl-format.md section 4.
+        """
+        model, fills = self.layout()
+        pages = []
+        for pg in model['Pages']:
+            controls = []
+            for c in pg['Controls']:
+                rect = (c['Left'], c['Top'], c['Width'], c['Height'])
+                spec = fills.get((c['__type'], rect)) or {}
+                border = (spec.get('border') or {}).get('resource')
+                controls.append({
+                    'op': 'clone-control',
+                    # Clone a control of the same type from anywhere in the
+                    # donor; only its backing fields survive, so any instance
+                    # of the right class will do.
+                    'donor_type': c['__type'],
+                    'fields': {
+                        'idField': c['ID'],
+                        'userIdField': c['UserId'],
+                        'nameField': c['Name'],
+                        'textField': c['Text'],
+                        'leftField': c['Left'], 'topField': c['Top'],
+                        'widthField': c['Width'], 'heightField': c['Height'],
+                        '<TLPImageID>k__BackingField': -1,
+                    },
+                    'fill': _argb(spec.get('fill')),
+                    'stroke': _argb(spec.get('stroke')),
+                    'border': border,
+                    'font': {'name': c['Font']['Name'],
+                             'size': c['Font']['PointSize'],
+                             'bold': c['Font']['Style']['Bold'],
+                             'italic': c['Font']['Style']['Italic']},
+                    'text_color': _argb(c['TextColor']),
+                    'alignment': c['TextAlignment'],
+                })
+            pages.append({
+                'op': 'clone-page',
+                'number': pg['ID'],
+                'name': pg['Name'],
+                'modal': pg['Modal'],
+                'background': _argb(pg['BackgroundFillColor']),
+                'clear_controls': True,
+                'controls': controls,
+            })
+        return {
+            'generated_by': 'gdl.spec',
+            'canvas': list(self.size),
+            'note': ('Apply with powershell/Apply-GdlPlan.ps1 under 32-bit '
+                     'Windows PowerShell 5.1. Page ids are assigned by the '
+                     'applier via Get-GdlNextPageId, not here - the donor '
+                     'project decides what is free.'),
+            'pages': pages,
+        }
+
     # -- checks ------------------------------------------------------------
     def check(self):
         """Problems a human would otherwise find on the Windows box."""
@@ -283,7 +358,8 @@ def main(argv):
     if len(argv) < 3:
         print(__doc__.strip().split('\n\n')[0])
         print('\n  python -m gdl.spec render <spec.json> <out.png> [page]'
-              '\n  python -m gdl.spec check  <spec.json>')
+              '\n  python -m gdl.spec check  <spec.json>'
+              '\n  python -m gdl.spec plan   <spec.json> <plan.json>')
         return 2
     cmd, path = argv[1], argv[2]
     panel = Panel.load(path)
@@ -294,6 +370,17 @@ def main(argv):
         print(f'{len(problems)} problem(s); {len(panel.pages)} page(s), '
               f'{sum(len(p["controls"]) for p in panel.pages)} controls')
         return 1 if problems else 0
+    if cmd == 'plan':
+        if problems:
+            for p in problems:
+                print('  ' + p)
+            return 1
+        plan = panel.plan()
+        with open(argv[3], 'w') as fh:
+            json.dump(plan, fh, indent=1)
+        print(f'{len(plan["pages"])} page(s), '
+              f'{sum(len(p["controls"]) for p in plan["pages"])} control ops -> {argv[3]}')
+        return 0
     if cmd == 'render':
         if problems:
             for p in problems:
