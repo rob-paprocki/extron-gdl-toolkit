@@ -27,7 +27,8 @@ spec instead of clicking it together. This toolkit opens the format up.
 | `docs/gdl-format.md` | **the format writeup — read this first** |
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/from-scratch.md` | designing a panel from a spec — what is possible, and what needs Windows |
-| `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render |
+| `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
+| `powershell/Apply-GdlPlan.ps1` | applies a build plan to a real project — **unverified** |
 | `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |
 | `research/` | measured but unshipped render improvements, with their numbers |
 
@@ -117,10 +118,11 @@ Known gaps:
   difference across 27 pages, worst page 7.68%. What remains is a
   size-dependent vertical text residual; it can be fitted away but the fit is
   degenerate, so the cause is still wanted. See `docs/render-fidelity.md`.
-- Generating a panel from a spec is **partly** built: the layout pass, control
-  ID allocation and a preview render are in `gdl/spec.py`, but writing the
-  result into `ProjectGCP` still needs the PowerShell bridge, and no generated
-  panel has been through GUI Designer yet. See `docs/from-scratch.md`.
+- Generating a panel from a spec: the layout pass, ID allocation, preview and
+  build-plan emitter are in `gdl/spec.py` and tested. Applying a plan to a real
+  project (`powershell/Apply-GdlPlan.ps1`) is written but **unverified** — no
+  generated panel has been through GUI Designer yet, which is the only real
+  oracle. See `docs/from-scratch.md`.
 
 ## Provenance
 

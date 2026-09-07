@@ -35,13 +35,23 @@ Read them with `gdl/project.py`, which resolves the authoring model directly.
 **This matters far more for authoring than for rendering:** these are the
 properties a generator sets. Corner radius and thickness come from the resource
 name (`"Afterburn - 10 Radius 2 Thick"`), so a generator picks named resources
-rather than inventing geometry. Seven are available in this project.
+rather than inventing geometry. Seven are *referenced* by this project — but 34
+are **defined** in it; see `docs/from-scratch.md`.
 
 **Implemented** in `gdl/compose.py` as `fill_index()` + `draw_fill()`. The join
 between the two models is on `(type, rect)`, because the authoring model is read
 as a flat object graph with no page association — there is no id to join on. A
-duplicate key is dropped rather than guessed at. Measured: Offline Page
-40.22% → 1.28%, all 26 other pages ±0.00%.
+duplicate key on the *source* side is dropped rather than guessed at. Measured:
+Offline Page 40.22% → 1.28%, all 26 other pages ±0.00%.
+
+Be precise about how strong that key is: `(type, rect)` is **not** unique over
+controls generally — each fixture has 127–132 colliding groups. It is unique
+only over the eligible subset (no artwork *and* a real fill), which is exactly
+one control in every fixture. The destination side is unchecked, so two
+same-typed, same-positioned controls on different pages would both be filled.
+Safe here by the shape of this corpus, not by construction. `gdl/spec.py`'s
+`check()` refuses to generate such a pair; a real `(page.ID, control.ID)` join —
+both already in `layout.json` — is the durable fix if a project ever needs it.
 
 The index holds exactly **one** entry in each of the six fixtures — the same
 `PBShape "Offline Window"` — so this rule is narrow in this corpus even though
@@ -104,7 +114,7 @@ than per control:
 
 So the backdrop decides, exactly as measured, without needing the `frac <=
 0.152` probe. Measured across all 27 pages: mean 2.60% → 2.33%, median 2.02% →
-1.85%, worst 8.99% → 8.15%, **nine pages improved and none regressed**.
+1.85%, worst 8.99% → 8.15%, **16 pages improved and none regressed**.
 
 The flatten threshold was swept, and `alpha > 0` is the corpus optimum by a
 clear margin — it is monotonic, so a "truer" 50%-coverage bilevel is worse:
@@ -118,7 +128,12 @@ glyphs, and it may be winning partly by compensating for glyph advances that
 are still slightly narrow (see the fractional-advance work below) rather than
 because GDI does precisely this. If advances are ever fixed, re-run this sweep.
 
-### The original measurement
+### The original measurement — historical
+
+This is how finding 4 was first proven. The structural rule above supersedes
+it: **none of this per-control probe was ported**, and `gdl/compose.py`
+contains no `frac` computation or 0.152 threshold. Kept because it is the
+evidence the rule is real.
 
 GUI Designer renders text **bilevel** — no antialiasing, hard edges,
 grid-fitted — when the composited artwork under the control is transparent, and
@@ -182,9 +197,12 @@ it is why a naive fit wants a ~1.5px downward correction. Reading OS/2
 `usWinAscent`/`usWinDescent` fractionally and anchoring on the baseline (`ls`,
 not `la`) fixes the cause rather than the symptom.
 
-**Horizontal registration.** `DX = -0.5`, the usual pixel-corner vs pixel-centre
-convention difference. A clean minimum over the corpus, and
-`research/compose2.py`'s independent fit landed on the same value.
+**Horizontal registration.** `DX = -0.5`, the usual pixel-corner vs
+pixel-centre convention difference. The value comes from the convention, not
+from a fit; the corpus then confirms it as a clean minimum. `research/compose2.py`
+also uses -0.5, but on this same corpus and with its own metric preferring
+roughly -0.75 — so read that as agreement about the convention, not as
+independent evidence.
 
 Together: mean **2.33% → 2.19%**, median 1.85% → 1.65%, worst 8.15% → 7.68%.
 24 pages improved, 3 regressed (Presentation Matrix +0.21, Teams Confirmation
@@ -241,19 +259,38 @@ Not implemented, but **written and measured**:
 | per-control RGBA layering | **rejected** — see below | `research/v3.py` |
 | modal scrim at 65% opacity | no observable effect in this corpus | `research/final_patch.py` |
 
-### Why `research/v3.py`'s architecture was rejected
+### Why `research/v3.py`'s architecture was not adopted
 
 `research/README.md` calls it "the clearest direction for further fidelity
-work". Two independent reviews of this repo concluded the opposite, and the
-measurement backs them: v3's per-control blit re-binarises the **whole** merged
-layer's alpha on every merge, which is only correct where the control sits over
-a transparent backdrop. On v3's own two tuning pages only 18 of 50 and 17 of 50
-controls qualify — so roughly two-thirds need genuine antialiasing that its
-architecture cannot produce, contradicting finding 4.
+work". It is not — but not for the reason first written here, which was wrong
+and is corrected below.
 
-Its measured win is attributable to its *other*, orthogonal contribution —
-fractional advances — which is what was ported here, into the existing shared
-canvas, without the layering.
+**It is redundant, not harmful.** Rendering each control into its own
+transparent RGBA layer and merging with the binary alpha test produces the same
+image as painting onto the shared canvas. Measured directly, by wrapping
+`render_control` to composite through a per-control layer:
+
+| page | shipped | per-control layer | |
+|---|---|---|---|
+| 3110 Adv Device Connectivity | 7.679% | 7.679% | byte-identical |
+| 3112 Adv Video Connectivity | 6.720% | 6.720% | byte-identical |
+| 1000 Home | 1.427% | 1.401% | −0.03 |
+| 3000 Tech | 2.986% | 2.989% | +0.00 |
+
+Byte-identical on both of v3's own tuning pages. So it buys nothing over what is
+already shipped, at the cost of a second compositing path.
+
+**The earlier reasoning here was backwards** and is recorded so it is not
+re-derived: it claimed the binary merge destroys antialiasing for the ~2/3 of
+controls sitting over an opaque backdrop. It does not. Source-over saturates the
+layer's alpha to 255 wherever it is already opaque, so the threshold is a no-op
+there and the antialiased blend survives. Binarising only changes pixels over a
+*transparent* local destination — which is exactly where finding 4 says bilevel
+is correct.
+
+v3's real contribution is its *other*, orthogonal one — fractional advances —
+which is what was ported here, into the existing shared canvas, without the
+layering.
 
 A caution carried over from the measurements: do **not** "fix" the line-height
 rule globally. Keeping `px = PointSize * 1.375` with PIL's `ascent + descent`

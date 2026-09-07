@@ -55,6 +55,20 @@ class TestGrid(unittest.TestCase):
         (x, y, w, h), = grid([0, 0, 100, 100], 1, 1, pad=10)
         self.assertEqual((x, y, w, h), (10, 10, 80, 80))
 
+    def test_negative_gap_is_rejected(self):
+        # A negative gap makes cells overlap while each stays individually
+        # valid - positive size, on canvas - so nothing downstream catches it.
+        with self.assertRaises(ValueError):
+            grid([0, 0, 100, 100], 3, gap=-10)
+        with self.assertRaises(ValueError):
+            grid([0, 0, 100, 100], 2, 2, gap=0, gap_y=-5)
+
+    def test_empty_grid_is_rejected(self):
+        with self.assertRaises(ValueError):
+            grid([0, 0, 100, 100], 0)
+        with self.assertRaises(ValueError):
+            grid([0, 0, 100, 100], 2, 0)
+
     def test_separate_vertical_gap(self):
         cells = grid([0, 0, 200, 210], 2, 2, gap=0, gap_y=10)
         self.assertEqual(cells[0][3], 100)

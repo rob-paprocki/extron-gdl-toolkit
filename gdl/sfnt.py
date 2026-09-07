@@ -128,9 +128,11 @@ class Advances:
         if fmt == 6:
             first, count = struct.unpack('>HH', raw[off + 6:off + 10])
             ids = struct.unpack(f'>{count}H', raw[off + 10:off + 10 + 2 * count])
-            return {first + i: g for i, g in enumerate(ids)}
+            # Skip glyph 0 (.notdef) so "is this character covered" can be
+            # asked by key presence, the same as the format 4 and 12 branches.
+            return {first + i: g for i, g in enumerate(ids) if g}
         if fmt == 0:
-            return {i: raw[off + 6 + i] for i in range(256)}
+            return {i: raw[off + 6 + i] for i in range(256) if raw[off + 6 + i]}
         return {}
 
     def _cmap4(self, raw, off):

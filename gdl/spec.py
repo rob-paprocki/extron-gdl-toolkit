@@ -9,11 +9,15 @@ here, because they are pure arithmetic and need nothing installed:
   * **ID allocation** - page numbers and per-control `userId`s handed out in
     bands, unique within a page, skipping anything the spec pins by hand
 
-The third piece, writing the authoring model, still needs 32-bit Windows
-PowerShell and GUI Designer. What this module gives you instead is a **preview**:
-a spec renders straight through `gdl/compose.py`, the same compositor that scores
-2.19% against GUI Designer's own snapshot exports. So a design can be judged
-before it ever reaches a Windows box, which is the expensive step.
+The third piece - writing the authoring model - has to *run* on 32-bit Windows
+PowerShell with GUI Designer installed, but everything that step needs is
+emitted here as data:
+
+  * a **preview** (`render`) - a spec goes straight through `gdl/compose.py`,
+    the same compositor that scores 2.19% against GUI Designer's own snapshot
+    exports, so a design can be judged before it reaches a Windows box
+  * a **plan** (`plan`) - the clone-and-set ops `powershell/Apply-GdlPlan.ps1`
+    applies. That applier is UNVERIFIED; see docs/from-scratch.md.
 
 That works because an authored control carries `TLPImageID = -1` - Build has not
 rasterised it yet - and the compositor already knows how to draw those from
@@ -109,6 +113,12 @@ def grid(rect, cols, rows=1, gap=0, gap_y=None, pad=0):
     """
     x, y, w, h = rect
     gy = gap if gap_y is None else gap_y
+    # A negative gap silently produces overlapping cells that are individually
+    # valid - positive size, on canvas - so nothing downstream would catch it.
+    if gap < 0 or gy < 0:
+        raise ValueError(f'negative gap ({gap}, {gy}) would overlap cells')
+    if cols < 1 or rows < 1:
+        raise ValueError(f'grid needs at least one row and column, got {cols}x{rows}')
     x, y, w, h = x + pad, y + pad, w - 2 * pad, h - 2 * pad
     cw = (w - gap * (cols - 1)) / cols
     ch = (h - gy * (rows - 1)) / rows

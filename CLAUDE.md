@@ -136,8 +136,11 @@ handle and means nothing to a programmer.
   finding 7.
 - Every text finding is validated against **one** typeface: the scored fixture
   only ever draws Forma DJR Display.
-- Generating a panel from a spec is partly built — `gdl/spec.py` has the layout
-  pass, control ID allocation and a preview render. Still missing: writing a
-  spec into `ProjectGCP`. **Group registration was never actually missing**;
+- Generating a panel from a spec: `gdl/spec.py` has the layout pass, control ID
+  allocation, a preview render and a build-plan emitter, all tested here.
+  `powershell/Apply-GdlPlan.ps1` applies a plan to a real project but is
+  **UNVERIFIED** — written on a Mac, never run against BinaryFormatter or GUI
+  Designer. Use `-WhatIf` first; it dry-runs and reports every unresolved donor
+  and field. **Group registration was never actually missing**;
   `Register-GdlPopupGroup` is complete. See `docs/from-scratch.md`, which also
   lists the six questions that need one session on a Windows box.

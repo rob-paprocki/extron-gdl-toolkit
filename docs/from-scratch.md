@@ -41,20 +41,40 @@ are the User-authored `Afterburn - *` ones. Read out of their `dataField`
 | thickness | 0, 1, 2, 3 |
 | 3D lighting | `depth`, `surfaceHeight` (3, 78, 117) |
 
-The six Afterburn resources are literally reparametrised clones of the System
-templates — same `type`/`style`/`depth`/`surfaceHeight`, differing only in
-`cornerRadius` and `thickness`.
+The six Afterburn resources are **not** clones of the System templates, which
+is more interesting than if they were. Every one carries `style = 0` (2D flat)
+together with `depth = 1, surfaceHeight = 3` (the 3D lighting values) — and no
+System template has that combination: every System `style = 0` record has
+`depth = 0, surface = 0`, and every record with `depth = 1, surface = 3` has
+`style = 1`.
 
-**The consequence that matters:** a generator that only *references* the 34
-resources already in a donor project needs no new resource appended. Referencing
-is proven — it is what every control in every fixture does. So the interesting
-design space is reachable without the one operation nobody has tested.
+So a human, working in GUI Designer's own UI, produced border resources with
+parameter combinations that ship with no template. That is direct evidence the
+parameter space is genuinely open rather than a fixed menu — though it is still
+not evidence that a *hand-appended* resource survives a build, which remains
+untested (§5).
+
+**The consequence that matters:** a generator that only *references* resources
+already in a donor project needs no new resource appended.
+
+How far that is proven, precisely: across all six fixtures only **9** distinct
+border names are ever bound to a control — the 6 Afterburn ones plus
+`2D Rounded Rectangle`, `2D Rectangle_1` and `2D Rounded Rectangle_1`. The other
+~25, including *every* 3D template and every `zGD - Default *`, are defined but
+never referenced by anything. So "referencing works" is demonstrated for those 9,
+and is an assumption for the rest.
+
+That is why §5's first test is what it is. If referencing an unused-but-present
+resource works, the usable palette is 34; if it does not, it is 9. Either way it
+is more than the "seven" the older notes imply, and either way it needs no
+append.
 
 ## 2. What is free, what is bounded, what is impossible
 
 **Free.** Layout and hierarchy, page and popup structure, ID allocation, exact
-fill/stroke/text colour (any ARGB), typography within the embedded faces, which
-of the 34 border resources each control uses.
+fill/stroke/text colour (any ARGB), typography within the embedded faces, and
+which border resource each control uses — 9 of them proven, 34 pending §5's
+first test.
 
 **Bounded.** Silhouette — rectangle/rounded/capsule/ellipse × flat/3D, at the
 radii and thicknesses those 34 resources encode. A new radius means a new
@@ -78,7 +98,8 @@ resource, which is the unverified step.
 | Layout pass | **Built.** `gdl/spec.py` `grid()` / `stack()`. |
 | Control ID allocation | **Built.** Per-page bands, honours pinned ids. |
 | Preview render | **Built.** Straight through `gdl/compose.py`. |
-| Spec → `ProjectGCP` | **Not built.** Needs the PowerShell bridge. |
+| Spec → build plan | **Built.** `python -m gdl.spec plan`. |
+| Plan → `ProjectGCP` | **Built, UNVERIFIED.** `powershell/Apply-GdlPlan.ps1` — written on a Mac, never run. `-WhatIf` dry-runs it. |
 | Repack to `.gdl` | Built already — `gdl/container.py pack`. |
 | GUI Designer opens + builds | **Human, on Windows.** The only real oracle. |
 
@@ -97,8 +118,9 @@ GUI Designer's own snapshot exports, which makes it good enough to judge a
 design *before* paying that cost:
 
 ```bash
-python -m gdl.spec check  examples/panel.json     # ids, overlaps, off-canvas, unknown resources
+python -m gdl.spec check  examples/panel.json     # ids, off-canvas, sizes, unknown resources
 python -m gdl.spec render examples/panel.json out/preview.png
+python -m gdl.spec plan   examples/panel.json out/plan.json   # ops for the applier
 ```
 
 ![generated panel](panel-preview.png)

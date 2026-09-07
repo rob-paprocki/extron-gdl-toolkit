@@ -121,10 +121,12 @@ def metrics(f):
 # See docs/render-fidelity.md finding 7 for what each is worth.
 FRAC_MEASURE = True
 FRAC_PLACE = True
-# Horizontal registration. Pillow's rasteriser and GDI+ disagree by the usual
-# half pixel (sample at the pixel corner vs at its centre). Measured as a clean
-# minimum over the corpus, and research/compose2.py's independent fit landed on
-# the same -0.5, which is the reason to believe it rather than the sweep alone.
+# Horizontal registration: Pillow's rasteriser and GDI+ disagree by the usual
+# half pixel (sample at the pixel corner vs at its centre). The value is a
+# convention, not a fit - and it is a clean minimum on the shipped model, which
+# is confirmation rather than derivation. research/compose2.py also uses -0.5,
+# but on the same corpus and with its own metric preferring roughly -0.75, so
+# treat that as agreement about the convention, not independent evidence.
 DX = -0.5
 _adv = {}
 
@@ -258,8 +260,19 @@ def fill_index(path):
 
     Keying on (type, rect) rather than an id is deliberate: the authoring model
     is read as a flat object graph with no page association, so there is no id
-    to join on. A duplicate key is dropped rather than guessed at - painting the
-    wrong fill is worse than painting none.
+    to join on. A duplicate key on the SOURCE side is dropped rather than
+    guessed at - painting the wrong fill is worse than painting none.
+
+    Be clear about how much that guarantees, which is less than it looks:
+    (type, rect) is *not* a unique key over controls generally - the fixtures
+    have 127-132 colliding groups each. It is unique only over the eligible
+    subset (no artwork AND a real fill), which happens to be exactly one
+    control in every one of the six fixtures. The DESTINATION side is not
+    checked at all, so two same-typed, same-positioned controls on different
+    pages would both receive the fill. That is safe in this corpus by luck of
+    its shape, not by construction. gdl/spec.py's check() refuses to generate
+    such a pair; a real id join (page.ID + control.ID, both already in
+    layout.json) is the durable fix if a project ever needs it.
     """
     from .project import Project
 
@@ -387,9 +400,18 @@ def flatten(canvas):
     composite: a pixel that was painted keeps its own colour at full strength,
     an untouched one stays black. That reproduces the previous
     opaque-canvas-from-the-start behaviour exactly.
+
+    The final putalpha is not cosmetic. paste() copies the source's own alpha
+    through, so a page whose art is itself semi-transparent (the modal scrim
+    asset is a uniform alpha 166) would otherwise come back partly transparent
+    from a function whose contract says opaque. Every caller today converts to
+    RGB, which drops alpha rather than compositing it, so this is currently
+    invisible - measured identical across all 27 pages. It is here so the
+    contract is true rather than true-by-accident-of-the-caller.
     """
     bg = Image.new('RGBA', canvas.size, (0, 0, 0, 255))
     bg.paste(canvas, (0, 0), canvas.getchannel('A').point(lambda a: 255 if a else 0))
+    bg.putalpha(255)
     return bg
 
 
