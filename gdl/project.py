@@ -143,26 +143,44 @@ class Project:
             size = len(arr)
         return [self.deref(x) for x in arr[:size]]
 
+    def _page(self, pg, kind):
+        return {
+            'kind': kind,
+            'id': self.field(pg, 'idField'),
+            'name': self.field(pg, 'nameField'),
+            'modal': self.field(pg, 'modalField'),
+            'controls': [dict(self.control(c), obj_id=self.field(c, 'idField'))
+                         for c in self.items(self.field(pg, 'controlsField'))],
+        }
+
     def pages(self):
         """Every page and popup, each with its own controls.
 
         Yields the page's `idField`, which is the same number layout.json
         exports as `Page.ID` - so this is what joins the authoring model to the
         built payload. Same for a control's `idField` and `Control.ID`.
+
+        A `.glt` template has **no PBProject** - it is a bare library of pages
+        and popups with no project wrapper - so walking down from the project
+        finds nothing. Fall back to scanning for the page classes directly,
+        which is what makes Extron's own per-panel templates readable. Ordering
+        is then whatever the graph gives, not declaration order; the project
+        path is used whenever there is a project, because order matters there
+        (popup group members are resolved by it).
         """
         proj = next(self.instances('PBProject'), None)
-        if proj is None:
+        if proj is not None:
+            for field, kind in (('pagesField', 'page'), ('popupPagesField', 'popup')):
+                for pg in self.items(self.field(proj, field)):
+                    yield self._page(pg, kind)
             return
-        for field, kind in (('pagesField', 'page'), ('popupPagesField', 'popup')):
-            for pg in self.items(self.field(proj, field)):
-                yield {
-                    'kind': kind,
-                    'id': self.field(pg, 'idField'),
-                    'name': self.field(pg, 'nameField'),
-                    'modal': self.field(pg, 'modalField'),
-                    'controls': [dict(self.control(c), obj_id=self.field(c, 'idField'))
-                                 for c in self.items(self.field(pg, 'controlsField'))],
-                }
+        for suffix, kind in (('PBPopupPage', 'popup'), ('PBPage', 'page')):
+            for pg in self.instances(suffix):
+                # PBPopupPage derives from PBPage, so match the exact class or
+                # every popup is yielded twice.
+                if self.kind(pg).rsplit('.', 1)[-1] != suffix:
+                    continue
+                yield self._page(pg, kind)
 
     def fill_map(self):
         """(page id, control id) -> the fill Build would have rasterised.
