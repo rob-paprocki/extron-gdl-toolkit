@@ -355,26 +355,59 @@ class TestBuildPlan(unittest.TestCase):
 class TestExtronRules(unittest.TestCase):
     """Extron's own numeric standards. See docs/design-rules.md for provenance."""
 
-    def test_touch_minimums_reproduce_extrons_published_rows(self):
+    def test_a_named_model_reproduces_extrons_published_rows(self):
+        """By MODEL, which is the number Extron's Quick Reference table (p.90)
+        actually gives - its rows name panels, not resolutions."""
         from gdl.spec import touch_minimums
-        # Values Extron publishes in its Quick Reference table (p.90).
-        self.assertEqual(touch_minimums((1280, 800)), (53, 12))
-        self.assertEqual(touch_minimums((320, 480)), (58, 13))
-        self.assertEqual(touch_minimums((320, 240)), (40, 9))
+        self.assertEqual(touch_minimums('TLP1035T'), (53, 12))    # 1280x800
+        self.assertEqual(touch_minimums('TLP300M'), (58, 13))     # 320x480
+        self.assertEqual(touch_minimums('TLP320M'), (40, 9))      # 320x240
 
-    def test_1280x720_has_no_documented_minimum(self):
-        # Extron's table has no row for it; inventing one would be a guess
-        # presented as a requirement.
+    def test_dpi_varies_within_a_resolution(self):
+        """The correction that made the model-keyed lookup necessary. Keying
+        the minimum off the resolution gave every 1280x800 panel the TLP Pro
+        1035's 53px, which is 14px too small for a TLP Pro 835."""
+        from gdl.spec import touch_minimums, dpi
+        self.assertEqual(dpi('TLP1035M'), 149.0)
+        self.assertEqual(dpi('TLP1220MG'), 124.75)
+        self.assertEqual(dpi('TLP835M'), 188.68)
+        self.assertEqual(touch_minimums('TLP835M'), (67, 15))
+        self.assertEqual(touch_minimums('TLP1220MG'), (44, 10))
+
+    def test_an_unnamed_model_falls_back_to_the_densest_physical_panel(self):
+        """Safe rather than right: without a model the check cannot know which
+        1280x800 panel this is, so it holds the design to the tightest one."""
         from gdl.spec import touch_minimums
-        self.assertEqual(touch_minimums((1280, 720)), (None, None))
+        self.assertEqual(touch_minimums((1280, 800)), (67, 15))   # TLP Pro 835
+
+    def test_a_model_carries_its_extron_part_number(self):
+        """GUI Designer identifies a panel by part number - a platform object
+        without one opens as "Unknown"."""
+        from gdl.spec import part_number
+        self.assertEqual(part_number('TLP1535M'), '60-2000-02')
+
+    def test_1280x720_now_has_a_minimum(self):
+        """It had none while the table came from Extron's published rows, which
+        have no 1280x720 row. The assemblies do: TLP Pro 535M/T at 293.72 DPI."""
+        from gdl.spec import touch_minimums
+        self.assertEqual(touch_minimums('TLP535M'), (104, 23))
 
     def test_undersized_button_is_caught(self):
         p = _spec([{'kind': 'button', 'rect': [0, 0, 40, 40], 'text': 'tiny'}])
         self.assertTrue(any('touch target' in m for m in p.check()))
 
     def test_button_at_the_minimum_passes(self):
-        p = _spec([{'kind': 'button', 'rect': [0, 0, 53, 53], 'text': 'ok'}])
+        p = _spec([{'kind': 'button', 'rect': [0, 0, 67, 67], 'text': 'ok'}])
         self.assertFalse(any('touch target' in m for m in p.check()))
+
+    def test_naming_the_model_gives_the_tighter_minimum(self):
+        """A 60px button fails the unnamed 1280x800 fallback and passes on the
+        panel this project is actually for."""
+        big = {'kind': 'button', 'rect': [0, 0, 60, 60], 'text': 'ok'}
+        self.assertTrue(any('touch target' in m for m in _spec([big]).check()))
+        named = Panel({'name': 'T', 'model': 'TLP1035T', 'theme': {'text': '#FFF'},
+                       'pages': [{'name': 'P', 'number': 1000, 'controls': [big]}]})
+        self.assertFalse(any('touch target' in m for m in named.check()))
 
     def test_labels_are_not_touch_targets(self):
         # Only interactive controls need to meet 9mm.
@@ -405,12 +438,13 @@ class TestExtronRules(unittest.TestCase):
         self.assertTrue(any('body-text minimum' in m for m in p.check()))
 
     def test_buttons_too_close_together_are_caught(self):
-        # 12px is the 1280x800 minimum; 4px is well under it.
+        # 15px is the unnamed-1280x800 minimum (2mm at the densest physical
+        # panel that size, the TLP Pro 835); 4px is well under it.
         p = _spec([
             {'kind': 'button', 'rect': [0, 0, 100, 60], 'text': 'a'},
             {'kind': 'button', 'rect': [0, 64, 100, 60], 'text': 'b'},
         ])
-        self.assertTrue(any('below the 12px minimum' in m for m in p.check()))
+        self.assertTrue(any('below the 15px minimum' in m for m in p.check()))
 
     def test_adequately_spaced_buttons_pass(self):
         p = _spec([

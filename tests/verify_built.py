@@ -50,9 +50,66 @@ def _index(page):
     return out
 
 
+def check_edits(plan, j):
+    """An EDIT plan addresses existing controls by id, so verification is a
+    direct lookup: did the field we asked for actually change?
+
+    Captions need care. The plan may write `textField` on the control, on every
+    state, or `ftextField` on every state, and the built `layout.json` reports
+    one merged caption - so compare against that rather than against whichever
+    field the op happened to name.
+    """
+    pages = {p['ID']: p for p in j['Pages'] + j['PopupPages']}
+    problems, checked, unverifiable = [], 0, []
+    for op in plan['controls']:
+        pg = pages.get(op['page'])
+        if pg is None:
+            problems.append(f"page id {op['page']} is not in the built file")
+            continue
+        c = next((x for x in (pg.get('Controls') or []) if x.get('ID') == op['control']),
+                 None)
+        if c is None:
+            problems.append(f"control id {op['control']} is not on page {pg['Name']!r}")
+            continue
+        checked += 1
+        want_text = None
+        for src in (op.get('fields') or {}, op.get('states') or {}):
+            if 'textField' in src:
+                want_text = src['textField']
+        if op.get('states_ftext') is not None:
+            want_text = op['states_ftext']
+        if want_text is not None and not op.get('flattened'):
+            got = (_caption(c) or '').replace('\t', '').replace('\r\n', ' ').strip()
+            if got != want_text:
+                problems.append(f"{pg['Name']!r} {c.get('Name')!r}: caption is {got!r}, "
+                                f'the edit asked for {want_text!r}')
+        elif want_text is not None:
+            # A formatted-text caption is baked into the artwork, and
+            # layout.json reports it as '' both before and after the edit. There
+            # is nothing here to compare, so checking it would report a failure
+            # that is really a lookup in the wrong place. Say so instead: the
+            # only real check is looking at the asset.
+            unverifiable.append(f"{pg['Name']!r} {c.get('Name')!r} -> {want_text!r}")
+        for f, key in (('leftField', 'Left'), ('topField', 'Top'),
+                       ('widthField', 'Width'), ('heightField', 'Height'),
+                       ('userIdField', 'UserID')):
+            want = (op.get('fields') or {}).get(f)
+            if want is None or key not in c:
+                continue
+            if c[key] != want:
+                problems.append(f"{pg['Name']!r} {c.get('Name')!r}: {key} is {c[key]}, "
+                                f'the edit asked for {want}')
+    for u in unverifiable:
+        print(f'  NOT VERIFIABLE HERE (caption is baked into the artwork, '
+              f'compare the asset PNG): {u}')
+    return problems, checked
+
+
 def check(plan_path, built_path):
     plan = json.load(open(plan_path))
     j, _ = load(built_path)
+    if plan.get('generated_by') == 'gdl.edit':
+        return check_edits(plan, j)
     pages = {p['Name']: p for p in j['Pages']}
     popups = {p['Name']: p for p in j['PopupPages']}
 

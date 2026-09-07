@@ -27,9 +27,12 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 
 ### A. Generate a panel from a description
 
-1. **Pick the panel model first.** The canvas is one of eight resolutions, not a
-   constant. `gdl/spec.py`'s `PANELS` maps each to its model and PPI, which is
-   what sets the touch-target minimum. Ask if you don't know it.
+1. **Pick the panel model first**, and put it in the spec as `"model"`.
+   `gdl/spec.py`'s `MODELS_FULL` has all 55 GUI Designer builds for, with each
+   one's resolution, DPI and Extron part number, read from the assemblies. The
+   canvas is one of eight resolutions, not a constant - and **DPI varies by
+   nearly 2x within a resolution**, so naming the model is what makes the
+   touch-target check right rather than merely safe. Ask if you don't know it.
 2. **Pick the theme.** `gdl.themes.AFTERBURN` is the documented token set. For
    Mach/Shockwave/Turbulence, or a client's house style, run
    `python -m gdl.themes <template.glt>` and read the tokens off the template.
@@ -54,6 +57,31 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    when it earns its keep.
 
 ### B. Modify an existing panel
+
+There is a vocabulary for this - write the change as JSON, resolve it against
+the real project on the Mac, then apply:
+
+1. **Describe the change** - see `examples/edits.json`. Four ops:
+   `rename` (captions), `retarget` (another panel model, optionally rescaling),
+   `renumber` (addressable `userId`s), `restyle` (colour remap). Selectors are
+   ANDed and support exact or regex match on name and caption.
+2. **Check it**: `python -m gdl.edit check <edits.json> <panel.gdl>`. Every
+   selector resolves against the real file, so "matched nothing" is an error
+   here rather than a silent no-op on Windows. Errors block; warnings do not.
+3. **Emit the plan**: `python -m gdl.edit plan <edits.json> <panel.gdl>
+   out/edits-plan.json`.
+4. **Apply**: `powershell\Apply-GdlEdits.ps1 <ProjectGCP> <plan> <out>`.
+5. **Build, then verify**: `python tests/verify_built.py out/edits-plan.json
+   <built.gdl>`.
+
+Two things about renaming that are not obvious:
+
+- A caption usually is **not** in the control's `textField`. It is on the first
+  state, or it is *formatted* text (`ftextField`) with hand-placed tabs and line
+  breaks. `gdl.edit` writes it back wherever it found it.
+- A **formatted** caption is baked into the artwork. Making one longer wraps it
+  onto an unindented second line over the icon - `check` warns, and the only
+  real verification is looking at the rasterised asset.
 
 Reading and rendering need nothing but Python and Pillow:
 

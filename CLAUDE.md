@@ -12,6 +12,8 @@ boundary.
 
 `SKILL.md` is the repeatable procedure for building or modifying a panel — the
 workflows, the verification gates, and the traps. Start there for panel work.
+`docs/from-scratch.md` covers generating one; `docs/editing.md` covers changing
+one that exists.
 
 Read `docs/gdl-format.md` before changing anything that touches the format. It
 is the accumulated findings, and most of them were expensive to discover.
@@ -176,6 +178,11 @@ handle and means nothing to a programmer.
   finding 7.
 - Every text finding is validated against **one** typeface: the scored fixture
   only ever draws Forma DJR Display.
+- Editing an existing panel: `gdl/edit.py` + `powershell/Apply-GdlEdits.ps1`.
+  Rename, retarget, renumber and restyle, all **verified end to end** against
+  GUI Designer 1.27.0.9 - including a scaled retarget of the whole Liberty Bank
+  project from a TLP Pro 1035T to a TLP Pro 1535M, 654/654 controls correct in
+  the built file.
 - Generating a panel from a spec: `gdl/spec.py` has the layout pass, control ID
   allocation, a preview render and a build-plan emitter, all tested here.
   `powershell/Apply-GdlPlan.ps1` applies a plan to a real project — **verified

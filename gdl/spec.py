@@ -72,24 +72,151 @@ BORDER_GEOMETRY = {
     'Afterburn - 14 Radius 0 Thick': (14, 0),
     'Afterburn - Elipse 3 Thick': (10, 3),
 }
-# Panel models by resolution. Names are read from GUI Designer's own Project
-# Create Wizard (55 entries), not reconstructed from class symbols - TLC and TLP
-# are different product lines and class names outlive retired models.
+# Every panel GUI Designer can target: (width, height, DPI, Extron part number).
 #
-# PPI is what Extron's touch-target Quick Reference table keys its minimums to.
-# Where a resolution spans models of different physical size the conservative
-# (higher PPI, larger minimum) value is used. 1280x720 HAS models - TLP Pro
-# 535M/535T - but no row in that table, so it has no documented minimum.
-PANELS = {
-    (320, 240): ('CCI Pro 700, TLP Pro 320C/M', 114),
-    (320, 480): ('TLP Pro 300M', 165),
-    (800, 480): ('TLC Pro 521M/526M, TLP Pro 525C/M/T', 187),
-    (1024, 600): ('TLC Pro 726M, TLP Pro 725C/M/T, 1022M/T, ZRTP Pro 725M/T', 170),
-    (1280, 720): ('TLP Pro 535M/T', None),
-    (1280, 800): ('TLC Pro 1026M, TLP Pro 835/1025/1035/1220/1225, ZRTP Pro 1025', 149),
-    (1366, 768): ('TLP Pro 1520MG/TG, 1525MG/TG', 100),
-    (1920, 1080): ('TLI Pro 201, TLP Pro 1535M/T, 1720MG/TG, 1725MG/TG', 128),
+# Read out of the ASSEMBLIES, not off the Project Create Wizard's list box.
+# `PBTouchPanelPlatformPro.GetDefaultResolutionDpi(type, out w, out h, out dpi)`
+# and `CreatePlatform(project, type)` are Extron's own, so this is primary
+# source. `out/probe-22-createplatform.ps1` regenerates it and
+# `research/data/platform-details.txt` is the raw capture.
+#
+# The part number matters: GUI Designer identifies a panel by it, and a project
+# whose platform object lacks one opens as "Unknown" no matter how correct the
+# class, enum and screen size are. See docs/from-scratch.md.
+#
+# DPI IS PER MODEL, NOT PER RESOLUTION. 1280x800 alone spans 124.75 (TLP Pro
+# 1220/1225), 149 (TLC 1026M, TLP Pro 1025/1035, ZRTP 1025), 188.68 (TLP Pro
+# 835) and 220 (virtual Android) - a 1.76x spread, which is 1.76x on the
+# touch-target minimum. An earlier version of this table keyed PPI off the
+# resolution and was therefore wrong for most 1280x800 models.
+#
+# Two things it is NOT:
+#   * not a catalogue of purchasable panels. Retired models (TLP Pro 1720MG/TG)
+#     and the virtual targets (VTLP Web/iOS/Android) are here because GUI
+#     Designer still builds for them.
+#   * not the enum. `PlatformProTypeEnum` has 60 members to these 55 platforms;
+#     `Unknown`, the MLC 84 button panels, TLP 1022W and TLP 1230WTG have no
+#     touch-panel platform class behind them, and CreatePlatform returns null.
+MODELS_FULL = {
+    'CCI700': (320, 240, 114.29, '60-1206-02'),
+    'TLC1026M': (1280, 800, 149.0, '60-1855-02'),
+    'TLC521M': (800, 480, 187.0, '60-1284-02'),
+    'TLC526M': (800, 480, 186.59, '60-1853-02'),
+    'TLC726M': (1024, 600, 169.55, '60-1854-02'),
+    'TLI101': (1920, 1080, 220.0, '60-1083-01'),
+    'TLI201': (1920, 1080, 220.0, '60-1669-01'),
+    'TLP1020M': (1024, 600, 118.0023, '60-1392-02'),
+    'TLP1020T': (1024, 600, 118.0023, '60-1393-02'),
+    'TLP1022M': (1024, 600, 117.51, '60-1602-02'),
+    'TLP1022T': (1024, 600, 117.51, '60-1601-02'),
+    'TLP1025M': (1280, 800, 149.0, '60-1566-02'),
+    'TLP1025T': (1280, 800, 149.0, '60-1565-02'),
+    'TLP1035M': (1280, 800, 149.0, '60-1999-02'),
+    'TLP1035T': (1280, 800, 149.0, '60-1999-02'),
+    'TLP1220MG': (1280, 800, 124.75, '60-1340-02'),
+    'TLP1220TG': (1280, 800, 124.75, '60-1341-02'),
+    'TLP1225MG': (1280, 800, 124.75, '60-1787-02'),
+    'TLP1225TG': (1280, 800, 124.75, '60-1788-02'),
+    'TLP1230WTG': (800, 480, 0.0, '60-1668-02'),
+    'TLP1520MG': (1366, 768, 100.45, '60-1342-02'),
+    'TLP1520TG': (1366, 768, 100.45, '60-1343-02'),
+    'TLP1525MG': (1366, 768, 100.45, '60-1789-02'),
+    'TLP1525TG': (1366, 768, 100.45, '60-1790-02'),
+    'TLP1535M': (1920, 1080, 127.7, '60-2000-02'),
+    'TLP1535T': (1920, 1080, 127.7, '60-2001-02'),
+    'TLP1720MG': (1920, 1080, 127.7, '60-1344-02'),
+    'TLP1720TG': (1920, 1080, 127.7, '60-1345-02'),
+    'TLP1725MG': (1920, 1080, 127.7, '60-1791-02'),
+    'TLP1725TG': (1920, 1080, 127.7, '60-1792-02'),
+    'TLP300M': (480, 320, 164.83, '60-1667-02'),
+    'TLP320C': (320, 240, 113.647, '60-1452-02'),
+    'TLP320M': (320, 240, 113.647, '60-1451-02'),
+    'TLP520M': (800, 480, 188.148, '60-1185-02'),
+    'TLP525C': (800, 480, 186.59, '60-1560-02'),
+    'TLP525M': (800, 480, 186.59, '60-1561-02'),
+    'TLP525T': (800, 480, 186.59, '60-1559-02'),
+    'TLP535M': (1280, 720, 293.72, '60-1993-02'),
+    'TLP535T': (1280, 720, 293.72, '60-1994-02'),
+    'TLP720C': (800, 480, 133.33, '60-1396-02'),
+    'TLP720M': (800, 480, 133.33, '60-1394-02'),
+    'TLP720T': (800, 480, 133.33, '60-1395-02'),
+    'TLP725C': (1024, 600, 169.55, '60-1564-02'),
+    'TLP725M': (1024, 600, 169.55, '60-1563-02'),
+    'TLP725T': (1024, 600, 169.55, '60-1562-02'),
+    'TLP835C': (1280, 800, 188.68, '60-1995-02'),
+    'TLP835M': (1280, 800, 188.68, '60-1996-02'),
+    'TLP835T': (1280, 800, 188.68, '60-1997-02'),
+    'VTLPAndroid': (1280, 800, 220.0, '79-600-01'),
+    'VTLPWeb': (1920, 1080, 220.0, '60-sVTLP'),
+    'VTLPiOS': (1920, 1080, 220.0, '79-559'),
+    'ZRTP1025M': (1280, 800, 149.0, '60-1566-212'),
+    'ZRTP1025T': (1280, 800, 149.0, '60-1565-212'),
+    'ZRTP725M': (1024, 600, 169.55, '60-1563-212'),
+    'ZRTP725T': (1024, 600, 169.55, '60-1562-212'),
 }
+
+# TLP Pro 300M is the one disagreement between the two sources: the platform
+# class reports 320x480 (portrait, which is how the panel is sold and how
+# Extron's own 300 template library is laid out) while GetDefaultResolutionDpi
+# reports 480x320. `GetDefaultValues(type, landscape)` takes an orientation
+# flag, so both are real - they are the two orientations of one panel. Portrait
+# is used here because that is what the shipped templates assume.
+MODELS_FULL['TLP300M'] = (320, 480, MODELS_FULL['TLP300M'][2],
+                          MODELS_FULL['TLP300M'][3])
+
+# name -> (width, height). The common case; the rest of MODELS_FULL is there
+# when you need the DPI or the part number.
+MODELS = {k: (v[0], v[1]) for k, v in MODELS_FULL.items()}
+
+
+def dpi(model):
+    """A model's DPI, straight from Extron's code. None if unknown."""
+    e = MODELS_FULL.get(model)
+    return e[2] if e else None
+
+
+def part_number(model):
+    """The Extron part number GUI Designer identifies the panel by."""
+    e = MODELS_FULL.get(model)
+    return e[3] if e else None
+
+
+# Extron's own numbers, GUI Design Standards rev E pp.55-56: a touch target must
+# be 9mm square, and touchable elements must be 2mm apart.
+MM_TOUCH_TARGET = 9.0
+MM_SPACING = 2.0
+MAX_BUTTONS_PER_GROUP = 9        # p.58
+MAX_COLOURS_PER_PROJECT = 6      # p.49
+MIN_BODY_POINT_SIZE = 14         # pp.65-67
+
+
+def _panels():
+    """resolution -> (models sharing it, the DENSEST model's DPI).
+
+    Derived, so it cannot drift from MODELS_FULL. The densest model is the
+    conservative choice: its pixels are the smallest, so its minimum is the
+    largest, and a layout that satisfies it satisfies every other panel at that
+    resolution. Name the model in the spec when you know it - it is a much
+    tighter answer, and the spread within one resolution is nearly 2x.
+
+    The VTLP* virtual targets are excluded from that maximum. They are a phone,
+    a tablet and a browser, so their 220 "DPI" is the host device's rather than
+    a fixed panel's, and letting it set the minimum for 1280x800 would hold
+    every real panel to a number no Extron hardware implies. They stay in the
+    model list, and asking for one by name still gives its own figure.
+    """
+    out = {}
+    for model, (w, h, d, _) in MODELS_FULL.items():
+        out.setdefault((w, h), []).append((model, d))
+    res = {}
+    for size, ms in out.items():
+        physical = [d for m, d in ms if not m.startswith('VTLP') and d]
+        res[size] = (', '.join(sorted(m for m, _ in ms)),
+                     max(physical) if physical else None)
+    return res
+
+
+PANELS = _panels()
 # Extron's own numbers, GUI Design Standards rev E pp.55-56: a touch target must
 # be 9mm square, and touchable elements must be 2mm apart. Converting to pixels
 # needs the panel's PPI, which is why PANELS carries it.
@@ -100,20 +227,30 @@ MAX_COLOURS_PER_PROJECT = 6      # p.49
 MIN_BODY_POINT_SIZE = 14         # pp.65-67
 
 
-def touch_minimums(size):
-    """(min target px, min spacing px) for a canvas size, or (None, None).
+def touch_minimums(target):
+    """(min target px, min spacing px) for a panel, or (None, None).
 
-    Derived as mm x PPI. Extron publishes the resulting table but not this
+    `target` is either a model name ('TLP1535M') or a (width, height) - the
+    model is the better answer, because DPI varies by nearly 2x within a single
+    resolution.
+
+    Derived as mm x DPI. Extron publishes the resulting table but not this
     formula - p.90 says third-party panels must be "calculated manually" and
     gives no formula - so treat these as reproducing the documented rows rather
     than as a documented rule in their own right.
     """
-    _, ppi = PANELS.get(tuple(size), (None, None))
-    if not ppi:
+    if isinstance(target, str):
+        d = dpi(target)
+    else:
+        try:
+            _, d = PANELS.get(tuple(target), (None, None))
+        except TypeError:
+            d = None
+    if not d:
         return None, None
     mm_per_inch = 25.4
-    return (round(MM_TOUCH_TARGET * ppi / mm_per_inch),
-            round(MM_SPACING * ppi / mm_per_inch))
+    return (round(MM_TOUCH_TARGET * d / mm_per_inch),
+            round(MM_SPACING * d / mm_per_inch))
 
 
 KIND_TYPE = {'panel': 'PBShape', 'shape': 'PBShape', 'button': 'PBButton',
@@ -217,7 +354,18 @@ class Panel:
     def __init__(self, spec):
         self.spec = spec
         self.theme = dict(spec.get('theme') or {})
-        self.size = tuple(spec.get('size') or (1280, 800))
+        # Name the MODEL when you know it. DPI varies by nearly 2x within one
+        # resolution, so the model gives a touch minimum that is right rather
+        # than merely safe: a 1280x800 TLP Pro 1035T needs 53px, a TLP Pro 835M
+        # at the same resolution needs 67px. Without a model the check falls
+        # back to the densest physical panel at that size.
+        self.model = spec.get('model')
+        if self.model and self.model not in MODELS:
+            raise ValueError(f'{self.model!r} is not a panel GUI Designer builds for')
+        if self.model and not spec.get('size'):
+            self.size = MODELS[self.model]
+        else:
+            self.size = tuple(spec.get('size') or (1280, 800))
         self.pages = []
         self.popups = []
         self._groups = {}
@@ -507,7 +655,7 @@ class Panel:
         these will still build - it just will not meet the standard.
         """
         out = []
-        target, spacing = touch_minimums(self.size)
+        target, spacing = touch_minimums(self.model or self.size)
         for c in pg['controls']:
             x, y, w, h = (int(v) for v in c['rect'])
             where = f"page {pg['number']} {c.get('name') or c.get('text') or '?'}"

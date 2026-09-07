@@ -100,6 +100,53 @@ class Project:
             out['radius'], out['thickness'] = int(m.group(1)), int(m.group(2))
         return out
 
+    def states(self, obj):
+        """A control's `PBState`s, in order.
+
+        `statesField` is a `PBStates` wrapper, NOT the list - the `List<PBState>`
+        hangs off its `mItems`. Reading `statesField` as a list yields nothing
+        and looks like a control with no states, which is wrong for every
+        button in every fixture. (The same wrapper is why PowerShell must index
+        `PBStates` rather than `foreach` it.)
+        """
+        d = self.field(obj, 'statesField')
+        if not isinstance(d, dict):
+            return []
+        return [self.deref(x) for x in self.items(d.get('mItems'))]
+
+    def caption(self, obj):
+        """What a control actually says, wherever the caption happens to live.
+
+        Three places, in priority order, and a control that uses one leaves the
+        others empty:
+          * the control's own `textField`
+          * `textField` on its first state - where a BUTTON's caption lives, and
+            a caption set only on the control builds blank
+          * `ftextField` on the first state - GUI Designer's formatted-text
+            variant, which arrives with tab and CRLF layout markers baked in
+            (`'\\t\\tDevice\\r\\n\\t\\tComms'`). 23 controls in the Liberty Bank
+            fixture against 336 plain ones, so it is the minority path, but
+            missing it means a caption search silently skips them.
+        """
+        return self.caption_at(obj)[0]
+
+    def caption_at(self, obj):
+        """(caption, where) - `where` being which field an edit has to write.
+
+        Renaming has to put the new text where the old text was: writing
+        `textField` on a control whose caption lives in a state's `ftextField`
+        leaves the original showing.
+        """
+        own = self.field(obj, 'textField')
+        if own:
+            return own, 'control'
+        for st in self.states(obj):
+            for f, where in (('textField', 'state'), ('ftextField', 'fstate')):
+                v = self.deref(st.get(f))
+                if v:
+                    return v.replace('\t', '').replace('\r\n', ' ').strip(), where
+        return None, None
+
     def control(self, obj):
         return {
             'type': self.kind(obj).rsplit('.', 1)[-1],
@@ -108,6 +155,11 @@ class Project:
             'rect': (self.field(obj, 'leftField'), self.field(obj, 'topField'),
                      self.field(obj, 'widthField'), self.field(obj, 'heightField')),
             'text': self.field(obj, 'textField'),
+            # What it says on the panel, which is usually NOT `text` - see
+            # caption(). Anything selecting a control by its wording wants this,
+            # and anything CHANGING it wants caption_in as well.
+            'caption': self.caption_at(obj)[0],
+            'caption_in': self.caption_at(obj)[1],
             'tlp_image': self.field(obj, '<TLPImageID>k__BackingField'),
             # the two the built payload throws away
             'fill': self.color(self.field(obj, 'borderFillColorField')),
@@ -149,6 +201,9 @@ class Project:
             'id': self.field(pg, 'idField'),
             'name': self.field(pg, 'nameField'),
             'modal': self.field(pg, 'modalField'),
+            # A page's own canvas. Standard pages match the panel; popups have
+            # their own, and a control outside it is relocated to 0,0 by Build.
+            'size': (self.field(pg, 'widthField'), self.field(pg, 'heightField')),
             'controls': [dict(self.control(c), obj_id=self.field(c, 'idField'))
                          for c in self.items(self.field(pg, 'controlsField'))],
         }

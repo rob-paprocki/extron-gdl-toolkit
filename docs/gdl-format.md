@@ -175,6 +175,31 @@ A generator should assert all four agree rather than trusting the writes.
   page.** A generated page therefore comes back with more controls than were
   authored — six more, with this donor's six modal popups. Not contamination
   from the clone; the donor's own pages all carry the same six.
+- **Retargeting a project needs Extron's factory, not a constructor.**
+  `[Activator]::CreateInstance` on a platform class gets the resolution right
+  and leaves `partNumberField` null, and GUI Designer then titles the project
+  `Unknown: file.gdl` however correct `platformField`, `platformTypeField` and
+  `screenSizeField` are - it identifies a panel by **part number**. Use
+  `PBTouchPanelPlatformPro.CreatePlatform(PBProject, PlatformProTypeEnum)`.
+- **A popup's authored size is the whole canvas.** `widthField`/`heightField`
+  on a `PBPopupPage` are 1280x800 even where `layout.json` reports the popup as
+  915x800 - that smaller figure is the DISPLAYED size, taken from the reference
+  that shows it (Standards p.70). So a retarget must resize `PopupPages` as well
+  as `Pages`; resizing only `Pages` left every scaled popup control overflowing
+  the old canvas and Build moved all 297 of them to 0,0.
+- **A caption lives in one of three places** and a control that uses one leaves
+  the others empty: the control's `textField`, the first state's `textField`
+  (where a button's normally is), or the first state's `ftextField` - GUI
+  Designer's formatted text, which carries tab and CRLF layout markers inline
+  (`"\t\tDevice\r\nComms"`). 23 controls against 336 in the Liberty Bank
+  fixture. Formatted captions are **flattened into the artwork**, so they read
+  as `''` in `layout.json` and can only be checked by looking at the asset - and
+  because their line breaks are hand-placed, a longer replacement wraps onto an
+  unindented second line over the icon. Renaming one works; renaming one to
+  something longer quietly ruins it.
+- `statesField` is a `PBStates` **wrapper**, not the list. The `List<PBState>`
+  hangs off its `mItems`. Reading `statesField` as a list yields nothing and
+  looks like a control with no states.
 - A clean build proves the file is **acceptable**, not that it is **correct**.
   Two separate traps (`flattenText`, and the relocation above) produce a file
   that opens, builds and is wrong. Finish with `tests/verify_built.py`, which

@@ -1,0 +1,32 @@
+{
+  "_comment": [
+    "A worked edit spec, run against fixtures/gdl/Interface__alt_...gdl.",
+    "Every selector below resolves against the real project when you run",
+    "`python -m gdl.edit check`, so a typo is an error on the Mac rather than a",
+    "no-op discovered on the panel."
+  ],
+  "edits": [
+    {
+      "op": "rename",
+      "_why": "Caption changes are the single most common request on a live job.",
+      "select": { "page": "2000 - Main - Presentation", "type": "PBButton" },
+      "map": {
+        "Cameras": "Camera Control",
+        "Audio": "Sound Levels",
+        "Displays": "Screens"
+      }
+    },
+    {
+      "op": "rename",
+      "_why": "Regex selection, for 'every input labelled Table Input N'.",
+      "select": { "type": "PBButton", "text_matches": "^Table Input" },
+      "text": "Table Connection"
+    },
+    {
+      "op": "restyle",
+      "_why": "Recolour the sliders' track fill without touching anything else.",
+      "select": { "type": "PBSlider" },
+      "map": { "#242634": "#1B2233" }
+    }
+  ]
+}

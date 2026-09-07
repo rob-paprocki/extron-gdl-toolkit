@@ -1,0 +1,4 @@
+{
+  "_comment": "Move the Boardroom panel from a TLP Pro 1035T (1280x800) to a TLP Pro 1535M (1920x1080), scaling the layout with it.",
+  "edits": [{ "op": "retarget", "model": "TLP1535M", "scale": true }]
+}

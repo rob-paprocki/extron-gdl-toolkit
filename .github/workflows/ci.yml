@@ -34,6 +34,17 @@ jobs:
       - name: spec tests (layout, IDs, Extron design rules)
         run: python tests/test_spec.py
 
+      - name: edit tests (selectors, rename, retarget, renumber, restyle)
+        # These run against the real fixture rather than a synthetic project:
+        # every bug this vocabulary has had came from the difference between
+        # what a panel file looks like in the abstract and what one contains.
+        run: python tests/test_edit.py
+
+      - name: the worked edit spec still resolves against the fixture
+        run: |
+          python -m gdl.edit check examples/edits.json \
+            fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl
+
       - name: the worked example still checks clean
         run: python -m gdl.spec check examples/panel.json
 
