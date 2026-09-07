@@ -1,7 +1,23 @@
-# Commercial font binaries recovered from the fixtures. Regenerate with:
+# Font binaries recovered from the fixtures. Regenerate with:
 #   for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
-# Without them text renders in fallback Arial and the harness score quietly worsens.
-gdl/fonts/
+#
+# Ignored per file rather than as a class: the seven faces do not share a
+# licence. Open Sans is Apache 2.0 and declares it in its own name table, so it
+# is tracked. Forma DJR Display is a retail typeface, and the four Extron and
+# Crestron icon fonts carry no licence grant at all. gdl/fonts/README.md has the
+# per-file detail, read from each font rather than assumed.
+#
+# This ignore does not keep the bytes out of git - every face is embedded in the
+# tracked .gdl fixtures and is recoverable from them exactly. It prevents a
+# second, more conveniently redistributable copy, nothing more.
+#
+# Without the untracked faces the harness does not degrade, it stops: face()
+# raises LookupError on the first one it cannot resolve.
+gdl/fonts/*
+!gdl/fonts/README.md
+!gdl/fonts/LICENSE-OpenSans.txt
+!gdl/fonts/opensans-regular.ttf
+!gdl/fonts/opensans-light.ttf
 
 # Scratch output: extracted ProjectGCP, repacked .gdl, authored results.
 out/

@@ -8,10 +8,14 @@ name: ci
 #   CAN  - reading the authoring model out of the fixtures (gdl/project.py,
 #          gdl/nrbf.py, gdl/container.py are all stdlib).
 #   CANNOT - the render fidelity harness. It needs gdl/fonts/, which is
-#          deliberately not in git (commercial font binaries). Without those
-#          faces text falls back to Arial and the score is quietly wrong, so a
-#          CI run of it would report a confident meaningless number. Fidelity
-#          stays a local gate - see CLAUDE.md.
+#          deliberately not in git (commercial font binaries). How that fails
+#          depends on the host, and neither way is usable as a gate:
+#            - here, on a bare Linux runner, face() raises LookupError on the
+#              first face it cannot resolve. There is no Arial on Linux to fall
+#              back to, so the harness dies rather than scoring anything.
+#            - on a host that HAS Arial (Windows, macOS), it does fall back, and
+#              then reports a confident meaningless number.
+#          Fidelity stays a local gate - see CLAUDE.md.
 #   CANNOT - anything that authors a .gdl. That needs 32-bit Windows PowerShell
 #          and an installed GUI Designer.
 

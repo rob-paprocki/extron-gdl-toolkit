@@ -1,47 +1,55 @@
 # extron-gdl-toolkit
 
-Read, render and **author** Extron GUI Designer `.gdl` touch-panel projects
+Read, render, edit and author Extron GUI Designer `.gdl` touch-panel projects
 from code.
 
-Verified against GUI Designer **1.27.0.9**: files written by this toolkit open
-in the application, survive structural edits — adding and removing pages, popup
-pages, popup page references and controls — and build successfully.
+Verified against GUI Designer 1.27.0.9. Files written by this toolkit open in
+the application, survive structural edits (adding and removing pages, popup
+pages, popup page references and controls) and build successfully.
+
+Not affiliated with Extron.
 
 ## Why
 
 A `.gdl` is opaque: a ZIP with deliberately mangled signatures wrapping a .NET
-`BinaryFormatter` graph. That makes ordinary things hard — diffing two panel
-revisions, auditing which control drives which ID, or generating a panel from a
-spec instead of clicking it together. This toolkit opens the format up.
+`BinaryFormatter` graph. So you cannot diff two panel revisions, audit which
+control drives which ID, or generate a panel from a spec instead of clicking it
+together.
 
 ## What is here
 
 | Path | |
 |---|---|
 | `gdl/` | Python: container, render model, font recovery, reference compositor |
-| `gdl/nrbf.py`, `gdl/project.py` | pure-Python reader for the authoring model — no GUI Designer needed |
-| `powershell/GdlProject.ps1` | authoring bridge — load, clone, edit, save a real project graph |
-| `viewer/` | builds a single-file HTML browser for every page and popup |
-| `tests/compare_snapshots.py` | scores our render against GUI Designer's own snapshot exports |
-| `examples/` | a worked authoring script that opens and builds in GUI Designer |
-| `docs/gdl-format.md` | **the format writeup — read this first** |
-| `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
-| `docs/from-scratch.md` | designing a panel from a spec — what is possible, and what needs Windows |
-| `docs/design-rules.md` | Extron's own design standards + Afterburn tokens, encodable, with provenance |
-| `SKILL.md` | **the repeatable procedure** — start here to build or modify a panel |
+| `gdl/nrbf.py`, `gdl/project.py` | pure-Python reader for the authoring model, no GUI Designer needed |
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
+| `gdl/edit.py` | change vocabulary for an existing panel: rename, retarget, renumber, restyle |
 | `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
-| `powershell/Apply-GdlPlan.ps1` | applies a build plan to a real project — **unverified** |
+| `powershell/GdlProject.ps1` | authoring bridge: load, clone, edit, save a real project graph |
+| `powershell/Apply-GdlPlan.ps1` | applies a build plan to a real project. `-WhatIf` dry-runs it |
+| `powershell/Apply-GdlEdits.ps1` | applies an edit plan to a real project |
+| `viewer/` | builds a single-file HTML browser for every page and popup |
+| `tests/score.py` | scores the render against ground truth and fails on any regression |
+| `tests/compare_snapshots.py` | the same comparison, printed per page |
+| `tests/verify_built.py` | diffs a built `layout.json` against the plan that produced it |
+| `examples/` | worked spec, edit set and authoring script, all of which run |
+| `SKILL.md` | the repeatable procedure. Start here to build or modify a panel |
+| `docs/gdl-format.md` | the format writeup. Read this first |
+| `docs/from-scratch.md` | generating a panel from a spec, and what needs Windows |
+| `docs/editing.md` | changing a panel that already exists |
+| `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
+| `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
 | `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |
 | `research/` | measured but unshipped render improvements, with their numbers |
 
 ## Quick start
 
-Run these from the repo root — the package is not pip-installable, so
+Run these from the repo root. The package is not pip-installable, so
 `python -m gdl.*` needs the repo as the working directory.
 
 Only the rendering side needs a dependency: `pip install -r requirements.txt`
-(Pillow). Reading and authoring are stdlib-only.
+(Pillow). Reading, editing and plan generation are stdlib-only, and none of
+them need Windows.
 
 Inspect a project:
 
@@ -66,9 +74,45 @@ Score the compositor against ground truth (needs Pillow):
 python tests/compare_snapshots.py "fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl" fixtures/snapshots/Individual
 ```
 
-Edit a project graph — **32-bit Windows PowerShell 5.1 only**
-(`C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe`; .NET Framework
-still has `BinaryFormatter`, and Extron's assemblies are x86):
+`tests/score.py record` and `tests/score.py diff` do the same comparison and
+exit non-zero on a regression, which is what a render change should be checked
+against.
+
+## Changing a panel that already exists
+
+Write the change as JSON, resolve it against the real project, then apply it.
+Four operations: `rename` captions, `retarget` to another panel model with
+optional rescaling, `renumber` addressable IDs, and `restyle` a colour remap.
+Selectors are ANDed and match exactly or by regex.
+
+```bash
+python -m gdl.edit check examples/edits.json "fixtures/gdl/<file>.gdl"
+python -m gdl.edit plan  examples/edits.json "fixtures/gdl/<file>.gdl" out/edits-plan.json
+```
+
+`check` resolves every selector against the real file, so a selector that
+matches nothing is an error here rather than a silent no-op on Windows.
+
+## Generating a panel from a spec
+
+```bash
+python -m gdl.spec check   examples/panel.json          # ids, off-canvas, sizes, resources
+python -m gdl.spec render  examples/panel.json out/preview.png
+python -m gdl.spec donors  examples/panel.json "fixtures/gdl/<donor>.gdl"
+python -m gdl.spec plan    examples/panel.json out/plan.json
+```
+
+Look at the preview before paying for a Windows round trip. The compositor is
+scored against GUI Designer's own output, so it is a real preview. `donors`
+catches the two failures that otherwise cost a trip to the VM: a control type
+the donor cannot supply, and a page or popup name the donor already uses.
+
+## Applying a plan, which needs Windows
+
+Editing the project graph needs 32-bit Windows PowerShell 5.1
+(`C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe`), because .NET
+Framework still has `BinaryFormatter` and Extron's assemblies are x86. A 64-bit
+host loads most of the assemblies and then fails on `GUI Designer.exe`.
 
 ```powershell
 . .\powershell\GdlProject.ps1
@@ -92,44 +136,68 @@ then repack and open in GUI Designer:
 python -m gdl.container pack "fixtures/gdl/<template>.gdl" out/new_ProjectGCP "My Project.gdl"
 ```
 
+A clean build is not proof the result is right, because Build silently
+relocates controls that do not fit their page and bakes captions into artwork.
+`python tests/verify_built.py out/plan.json <built.gdl>` diffs the built
+`layout.json` against the plan and exits non-zero on any control that moved or
+lost its caption.
+
 ## The three things that will bite you
 
-1. **Clone, never construct.** Constructors and property setters both need
-   runtime services that are null outside the app — and a failed setter writes
-   the backing field before it throws, so it looks like it worked.
-2. **Popup bindings live in four places** and every mismatch fails *silently*:
-   the file opens and builds, the binding just reads "Unassigned".
+1. Clone, never construct. Constructors and property setters both need runtime
+   services that are null outside the app, and a failed setter writes the
+   backing field before it throws, so it looks like it worked.
+2. Popup bindings live in four places, and every mismatch fails silently: the
+   file opens and builds, the binding just reads "Unassigned".
    `Test-GdlPopupBinding` checks all four.
-3. **Build owns the artwork.** Controls are authored with `TLPImageID = -1`;
-   GUI Designer rasterises, deduplicates and assigns on build. Never hand-author
-   PNGs. What you *do* author is `borderFillColor` plus a named border resource
-   (`"Afterburn - 10 Radius 2 Thick"`) — and neither survives into
+3. Build owns the artwork. Controls are authored with `TLPImageID = -1`, and
+   GUI Designer rasterises, deduplicates and assigns on build, so never
+   hand-author PNGs. What you author instead is `borderFillColor` plus a named
+   border resource (`"Afterburn - 10 Radius 2 Thick"`). Neither survives into
    `layout.json`, so read them from `ProjectGCP` via `gdl/project.py`.
 
 `docs/gdl-format.md` has the full detail.
 
 ## Status
 
-Working and verified: reading, rendering, structural authoring, round-tripping,
-building.
+Reading, rendering, editing, generating, round-tripping and building all work
+and are verified against 1.27.0.9.
+
+A retarget of the whole Liberty Bank project from a TLP Pro 1035T to a TLP Pro
+1535M came back 654 of 654 controls correct in the built file. A generated
+panel went from `examples/panel.json` through the layout pass, ID allocation,
+`Apply-GdlPlan.ps1` and `gdl.container pack` into GUI Designer, which built it
+with 0 errors and 0 warnings. `docs/generated-built.png` is that page rendered
+from its own built payload rather than from a preview.
 
 Known gaps:
 
-- `referenceCountField` on a popup group — semantics unknown, a plausible value
-  causes no visible problem.
-- The Pillow compositor sits at a **2.19% mean / 1.65% median** pixel
-  difference across 27 pages, worst page 7.68%. What remains is a
-  size-dependent vertical text residual; it can be fitted away but the fit is
-  degenerate, so the cause is still wanted. See `docs/render-fidelity.md`.
-- Generating a panel from a spec **works end to end**: `examples/panel.json`
-  was laid out, ID-allocated, applied to a real project and built by GUI
-  Designer 1.27.0.9 with 0 errors — see `docs/generated-built.png`, rendered
-  from its own built payload. Open gap: colour fidelity (geometry, captions,
-  ids and structure are correct). See `docs/from-scratch.md`.
+- Colour fidelity on a generated panel. Geometry, captions, IDs and structure
+  are correct. See `docs/from-scratch.md`.
+- The Pillow compositor sits at a 2.19% mean and 1.65% median pixel difference
+  across 27 pages, worst page 7.68%. What remains is a size-dependent vertical
+  text residual. It can be fitted away, but the fit is degenerate, so the cause
+  is still wanted. See `docs/render-fidelity.md`.
+- Every text finding is validated against one typeface, because the scored
+  fixture only ever draws Forma DJR Display.
+- `referenceCountField` on a popup group. The semantics are unknown, and a
+  plausible value causes no visible problem.
+
+## Fonts
+
+The renderer resolves faces from `gdl/fonts/` before falling back to the system
+font path, so a project renders the same on a machine with nothing installed.
+Open Sans is tracked because it is Apache 2.0 and says so in its own name
+table. The other five faces are recovered from the fixtures with the command in
+Quick start above, and `gdl/fonts/README.md` records where each one stands.
+
+Missing faces fail loudly: `face()` raises `LookupError` rather than degrading
+to a wrong score. The exception is a host with Arial installed, where a missing
+embedded face silently resolves to Arial instead.
 
 ## Provenance
 
-Reverse-engineered from project files, GUI Designer's own snapshot exports, and
+Reverse-engineered from project files, GUI Designer's own snapshot exports and
 the installed assemblies. No Extron documentation was involved, so 1.27.0.9 is
 the tested boundary. The `fixtures/` files are real Liberty Bank project files
 kept as test data.
