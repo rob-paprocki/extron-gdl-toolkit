@@ -10,6 +10,9 @@ Designer's own snapshot exports, and the installed assemblies — **no Extron
 documentation exists for any of this**. Version 1.27.0.9 is the tested
 boundary.
 
+`SKILL.md` is the repeatable procedure for building or modifying a panel — the
+workflows, the verification gates, and the traps. Start there for panel work.
+
 Read `docs/gdl-format.md` before changing anything that touches the format. It
 is the accumulated findings, and most of them were expensive to discover.
 `docs/design-rules.md` is Extron's own design standards reduced to encodable

@@ -116,7 +116,20 @@ in Extron's own Quick Reference table at all.
 - Don't use acronyms the audience may not share (VTC, ALC). HDMI/DVD/DVR/AUX are
   fine.
 
-## 4. The Afterburn colour system — fully encodable
+## 4. Themes — four of them, one documented
+
+Extron ships **Afterburn, Mach, Shockwave and Turbulence**, each with a resource
+kit, but publishes a colour guide only for Afterburn. `gdl/themes.py` handles both
+cases: `AFTERBURN` is the transcribed token set, and `extract(path)` reads the
+palette, borders and fonts a `.glt` template or `.gdl` project actually uses.
+
+`extract()` is validated against the one theme that can be: run on
+`Afterburn 1020 Series.glt` it returns `#BABCCE`, `#37394E`, `#242634` and
+`#6A6E89` — every one in the published guide, and nothing spurious — without
+reading the guide. So it can be trusted on the three undocumented themes, and on
+a client's own house style read off a panel they already have.
+
+### The Afterburn colour system — fully encodable
 
 Straight from the theme guide. This is a complete token set.
 
@@ -167,19 +180,37 @@ The theme guide defines these, and they map cleanly onto generator output:
 
 States: Not Selected, Selected, Pressed, Multi-state Status.
 
-## 6. Icons come from a font, not from images
+## 6. Icons: images **and** fonts, both supported
 
-The single most useful thing in the theme guide for a generator: *"Use the
-Afterburn font to quickly add single color icons to buttons."*
+Two routes. Images are the normal one — real panels use them heavily (the Liberty
+Bank fixture carries 38 `PBImageResource` and 1,855 `PBResourceReferenceImage`) —
+and the font is an additional convenience for single-colour icons. An earlier
+draft of this file said icons "come from a font, not images", which was an
+overcorrection.
 
-Verified against the fonts already extracted into `gdl/fonts/`:
+**Images.** Every control has *two* image slots — `buttonImageField` (the icon)
+and `backgroundImageField` — each with its own alignment, layout, left/top offset
+and transparency key colour. A `PBImageResource` holds the bitmap
+(`dataField` is a `System.Drawing.Bitmap`); a `PBResourceReferenceImage` names it.
+**Verified**: cloning an image resource, replacing its bitmap with a PNG from
+Extron's kit, appending it and binding it to a button built with 0 errors, and the
+icon was rasterised into the button's artwork. Set `buttonImageLayout`/alignment
+or a 440×440 kit icon will swamp a small button.
 
-- `afterburn_modified.ttf` — **136 icon glyphs** at U+E900–U+E98C
-- `extron_guic_video_conference_1.ttf` — **203 glyphs** at U+F008–U+F0FF
+Extron's kits ship: Afterburn 3,376 files, Turbulence 1,408, Shockwave 1,124,
+Mach 596.
 
-So ~339 icons are placeable as **text**: any colour, any size, no image resource,
-and none of the resource-append machinery. The Resource Kit's 1,316 icon PNGs and
-1,985 button images are only needed for *multi-colour* icons.
+**Icon fonts.** For single-colour icons the theme guide says to use the theme
+font instead, which needs no resource at all:
+
+| Font | Glyphs | Range |
+|---|---|---|
+| `Extron - Afterburn 1a` | 136 | U+E900–U+E98C |
+| `Extron-Lift` (Mach) | 121 | U+E900–U+E978 |
+| `Extron GUIC Video Conference 1` | 203 | U+F008–U+F0FF |
+
+Shockwave's font has only 18 glyphs and is not an icon set; Turbulence ships no
+font. Those two are images-only.
 
 ## 7. Extron ships the donor library
 
