@@ -56,11 +56,22 @@ There is ground truth, so use it rather than eyeballing:
 python tests/compare_snapshots.py fixtures/gdl/<file>.gdl fixtures/snapshots/Individual
 ```
 
-Current baseline: **mean 4.04%, median 2.07%** differing pixels across 27
-pages (2.65% mean excluding the disabled Offline page). A render change must
-report its before and after across **all** pages — several plausible-looking
-fixes improve one page and regress twenty. `docs/render-fidelity.md` records
-which ones, so you don't rediscover them.
+Current baseline: **mean 2.60%, median 2.02%, worst 8.99%** differing pixels
+across 27 pages.
+
+A render change must report its before and after across **all** pages —
+several plausible-looking fixes improve one page and regress twenty.
+`docs/render-fidelity.md` records which ones, so you don't rediscover them.
+Don't do that comparison by eye; `tests/score.py` does it properly and exits
+non-zero on any regression:
+
+```bash
+python tests/score.py record fixtures/gdl/<file>.gdl fixtures/snapshots/Individual -o /tmp/after.json
+python tests/score.py diff tests/baseline.json /tmp/after.json
+```
+
+`tests/baseline.json` is the currently shipped state; refresh it when a render
+change lands.
 
 For authoring changes, the end-to-end check is `examples/add-page-and-popup.ps1`,
 which self-asserts. A file that merely serialises proves nothing; the real test
@@ -119,9 +130,9 @@ handle and means nothing to a programmer.
 
 - `referenceCountField` on a popup group: semantics unknown. A plausible value
   causes no visible problem.
-- Two measured but unimplemented render fixes: synthesising `borderFillColor`
-  fills, and the bilevel-vs-antialiased text decision. See
-  `docs/render-fidelity.md`.
+- One measured but unimplemented render fix: the text work — the
+  bilevel-vs-antialiased decision and fractional glyph advances. Everything
+  left in the corpus is text. See `docs/render-fidelity.md`.
 - Generating a panel from a spec, rather than by cloning an existing one, is
   not built yet. The parts exist; the missing pieces are ID allocation, group
   registration and a layout pass.

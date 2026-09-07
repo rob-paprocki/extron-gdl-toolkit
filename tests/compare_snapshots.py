@@ -21,7 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PIL import Image  # noqa: E402
 
-from gdl.compose import diff_stats, group_members, load, render_page  # noqa: E402
+from gdl.compose import (diff_stats, fill_index, group_members, load,  # noqa: E402
+                         render_page)
 
 ID_RE = re.compile(r'_Id(\d+)\.png$')
 
@@ -35,6 +36,7 @@ def main():
 
     layout, assets = load(args.gdl)
     groups = group_members(layout)
+    fills = fill_index(args.gdl)
     pages = {p['ID']: p for p in layout['Pages'] + layout['PopupPages']}
     if args.save:
         os.makedirs(args.save, exist_ok=True)
@@ -50,7 +52,7 @@ def main():
             missing.append(fn)
             continue
         ref = Image.open(os.path.join(args.snapshots, fn)).convert('RGB')
-        mine = render_page(page, assets, ref.size, groups=groups)
+        mine = render_page(page, assets, ref.size, groups=groups, fills=fills)
         if args.save:
             mine.convert('RGB').save(os.path.join(args.save, f'{pid}.png'))
         rows.append((diff_stats(mine, ref)['pct_bad'], fn))

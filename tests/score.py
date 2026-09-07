@@ -13,6 +13,8 @@ So: record a run to JSON, make the change, record again, and diff.
     python tests/score.py record <project.gdl> <snapshots/Individual> -o after.json
     python tests/score.py diff before.json after.json
 
+tests/baseline.json is the currently shipped state, refreshed whenever a
+render change lands, so any working change can be diffed against it directly.
 The diff exits non-zero if any page regressed by more than --tol (default
 0.01%), so it can gate a commit. Scores come from the same `diff_stats` the
 harness uses, so the numbers are directly comparable to its output.
@@ -27,7 +29,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PIL import Image  # noqa: E402
 
-from gdl.compose import diff_stats, group_members, load, render_page  # noqa: E402
+from gdl.compose import (diff_stats, fill_index, group_members, load,  # noqa: E402
+                         render_page)
 
 ID_RE = re.compile(r'_Id(\d+)\.png$')
 
@@ -36,6 +39,7 @@ def record(gdl_path, snapshot_dir):
     """Score every snapshot that maps to a page. Returns {filename: pct_bad}."""
     layout, assets = load(gdl_path)
     groups = group_members(layout)
+    fills = fill_index(gdl_path)
     pages = {p['ID']: p for p in layout['Pages'] + layout['PopupPages']}
 
     scores, missing = {}, []
@@ -48,7 +52,7 @@ def record(gdl_path, snapshot_dir):
             missing.append(fn)
             continue
         ref = Image.open(os.path.join(snapshot_dir, fn)).convert('RGB')
-        mine = render_page(page, assets, ref.size, groups=groups)
+        mine = render_page(page, assets, ref.size, groups=groups, fills=fills)
         scores[fn] = diff_stats(mine, ref)['pct_bad']
 
     # Same guard as compare_snapshots: matching is by numeric id alone, so the

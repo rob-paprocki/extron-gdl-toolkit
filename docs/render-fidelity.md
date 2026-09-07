@@ -37,8 +37,34 @@ properties a generator sets. Corner radius and thickness come from the resource
 name (`"Afterburn - 10 Radius 2 Thick"`), so a generator picks named resources
 rather than inventing geometry. Seven are available in this project.
 
-Practical fix for a viewer: honour `EnableOfflinePage`, which is `false` in all
-six files. The offline page is a system overlay, not a navigable popup.
+**Implemented** in `gdl/compose.py` as `fill_index()` + `draw_fill()`. The join
+between the two models is on `(type, rect)`, because the authoring model is read
+as a flat object graph with no page association — there is no id to join on. A
+duplicate key is dropped rather than guessed at. Measured: Offline Page
+40.22% → 1.28%, all 26 other pages ±0.00%.
+
+The index holds exactly **one** entry in each of the six fixtures — the same
+`PBShape "Offline Window"` — so this rule is narrow in this corpus even though
+it is worth 1.44 points of the corpus mean.
+
+### The scrim half of the rule is not verifiable here
+
+`research/final_patch.py` also implements a rule the earlier writeup recorded:
+a modal page with `TLPImageID == -1` paints its `BackgroundFillColor` at 65%
+opacity, matching the alpha 166 baked into scrim asset 36. That rule was **not**
+shipped, because nothing in the corpus can test it:
+
+- All **seven** modal popups carry `BackgroundFillColor` = opaque **black**.
+- Six of them have real artwork (asset 36 — which is where the alpha was
+  measured), so the scrim is already in their PNG.
+- The Offline page is the only modal without artwork, and there black at 65%
+  over an already-black canvas is indistinguishable from black. Measured
+  directly: ground truth outside the window rect is `(0,0,0)`, and so is ours,
+  before and after.
+
+So `SCRIM_ALPHA = 165` is a plausible generalisation with zero observable
+consequence in this corpus. It is left in `research/` rather than shipped into
+the maintained compositor, where it would read as a measured rule.
 
 ## 2. Compositing uses a binary alpha test
 
@@ -95,26 +121,33 @@ rasterisation.
 | | mean | median | worst |
 |---|---|---|---|
 | baseline | 4.57% | 2.28% | 40.22% |
-| binary alpha + group popups (implemented) | 4.04% | 2.07% | 40.22% |
-| navigable pages only (offline excluded) | **2.65%** | **2.07%** | 8.99% |
+| binary alpha + group popups | 4.04% | 2.07% | 40.22% |
+| **+ borderFillColor fill (current)** | **2.60%** | **2.02%** | **8.99%** |
 
-Implemented in `gdl/compose.py`: findings 2 and 3.
+Implemented in `gdl/compose.py`: findings 1 (fill only), 2 and 3.
+
+With the Offline page no longer an outlier, the mean is now a fair summary of
+the corpus rather than one page's error — every remaining page is between 0.63%
+and 8.99%, and what is left is almost entirely text.
 
 Not implemented, but **written and measured** — the code is in `research/`,
 with `research/README.md` giving the numbers and the fitted constants:
 
 | Candidate | Measured | Where |
 |---|---|---|
-| `borderFillColor` fill + modal scrim (finding 1) | Offline 40.22% → 1.28% | `research/final_patch.py` |
 | bilevel/antialiased text decision (finding 4) | mean 4.57% → 3.50%, median 2.28% → 1.23% | `research/compose2.py`, `q_final.py` |
 | fractional glyph advances + per-control layering | worst two pages 9.39% → 3.67%, 8.02% → 3.38% | `research/v3.py`, `frac.py` |
+| modal scrim at 65% opacity | no observable effect in this corpus — see above | `research/final_patch.py` |
 
-The third is the strongest result the project reached and is the clearest
+The second is the strongest result the project reached and is the clearest
 direction for further work; nothing in `gdl/` implements it. The constants
-behind all three cost hours of sweeps, so re-derive nothing before reading
+behind both cost hours of sweeps, so re-derive nothing before reading
 `research/README.md`.
 
-Finding 1 is sidestepped in the shipped code by honouring `EnableOfflinePage`.
+Note that those two candidates' "before" numbers are against the 4.57%
+baseline, which predates the binary-alpha and group-popup work as well as the
+fill. Their *deltas* remain informative; their absolute afters do not stack
+onto 2.60%.
 
 A caution carried over from the measurements: do **not** "fix" the line-height
 rule globally. Keeping `px = PointSize * 1.375` with PIL's `ascent + descent`

@@ -149,6 +149,49 @@ def paste(canvas, assets, img_id, x, y, clip=None, binary=True):
         canvas.alpha_composite(im, (int(x), int(y)))
 
 
+def fill_index(path):
+    """(type, rect) -> the fill Build would have rasterised, for controls it did not.
+
+    A control authored with TLPImageID == -1 has no artwork in the payload, and
+    its real interior colour - borderFillColor plus a *named* border resource
+    giving the corner radius - exists only in ProjectGCP. layout.json exports
+    neither, so the compositor cannot draw the control at all without going
+    back to the authoring model. See docs/render-fidelity.md finding 1.
+
+    Keying on (type, rect) rather than an id is deliberate: the authoring model
+    is read as a flat object graph with no page association, so there is no id
+    to join on. A duplicate key is dropped rather than guessed at - painting the
+    wrong fill is worse than painting none.
+    """
+    from .project import Project
+
+    idx, seen = {}, set()
+    for c in Project.open(path).controls():
+        if c['tlp_image'] != -1 or not c['fill']:
+            continue
+        key = (c['type'], tuple(c['rect']))
+        if key in seen:
+            idx.pop(key, None)
+            continue
+        seen.add(key)
+        idx[key] = {'fill': c['fill'], 'border': c['border']}
+    return idx
+
+
+def draw_fill(canvas, box, spec):
+    """Paint the rounded rectangle Build would have baked into a PNG."""
+    fill = rgba(spec['fill'])
+    if not fill or not fill[3]:
+        return
+    radius = (spec.get('border') or {}).get('radius', 0)
+    d = ImageDraw.Draw(canvas)
+    if radius:
+        d.rounded_rectangle([box[0], box[1], box[0] + box[2] - 1, box[1] + box[3] - 1],
+                            radius=radius, fill=fill)
+    else:
+        d.rectangle([box[0], box[1], box[0] + box[2] - 1, box[1] + box[3] - 1], fill=fill)
+
+
 def group_members(layout):
     """GroupID -> popup page IDs, in PopupPages array order."""
     out = {}
@@ -159,7 +202,7 @@ def group_members(layout):
     return out
 
 
-def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None):
+def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None, fills=None):
     ref = popup_ref(c)
     if ref:
         # A reference bound to one popup paints nothing. A reference bound to a
@@ -169,7 +212,7 @@ def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None):
         gid = ref.get('group')
         if gid and groups and groups.get(gid):
             render_page(groups[gid][0], assets, None, ox + c['Left'], oy + c['Top'],
-                        canvas=canvas, draw_txt=draw_txt, groups=groups)
+                        canvas=canvas, draw_txt=draw_txt, groups=groups, fills=fills)
         return
     kind = c['__type'].split(':')[0]
     states = c.get('States') or []
@@ -182,6 +225,12 @@ def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None):
     elif st is not None:
         base = st.get('TLPImageID', base)
     x, y, w, h = c['Left'] + ox, c['Top'] + oy, c['Width'], c['Height']
+    if base in (None, -1) or base not in assets:
+        # Build never rasterised this one, so there is no PNG to blit. Its fill
+        # lives in the authoring model; synthesise what Build would have baked.
+        spec = (fills or {}).get((kind, (c['Left'], c['Top'], w, h)))
+        if spec:
+            draw_fill(canvas, (x, y, w, h), spec)
     paste(canvas, assets, base, x, y)
 
     # value fill for sliders / levels, parked at half travel
@@ -220,7 +269,8 @@ def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None):
               fnt, col, src.get('TextAlignment', c.get('TextAlignment', 3)))
 
 
-def render_page(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True, groups=None):
+def render_page(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True, groups=None,
+                fills=None):
     if canvas is None:
         canvas = Image.new('RGBA', size, (0, 0, 0, 255))
         fill = rgba(pg.get('BackgroundFillColor'))
@@ -228,7 +278,7 @@ def render_page(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True, groups
             canvas.paste(fill, [0, 0, *size])
     paste(canvas, assets, pg.get('TLPImageID'), ox, oy)
     for c in (pg.get('Controls') or []):
-        render_control(canvas, c, assets, ox, oy, draw_txt, groups)
+        render_control(canvas, c, assets, ox, oy, draw_txt, groups, fills)
     return canvas
 
 
@@ -246,7 +296,7 @@ def popup_groups(j):
     return g
 
 
-def render_snapshot(j, pid, assets, size, shown=None, draw_txt=True):
+def render_snapshot(j, pid, assets, size, shown=None, draw_txt=True, fills=None):
     """Render a page the way GUI Designer's own snapshot does.
 
     A PBPopupPageReference bound to a single popup (IsPopupPageIdValid)
@@ -257,7 +307,7 @@ def render_snapshot(j, pid, assets, size, shown=None, draw_txt=True):
     pages = {p['ID']: p for p in j['Pages'] + j['PopupPages']}
     groups = popup_groups(j)
     pg = pages[pid]
-    canvas = render_page(pg, assets, size, draw_txt=draw_txt)
+    canvas = render_page(pg, assets, size, draw_txt=draw_txt, fills=fills)
     for c in (pg.get('Controls') or []):
         pp = c.get('PopupPageID')
         if not isinstance(pp, dict) or not pp.get('IsPopupGroupIdValid'):
@@ -269,7 +319,7 @@ def render_snapshot(j, pid, assets, size, shown=None, draw_txt=True):
         if mid is None:
             continue
         render_page(pages[mid], assets, size, ox=c['Left'], oy=c['Top'],
-                    canvas=canvas, draw_txt=draw_txt)
+                    canvas=canvas, draw_txt=draw_txt, fills=fills)
     return canvas
 
 
