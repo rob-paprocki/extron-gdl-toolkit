@@ -86,7 +86,18 @@ change lands.
 
 For authoring changes, the end-to-end check is `examples/add-page-and-popup.ps1`,
 which self-asserts. A file that merely serialises proves nothing; the real test
-is that GUI Designer opens *and builds* it, and that needs a human.
+is that GUI Designer opens *and builds* it, and that needs a Windows box.
+
+A clean build is still not proof the result is *right* — Build silently
+relocates controls that don't fit their page, and bakes captions into artwork.
+Close the loop:
+
+```bash
+python tests/verify_built.py out/plan.json out/generated.gdl
+```
+
+It diffs the built `layout.json` against the plan that produced it and exits
+non-zero on any authored control that moved or lost its caption.
 
 ## Driving the Windows VM from macOS
 

@@ -1,7 +1,9 @@
 {
   "name": "Generated Boardroom",
-  "size": [1280, 800],
-
+  "size": [
+    1280,
+    800
+  ],
   "theme": {
     "background": "#12131C",
     "surface": "#242634",
@@ -12,74 +14,399 @@
     "font": "Forma DJR Display",
     "size": 16
   },
-
   "pages": [
     {
       "name": "Home",
       "number": 1000,
       "controls": [
-        { "kind": "panel", "name": "Header", "rect": [0, 0, 1280, 96],
-          "fill": "surface", "border": "rect" },
-        { "kind": "label", "name": "Room", "rect": [32, 0, 600, 96],
-          "text": "Boardroom", "align": "left", "size": 34 },
-        { "kind": "label", "name": "Subtitle", "rect": [648, 0, 600, 96],
-          "text": "Not in a meeting", "align": "right", "size": 18, "color": "muted" },
-
-        { "kind": "panel", "name": "Nav", "rect": [0, 96, 232, 656],
-          "fill": "surface", "border": "rect" },
-        { "stack": { "rect": [16, 120, 200, 400], "count": 5, "gap": 12,
-                     "kind": "button", "fill": "raised", "border": "afterburn",
-                     "stroke": "muted",
-                     "items": [
-                       { "text": "Presentation" },
-                       { "text": "Video Call" },
-                       { "text": "Cameras" },
-                       { "text": "Audio" },
-                       { "text": "Lighting" }
-                     ] } },
-
-        { "kind": "label", "name": "SourcesLabel", "rect": [264, 116, 400, 32],
-          "text": "SOURCES", "align": "left", "size": 14, "color": "muted" },
-        { "grid": { "rect": [264, 152, 984, 264], "cols": 3, "rows": 2, "gap": 20,
-                    "kind": "button", "fill": "raised", "border": "afterburn",
-                    "items": [
-                      { "text": "Laptop HDMI" },
-                      { "text": "Wireless" },
-                      { "text": "Room PC" },
-                      { "text": "Cable TV" },
-                      { "text": "Camera" },
-                      { "text": "Doc Cam" }
-                    ] } },
-
-        { "kind": "label", "name": "DisplaysLabel", "rect": [264, 440, 400, 32],
-          "text": "DISPLAYS", "align": "left", "size": 14, "color": "muted" },
-        { "grid": { "rect": [264, 476, 984, 120], "cols": 2, "gap": 20,
-                    "kind": "button", "fill": "raised", "border": "afterburn",
-                    "items": [
-                      { "text": "Left Display" },
-                      { "text": "Right Display" }
-                    ] } },
-
-        { "kind": "panel", "name": "VolumeWell", "rect": [264, 620, 984, 108],
-          "fill": "surface", "border": "afterburn-flat" },
-        { "kind": "label", "name": "VolumeLabel", "rect": [288, 620, 200, 108],
-          "text": "Volume", "align": "left", "size": 18, "color": "muted" },
-        { "grid": { "rect": [520, 644, 704, 60], "cols": 4, "gap": 16,
-                    "kind": "button", "fill": "raised", "border": "capsule",
-                    "items": [
-                      { "text": "Mute" },
-                      { "text": "-" },
-                      { "text": "+" },
-                      { "text": "Presets", "fill": "accent" }
-                    ] } },
-
-        { "kind": "panel", "name": "StatusStrip", "rect": [0, 752, 1280, 48],
-          "fill": "surface", "border": "rect" },
-        { "kind": "label", "name": "Status", "rect": [32, 752, 800, 48],
-          "text": "System ready", "align": "left", "size": 14, "color": "muted" },
-        { "kind": "label", "name": "Help", "rect": [448, 752, 800, 48],
-          "text": "Touch a source to begin", "align": "right", "size": 14,
-          "color": "muted" }
+        {
+          "kind": "panel",
+          "name": "Header",
+          "rect": [
+            0,
+            0,
+            1280,
+            96
+          ],
+          "fill": "surface",
+          "border": "rect"
+        },
+        {
+          "kind": "label",
+          "name": "Room",
+          "rect": [
+            32,
+            0,
+            600,
+            96
+          ],
+          "text": "Boardroom",
+          "align": "left",
+          "size": 34
+        },
+        {
+          "kind": "label",
+          "name": "Subtitle",
+          "rect": [
+            648,
+            0,
+            600,
+            96
+          ],
+          "text": "Not in a meeting",
+          "align": "right",
+          "size": 18,
+          "color": "muted"
+        },
+        {
+          "kind": "panel",
+          "name": "Nav",
+          "rect": [
+            0,
+            96,
+            232,
+            656
+          ],
+          "fill": "surface",
+          "border": "rect"
+        },
+        {
+          "stack": {
+            "rect": [
+              16,
+              120,
+              200,
+              400
+            ],
+            "count": 5,
+            "gap": 12,
+            "kind": "button",
+            "fill": "raised",
+            "border": "afterburn",
+            "stroke": "muted",
+            "items": [
+              {
+                "text": "Presentation"
+              },
+              {
+                "text": "Video Call"
+              },
+              {
+                "text": "Cameras"
+              },
+              {
+                "text": "Audio"
+              },
+              {
+                "text": "Lighting"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "label",
+          "name": "SourcesLabel",
+          "rect": [
+            264,
+            116,
+            400,
+            32
+          ],
+          "text": "SOURCES",
+          "align": "left",
+          "size": 14,
+          "color": "muted"
+        },
+        {
+          "grid": {
+            "rect": [
+              264,
+              152,
+              984,
+              264
+            ],
+            "cols": 3,
+            "rows": 2,
+            "gap": 20,
+            "kind": "button",
+            "fill": "raised",
+            "border": "afterburn",
+            "items": [
+              {
+                "text": "Laptop HDMI"
+              },
+              {
+                "text": "Wireless"
+              },
+              {
+                "text": "Room PC"
+              },
+              {
+                "text": "Cable TV"
+              },
+              {
+                "text": "Camera"
+              },
+              {
+                "text": "Doc Cam"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "label",
+          "name": "DisplaysLabel",
+          "rect": [
+            264,
+            440,
+            400,
+            32
+          ],
+          "text": "DISPLAYS",
+          "align": "left",
+          "size": 14,
+          "color": "muted"
+        },
+        {
+          "grid": {
+            "rect": [
+              264,
+              476,
+              984,
+              120
+            ],
+            "cols": 2,
+            "gap": 20,
+            "kind": "button",
+            "fill": "raised",
+            "border": "afterburn",
+            "items": [
+              {
+                "text": "Left Display"
+              },
+              {
+                "text": "Right Display"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "panel",
+          "name": "VolumeWell",
+          "rect": [
+            264,
+            620,
+            984,
+            108
+          ],
+          "fill": "surface",
+          "border": "afterburn-flat"
+        },
+        {
+          "kind": "label",
+          "name": "VolumeLabel",
+          "rect": [
+            288,
+            620,
+            200,
+            108
+          ],
+          "text": "Volume",
+          "align": "left",
+          "size": 18,
+          "color": "muted"
+        },
+        {
+          "grid": {
+            "rect": [
+              520,
+              644,
+              704,
+              60
+            ],
+            "cols": 4,
+            "gap": 16,
+            "kind": "button",
+            "fill": "raised",
+            "border": "capsule",
+            "items": [
+              {
+                "text": "Mute"
+              },
+              {
+                "text": "-"
+              },
+              {
+                "text": "+"
+              },
+              {
+                "text": "Presets",
+                "fill": "accent"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "panel",
+          "name": "StatusStrip",
+          "rect": [
+            0,
+            752,
+            1280,
+            48
+          ],
+          "fill": "surface",
+          "border": "rect"
+        },
+        {
+          "kind": "label",
+          "name": "Status",
+          "rect": [
+            32,
+            752,
+            800,
+            48
+          ],
+          "text": "System ready",
+          "align": "left",
+          "size": 14,
+          "color": "muted"
+        },
+        {
+          "kind": "label",
+          "name": "Help",
+          "rect": [
+            448,
+            752,
+            800,
+            48
+          ],
+          "text": "Touch a source to begin",
+          "align": "right",
+          "size": 14,
+          "color": "muted"
+        },
+        {
+          "kind": "popup_ref",
+          "name": "VolumeRef",
+          "rect": [
+            264,
+            620,
+            984,
+            108
+          ],
+          "group": "Volume"
+        }
+      ]
+    }
+  ],
+  "popups": [
+    {
+      "name": "2310 - Program Volume",
+      "number": 2310,
+      "group": "Volume",
+      "size": [
+        984,
+        108
+      ],
+      "background": "surface",
+      "controls": [
+        {
+          "kind": "label",
+          "name": "ConfLbl",
+          "rect": [
+            24,
+            0,
+            200,
+            108
+          ],
+          "text": "Conference",
+          "align": "left",
+          "size": 18,
+          "color": "muted"
+        },
+        {
+          "grid": {
+            "rect": [
+              256,
+              24,
+              704,
+              60
+            ],
+            "cols": 4,
+            "gap": 16,
+            "kind": "button",
+            "fill": "raised",
+            "border": "capsule",
+            "items": [
+              {
+                "text": "Mute"
+              },
+              {
+                "text": "-"
+              },
+              {
+                "text": "+"
+              },
+              {
+                "text": "Presets",
+                "fill": "accent"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2320 - Speech Volume",
+      "number": 2320,
+      "group": "Volume",
+      "size": [
+        984,
+        108
+      ],
+      "background": "surface",
+      "controls": [
+        {
+          "kind": "label",
+          "name": "CatvLbl",
+          "rect": [
+            24,
+            0,
+            200,
+            108
+          ],
+          "text": "Cable TV",
+          "align": "left",
+          "size": 18,
+          "color": "muted"
+        },
+        {
+          "grid": {
+            "rect": [
+              256,
+              24,
+              704,
+              60
+            ],
+            "cols": 3,
+            "gap": 16,
+            "kind": "button",
+            "fill": "raised",
+            "border": "capsule",
+            "items": [
+              {
+                "text": "Mute"
+              },
+              {
+                "text": "-"
+              },
+              {
+                "text": "+"
+              }
+            ]
+          }
+        }
       ]
     }
   ]

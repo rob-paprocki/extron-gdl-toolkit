@@ -151,7 +151,7 @@ how that was driven, which is fully scriptable.
 | 2 | Append a *new* `PBBorderResource` and bind to it? | **YES** |
 | 3 | Out-of-corpus `PBBorderInfo` values? | **Builds clean** (visual check still open) |
 | 4 | Cross-graph `Copy-GdlObject`? | **YES** |
-| 5 | ID uniqueness enforcement | not yet tested |
+| 5 | ID / name uniqueness enforcement | **NAMES yes, hard error**; ids untested |
 | 6 | `referenceCountField` semantics | not yet tested |
 
 **1 — referencing an unused resource works.** A `PBShape` was repointed from
@@ -176,6 +176,76 @@ independently-deserialised project into another with `Copy-GdlObject`, and the
 result opened, built clean, and rendered correctly (the cloned popup reference
 paints its group member, per render finding 3). A curated component library in a
 separate `.gdl` is therefore viable.
+
+**5 — page and popup names must be unique project-wide.** Found the expensive
+way. The worked example's two popups were named `2210 - Conference Volume` and
+`2220 - CATV Volume` — perfectly sensible names, and unique *within the spec*.
+But a generated panel joins the **donor's** project, and the Liberty Bank donor
+already had both. Build rejected it:
+
+    2210 - Conference Volume   Duplicate page or popup page names are not
+                               allowed within the same project.
+    2220 - CATV Volume         Duplicate page or popup page names are not
+                               allowed within the same project.
+
+Two errors, no payload. Points worth keeping:
+
+* Pages and popups share **one** namespace — a popup may not take a page's name.
+* It is a **build** error, not a load error. GUI Designer opened the file
+  happily and showed both duplicates in the workspace tree, so "it opens" says
+  nothing here.
+* The **name** is the only identity that matters. Page "number" (the `2210 -`
+  prefix) is a naming convention, not a field: `PBPage` has no number, and the
+  fixture's own names are just numerically prefixed strings.
+* Numeric `idField`s were duplicated across projects throughout this work with
+  no complaint, so whatever uniqueness ids need, it is not this one.
+
+`Panel.check_donor()` now compares spec names against the donor's before
+anything leaves the Mac, and `Panel.check()` catches a spec that collides with
+itself. Renaming to `2310 - Program Volume` / `2320 - Speech Volume` cleared it:
+the build emitted `generated9.tgz4` with 207 PNGs (a failed build emits none),
+661 of 698 controls rasterised, and both popups came through with their own
+captions.
+
+**And the file was still wrong** — see the next finding, which is the more
+important one.
+
+**A control that does not fit its page is moved to 0,0. Silently, at build
+time, with the build still reporting success.** The clean build above was
+checked by rendering it, and one button was missing from each popup. Reading the
+built `layout.json` back:
+
+    2310 - Program Volume  (page is 915x800)
+        Mute     256,24  164x60
+        -        436,24  164x60
+        +        616,24  164x60
+        Presets    0,0   164x60     <- planned 796,24
+
+Every relocated control is exactly one whose right edge passed **915** — the
+donor popup's width. The applier sized nothing, so each cloned popup kept the
+donor's dimensions while the spec laid its controls out across 984. Note what
+survived: the width and height are the planned ones, only the position was
+rewritten, so the object is not corrupt and nothing in the file says it was
+touched.
+
+Consequences worth keeping:
+
+* **A popup's size must be authored** (`widthField` / `heightField`; both
+  `PBPage` and `PBPopupPage` carry them). A clone inherits the donor's, and the
+  donor's is arbitrary.
+* **"It built with 0 errors" is not a correctness check.** This is the second
+  trap of this shape after `flattenText`, and both produced a file that opened,
+  built and was wrong.
+* So the loop now ends with `python tests/verify_built.py <plan.json>
+  <built.gdl>`, which reads the plan and the built file and asserts every
+  authored control's rect and caption. It reproduces this defect exactly and
+  reports 0 problems on the fixed build.
+
+**What Build adds by itself.** The generated page came back with 35 controls
+against 29 authored, which looked like clone contamination and is not: Build
+adds one full-canvas `PBPopupPageReference` per **modal** popup to **every**
+page, and the donor has exactly six modal popups. Every donor page carries the
+same six. The verifier ignores unauthored extras for this reason.
 
 ### Two things the run corrected
 

@@ -263,6 +263,57 @@ class TestDonorAvailability(unittest.TestCase):
                          'Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl')
         self.assertEqual(p.check_donor(alt), [])
 
+    def test_a_name_the_donor_already_uses_is_reported(self):
+        """GUI Designer: "Duplicate page or popup page names are not allowed
+        within the same project." It is a build ERROR, and it cost a Windows
+        round trip to find - the generated popups joined the donor's project,
+        where those two names were already taken."""
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFF'},
+                   'pages': [{'name': '1000 - Home', 'number': 1000,
+                              'controls': [{'kind': 'label', 'rect': [0, 0, 8, 8]}]}]})
+        alt = self._path('fixtures', 'gdl',
+                         'Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl')
+        problems = p.check_donor(alt)
+        self.assertTrue(any('1000 - Home' in m and 'unique' in m for m in problems))
+
+    def test_a_popup_name_the_donor_already_uses_is_reported(self):
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFF'},
+                   'pages': [{'name': 'Fresh', 'number': 1000, 'controls': [
+                       {'kind': 'popup_ref', 'rect': [0, 0, 100, 60], 'group': 'G'}]}],
+                   'popups': [{'name': '160 - Confirmation', 'number': 2100,
+                               'group': 'G', 'size': [100, 60], 'controls': []}]})
+        alt = self._path('fixtures', 'gdl',
+                         'Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl')
+        self.assertTrue(any('160 - Confirmation' in m for m in p.check_donor(alt)))
+
+
+class TestNameUniqueness(unittest.TestCase):
+    """Names must be unique project-wide, across pages AND popups together."""
+
+    def _panel(self, page, popup):
+        return Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFF'},
+                      'pages': [{'name': page, 'number': 1000, 'controls': [
+                          {'kind': 'popup_ref', 'rect': [0, 0, 100, 60], 'group': 'G'}]}],
+                      'popups': [{'name': popup, 'number': 2100, 'group': 'G',
+                                  'size': [100, 60], 'controls': []}]})
+
+    def test_distinct_names_are_clean(self):
+        self.assertEqual(self._panel('Home', 'Volume').check(), [])
+
+    def test_a_popup_may_not_reuse_a_page_name(self):
+        problems = self._panel('Volume', 'Volume').check()
+        self.assertTrue(any('unique' in m for m in problems), problems)
+
+    def test_two_popups_may_not_share_a_name(self):
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFF'},
+                   'pages': [{'name': 'Home', 'number': 1000, 'controls': [
+                       {'kind': 'popup_ref', 'rect': [0, 0, 100, 60], 'group': 'G'}]}],
+                   'popups': [{'name': 'Dup', 'number': 2100, 'group': 'G',
+                               'size': [100, 60], 'controls': []},
+                              {'name': 'Dup', 'number': 2200, 'group': 'G',
+                               'size': [100, 60], 'controls': []}]})
+        self.assertTrue(any('unique' in m for m in p.check()))
+
 
 class TestBuildPlan(unittest.TestCase):
     """The plan is what the Windows applier consumes, so it needs its own tests.

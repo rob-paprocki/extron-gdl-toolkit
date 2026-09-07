@@ -37,8 +37,29 @@ jobs:
       - name: the worked example still checks clean
         run: python -m gdl.spec check examples/panel.json
 
+      - name: the worked example is still satisfiable by its donor
+        # Catches both donor failures without a Windows box: a control type the
+        # donor cannot supply (clone-never-construct), and a page or popup name
+        # the donor already uses - which is a hard build error, and cost a round
+        # trip to the VM to discover.
+        run: |
+          python -m gdl.spec donors examples/panel.json \
+            fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl
+
       - name: the worked example still emits a plan
         run: python -m gdl.spec plan examples/panel.json /tmp/plan.json
+
+      - name: the plan still carries a size for every popup
+        # Without it the applier leaves a cloned popup at the donor's size and
+        # Build moves every control that overflows to 0,0, silently.
+        run: |
+          python - <<'PY'
+          import json
+          plan = json.load(open('/tmp/plan.json'))
+          for p in plan['popups']:
+              assert p.get('size'), f"popup {p['name']!r} has no size"
+          print(f"  {len(plan['popups'])} popup(s), all sized")
+          PY
 
       - name: every fixture and template still parses
         run: |

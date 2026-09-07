@@ -157,6 +157,28 @@ A generator should assert all four agree rather than trusting the writes.
 - Cloned controls keep the source's `UserId` and per-page `ID`. Duplicate IDs
   are legal (Extron uses them for feedback mirrors) but allocate fresh ones
   unless a mirror is what you want.
+- **Page and popup names must be unique across the whole project**, in one
+  shared namespace — a popup may not take a page's name. Build fails with
+  *"Duplicate page or popup page names are not allowed within the same
+  project."* It is a **build** error, not a load error: the file opens fine and
+  shows both duplicates in the tree. The name is the only identity that matters
+  here; the `2210 - ` prefix on Extron's own names is a convention, not a field
+  (`PBPage` has no page number), and duplicate numeric `idField`s draw no
+  complaint at all.
+- **A control outside its page's bounds is relocated to 0,0 by Build** —
+  silently, with the build still reporting 0 errors. Width and height are left
+  alone, so it reads as a positioning bug rather than as clipping, and nothing
+  in the file records that it happened. This bites cloned popups hardest,
+  because a clone keeps the **donor's** `widthField`/`heightField`: author the
+  popup's own size before adding controls to it.
+- **Build adds one full-canvas `PBPopupPageReference` per modal popup to every
+  page.** A generated page therefore comes back with more controls than were
+  authored — six more, with this donor's six modal popups. Not contamination
+  from the clone; the donor's own pages all carry the same six.
+- A clean build proves the file is **acceptable**, not that it is **correct**.
+  Two separate traps (`flattenText`, and the relocation above) produce a file
+  that opens, builds and is wrong. Finish with `tests/verify_built.py`, which
+  diffs the built `layout.json` against the plan that produced it.
 
 ## 8. Where the code is
 

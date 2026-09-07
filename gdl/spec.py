@@ -118,7 +118,8 @@ def touch_minimums(size):
 
 KIND_TYPE = {'panel': 'PBShape', 'shape': 'PBShape', 'button': 'PBButton',
              'label': 'PBLabel', 'line': 'PBLine', 'image': 'PBImage',
-             'slider': 'PBSlider', 'level': 'PBLevel', 'datetime': 'PBDateTime'}
+             'slider': 'PBSlider', 'level': 'PBLevel', 'datetime': 'PBDateTime',
+             'popup_ref': 'PBPopupPageReference'}
 # Interactive kinds are the ones held to the 9mm touch-target rule.
 TOUCHABLE = {'button', 'slider'}
 
@@ -218,6 +219,7 @@ class Panel:
         self.theme = dict(spec.get('theme') or {})
         self.size = tuple(spec.get('size') or (1280, 800))
         self.pages = []
+        self.popups = []
         self._groups = {}
         self._build()
 
@@ -311,6 +313,26 @@ class Panel:
 
     # -- build -------------------------------------------------------------
     def _build(self):
+        self.popups = []
+        for i, pu in enumerate(self.spec.get('popups') or []):
+            self._groups = {}
+            controls = self._controls(pu.get('controls') or [], [])
+            number = pu.get('number', 9000 + i)
+            self._allocate(pu, controls, pu.get('id_base') or number + 1)
+            self.popups.append({
+                'number': number,
+                'name': pu.get('name') or f'Popup {number}',
+                'group': pu.get('group'),
+                # A popup inherits its reference's dimensions (GUI Design
+                # Standards p.70), so its own size is the anchor's, not its own
+                # choice. Recorded for the check, not authored.
+                'size': pu.get('size'),
+                'modal': bool(pu.get('modal')),
+                'background': colour(pu.get('background') or self.theme.get('background')
+                                     or '#000000', self.theme),
+                'controls': controls,
+                'group_sizes': dict(self._groups),
+            })
         page_no = None
         for i, pg in enumerate(self.spec.get('pages') or []):
             self._groups = {}
@@ -402,62 +424,31 @@ class Panel:
         Deliberately *data*, not code. Writing the authoring model needs 32-bit
         Windows PowerShell and GUI Designer, which cannot be tested here - so
         the split is: Python decides everything (layout, ids, colours, which
-        donor object to clone), and `powershell/Apply-GdlPlan.ps1` does nothing
-        but apply the ops. That keeps the untestable half thin and mechanical
-        rather than putting a generator in a language this machine cannot run.
+        donor object to clone, popup grouping), and
+        `powershell/Apply-GdlPlan.ps1` does nothing but apply the ops.
 
         Every op is clone-then-set-backing-field, because constructors and
         property setters both throw headless - see docs/gdl-format.md section 4.
         """
-        model, fills = self.layout()
         pages = []
-        for pg in model['Pages']:
-            controls = []
-            for c in pg['Controls']:
-                # Keyed the way layout() emits and compose.py looks up:
-                # (page id, control id). This used to key on (type, rect) and
-                # silently produced fill=None on every op after the join
-                # changed - which is exactly the sort of break a plan-level
-                # test catches and an end-to-end render does not.
-                spec = fills.get((pg['ID'], c['ID'])) or {}
-                border = (spec.get('border') or {}).get('resource')
-                controls.append({
-                    'op': 'clone-control',
-                    # Clone a control of the same type from anywhere in the
-                    # donor; only its backing fields survive, so any instance
-                    # of the right class will do.
-                    'donor_type': c['__type'],
-                    'fields': {
-                        'idField': c['ID'],
-                        'userIdField': c['UserId'],
-                        'nameField': c['Name'],
-                        'textField': c['Text'],
-                        'leftField': c['Left'], 'topField': c['Top'],
-                        'widthField': c['Width'], 'heightField': c['Height'],
-                        '<TLPImageID>k__BackingField': -1,
-                        **(c.get('TypeFields') or {}),
-                    },
-                    'fill': _argb(spec.get('fill')),
-                    'stroke': _argb(spec.get('stroke')),
-                    'border': border,
-                    'font': {'name': c['Font']['Name'],
-                             'size': c['Font']['PointSize'],
-                             'bold': c['Font']['Style']['Bold'],
-                             'italic': c['Font']['Style']['Italic']},
-                    'text_color': _argb(c['TextColor']),
-                    'alignment': c['TextAlignment'],
-                })
+        for pg in self.pages:
             pages.append({
                 'op': 'clone-page',
-                'number': pg['ID'],
-                'name': pg['Name'],
-                'modal': pg['Modal'],
-                'background': _argb(pg['BackgroundFillColor']),
+                'number': pg['number'],
+                'name': pg['name'],
+                'modal': pg['modal'],
+                'background': _argb(pg['background']),
                 'clear_controls': True,
-                'controls': controls,
+                # Same helper popups use. Building these two separately is what
+                # dropped 'group' from every page op and left popup references
+                # bound to the donor's group.
+                'controls': [self._op_for(c, i) for i, c in enumerate(pg['controls'])],
             })
+
         return {
             'generated_by': 'gdl.spec',
+            'popup_groups': sorted({p['group'] for p in self.popups if p['group']}),
+            'popups': self._popup_ops(),
             'canvas': list(self.size),
             'note': ('Apply with powershell/Apply-GdlPlan.ps1 under 32-bit '
                      'Windows PowerShell 5.1. Page ids are assigned by the '
@@ -499,6 +490,8 @@ class Panel:
                     out.append(f'{where}: unknown border resource {b!r} - a generator may '
                                f'only reference resources the project already carries')
             out += self._house_rules(pg)
+        out += self._popup_rules()
+        out += self._name_rules()
         n = len(self.palette())
         if n > MAX_COLOURS_PER_PROJECT:
             out.append(f'project uses {n} distinct colours, above the '
@@ -558,28 +551,178 @@ class Panel:
                                    f'below the {spacing}px minimum (2mm, p.56)')
         return out
 
+    def _op_for(self, c, index):
+        """One clone-control op, from a SPEC control (not a layout-model one).
+
+        Popups take the same path as pages so the two cannot drift apart - the
+        last time they were built separately, one of them silently lost its
+        fills.
+        """
+        kind = c.get('kind', 'panel')
+        cls = KIND_TYPE.get(kind, 'PBShape')
+        rect = [int(v) for v in c['rect']]
+        fill = colour(c.get('fill'), self.theme)
+        border = c.get('border')
+        border = BORDERS.get(border, border)
+        if border is None and fill is not None:
+            border = BORDERS['rounded']
+        return {
+            'op': 'clone-control',
+            'donor_type': cls,
+            'fields': {
+                'idField': index,
+                'userIdField': c.get('id'),
+                'nameField': c.get('name') or c.get('text') or cls,
+                'textField': c.get('text') or '',
+                'leftField': rect[0], 'topField': rect[1],
+                'widthField': rect[2], 'heightField': rect[3],
+                '<TLPImageID>k__BackingField': -1,
+                **(_type_fields(kind, c) or {}),
+            },
+            'fill': _argb(fill),
+            'stroke': _argb(colour(c.get('stroke'), self.theme)),
+            'border': border,
+            'text_color': _argb(colour(c.get('color') or self.theme.get('text')
+                                       or '#FFFFFF', self.theme)),
+            'alignment': ALIGN.get(c.get('align', 'center'), 3),
+            'font': {'name': c.get('font') or self.theme.get('font') or 'Arial',
+                     'size': c.get('size') or self.theme.get('size') or 14,
+                     'bold': bool(c.get('bold')), 'italic': bool(c.get('italic'))},
+            # Only meaningful on a popup reference; the applier ignores it
+            # elsewhere.
+            'group': c.get('group'),
+        }
+
+    def _popup_ops(self):
+        return [{
+            'op': 'clone-popup',
+            'number': pu['number'],
+            'name': pu['name'],
+            'group': pu['group'],
+            'modal': pu['modal'],
+            'background': _argb(pu['background']),
+            # The applier MUST set this. A cloned popup keeps the donor's size,
+            # and GUI Designer relocates any control that falls outside the page
+            # to 0,0 - silently, at build time. The first popup build lost the
+            # last button of every grid that way: the spec said 984 wide, the
+            # donor popup was 915, and everything past x=915 stacked up at the
+            # origin while the file still built with 0 errors.
+            'size': list(pu['size']) if pu['size'] else None,
+            'clear_controls': True,
+            'controls': [self._op_for(c, i) for i, c in enumerate(pu['controls'])],
+        } for pu in self.popups]
+
+    def _popup_rules(self):
+        """What the format and GUI Design Standards p.70 require of popups.
+
+        Every one of these fails SILENTLY in GUI Designer - the file opens, it
+        builds, and the binding just reads "Unassigned" - which is why they are
+        checked here rather than discovered on the panel.
+        """
+        out = []
+        refs = {}
+        for pg in self.pages:
+            for c in pg['controls']:
+                if c.get('kind') != 'popup_ref':
+                    continue
+                g = c.get('group')
+                if not g:
+                    out.append(f"page {pg['number']} {c.get('name') or '?'}: a popup "
+                               f'reference must name a group')
+                    continue
+                refs.setdefault(g, []).append(tuple(int(v) for v in c['rect']))
+
+        groups = {p['group'] for p in self.popups if p['group']}
+        for g in sorted(groups - set(refs)):
+            out.append(f'popup group {g!r} has no reference on any page - its popups '
+                       f'can never be shown')
+        for g in sorted(set(refs) - groups):
+            out.append(f'popup reference bound to group {g!r}, but no popup is in that '
+                       f"group - the binding would read 'Unassigned'")
+
+        # A control that does not fit inside its popup is RELOCATED TO 0,0 by
+        # GUI Designer, at build time, with no error. Pages get this check from
+        # the off-canvas rule; popups need their own because their canvas is the
+        # popup's own size, not the panel's.
+        for pu in self.popups:
+            if not pu['size']:
+                continue
+            w, h = int(pu['size'][0]), int(pu['size'][1])
+            flat = []
+            self._controls(pu['controls'], flat)
+            for c in flat:
+                x, y, cw, ch = (int(v) for v in c['rect'])
+                if x < 0 or y < 0 or x + cw > w or y + ch > h:
+                    label = c.get('name') or c.get('text') or '?'
+                    out.append(f"popup {pu['name']!r} {label}: "
+                               f'{x},{y} {cw}x{ch} does not fit the popup\'s {w}x{h} - '
+                               f'GUI Designer moves it to 0,0 without reporting anything')
+
+        for pu in self.popups:
+            if pu['modal'] and pu['group']:
+                out.append(f"popup {pu['name']!r} is modal AND grouped - modal popups are "
+                           f'always ungrouped, and Build makes their references')
+            if not pu['group'] or not pu['size']:
+                continue
+            for rect in refs.get(pu['group'], []):
+                if tuple(pu['size']) != (rect[2], rect[3]):
+                    out.append(f"popup {pu['name']!r} is {pu['size'][0]}x{pu['size'][1]} but "
+                               f'its reference is {rect[2]}x{rect[3]} - a popup inherits its '
+                               f"reference's dimensions (Standards p.70)")
+        return out
+
+    def _name_rules(self):
+        """Page and popup NAMES must be unique within a project.
+
+        GUI Designer enforces this at build time - "Duplicate page or popup page
+        names are not allowed within the same project" - and it is a build
+        ERROR, not a warning. Cheap to check here; a wasted Windows round trip
+        otherwise.
+        """
+        out = []
+        seen = {}
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for it in items:
+                n = it['name']
+                if n in seen:
+                    out.append(f'{kind} {n!r} has the same name as {seen[n]} - page and '
+                               f'popup names must be unique within a project')
+                seen[n] = f'{kind} {n!r}'
+        return out
+
+    def check_donor(self, path):
+        """Can this donor supply every control type, and do any names collide?
+
+        Clone-never-construct means a type absent from the donor cannot be
+        authored at all, and donors genuinely differ: the _alt fixture has no
+        PBLevel, Extron's Afterburn 1020 template has no PBLevel either, its 300
+        Portrait template has Levels but no Slider, and Mach 1020 has neither
+        Level nor Line.
+
+        Names matter too: the generated pages join the DONOR's project, so a
+        name that already exists there is a build error even though it is unique
+        within the spec.
+        """
+        from .project import Project
+        proj = Project.open(path)
+        have, names = set(), set()
+        for pg in proj.pages():
+            names.add(pg['name'])
+            for c in pg['controls']:
+                have.add(c['type'])
+        out = [f'donor {path} has no {t} to clone - that control type cannot '
+               f'be authored from it' for t in sorted(self.needs() - have)]
+        for it in list(self.pages) + list(self.popups):
+            if it['name'] in names:
+                out.append(f"{it['name']!r} already exists in the donor project - page and "
+                           f'popup names must be unique, and Build rejects duplicates')
+        return out
+
     def needs(self):
         """Every control class this spec requires a donor for."""
         return {KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
                 for pg in self.pages for c in pg['controls']}
 
-    def check_donor(self, path):
-        """Can this donor project supply every control type the spec uses?
-
-        Clone-never-construct means a type absent from the donor cannot be
-        authored at all, and donors differ: the _alt fixture has no PBLevel,
-        Extron's Afterburn 1020 template has no PBLevel either, its 300 Portrait
-        template has Levels but no Slider, and Mach 1020 has neither Level nor
-        Line. Worth knowing before a trip to the Windows box, not after.
-        """
-        from .project import Project
-        have = set()
-        for pg in Project.open(path).pages():
-            for c in pg['controls']:
-                have.add(c['type'])
-        missing = sorted(self.needs() - have)
-        return [f'donor {path} has no {t} to clone - that control type cannot '
-                f'be authored from it' for t in missing]
 
     def palette(self):
         """Every distinct colour the spec uses. p.49 caps a project at six."""
@@ -617,7 +760,7 @@ def main(argv):
             print('  ' + p)
         print(f'{len(panel.needs())} control type(s) needed: '
               f'{", ".join(sorted(panel.needs()))}')
-        print(f'{len(problems)} unavailable')
+        print(f'{len(problems)} donor problem(s)')
         return 1 if problems else 0
     if cmd == 'plan':
         if problems:

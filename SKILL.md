@@ -43,8 +43,15 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    **look at the image**. The compositor scores 2.19% against GUI Designer's own
    output, so this is a real preview, not a sketch. Iterate here — it costs
    nothing and needs no Windows.
-6. **Emit the plan**: `python -m gdl.spec plan <spec.json> out/plan.json`.
-7. **Apply and build** — needs Windows, see below.
+6. **Check it against the donor**: `python -m gdl.spec donors <spec.json>
+   <donor.gdl>`. The donor supplies every cloned control, so a type it lacks is
+   unauthorable — and its page/popup names are taken, which is a build error.
+   Both are free to find here and cost a Windows round trip to find there.
+7. **Emit the plan**: `python -m gdl.spec plan <spec.json> out/plan.json`.
+8. **Apply and build** — needs Windows, see below.
+9. **Verify the build**: `python tests/verify_built.py out/plan.json
+   <built.gdl>`. Do not skip this because the build was clean; that is exactly
+   when it earns its keep.
 
 ### B. Modify an existing panel
 
@@ -99,6 +106,15 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
   the file opens and builds, the binding just reads "Unassigned". Use
   `Register-GdlPopupGroup` and assert with `Test-GdlPopupBinding`. Don't
   hand-author popups any other way.
+- **Page and popup names must be unique project-wide** — one namespace for
+  both. Build refuses with "Duplicate page or popup page names are not allowed
+  within the same project." Your spec joins a *donor* project, so a name that is
+  unique in the spec can still collide; `python -m gdl.spec donors <spec>
+  <donor.gdl>` is the check.
+- **A control that doesn't fit its page is moved to 0,0 by Build**, silently,
+  and the build still says 0 errors. Cloned popups keep the *donor's* size, so
+  a popup whose controls run wider than the donor's width loses them to the
+  origin. Author the popup's size; then run `tests/verify_built.py`.
 - **`Save-GdlProject` resets every `TLPImageID` to -1**, so a bridge-saved file
   always needs rebuilding. Harmless, but it means byte comparison against the
   original is meaningless — compare pass1 vs pass2.
@@ -121,10 +137,15 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
   exits non-zero on any page regressing. A change that improves one page and
   regresses twenty is the documented failure mode here.
 - **Spec change**: `python tests/test_spec.py` (50 tests).
-- **Anything authored**: a file that merely serialises proves nothing. GUI
-  Designer must **open and build** it. That is the only oracle.
-- Report numbers you actually ran. Never state a build succeeded without the
-  "0 error(s), 0 warning(s)" line.
+- **Anything authored**: two gates, not one.
+  1. GUI Designer must **open and build** it — a file that merely serialises
+     proves nothing.
+  2. `python tests/verify_built.py <plan.json> <built.gdl>` — because a build
+     that reports 0 errors still relocates controls and bakes captions. Both of
+     this repo's worst authoring bugs built perfectly clean.
+- Report numbers you actually ran. Never state a build succeeded on the strength
+  of "no error dialog appeared" — say what you checked (payload member present,
+  N controls rasterised, verifier clean).
 
 ## Where the design authority lives
 
