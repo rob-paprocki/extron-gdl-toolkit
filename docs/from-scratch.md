@@ -49,36 +49,29 @@ System template has that combination: every System `style = 0` record has
 `style = 1`.
 
 So a human, working in GUI Designer's own UI, produced border resources with
-parameter combinations that ship with no template. That is direct evidence the
-parameter space is genuinely open rather than a fixed menu — though it is still
-not evidence that a *hand-appended* resource survives a build, which remains
-untested (§5).
+parameter combinations that ship with no template. §5 confirms the stronger
+version: a **hand-appended** resource with out-of-corpus values also survives a
+build.
 
 **The consequence that matters:** a generator that only *references* resources
 already in a donor project needs no new resource appended.
 
-How far that is proven, precisely: across all six fixtures only **9** distinct
-border names are ever bound to a control — the 6 Afterburn ones plus
-`2D Rounded Rectangle`, `2D Rectangle_1` and `2D Rounded Rectangle_1`. The other
-~25, including *every* 3D template and every `zGD - Default *`, are defined but
-never referenced by anything. So "referencing works" is demonstrated for those 9,
-and is an assumption for the rest.
-
-That is why §5's first test is what it is. If referencing an unused-but-present
-resource works, the usable palette is 34; if it does not, it is 9. Either way it
-is more than the "seven" the older notes imply, and either way it needs no
-append.
+Worth knowing how narrow the corpus evidence was: across all six fixtures only
+**9** distinct border names are ever bound to a control, and ~25 — including
+*every* 3D template and every `zGD - Default *` — are defined but never
+referenced. §5 tested one of those unreferenced names directly and it built
+clean, so the usable palette is the full **34**, and appending more works too.
 
 ## 2. What is free, what is bounded, what is impossible
 
 **Free.** Layout and hierarchy, page and popup structure, ID allocation, exact
 fill/stroke/text colour (any ARGB), typography within the embedded faces, and
-which border resource each control uses — 9 of them proven, 34 pending §5's
-first test.
+which border resource each control uses — all 34, confirmed in §5.
 
-**Bounded.** Silhouette — rectangle/rounded/capsule/ellipse × flat/3D, at the
-radii and thicknesses those 34 resources encode. A new radius means a new
-resource, which is the unverified step.
+**Bounded — less than expected.** Silhouette is
+rectangle/rounded/capsule/ellipse × flat/3D. A new radius means a new resource,
+and §5 showed appending one works, so this is bounded by the shape *family*
+rather than by the resource list.
 
 **Impossible without new resources, and possibly impossible at all.**
 
@@ -99,9 +92,9 @@ resource, which is the unverified step.
 | Control ID allocation | **Built.** Per-page bands, honours pinned ids. |
 | Preview render | **Built.** Straight through `gdl/compose.py`. |
 | Spec → build plan | **Built.** `python -m gdl.spec plan`. |
-| Plan → `ProjectGCP` | **Built, UNVERIFIED.** `powershell/Apply-GdlPlan.ps1` — written on a Mac, never run. `-WhatIf` dry-runs it. |
+| Plan → `ProjectGCP` | **Built and verified.** `powershell/Apply-GdlPlan.ps1`; `-WhatIf` dry-runs it. |
 | Repack to `.gdl` | Built already — `gdl/container.py pack`. |
-| GUI Designer opens + builds | **Human, on Windows.** The only real oracle. |
+| GUI Designer opens + builds | **Verified**, and scriptable from the host (§7). |
 
 Note one correction to `CLAUDE.md`'s gap list: **group registration is not
 missing.** `Register-GdlPopupGroup` is a complete, exercised implementation of
@@ -127,8 +120,8 @@ python -m gdl.spec plan   examples/panel.json out/plan.json   # ops for the appl
 
 That image is a panel that has never existed: 28 controls, every rect computed
 by the layout pass, every id allocated, rendered by the same code path that is
-measured against ground truth. It is not proof GUI Designer will accept it — see
-below — but it is proof the *design* is right.
+measured against ground truth. §5b shows the same spec after GUI Designer has
+actually built it, which is the proof; this is the cheap check you run first.
 
 The preview is honest about what it is drawing: every control is emitted with
 `TLPImageID = -1`, exactly as an authored control is before Build, so the

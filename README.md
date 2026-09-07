@@ -118,11 +118,11 @@ Known gaps:
   difference across 27 pages, worst page 7.68%. What remains is a
   size-dependent vertical text residual; it can be fitted away but the fit is
   degenerate, so the cause is still wanted. See `docs/render-fidelity.md`.
-- Generating a panel from a spec: the layout pass, ID allocation, preview and
-  build-plan emitter are in `gdl/spec.py` and tested. Applying a plan to a real
-  project (`powershell/Apply-GdlPlan.ps1`) is written but **unverified** — no
-  generated panel has been through GUI Designer yet, which is the only real
-  oracle. See `docs/from-scratch.md`.
+- Generating a panel from a spec **works end to end**: `examples/panel.json`
+  was laid out, ID-allocated, applied to a real project and built by GUI
+  Designer 1.27.0.9 with 0 errors — see `docs/generated-built.png`, rendered
+  from its own built payload. Open gap: colour fidelity (geometry, captions,
+  ids and structure are correct). See `docs/from-scratch.md`.
 
 ## Provenance
 

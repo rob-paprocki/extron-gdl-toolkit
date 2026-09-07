@@ -157,9 +157,10 @@ handle and means nothing to a programmer.
   only ever draws Forma DJR Display.
 - Generating a panel from a spec: `gdl/spec.py` has the layout pass, control ID
   allocation, a preview render and a build-plan emitter, all tested here.
-  `powershell/Apply-GdlPlan.ps1` applies a plan to a real project but is
-  **UNVERIFIED** — written on a Mac, never run against BinaryFormatter or GUI
-  Designer. Use `-WhatIf` first; it dry-runs and reports every unresolved donor
-  and field. **Group registration was never actually missing**;
+  `powershell/Apply-GdlPlan.ps1` applies a plan to a real project — **verified
+  end to end**: the example spec was generated, applied, packed, and built by
+  GUI Designer 1.27.0.9 with 0 errors. Use `-WhatIf` first; it dry-runs and
+  reports every unresolved donor and field. Colour fidelity is the open gap.
+  See `docs/from-scratch.md` §5b. **Group registration was never actually missing**;
   `Register-GdlPopupGroup` is complete. See `docs/from-scratch.md`, which also
   lists the six questions that need one session on a Windows box.
