@@ -1,11 +1,12 @@
 # Font binaries recovered from the fixtures. Regenerate with:
 #   for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
 #
-# Ignored per file rather than as a class: the seven faces do not share a
-# licence. Open Sans is Apache 2.0 and declares it in its own name table, so it
-# is tracked. Forma DJR Display is a retail typeface, and the four Extron and
-# Crestron icon fonts carry no licence grant at all. gdl/fonts/README.md has the
-# per-file detail, read from each font rather than assumed.
+# Ignored per file rather than as a class: the nine files do not share a
+# license. Open Sans is Apache 2.0 and declares it in its own name table, so it
+# is tracked. Arial and Arial Black are retail Monotype faces, Forma DJR Display
+# is a retail typeface, and the Extron and Crestron icon fonts carry no license
+# grant at all. gdl/fonts/README.md has the per-file detail, read from each font
+# rather than assumed.
 #
 # This ignore does not keep the bytes out of git - every face is embedded in the
 # tracked .gdl fixtures and is recoverable from them exactly. It prevents a
@@ -22,10 +23,10 @@ gdl/fonts/*
 # Scratch output: extracted ProjectGCP, repacked .gdl, authored results.
 out/
 
-# Built viewer artefacts (regenerate with gdl.data + viewer/build_viewer.py).
+# Built viewer artifacts (regenerate with gdl.data + viewer/build_viewer.py).
 panel-data.json
 panel-atlas.html
 
 __pycache__/
 *.pyc
-.DS_Store
+.pytest_cache/

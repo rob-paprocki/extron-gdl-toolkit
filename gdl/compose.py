@@ -48,9 +48,12 @@ ALIASES = {
     'arialbi.ttf': ['Arial Bold Italic.ttf'],
     'ariblk.ttf': ['Arial Black.ttf'],
 }
-# Where the *system* faces live. Arial and Arial Black are not embedded in a
-# .gdl - on Windows they come from C:/Windows/Fonts, and off Windows they have
-# to be found somewhere else or the render dies rather than degrades.
+# Fallback only. Arial and Arial Black ARE embedded in the .gdl - every fixture
+# and every Extron template carries Monotype Arial 5.10 and Arial Black 5.06 -
+# so `python -m gdl.fonts` puts them in FONTDIR and this list is never reached.
+# It stays for a checkout whose fonts have not been extracted yet, and it is a
+# worse answer than extraction: the system Arial is whatever build the host
+# happens to ship, not the one GUI Designer rasterized the snapshots with.
 SYSFONTS = (
     'C:/Windows/Fonts',
     '/System/Library/Fonts/Supplemental', '/System/Library/Fonts', '/Library/Fonts',
@@ -98,9 +101,10 @@ def face(name, bold, italic, px):
             f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
     raise LookupError(
-        f'no font file for {name!r} (bold={bold} italic={italic}). Embedded faces '
-        f'come from `python -m gdl.fonts <file.gdl> gdl/fonts/`; system faces like '
-        f'Arial must exist in one of {SYSFONTS}.')
+        f'no font file for {name!r} (bold={bold} italic={italic}). Every face a '
+        f'project declares is embedded in it, Arial included - run '
+        f'`python -m gdl.fonts <file.gdl> gdl/fonts/` over all six fixtures, since '
+        f'no single one carries every face. Failing that, {SYSFONTS} is searched.')
 
 
 def metrics(f):
@@ -108,7 +112,7 @@ def metrics(f):
 
     Read from the font rather than via Pillow: getmetrics() rounds both to
     whole pixels, which costs a pixel of line box per line and pushes a
-    vertically centred block off by half of it. See gdl/sfnt.py.
+    vertically centerd block off by half of it. See gdl/sfnt.py.
     """
     a = advances(f)
     if a is not None:
@@ -121,8 +125,8 @@ def metrics(f):
 # See docs/render-fidelity.md finding 7 for what each is worth.
 FRAC_MEASURE = True
 FRAC_PLACE = True
-# Horizontal registration: Pillow's rasteriser and GDI+ disagree by the usual
-# half pixel (sample at the pixel corner vs at its centre). The value is a
+# Horizontal registration: Pillow's rasterizer and GDI+ disagree by the usual
+# half pixel (sample at the pixel corner vs at its center). The value is a
 # convention, not a fit - and it is a clean minimum on the shipped model, which
 # is confirmation rather than derivation. research/compose2.py also uses -0.5,
 # but on the same corpus and with its own metric preferring roughly -0.75, so
@@ -191,7 +195,7 @@ def draw_text(img, box, text, fnt, color, alignv):
     """Place a text block per AlignmentEnum: value = 3*vertical + horizontal."""
     x, y, w, h = box
     vert = alignv // 3          # 0 bottom, 1 middle, 2 top
-    horz = alignv % 3           # 0 centre, 1 left, 2 right
+    horz = alignv % 3           # 0 center, 1 left, 2 right
     d0 = ImageDraw.Draw(img)
     lines = wrap(text, fnt, w, lambda s, f: measure(s, f, d0))
     asc, desc = metrics(fnt)
@@ -250,10 +254,10 @@ def paste(canvas, assets, img_id, x, y, clip=None, binary=True):
 
 
 def fill_index(path):
-    """(page id, control id) -> the fill Build would have rasterised.
+    """(page id, control id) -> the fill Build would have rasterized.
 
     A control authored with TLPImageID == -1 has no artwork in the payload, and
-    its real interior colour - borderFillColor plus a *named* border resource
+    its real interior color - borderFillColor plus a *named* border resource
     giving the corner radius - exists only in ProjectGCP. layout.json exports
     neither, so the compositor cannot draw the control at all without going
     back to the authoring model. See docs/render-fidelity.md finding 1.
@@ -334,7 +338,7 @@ def render_control(canvas, c, assets, ox, oy, draw_txt=True, groups=None, fills=
         base = st.get('TLPImageID', base)
     x, y, w, h = c['Left'] + ox, c['Top'] + oy, c['Width'], c['Height']
     if base in (None, -1) or base not in assets:
-        # Build never rasterised this one, so there is no PNG to blit. Its fill
+        # Build never rasterized this one, so there is no PNG to blit. Its fill
         # lives in the authoring model; synthesise what Build would have baked.
         spec = (fills or {}).get((page_id, c.get('ID')))
         if spec:
@@ -381,9 +385,9 @@ def flatten(canvas):
     """Put the finished page on opaque black, the way the panel displays it.
 
     Deliberately the same binary rule paste() uses rather than an alpha
-    composite: a pixel that was painted keeps its own colour at full strength,
+    composite: a pixel that was painted keeps its own color at full strength,
     an untouched one stays black. That reproduces the previous
-    opaque-canvas-from-the-start behaviour exactly.
+    opaque-canvas-from-the-start behavior exactly.
 
     The final putalpha is not cosmetic. paste() copies the source's own alpha
     through, so a page whose art is itself semi-transparent (the modal scrim

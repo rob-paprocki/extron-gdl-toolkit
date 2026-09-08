@@ -15,9 +15,9 @@ appended (§5), and Extron ships per-panel `.glt` template libraries to clone fr
 ## 1. What actually bounds the design space
 
 An authored control carries `TLPImageID = -1`. It has no artwork. What it has is
-a fill colour, a stroke colour, and a **named** border resource that supplies
-the silhouette. GUI Designer rasterises those on Build. So a generator never
-makes pixels; it names resources and sets colours.
+a fill color, a stroke color, and a **named** border resource that supplies
+the silhouette. GUI Designer rasterizes those on Build. So a generator never
+makes pixels; it names resources and sets colors.
 
 The obvious reading of that — and what the older notes imply — is that a
 generator is limited to the seven border resources the shipped panel references.
@@ -67,7 +67,7 @@ clean, so the usable palette is the full **34**, and appending more works too.
 ## 2. What is free, what is bounded, what is impossible
 
 **Free.** Layout and hierarchy, page and popup structure, ID allocation, exact
-fill/stroke/text colour (any ARGB), typography within the embedded faces, and
+fill/stroke/text color (any ARGB), typography within the embedded faces, and
 which border resource each control uses — all 34, confirmed in §5.
 
 **Bounded — less than expected.** Silhouette is
@@ -172,7 +172,7 @@ This was the biggest open question and it is the more permissive answer: a
 generator is not limited to a donor's existing resources.
 
 **4 — cross-graph cloning works.** A control was cloned out of one
-independently-deserialised project into another with `Copy-GdlObject`, and the
+independently-deserialized project into another with `Copy-GdlObject`, and the
 result opened, built clean, and rendered correctly (the cloned popup reference
 paints its group member, per render finding 3). A curated component library in a
 separate `.gdl` is therefore viable.
@@ -204,7 +204,7 @@ Two errors, no payload. Points worth keeping:
 anything leaves the Mac, and `Panel.check()` catches a spec that collides with
 itself. Renaming to `2310 - Program Volume` / `2320 - Speech Volume` cleared it:
 the build emitted `generated9.tgz4` with 207 PNGs (a failed build emits none),
-661 of 698 controls rasterised, and both popups came through with their own
+661 of 698 controls rasterized, and both popups came through with their own
 captions.
 
 **And the file was still wrong** — see the next finding, which is the more
@@ -260,7 +260,7 @@ named after the file lowercased (`testb.tgz4`).
 the method the build dialog's worker calls, and `BuildManager` has a public
 constructor taking just a `PBProject` — but calling it throws
 `NullReferenceException` inside `BuildProject()`, in an interactive session as
-well as a service one. It needs state only a properly-initialised GUI Designer
+well as a service one. It needs state only a properly-initialized GUI Designer
 process has. Driving the real UI (§7) is the working route.
 
 ## 5b. The whole loop, closed
@@ -271,7 +271,7 @@ process has. Driving the real UI (§7) is the working route.
          -> ProjectGCP -> gdl.container pack -> GUI Designer -> Save and Build
 
 GUI Designer opened it and built with **0 errors, 0 warnings**, producing a page
-of 34 controls with 28 rasterised assets. `docs/generated-built.png` is that
+of 34 controls with 28 rasterized assets. `docs/generated-built.png` is that
 page rendered from GUI Designer's *own* built payload — not a preview:
 
 ![generated and built](generated-built.png)
@@ -299,29 +299,81 @@ Checking the model would have said everything was fine.
 
 - Questions 5 and 6 are untested.
 - Test 3 is only half-answered: an out-of-corpus radius/thickness *builds*, but
-  nobody has looked at whether it *rasterises* correctly. The control used was
-  the Offline Window, which Build legitimately leaves unrasterised, so there is
+  nobody has looked at whether it *rasterizes* correctly. The control used was
+  the Offline Window, which Build legitimately leaves unrasterized, so there is
   no artwork to inspect. Redo it against a visible control.
-- Colour fidelity is not there yet: the accent button and some panel fills did
+- Color fidelity is not there yet: the accent button and some panel fills did
   not survive, and the generated page still shows a band of donor page artwork
   behind the content area. Geometry, captions, IDs and structure are correct;
-  colour plumbing needs another pass.
-- The resource counts are from the `_alt 2_0_0` fixture. The two archived
-  fixtures carry 36 border resources, so the number is project-specific.
+  color plumbing needs another pass.
+- The resource counts are from the `_alt 2_0_0` fixture, which carries 32 border
+  resources; the two archived fixtures carry 36. Across Extron's 44 installed
+  templates the count runs **13 to 32**, so treat it as per-project and read it,
+  never assume it. The low end matters: a Mach or Turbulence template offers 13
+  borders, so a spec that names a radius/thickness the target project has no
+  resource for will not resolve.
 - The preview's fidelity is measured against pages made of *built* artwork. A
   page of `TLPImageID = -1` controls is exercised by exactly one control in the
   whole corpus (the Offline Window), so the preview's accuracy on a fully
   synthetic page is inferred from that one data point, not measured.
 
-## 7. Driving GUI Designer from the host
+## 7. Driving GUI Designer
 
-The round trip is scriptable end to end from macOS against a Parallels VM, which
-is what made §5 cheap enough to do properly.
+### On the Windows box (the simple case)
+
+Run Claude Code on the machine that has GUI Designer and there is no remoting
+layer at all. A session there is already interactive - `UserInteractive` is
+true, on session 1 with a real desktop - so the authoring bridge, the build and
+the screen capture all run in one place:
+
+```powershell
+# 1. author. 32-bit PS 5.1: .NET Framework still has BinaryFormatter, and
+#    Extron's assemblies are x86.
+C:\Windows\SysWOW64\WindowsPowerShell1.0\powershell.exe -NoProfile `
+    -ExecutionPolicy Bypass -File examplesdd-page-and-popup.ps1 `
+    C:\gdlwork\ProjectGCP C:\gdlwork
+ew_ProjectGCP
+
+# 2. repack, then open it
+python -m gdl.container pack template.gdl C:\gdlwork
+ew_ProjectGCP C:\gdlwork\out.gdl
+Start-Process "C:\Program Files (x86)\Extron\GUI Designer\GUI Designer.exe" `
+    -ArgumentList '"C:\gdlwork\out.gdl"'
+
+# 3. File > Save and Build
+powershell\Send-GdlKeys.ps1 -Keys '^+b'
+```
+
+Read the screen back with `System.Drawing`:
+
+```powershell
+Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+$b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+$bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+[System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+$bmp.Save('shot.png', [System.Drawing.Imaging.ImageFormat]::Png)
+```
+
+Three things that will cost you time:
+
+- **`Get-Process` caches `MainWindowTitle`.** It keeps reading `GUI Designer`
+  long after the project is open; call `.Refresh()` and it becomes
+  `GUI Designer - [TLP Pro 1035T: out.gdl*]`. Polling the cached title for the
+  project name, or for the dirty marker, waits forever.
+- **The trailing `*` is the completion signal.** Save and Build clears it. Until
+  then a *Please wait while the project is being saved* overlay is up, and the
+  process reports `Responding = False` intermittently, which is not a hang.
+- **Work under `C:\gdlwork`, not the repo.** If the repo is on a mounted drive
+  GUI Designer is slow against it, and only two files need to move: the plan in,
+  the built `.gdl` back.
+
+### From macOS against a Parallels guest
+
+Still works, and is what made §5 cheap enough to do properly.
 
 ```bash
 # runs as SYSTEM, non-interactive - fine for authoring, no UI
-prlctl exec "Windows 11" 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe' \
-    -NoProfile -ExecutionPolicy Bypass -File '\\Mac\Home\...\out\make-tests.ps1'
+prlctl exec "Windows 11" 'C:\Windows\SysWOW64\WindowsPowerShell1.0\powershell.exe'     -NoProfile -ExecutionPolicy Bypass -File '\Mac\Home\...\out\make-tests.ps1'
 
 # runs as the logged-on user WITH a desktop - needed for anything that draws
 prlctl exec "Windows 11" --current-user ... -File '...\out\sendkeys.ps1' -Keys '^+b'
@@ -335,9 +387,10 @@ Two things to know:
   `nt authority\system` with `UserInteractive = False`, and anything that shows
   a form dies with "Showing a modal dialog box or form when the application is
   not running in UserInteractive mode".
-- The host filesystem is reachable in the guest at `\\Mac\Home\...`. The `Z:`
+- The host filesystem is reachable in the guest at `\Mac\Home\...`. The `Z:`
   mapping is per-interactive-session and is **not** visible to `prlctl exec`;
   use the UNC path.
 
-`out/sendkeys.ps1` activates GUI Designer's window and sends keystrokes, which is
-enough to drive Open / Verify / Save and Build.
+`out/sendkeys.ps1` and `powershell/Send-GdlKeys.ps1` both activate GUI Designer's
+window and send keystrokes, which is enough to drive Open / Verify / Save and
+Build.

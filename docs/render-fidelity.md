@@ -54,7 +54,7 @@ same-typed, same-positioned controls on different pages would both have been
 filled. Recorded because "it scored the same" is exactly how a key like that
 survives review.
 
-One trap in the page walk: a serialised `List<T>`'s `_items` is over-allocated —
+One trap in the page walk: a serialized `List<T>`'s `_items` is over-allocated —
 32 slots holding 4 pages — so it must be sliced to `_size`, or the tail of
 `None`s reads as real empty objects.
 
@@ -107,12 +107,12 @@ Tech and Main-Presentation.
 **Implemented — but structurally, not as a per-control probe.** The compositor
 now starts each page canvas *transparent* and flattens it onto black once, at
 the end of the outermost `render_page`, with the same binary alpha rule
-`paste()` uses. That alone produces finding 4's behaviour, per pixel rather
+`paste()` uses. That alone produces finding 4's behavior, per pixel rather
 than per control:
 
 - Pillow's `ImageDraw.text` does source-over. Onto a **transparent**
   destination the glyph's coverage lands in the *alpha* channel while RGB stays
-  the undiluted ink colour, so the binary flatten writes every covered pixel at
+  the undiluted ink color, so the binary flatten writes every covered pixel at
   full strength — hard edges, i.e. **bilevel**.
 - Over **opaque** artwork the destination alpha is already 255, so the glyph
   blends normally — **antialiased**.
@@ -148,7 +148,7 @@ control rect, every bilevel control has `frac <= 0.152` and every antialiased
 one is far above.
 
 So the residual floor is **not** antialiasing physics: only ~55% of it is
-genuine GDI+-vs-FreeType rasterisation difference.
+genuine GDI+-vs-FreeType rasterization difference.
 
 `research/compose2.py` implements this as an explicit per-control probe with a
 threshold of 0.5 — looser than the 0.152 the measurement actually establishes —
@@ -172,7 +172,7 @@ multi-state button in the corpus, and `State.ID` equals the array index in all
 
 Worth recording because it redirects effort: state choice accounts for none of
 the residual, so what remains on text-heavy pages is text metrics and glyph
-rasterisation.
+rasterization.
 
 ## 7. Text metrics: Pillow rounds what GDI does not
 
@@ -197,13 +197,13 @@ Measuring and placing must move **together** — either alone is a regression:
 **Vertical metrics.** `getmetrics()` returns FreeType's *rounded* ascent and
 descent. Open Sans at 22px: ascent 24 against a true `usWinAscent` of 23.51, and
 a line box of 31 against 29.96. That is a whole pixel per line, which a
-vertically centred block splits in half and a two-line block pays in full — and
+vertically centerd block splits in half and a two-line block pays in full — and
 it is why a naive fit wants a ~1.5px downward correction. Reading OS/2
 `usWinAscent`/`usWinDescent` fractionally and anchoring on the baseline (`ls`,
 not `la`) fixes the cause rather than the symptom.
 
 **Horizontal registration.** `DX = -0.5`, the usual pixel-corner vs
-pixel-centre convention difference. The value comes from the convention, not
+pixel-center convention difference. The value comes from the convention, not
 from a fit; the corpus then confirms it as a clean minimum. `research/compose2.py`
 also uses -0.5, but on this same corpus and with its own metric preferring
 roughly -0.75 — so read that as agreement about the convention, not as
@@ -220,7 +220,7 @@ noise. The existing constant is right.
 
 ### What is left, and why it is not shipped
 
-A size-dependent vertical residual remains. Per-control best-shift analysis over
+A size-dependent vertical residual remains. Per-control best-shift analyzis over
 67 text controls shows it **scales with point size** (13pt wants ~1.0–1.5px,
 16–38pt want ≥2.5px), so it is a metrics error rather than a constant offset.
 Fitting an ascent multiplier `A` and line-height multiplier `L` on top reaches
@@ -240,6 +240,15 @@ a full harness run shows 576 calls, all Forma DJR Display. Every text finding
 here is therefore validated against a single typeface; the corpus's Arial,
 Open Sans and Afterburn text is flattened into artwork on these pages. Treat the
 constants as measured for Forma and plausible elsewhere.
+
+The way out of that is now on disk. Extron ships 44 `.glt` templates with GUI
+Designer (`C:\Users\Public\Documents\Extron\GUI Designer Templates\TouchLink
+Templates`), they are the same `KP`-swapped container, `Project.open()` reads
+all 44 unchanged, and between them they embed **15 distinct faces** against the
+seven in `gdl/fonts/` — Open Sans, Roboto Thin and Light, Segoe UI and Segoe UI
+Semibold, FluentSystemIcons, four Extron icon families, and Arial. What they do
+*not* ship is ground truth: a template carries no built payload, so there are no
+snapshots to score against and one would have to be built first.
 
 ## Where it stands
 

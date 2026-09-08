@@ -7,15 +7,17 @@ name: ci
 #          needs no Pillow, so this runs on a bare runner.
 #   CAN  - reading the authoring model out of the fixtures (gdl/project.py,
 #          gdl/nrbf.py, gdl/container.py are all stdlib).
-#   CANNOT - the render fidelity harness. It needs gdl/fonts/, which is
-#          deliberately not in git (commercial font binaries). How that fails
-#          depends on the host, and neither way is usable as a gate:
-#            - here, on a bare Linux runner, face() raises LookupError on the
-#              first face it cannot resolve. There is no Arial on Linux to fall
-#              back to, so the harness dies rather than scoring anything.
-#            - on a host that HAS Arial (Windows, macOS), it does fall back, and
-#              then reports a confident meaningless number.
-#          Fidelity stays a local gate - see CLAUDE.md.
+#   CAN  - the render fidelity harness, as of the embedded-Arial fix. This was
+#          long believed impossible: gdl/fonts/ is deliberately not in git, and
+#          Arial was thought to be a system face the format referenced without
+#          embedding, so a bare Linux runner had no way to resolve it. It was
+#          embedded the whole time - `extract` was matching sizes too strictly.
+#          Every declared face now comes back out of the tracked fixtures with
+#          stdlib alone, so the runner reproduces tests/baseline.json exactly.
+#          Extract fonts FIRST. Skip that step and this does not fail loudly on
+#          every host: on Linux face() raises, but on a host with Arial the
+#          missing faces resolve to it and the job reports a confident wrong
+#          number (2.81% against a 2.19% baseline, measured).
 #   CANNOT - anything that authors a .gdl. That needs 32-bit Windows PowerShell
 #          and an installed GUI Designer.
 
@@ -101,6 +103,44 @@ jobs:
                  if isinstance(v, str) and v.startswith('#')}
           doc = {('#FF' + c[1:]) if len(c) == 7 else c for c in doc}
           extra = observed - doc
-          assert not extra, f'colours not in the Afterburn guide: {sorted(extra)}'
-          print(f'  {len(observed)} colours observed, all in the guide')
+          assert not extra, f'colors not in the Afterburn guide: {sorted(extra)}'
+          print(f'  {len(observed)} colors observed, all in the guide')
           PY
+
+      - name: every declared face comes back out of every fixture
+        # The gate that was missing. Arial and Arial Black were declared,
+        # embedded, and silently dropped by an over-strict size match for as
+        # long as the extractor existed, and the inference drawn from that -
+        # "they must be system faces" - reached this file, the README and the
+        # render path.
+        run: python tests/test_fonts.py
+
+  fidelity:
+    # The render harness, against GUI Designer's own snapshot exports. Runs here
+    # only because every face is recoverable from the tracked fixtures; see the
+    # note at the top of this file before assuming it can be simplified.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: install Pillow
+        run: pip install -r requirements.txt
+
+      - name: recover the embedded faces
+        # All six fixtures: no single one embeds every face.
+        run: |
+          for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
+          ls -1 gdl/fonts/
+
+      - name: score the render against ground truth
+        run: |
+          python tests/score.py record \
+            fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl \
+            fixtures/snapshots/Individual -o /tmp/after.json
+
+      - name: no page may regress against the shipped baseline
+        run: python tests/score.py diff tests/baseline.json /tmp/after.json

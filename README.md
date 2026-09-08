@@ -82,7 +82,7 @@ against.
 
 Write the change as JSON, resolve it against the real project, then apply it.
 Four operations: `rename` captions, `retarget` to another panel model with
-optional rescaling, `renumber` addressable IDs, and `restyle` a colour remap.
+optional rescaling, `renumber` addressable IDs, and `restyle` a color remap.
 Selectors are ANDed and match exactly or by regex.
 
 ```bash
@@ -151,7 +151,7 @@ lost its caption.
    file opens and builds, the binding just reads "Unassigned".
    `Test-GdlPopupBinding` checks all four.
 3. Build owns the artwork. Controls are authored with `TLPImageID = -1`, and
-   GUI Designer rasterises, deduplicates and assigns on build, so never
+   GUI Designer rasterizes, deduplicates and assigns on build, so never
    hand-author PNGs. What you author instead is `borderFillColor` plus a named
    border resource (`"Afterburn - 10 Radius 2 Thick"`). Neither survives into
    `layout.json`, so read them from `ProjectGCP` via `gdl/project.py`.
@@ -172,7 +172,7 @@ from its own built payload rather than from a preview.
 
 Known gaps:
 
-- Colour fidelity on a generated panel. Geometry, captions, IDs and structure
+- Color fidelity on a generated panel. Geometry, captions, IDs and structure
   are correct. See `docs/from-scratch.md`.
 - The Pillow compositor sits at a 2.19% mean and 1.65% median pixel difference
   across 27 pages, worst page 7.68%. What remains is a size-dependent vertical
@@ -188,12 +188,19 @@ Known gaps:
 The renderer resolves faces from `gdl/fonts/` before falling back to the system
 font path, so a project renders the same on a machine with nothing installed.
 Open Sans is tracked because it is Apache 2.0 and says so in its own name
-table. The other five faces are recovered from the fixtures with the command in
+table. The other seven files are recovered from the fixtures with the command in
 Quick start above, and `gdl/fonts/README.md` records where each one stands.
+
+**Every face a project declares is embedded in it, Arial included** — genuine
+Monotype Arial 5.10 and Arial Black 5.06, in each of the six fixtures. So the
+harness needs no fonts installed on the host, and on a host that has Arial the
+embedded copy is still the better one: it is what GUI Designer rasterized the
+ground-truth snapshots with, where the system copy is whatever build the OS
+shipped.
 
 Missing faces fail loudly: `face()` raises `LookupError` rather than degrading
 to a wrong score. The exception is a host with Arial installed, where a missing
-embedded face silently resolves to Arial instead.
+embedded face silently resolves to the system Arial instead.
 
 ## Provenance
 

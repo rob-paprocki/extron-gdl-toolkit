@@ -43,21 +43,27 @@ Writing is the constrained one, for two independent reasons:
 A 64-bit PowerShell will load 34 of 39 assemblies and then fail on
 `GUI Designer.exe` specifically. If you see that, you are in the wrong host.
 
-### Working in a cloud session (Linux, no Windows)
+### Where to work
 
-Measured 2026-09-07 in a Claude Code cloud container. Everything except the
-PowerShell half runs, and the render harness reproduces `tests/baseline.json`
-**exactly** — mean 2.19%, median 1.65%, worst 7.68%, every page within 0.01%.
-Treat the cloud as the normal place to work and the Windows trip as one batched
-step at the end, not a per-iteration cost.
+Three platforms now reproduce `tests/baseline.json` **exactly** — mean 2.19%,
+median 1.65%, worst 7.68%, every page within 0.01%: macOS, a Claude Code Linux
+cloud container (2026-09-07), and the Windows box natively (2026-09-08).
+
+**If you are on the Windows box, work there.** The premise that "the Windows box
+is the scarce resource", which justified batching plans into one trip, no longer
+holds — a session there runs the Python half and drives GUI Designer in the same
+place, so author → build → verify is one loop with nothing to carry.
+
+Off Windows, everything except the PowerShell half still runs, and the table
+below says what waits for a Windows trip.
 
 | Runs in the cloud | Needs the Windows box |
 |---|---|
 | `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` | `powershell/*.ps1`, all eight |
 | `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` | File > Save and Build |
-| `gdl.spec` check / render / plan / donors | driving the VM — `prlctl` is host-side |
-| `gdl.edit` check / plan | `examples/add-page-and-popup.ps1` |
-| `tests/test_spec.py` (72 tests), `tests/test_edit.py` (23) | |
+| `gdl.spec` check / render / plan / donors | `examples/add-page-and-popup.ps1` |
+| `gdl.edit` check / plan | |
+| `tests/test_spec.py` (72), `test_edit.py` (23), `test_fonts.py` (7) | |
 | `tests/verify_built.py`, once the built file is carried back | |
 
 Setup is two commands:
@@ -88,7 +94,7 @@ container, and anything pushed goes to GitHub.
    Call `Test-GdlPopupBinding` rather than trusting your writes.
 
 3. **Build owns the artwork.** Controls are authored with `TLPImageID = -1`;
-   GUI Designer rasterises, deduplicates and assigns on build. What you author
+   GUI Designer rasterizes, deduplicates and assigns on build. What you author
    instead is `borderFillColor` plus a **named** border resource
    (`"Afterburn - 10 Radius 2 Thick"`). Neither survives into `layout.json` —
    read them from `ProjectGCP` via `gdl/project.py`.
@@ -119,7 +125,7 @@ python tests/score.py diff tests/baseline.json /tmp/after.json
 change lands.
 
 For authoring changes, the end-to-end check is `examples/add-page-and-popup.ps1`,
-which self-asserts. A file that merely serialises proves nothing; the real test
+which self-asserts. A file that merely serializes proves nothing; the real test
 is that GUI Designer opens *and builds* it, and that needs a Windows box.
 
 A clean build is still not proof the result is *right* — Build silently
@@ -133,19 +139,39 @@ python tests/verify_built.py out/plan.json out/generated.gdl
 It diffs the built `layout.json` against the plan that produced it and exits
 non-zero on any authored control that moved or lost its caption.
 
-## Driving the Windows VM from macOS
+## Driving GUI Designer
 
-This is scripted, not manual — `docs/from-scratch.md` §7 has the detail. The two
-things that cost time to discover:
+Scripted, not manual — `docs/from-scratch.md` §7 has the detail.
 
-- `prlctl exec` runs as `nt authority\system` with `UserInteractive = False`, so
-  anything that draws a form dies. Add **`--current-user`** and it runs as the
-  logged-on user with a desktop.
-- The host is at `\\Mac\Home\...` inside the guest. The `Z:` drive mapping is
-  per-interactive-session and is **not** visible to `prlctl exec`.
+**Run Claude Code on the Windows box and this is all local.** A session there is
+already interactive (`[Environment]::UserInteractive` is true, on session 1
+with a real desktop), so nothing needs a VM, a scheduled task or a remote exec:
 
-`prlctl capture "Windows 11" --file x.png` reads the screen back, and
-`powershell/Send-GdlKeys.ps1` drives GUI Designer's menus.
+```powershell
+Start-Process "C:\Program Files (x86)\Extron\GUI Designer\GUI Designer.exe" -ArgumentList '"C:\gdlwork\x.gdl"'
+powershell\Send-GdlKeys.ps1 -Keys '^+b'      # File > Save and Build
+```
+
+and `System.Drawing`'s `CopyFromScreen` reads the screen back. Use `C:\gdlwork`
+for build scratch — the repo lives on a mounted drive and GUI Designer is slow
+against it.
+
+Two gotchas:
+
+- **`Get-Process` caches `MainWindowTitle`.** It reads `GUI Designer` until you
+  call `.Refresh()`, and only then shows `GUI Designer - [TLP Pro 1035T:
+  x.gdl*]`. Polling the title for the project name or the dirty marker without
+  refreshing waits forever.
+- The window title's trailing `*` is the build-finished signal. Save and Build
+  clears it; a `Please wait while the project is being saved` overlay is up
+  until then.
+
+If you are instead driving a Parallels guest from macOS, the old route still
+works: `prlctl exec "Windows 11" --current-user ...` (without `--current-user`
+it runs as `nt authority\system` with `UserInteractive = False` and anything
+that draws a form dies), the host is at `\\Mac\Home\...` since the `Z:` mapping
+is per-interactive-session and invisible to `prlctl exec`, and `prlctl capture`
+reads the screen.
 
 **`Project > Verify` (Ctrl+B) is not a build.** It says "Build Complete - 0
 errors" and produces no payload; saving after it drops the payload entirely.
@@ -171,7 +197,7 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
   Write/Edit tools for any content containing backslashes.
 - `Save-GdlProject` prints a bare `The system cannot find the file specified.
   (Exception from HRESULT: 0x80070002)` on every save. It comes from inside an
-  Extron assembly during serialisation, the return value is intact, and it is
+  Extron assembly during serialization, the return value is intact, and it is
   not an error.
 - Windows long paths: the longest tracked path is 118 characters, so cloning
   into a deep directory fails without `core.longpaths`.
@@ -179,27 +205,26 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
   `-ExecutionPolicy Bypass` on a machine that has not set it.
 - `gdl/fonts/` must be extracted from **all six** fixtures — no single one
   embeds every face.
-- **There is no Arial on Linux, and `face()` raises rather than degrading.**
-  Arial and Arial Black are system faces, not embedded ones, so on a cloud box
-  they resolve nowhere and the render dies with `LookupError`. The scored `_alt`
-  fixture never draws Arial — it is Forma DJR Display throughout, so the 2.19%
-  baseline reproduces with no Arial present at all — but the `TLP1035-1.1.0`
-  fixture does, and hard-fails. Substituting metric-compatible Liberation Sans
-  (copy `LiberationSans-*.ttf` over `arial.ttf` / `arialbd.ttf` / `ariali.ttf` /
-  `arialbi.ttf` / `ariblk.ttf` in `gdl/fonts/`) gets it to render, but at 5.88%
-  mean and 23.51% worst against ground truth. That is good enough to look at and
-  **not** good enough to score or to record a baseline from. If you do it, know
-  that you have put a file named `arial.ttf` on disk that is not Arial.
+- **Arial is embedded. Extract it; never substitute it.** This used to read the
+  other way, and the correction is worth knowing about because the wrong version
+  cost real time. `extract()` matched `layout.json`'s declared size against the
+  measured sfnt length *exactly*, and both Arial faces carry bytes past the far
+  edge of their last table — 28 for Arial, 30 for Arial Black — so neither ever
+  matched, and both were written off as system faces the format referenced
+  without embedding. Genuine Monotype Arial 5.10 and Arial Black 5.06 are in
+  every fixture and in all 44 of Extron's installed templates. Nothing needs
+  Liberation Sans, and a `.gdl` renders identically on a host with no fonts
+  installed at all. `tests/test_fonts.py` is the gate that was missing.
 
 ## Things deliberately not in git
 
-- **Five of the seven faces in `gdl/fonts/`**, regenerated with
+- **Seven of the nine files in `gdl/fonts/`**, regenerated with
   `python -m gdl.fonts <file.gdl> gdl/fonts/`. Skip that and the harness does
   not degrade, it stops — `face()` raises `LookupError` on the first face it
   cannot resolve. The ignore is per file, not a class: Open Sans is Apache 2.0
-  and is tracked with its licence; Forma DJR Display is a retail typeface; the
-  four Extron and Crestron icon fonts carry no licence grant at all.
-  `gdl/fonts/README.md` has the per-file detail.
+  and is tracked with its license; Arial, Arial Black and Forma DJR Display are
+  retail typefaces; the four Extron and Crestron icon fonts carry no license
+  grant at all. `gdl/fonts/README.md` has the per-file detail.
   Note this keeps out a *convenient* copy, not the bytes — every face is
   embedded in the tracked `.gdl` fixtures and recoverable from them exactly. If
   the concern is distribution, `fixtures/` is the thing to look at.
@@ -238,7 +263,7 @@ handle and means nothing to a programmer.
   `powershell/Apply-GdlPlan.ps1` applies a plan to a real project — **verified
   end to end**: the example spec was generated, applied, packed, and built by
   GUI Designer 1.27.0.9 with 0 errors. Use `-WhatIf` first; it dry-runs and
-  reports every unresolved donor and field. Colour fidelity is the open gap.
+  reports every unresolved donor and field. Color fidelity is the open gap.
   See `docs/from-scratch.md` §5b. **Group registration was never actually missing**;
   `Register-GdlPopupGroup` is complete. See `docs/from-scratch.md`, which also
   lists the six questions that need one session on a Windows box.
