@@ -302,10 +302,15 @@ Checking the model would have said everything was fine.
   nobody has looked at whether it *rasterizes* correctly. The control used was
   the Offline Window, which Build legitimately leaves unrasterized, so there is
   no artwork to inspect. Redo it against a visible control.
-- Color fidelity is not there yet: the accent button and some panel fills did
-  not survive, and the generated page still shows a band of donor page artwork
-  behind the content area. Geometry, captions, IDs and structure are correct;
-  color plumbing needs another pass.
+- ~~Color fidelity is not there yet.~~ **Fixed in `bf0fe8b`; this bullet then sat
+  stale for longer than the bug was alive.** Re-verified 2026-09-08 on a fresh
+  run end to end — spec, plan, apply, GUI Designer Save and Build — reading the
+  color off the *built artwork* rather than the model, because a built control's
+  `BackgroundFillColor` reads back transparent white no matter what was
+  authored. 21 of 21 planned fills are the plurality color of their own
+  rasterized asset, the accent button among them at 87% `#3D8BFD`, and the page
+  artwork is 100% `#12131C` with no trace of the donor band.
+  `tests/verify_built.py` checks this now, so it is a gate rather than a memory.
 - The resource counts are from the `_alt 2_0_0` fixture, which carries 32 border
   resources; the two archived fixtures carry 36. Across Extron's 44 installed
   templates the count runs **13 to 32**, so treat it as per-project and read it,

@@ -139,6 +139,14 @@ python tests/verify_built.py out/plan.json out/generated.gdl
 It diffs the built `layout.json` against the plan that produced it and exits
 non-zero on any authored control that moved or lost its caption.
 
+It also checks **color, off the artwork rather than the model.** That
+distinction is the whole point: a built control's `BackgroundFillColor` reads
+back as transparent white whatever you authored, because Build rasterizes fill,
+border and caption into a PNG and leaves a `TLPImageID` behind. So the check
+takes the plurality opaque color of each control's own asset, and reads the page
+asset too — a donor background image re-rasterized under the fill is invisible
+in every field and obvious in the artwork.
+
 ## Driving GUI Designer
 
 Scripted, not manual — `docs/from-scratch.md` §7 has the detail.
@@ -160,11 +168,17 @@ Two gotchas:
 
 - **`Get-Process` caches `MainWindowTitle`.** It reads `GUI Designer` until you
   call `.Refresh()`, and only then shows `GUI Designer - [TLP Pro 1035T:
-  x.gdl*]`. Polling the title for the project name or the dirty marker without
-  refreshing waits forever.
-- The window title's trailing `*` is the build-finished signal. Save and Build
-  clears it; a `Please wait while the project is being saved` overlay is up
-  until then.
+  x.gdl*]`. Polling the title for the project name without refreshing waits
+  forever.
+- **Wait for a build with `powershell/Wait-GdlBuild.ps1`, not by watching the
+  file or the title.** Both obvious signals are wrong. The title's trailing `*`
+  only means unsaved changes, so a freshly packed file opened clean never has
+  one and the wait returns immediately onto a stale payload — indistinguishable
+  from a build that silently did nothing. And `LastWriteTime` stops changing
+  well before the build ends, because Save and Build writes the project first
+  and the payload after. The Build Manager window is the real signal, and it is
+  a child window, so `MainWindowTitle` cannot see it — the script enumerates
+  top-level windows instead.
 
 If you are instead driving a Parallels guest from macOS, the old route still
 works: `prlctl exec "Windows 11" --current-user ...` (without `--current-user`
