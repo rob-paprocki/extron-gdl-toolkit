@@ -137,7 +137,18 @@ try {
         if ($proc) { $proc.Refresh() }
     } while ((-not $proc -or $proc.MainWindowTitle -notlike "*$leaf*") -and (Get-Date) -lt $deadline)
     if (-not $proc -or $proc.MainWindowTitle -notlike "*$leaf*") {
-        throw "GUI Designer did not open $leaf within 180s"
+        # Distinguish "slow" from "refused". GUI Designer does not report a file
+        # it declines to open - it comes up empty and shows the Project Create
+        # Wizard, which from out here looks identical to a hang. The usual cause
+        # is a donor with no PBProject (a .glt template is a page library, not a
+        # project); `gdl.spec donors` now catches that at step 2.
+        $wizard = $null -ne (Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue)
+        $hint = if ($wizard) {
+            " GUI Designer is running but has not opened it - check for a Project " +
+            "Create Wizard on screen, which means it rejected the file rather than " +
+            "being slow."
+        } else { '' }
+        throw "GUI Designer did not open $leaf within 180s.$hint"
     }
     Write-Output "  $($proc.MainWindowTitle)"
 

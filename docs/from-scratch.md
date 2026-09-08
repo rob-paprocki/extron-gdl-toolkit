@@ -295,6 +295,77 @@ That third one is worth remembering: the file was *correct* the whole time -
 `layout.json` had the right text - and only the rendered artwork was wrong.
 Checking the model would have said everything was fine.
 
+## 5c. Authoring without a client project: seeds
+
+Every generated panel so far clones `fixtures/gdl/Interface__alt_...Liberty_Bank...`,
+which is a **real client project** for job J26450039. That is fine for testing and
+wrong for delivery: the result inherits that client's page names, popups,
+resources, artwork and retail fonts, and is pinned to their model and theme.
+
+The obvious fix is to clone one of Extron's own templates instead. There are 44
+of them under `GUI Designer Templates\TouchLink Templates` in the shared
+Documents folder, they are the same `KP`-swapped container, `Project.open()`
+reads all 44, and they cover six theme families across eight resolutions.
+
+**It does not work, and it fails quietly.** Measured 2026-09-08 against
+`Afterburn 1020 Series.glt`:
+
+- `gdl.spec donors` was happy — every control type resolved.
+- `Apply-GdlPlan.ps1` applied all 16 ops and wrote a 3.4 MB ProjectGCP.
+- `gdl.container pack` produced a 1.7 MB `.gdl`.
+- GUI Designer opened **empty** and showed the Project Create Wizard.
+
+A `.glt` has no `PBProject`. It is a library of pages, popups and resources with
+no project wrapper, so there is nothing for GUI Designer to open and it offers to
+make a new project instead. From outside, that is indistinguishable from a hang —
+the pipeline waited its full 180s for a window title that was never coming.
+`Panel.check_donor` now catches this in about a second, and `New-GdlPanel.ps1`
+says what a missing window probably means.
+
+`pack()` no longer requires a payload member, which is worth keeping on its own:
+a `.glt` has none, and neither does a `.gdl` saved without building. The result is
+a ProjectGCP-only container, which GUI Designer opens and builds happily — the
+payload is Build's *output*, not its input.
+
+### Making a seed
+
+The project wrapper has to come from GUI Designer. `PBProject` cannot be
+constructed headlessly any more than a `PBPage` can, and a template has none to
+clone.
+
+So, once per theme:
+
+1. **File > New Project...**
+2. Step 1, pick any panel — the model is not what you are capturing.
+3. Step 2, choose **Theme**, then the theme, project font and application.
+4. **Create**, then save it outside the repo. That file is the seed.
+
+Then pass `-Donor <seed>.gdl`, and nothing of anyone else's is in the output.
+
+**One seed per theme is enough, not one per model.** `gdl.edit`'s `retarget` op
+moves a project to another panel model and rescales it — verified at 654/654
+controls on a 1035T to 1535M. Six seeds cover the six theme families; retarget
+covers the 55 models.
+
+### Do not try to automate the wizard
+
+It cannot be driven through UI Automation. `AutomationElement.FromHandle` on the
+wizard's HWND returns the window — name and class come back correctly — and its
+descendant tree is then **empty**: zero combo boxes, zero radio buttons, zero
+buttons. The controls expose no UIA providers, so there is nothing to find by
+name and nothing to invoke.
+
+Two things that mislead on the way to finding that out. `InvokePattern.Invoke()`
+on the menu item that opens the wizard throws `Operation timed out
+(0x80131505)`, because the call blocks on the modal — the dialog *does* open, so
+query it from a separate call rather than believing the exception. And
+`FindFirst` from `RootElement` does not see the wizard at all while those modals
+are up; only `FromHandle` on an `EnumWindows` result reaches it.
+
+What is left is coordinate clicking or blind `SendKeys` tabbing, both of which
+depend on window size and dialog layout. For a step run once per theme, that is a
+bad trade.
+
 ## 6. Honest limits of everything above
 
 - Questions 5 and 6 are untested.

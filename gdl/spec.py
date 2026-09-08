@@ -860,13 +860,31 @@ class Panel:
         """
         from .project import Project
         proj = Project.open(path)
+        out = []
+
+        # A donor must be a PROJECT, not a page library. Extron's .glt templates
+        # have no PBProject - they are pages, popups and resources with no
+        # project wrapper - and everything downstream still appears to work: the
+        # types all resolve, the applier writes 16 of 16 ops, the pack succeeds.
+        # GUI Designer then silently declines to open the result and offers the
+        # Project Create Wizard instead, which reads as "it hung" rather than as
+        # a rejection. Caught here it costs a second instead of a build cycle.
+        if next(proj.instances('PBProject'), None) is None:
+            out.append(
+                f'{path} has no PBProject, so it is a page library rather than a '
+                f'project. GUI Designer will not open a file built from it - it '
+                f'opens empty and shows the Project Create Wizard. Use a real '
+                f'.gdl as the donor; to author from Extron content with no client '
+                f'material in it, make a seed project first (File > New, pick the '
+                f'panel and theme, save) and use that.')
+
         have, names = set(), set()
         for pg in proj.pages():
             names.add(pg['name'])
             for c in pg['controls']:
                 have.add(c['type'])
-        out = [f'donor {path} has no {t} to clone - that control type cannot '
-               f'be authored from it' for t in sorted(self.needs() - have)]
+        out += [f'donor {path} has no {t} to clone - that control type cannot '
+                f'be authored from it' for t in sorted(self.needs() - have)]
         for it in list(self.pages) + list(self.popups):
             if it['name'] in names:
                 out.append(f"{it['name']!r} already exists in the donor project - page and "

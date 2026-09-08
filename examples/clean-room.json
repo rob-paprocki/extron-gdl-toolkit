@@ -1,0 +1,82 @@
+{
+  "name": "Clean Room 1020",
+  "model": "TLP1020T",
+  "size": [1024, 600],
+
+  "_brief": "A clean-room panel: nothing of any client's in it. The first spec here on a canvas that is not 1280x800 - a TLP Pro 1020T is 1024x600 at 118 DPI against the 1035T's 149, so it exercises the per-model DPI table rather than assuming a constant.",
+
+  "_donor": "NEEDS A SEED, and will not build against the fixtures without putting a client's content in the result. Extron's .glt templates cannot be donors either - they have no PBProject, and `gdl.spec donors` refuses them. Make a seed once: GUI Designer, File > New Project..., Step 2 'Theme' -> Afterburn, Create, save it outside the repo. Then: powershell\\New-GdlPanel.ps1 -Spec examples\\clean-room.json -Donor <seed>.gdl -Output C:\\gdlwork\\CleanRoom.gdl. See docs/from-scratch.md section 5c. `check` and `render` need no donor and work today.",
+
+  "_theme_note": "The documented Afterburn token set from gdl.themes.AFTERBURN, whose typeface is Open Sans - Apache 2.0, embedded in every template, and the one face this repo can redistribute.",
+
+  "theme": {
+    "background": "#242634",
+    "surface": "#242634",
+    "raised": "#37394E",
+    "accent": "#3D8BFD",
+    "text": "#FFFFFF",
+    "muted": "#BABCCE",
+    "font": "Open Sans",
+    "size": 16
+  },
+
+  "pages": [
+    {
+      "name": "Room Home",
+      "number": 1000,
+      "controls": [
+        { "kind": "panel", "name": "TopBar", "rect": [0, 0, 1024, 80],
+          "fill": "raised", "border": "rect" },
+        { "kind": "label", "name": "RoomName", "rect": [32, 0, 560, 80],
+          "text": "Conference Room", "align": "left", "size": 30 },
+        { "kind": "label", "name": "RoomState", "rect": [472, 0, 520, 80],
+          "text": "Available", "align": "right", "size": 18, "color": "muted" },
+
+        { "kind": "label", "name": "SourcesLabel", "rect": [32, 100, 400, 28],
+          "text": "SOURCES", "align": "left", "size": 15, "color": "muted" },
+
+        { "grid": {
+            "rect": [32, 136, 960, 200],
+            "cols": 3, "gap": 20,
+            "kind": "button", "fill": "raised", "border": "afterburn",
+            "stroke": "muted",
+            "items": [
+              { "text": "Laptop" },
+              { "text": "Wireless" },
+              { "text": "Room PC" }
+            ]
+          }
+        },
+
+        { "kind": "panel", "name": "VolumeWell", "rect": [32, 372, 600, 112],
+          "fill": "raised", "border": "afterburn-flat" },
+        { "kind": "label", "name": "VolumeLabel", "rect": [56, 372, 170, 112],
+          "text": "Volume", "align": "left", "size": 18, "color": "muted" },
+        { "grid": {
+            "rect": [236, 396, 372, 64],
+            "cols": 3, "gap": 16,
+            "kind": "button", "fill": "surface", "border": "capsule",
+            "stroke": "muted",
+            "items": [
+              { "text": "Mute" },
+              { "text": "–" },
+              { "text": "+" }
+            ]
+          }
+        },
+
+        { "kind": "button", "name": "Present", "rect": [664, 372, 328, 112],
+          "text": "Start Presenting", "fill": "accent", "border": "afterburn",
+          "size": 20 },
+
+        { "kind": "panel", "name": "StatusStrip", "rect": [0, 528, 1024, 72],
+          "fill": "raised", "border": "rect" },
+        { "kind": "label", "name": "Status", "rect": [32, 528, 480, 72],
+          "text": "Ready", "align": "left", "size": 15, "color": "muted" },
+        { "kind": "label", "name": "Hint", "rect": [512, 528, 480, 72],
+          "text": "Tap a source to begin", "align": "right", "size": 15,
+          "color": "muted" }
+      ]
+    }
+  ]
+}

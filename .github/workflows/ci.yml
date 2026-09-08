@@ -71,7 +71,8 @@ jobs:
         # cp1252 spec read. Its en-dash caption is the encoding canary.
         run: |
           python -m gdl.spec check examples/huddle.json
-          python -m gdl.spec donors examples/huddle.json             fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl
+          python -m gdl.spec donors examples/huddle.json \
+            fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl
           python -m gdl.spec plan examples/huddle.json /tmp/huddle-plan.json
           python - <<'PY'
           import json
@@ -124,6 +125,17 @@ jobs:
           assert not extra, f'colors not in the Afterburn guide: {sorted(extra)}'
           print(f'  {len(observed)} colors observed, all in the guide')
           PY
+
+      - name: the clean-room example checks on a canvas that is not 1280x800
+        # TLP1020T, 1024x600 at 118 DPI. No donor: it needs a seed project a
+        # human makes once, and the fixtures are client material. check and
+        # render need neither.
+        run: python -m gdl.spec check examples/clean-room.json
+
+      - name: containers with no built payload round-trip
+        # .glt templates and unbuilt .gdl files hold only a ProjectGCP.
+        # payload_name used to raise a bare StopIteration on them.
+        run: python tests/test_container.py
 
       - name: every declared face comes back out of every fixture
         # The gate that was missing. Arial and Arial Black were declared,
