@@ -159,6 +159,13 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
 
 ## Traps that have already cost time
 
+- **The font is not the donor's any more, but check that it isn't.**
+  `Apply-GdlPlan.ps1` set no font at all until 2026-09-08, so a spec's `size`
+  reached the preview and stopped there - labels built at the donor's 20pt,
+  buttons at 13pt, shapes at 14.25pt. `Set-GdlFont` now applies size, weight and
+  (where the project already carries the resource) family, on the control and on
+  every state. Family is the conservative one: a face with no `PBFontResource`
+  in the donor is reported, not silently substituted.
 - **`flattenText` bakes captions into the artwork.** A cloned button inherits it,
   so Build deduplicates every generated button to one asset carrying the donor's
   word — while `layout.json` holds the correct captions. The model reads

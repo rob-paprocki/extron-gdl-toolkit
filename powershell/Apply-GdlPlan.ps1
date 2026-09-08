@@ -83,6 +83,7 @@ function Add-GdlControls {
         Set-GdlFieldIfPresent $c 'buttonImageField' $null | Out-Null
         Set-GdlFieldIfPresent $c 'backgroundImageField' $null | Out-Null
         Set-GdlBorder $Project $c $op.border
+            Set-GdlFont $Project $c $op.font
             Set-GdlFieldIfPresent $c 'textAlignmentField' $op.alignment | Out-Null
 
             # A button renders from its STATE, not from the control: layout.json's
@@ -110,6 +111,10 @@ function Add-GdlControls {
                     Set-GdlColor $Project $st 'borderFillColorField' $op.fill
                     Set-GdlColor $Project $st 'borderColorField' $op.stroke
                     Set-GdlBorder $Project $st $op.border
+                    # A button renders its caption from the STATE's font,
+                    # not the control's, so a size set only on the control
+                    # is ignored the same way a caption would be.
+                    Set-GdlFont $Project $st $op.font
                 }
             }
 

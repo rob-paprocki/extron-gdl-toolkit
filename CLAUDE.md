@@ -81,7 +81,7 @@ Before working here, note that `fixtures/` is real client material — see
 *Working on the fixtures* below. A cloud session clones it into a managed
 container, and anything pushed goes to GitHub.
 
-## Three things that will waste your time if you don't know them
+## Four things that will waste your time if you don't know them
 
 1. **Clone, never construct.** `PBPage(PBProject)` and friends throw
    `NullReferenceException` outside the running app. So do the property
@@ -93,7 +93,17 @@ container, and anything pushed goes to GitHub.
    The file opens, it builds, the binding just reads "Unassigned" in the UI.
    Call `Test-GdlPopupBinding` rather than trusting your writes.
 
-3. **Build owns the artwork.** Controls are authored with `TLPImageID = -1`;
+3. **A preview agreeing with the spec proves nothing about the panel.** Both of
+   this repo's silent authoring failures were the preview drawing what the spec
+   said while the applier shipped the donor's value: `flattenText` for captions,
+   and the font, which `Apply-GdlPlan.ps1` did not set at all until 2026-09-08 —
+   so every label built at the donor's 20pt, every button at 13pt, every shape
+   at 14.25pt, whatever the spec asked for. Note what that did to the gate:
+   `gdl.spec check` enforces Extron's ≥14pt body-text rule against the *spec*,
+   so the one check that should have caught it was measuring a number that never
+   left the file. Verify against the built result, not the plan.
+
+4. **Build owns the artwork.** Controls are authored with `TLPImageID = -1`;
    GUI Designer rasterizes, deduplicates and assigns on build. What you author
    instead is `borderFillColor` plus a **named** border resource
    (`"Afterburn - 10 Radius 2 Thick"`). Neither survives into `layout.json` —
@@ -137,7 +147,8 @@ python tests/verify_built.py out/plan.json out/generated.gdl
 ```
 
 It diffs the built `layout.json` against the plan that produced it and exits
-non-zero on any authored control that moved or lost its caption.
+non-zero on any authored control that moved, lost its caption, or came back at
+the donor's font size instead of the spec's.
 
 It also checks **color, off the artwork rather than the model.** That
 distinction is the whole point: a built control's `BackgroundFillColor` reads

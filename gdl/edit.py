@@ -72,7 +72,8 @@ class Edits:
 
     @classmethod
     def load(cls, spec_path, gdl_path):
-        with open(spec_path) as fh:
+        # UTF-8, not the locale codepage - see the note in gdl/spec.py.
+        with open(spec_path, encoding='utf-8') as fh:
             return cls(json.load(fh), gdl_path)
 
     # -- selection ---------------------------------------------------------
@@ -459,7 +460,7 @@ def main(argv):
             print('refusing to emit a plan while there are errors')
             return 1
         out = argv[4] if len(argv) > 4 else 'out/edits-plan.json'
-        with open(out, 'w') as fh:
+        with open(out, 'w', encoding='utf-8') as fh:
             json.dump(plan, fh, indent=2)
         print(f'-> {out}')
         return 0

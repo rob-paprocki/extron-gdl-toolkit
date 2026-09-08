@@ -376,7 +376,11 @@ class Panel:
 
     @classmethod
     def load(cls, path):
-        with open(path) as fh:
+        # JSON is UTF-8 by definition (RFC 8259). Without this Python uses the
+        # locale encoding, which on Windows is cp1252 - so an en-dash, a degree
+        # sign or an accented room name in a spec comes through as mojibake and
+        # gets rasterized into the panel. Silent, and invisible off Windows.
+        with open(path, encoding='utf-8') as fh:
             return cls(json.load(fh))
 
     # -- layout ------------------------------------------------------------
@@ -919,7 +923,7 @@ def main(argv):
                 print('  ' + p)
             return 1
         plan = panel.plan()
-        with open(argv[3], 'w') as fh:
+        with open(argv[3], 'w', encoding='utf-8') as fh:
             json.dump(plan, fh, indent=1)
         print(f'{len(plan["pages"])} page(s), '
               f'{sum(len(p["controls"]) for p in plan["pages"])} control ops -> {argv[3]}')

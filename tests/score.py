@@ -139,16 +139,16 @@ def main():
 
     if args.cmd == 'record':
         scores = record(args.gdl, args.snapshots)
-        with open(args.out, 'w') as fh:
+        with open(args.out, 'w', encoding='utf-8') as fh:
             json.dump(scores, fh, indent=1, sort_keys=True)
         s = summarise(scores)
         print(f'{s["pages"]} pages   mean {s["mean"]:.2f}%   '
               f'median {s["median"]:.2f}%   worst {s["worst"]:.2f}%   -> {args.out}')
         return 0
 
-    with open(args.before) as fh:
+    with open(args.before, encoding='utf-8') as fh:
         before = json.load(fh)
-    with open(args.after) as fh:
+    with open(args.after, encoding='utf-8') as fh:
         after = json.load(fh)
     return diff(before, after, args.tol)
 

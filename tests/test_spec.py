@@ -7,8 +7,10 @@ narrow looks fine in a preview and wrong on a panel.
 
     python tests/test_spec.py
 """
+import json
 import os
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -554,6 +556,68 @@ class TestBorderGeometry(unittest.TestCase):
         self.assertEqual(ALIGN['center'], 3 * 1 + 0)
         self.assertEqual(ALIGN['top-left'], 3 * 2 + 1)
         self.assertEqual(ALIGN['bottom-right'], 3 * 0 + 2)
+
+
+class TestSpecsAreUTF8(unittest.TestCase):
+    """A spec is JSON, and JSON is UTF-8 (RFC 8259) whatever the locale says.
+
+    `open(path)` without an encoding uses the platform default, which is cp1252
+    on a stock Windows install. A prose-written spec arrives full of characters
+    that are not ASCII - typographic dashes and quotes, degree signs, accented
+    room names - and cp1252 mishandles them two different ways:
+
+      * an en-dash decodes to mojibake, silently. Found by rendering a volume
+        row whose minus was an en-dash: the button read a-EUR-quote, the build
+        was clean, and no check looked at captions as text.
+      * a curly quote raises UnicodeDecodeError outright, because 0x9D is not
+        assigned in cp1252. The spec simply will not load.
+
+    Neither is reproducible off Windows, where the default is already UTF-8.
+    """
+
+    SAMPLE = {'name': 'Sala Café', 'size': [1280, 800],
+              'theme': {'text': '#FFFFFF', 'raised': '#2E3142'},
+              'pages': [{'name': 'P', 'number': 1000, 'controls': [
+                  {'kind': 'button', 'name': 'Down', 'rect': [0, 0, 200, 80],
+                   'text': '–', 'fill': 'raised'},
+                  {'kind': 'label', 'name': 'Temp', 'rect': [0, 100, 200, 80],
+                   'text': '21° — “Auto”'},
+              ]}]}
+
+    def _round_trip(self, encoding_written='utf-8'):
+        d = tempfile.mkdtemp()
+        path = os.path.join(d, 'spec.json')
+        with open(path, 'w', encoding=encoding_written) as fh:
+            json.dump(self.SAMPLE, fh, ensure_ascii=False)
+        return Panel.load(path)
+
+    def test_non_ascii_captions_survive_loading(self):
+        p = self._round_trip()
+        caps = [c['text'] for c in p.spec['pages'][0]['controls']]
+        self.assertIn('–', caps[0])
+        self.assertEqual(caps[1], '21° — “Auto”')
+        self.assertEqual(p.spec['name'], 'Sala Café')
+
+    def test_non_ascii_reaches_the_plan(self):
+        p = self._round_trip()
+        plan = p.plan()
+        texts = [(op.get('fields') or {}).get('textField')
+                 for op in plan['pages'][0]['controls']]
+        self.assertIn('–', texts)
+        self.assertTrue(any(t and '“' in t for t in texts),
+                        f'curly quotes lost on the way to the plan: {texts}')
+
+    def test_a_plan_written_out_and_read_back_keeps_them(self):
+        p = self._round_trip()
+        d = tempfile.mkdtemp()
+        out = os.path.join(d, 'plan.json')
+        with open(out, 'w', encoding='utf-8') as fh:
+            json.dump(p.plan(), fh, ensure_ascii=False)
+        with open(out, encoding='utf-8') as fh:
+            back = json.load(fh)
+        texts = [(op.get('fields') or {}).get('textField')
+                 for op in back['pages'][0]['controls']]
+        self.assertIn('–', texts)
 
 
 if __name__ == '__main__':

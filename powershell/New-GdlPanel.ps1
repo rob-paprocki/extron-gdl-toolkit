@@ -51,8 +51,35 @@ $Output = [System.IO.Path]::GetFullPath($Output)
 if (-not $Work) {
     $Work = Join-Path 'C:\gdlwork' ([System.IO.Path]::GetFileNameWithoutExtension($Output))
 }
-if (Test-Path $Work) { Remove-Item $Work -Recurse -Force }
+$Work = [System.IO.Path]::GetFullPath($Work)
+
+# This used to be `Remove-Item $Work -Recurse -Force`, and it deleted the spec it
+# was about to build. -Output C:\gdlwork\huddle\Huddle.gdl derives a work
+# directory of C:\gdlwork\Huddle, Windows paths are case-insensitive, and the
+# spec was sitting in C:\gdlwork\huddle. Refuse the case rather than narrow it:
+# a scratch directory that eats its own inputs is worth failing loudly over.
+function Test-Inside([string]$child, [string]$parent) {
+    $c = [System.IO.Path]::GetFullPath($child).TrimEnd('\')
+    $p = [System.IO.Path]::GetFullPath($parent).TrimEnd('\')
+    return $c.Equals($p, 'OrdinalIgnoreCase') -or
+           $c.StartsWith($p + '\', 'OrdinalIgnoreCase')
+}
+foreach ($pair in @(@{n = 'spec'; v = $Spec}, @{n = 'donor'; v = $Donor})) {
+    if (Test-Inside $pair.v $Work) {
+        throw ("the $($pair.n) is inside the work directory ($Work), which this " +
+               'script clears. Pass -Work somewhere else, or move the file out.')
+    }
+}
+
+# Clear only what this script writes, so an unrelated file in a reused scratch
+# directory survives.
 New-Item -ItemType Directory -Force -Path $Work | Out-Null
+foreach ($n in 'plan.json', 'ProjectGCP', 'gen_ProjectGCP') {
+    $p = Join-Path $Work $n
+    if (Test-Path $p) { Remove-Item $p -Force }
+}
+Get-ChildItem -Path $Work -Filter '*.tgz4' -File -ErrorAction SilentlyContinue |
+    Remove-Item -Force
 New-Item -ItemType Directory -Force -Path (Split-Path $Output -Parent) | Out-Null
 
 $step = 0

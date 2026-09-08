@@ -130,6 +130,54 @@ def check_fills(plan_items, table, assets, kind):
     return problems, notes, checked
 
 
+def check_fonts(plan_items, table, kind):
+    """Typography must reach the panel, not just the preview.
+
+    `Apply-GdlPlan.ps1` set no font at all for as long as it existed, so a
+    spec's `size` was honored by `gdl.spec render` and then dropped: every
+    generated label built at the donor's 20pt, every button at 13pt, every shape
+    at 14.25pt. The preview was an honest picture of a design nobody was
+    building. Worse, `gdl.spec check` enforces Extron's >=14pt body-text rule
+    against the spec, so the one gate that should have caught it was measuring a
+    number that never left the file.
+
+    Unlike fill, this one IS readable from the model - `layout.json` carries
+    Font.PointSize per control - so it needs no artwork.
+    """
+    problems, checked = [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            want = op.get('font')
+            if not want:
+                continue
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if c is None:
+                continue
+            font = c.get('Font') or {}
+            size = want.get('size')
+            if size is not None and font.get('PointSize') is not None:
+                checked += 1
+                if abs(float(font['PointSize']) - float(size)) > 0.01:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r}: planned {size}pt, built "
+                        f"{font['PointSize']}pt - the applier is leaving the donor's font")
+            if want.get('name') and font.get('Name') and font['Name'] != want['name']:
+                problems.append(f"{kind} {item['name']!r} {name!r}: planned font "
+                                f"{want['name']!r}, built {font['Name']!r}")
+            style = font.get('Style') or {}
+            for key, built in (('bold', 'Bold'), ('italic', 'Italic')):
+                if want.get(key) is not None and built in style:
+                    if bool(style[built]) != bool(want[key]):
+                        problems.append(f"{kind} {item['name']!r} {name!r}: planned "
+                                        f'{key}={want[key]}, built {style[built]}')
+    return problems, checked
+
+
 def check_page_background(plan_pages, pages, assets):
     """The donor's background image is a separate reference from its artwork.
 
@@ -227,7 +275,8 @@ def check_edits(plan, j):
 
 
 def check(plan_path, built_path):
-    plan = json.load(open(plan_path))
+    with open(plan_path, encoding='utf-8') as fh:
+        plan = json.load(fh)
     j, assets = load(built_path)
     if plan.get('generated_by') == 'gdl.edit':
         return check_edits(plan, j)
@@ -293,6 +342,9 @@ def check(plan_path, built_path):
         checked += n
         for note in notes:
             print(f'  FILL NOT DOMINANT (survived, but check it by eye): {note}')
+        probs, n = check_fonts(spec, table, kind)
+        problems += probs
+        checked += n
     problems += check_page_background(plan['pages'], pages, assets)
 
     return problems, checked
