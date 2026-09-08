@@ -40,7 +40,9 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 2. **Pick the theme.** `gdl.themes.AFTERBURN` is the documented token set. For
    Mach/Shockwave/Turbulence, or a client's house style, run
    `python -m gdl.themes <template.glt>` and read the tokens off the template.
-3. **Write the spec** — see `examples/panel.json`. Use `grid`/`stack` for layout;
+3. **Write the spec** — see `examples/panel.json` for the full vocabulary and
+   `examples/huddle.json` for a small one written straight from a prose brief.
+   Use `grid`/`stack` for layout;
    never hand-type a rect. Nest them for sub-regions (a nested directive lays out
    inside its parent cell, and a `rect` at that depth is an offset into it).
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,

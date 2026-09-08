@@ -1,0 +1,78 @@
+{
+  "name": "Huddle Room",
+  "model": "TLP1035T",
+  "size": [1280, 800],
+
+  "_brief": "Written straight from a prose brief: 'A huddle room panel for a 1035T. Dark, big and simple - non-technical users. Top bar with the room name and whether a call is active. Three large source buttons across the middle. A volume row. And a red End Call button bottom-right, clearly separated.' Kept as an example because building it found two bugs the worked example could not: the applier never set the font (every size fell back to the donor), and a spec was read in the locale codepage, so the en-dash on the volume-down button arrived as mojibake. Both are gated now.",
+
+  "theme": {
+    "background": "#12131C",
+    "surface": "#242634",
+    "raised": "#2E3142",
+    "danger": "#C0392B",
+    "text": "#FFFFFF",
+    "muted": "#BABCCE",
+    "font": "Forma DJR Display",
+    "size": 18
+  },
+
+  "pages": [
+    {
+      "name": "Huddle Home",
+      "number": 1000,
+      "controls": [
+        { "kind": "panel", "name": "TopBar", "rect": [0, 0, 1280, 112],
+          "fill": "surface", "border": "rect" },
+        { "kind": "label", "name": "RoomName", "rect": [40, 0, 700, 112],
+          "text": "Huddle Room", "align": "left", "size": 40 },
+        { "kind": "label", "name": "CallState", "rect": [600, 0, 640, 112],
+          "text": "No call in progress", "align": "right", "size": 20,
+          "color": "muted" },
+
+        { "kind": "label", "name": "PickSource", "rect": [40, 148, 700, 36],
+          "text": "SHARE SOMETHING", "align": "left", "size": 16,
+          "color": "muted" },
+
+        { "grid": {
+            "rect": [40, 196, 1200, 300],
+            "cols": 3, "gap": 24,
+            "kind": "button", "fill": "raised", "border": "afterburn",
+            "items": [
+              { "text": "Laptop" },
+              { "text": "Wireless" },
+              { "text": "Room PC" }
+            ]
+          }
+        },
+
+        { "kind": "panel", "name": "VolumeWell", "rect": [40, 540, 760, 140],
+          "fill": "surface", "border": "afterburn-flat" },
+        { "kind": "label", "name": "VolumeLabel", "rect": [72, 540, 220, 140],
+          "text": "Volume", "align": "left", "size": 20, "color": "muted" },
+        { "grid": {
+            "rect": [300, 572, 468, 76],
+            "cols": 3, "gap": 20,
+            "kind": "button", "fill": "raised", "border": "capsule",
+            "items": [
+              { "text": "Mute" },
+              { "text": "–" },
+              { "text": "+" }
+            ]
+          }
+        },
+
+        { "kind": "button", "name": "EndCall", "rect": [872, 540, 368, 140],
+          "text": "End Call", "fill": "danger", "border": "afterburn",
+          "size": 26 },
+
+        { "kind": "panel", "name": "StatusStrip", "rect": [0, 736, 1280, 64],
+          "fill": "surface", "border": "rect" },
+        { "kind": "label", "name": "Status", "rect": [40, 736, 800, 64],
+          "text": "Ready", "align": "left", "size": 16, "color": "muted" },
+        { "kind": "label", "name": "Hint", "rect": [440, 736, 800, 64],
+          "text": "Tap a source to share", "align": "right", "size": 16,
+          "color": "muted" }
+      ]
+    }
+  ]
+}
