@@ -11,8 +11,8 @@ kept in ProjectGCP still has them, and they are what an authoring tool sets:
                       giving shape type, corner radius and thickness
     backgroundImage / buttonImage   named image resources
 
-Build rasterises those into `N.png` and assigns TLPImageID. So a generator
-never produces artwork — it names resources and sets colours, exactly as a
+Build rasterizes those into `N.png` and assigns TLPImageID. So a generator
+never produces artwork — it names resources and sets colors, exactly as a
 designer does in the UI.
 
 This module is read-only and pure Python: it does not need GUI Designer
@@ -180,7 +180,7 @@ class Project:
 
     # -- the page tree -----------------------------------------------------
     def items(self, lst):
-        """Elements of a serialised List<T>.
+        """Elements of a serialized List<T>.
 
         `_items` is the backing array and is over-allocated - 32 slots holding
         4 pages - so it must be sliced to `_size`. Reading the whole array
@@ -238,7 +238,7 @@ class Project:
                 yield self._page(pg, kind)
 
     def fill_map(self):
-        """(page id, control id) -> the fill Build would have rasterised.
+        """(page id, control id) -> the fill Build would have rasterized.
 
         Only controls Build left without artwork, which are the only ones whose
         appearance layout.json cannot describe. Keyed on the ids both models
@@ -271,9 +271,9 @@ if __name__ == '__main__':
     print(f'border resources ({len(res)}):')
     for n, geo in sorted(res.items()):
         print(f'   {n:<40} {geo}')
-    unrasterised = [c for c in p.controls() if c['tlp_image'] == -1 and c['fill']]
-    print(f'\ncontrols with no built artwork but a real fill ({len(unrasterised)}) '
+    unrasterized = [c for c in p.controls() if c['tlp_image'] == -1 and c['fill']]
+    print(f'\ncontrols with no built artwork but a real fill ({len(unrasterized)}) '
           f'- these are the ones layout.json cannot describe:')
-    for c in unrasterised:
+    for c in unrasterized:
         print(f"   {c['type']:<10} {str(c['name'])[:22]:<22} {c['rect']} "
               f"fill={c['fill']} border={c['border']}")

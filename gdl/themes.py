@@ -1,13 +1,13 @@
 """Theme token sets - one shipped, and a way to read the rest out of a template.
 
 Extron ships four themes (Afterburn, Mach, Shockwave, Turbulence) with a
-resource kit each, but publishes a colour guide for only one of them. Hard-coding
+resource kit each, but publishes a color guide for only one of them. Hard-coding
 Afterburn would make the toolkit a one-theme tool, so there are two routes here:
 
   * `AFTERBURN` - the documented token set, transcribed from the Afterburn Theme
     Guide. Authoritative, and includes the four accent schemes.
   * `extract(path)` - read ANY `.glt` template or `.gdl` project and report the
-    colours, border resources and fonts it actually uses, ranked by frequency.
+    colors, border resources and fonts it actually uses, ranked by frequency.
     Empirical rather than documented, but it works for every theme, including
     ones with no published guide, and for a client's own house style.
 
@@ -42,7 +42,7 @@ AFTERBURN = {
     'icon_background': '#414459',
     'divider': '#BABCCE',
     'shape': '#6A6E89',
-    'track': '#37394E',                   # slider/level track over a colour
+    'track': '#37394E',                   # slider/level track over a color
     'track_on_image': '#242634',
     'fill': '#BABCCE',                    # slider fill
     'thumb_off': '#6A6E89',

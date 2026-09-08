@@ -73,7 +73,7 @@ ORACLE  233,788 bad px  (5.06%)   -> the per-control best-shift floor
 ```
 
 So 38% of the text residual is correctable systematics and 55% is genuine
-GDI+-vs-FreeType rasterisation. Page-level: **mean 4.57% → 3.50%, median 2.28%
+GDI+-vs-FreeType rasterization. Page-level: **mean 4.57% → 3.50%, median 2.28%
 → 1.23%**.
 
 ## 3. `v3.py` + `frac.py` — the strongest result reached

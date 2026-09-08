@@ -9,7 +9,7 @@
         so numbers arrive as Int32 while fields are UInt16/UInt64, and
         reflection neither widens nor narrows - it throws.
       * "no such field" and "the field is null" are different, and conflating
-        them reports a missing field that is right there. Most colour and border
+        them reports a missing field that is right there. Most color and border
         fields are null on most controls because the value lives on the state.
       * clone, never construct - which applies to PBColor and to border
         references too, hence the donor lookups.
@@ -75,27 +75,27 @@ function Get-GdlDonor {
     return $null
 }
 
-$script:ColourDonor = $null
-function Find-ColourDonor {
+$script:ColorDonor = $null
+function Find-ColorDonor {
     <#  Any PBColor instance in the project, to clone when a target field is null.
 
         Needed because clone-never-construct applies to PBColor too, and a field
         being null is common - a button leaves textColorField null and carries
-        its text colour on the state instead. #>
+        its text color on the state instead. #>
     param($Project)
-    if ($script:ColourDonor) { return , $script:ColourDonor }
+    if ($script:ColorDonor) { return , $script:ColorDonor }
     foreach ($pg in @($Project.Pages) + @($Project.PopupPages)) {
         foreach ($c in $pg.Controls) {
             foreach ($n in 'borderFillColorField', 'textColorField', 'borderColorField') {
                 $v = Get-GdlField $c $n
-                if ($v) { $script:ColourDonor = $v; return , $v }
+                if ($v) { $script:ColorDonor = $v; return , $v }
             }
         }
     }
     return $null
 }
 
-function Set-GdlColour {
+function Set-GdlColor {
     <#  Set a PBColor-valued field from a packed 0xAARRGGBB int.
 
         The PBColor wrapper is cloned - from the field's current value where it
@@ -115,7 +115,7 @@ function Set-GdlColour {
     if (-not $has) { Note-Problem "no field '$Field' on $($Control.GetType().Name)"; return }
 
     $existing = Get-GdlField $Control $Field
-    if (-not $existing) { $existing = Find-ColourDonor $Project }
+    if (-not $existing) { $existing = Find-ColorDonor $Project }
     if (-not $existing) { Note-Problem "no PBColor anywhere to clone for '$Field'"; return }
 
     $c = Copy-GdlObject $existing
@@ -163,7 +163,7 @@ function Set-GdlBorder {
         Note-Problem "border resource '$Name' is not in the donor project; a plan may only reference existing resources"
         return
     }
-    # Same null-vs-missing trap as colours: a button's own borderField is
+    # Same null-vs-missing trap as colors: a button's own borderField is
     # usually null and the border lives on its state, so clone a reference from
     # wherever one exists rather than reporting a field that is right there.
     $existing = Get-GdlField $Control 'borderField'

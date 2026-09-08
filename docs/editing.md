@@ -11,7 +11,7 @@ It can. All four operations are verified end to end against GUI Designer
 | Op | What it does | Verified |
 |---|---|---|
 | `rename` | captions, wherever they actually live | 12 controls, built, 12/12 correct |
-| `restyle` | remap colours across a selection | 5 sliders, built, 5/5 correct |
+| `restyle` | remap colors across a selection | 5 sliders, built, 5/5 correct |
 | `renumber` | reassign addressable `userId`s in bands | planned + checked |
 | `retarget` | move to another panel model, optionally rescaling | **654/654 controls correct in the built file** |
 
@@ -51,7 +51,7 @@ Formatted text is the awkward one. It carries its layout inline —
 `"\t\tDevice\r\n\t\tComms"` — and it is **flattened into the artwork**, so
 `layout.json` reports it as `''` both before and after an edit. Measured:
 
-- `Displays` → `Screens` rasterised perfectly.
+- `Displays` → `Screens` rasterized perfectly.
 - `Cameras` → `Camera Control` came out as "Camera" on one line and "Control"
   on a second, unindented, over the icon.
 
@@ -73,7 +73,7 @@ default-constructed `PBTLP1535MPlatform` has the right resolution and a **null
 `partNumberField`**, and GUI Designer then titles the project
 `Unknown: file.gdl`. It identifies a panel by part number. The fix is
 `PBTouchPanelPlatformPro.CreatePlatform(project, type)`, which returns a fully
-initialised instance — after which the title bar reads
+initialized instance — after which the title bar reads
 `[TLP Pro 1535M: retargeted2.gdl]`.
 
 **Resize the popups too.** A popup's authored `widthField`/`heightField` is the

@@ -20,7 +20,7 @@ emitted here as data:
     applies. That applier is UNVERIFIED; see docs/from-scratch.md.
 
 That works because an authored control carries `TLPImageID = -1` - Build has not
-rasterised it yet - and the compositor already knows how to draw those from
+rasterized it yet - and the compositor already knows how to draw those from
 their `borderFillColor` plus a named border resource. A spec is exactly a
 description of those properties.
 
@@ -36,12 +36,15 @@ import re
 import sys
 
 # AlignmentEnum = 3*vertical + horizontal; vertical 0 bottom / 1 middle / 2 top,
-# horizontal 0 centre / 1 left / 2 right. Same convention gdl/compose.py decodes.
+# horizontal 0 center / 1 left / 2 right. Same convention gdl/compose.py decodes.
 ALIGN = {
     'top-left': 7, 'top': 6, 'top-right': 8,
-    'left': 4, 'center': 3, 'centre': 3, 'right': 5,
+    'left': 4, 'center': 3, 'right': 5,
     'bottom-left': 1, 'bottom': 0, 'bottom-right': 2,
 }
+# Accepted on input, not produced: a spec written in British English should not
+# fail over one letter.
+ALIGN['centre'] = ALIGN['center']
 
 # The border resources every fixture already carries. A generator that only
 # *references* these needs no new resource appended to the project, which is the
@@ -186,7 +189,7 @@ def part_number(model):
 MM_TOUCH_TARGET = 9.0
 MM_SPACING = 2.0
 MAX_BUTTONS_PER_GROUP = 9        # p.58
-MAX_COLOURS_PER_PROJECT = 6      # p.49
+MAX_COLORS_PER_PROJECT = 6      # p.49
 MIN_BODY_POINT_SIZE = 14         # pp.65-67
 
 
@@ -223,7 +226,7 @@ PANELS = _panels()
 MM_TOUCH_TARGET = 9.0
 MM_SPACING = 2.0
 MAX_BUTTONS_PER_GROUP = 9        # p.58
-MAX_COLOURS_PER_PROJECT = 6      # p.49
+MAX_COLORS_PER_PROJECT = 6      # p.49
 MIN_BODY_POINT_SIZE = 14         # pp.65-67
 
 
@@ -298,7 +301,7 @@ def _argb(c):
 HEX = re.compile(r'^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
 
 
-def colour(v, theme=None):
+def color(v, theme=None):
     """'#RRGGBB', '#AARRGGBB' or a theme key -> the ARGB dict layout.json uses."""
     if v is None:
         return None
@@ -308,7 +311,7 @@ def colour(v, theme=None):
         v = theme[v]
     m = HEX.match(str(v))
     if not m:
-        raise ValueError(f'not a colour or theme key: {v!r}')
+        raise ValueError(f'not a color or theme key: {v!r}')
     h = m.group(1)
     if len(h) == 6:
         h = 'FF' + h
@@ -476,7 +479,7 @@ class Panel:
                 # choice. Recorded for the check, not authored.
                 'size': pu.get('size'),
                 'modal': bool(pu.get('modal')),
-                'background': colour(pu.get('background') or self.theme.get('background')
+                'background': color(pu.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
                 'controls': controls,
                 'group_sizes': dict(self._groups),
@@ -493,7 +496,7 @@ class Panel:
                 'number': page_no,
                 'name': pg.get('name') or f'Page {page_no}',
                 'modal': bool(pg.get('modal')),
-                'background': colour(pg.get('background') or self.theme.get('background')
+                'background': color(pg.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
                 'controls': controls,
                 'group_sizes': dict(self._groups),
@@ -504,7 +507,7 @@ class Panel:
         """The layout.json-shaped model gdl/compose.py renders, plus its fills.
 
         Every control is emitted with TLPImageID = -1, exactly as an authored
-        one is before Build rasterises it - so the preview is drawing the same
+        one is before Build rasterizes it - so the preview is drawing the same
         thing GUI Designer would be asked to build.
         """
         pages, fills = [], {}
@@ -513,7 +516,7 @@ class Panel:
             for c in pg['controls']:
                 kind = KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
                 rect = [int(v) for v in c['rect']]
-                fill = colour(c.get('fill'), self.theme)
+                fill = color(c.get('fill'), self.theme)
                 border = c.get('border')
                 if border in BORDERS:
                     border = BORDERS[border]
@@ -534,7 +537,7 @@ class Panel:
                     'Left': rect[0], 'Top': rect[1], 'Width': rect[2], 'Height': rect[3],
                     'TLPImageID': -1,
                     'Text': c.get('text') or '',
-                    'TextColor': colour(c.get('color') or self.theme.get('text')
+                    'TextColor': color(c.get('color') or self.theme.get('text')
                                         or '#FFFFFF', self.theme),
                     'TextAlignment': ALIGN.get(c.get('align', 'center'), 3),
                     'Font': {'Name': font,
@@ -549,7 +552,7 @@ class Panel:
                     # control id), the pair both models share.
                     fills[(pg['number'], out['ID'])] = {
                         'fill': fill,
-                        'stroke': colour(c.get('stroke'), self.theme),
+                        'stroke': color(c.get('stroke'), self.theme),
                         'border': {'resource': border, 'radius': radius,
                                    'thickness': thickness},
                     }
@@ -571,7 +574,7 @@ class Panel:
 
         Deliberately *data*, not code. Writing the authoring model needs 32-bit
         Windows PowerShell and GUI Designer, which cannot be tested here - so
-        the split is: Python decides everything (layout, ids, colours, which
+        the split is: Python decides everything (layout, ids, colors, which
         donor object to clone, popup grouping), and
         `powershell/Apply-GdlPlan.ps1` does nothing but apply the ops.
 
@@ -641,9 +644,9 @@ class Panel:
         out += self._popup_rules()
         out += self._name_rules()
         n = len(self.palette())
-        if n > MAX_COLOURS_PER_PROJECT:
-            out.append(f'project uses {n} distinct colours, above the '
-                       f'{MAX_COLOURS_PER_PROJECT}-colour maximum '
+        if n > MAX_COLORS_PER_PROJECT:
+            out.append(f'project uses {n} distinct colors, above the '
+                       f'{MAX_COLORS_PER_PROJECT}-color maximum '
                        f'(GUI Design Standards p.49)')
         return out
 
@@ -709,7 +712,7 @@ class Panel:
         kind = c.get('kind', 'panel')
         cls = KIND_TYPE.get(kind, 'PBShape')
         rect = [int(v) for v in c['rect']]
-        fill = colour(c.get('fill'), self.theme)
+        fill = color(c.get('fill'), self.theme)
         border = c.get('border')
         border = BORDERS.get(border, border)
         if border is None and fill is not None:
@@ -728,9 +731,9 @@ class Panel:
                 **(_type_fields(kind, c) or {}),
             },
             'fill': _argb(fill),
-            'stroke': _argb(colour(c.get('stroke'), self.theme)),
+            'stroke': _argb(color(c.get('stroke'), self.theme)),
             'border': border,
-            'text_color': _argb(colour(c.get('color') or self.theme.get('text')
+            'text_color': _argb(color(c.get('color') or self.theme.get('text')
                                        or '#FFFFFF', self.theme)),
             'alignment': ALIGN.get(c.get('align', 'center'), 3),
             'font': {'name': c.get('font') or self.theme.get('font') or 'Arial',
@@ -873,13 +876,13 @@ class Panel:
 
 
     def palette(self):
-        """Every distinct colour the spec uses. p.49 caps a project at six."""
+        """Every distinct color the spec uses. p.49 caps a project at six."""
         seen = set()
         for pg in self.pages:
             seen.add(tuple(sorted((pg['background'] or {}).items())))
             for c in pg['controls']:
                 for key in ('fill', 'stroke', 'color'):
-                    v = colour(c.get(key), self.theme)
+                    v = color(c.get(key), self.theme)
                     if v:
                         seen.add(tuple(sorted(v.items())))
         return {s for s in seen if s}

@@ -3,7 +3,7 @@
 `gdl/spec.py` builds a panel from nothing. This is the other half of the job and
 the more common one: a client project already exists and someone wants the
 buttons renamed, the whole thing moved to a bigger panel, the IDs renumbered, or
-the colours restyled.
+the colors restyled.
 
 Same architecture, for the same reason: every decision is made here, in Python,
 where it can be tested against a real `.gdl` on a Mac, and `Apply-GdlEdits.ps1`
@@ -22,7 +22,7 @@ The four operations:
             have to agree (platform instance, platform type enum, screen size)
             and optionally rescales the layout.
   renumber  reassign the addressable IDs (`userIdField`) in per-page bands.
-  restyle   remap colours across the whole project.
+  restyle   remap colors across the whole project.
 
 Selectors are ANDed, and every one of them is resolved against the real project
 here, so `check` can say "this matched nothing" instead of the edit silently
@@ -36,9 +36,9 @@ import sys
 from .project import Project
 from .spec import MODELS, dpi, touch_minimums, MM_TOUCH_TARGET
 
-# Fields that carry a colour, and are therefore what `restyle` rewrites. A
+# Fields that carry a color, and are therefore what `restyle` rewrites. A
 # control's own three plus the page background; states carry the same three.
-COLOUR_FIELDS = ('borderFillColorField', 'borderColorField', 'textColorField')
+COLOR_FIELDS = ('borderFillColorField', 'borderColorField', 'textColorField')
 
 
 def _argb_hex(c):
@@ -49,7 +49,7 @@ def _argb_hex(c):
 
 
 def _norm(v):
-    """Any accepted colour spelling -> '#AARRGGBB'. '#RRGGBB' means opaque."""
+    """Any accepted color spelling -> '#AARRGGBB'. '#RRGGBB' means opaque."""
     if v is None:
         return None
     if isinstance(v, dict):
@@ -197,10 +197,10 @@ class Edits:
             n += step
 
     def _restyle(self, e, ops, problems):
-        """Remap colours project-wide, or under a selector."""
+        """Remap colors project-wide, or under a selector."""
         table = {_norm(k): _norm(v) for k, v in (e.get('map') or {}).items()}
         if not table:
-            problems.append("restyle: needs a 'map' of old colour -> new colour")
+            problems.append("restyle: needs a 'map' of old color -> new color")
             return
         hits = self.select(e.get('select'))
         seen = set()
@@ -216,8 +216,8 @@ class Edits:
             if changes:
                 ops.append({'page': pg['id'], 'control': c['obj_id'],
                             'why': f'restyle {c["name"] or c["type"]}',
-                            'colours': changes, 'states_colours': changes})
-        self._unused_colours += [k for k in table if k not in seen]
+                            'colors': changes, 'states_colors': changes})
+        self._unused_colors += [k for k in table if k not in seen]
 
     def _retarget(self, e, ops, problems, project_ops):
         """Move the project to another panel model.
@@ -284,7 +284,7 @@ class Edits:
         ops, project_ops, problems = [], [], []
         self._resize = None
         self._model = None
-        self._unused_colours = []
+        self._unused_colors = []
         for e in self.edits:
             op = e.get('op')
             if op == 'rename':
@@ -323,9 +323,9 @@ class Edits:
 
         # A formatted-text caption is baked INTO the artwork at build time, and
         # its tab/CRLF scaffolding is hand-placed per line. Renaming one works -
-        # Build re-rasterises and the new word appears - but a longer caption
+        # Build re-rasterizes and the new word appears - but a longer caption
         # wraps onto a second line that has none of that indent, so it starts at
-        # x=0 on top of the icon. Measured: "Displays" -> "Screens" rasterises
+        # x=0 on top of the icon. Measured: "Displays" -> "Screens" rasterizes
         # perfectly; "Cameras" -> "Camera Control" comes out as "Camera" over
         # "Control" hanging off the left edge. Nothing in the file says so - the
         # model reads correctly and only the pixels are wrong, exactly like the
@@ -342,7 +342,7 @@ class Edits:
                     f'rename {old!r} -> {newt!r}: this caption is FORMATTED text baked '
                     f'into the artwork with hand-placed line breaks. The new text is '
                     f'longer, so it will wrap onto an unindented second line over the '
-                    f"icon. Check the rasterised asset, don't trust the model.")
+                    f"icon. Check the rasterized asset, don't trust the model.")
 
         # After the ops, does every control still fit its page? Build relocates
         # anything that does not to 0,0 - silently, with 0 errors reported - so
@@ -447,7 +447,7 @@ def main(argv):
         print('  warning ' + p)
     if len(warnings) > 20:
         print(f'  warning ... and {len(warnings) - 20} more')
-    for c in ed._unused_colours:
+    for c in ed._unused_colors:
         print(f'  warning restyle: no control uses {c} - nothing to remap')
     print(f'{len(plan["controls"])} control op(s), '
           f'{len(plan["project"])} project op(s): {_summarise(plan)}')

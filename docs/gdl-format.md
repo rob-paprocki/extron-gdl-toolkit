@@ -28,7 +28,7 @@ rebuilds it.
 
 Measured by diffing a project before and after a build:
 
-1. **Rasterises** every control and every button state to a PNG sized to the
+1. **Rasterizes** every control and every button state to a PNG sized to the
    control's exact rect, and writes them as `N.png`.
 2. **Deduplicates by appearance.** One asset backs many controls (a single
    asset served 24 controls in the test project). **Text is not part of the
@@ -71,7 +71,7 @@ Preload every DLL plus `GUI Designer.exe` from
 from an `AssemblyResolve` handler. Calling `LoadFrom` *inside* the handler
 recurses until the stack overflows.
 
-**Corrected 2026-09-07, measured against 1.27.0.9.** Re-serialising an
+**Corrected 2026-09-07, measured against 1.27.0.9.** Re-serializing an
 untouched project is **not** byte-identical to the original: it differs by
 **5,900 bytes** on the `_alt` fixture. But it is *stable* from the first pass
 onward - pass1 vs pass2 and pass2 vs pass3 are both **zero** differing bytes.

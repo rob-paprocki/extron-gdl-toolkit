@@ -95,7 +95,7 @@ class TestRename(unittest.TestCase):
 
     def test_growing_a_formatted_caption_warns(self):
         """Measured against the real build: 'Cameras' -> 'Camera Control'
-        rasterises as two lines with the second unindented over the icon."""
+        rasterizes as two lines with the second unindented over the icon."""
         _, _, warnings = _edits([{'op': 'rename', 'select': {'text': 'Cameras'},
                                   'text': 'Camera Control'}]).check()
         self.assertTrue(any('FORMATTED text' in w for w in warnings))
@@ -140,25 +140,25 @@ class TestRenumber(unittest.TestCase):
 
 
 class TestRestyle(unittest.TestCase):
-    def test_colours_are_remapped(self):
+    def test_colors_are_remapped(self):
         plan, problems = _edits([{'op': 'restyle', 'select': {'type': 'PBSlider'},
                                   'map': {'#242634': '#1B2233'}}]).plan()
         self.assertEqual(problems, [])
         self.assertTrue(plan['controls'])
         for o in plan['controls']:
-            self.assertEqual(o['colours']['borderFillColorField'], '#FF1B2233')
+            self.assertEqual(o['colors']['borderFillColorField'], '#FF1B2233')
 
     def test_short_hex_means_opaque(self):
         self.assertEqual(_norm('#242634'), '#FF242634')
         self.assertEqual(_norm('#FF242634'), '#FF242634')
 
-    def test_an_unused_colour_is_a_warning_not_an_error(self):
-        """A theme map legitimately covers colours a given project happens not
+    def test_an_unused_color_is_a_warning_not_an_error(self):
+        """A theme map legitimately covers colors a given project happens not
         to use, so this must not block the edit."""
         ed = _edits([{'op': 'restyle', 'map': {'#010203': '#040506'}}])
         _, errors, _ = ed.check()
         self.assertEqual(errors, [])
-        self.assertIn('#FF010203', ed._unused_colours)
+        self.assertIn('#FF010203', ed._unused_colors)
 
 
 class TestRetarget(unittest.TestCase):

@@ -16,8 +16,8 @@ expensive to get.
 ## The one thing to internalise
 
 **Build owns the artwork.** You never make pixels. You set semantic properties —
-a fill colour, a stroke, a *named* border resource, a font, a caption — and GUI
-Designer rasterises them on build. A control you author carries `TLPImageID = -1`
+a fill color, a stroke, a *named* border resource, a font, a caption — and GUI
+Designer rasterizes them on build. A control you author carries `TLPImageID = -1`
 until then.
 
 This is why a preview is possible at all, and why "the file looks right" is not
@@ -41,7 +41,7 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    inside its parent cell, and a `rect` at that depth is an offset into it).
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
-   ≤9 buttons per group, ≤6 colours, ≥14pt body text).
+   ≤9 buttons per group, ≤6 colors, ≥14pt body text).
 5. **Preview it**: `python -m gdl.spec render <spec.json> out/preview.png`, then
    **look at the image**. The compositor scores 2.19% against GUI Designer's own
    output, so this is a real preview, not a sketch. Iterate here — it costs
@@ -63,7 +63,7 @@ the real project on the Mac, then apply:
 
 1. **Describe the change** - see `examples/edits.json`. Four ops:
    `rename` (captions), `retarget` (another panel model, optionally rescaling),
-   `renumber` (addressable `userId`s), `restyle` (colour remap). Selectors are
+   `renumber` (addressable `userId`s), `restyle` (color remap). Selectors are
    ANDed and support exact or regex match on name and caption.
 2. **Check it**: `python -m gdl.edit check <edits.json> <panel.gdl>`. Every
    selector resolves against the real file, so "matched nothing" is an error
@@ -81,7 +81,7 @@ Two things about renaming that are not obvious:
   breaks. `gdl.edit` writes it back wherever it found it.
 - A **formatted** caption is baked into the artwork. Making one longer wraps it
   onto an unindented second line over the icon - `check` warns, and the only
-  real verification is looking at the rasterised asset.
+  real verification is looking at the rasterized asset.
 
 Reading and rendering need nothing but Python and Pillow:
 
@@ -126,9 +126,9 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
 - **A clone inherits what you didn't ask for.** Page-level artwork, button icons,
   ids. Clear `<TLPImageID>` on a cloned page and `buttonImageField` on a cloned
   button unless you want the donor's.
-- **Buttons render from their STATE, not the control.** Set text/colour on every
+- **Buttons render from their STATE, not the control.** Set text/color on every
   state or the caption won't appear.
-- **"Field is null" is not "field is missing."** Most colour and image fields are
+- **"Field is null" is not "field is missing."** Most color and image fields are
   null on most controls; clone a donor value from elsewhere in the project.
 - **Popup bindings live in four places** and every mismatch fails *silently* —
   the file opens and builds, the binding just reads "Unassigned". Use
@@ -155,7 +155,7 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
   Appending a new `PBImageResource` and binding it to `buttonImageField` is
   proven to build. Set `buttonImageLayout`/alignment or a large icon will fill
   the button.
-- **Icon fonts** — for single-colour icons, faster and needs no resource.
+- **Icon fonts** — for single-color icons, faster and needs no resource.
   Afterburn 136 glyphs at U+E900–E98C, Mach (Extron-Lift) 121 at U+E900–E978.
   Place them as text in that face.
 
@@ -166,14 +166,14 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
   regresses twenty is the documented failure mode here.
 - **Spec change**: `python tests/test_spec.py` (50 tests).
 - **Anything authored**: two gates, not one.
-  1. GUI Designer must **open and build** it — a file that merely serialises
+  1. GUI Designer must **open and build** it — a file that merely serializes
      proves nothing.
   2. `python tests/verify_built.py <plan.json> <built.gdl>` — because a build
      that reports 0 errors still relocates controls and bakes captions. Both of
      this repo's worst authoring bugs built perfectly clean.
 - Report numbers you actually ran. Never state a build succeeded on the strength
   of "no error dialog appeared" — say what you checked (payload member present,
-  N controls rasterised, verifier clean).
+  N controls rasterized, verifier clean).
 
 ## Where the design authority lives
 

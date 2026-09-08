@@ -16,7 +16,7 @@
 
     which is the gate that catches what a clean build does not report.
 
-    It is deliberately thin. Every decision - layout, ids, colours, which donor
+    It is deliberately thin. Every decision - layout, ids, colors, which donor
     to clone - was made in Python, where it is testable; this only applies ops.
     That is why the interesting logic is in gdl/spec.py and not here.
 
@@ -72,9 +72,9 @@ function Add-GdlControls {
             foreach ($f in $op.fields.PSObject.Properties) {
                 Set-GdlFieldIfPresent $c $f.Name $f.Value | Out-Null
             }
-            Set-GdlColour $Project $c 'borderFillColorField' $op.fill
-            Set-GdlColour $Project $c 'borderColorField' $op.stroke
-            Set-GdlColour $Project $c 'textColorField' $op.text_color
+            Set-GdlColor $Project $c 'borderFillColorField' $op.fill
+            Set-GdlColor $Project $c 'borderColorField' $op.stroke
+            Set-GdlColor $Project $c 'textColorField' $op.text_color
             # flattenText bakes the caption INTO the artwork at build time, and a
         # clone inherits the donor's. Build then dedupes every generated button
         # to one asset carrying the donor's word. Captions must be drawn live
@@ -86,7 +86,7 @@ function Add-GdlControls {
             Set-GdlFieldIfPresent $c 'textAlignmentField' $op.alignment | Out-Null
 
             # A button renders from its STATE, not from the control: layout.json's
-            # reader takes state[0]'s text/font/colour in preference. Mirror the
+            # reader takes state[0]'s text/font/color in preference. Mirror the
             # caption onto every state or the button builds blank.
             # Index rather than foreach: PBStates is a collection object that
             # supports .Count and [i], but enumerating it yields the collection
@@ -106,9 +106,9 @@ function Add-GdlControls {
                     Set-GdlFieldIfPresent $st 'buttonImageField' $null | Out-Null
                     Set-GdlFieldIfPresent $st 'textField' $op.fields.textField | Out-Null
                     Set-GdlFieldIfPresent $st 'textAlignmentField' $op.alignment | Out-Null
-                    Set-GdlColour $Project $st 'textColorField' $op.text_color
-                    Set-GdlColour $Project $st 'borderFillColorField' $op.fill
-                    Set-GdlColour $Project $st 'borderColorField' $op.stroke
+                    Set-GdlColor $Project $st 'textColorField' $op.text_color
+                    Set-GdlColor $Project $st 'borderFillColorField' $op.fill
+                    Set-GdlColor $Project $st 'borderColorField' $op.stroke
                     Set-GdlBorder $Project $st $op.border
                 }
             }
@@ -154,11 +154,11 @@ foreach ($pg in $spec.pages) {
     Set-GdlFieldIfPresent $newPage 'idField' $pageId | Out-Null
     Set-GdlFieldIfPresent $newPage 'nameField' $pg.name | Out-Null
     Set-GdlFieldIfPresent $newPage 'userIdField' ([uint16]$pg.number) | Out-Null
-    Set-GdlColour $project $newPage 'backgroundFillColorField' $pg.background
+    Set-GdlColor $project $newPage 'backgroundFillColorField' $pg.background
     # A cloned page keeps the DONOR's page-level artwork, which then paints
     # underneath everything the plan authors. Clearing <TLPImageID> is not
     # enough: backgroundImageField is a separate reference to the donor's
-    # background IMAGE, and Build re-rasterises fill + image together into a new
+    # background IMAGE, and Build re-rasterizes fill + image together into a new
     # page asset, so the donor's art comes back looking like a stray tint.
     Set-GdlFieldIfPresent $newPage '<TLPImageID>k__BackingField' -1 | Out-Null
     Set-GdlFieldIfPresent $newPage 'backgroundImageField' $null | Out-Null
@@ -221,7 +221,7 @@ if (@($spec.popups).Count) {
         }
         Set-GdlFieldIfPresent $popup '<TLPImageID>k__BackingField' -1 | Out-Null
         Set-GdlFieldIfPresent $popup 'backgroundImageField' $null | Out-Null
-        Set-GdlColour $project $popup 'backgroundFillColorField' $pu.background
+        Set-GdlColor $project $popup 'backgroundFillColorField' $pu.background
         # A member stores the group's NAME as well as its id; one without the
         # other is one of the four silent-failure sites.
         Set-GdlFieldIfPresent $popup 'groupIDField' ([int]$groupIds[$pu.group]) | Out-Null

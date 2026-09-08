@@ -61,7 +61,7 @@ function Set-GdlStates {
         enumerating it yields the collection itself, so foreach silently writes
         to the wrong object. A shape also reports a non-zero Count on an empty
         states collection and then indexes to null, so check each one. #>
-    param($Proj, $Control, $Fields, $Colours, $FText)
+    param($Proj, $Control, $Fields, $Colors, $FText)
     $states = Get-GdlField $Control 'statesField'
     if (-not $states -or -not $states.Count) { return 0 }
     $n = 0
@@ -83,9 +83,9 @@ function Set-GdlStates {
             if ($old -match '^([\t\r\n ]*)') { $lead = $Matches[1] }
             Set-GdlFieldIfPresent $st 'ftextField' ($lead + $FText) | Out-Null
         }
-        if ($Colours) {
-            foreach ($f in $Colours.PSObject.Properties) {
-                Set-GdlColour $Proj $st $f.Name (ConvertTo-Argb $f.Value)
+        if ($Colors) {
+            foreach ($f in $Colors.PSObject.Properties) {
+                Set-GdlColor $Proj $st $f.Name (ConvertTo-Argb $f.Value)
             }
         }
     }
@@ -93,9 +93,9 @@ function Set-GdlStates {
 }
 
 function ConvertTo-Argb {
-    <#  '#AARRGGBB' -> the packed int Set-GdlColour wants.
+    <#  '#AARRGGBB' -> the packed int Set-GdlColor wants.
 
-        The plan carries colours as hex strings because that is what a human
+        The plan carries colors as hex strings because that is what a human
         writes in an edit spec and what gdl/edit.py matches on. #>
     param([string]$Hex)
     if (-not $Hex) { return $null }
@@ -126,7 +126,7 @@ foreach ($op in $spec.project) {
     #
     #   PBTouchPanelPlatformPro.CreatePlatform(PBProject, PlatformProTypeEnum)
     #
-    # returns a fully initialised instance, part number and all. It needs the
+    # returns a fully initialized instance, part number and all. It needs the
     # project, which is presumably why the wizard is the only thing that
     # normally calls it.
     $enumField = $proj.GetType().GetField('platformTypeField', 'Instance,Public,NonPublic')
@@ -204,13 +204,13 @@ foreach ($op in $spec.controls) {
                 Set-GdlFieldIfPresent $c $f.Name $f.Value | Out-Null
             }
         }
-        if ($op.colours) {
-            foreach ($f in $op.colours.PSObject.Properties) {
-                Set-GdlColour $proj $c $f.Name (ConvertTo-Argb $f.Value)
+        if ($op.colors) {
+            foreach ($f in $op.colors.PSObject.Properties) {
+                Set-GdlColor $proj $c $f.Name (ConvertTo-Argb $f.Value)
             }
         }
-        if ($op.states -or $op.states_colours -or $null -ne $op.states_ftext) {
-            Set-GdlStates $proj $c $op.states $op.states_colours $op.states_ftext | Out-Null
+        if ($op.states -or $op.states_colors -or $null -ne $op.states_ftext) {
+            Set-GdlStates $proj $c $op.states $op.states_colors $op.states_ftext | Out-Null
         }
         $applied++
     } catch {

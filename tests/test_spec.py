@@ -13,7 +13,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from gdl.spec import ALIGN, BORDER_GEOMETRY, Panel, colour, grid, stack  # noqa: E402
+from gdl.spec import ALIGN, BORDER_GEOMETRY, Panel, color, grid, stack  # noqa: E402
 
 
 class TestGrid(unittest.TestCase):
@@ -87,22 +87,22 @@ class TestStack(unittest.TestCase):
         self.assertTrue(all(c[1] == 0 and c[3] == 100 for c in cells))
 
 
-class TestColour(unittest.TestCase):
+class TestColor(unittest.TestCase):
     def test_six_digit_hex_is_opaque(self):
-        self.assertEqual(colour('#242634'), {'A': 255, 'R': 36, 'G': 38, 'B': 52})
+        self.assertEqual(color('#242634'), {'A': 255, 'R': 36, 'G': 38, 'B': 52})
 
     def test_eight_digit_hex_carries_alpha(self):
-        self.assertEqual(colour('#80242634'), {'A': 128, 'R': 36, 'G': 38, 'B': 52})
+        self.assertEqual(color('#80242634'), {'A': 128, 'R': 36, 'G': 38, 'B': 52})
 
     def test_theme_key_resolves(self):
-        self.assertEqual(colour('surface', {'surface': '#242634'}),
+        self.assertEqual(color('surface', {'surface': '#242634'}),
                          {'A': 255, 'R': 36, 'G': 38, 'B': 52})
 
     def test_garbage_is_rejected_rather_than_defaulted(self):
-        # Silently defaulting an unknown colour would produce a panel that
+        # Silently defaulting an unknown color would produce a panel that
         # looks subtly wrong instead of failing.
         with self.assertRaises(ValueError):
-            colour('not-a-colour')
+            color('not-a-color')
 
 
 def _spec(controls, **kw):
@@ -320,7 +320,7 @@ class TestBuildPlan(unittest.TestCase):
 
     layout() and plan() look fills up by the same key, and when that key changed
     only layout() was updated - so every plan carried fill=None and every
-    generated panel came out uncoloured. Nothing caught it, because the preview
+    generated panel came out uncolored. Nothing caught it, because the preview
     renders from layout() and the tests only exercised layout().
     """
 
@@ -335,13 +335,13 @@ class TestBuildPlan(unittest.TestCase):
         op = p.plan()['pages'][0]['controls'][0]
         self.assertEqual(op['border'], '2D Capsule')
 
-    def test_text_colour_reaches_the_plan(self):
+    def test_text_color_reaches_the_plan(self):
         p = _spec([{'kind': 'label', 'rect': [0, 0, 100, 50],
                     'text': 'x', 'color': '#FF0000'}])
         op = p.plan()['pages'][0]['controls'][0]
         self.assertEqual(op['text_color'], 0xFFFF0000)
 
-    def test_the_worked_example_carries_its_colours_into_the_plan(self):
+    def test_the_worked_example_carries_its_colors_into_the_plan(self):
         import os
         here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         p = Panel.load(os.path.join(here, 'examples', 'panel.json'))
@@ -349,7 +349,7 @@ class TestBuildPlan(unittest.TestCase):
         filled = [o for o in ops if o['fill']]
         self.assertGreater(len(filled), 15, 'most controls in the example are filled')
         accent = [o for o in ops if o['fields']['nameField'] == 'Presets']
-        self.assertEqual(accent[0]['fill'], 0xFF3D8BFD, 'the accent colour must survive')
+        self.assertEqual(accent[0]['fill'], 0xFF3D8BFD, 'the accent color must survive')
 
 
 class TestExtronRules(unittest.TestCase):
@@ -426,12 +426,12 @@ class TestExtronRules(unittest.TestCase):
                              'items': [{'text': str(i)} for i in range(9)]}}])
         self.assertFalse(any('per-group maximum' in m for m in p.check()))
 
-    def test_too_many_colours_is_caught(self):
+    def test_too_many_colors_is_caught(self):
         hues = ['#111111', '#222222', '#333333', '#444444',
                 '#555555', '#666666', '#777777', '#888888']
         p = _spec([{'kind': 'panel', 'rect': [i * 60, 0, 50, 50], 'fill': h}
                    for i, h in enumerate(hues)])
-        self.assertTrue(any('colour' in m and 'maximum' in m for m in p.check()))
+        self.assertTrue(any('color' in m and 'maximum' in m for m in p.check()))
 
     def test_small_body_text_is_caught(self):
         p = _spec([{'kind': 'label', 'rect': [0, 0, 100, 40], 'text': 'x', 'size': 10}])
@@ -550,7 +550,7 @@ class TestBorderGeometry(unittest.TestCase):
 
     def test_alignment_enum_matches_the_documented_formula(self):
         # value = 3*vertical + horizontal, vertical 0 bottom/1 middle/2 top,
-        # horizontal 0 centre/1 left/2 right.
+        # horizontal 0 center/1 left/2 right.
         self.assertEqual(ALIGN['center'], 3 * 1 + 0)
         self.assertEqual(ALIGN['top-left'], 3 * 2 + 1)
         self.assertEqual(ALIGN['bottom-right'], 3 * 0 + 2)
