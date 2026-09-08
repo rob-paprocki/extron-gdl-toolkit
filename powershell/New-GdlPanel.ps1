@@ -14,8 +14,19 @@
     gate a run rather than be read.
 
     Runs the applier under 32-bit PowerShell 5.1 itself, so it does not matter
-    which host you start it from. It does need a desktop - GUI Designer draws a
-    build dialog, and BuildProject() is not callable headlessly.
+    which host you start it from.
+
+    IT NEEDS THE DESKTOP TO ITSELF. Save and Build is driven by SendKeys, which
+    types into whatever holds focus, so this script has to bring GUI Designer to
+    the foreground - and Windows only grants that to a process that already has
+    it or has just received input. Anything else grabbing focus while this runs
+    makes the keystroke unsendable, and the run stops at that step rather than
+    typing Ctrl+Shift+B into someone else's window.
+
+    In practice that means: do not use the machine while it runs, and do not
+    poll it from another shell. Polling was what broke the first two attempts at
+    a three-page build - every command run from a terminal brings that terminal
+    forward, and the pipeline could not take the foreground back.
 
     -KeepOpen leaves GUI Designer up to look at. By default it is closed, since
     an instance holding the file open blocks the next run.
@@ -153,8 +164,12 @@ try {
     Write-Output "  $($proc.MainWindowTitle)"
 
     Step 'File > Save and Build'
-    & $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-              (Join-Path $PSScriptRoot 'Send-GdlKeys.ps1'), '-Keys', '^+b')
+    # Check this. Send-GdlKeys exits 2 when it cannot take the foreground, and
+    # an unchecked failure here means waiting the full build timeout for a build
+    # that was never started - which is exactly what it did, twice, before the
+    # exit code was wired in.
+    Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+                (Join-Path $PSScriptRoot 'Send-GdlKeys.ps1'), '-Keys', '^+b') 'keystroke'
     Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
                 (Join-Path $PSScriptRoot 'Wait-GdlBuild.ps1'),
                 '-ProjectFile', $Output, '-TimeoutSeconds', $TimeoutSeconds) 'build'

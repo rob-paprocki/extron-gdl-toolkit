@@ -132,6 +132,11 @@ jobs:
         # render need neither.
         run: python -m gdl.spec check examples/clean-room.json
 
+      - name: more than one page per spec
+        # Every example and test used exactly one page until 2026-09-08, while
+        # the client fixture has 27 - so cross-page id allocation was untested.
+        run: python tests/test_multipage.py
+
       - name: containers with no built payload round-trip
         # .glt templates and unbuilt .gdl files hold only a ProjectGCP.
         # payload_name used to raise a bare StopIteration on them.
