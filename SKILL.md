@@ -6,8 +6,12 @@ description: Use when creating, modifying or reviewing an Extron GUI Designer to
 # Building Extron touch panels
 
 This repo can read, render, check and generate Extron `.gdl` panels. The whole
-loop is proven against GUI Designer 1.27.0.9: a JSON spec became a page that GUI
-Designer opened and built with 0 errors.
+loop is proven against GUI Designer 1.27.0.9, and on a Windows box it runs
+unattended end to end — `powershell\New-GdlPanel.ps1` takes a JSON spec and
+returns a built, verified panel without anyone opening GUI Designer.
+
+So the job here is usually to turn a description into a good spec. The build is
+mechanical; the design is not.
 
 Read `docs/design-rules.md` before making design decisions and
 `docs/gdl-format.md` before touching the format. Both encode findings that were
@@ -50,11 +54,26 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    <donor.gdl>`. The donor supplies every cloned control, so a type it lacks is
    unauthorable — and its page/popup names are taken, which is a build error.
    Both are free to find here and cost a Windows round trip to find there.
-7. **Emit the plan**: `python -m gdl.spec plan <spec.json> out/plan.json`.
-8. **Apply and build** — needs Windows, see below.
-9. **Verify the build**: `python tests/verify_built.py out/plan.json
-   <built.gdl>`. Do not skip this because the build was clean; that is exactly
-   when it earns its keep.
+7. **Build it.** On the Windows box this is one command, which re-runs steps 4
+   and 6 and finishes with step 8:
+
+   ```powershell
+   powershell\New-GdlPanel.ps1 -Spec examples\panel.json `
+       -Donor fixtures\gdl\Interface__alt_....gdl -Output C:\gdlwork\Boardroom.gdl
+   ```
+
+   check → donors → plan → apply → pack → open → Save and Build → wait →
+   verify. It exits 0 only if the verifier passed, so it gates rather than
+   reports. Nobody touches GUI Designer. Add `-KeepOpen` to leave it up.
+
+   Off Windows, run the steps by hand — `python -m gdl.spec plan <spec.json>
+   out/plan.json`, then the Windows half per `docs/from-scratch.md` §7.
+8. **Verify the build** (already done for you by `New-GdlPanel.ps1`):
+   `python tests/verify_built.py out/plan.json <built.gdl>`. Do not skip this
+   because the build was clean; that is exactly when it earns its keep. It
+   checks geometry, captions, popup bindings **and color** — the last read off
+   the rasterized artwork, since a built control's `BackgroundFillColor` reads
+   back transparent white whatever you authored.
 
 ### B. Modify an existing panel
 
@@ -95,9 +114,30 @@ Writing goes through `powershell/GdlProject.ps1` on Windows. **Clone, never
 construct** — every constructor and property setter throws headless, and a failed
 setter writes the backing field *before* throwing, so it looks like it worked.
 
-## Running Windows from macOS
+## Running the Windows half
 
-Fully scriptable against the Parallels VM; `docs/from-scratch.md` §7 has detail.
+**On the Windows box, use `powershell\New-GdlPanel.ps1`** (above) and skip the
+rest of this section. A Claude Code session there is already interactive, so
+there is no VM, no remote exec and no scheduled task.
+
+Three things about driving GUI Designer that cost time here, in case you are
+scripting something it does not cover:
+
+- **Wait for a build with `powershell\Wait-GdlBuild.ps1`.** It waits for the
+  `.gdl` to be rewritten and then to stop growing. Every cheaper signal is
+  wrong: the title's trailing `*` only means unsaved changes, so a freshly
+  packed file never has one and the wait returns instantly onto a stale
+  payload; and the Build Manager window appears seconds *after* the keystroke
+  and closes ~5s *before* the file is written, so killing the process on that
+  signal truncates the payload. Measured: dialog gone at t+4s while still
+  building, file written at t+46s.
+- **`Get-Process` caches `MainWindowTitle`** — call `.Refresh()` or it reads
+  `GUI Designer` forever and your wait never ends.
+- Read the screen back with `System.Drawing`'s `CopyFromScreen`.
+
+### From macOS against a Parallels guest
+
+Fully scriptable; `docs/from-scratch.md` §7 has detail.
 
 ```bash
 # authoring - runs as SYSTEM, no desktop, fine for anything headless
@@ -164,13 +204,14 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
 - **Render change**: `tests/score.py record` before and after, then `diff`. It
   exits non-zero on any page regressing. A change that improves one page and
   regresses twenty is the documented failure mode here.
-- **Spec change**: `python tests/test_spec.py` (50 tests).
+- **Spec change**: `python -m pytest` (102 tests: 72 spec, 23 edit, 7 fonts).
 - **Anything authored**: two gates, not one.
   1. GUI Designer must **open and build** it — a file that merely serializes
      proves nothing.
   2. `python tests/verify_built.py <plan.json> <built.gdl>` — because a build
-     that reports 0 errors still relocates controls and bakes captions. Both of
-     this repo's worst authoring bugs built perfectly clean.
+     that reports 0 errors still relocates controls, bakes captions and drops
+     fills. Every one of this repo's worst authoring bugs built perfectly
+     clean. `New-GdlPanel.ps1` runs this for you and fails the run on it.
 - Report numbers you actually ran. Never state a build succeeded on the strength
   of "no error dialog appeared" — say what you checked (payload member present,
   N controls rasterized, verifier clean).
