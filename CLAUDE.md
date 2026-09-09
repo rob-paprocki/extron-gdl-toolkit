@@ -181,6 +181,15 @@ Two gotchas:
   call `.Refresh()`, and only then shows `GUI Designer - [TLP Pro 1035T:
   x.gdl*]`. Polling the title for the project name without refreshing waits
   forever.
+- **Trigger the build with `powershell/Invoke-GdlMenu.ps1`, not SendKeys.** UIA
+  clicks the menu item directly and needs no focus, so the pipeline runs while
+  the machine is in use. SendKeys types into whatever holds the foreground, and
+  a pipeline driven from a terminal can never take the foreground away from that
+  terminal — Windows will not hand it to a process that does not already have
+  it. `Send-GdlKeys.ps1` now verifies and refuses rather than typing blind, and
+  is only the fallback. Note `Invoke()` throws `Operation timed out
+  (0x80131505)` because it blocks on the build modal; the click landed anyway,
+  so watch the `.gdl`, not the exit code.
 - **Wait for a build with `powershell/Wait-GdlBuild.ps1`, not by watching the
   file or the title.** Both obvious signals are wrong. The title's trailing `*`
   only means unsaved changes, so a freshly packed file opened clean never has

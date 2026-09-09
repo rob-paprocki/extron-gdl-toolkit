@@ -164,12 +164,19 @@ try {
     Write-Output "  $($proc.MainWindowTitle)"
 
     Step 'File > Save and Build'
-    # Check this. Send-GdlKeys exits 2 when it cannot take the foreground, and
-    # an unchecked failure here means waiting the full build timeout for a build
-    # that was never started - which is exactly what it did, twice, before the
-    # exit code was wired in.
-    Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-                (Join-Path $PSScriptRoot 'Send-GdlKeys.ps1'), '-Keys', '^+b') 'keystroke'
+    # UIA first: it clicks the menu item directly and needs no focus, so this
+    # works while the machine is in use. SendKeys is the fallback and cannot,
+    # since a pipeline driven from a terminal can never take the foreground away
+    # from that terminal. Both are checked - an unchecked failure here means
+    # waiting the full build timeout for a build that never started, which is
+    # exactly what it did twice before.
+    & powershell -NoProfile -ExecutionPolicy Bypass -File `
+        (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'Save and Build'
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output '  UIA menu invoke failed; falling back to SendKeys'
+        Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+                    (Join-Path $PSScriptRoot 'Send-GdlKeys.ps1'), '-Keys', '^+b') 'keystroke'
+    }
     Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
                 (Join-Path $PSScriptRoot 'Wait-GdlBuild.ps1'),
                 '-ProjectFile', $Output, '-TimeoutSeconds', $TimeoutSeconds) 'build'

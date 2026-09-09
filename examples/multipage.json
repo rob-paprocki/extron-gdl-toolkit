@@ -5,7 +5,7 @@
     1280,
     800
   ],
-  "_why": "Three pages. Every other example here has exactly one, and so did every test, while the real client fixture has 27 - so nothing had ever exercised page-to-page ID allocation. It works: page numbers 1000/1100/1200 band the control userIds 1001-1005, 1101-1104, 1201-1205 with no collisions. Kept as the smallest spec that proves it.",
+  "_why": "Three pages. Every other example here has exactly one, and so did every test, while the real client fixture has 27 - so nothing had ever exercised page-to-page ID allocation. It works: page numbers 1000/1100/1200 band the control userIds 1001-1005, 1101-1104, 1201-1205 with no collisions. Kept as the smallest spec that proves it. Uses Open Sans, not the client fixture's Forma DJR Display: a fresh themed project defines no resource for a retail face, so a spec naming one builds silently in the donor's font. `donors` now reports that.",
   "theme": {
     "background": "#12131C",
     "surface": "#242634",
@@ -13,7 +13,7 @@
     "accent": "#3D8BFD",
     "text": "#FFFFFF",
     "muted": "#BABCCE",
-    "font": "Forma DJR Display",
+    "font": "Open Sans",
     "size": 16
   },
   "pages": [

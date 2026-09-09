@@ -65,6 +65,13 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    donors — they have no `PBProject`, and a file built from one makes GUI
    Designer open empty and offer the Create Wizard. `donors` refuses them with
    that explanation. See `docs/from-scratch.md` §5c.
+
+   `donors` checks five things, and four of them once cost a Windows round trip:
+   control types, page-name collisions, **border resources**, **font families**
+   and **canvas size**. The font one is the sly one — a family the donor has no
+   `PBFontResource` for does not fail the build, it ships the panel in the
+   donor's face. Answer its complaints before going to Windows; that is the
+   entire point of the step.
 7. **Build it.** On the Windows box this is one command, which re-runs steps 4
    and 6 and finishes with step 8:
 

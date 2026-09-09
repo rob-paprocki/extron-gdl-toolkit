@@ -347,6 +347,27 @@ moves a project to another panel model and rescales it — verified at 654/654
 controls on a 1035T to 1535M. Six seeds cover the six theme families; retarget
 covers the 55 models.
 
+### A seed works, end to end
+
+Done 2026-09-09 against a seed a human made in about a minute (File > New
+Project, Afterburn All-inclusive 1220 theme, TLP Pro 835M, saved to the
+desktop). `examples/multipage.json` went through `New-GdlPanel.ps1` unattended:
+three pages, 39 authored controls, **built and verified with 0 problems**, and
+nothing of any client's in the result.
+
+Two things that seed taught, both now checked by `gdl.spec donors`:
+
+- **A fresh themed project defines a different resource set from a client
+  file.** It has 31 border resources and the fixture has 34, but they are not
+  the same list. And its only font resources are Arial, Extron-Afterburn and
+  Open Sans - so the spec's `Forma DJR Display`, inherited from the Liberty Bank
+  fixture, had no resource to resolve against. That does *not* fail the build:
+  `Set-GdlFont` correctly leaves the donor's face, the panel builds clean, and
+  it ships in Open Sans. Only `tests/verify_built.py` noticed, 14 controls deep.
+- **The spec's `model` is not the panel's model.** The built panel is whatever
+  the donor is - this seed is an 835M - and `model` only feeds the touch-target
+  check. A spec whose canvas differs from the donor's is now refused.
+
 ### Do not try to automate the wizard
 
 It cannot be driven through UI Automation. `AutomationElement.FromHandle` on the

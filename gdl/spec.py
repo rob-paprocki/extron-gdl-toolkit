@@ -31,6 +31,7 @@ description of those properties.
 What it cannot do is prove GUI Designer will accept the result. Nothing here
 touches a real `.gdl`; see docs/from-scratch.md for what still needs a human.
 """
+import collections
 import json
 import re
 import sys
@@ -885,6 +886,47 @@ class Panel:
                 have.add(c['type'])
         out += [f'donor {path} has no {t} to clone - that control type cannot '
                 f'be authored from it' for t in sorted(self.needs() - have)]
+
+        # Border resources, for the same clone-never-construct reason and with a
+        # much wider spread than control types. Missed here it costs a whole
+        # Windows round trip: Set-GdlBorder reports it per control at apply time,
+        # by which point the plan has already been applied and packed.
+        # DEFINED, not referenced. border_resources() walks the references, so a
+        # donor that defines 2D Capsule but never draws with it would look like
+        # it lacked one - which is the false positive this check first produced,
+        # against a spec that had already built cleanly.
+        borders = proj.border_resource_names()
+        for want in sorted(self.needs_borders() - borders):
+            out.append(f'border resource {want!r} is not defined in {path} - a '
+                       f'spec may only name resources the donor already carries. '
+                       f'It defines: {", ".join(sorted(borders))}')
+
+        # Fonts, for the same reason but a softer failure: a family the donor
+        # lacks does not stop the build, it silently ships in the donor's face.
+        # The three-page panel built cleanly in Open Sans while its spec asked
+        # for Forma DJR Display, and only the built-file verifier noticed.
+        fonts = proj.font_resource_names()
+        for want in sorted(self.needs_fonts() - fonts):
+            out.append(f'font family {want!r} has no resource in {path}, so every '
+                       f'control asking for it will build in the donor\'s face '
+                       f'instead. It defines: {", ".join(sorted(fonts))}')
+
+        # Canvas. The spec lays out against its own `size`, but the built panel
+        # is whatever model the DONOR is - the spec's `model` only feeds the
+        # touch-target check. Author 1024x600 into a 1280x800 project and the
+        # layout is right by its own arithmetic and wrong on the panel.
+        canvas = collections.Counter(
+            tuple(pg['size']) for pg in proj.pages()
+            if pg.get('kind') != 'popup' and pg.get('size'))
+        if canvas:
+            donor_size, _ = canvas.most_common(1)[0]
+            if tuple(self.size) != donor_size:
+                out.append(
+                    f'spec canvas {tuple(self.size)} does not match the donor\'s '
+                    f'{donor_size}. The built panel is the donor\'s model, so the '
+                    f'layout would be sized for a panel this is not. Match the '
+                    f'spec to the donor, or retarget the donor first '
+                    f'(python -m gdl.edit).')
         for it in list(self.pages) + list(self.popups):
             if it['name'] in names:
                 out.append(f"{it['name']!r} already exists in the donor project - page and "
@@ -895,6 +937,34 @@ class Panel:
         """Every control class this spec requires a donor for."""
         return {KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
                 for pg in self.pages for c in pg['controls']}
+
+    def needs_borders(self):
+        """Every named border RESOURCE this spec references, already resolved.
+
+        A spec may only point at a resource the donor already carries - creating
+        one has never been tested against GUI Designer - so which donor you use
+        decides which borders are available. That varies far more than it looks:
+        the client fixture carries 32 and a fresh themed project carries 6.
+        `2D Capsule` is in the first and not the second.
+        """
+        out = set()
+        for pg in self.pages + self.popups:
+            for c in pg['controls']:
+                b = c.get('border')
+                if b:
+                    out.add(BORDERS.get(b, b))
+        return out
+
+    def needs_fonts(self):
+        """Every font family this spec asks for, theme default included."""
+        out = set()
+        default = self.theme.get('font')
+        for pg in self.pages + self.popups:
+            for c in pg['controls']:
+                f = c.get('font') or default
+                if f:
+                    out.add(f)
+        return out
 
 
     def palette(self):

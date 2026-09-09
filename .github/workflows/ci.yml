@@ -132,6 +132,11 @@ jobs:
         # render need neither.
         run: python -m gdl.spec check examples/clean-room.json
 
+      - name: donor fitness gates (types, names, borders, fonts, canvas)
+        # Each of these once cost a Windows round trip or, for fonts, shipped a
+        # panel in the wrong typeface with a clean build.
+        run: python tests/test_donor_gates.py
+
       - name: more than one page per spec
         # Every example and test used exactly one page until 2026-09-08, while
         # the client fixture has 27 - so cross-page id allocation was untested.

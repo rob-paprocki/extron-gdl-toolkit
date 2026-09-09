@@ -253,7 +253,13 @@ class Project:
         return out
 
     def border_resources(self):
-        """Every named border resource the project can draw with."""
+        """Every named border resource the project's controls actually USE.
+
+        This walks `PBResourceReferenceBorder` - the references - so it answers
+        "what does this design draw with", not "what may I draw with". The two
+        differ a lot: the Liberty Bank fixture references 7 and defines 34.
+        Use `border_resource_names()` before authoring against a donor.
+        """
         seen = {}
         for obj in self.instances('PBResourceReferenceBorder'):
             n = self.field(obj, 'resourceNameField')
@@ -261,6 +267,48 @@ class Project:
                 m = BORDER_NAME.search(n)
                 seen[n] = {'radius': int(m.group(1)), 'thickness': int(m.group(2))} if m else {}
         return seen
+
+    def border_resource_names(self):
+        """Every border resource the project DEFINES, whether drawn with or not.
+
+        The set a spec may reference, and the same one `Set-GdlBorder` checks
+        against `ResourceSet.Resources` on the Windows side. Reading the
+        `PBBorderResource` instances out of the graph gets it without a Windows
+        box, so an unavailable border is a one-second check here instead of a
+        per-control complaint after a plan has been applied and packed.
+
+        Every project carries the ~14 GUI Designer built-ins twice - once plain
+        and once `zGD - Default ...` - plus its theme's own. A fresh Afterburn
+        1220 defines 31, the Liberty Bank fixture 34.
+        """
+        return self._resource_names('PBBorderResource')
+
+    def font_resource_names(self):
+        """Every font FAMILY the project defines a resource for.
+
+        GUI Designer resolves a typeface through a named `PBFontResource`, and
+        the resource name carries a style suffix the spec would never write -
+        `Forma DJR Display Regular Bold Italic` for the family `Forma DJR
+        Display` - so the suffix is stripped here and matching is on the family.
+
+        A spec naming a family the donor has no resource for does not fail: the
+        applier leaves the donor's font and says so. That is the right call and
+        also easy to miss, since the panel then builds cleanly in the wrong face.
+        """
+        out = set()
+        for name in self._resource_names('PBFontResource'):
+            fam = re.sub(r'(\s+(Regular|Bold|Italic|Light|Black|Semibold|Medium|Thin))+$',
+                         '', name).strip()
+            out.add(fam or name)
+        return out
+
+    def _resource_names(self, cls):
+        out = set()
+        for obj in self.instances(cls):
+            n = self.field(obj, 'PBResource+nameField') or self.field(obj, 'nameField')
+            if n:
+                out.add(n)
+        return out
 
 
 if __name__ == '__main__':
