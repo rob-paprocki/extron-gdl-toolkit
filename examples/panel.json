@@ -13,7 +13,8 @@
     "text": "#FFFFFF",
     "muted": "#BABCCE",
     "font": "Forma DJR Display",
-    "size": 16
+    "size": 16,
+    "on": "accent"
   },
   "pages": [
     {
@@ -410,5 +411,6 @@
         }
       ]
     }
-  ]
+  ],
+  "_states_note": "theme.on gives every button an Off/On pair, so the control system has something to switch. Off/On is what 3475 of the 3668 buttons in Extron's own templates use (94.7%), and 60% of those change fill between the two. Per button, \"on\" may be a color or a dict of fill/stroke/color/border; omit it for a button that should never change appearance."
 }

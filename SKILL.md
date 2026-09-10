@@ -45,6 +45,24 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    Use `grid`/`stack` for layout;
    never hand-type a rect. Nest them for sub-regions (a nested directive lays out
    inside its parent cell, and a `rect` at that depth is an offset into it).
+
+   **Give the buttons feedback.** A button with one appearance is inert: the
+   control system sets it On and nothing on the panel changes. Set `"on"` in
+   the theme and every button gets an On state for free:
+
+   ```json
+   "theme": { "raised": "#37394E", "accent": "#3D8BFD", "on": "accent" }
+   ```
+
+   Per button, `"on": "accent"` changes just the fill; `"on": {"fill": "surface",
+   "color": "muted", "stroke": "accent", "border": "capsule"}` changes whatever
+   it names and inherits the rest from the Off appearance. Omit `on` entirely
+   and the button keeps a single appearance, which is right for a label-like
+   button and wrong for anything the control system drives.
+
+   `Off`/`On` is what Extron's own templates use for **3475 of 3668** buttons
+   (94.7%). Multi-state idioms (`Muted`/`Level 1`/`Level 2`/`Level 3`) exist but
+   are domain-specific; do those with `gdl.edit` on a real project.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
    ≤9 buttons per group, ≤6 colors, ≥14pt body text).
@@ -66,12 +84,15 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    Designer open empty and offer the Create Wizard. `donors` refuses them with
    that explanation. See `docs/from-scratch.md` §5c.
 
-   `donors` checks five things, and four of them once cost a Windows round trip:
-   control types, page-name collisions, **border resources**, **font families**
-   and **canvas size**. The font one is the sly one — a family the donor has no
-   `PBFontResource` for does not fail the build, it ships the panel in the
-   donor's face. Answer its complaints before going to Windows; that is the
-   entire point of the step.
+   `donors` checks six things, and five of them once cost a Windows round trip:
+   control types, page-name collisions, **border resources**, **font families**,
+   **canvas size** and **button states**. The font one is the sly one — a family
+   the donor has no `PBFontResource` for does not fail the build, it ships the
+   panel in the donor's face. The states one is the same shape: a donor whose
+   buttons carry a single state cannot express Off/On, the applier cannot create
+   the missing one, and the panel builds looking correct and does nothing when
+   switched. Answer its complaints before going to Windows; that is the entire
+   point of the step.
 7. **Build it.** On the Windows box this is one command, which re-runs steps 4
    and 6 and finishes with step 8:
 
@@ -193,6 +214,14 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
   button unless you want the donor's.
 - **Buttons render from their STATE, not the control.** Set text/color on every
   state or the caption won't appear.
+- **`PBStates.Count` is not the number of states.** It is a logical count and
+  reports **1** for an ordinary two-state Off/On button, while `$sts[0]` and
+  `$sts[1]` both return a `PBState`. So `for ($i = 0; $i -lt $states.Count;
+  $i++)` writes state 0 and stops — which is what both appliers did until
+  2026-09-10, meaning *every* "write to every state" loop only ever wrote one.
+  Use `Get-GdlStates`, which reads `mItems`. Invisible from outside:
+  `TLPDefaultStateID` is 0, so the panel renders state 0 and looks perfect until
+  a control system switches it.
 - **"Field is null" is not "field is missing."** Most color and image fields are
   null on most controls; clone a donor value from elsewhere in the project.
 - **Popup bindings live in four places** and every mismatch fails *silently* —

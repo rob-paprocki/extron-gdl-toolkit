@@ -181,12 +181,18 @@ A generator should assert all four agree rather than trusting the writes.
   `Unknown: file.gdl` however correct `platformField`, `platformTypeField` and
   `screenSizeField` are - it identifies a panel by **part number**. Use
   `PBTouchPanelPlatformPro.CreatePlatform(PBProject, PlatformProTypeEnum)`.
-- **A popup's authored size is the whole canvas.** `widthField`/`heightField`
-  on a `PBPopupPage` are 1280x800 even where `layout.json` reports the popup as
-  915x800 - that smaller figure is the DISPLAYED size, taken from the reference
-  that shows it (Standards p.70). So a retarget must resize `PopupPages` as well
-  as `Pages`; resizing only `Pages` left every scaled popup control overflowing
-  the old canvas and Build moved all 297 of them to 0,0.
+- **A popup's authored size is its real size** — and a retarget must resize
+  `PopupPages` as well as `Pages`. Resizing only `Pages` left every scaled popup
+  control overflowing the old canvas and Build moved all 297 of them to 0,0.
+  ~~A popup's authored size is always the whole canvas, and `layout.json`'s
+  smaller figure is the DISPLAYED size taken from the reference that shows
+  it.~~ That was inferred from the Liberty Bank project, where every popup
+  happens to be authored full-canvas, and it is **wrong**: 10 of the 29 popups
+  in Extron's own Afterburn template are authored at 880x525 and the **built**
+  `layout.json` reports 880x525 for them — all 29 built popup sizes match the
+  authored canvas exactly. So resize each popup by the same factor as its own
+  contents; forcing it to the screen size turns a modal card into a full-screen
+  page in the shipped file.
 - **A caption lives in one of three places** and a control that uses one leaves
   the others empty: the control's `textField`, the first state's `textField`
   (where a button's normally is), or the first state's `ftextField` - GUI
@@ -200,6 +206,28 @@ A generator should assert all four agree rather than trusting the writes.
 - `statesField` is a `PBStates` **wrapper**, not the list. The `List<PBState>`
   hangs off its `mItems`. Reading `statesField` as a list yields nothing and
   looks like a control with no states.
+- **`PBStates.Count` is not the number of states.** It is a logical count and
+  reports **1** for an ordinary two-state Off/On button. The indexer is fine —
+  `$sts[0]` and `$sts[1]` both return a `PBState` — so `for ($i = 0; $i -lt
+  $states.Count; $i++)` visits state 0 and stops, and every "write to every
+  state" loop in both appliers did exactly that. Use `mItems`, via
+  `Get-GdlStates`. This one is invisible from the outside: `TLPDefaultStateID`
+  is 0, so a button whose state 1 was never written renders correctly, verifies
+  correctly, and only misbehaves once a control system switches it On.
+- **A button renders from its state, and its states are what make it useful.**
+  `nameField` on a `PBState` gives the state its name, and `('Off', 'On')`
+  covers **3475 of 3668** buttons (94.7%) across Extron's six theme templates
+  plus the Liberty Bank project. 60% of those give the two states different
+  fills and 68% different artwork — Build assigns each state its own
+  `TLPImageID` and rasterizes them separately. A button whose states are
+  identical is inert: the control system sets it On and nothing changes.
+  The remaining idioms are multi-state and domain-specific: `('Muted',
+  'Level 1', 'Level 2', 'Level 3')`, `('Disconnected', 'Connected')`,
+  `('Unavailable', 'Ready', 'Connected')`.
+- **Momentary press feedback is a separate mechanism, and barely used.**
+  `<TLPPressFeedbackStateID>` points at a state to show while pressed; it is
+  `-1` on 7320 of the 7392 states in that corpus. Off/On driven by the control
+  system is the idiom, not press-and-release.
 - A clean build proves the file is **acceptable**, not that it is **correct**.
   Two separate traps (`flattenText`, and the relocation above) produce a file
   that opens, builds and is wrong. Finish with `tests/verify_built.py`, which

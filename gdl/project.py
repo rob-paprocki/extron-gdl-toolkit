@@ -165,6 +165,12 @@ class Project:
             'fill': self.color(self.field(obj, 'borderFillColorField')),
             'stroke': self.color(self.field(obj, 'borderColorField')),
             'border': self.border(obj),
+            # How many appearances this control can show. A button with one
+            # state cannot give feedback, and a plan can only fill states the
+            # donor already has - see Spec.check_donor. `states` is the whole
+            # picture; this is the number a donor check needs.
+            'n_states': len(self.states(obj)),
+            'state_names': [self.field(s, 'nameField') for s in self.states(obj)],
         }
 
     def controls(self, types=CONTROL_TYPES):

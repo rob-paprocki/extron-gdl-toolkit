@@ -57,13 +57,13 @@ function Get-GdlControlById {
 function Set-GdlStates {
     <#  Apply a change to every state of a control.
 
-        Index rather than foreach: PBStates supports .Count and [i] but
-        enumerating it yields the collection itself, so foreach silently writes
-        to the wrong object. A shape also reports a non-zero Count on an empty
-        states collection and then indexes to null, so check each one. #>
+        Via Get-GdlStates, which reads `mItems`. `PBStates.Count` is a LOGICAL
+        count and reports 1 for a two-state Off/On button, so this loop used to
+        rename state 0 and stop - leaving state 1 showing the old caption on
+        every button the control system switches. #>
     param($Proj, $Control, $Fields, $Colors, $FText)
-    $states = Get-GdlField $Control 'statesField'
-    if (-not $states -or -not $states.Count) { return 0 }
+    $states = Get-GdlStates $Control
+    if (-not $states.Count) { return 0 }
     $n = 0
     for ($i = 0; $i -lt $states.Count; $i++) {
         $st = $states[$i]

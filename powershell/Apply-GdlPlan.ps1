@@ -92,30 +92,67 @@ function Add-GdlControls {
             # Index rather than foreach: PBStates is a collection object that
             # supports .Count and [i], but enumerating it yields the collection
             # itself, so foreach would silently write to the wrong thing.
-            $states = Get-GdlField $c 'statesField'
+            # Get-GdlStates, NOT $states.Count - PBStates.Count is a logical
+            # count that reports 1 for a two-state button, so a loop bounded by
+            # it writes state 0 and stops. See the note on Get-GdlStates.
+            $states = Get-GdlStates $c
             $script:StateWrites = 0
-            if ($states -and $states.Count) {
+            # @($null) is an array of ONE null, so a control with no `states` in
+            # the plan would otherwise look like it asked for one state.
+            $want = if ($null -ne $op.states) { @($op.states) } else { @() }
+            if ($states.Count) {
                 for ($si = 0; $si -lt $states.Count; $si++) {
                     $st = $states[$si]
-                    # A shape/label reports a non-zero Count on an empty states
-                    # collection and then indexes to null, so check rather than
-                    # trusting Count.
                     if ($null -eq $st) { continue }
                     $script:StateWrites++
+
+                    # Per-state appearance when the plan carries one, the single
+                    # flat appearance otherwise. Writing one appearance to every
+                    # state - which is all this used to do - builds a button
+                    # that cannot show feedback: the control system sets it On
+                    # and nothing changes, because Off and On rasterize
+                    # identically. Each state gets its own TLPImageID at build,
+                    # so they really are drawn separately.
+                    $s = if ($si -lt $want.Count -and $null -ne $want[$si]) { $want[$si] } else { $null }
+                    $fill   = if ($s) { $s.fill }       else { $op.fill }
+                    $stroke = if ($s) { $s.stroke }     else { $op.stroke }
+                    $tcolor = if ($s) { $s.text_color } else { $op.text_color }
+                    $bord   = if ($s -and $s.border) { $s.border } else { $op.border }
+
                     # The donor's own caption and icon ride along on a clone, so
                     # a state that is not rewritten renders the donor's text.
                     Set-GdlFieldIfPresent $st 'buttonImageField' $null | Out-Null
                     Set-GdlFieldIfPresent $st 'textField' $op.fields.textField | Out-Null
                     Set-GdlFieldIfPresent $st 'textAlignmentField' $op.alignment | Out-Null
-                    Set-GdlColor $Project $st 'textColorField' $op.text_color
-                    Set-GdlColor $Project $st 'borderFillColorField' $op.fill
-                    Set-GdlColor $Project $st 'borderColorField' $op.stroke
-                    Set-GdlBorder $Project $st $op.border
+                    # A state names itself - 'Off' / 'On' is what 94.7% of the
+                    # buttons in Extron's own templates use, and the name is how
+                    # a person reading the project in GUI Designer tells the two
+                    # apart. Only set it when the plan says so, or a donor's
+                    # domain-specific names ('Muted', 'Level 1') get clobbered.
+                    if ($s -and $s.name) {
+                        Set-GdlFieldIfPresent $st 'nameField' $s.name | Out-Null
+                    }
+                    Set-GdlColor $Project $st 'textColorField' $tcolor
+                    Set-GdlColor $Project $st 'borderFillColorField' $fill
+                    Set-GdlColor $Project $st 'borderColorField' $stroke
+                    Set-GdlBorder $Project $st $bord
                     # A button renders its caption from the STATE's font,
                     # not the control's, so a size set only on the control
                     # is ignored the same way a caption would be.
                     Set-GdlFont $Project $st $op.font
                 }
+            }
+
+            # Asking for feedback the donor cannot carry has to be loud. A new
+            # PBState would have to be CONSTRUCTED, and constructing Extron
+            # types headlessly is the thing this whole pipeline avoids - so the
+            # honest outcome is a report, not a button that silently ships with
+            # one state and no feedback.
+            if ($want.Count -gt $script:StateWrites) {
+                Note-Problem ("'$($op.fields.nameField)': the spec asks for $($want.Count) states " +
+                    "but the donor control only has $($script:StateWrites) - the extra " +
+                    'state(s) were NOT created, so this button will not show feedback. ' +
+                    'Pick a donor whose buttons have Off/On states.')
             }
 
             if ($op.donor_type -eq 'PBButton' -and $script:StateWrites -eq 0) {

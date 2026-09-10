@@ -130,6 +130,111 @@ def check_fills(plan_items, table, assets, kind):
     return problems, notes, checked
 
 
+def check_states(plan_items, table, assets, kind):
+    """A button that asked for feedback must actually show it.
+
+    The failure this exists for is silent and total: the applier wrote one
+    appearance to every state of the cloned donor, so Off and On rasterized
+    identically. The button builds, verifies against every other check, looks
+    correct in the preview - and does nothing visible when the control system
+    sets it On.
+
+    Build gives each state its own TLPImageID, so the states really are drawn
+    separately and can be compared as pixels. Two states that share an image id,
+    or whose artwork has the same plurality color, are inert - and that is a
+    problem regardless of what the model says, because the model is not what
+    the panel draws.
+    """
+    problems, notes, checked = [], [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            want = op.get('states')
+            if not want:
+                continue
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if c is None:
+                continue
+            built = c.get('States') or []
+            if len(built) < len(want):
+                problems.append(
+                    f"{kind} {item['name']!r} {name!r}: planned {len(want)} states "
+                    f'but the built control has {len(built)} - the donor could not '
+                    f'supply them, so this button shows no feedback')
+                continue
+
+            dominant = {}
+            for i, ws in enumerate(want):
+                bs = built[i]
+                checked += 1
+                if ws.get('name') and bs.get('Name') != ws['name']:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r} state {i}: named "
+                        f"{bs.get('Name')!r}, planned {ws['name']!r}")
+                tid = bs.get('TLPImageID')
+                if tid is None or tid < 0:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r} state "
+                        f"{bs.get('Name') or i!r}: Build produced no artwork "
+                        f'(TLPImageID {tid}), so it will draw nothing')
+                    continue
+                shares = _shares(assets, tid)
+                if not shares:
+                    # A deliberately transparent Off state is a real idiom -
+                    # Extron's own 'Lighting Preset' buttons are transparent
+                    # when off - so this is only wrong if a fill was planned.
+                    if ws.get('fill') is not None:
+                        problems.append(
+                            f"{kind} {item['name']!r} {name!r} state "
+                            f"{bs.get('Name') or i}: artwork {tid} is missing or "
+                            f'fully transparent, but a fill was planned')
+                    dominant[i] = (tid, None)
+                    continue
+                top, top_share = max(shares.items(), key=lambda kv: kv[1])
+                dominant[i] = (tid, top)
+                if ws.get('fill') is None:
+                    continue
+                target = _rgb(ws['fill'])
+                if top == target:
+                    continue
+                mine = shares.get(target, 0.0)
+                if mine >= WEAK_FILL:
+                    notes.append(
+                        f"{kind} {item['name']!r} {name!r} state "
+                        f"{bs.get('Name') or i}: fill {_hex(target)} is {mine:.0%} of "
+                        f'the artwork, behind {_hex(top)} at {top_share:.0%}')
+                else:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r} state "
+                        f"{bs.get('Name') or i}: planned fill {_hex(target)} is "
+                        f'{mine:.0%} of the built artwork; it is mostly '
+                        f'{_hex(top)} ({top_share:.0%})')
+
+            # The point of the whole feature. If the plan asked for two
+            # different appearances and the panel cannot tell them apart, the
+            # button is decorative.
+            planned_differ = len({_hex(_rgb(w['fill'])) if w.get('fill') else None
+                                  for w in want}) > 1
+            if planned_differ and len(dominant) > 1:
+                ids = {v[0] for v in dominant.values()}
+                colors = {v[1] for v in dominant.values()}
+                if len(ids) == 1:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r}: every state shares artwork "
+                        f'{ids.pop()}, so Off and On are the same pixels - this button '
+                        f'cannot show feedback')
+                elif len(colors) == 1:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r}: the states were planned in "
+                        f'different colors but all built {_hex(colors.pop())} - no '
+                        f'visible feedback')
+    return problems, notes, checked
+
+
 def check_fonts(plan_items, table, kind):
     """Typography must reach the panel, not just the preview.
 
@@ -345,6 +450,11 @@ def check(plan_path, built_path):
         probs, n = check_fonts(spec, table, kind)
         problems += probs
         checked += n
+        probs, notes, n = check_states(spec, table, assets, kind)
+        problems += probs
+        checked += n
+        for note in notes:
+            print(f'  STATE FILL NOT DOMINANT (survived, but check it by eye): {note}')
     problems += check_page_background(plan['pages'], pages, assets)
 
     return problems, checked

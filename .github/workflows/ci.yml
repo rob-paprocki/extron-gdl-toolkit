@@ -147,6 +147,14 @@ jobs:
         # payload_name used to raise a bare StopIteration on them.
         run: python tests/test_container.py
 
+      - name: buttons get Off/On feedback, and an inert one is caught
+        # Every generated button was inert until 2026-09-10: the spec had no
+        # vocabulary for a second appearance, and PBStates.Count reports 1 for a
+        # two-state button, so both appliers wrote state 0 and stopped. Nothing
+        # looked wrong - TLPDefaultStateID is 0, so the panel renders state 0
+        # and only misbehaves once a control system switches it.
+        run: python tests/test_states.py
+
       - name: a retarget scales every page's canvas, popups included
         # `retarget --scale` scaled the controls and emitted no page size, and
         # the applier set every page AND popup to the new screen size. Those

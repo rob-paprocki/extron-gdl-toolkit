@@ -127,6 +127,31 @@ function Set-GdlColor {
     Set-GdlFieldIfPresent $Control $Field $c | Out-Null
 }
 
+function Get-GdlStates {
+    <#  A control's PBState objects, as a real array.
+
+        DO NOT use `$states.Count`. `PBStates` is a wrapper, not the list, and
+        its `Count` is a LOGICAL count that does not match the number of
+        PBStates: it reports 1 for a two-state Off/On button. The indexer is
+        fine - `$sts[0]` and `$sts[1]` both return a PBState - so a loop bounded
+        by `.Count` silently visits only state 0 and stops.
+
+        That is exactly what both appliers did, so every "write to every state"
+        loop here has only ever written state 0. It went unnoticed because
+        `TLPDefaultStateID` is 0: the button renders from state 0, so a panel
+        with an unwritten state 1 looks completely correct until the control
+        system sets it On.
+
+        The real list hangs off `mItems`, which is the same field gdl/project.py
+        reads for the same reason. #>
+    param($Control)
+    $sts = Get-GdlField $Control 'statesField'
+    if (-not $sts) { return @() }
+    $items = Get-GdlField $sts 'mItems'
+    if ($null -eq $items) { return @() }
+    return @($items | Where-Object { $null -ne $_ })
+}
+
 $script:BorderDonor = $null
 function Find-BorderDonor {
     param($Project)
@@ -135,8 +160,8 @@ function Find-BorderDonor {
         foreach ($c in $pg.Controls) {
             $v = Get-GdlField $c 'borderField'
             if ($v) { $script:BorderDonor = $v; return , $v }
-            $sts = Get-GdlField $c 'statesField'
-            if ($sts -and $sts.Count) {
+            $sts = Get-GdlStates $c
+            if ($sts.Count) {
                 for ($i = 0; $i -lt $sts.Count; $i++) {
                     if ($null -eq $sts[$i]) { continue }
                     $v2 = Get-GdlField $sts[$i] 'borderField'
@@ -185,8 +210,8 @@ function Find-FontDonor {
         foreach ($c in $pg.Controls) {
             $v = Get-GdlField $c 'fontField'
             if ($v) { $script:FontDonor = $v; return , $v }
-            $sts = Get-GdlField $c 'statesField'
-            if ($sts -and $sts.Count) {
+            $sts = Get-GdlStates $c
+            if ($sts.Count) {
                 for ($i = 0; $i -lt $sts.Count; $i++) {
                     if ($null -eq $sts[$i]) { continue }
                     $v2 = Get-GdlField $sts[$i] 'fontField'
