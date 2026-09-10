@@ -147,6 +147,15 @@ jobs:
         # payload_name used to raise a bare StopIteration on them.
         run: python tests/test_container.py
 
+      - name: a retarget scales every page's canvas, popups included
+        # `retarget --scale` scaled the controls and emitted no page size, and
+        # the applier set every page AND popup to the new screen size. Those
+        # agree only when every popup is authored full-canvas, which is true of
+        # the one project it was tested against and false in Extron's own
+        # templates. The overflow check that was supposed to catch it skipped
+        # popups - the only pages where a canvas may differ from the screen.
+        run: python tests/test_retarget_canvas.py
+
       - name: every declared face comes back out of every fixture
         # The gate that was missing. Arial and Arial Black were declared,
         # embedded, and silently dropped by an over-strict size match for as

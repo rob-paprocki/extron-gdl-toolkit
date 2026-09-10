@@ -220,7 +220,7 @@ class Edits:
                             'colors': changes, 'states_colors': changes})
         self._unused_colors += [k for k in table if k not in seen]
 
-    def _retarget(self, e, ops, problems, project_ops):
+    def _retarget(self, e, ops, problems, project_ops, page_ops):
         """Move the project to another panel model.
 
         Three fields have to agree or GUI Designer is being told two different
@@ -229,6 +229,23 @@ class Edits:
         (`platformTypeField`) and `screenSizeField`. The applier constructs the
         class, because a platform is one of the few objects that does construct
         headlessly - it holds no project state.
+
+        Every PAGE also carries its own canvas, and scaling the controls without
+        scaling the canvas is the silent-destruction case: Build moves anything
+        that no longer fits to 0,0 and reports nothing. The applier used to set
+        every page - popups included - to the new SCREEN size, on the belief
+        that a popup's authored size is always the full canvas. That came from
+        the Liberty Bank fixture, where every popup happens to be full-canvas,
+        and it is wrong: 10 of the 29 popups in Extron's own Afterburn template
+        are authored at 880x525, and the built layout.json reports 880x525 for
+        them. Blowing those up to the screen size turns a modal card into a
+        full-screen page.
+
+        So scale each page's own canvas by the same per-axis factors as its
+        controls. A full-canvas popup lands exactly on the screen size
+        (1280*1.5, 800*1.35 -> 1920x1080), and a genuinely small one keeps its
+        proportions. What matters is that canvas and contents move together, so
+        nothing can overflow that did not overflow before.
         """
         model = e.get('model')
         if model not in MODELS:
@@ -249,7 +266,16 @@ class Edits:
             return old_size, new_size
         sx = new_size[0] / old_size[0]
         sy = new_size[1] / old_size[1]
+        self._scale = (sx, sy)
         for pg in self.pages:
+            pw, ph = pg['size']
+            if None not in (pw, ph):
+                page_ops.append({
+                    'page': pg['id'], 'name': pg['name'], 'kind': pg['kind'],
+                    'why': f'scale canvas {sx:.4g}x{sy:.4g}',
+                    'was': [pw, ph],
+                    'size': [round(pw * sx), round(ph * sy)],
+                })
             for c in pg['controls']:
                 x, y, w, h = c['rect']
                 if None in (x, y, w, h):
@@ -282,9 +308,10 @@ class Edits:
 
     # -- plan and checks ---------------------------------------------------
     def plan(self):
-        ops, project_ops, problems = [], [], []
+        ops, project_ops, page_ops, problems = [], [], [], []
         self._resize = None
         self._model = None
+        self._scale = None
         self._unused_colors = []
         for e in self.edits:
             op = e.get('op')
@@ -295,7 +322,7 @@ class Edits:
             elif op == 'restyle':
                 self._restyle(e, ops, problems)
             elif op == 'retarget':
-                self._resize = self._retarget(e, ops, problems, project_ops)
+                self._resize = self._retarget(e, ops, problems, project_ops, page_ops)
             else:
                 problems.append(f'unknown op {op!r}')
         return {
@@ -305,6 +332,7 @@ class Edits:
                      'PowerShell 5.1, then verify the BUILT file - a clean build '
                      'does not mean a correct one.'),
             'project': project_ops,
+            'pages': page_ops,
             'controls': ops,
         }, problems
 
@@ -353,8 +381,17 @@ class Edits:
                  if 'leftField' in (o.get('fields') or {})}
         size = self._resize[1] if getattr(self, '_resize', None) else None
         if size:
+            # Against each page's OWN new canvas, popups included. Checking only
+            # standard pages was the blind spot that let the applier's blanket
+            # popup resize through: popups are exactly where the canvas and the
+            # screen are allowed to disagree, so they are the only place this
+            # check could ever have fired.
+            resized = {p['page']: p['size'] for p in plan['pages']}
             for pg in self.pages:
-                if pg['kind'] != 'page':
+                canvas = resized.get(pg['id'])
+                if canvas is None:
+                    canvas = size if pg['kind'] == 'page' else pg['size']
+                if not canvas or None in tuple(canvas):
                     continue
                 for c in pg['controls']:
                     f = moved.get((pg['id'], c['obj_id']))
@@ -365,11 +402,12 @@ class Edits:
                         x, y, w, h = c['rect']
                     if None in (x, y, w, h):
                         continue
-                    if x + w > size[0] or y + h > size[1]:
+                    if x + w > canvas[0] or y + h > canvas[1]:
                         errors.append(
                             f"{pg['name']} {c['name'] or c['type']}: {x},{y} {w}x{h} "
-                            f'falls outside the new {size[0]}x{size[1]} canvas - Build '
-                            f'moves it to 0,0 without reporting anything')
+                            f'falls outside the new {canvas[0]}x{canvas[1]} '
+                            f"{'canvas' if pg['kind'] == 'page' else 'popup canvas'} - "
+                            f'Build moves it to 0,0 without reporting anything')
 
             # Shrinking pixel-wise is not the same as shrinking physically. A
             # 1366x768 panel is bigger than a 1280x800 one, so scaling down can

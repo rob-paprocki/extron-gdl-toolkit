@@ -167,16 +167,32 @@ foreach ($op in $spec.project) {
         # Pages ARE the canvas - a page left at the old size would put every
         # control outside it, and Build moves those to 0,0 without a word.
         #
-        # POPUPS TOO. A popup's authored widthField/heightField is the full
-        # canvas (1280x800 here) even though layout.json reports it as 915x800 -
-        # that smaller number is the DISPLAYED size, taken from the reference
-        # that shows it. Resizing only $proj.Pages left every popup at the old
-        # canvas, so all 297 scaled popup controls overflowed and Build put them
-        # at 0,0. Page controls were fine, which is what made it look like a
-        # popup-specific bug rather than a missing collection.
+        # POPUPS TOO, but NOT at the screen size. This used to set every page
+        # and popup to $op.size, on the belief that a popup's authored
+        # widthField/heightField is always the full canvas (1280x800 here) with
+        # layout.json's smaller 915x800 being the DISPLAYED size taken from the
+        # reference that shows it. That belief came from the Liberty Bank
+        # fixture, where every popup happens to be authored full-canvas, and it
+        # is wrong. In Extron's own Afterburn template 10 of the 29 popups are
+        # authored at 880x525, and the BUILT payload reports 880x525 for them -
+        # all 29 popup sizes in layout.json match the authored canvas exactly.
+        # The authored size IS the popup size. Forcing it to the screen size
+        # turns a modal card into a full-screen page in the shipped file.
+        #
+        # gdl.edit now emits a size per page, each scaled by the same per-axis
+        # factors as its controls, so canvas and contents move together. Fall
+        # back to the old blanket behaviour only for a plan that predates it -
+        # leaving a popup at the old canvas is the one outcome that silently
+        # destroys the layout.
+        $sized = @{}
+        foreach ($pgop in @($spec.pages)) {
+            if ($null -ne $pgop) { $sized[[string]$pgop.page] = $pgop.size }
+        }
         foreach ($pg in @($proj.Pages) + @($proj.PopupPages)) {
-            Set-GdlFieldIfPresent $pg 'widthField' ([int]$op.size[0]) | Out-Null
-            Set-GdlFieldIfPresent $pg 'heightField' ([int]$op.size[1]) | Out-Null
+            $want = $sized[[string](Get-GdlField $pg 'idField')]
+            if (-not $want) { $want = $op.size }
+            Set-GdlFieldIfPresent $pg 'widthField' ([int]$want[0]) | Out-Null
+            Set-GdlFieldIfPresent $pg 'heightField' ([int]$want[1]) | Out-Null
         }
     }
 }
