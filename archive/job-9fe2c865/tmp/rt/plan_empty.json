@@ -1,0 +1,8 @@
+{
+  "generated_by": "gdl.edit",
+  "target": "C:\\Users\\robp\\.claude\\jobs\\9fe2c865/tmp/rt/seed.gdl",
+  "note": "Apply with powershell/Apply-GdlEdits.ps1 under 32-bit Windows PowerShell 5.1, then verify the BUILT file - a clean build does not mean a correct one.",
+  "project": [],
+  "pages": [],
+  "controls": []
+}

@@ -1,0 +1,16 @@
+# Binaries carried off the Windows box's C: drive go through Git LFS, so a clone
+# stays light and `git lfs pull` fetches them only when wanted.
+#
+# fixtures/ predates this and stays in plain git: moving it to LFS would rewrite
+# every commit that touched it.
+
+# The theme seeds - see seeds/README.md.
+seeds/*.gdl                 filter=lfs diff=lfs merge=lfs -text
+
+# Raw working state from C:\gdlwork, the job scratch dir and the Desktop -
+# see archive/README.md.
+archive/**/*.gdl            filter=lfs diff=lfs merge=lfs -text
+archive/**/*ProjectGCP      filter=lfs diff=lfs merge=lfs -text
+archive/**/*.tgz4           filter=lfs diff=lfs merge=lfs -text
+archive/**/*.png            filter=lfs diff=lfs merge=lfs -text
+archive/**/*.jsonl          filter=lfs diff=lfs merge=lfs -text

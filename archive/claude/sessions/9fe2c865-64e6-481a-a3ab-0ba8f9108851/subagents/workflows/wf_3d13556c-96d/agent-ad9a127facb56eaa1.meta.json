@@ -1,0 +1,1 @@
+{"agentType":"workflow-subagent","description":"extract:powershell","workflowPhase":"Extract","spawnDepth":1,"requestShape":"foreground","requestNonInteractive":false,"model":"haiku"}

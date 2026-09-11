@@ -1,0 +1,6 @@
+{
+  "_why": "Ground-truth retarget: Extron shipped this same project at 1920x1080 by hand, so the built result can be compared against their own answer rather than only against itself.",
+  "edits": [
+    {"op": "retarget", "model": "TLP1535M", "scale": true}
+  ]
+}

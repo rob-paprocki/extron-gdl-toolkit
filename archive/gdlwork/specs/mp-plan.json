@@ -1,0 +1,420 @@
+{
+ "generated_by": "gdl.spec",
+ "popup_groups": [],
+ "popups": [],
+ "canvas": [
+  1280,
+  800
+ ],
+ "note": "Apply with powershell/Apply-GdlPlan.ps1 under 32-bit Windows PowerShell 5.1. Page ids are assigned by the applier via Get-GdlNextPageId, not here - the donor project decides what is free.",
+ "pages": [
+  {
+   "op": "clone-page",
+   "number": 1000,
+   "name": "Home",
+   "modal": false,
+   "background": 4279374620,
+   "clear_controls": true,
+   "controls": [
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 0,
+      "userIdField": 1001,
+      "nameField": "Bar",
+      "textField": "",
+      "leftField": 0,
+      "topField": 0,
+      "widthField": 1280,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": null,
+     "border": "2D Rectangle",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 1,
+      "userIdField": 1002,
+      "nameField": "Title",
+      "textField": "Home",
+      "leftField": 32,
+      "topField": 0,
+      "widthField": 600,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4294967295,
+     "alignment": 4,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 32,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 2,
+      "userIdField": 1003,
+      "nameField": "Displays",
+      "textField": "Displays",
+      "leftField": 32,
+      "topField": 128,
+      "widthField": 392,
+      "heightField": 200,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 3,
+      "userIdField": 1004,
+      "nameField": "Audio",
+      "textField": "Audio",
+      "leftField": 444,
+      "topField": 128,
+      "widthField": 392,
+      "heightField": 200,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 4,
+      "userIdField": 1005,
+      "nameField": "Cameras",
+      "textField": "Cameras",
+      "leftField": 856,
+      "topField": 128,
+      "widthField": 392,
+      "heightField": 200,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    }
+   ]
+  },
+  {
+   "op": "clone-page",
+   "number": 1100,
+   "name": "Displays",
+   "modal": false,
+   "background": 4279374620,
+   "clear_controls": true,
+   "controls": [
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 0,
+      "userIdField": 1101,
+      "nameField": "Bar",
+      "textField": "",
+      "leftField": 0,
+      "topField": 0,
+      "widthField": 1280,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": null,
+     "border": "2D Rectangle",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 1,
+      "userIdField": 1102,
+      "nameField": "Title",
+      "textField": "Displays",
+      "leftField": 32,
+      "topField": 0,
+      "widthField": 600,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4294967295,
+     "alignment": 4,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 32,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 2,
+      "userIdField": 1103,
+      "nameField": "Left Display",
+      "textField": "Left Display",
+      "leftField": 32,
+      "topField": 128,
+      "widthField": 598,
+      "heightField": 200,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 3,
+      "userIdField": 1104,
+      "nameField": "Right Display",
+      "textField": "Right Display",
+      "leftField": 650,
+      "topField": 128,
+      "widthField": 598,
+      "heightField": 200,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    }
+   ]
+  },
+  {
+   "op": "clone-page",
+   "number": 1200,
+   "name": "Audio",
+   "modal": false,
+   "background": 4279374620,
+   "clear_controls": true,
+   "controls": [
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 0,
+      "userIdField": 1201,
+      "nameField": "Bar",
+      "textField": "",
+      "leftField": 0,
+      "topField": 0,
+      "widthField": 1280,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": null,
+     "border": "2D Rectangle",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 1,
+      "userIdField": 1202,
+      "nameField": "Title",
+      "textField": "Audio",
+      "leftField": 32,
+      "topField": 0,
+      "widthField": 600,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4294967295,
+     "alignment": 4,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 32,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 2,
+      "userIdField": 1203,
+      "nameField": "Mute",
+      "textField": "Mute",
+      "leftField": 32,
+      "topField": 128,
+      "widthField": 392,
+      "heightField": 120,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 3,
+      "userIdField": 1204,
+      "nameField": "Down",
+      "textField": "Down",
+      "leftField": 444,
+      "topField": 128,
+      "widthField": 392,
+      "heightField": 120,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 4,
+      "userIdField": 1205,
+      "nameField": "Up",
+      "textField": "Up",
+      "leftField": 856,
+      "topField": 128,
+      "widthField": 392,
+      "heightField": 120,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    }
+   ]
+  }
+ ]
+}

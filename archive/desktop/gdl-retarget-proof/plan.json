@@ -1,0 +1,7674 @@
+{
+  "generated_by": "gdl.edit",
+  "target": "C:\\Users\\robp\\.claude\\jobs\\9fe2c865/tmp/rt/seed.gdl",
+  "note": "Apply with powershell/Apply-GdlEdits.ps1 under 32-bit Windows PowerShell 5.1, then verify the BUILT file - a clean build does not mean a correct one.",
+  "project": [
+    {
+      "why": "retarget to TLP1535M (1920x1080)",
+      "model": "TLP1535M",
+      "size": [
+        1920,
+        1080
+      ],
+      "platform_class": "Extron.GUICPro.PBTLP1535MPlatform"
+    }
+  ],
+  "pages": [
+    {
+      "page": 0,
+      "name": "Start",
+      "kind": "page",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 18,
+      "name": "Main Select Source",
+      "kind": "page",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 16,
+      "name": "Main SD Screen Arrows",
+      "kind": "page",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 13,
+      "name": "Main Multi-Window",
+      "kind": "page",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 3,
+      "name": "Main SD",
+      "kind": "page",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 1,
+      "name": "Main VC",
+      "kind": "page",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 9200,
+      "name": "Main Recording",
+      "kind": "page",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 17,
+      "name": "Video Preview - Multi-Window",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 6,
+      "name": "PC",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 19,
+      "name": "BluRay",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 22,
+      "name": "Doc Cam",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 23,
+      "name": "Camera Select",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 33,
+      "name": "Video Preview",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 11,
+      "name": "Audio Settings",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 31,
+      "name": "Camera Settings",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 29,
+      "name": "VTC Keyboard",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 28,
+      "name": "Screen Settings",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 27,
+      "name": "Incoming Call",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 26,
+      "name": "Help",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 25,
+      "name": "Display Settings",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 24,
+      "name": "Confirmation",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 30,
+      "name": "VTC Search Results",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 65535,
+      "name": "Offline Page",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 2,
+      "name": "VTC Dialer",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 4,
+      "name": "Lighting Settings",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 14,
+      "name": "Window Layout",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 32,
+      "name": "Video Preview - Share Source",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 12,
+      "name": "TV Channels",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 10,
+      "name": "Powering Down",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 9,
+      "name": "TV",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 8,
+      "name": "Starting Up",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 15,
+      "name": "Share Content",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 7,
+      "name": "Laptop",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 5,
+      "name": "Streaming",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        880,
+        525
+      ],
+      "size": [
+        1320,
+        709
+      ]
+    },
+    {
+      "page": 20,
+      "name": "Confirmation - Recording",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "page": 9201,
+      "name": "Recording Controls",
+      "kind": "popup",
+      "why": "scale canvas 1.5x1.35",
+      "was": [
+        1280,
+        800
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "page": 0,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 298,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 0,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 655,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 0,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 566,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 0,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 477,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 0,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 387,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 0,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 790,
+        "topField": 518,
+        "widthField": 342,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 0,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 216,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 0,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 712,
+        "topField": 184,
+        "widthField": 495,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 0,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1664,
+        "topField": 216,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 0,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 622,
+        "topField": 964,
+        "widthField": 675,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 0,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1752,
+        "topField": 273,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 0,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1742,
+        "topField": 802,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 0,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 0,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 758,
+        "topField": 425,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 18,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 519,
+        "topField": 425,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 18,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1234,
+        "topField": 425,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 18,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 996,
+        "topField": 425,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 18,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 772,
+        "topField": 301,
+        "widthField": 375,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 687,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 544,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 765,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 30,
+        "topField": 953,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 18,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1752,
+        "topField": 273,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 18,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 609,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 216,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1664,
+        "topField": 216,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1742,
+        "topField": 802,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 18,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1688,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 18,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1796,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 18,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 281,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 359,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 18,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 959,
+        "widthField": 312,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 18,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1398,
+        "topField": 959,
+        "widthField": 222,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 18,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 852,
+        "topField": 946,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 18,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 35,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 36,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 37,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 18,
+      "control": 38,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 281,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 359,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 520,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 41,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 599,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 513,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 16,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 752,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 16,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1228,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 16,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 990,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 16,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 390,
+        "topField": 185,
+        "widthField": 1140,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 16,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 236,
+        "widthField": 1320,
+        "heightField": 709
+      }
+    },
+    {
+      "page": 16,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 774,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 695,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 30,
+        "topField": 953,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 16,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1752,
+        "topField": 273,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 16,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 216,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1664,
+        "topField": 216,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 42,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 455,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 16,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1742,
+        "topField": 802,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 16,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1688,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 16,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1796,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 16,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 959,
+        "widthField": 312,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 16,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1398,
+        "topField": 959,
+        "widthField": 222,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 16,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 852,
+        "topField": 946,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 16,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 35,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 36,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 37,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 16,
+      "control": 38,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 281,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 13,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 359,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 13,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 513,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 13,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 752,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 13,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1228,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 13,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 990,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 13,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 687,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 13,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 544,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 13,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 765,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 13,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 30,
+        "topField": 953,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 13,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1752,
+        "topField": 273,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 13,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 216,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 13,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1664,
+        "topField": 216,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 13,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 959,
+        "widthField": 312,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 13,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1656,
+        "topField": 40,
+        "widthField": 123,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 13,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1790,
+        "topField": 40,
+        "widthField": 123,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 13,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 390,
+        "topField": 185,
+        "widthField": 1140,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 13,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 236,
+        "widthField": 1320,
+        "heightField": 709
+      }
+    },
+    {
+      "page": 13,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1742,
+        "topField": 802,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 13,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1688,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 13,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1796,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 13,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 852,
+        "topField": 946,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 13,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1398,
+        "topField": 959,
+        "widthField": 222,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 13,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 35,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 36,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 37,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 38,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 39,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 13,
+      "control": 40,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 513,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 3,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 752,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 3,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1228,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 3,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 990,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 3,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 687,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 3,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 544,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 3,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 765,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 3,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 30,
+        "topField": 953,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 3,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1742,
+        "topField": 802,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 3,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1752,
+        "topField": 273,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 3,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 609,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 3,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 216,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 3,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1664,
+        "topField": 216,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 3,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 390,
+        "topField": 185,
+        "widthField": 1140,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 3,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 236,
+        "widthField": 1320,
+        "heightField": 709
+      }
+    },
+    {
+      "page": 3,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1688,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 3,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1796,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 3,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 281,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 3,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 359,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 3,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 959,
+        "widthField": 312,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 3,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1398,
+        "topField": 959,
+        "widthField": 222,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 3,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 852,
+        "topField": 946,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 3,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 35,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 36,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 37,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 38,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 3,
+      "control": 39,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 513,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 1,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 752,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 1,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1228,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 1,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 990,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 1,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 765,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 281,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 216,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 359,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 437,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 609,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 544,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 844,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 30,
+        "topField": 953,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 1,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1688,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 1,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1796,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 1,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1664,
+        "topField": 216,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1752,
+        "topField": 273,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 1,
+      "control": 49,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 687,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 1,
+      "control": 50,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1682,
+        "topField": 40,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 1,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 390,
+        "topField": 185,
+        "widthField": 1140,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 1,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 236,
+        "widthField": 1320,
+        "heightField": 709
+      }
+    },
+    {
+      "page": 1,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1742,
+        "topField": 802,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 1,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 852,
+        "topField": 946,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 1,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 959,
+        "widthField": 312,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 1,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1398,
+        "topField": 959,
+        "widthField": 222,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 1,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 35,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 36,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 37,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 38,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 39,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 1,
+      "control": 40,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 236,
+        "widthField": 1320,
+        "heightField": 709
+      }
+    },
+    {
+      "page": 9200,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 620,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 41,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 699,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 30,
+        "topField": 953,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9200,
+      "control": 42,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 468,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 780,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 4,
+        "topField": 11,
+        "widthField": 84,
+        "heightField": 78
+      }
+    },
+    {
+      "page": 9200,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 540,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 102,
+        "topField": 19,
+        "widthField": 164,
+        "heightField": 63
+      }
+    },
+    {
+      "page": 9200,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 74,
+        "topField": 19,
+        "widthField": 164,
+        "heightField": 63
+      }
+    },
+    {
+      "page": 9200,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 513,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 9200,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 752,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 9200,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1228,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 9200,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 990,
+        "topField": 50,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 9200,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1742,
+        "topField": 802,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9200,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1752,
+        "topField": 273,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 9200,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 21,
+        "topField": 216,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1664,
+        "topField": 216,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 390,
+        "topField": 185,
+        "widthField": 1140,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 9200,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1688,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9200,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1796,
+        "topField": 953,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9200,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 281,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 359,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9200,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 300,
+        "topField": 959,
+        "widthField": 312,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 9200,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1398,
+        "topField": 959,
+        "widthField": 222,
+        "heightField": 81
+      }
+    },
+    {
+      "page": 9200,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 852,
+        "topField": 946,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9200,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 35,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 36,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 37,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 38,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 39,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 40,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9200,
+      "control": 43,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 17,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 17,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 17,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 17,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 513,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 17,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 752,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 17,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1228,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 17,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 990,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 17,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 390,
+        "topField": 252,
+        "widthField": 1140,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 17,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 657,
+        "topField": 946,
+        "widthField": 291,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 17,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 972,
+        "topField": 946,
+        "widthField": 291,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 17,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 352,
+        "topField": 282,
+        "widthField": 1215,
+        "heightField": 616
+      }
+    },
+    {
+      "page": 6,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 538,
+        "topField": 0,
+        "widthField": 243,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 6,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 180,
+        "topField": 99,
+        "widthField": 960,
+        "heightField": 173
+      }
+    },
+    {
+      "page": 19,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 736,
+        "topField": 99,
+        "widthField": 399,
+        "heightField": 359
+      }
+    },
+    {
+      "page": 19,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 538,
+        "topField": 0,
+        "widthField": 243,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 19,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 888,
+        "topField": 128,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 888,
+        "topField": 235,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1006,
+        "topField": 235,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 770,
+        "topField": 235,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 888,
+        "topField": 342,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 333,
+        "topField": 128,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 483,
+        "topField": 128,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 183,
+        "topField": 128,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 333,
+        "topField": 235,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 483,
+        "topField": 235,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 183,
+        "topField": 235,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 333,
+        "topField": 342,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 483,
+        "topField": 342,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 19,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 183,
+        "topField": 342,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 116,
+        "topField": 99,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 22,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 418,
+        "topField": 99,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 22,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 722,
+        "topField": 99,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 22,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1024,
+        "topField": 99,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 22,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 90,
+        "topField": 182,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 999,
+        "topField": 182,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 393,
+        "topField": 289,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 393,
+        "topField": 182,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 90,
+        "topField": 289,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 90,
+        "topField": 396,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 999,
+        "topField": 289,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 696,
+        "topField": 182,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 696,
+        "topField": 289,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 538,
+        "topField": 0,
+        "widthField": 243,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 22,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 393,
+        "topField": 396,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 696,
+        "topField": 396,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 22,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 999,
+        "topField": 396,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 23,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 23,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 996,
+        "topField": 189,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 23,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 758,
+        "topField": 189,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 23,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 23,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 23,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 720,
+        "topField": 325,
+        "widthField": 478,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 33,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 33,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 33,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 33,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 513,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 33,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 752,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 33,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1228,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 33,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 990,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 33,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 390,
+        "topField": 252,
+        "widthField": 1140,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 33,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 814,
+        "topField": 946,
+        "widthField": 291,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 11,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 11,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 11,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 11,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1248,
+        "topField": 774,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 11,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1258,
+        "topField": 246,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 11,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1170,
+        "topField": 189,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 11,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 912,
+        "topField": 774,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 11,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 922,
+        "topField": 246,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 11,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 834,
+        "topField": 189,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 11,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 576,
+        "topField": 774,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 11,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 586,
+        "topField": 246,
+        "widthField": 75,
+        "heightField": 533
+      }
+    },
+    {
+      "page": 11,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 498,
+        "topField": 189,
+        "widthField": 252,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 31,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 369,
+        "topField": 182,
+        "widthField": 399,
+        "heightField": 359
+      }
+    },
+    {
+      "page": 31,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 888,
+        "topField": 182,
+        "widthField": 399,
+        "heightField": 359
+      }
+    },
+    {
+      "page": 31,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 466,
+        "topField": 0,
+        "widthField": 375,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 31,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 476,
+        "topField": 101,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 31,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 510,
+        "topField": 632,
+        "widthField": 118,
+        "heightField": 34
+      }
+    },
+    {
+      "page": 31,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 33,
+        "topField": 308,
+        "widthField": 214,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 31,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 926,
+        "topField": 101,
+        "widthField": 333,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 31,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 520,
+        "topField": 212,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1040,
+        "topField": 212,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 402,
+        "topField": 605,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 639,
+        "topField": 605,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 520,
+        "topField": 319,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 639,
+        "topField": 319,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 402,
+        "topField": 319,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 520,
+        "topField": 425,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 968,
+        "topField": 605,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1114,
+        "topField": 605,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1040,
+        "topField": 319,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1158,
+        "topField": 319,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 921,
+        "topField": 319,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1040,
+        "topField": 425,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 33,
+        "topField": 392,
+        "widthField": 214,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 33,
+        "topField": 498,
+        "widthField": 214,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 33,
+        "topField": 605,
+        "widthField": 214,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 33,
+        "topField": 182,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 152,
+        "topField": 182,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 31,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 33,
+        "topField": 99,
+        "widthField": 214,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 29,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 190,
+        "topField": 7,
+        "widthField": 946,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 29,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1144,
+        "topField": 0,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 190,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 309,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 428,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 546,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 664,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 783,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 902,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1020,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 72,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1138,
+        "topField": 101,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 190,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 309,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 428,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 546,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 664,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 783,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 902,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1020,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 72,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1138,
+        "topField": 194,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 255,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 374,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 492,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 610,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 729,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 848,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 966,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1084,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 136,
+        "topField": 288,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 309,
+        "topField": 381,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 428,
+        "topField": 381,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 546,
+        "topField": 381,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 664,
+        "topField": 381,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 35,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 783,
+        "topField": 381,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 36,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 902,
+        "topField": 381,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 37,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 190,
+        "topField": 381,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 38,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 192,
+        "topField": 474,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 39,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 429,
+        "topField": 474,
+        "widthField": 464,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 40,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 310,
+        "topField": 474,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 41,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1020,
+        "topField": 474,
+        "widthField": 228,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 42,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 902,
+        "topField": 474,
+        "widthField": 110,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 29,
+      "control": 43,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 28,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 28,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 430,
+        "topField": 189,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 28,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 723,
+        "topField": 189,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 28,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1016,
+        "topField": 189,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 28,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1308,
+        "topField": 189,
+        "widthField": 180,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 28,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 472,
+        "topField": 273,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1350,
+        "topField": 273,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 765,
+        "topField": 486,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 765,
+        "topField": 273,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 472,
+        "topField": 486,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 472,
+        "topField": 379,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1350,
+        "topField": 486,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1058,
+        "topField": 273,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1058,
+        "topField": 486,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 765,
+        "topField": 379,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1058,
+        "topField": 379,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 28,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1350,
+        "topField": 379,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 27,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 27,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 435,
+        "topField": 301,
+        "widthField": 1050,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 27,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 693,
+        "topField": 439,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 27,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 996,
+        "topField": 439,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 26,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 26,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 435,
+        "topField": 189,
+        "widthField": 1050,
+        "heightField": 135
+      }
+    },
+    {
+      "page": 26,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 26,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 25,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 25,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 25,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 568,
+        "topField": 189,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 25,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1125,
+        "topField": 189,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 25,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 25,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 548,
+        "topField": 351,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 25,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1104,
+        "topField": 273,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 25,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1104,
+        "topField": 351,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 25,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 548,
+        "topField": 273,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 24,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 24,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 435,
+        "topField": 301,
+        "widthField": 1050,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 24,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 693,
+        "topField": 439,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 24,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 996,
+        "topField": 439,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 30,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 234,
+        "topField": 101,
+        "widthField": 518,
+        "heightField": 520
+      }
+    },
+    {
+      "page": 30,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 234,
+        "topField": 185,
+        "widthField": 450,
+        "heightField": 1
+      }
+    },
+    {
+      "page": 30,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 234,
+        "topField": 273,
+        "widthField": 450,
+        "heightField": 1
+      }
+    },
+    {
+      "page": 30,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 234,
+        "topField": 360,
+        "widthField": 450,
+        "heightField": 1
+      }
+    },
+    {
+      "page": 30,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 234,
+        "topField": 448,
+        "widthField": 450,
+        "heightField": 1
+      }
+    },
+    {
+      "page": 30,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 234,
+        "topField": 9,
+        "widthField": 525,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 30,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 855,
+        "topField": 256,
+        "widthField": 231,
+        "heightField": 208
+      }
+    },
+    {
+      "page": 30,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 248,
+        "topField": 201,
+        "widthField": 428,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 248,
+        "topField": 289,
+        "widthField": 428,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 248,
+        "topField": 113,
+        "widthField": 428,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 248,
+        "topField": 464,
+        "widthField": 428,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 248,
+        "topField": 377,
+        "widthField": 428,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 248,
+        "topField": 552,
+        "widthField": 428,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 666,
+        "topField": 537,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 30,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 666,
+        "topField": 99,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 30,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 123,
+        "topField": 0,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 30,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 234,
+        "topField": 536,
+        "widthField": 450,
+        "heightField": 1
+      }
+    },
+    {
+      "page": 30,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 255,
+        "topField": 113,
+        "widthField": 396,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 255,
+        "topField": 201,
+        "widthField": 396,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 255,
+        "topField": 289,
+        "widthField": 396,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 255,
+        "topField": 464,
+        "widthField": 396,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 255,
+        "topField": 377,
+        "widthField": 396,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 30,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 255,
+        "topField": 552,
+        "widthField": 396,
+        "heightField": 57
+      }
+    },
+    {
+      "page": 65535,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 336,
+        "topField": 202,
+        "widthField": 1248,
+        "heightField": 674
+      }
+    },
+    {
+      "page": 65535,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 441,
+        "topField": 251,
+        "widthField": 1038,
+        "heightField": 578
+      }
+    },
+    {
+      "page": 2,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 640,
+        "topField": 490,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 524,
+        "topField": 429,
+        "widthField": 96,
+        "heightField": 40
+      }
+    },
+    {
+      "page": 2,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 382,
+        "topField": 429,
+        "widthField": 96,
+        "heightField": 40
+      }
+    },
+    {
+      "page": 2,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 242,
+        "topField": 429,
+        "widthField": 96,
+        "heightField": 40
+      }
+    },
+    {
+      "page": 2,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 524,
+        "topField": 323,
+        "widthField": 96,
+        "heightField": 40
+      }
+    },
+    {
+      "page": 2,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 382,
+        "topField": 323,
+        "widthField": 96,
+        "heightField": 40
+      }
+    },
+    {
+      "page": 2,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 242,
+        "topField": 323,
+        "widthField": 96,
+        "heightField": 40
+      }
+    },
+    {
+      "page": 2,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 242,
+        "topField": 277,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 382,
+        "topField": 277,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 524,
+        "topField": 277,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 242,
+        "topField": 383,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 382,
+        "topField": 383,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 524,
+        "topField": 383,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 846,
+        "topField": 170,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 846,
+        "topField": 277,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 846,
+        "topField": 383,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 846,
+        "topField": 490,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 538,
+        "topField": 0,
+        "widthField": 243,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 2,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 242,
+        "topField": 93,
+        "widthField": 339,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 2,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 242,
+        "topField": 170,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 242,
+        "topField": 490,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 24,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 382,
+        "topField": 490,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 524,
+        "topField": 490,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 580,
+        "topField": 82,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 382,
+        "topField": 216,
+        "widthField": 96,
+        "heightField": 40
+      }
+    },
+    {
+      "page": 2,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 382,
+        "topField": 170,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 2,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 524,
+        "topField": 216,
+        "widthField": 96,
+        "heightField": 40
+      }
+    },
+    {
+      "page": 2,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 524,
+        "topField": 170,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 4,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 4,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 548,
+        "topField": 273,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 548,
+        "topField": 586,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 548,
+        "topField": 508,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 548,
+        "topField": 429,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 548,
+        "topField": 351,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 568,
+        "topField": 189,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1104,
+        "topField": 273,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1104,
+        "topField": 586,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1104,
+        "topField": 508,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1104,
+        "topField": 429,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1104,
+        "topField": 351,
+        "widthField": 267,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1125,
+        "topField": 189,
+        "widthField": 228,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 4,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 14,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 14,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 982,
+        "topField": 189,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 430,
+        "topField": 316,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 430,
+        "topField": 189,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1258,
+        "topField": 189,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 706,
+        "topField": 316,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 706,
+        "topField": 189,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 430,
+        "topField": 443,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 982,
+        "topField": 443,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 982,
+        "topField": 316,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1258,
+        "topField": 443,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1258,
+        "topField": 316,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 14,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 706,
+        "topField": 443,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 32,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 32,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 32,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 32,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 758,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 32,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 996,
+        "topField": 117,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 32,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 390,
+        "topField": 252,
+        "widthField": 1140,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 32,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 732,
+        "topField": 946,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 32,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 972,
+        "topField": 946,
+        "widthField": 216,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 32,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 352,
+        "topField": 282,
+        "widthField": 1215,
+        "heightField": 616
+      }
+    },
+    {
+      "page": 12,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 12,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 12,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 12,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 706,
+        "topField": 316,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 12,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 706,
+        "topField": 443,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 12,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 706,
+        "topField": 189,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 12,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 982,
+        "topField": 316,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 12,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 982,
+        "topField": 443,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 12,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 982,
+        "topField": 189,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 10,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 10,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 435,
+        "topField": 506,
+        "widthField": 1050,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 190,
+        "topField": 500,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 542,
+        "topField": 0,
+        "widthField": 243,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 286,
+        "topField": 92,
+        "widthField": 142,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 428,
+        "topField": 82,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 309,
+        "topField": 180,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 428,
+        "topField": 180,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 190,
+        "topField": 286,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 309,
+        "topField": 286,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 428,
+        "topField": 286,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 190,
+        "topField": 393,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 309,
+        "topField": 393,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 428,
+        "topField": 393,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 190,
+        "topField": 180,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 309,
+        "topField": 500,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 428,
+        "topField": 500,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 897,
+        "topField": 180,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 897,
+        "topField": 286,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 17,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 897,
+        "topField": 393,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 897,
+        "topField": 500,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 654,
+        "topField": 189,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 654,
+        "topField": 305,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 627,
+        "topField": 273,
+        "widthField": 150,
+        "heightField": 34
+      }
+    },
+    {
+      "page": 9,
+      "control": 22,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 654,
+        "topField": 409,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9,
+      "control": 23,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 654,
+        "topField": 487,
+        "widthField": 96,
+        "heightField": 34
+      }
+    },
+    {
+      "page": 8,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 8,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 480,
+        "topField": 454,
+        "widthField": 960,
+        "heightField": 173
+      }
+    },
+    {
+      "page": 15,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 15,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 996,
+        "topField": 189,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 15,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 758,
+        "topField": 189,
+        "widthField": 165,
+        "heightField": 148
+      }
+    },
+    {
+      "page": 15,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 15,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 15,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 720,
+        "topField": 325,
+        "widthField": 478,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 7,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 538,
+        "topField": 0,
+        "widthField": 243,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 7,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 180,
+        "topField": 99,
+        "widthField": 960,
+        "heightField": 173
+      }
+    },
+    {
+      "page": 5,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 460,
+        "topField": 231,
+        "widthField": 399,
+        "heightField": 359
+      }
+    },
+    {
+      "page": 5,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 538,
+        "topField": 0,
+        "widthField": 243,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 5,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 494,
+        "topField": 99,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 5,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 699,
+        "topField": 99,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 5,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 612,
+        "topField": 261,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 5,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 612,
+        "topField": 367,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 5,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 612,
+        "topField": 474,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 5,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 730,
+        "topField": 367,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 5,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 494,
+        "topField": 367,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 20,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 20,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 405,
+        "topField": 153,
+        "widthField": 1110,
+        "heightField": 230
+      }
+    },
+    {
+      "page": 20,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 693,
+        "topField": 439,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 20,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 996,
+        "topField": 439,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 42,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 0,
+        "topField": 0,
+        "widthField": 1920,
+        "heightField": 1080
+      }
+    },
+    {
+      "page": 9201,
+      "control": 0,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 728,
+        "topField": 49,
+        "widthField": 465,
+        "heightField": 68
+      }
+    },
+    {
+      "page": 9201,
+      "control": 1,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1539,
+        "topField": 34,
+        "widthField": 96,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 2,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1092,
+        "topField": 849,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 3,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 358,
+        "topField": 849,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 4,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 603,
+        "topField": 849,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 5,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 848,
+        "topField": 849,
+        "widthField": 231,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 6,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 350,
+        "topField": 771,
+        "widthField": 1209,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 7,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 350,
+        "topField": 744,
+        "widthField": 1209,
+        "heightField": 27
+      }
+    },
+    {
+      "page": 9201,
+      "control": 14,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1434,
+        "topField": 936,
+        "widthField": 128,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 25,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1434,
+        "topField": 849,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 26,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1352,
+        "topField": 825,
+        "widthField": 50,
+        "heightField": 150
+      }
+    },
+    {
+      "page": 9201,
+      "control": 27,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 358,
+        "topField": 936,
+        "widthField": 231,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 28,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 603,
+        "topField": 936,
+        "widthField": 231,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 29,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 848,
+        "topField": 936,
+        "widthField": 231,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 30,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1092,
+        "topField": 936,
+        "widthField": 231,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 32,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 518,
+        "topField": 212,
+        "widthField": 464,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 33,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 518,
+        "topField": 333,
+        "widthField": 464,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 34,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 987,
+        "topField": 333,
+        "widthField": 632,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 35,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 987,
+        "topField": 212,
+        "widthField": 632,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 37,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 518,
+        "topField": 273,
+        "widthField": 464,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 38,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 987,
+        "topField": 273,
+        "widthField": 632,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 8,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 987,
+        "topField": 455,
+        "widthField": 632,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 9,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1124,
+        "topField": 562,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 10,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 518,
+        "topField": 562,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 11,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 820,
+        "topField": 648,
+        "widthField": 128,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 12,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1124,
+        "topField": 648,
+        "widthField": 128,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 13,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 518,
+        "topField": 648,
+        "widthField": 128,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 15,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 820,
+        "topField": 562,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 16,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1274,
+        "topField": 647,
+        "widthField": 128,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 18,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 1274,
+        "topField": 562,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 19,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 669,
+        "topField": 562,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 20,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 669,
+        "topField": 648,
+        "widthField": 128,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 21,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 972,
+        "topField": 647,
+        "widthField": 128,
+        "heightField": 53
+      }
+    },
+    {
+      "page": 9201,
+      "control": 31,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 972,
+        "topField": 562,
+        "widthField": 128,
+        "heightField": 86
+      }
+    },
+    {
+      "page": 9201,
+      "control": 36,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 518,
+        "topField": 394,
+        "widthField": 464,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 40,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 987,
+        "topField": 394,
+        "widthField": 632,
+        "heightField": 61
+      }
+    },
+    {
+      "page": 9201,
+      "control": 41,
+      "why": "scale 1.5x1.35",
+      "fields": {
+        "leftField": 518,
+        "topField": 455,
+        "widthField": 464,
+        "heightField": 61
+      }
+    }
+  ]
+}

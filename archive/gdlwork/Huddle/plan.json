@@ -1,0 +1,454 @@
+{
+ "generated_by": "gdl.spec",
+ "popup_groups": [],
+ "popups": [],
+ "canvas": [
+  1280,
+  800
+ ],
+ "note": "Apply with powershell/Apply-GdlPlan.ps1 under 32-bit Windows PowerShell 5.1. Page ids are assigned by the applier via Get-GdlNextPageId, not here - the donor project decides what is free.",
+ "pages": [
+  {
+   "op": "clone-page",
+   "number": 1000,
+   "name": "Huddle Home",
+   "modal": false,
+   "background": 4279374620,
+   "clear_controls": true,
+   "controls": [
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 0,
+      "userIdField": 1001,
+      "nameField": "TopBar",
+      "textField": "",
+      "leftField": 0,
+      "topField": 0,
+      "widthField": 1280,
+      "heightField": 112,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": null,
+     "border": "2D Rectangle",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 1,
+      "userIdField": 1002,
+      "nameField": "RoomName",
+      "textField": "Huddle Room",
+      "leftField": 40,
+      "topField": 0,
+      "widthField": 700,
+      "heightField": 112,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4294967295,
+     "alignment": 4,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 40,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 2,
+      "userIdField": 1003,
+      "nameField": "CallState",
+      "textField": "No call in progress",
+      "leftField": 600,
+      "topField": 0,
+      "widthField": 640,
+      "heightField": 112,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "alignment": 5,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 20,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 3,
+      "userIdField": 1004,
+      "nameField": "PickSource",
+      "textField": "SHARE SOMETHING",
+      "leftField": 40,
+      "topField": 148,
+      "widthField": 700,
+      "heightField": 36,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "alignment": 4,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 4,
+      "userIdField": 1005,
+      "nameField": "Laptop",
+      "textField": "Laptop",
+      "leftField": 40,
+      "topField": 196,
+      "widthField": 384,
+      "heightField": 300,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 5,
+      "userIdField": 1006,
+      "nameField": "Wireless",
+      "textField": "Wireless",
+      "leftField": 448,
+      "topField": 196,
+      "widthField": 384,
+      "heightField": 300,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 6,
+      "userIdField": 1007,
+      "nameField": "Room PC",
+      "textField": "Room PC",
+      "leftField": 856,
+      "topField": 196,
+      "widthField": 384,
+      "heightField": 300,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 7,
+      "userIdField": 1008,
+      "nameField": "VolumeWell",
+      "textField": "",
+      "leftField": 40,
+      "topField": 540,
+      "widthField": 760,
+      "heightField": 140,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 0 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 8,
+      "userIdField": 1009,
+      "nameField": "VolumeLabel",
+      "textField": "Volume",
+      "leftField": 72,
+      "topField": 540,
+      "widthField": 220,
+      "heightField": 140,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "alignment": 4,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 20,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 9,
+      "userIdField": 1010,
+      "nameField": "Mute",
+      "textField": "Mute",
+      "leftField": 300,
+      "topField": 572,
+      "widthField": 143,
+      "heightField": 76,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 10,
+      "userIdField": 1011,
+      "nameField": "\u2013",
+      "textField": "\u2013",
+      "leftField": 463,
+      "topField": 572,
+      "widthField": 143,
+      "heightField": 76,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 11,
+      "userIdField": 1012,
+      "nameField": "+",
+      "textField": "+",
+      "leftField": 625,
+      "topField": 572,
+      "widthField": 143,
+      "heightField": 76,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281217346,
+     "stroke": null,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 12,
+      "userIdField": 1013,
+      "nameField": "EndCall",
+      "textField": "End Call",
+      "leftField": 872,
+      "topField": 540,
+      "widthField": 368,
+      "heightField": 140,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4290787627,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 26,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 13,
+      "userIdField": 1014,
+      "nameField": "StatusStrip",
+      "textField": "",
+      "leftField": 0,
+      "topField": 736,
+      "widthField": 1280,
+      "heightField": 64,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": null,
+     "border": "2D Rectangle",
+     "text_color": 4294967295,
+     "alignment": 3,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 14,
+      "userIdField": 1015,
+      "nameField": "Status",
+      "textField": "Ready",
+      "leftField": 40,
+      "topField": 736,
+      "widthField": 800,
+      "heightField": 64,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "alignment": 4,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 15,
+      "userIdField": 1016,
+      "nameField": "Hint",
+      "textField": "Tap a source to share",
+      "leftField": 440,
+      "topField": 736,
+      "widthField": 800,
+      "heightField": 64,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "alignment": 5,
+     "font": {
+      "name": "Forma DJR Display",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    }
+   ]
+  }
+ ]
+}

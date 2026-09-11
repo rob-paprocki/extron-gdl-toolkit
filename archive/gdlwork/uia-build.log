@@ -1,0 +1,54 @@
+=== uia build ===
+01:20:40 window: GUI Designer - [TLP Pro 835M: Multipage.gdl*]
+01:20:42 File expand dispatched
+01:20:45 menu items visible: 47
+01:20:45   item: 'New Project...' enabled=True
+01:20:45   item: 'Open Project...' enabled=True
+01:20:45   item: 'Close Afterburn All-inclusive 1220' enabled=True
+01:20:45   item: 'Close All' enabled=False
+01:20:45   item: 'Save Afterburn All-inclusive 1220' enabled=True
+01:20:45   item: 'Save Afterburn All-inclusive 1220 As...' enabled=True
+01:20:45   item: 'Save All' enabled=False
+01:20:45   item: 'Save and Build...' enabled=True
+01:20:45   item: 'Snapshot' enabled=True
+01:20:45   item: 'Workspace' enabled=True
+01:20:45   item: 'Window Layout Preset' enabled=True
+01:20:45   item: 'Page Setup...' enabled=True
+01:20:45   item: 'Print Preview...' enabled=True
+01:20:45   item: 'Print...' enabled=True
+01:20:45   item: '1  C:\gdlwork\seed1\Multipage.gdl' enabled=True
+01:20:45   item: '2  C:\Users\robp\Desktop\Project1.gdl' enabled=True
+01:20:45   item: '3  C:\gdlwork\mp2\Multipage.gdl' enabled=True
+01:20:45   item: 'Preferences…' enabled=True
+01:20:45   item: 'Exit' enabled=True
+01:20:45   item: 'ToolBar Options' enabled=True
+01:20:45   item: 'File' enabled=True
+01:20:45   item: 'New Project...' enabled=True
+01:20:45   item: 'Open Project...' enabled=True
+01:20:45   item: 'Close Afterburn All-inclusive 1220' enabled=True
+01:20:45   item: 'Close All' enabled=False
+01:20:45   item: 'Save Afterburn All-inclusive 1220' enabled=True
+01:20:45   item: 'Save Afterburn All-inclusive 1220 As...' enabled=True
+01:20:45   item: 'Save All' enabled=False
+01:20:45   item: 'Save and Build...' enabled=True
+01:20:45   item: 'Snapshot' enabled=True
+01:20:45   item: 'Workspace' enabled=True
+01:20:45   item: 'Window Layout Preset' enabled=True
+01:20:45   item: 'Page Setup...' enabled=True
+01:20:45   item: 'Print Preview...' enabled=True
+01:20:45   item: 'Print...' enabled=True
+01:20:45   item: '1  C:\gdlwork\seed1\Multipage.gdl' enabled=True
+01:20:45   item: '2  C:\Users\robp\Desktop\Project1.gdl' enabled=True
+01:20:45   item: '3  C:\gdlwork\mp2\Multipage.gdl' enabled=True
+01:20:45   item: 'Preferences…' enabled=True
+01:20:45   item: 'Exit' enabled=True
+01:20:45   item: 'Edit' enabled=True
+01:20:45   item: 'Project' enabled=True
+01:20:45   item: 'Layout' enabled=True
+01:20:45   item: 'Tools' enabled=True
+01:20:45   item: 'View' enabled=True
+01:20:45   item: 'Window' enabled=True
+01:20:45   item: 'Help' enabled=True
+01:20:45 invoking: 'Save and Build...'
+01:21:49 invoke threw (expected if it blocked on the build): Exception calling "Invoke" with "0" argument(s): "Operation timed out. (Exception from HRESULT: 0x80131505)"
+01:21:49 done
