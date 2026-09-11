@@ -172,9 +172,15 @@ A generator should assert all four agree rather than trusting the writes.
   because a clone keeps the **donor's** `widthField`/`heightField`: author the
   popup's own size before adding controls to it.
 - **Build adds one full-canvas `PBPopupPageReference` per modal popup to every
-  page.** A generated page therefore comes back with more controls than were
-  authored — six more, with this donor's six modal popups. Not contamination
-  from the clone; the donor's own pages all carry the same six.
+  page — the Offline Page included only when `EnableOfflinePage` is on.** A
+  generated page therefore comes back with more controls than were authored —
+  six more with this donor, which has seven modal popups, one of them an
+  Offline Page that is switched off. Not contamination from the clone; the
+  donor's own pages all carry the same six. Measured on 2026-09-11 across all 20
+  built projects in the corpus (`tests/audit_corpus.py`): 19 have the offline
+  page off and carry one reference fewer than they have modal popups; the
+  Turbulence seed has it on and references its Offline Page too. Earlier text
+  said "one per modal popup", which is off by one on 19 of the 20.
 - **Retargeting a project needs Extron's factory, not a constructor.**
   `[Activator]::CreateInstance` on a platform class gets the resolution right
   and leaves `partNumberField` null, and GUI Designer then titles the project

@@ -168,14 +168,16 @@ with a real desktop), so nothing needs a VM, a scheduled task or a remote exec:
 
 ```powershell
 Start-Process "C:\Program Files (x86)\Extron\GUI Designer\GUI Designer.exe" -ArgumentList '"C:\gdlwork\x.gdl"'
-powershell\Send-GdlKeys.ps1 -Keys '^+b'      # File > Save and Build
+powershell\Invoke-GdlMenu.ps1 -Item 'Save and Build'   # no focus needed
+powershell\Wait-GdlBuild.ps1 -ProjectFile C:\gdlwork\x.gdl
 ```
 
-and `System.Drawing`'s `CopyFromScreen` reads the screen back. Use `C:\gdlwork`
-for build scratch — the repo lives on a mounted drive and GUI Designer is slow
-against it.
+`powershell\New-GdlPanel.ps1` does all of that and the verification for you.
+`System.Drawing`'s `CopyFromScreen` reads the screen back. Use `C:\gdlwork` for
+build scratch — the repo lives on a mounted drive and GUI Designer is slow
+against it. (What was in `C:\gdlwork` up to 2026-09-10 is in `archive/gdlwork/`.)
 
-Two gotchas:
+Three gotchas:
 
 - **`Get-Process` caches `MainWindowTitle`.** It reads `GUI Designer` until you
   call `.Refresh()`, and only then shows `GUI Designer - [TLP Pro 1035T:
@@ -190,15 +192,16 @@ Two gotchas:
   is only the fallback. Note `Invoke()` throws `Operation timed out
   (0x80131505)` because it blocks on the build modal; the click landed anyway,
   so watch the `.gdl`, not the exit code.
-- **Wait for a build with `powershell/Wait-GdlBuild.ps1`, not by watching the
-  file or the title.** Both obvious signals are wrong. The title's trailing `*`
-  only means unsaved changes, so a freshly packed file opened clean never has
-  one and the wait returns immediately onto a stale payload — indistinguishable
-  from a build that silently did nothing. And `LastWriteTime` stops changing
-  well before the build ends, because Save and Build writes the project first
-  and the payload after. The Build Manager window is the real signal, and it is
-  a child window, so `MainWindowTitle` cannot see it — the script enumerates
-  top-level windows instead.
+- **Wait for a build with `powershell/Wait-GdlBuild.ps1`, which watches the
+  `.gdl` itself.** The two obvious signals are both wrong. The title's trailing
+  `*` only means unsaved changes, so a freshly packed file opened clean never
+  has one and the wait returns immediately onto a stale payload —
+  indistinguishable from a build that silently did nothing. The Build Manager
+  window is worse because it looks right: it appears seconds *after* the menu
+  click and closes about five seconds *before* the file is written, so trusting
+  it truncates the payload. The file's own mtime is the only real signal — wait
+  for it to change, then to stop changing. (Until 2026-09-11 this bullet named
+  the Build Manager window as the signal; the script was right, the doc stale.)
 
 If you are instead driving a Parallels guest from macOS, the old route still
 works: `prlctl exec "Windows 11" --current-user ...` (without `--current-user`
@@ -224,11 +227,21 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
 
 ## Environment traps that cost time
 
+- **This box has 8 GB of RAM and a 500 MB pagefile, so its commit limit is
+  8.5 GB.** Six Claude Code processes held about 2 GB between them; each
+  workflow agent adds a process, and a Python process holding many parsed
+  projects at once adds more. Past the limit, processes die mid-task and new ones
+  fail with *The paging file is too small for this operation to complete* —
+  which is what killed both runs of `workflows/gdl-bug-hunt.js` and the first
+  version of `tests/audit_corpus.py`. Stream over projects instead of loading
+  them all, keep workflows small, or let Windows manage the pagefile.
 - **Do not write backslash escapes through a bash heredoc.** Backslash-v and
   backslash-a get interpreted before Python sees them, leaving literal 0x0B and
   0x07 bytes in the file. This corrupted a documented command in README.md, and
-  then corrupted this very warning on the first attempt to write it. Use the
-  Write/Edit tools for any content containing backslashes.
+  then corrupted this very warning on the first attempt to write it — and it
+  had left three more in `docs/from-scratch.md` §7 until 2026-09-11. A doubled
+  backslash does not survive either: `'C:\\'` in a quoted heredoc arrived as
+  `'C:\'`. Use the Write/Edit tools for any content containing backslashes.
 - `Save-GdlProject` prints a bare `The system cannot find the file specified.
   (Exception from HRESULT: 0x80070002)` on every save. It comes from inside an
   Extron assembly during serialization, the return value is intact, and it is
@@ -246,9 +259,17 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
   edge of their last table — 28 for Arial, 30 for Arial Black — so neither ever
   matched, and both were written off as system faces the format referenced
   without embedding. Genuine Monotype Arial 5.10 and Arial Black 5.06 are in
-  every fixture and in all 44 of Extron's installed templates. Nothing needs
-  Liberation Sans, and a `.gdl` renders identically on a host with no fonts
-  installed at all. `tests/test_fonts.py` is the gate that was missing.
+  every fixture and in all 44 of Extron's installed templates, so nothing needs
+  Liberation Sans to render the fixtures. `tests/test_fonts.py` is the gate that
+  was missing.
+- **…but "every declared face is embedded" is not true of every project.** A
+  fresh project from File > New *declares* Arial Black without embedding it —
+  no sfnt table of anything like its declared 119,904 bytes is in 11 of the 14
+  seeds — the Turbulence seed declares Arial the same way, and the Shockwave
+  seeds declare `extron_shockwave.ttf` without it. Found by
+  `tests/audit_corpus.py` on 2026-09-11. Rendering a seed-built panel off
+  Windows needs those faces from somewhere else; `docs/ROADMAP.md` has the
+  follow-ups.
 
 ## Things deliberately not in git
 
@@ -263,6 +284,30 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
   embedded in the tracked `.gdl` fixtures and recoverable from them exactly. If
   the concern is distribution, `fixtures/` is the thing to look at.
 - `out/`, `__pycache__/`, built viewer HTML.
+- **`vendor/`'s contents** — Extron's 44 `.glt` templates and the Afterburn
+  icon kit, copied from the install so the tests that read them need nothing on
+  `C:`. About 470 MB of reinstallable vendor content; `vendor/MANIFEST.md` pins
+  every file by SHA-256 and `vendor/README.md` says how to repopulate it.
+  `tests/_corpus.py` falls back to the install path when it is empty.
+
+## Where things live
+
+Everything this project had on the Windows box's `C:` drive was moved into the
+repo on 2026-09-10, so nothing about it lives only on one machine:
+
+| Path | What | In git |
+|---|---|---|
+| `seeds/` | fourteen themed seed projects to author from — `seeds/README.md` | Git LFS |
+| `archive/` | raw working state from `C:\gdlwork`, the job scratch dir, the Desktop, and the Claude Code transcripts and memory — the evidence behind the commits | Git LFS |
+| `research/2026-09-10/` | the scripts behind that session's numbers | yes |
+| `workflows/gdl-bug-hunt.js` | the planned multi-agent bug hunt; never finished — see its README | yes |
+| `tests/audit_corpus.py` | re-tests documented beliefs against every project it can reach | yes |
+| `vendor/` | Extron's templates and icons | manifest only |
+| `docs/ROADMAP.md` | everything left to do, in order | yes |
+
+Run `git lfs pull` after cloning. A clone without it has pointer files where the
+seeds should be; `tests/_corpus.py` treats those as absent and the seed tests
+skip rather than fail.
 
 ## Working on the fixtures
 
@@ -291,13 +336,18 @@ handle and means nothing to a programmer.
   Rename, retarget, renumber and restyle, all **verified end to end** against
   GUI Designer 1.27.0.9 - including a scaled retarget of the whole Liberty Bank
   project from a TLP Pro 1035T to a TLP Pro 1535M, 654/654 controls correct in
-  the built file.
+  the built file. Two corrections since: until `7b3e630`, `rename` wrote only
+  state 0 (`PBStates.Count` reports 1 for an Off/On button), so a renamed button
+  showed its old caption once switched On; and a retarget builds correctly but
+  matches Extron's own hand layout at the new size for only 22% of controls.
 - Generating a panel from a spec: `gdl/spec.py` has the layout pass, control ID
   allocation, a preview render and a build-plan emitter, all tested here.
   `powershell/Apply-GdlPlan.ps1` applies a plan to a real project — **verified
   end to end**: the example spec was generated, applied, packed, and built by
   GUI Designer 1.27.0.9 with 0 errors. Use `-WhatIf` first; it dry-runs and
-  reports every unresolved donor and field. Color fidelity is the open gap.
-  See `docs/from-scratch.md` §5b. **Group registration was never actually missing**;
+  reports every unresolved donor and field. Color is verified off the built
+  artwork (`docs/from-scratch.md` §5b), and buttons get Off/On feedback states.
+
+Everything left to do, in order and by owner, is in `docs/ROADMAP.md`. **Group registration was never actually missing**;
   `Register-GdlPopupGroup` is complete. See `docs/from-scratch.md`, which also
   lists the six questions that need one session on a Windows box.

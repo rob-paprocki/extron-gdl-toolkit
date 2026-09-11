@@ -244,8 +244,9 @@ Consequences worth keeping:
 **What Build adds by itself.** The generated page came back with 35 controls
 against 29 authored, which looked like clone contamination and is not: Build
 adds one full-canvas `PBPopupPageReference` per **modal** popup to **every**
-page, and the donor has exactly six modal popups. Every donor page carries the
-same six. The verifier ignores unauthored extras for this reason.
+page, the Offline Page counting only when `EnableOfflinePage` is on — and the
+donor has seven modal popups, one of them a switched-off Offline Page. Every
+donor page carries the same six. The verifier ignores unauthored extras for this reason.
 
 ### Two things the run corrected
 
@@ -336,22 +337,32 @@ clone.
 So, once per theme:
 
 1. **File > New Project...**
-2. Step 1, pick any panel — the model is not what you are capturing.
+2. Step 1, pick the panel — ideally the size you will deliver on (see below).
 3. Step 2, choose **Theme**, then the theme, project font and application.
-4. **Create**, then save it outside the repo. That file is the seed.
+4. **Create**, then save it into `seeds/`. That file is the seed.
 
-Then pass `-Donor <seed>.gdl`, and nothing of anyone else's is in the output.
+Then pass `-Donor "seeds/<seed>.gdl"`, and nothing of anyone else's is in the
+output.
 
-**One seed per theme is enough, not one per model.** `gdl.edit`'s `retarget` op
-moves a project to another panel model and rescales it — verified at 654/654
-controls on a 1035T to 1535M. Six seeds cover the six theme families; retarget
-covers the 55 models.
+`seeds/` holds fourteen, made 2026-09-09: Afterburn at five sizes, Mach at
+three, Shockwave at two, Turbulence, both Zoom Rooms ZRTP variants, and the 835
+seed below. `seeds/README.md` lists each one's model, canvas and resources. They
+are in Git LFS, so run `git lfs pull` on a fresh clone.
+
+**Prefer a seed at the target size; retarget is the fallback.** This section used
+to say one seed per theme was enough because `retarget` covers the other
+models. It does build correctly — 654/654 on the Liberty Bank fixture, 650/650
+on the Afterburn 1035 seed taken to a 1535M. But scored against Extron's *own*
+hand-authored 1535, only 22% of controls land identically, median 18px off. The
+rule is the same per-axis scale Extron used; the difference is their designers
+nudging by hand, which a native-size seed carries and a retarget cannot. See
+`docs/editing.md`.
 
 ### A seed works, end to end
 
 Done 2026-09-09 against a seed a human made in about a minute (File > New
-Project, Afterburn All-inclusive 1220 theme, TLP Pro 835M, saved to the
-desktop). `examples/multipage.json` went through `New-GdlPanel.ps1` unattended:
+Project, Afterburn All-inclusive 1220 theme, TLP Pro 835M) — now
+`seeds/Afterburn 835 (Project1).gdl`. `examples/multipage.json` went through `New-GdlPanel.ps1` unattended:
 three pages, 39 authored controls, **built and verified with 0 problems**, and
 nothing of any client's in the result.
 
@@ -426,14 +437,12 @@ the screen capture all run in one place:
 ```powershell
 # 1. author. 32-bit PS 5.1: .NET Framework still has BinaryFormatter, and
 #    Extron's assemblies are x86.
-C:\Windows\SysWOW64\WindowsPowerShell1.0\powershell.exe -NoProfile `
-    -ExecutionPolicy Bypass -File examplesdd-page-and-popup.ps1 `
-    C:\gdlwork\ProjectGCP C:\gdlwork
-ew_ProjectGCP
+C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -NoProfile `
+    -ExecutionPolicy Bypass -File examples\add-page-and-popup.ps1 `
+    C:\gdlwork\ProjectGCP C:\gdlwork\new_ProjectGCP
 
 # 2. repack, then open it
-python -m gdl.container pack template.gdl C:\gdlwork
-ew_ProjectGCP C:\gdlwork\out.gdl
+python -m gdl.container pack template.gdl C:\gdlwork\new_ProjectGCP C:\gdlwork\out.gdl
 Start-Process "C:\Program Files (x86)\Extron\GUI Designer\GUI Designer.exe" `
     -ArgumentList '"C:\gdlwork\out.gdl"'
 
@@ -470,7 +479,7 @@ Still works, and is what made §5 cheap enough to do properly.
 
 ```bash
 # runs as SYSTEM, non-interactive - fine for authoring, no UI
-prlctl exec "Windows 11" 'C:\Windows\SysWOW64\WindowsPowerShell1.0\powershell.exe'     -NoProfile -ExecutionPolicy Bypass -File '\Mac\Home\...\out\make-tests.ps1'
+prlctl exec "Windows 11" 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe'     -NoProfile -ExecutionPolicy Bypass -File '\Mac\Home\...\out\make-tests.ps1'
 
 # runs as the logged-on user WITH a desktop - needed for anything that draws
 prlctl exec "Windows 11" --current-user ... -File '...\out\sendkeys.ps1' -Keys '^+b'

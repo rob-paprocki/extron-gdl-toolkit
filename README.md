@@ -40,7 +40,13 @@ together.
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
 | `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |
-| `research/` | measured but unshipped render improvements, with their numbers |
+| `seeds/` | fourteen themed seed projects to author from without client material (Git LFS) |
+| `tests/audit_corpus.py` | re-tests the repo's documented beliefs against every project it can reach |
+| `research/` | measured findings and unshipped render improvements, with their numbers and scripts |
+| `workflows/` | the planned multi-agent bug hunt, not yet run |
+| `archive/` | raw working state carried off the Windows box, kept as evidence (Git LFS) |
+| `vendor/` | Extron's templates and icons, on disk but not pushed - see its README |
+| `docs/ROADMAP.md` | what is left, in order, and who has to do it |
 
 ## Quick start
 
@@ -170,10 +176,13 @@ panel went from `examples/panel.json` through the layout pass, ID allocation,
 with 0 errors and 0 warnings. `docs/generated-built.png` is that page rendered
 from its own built payload rather than from a preview.
 
-Known gaps:
+Known gaps — `docs/ROADMAP.md` has the full list, in order:
 
-- Color fidelity on a generated panel. Geometry, captions, IDs and structure
-  are correct. See `docs/from-scratch.md`.
+- Nothing generated has been larger than three pages yet, against a 27-page
+  client project; icons are not in the spec vocabulary; buttons get Off/On
+  feedback but not multi-state (`Muted` / `Level 1..3`).
+- A retarget builds correctly but matches Extron's own hand-authored layout at
+  another size for only 22% of controls. Prefer a native-size seed.
 - The Pillow compositor sits at a 2.19% mean and 1.65% median pixel difference
   across 27 pages, worst page 7.68%. What remains is a size-dependent vertical
   text residual. It can be fitted away, but the fit is degenerate, so the cause
