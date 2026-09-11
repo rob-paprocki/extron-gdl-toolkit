@@ -24,7 +24,7 @@
     },
     {
       "op": "restyle",
-      "_why": "Recolour the sliders' track fill without touching anything else.",
+      "_why": "Recolor the sliders' track fill without touching anything else.",
       "select": { "type": "PBSlider" },
       "map": { "#242634": "#1B2233" }
     }

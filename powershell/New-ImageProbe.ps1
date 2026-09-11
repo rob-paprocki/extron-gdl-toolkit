@@ -3,15 +3,24 @@
 # The border-resource append is proven (docs/from-scratch.md section 5). Images
 # are the OTHER half of the icon story - the Afterburn kit ships 1,316 icon PNGs
 # and real panels use them heavily (the Liberty Bank fixture carries 38 image
-# resources and 1,855 references). The font route covers single-colour icons;
+# resources and 1,855 references). The font route covers single-color icons;
 # this covers everything else.
 #
 # Uses an icon from Extron's own resource kit, which is the realistic workflow.
+#
+# The icon kit is copied into vendor/extron/ (see vendor/README.md); the install
+# path is the fallback. $Repo used to default to the Parallels \\Mac\Home share.
 param(
-    [string]$Repo = '\\Mac\Home\GitHub\rob-paprocki\extron-gdl-toolkit',
+    [string]$Repo = (Split-Path -Parent $PSScriptRoot),
     [string]$Work = 'C:\gdlwork',
-    [string]$Icon = 'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources\Afterburn\Icons'
+    [string]$Icon = ''
 )
+if (-not $Icon) {
+    $Icon = Join-Path $Repo 'vendor\extron\Resources\Afterburn\Icons'
+    if (-not (Test-Path $Icon)) {
+        $Icon = 'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources\Afterburn\Icons'
+    }
+}
 $ErrorActionPreference = 'Stop'
 . (Join-Path $Repo 'powershell\GdlProject.ps1')
 Initialize-Gdl | Out-Null

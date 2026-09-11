@@ -1,0 +1,53 @@
+{
+  "name": "Multipage Probe",
+  "model": "TLP1035T",
+  "size": [1280, 800],
+  "_why": "Throwaway probe: does the spec pipeline handle more than one page at all? Every example and every test to date uses exactly one.",
+
+  "theme": {
+    "background": "#12131C",
+    "surface": "#242634",
+    "raised": "#2E3142",
+    "accent": "#3D8BFD",
+    "text": "#FFFFFF",
+    "muted": "#BABCCE",
+    "font": "Forma DJR Display",
+    "size": 16
+  },
+
+  "pages": [
+    {
+      "name": "Home",
+      "number": 1000,
+      "controls": [
+        { "kind": "panel", "name": "Bar", "rect": [0, 0, 1280, 96], "fill": "surface", "border": "rect" },
+        { "kind": "label", "name": "Title", "rect": [32, 0, 600, 96], "text": "Home", "align": "left", "size": 32 },
+        { "grid": { "rect": [32, 128, 1216, 200], "cols": 3, "gap": 20,
+            "kind": "button", "fill": "raised", "border": "afterburn",
+            "items": [ { "text": "Displays" }, { "text": "Audio" }, { "text": "Cameras" } ] } }
+      ]
+    },
+    {
+      "name": "Displays",
+      "number": 1100,
+      "controls": [
+        { "kind": "panel", "name": "Bar", "rect": [0, 0, 1280, 96], "fill": "surface", "border": "rect" },
+        { "kind": "label", "name": "Title", "rect": [32, 0, 600, 96], "text": "Displays", "align": "left", "size": 32 },
+        { "grid": { "rect": [32, 128, 1216, 200], "cols": 2, "gap": 20,
+            "kind": "button", "fill": "raised", "border": "afterburn",
+            "items": [ { "text": "Left Display" }, { "text": "Right Display" } ] } }
+      ]
+    },
+    {
+      "name": "Audio",
+      "number": 1200,
+      "controls": [
+        { "kind": "panel", "name": "Bar", "rect": [0, 0, 1280, 96], "fill": "surface", "border": "rect" },
+        { "kind": "label", "name": "Title", "rect": [32, 0, 600, 96], "text": "Audio", "align": "left", "size": 32 },
+        { "grid": { "rect": [32, 128, 1216, 120], "cols": 3, "gap": 20,
+            "kind": "button", "fill": "raised", "border": "capsule",
+            "items": [ { "text": "Mute" }, { "text": "Down" }, { "text": "Up" } ] } }
+      ]
+    }
+  ]
+}

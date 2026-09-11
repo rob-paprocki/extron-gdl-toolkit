@@ -40,7 +40,13 @@ together.
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
 | `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |
-| `research/` | measured but unshipped render improvements, with their numbers |
+| `seeds/` | fourteen themed seed projects to author from without client material (Git LFS) |
+| `tests/audit_corpus.py` | re-tests the repo's documented beliefs against every project it can reach |
+| `research/` | measured findings and unshipped render improvements, with their numbers and scripts |
+| `workflows/` | the planned multi-agent bug hunt, not yet run |
+| `archive/` | raw working state carried off the Windows box, kept as evidence (Git LFS) |
+| `vendor/` | Extron's templates and icons, on disk but not pushed - see its README |
+| `docs/ROADMAP.md` | what is left, in order, and who has to do it |
 
 ## Quick start
 
@@ -82,7 +88,7 @@ against.
 
 Write the change as JSON, resolve it against the real project, then apply it.
 Four operations: `rename` captions, `retarget` to another panel model with
-optional rescaling, `renumber` addressable IDs, and `restyle` a colour remap.
+optional rescaling, `renumber` addressable IDs, and `restyle` a color remap.
 Selectors are ANDed and match exactly or by regex.
 
 ```bash
@@ -151,7 +157,7 @@ lost its caption.
    file opens and builds, the binding just reads "Unassigned".
    `Test-GdlPopupBinding` checks all four.
 3. Build owns the artwork. Controls are authored with `TLPImageID = -1`, and
-   GUI Designer rasterises, deduplicates and assigns on build, so never
+   GUI Designer rasterizes, deduplicates and assigns on build, so never
    hand-author PNGs. What you author instead is `borderFillColor` plus a named
    border resource (`"Afterburn - 10 Radius 2 Thick"`). Neither survives into
    `layout.json`, so read them from `ProjectGCP` via `gdl/project.py`.
@@ -170,10 +176,13 @@ panel went from `examples/panel.json` through the layout pass, ID allocation,
 with 0 errors and 0 warnings. `docs/generated-built.png` is that page rendered
 from its own built payload rather than from a preview.
 
-Known gaps:
+Known gaps — `docs/ROADMAP.md` has the full list, in order:
 
-- Colour fidelity on a generated panel. Geometry, captions, IDs and structure
-  are correct. See `docs/from-scratch.md`.
+- Nothing generated has been larger than three pages yet, against a 27-page
+  client project; icons are not in the spec vocabulary; buttons get Off/On
+  feedback but not multi-state (`Muted` / `Level 1..3`).
+- A retarget builds correctly but matches Extron's own hand-authored layout at
+  another size for only 22% of controls. Prefer a native-size seed.
 - The Pillow compositor sits at a 2.19% mean and 1.65% median pixel difference
   across 27 pages, worst page 7.68%. What remains is a size-dependent vertical
   text residual. It can be fitted away, but the fit is degenerate, so the cause
@@ -188,12 +197,19 @@ Known gaps:
 The renderer resolves faces from `gdl/fonts/` before falling back to the system
 font path, so a project renders the same on a machine with nothing installed.
 Open Sans is tracked because it is Apache 2.0 and says so in its own name
-table. The other five faces are recovered from the fixtures with the command in
+table. The other seven files are recovered from the fixtures with the command in
 Quick start above, and `gdl/fonts/README.md` records where each one stands.
+
+**Every face a project declares is embedded in it, Arial included** — genuine
+Monotype Arial 5.10 and Arial Black 5.06, in each of the six fixtures. So the
+harness needs no fonts installed on the host, and on a host that has Arial the
+embedded copy is still the better one: it is what GUI Designer rasterized the
+ground-truth snapshots with, where the system copy is whatever build the OS
+shipped.
 
 Missing faces fail loudly: `face()` raises `LookupError` rather than degrading
 to a wrong score. The exception is a host with Arial installed, where a missing
-embedded face silently resolves to Arial instead.
+embedded face silently resolves to the system Arial instead.
 
 ## Provenance
 

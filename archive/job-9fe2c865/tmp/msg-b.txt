@@ -1,0 +1,41 @@
+test: read seeds and templates from the repo, and audit the whole corpus
+
+tests/_corpus.py resolves the seeds and Extron's templates from seeds/
+and vendor/ first and the GUI Designer install second, and treats an
+un-pulled LFS pointer as absent. The three tests that hard-coded C:
+paths now run wherever the files are and skip cleanly where they are
+not. 157 pass; the 27 seed and template tests ran against the repo's
+own copies.
+
+tests/audit_corpus.py re-tests the repo's documented beliefs against
+every project it can reach: 6 fixtures, 14 seeds, 44 templates. Its
+first version loaded all of them before checking anything and helped
+push the box past its 8.5 GB commit limit; it now reduces each project
+to a small dict of facts and releases it before opening the next.
+
+First full run, 9 of 12 held. The three that did not:
+
+- Arial Black is declared but not embedded in 11 of the 14 seeds, with
+  no sfnt table anywhere near its declared 119,904 bytes; the
+  Turbulence seed declares Arial the same way and the Shockwave seeds
+  extron_shockwave.ttf. True of every fixture, false of a fresh
+  project.
+- MODELS_FULL has TLP1230WTG at 800x480 and 0 DPI - the generic
+  platform class's default. Extron's own 1230W project builds at
+  1920x720, its only supported resolution. Separately, the table holds
+  one orientation per model while the platforms support both (300M
+  320x480 and 480x320; 1035M 1280x800 and 800x1280).
+- Build's full-canvas popup references are one per modal popup, the
+  Offline Page counting only when EnableOfflinePage is on. The
+  documented rule ("one per modal popup") was off by one on 19 of the
+  20 built projects; "all but the Offline Page" then failed only the
+  Turbulence seed, the one with the offline page enabled. The audit now
+  encodes that rule and it holds on all 20.
+
+The first two are recorded in docs/ROADMAP.md rather than patched here.
+
+Also: New-ImageProbe.ps1 defaults to this repo and the vendor/ icon kit
+instead of the old Parallels share, and clean-room.json names its seed.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Mbbt2yzkmqSoyJktwnbHHe

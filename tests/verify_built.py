@@ -25,10 +25,17 @@ Two things it deliberately does NOT treat as failures:
     dimensions from the reference that shows it; the page's own size only has
     to be big enough to hold the controls.
 """
+import collections
+import io
 import json
+import os
 import sys
 
-sys.path.insert(0, __file__.rsplit('/', 2)[0])
+# os.path, not a '/' rsplit: on Windows __file__ comes back with backslashes and
+# the split is a no-op, so the import below fails with ModuleNotFoundError.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from PIL import Image  # noqa: E402
 
 from gdl.compose import load  # noqa: E402
 
@@ -40,6 +47,273 @@ TYPE_NAME = {6: 'PopupPageReference', 7: 'Button', 11: 'Label', 13: 'Shape',
 def _caption(c):
     st = c.get('States') or []
     return (st[0].get('Text') if st else None) or c.get('Text') or ''
+
+
+def _shares(assets, tid):
+    """{(r,g,b): share of opaque pixels} for one rasterized asset.
+
+    The authored fill does not survive into `layout.json`. A built control's
+    `BackgroundFillColor` reads back as transparent white no matter what was
+    authored, because Build rasterizes fill, border and caption together into a
+    PNG and leaves only a `TLPImageID` behind. So the artwork is the only place
+    the color a panel will actually show can be read - checking the model here
+    would confirm nothing, which is the same trap `flattenText` set.
+    """
+    blob = assets.get(tid)
+    if blob is None:
+        return {}
+    im = Image.open(io.BytesIO(blob)).convert('RGBA')
+    raw = im.tobytes()
+    counts = collections.Counter()
+    for i in range(0, len(raw), 4):
+        if raw[i + 3] > 250:                    # ignore antialiased edges
+            counts[raw[i:i + 3]] += 1
+    total = sum(counts.values())
+    if not total:
+        return {}
+    return {tuple(k): v / total for k, v in counts.items()}
+
+
+def _rgb(argb):
+    return ((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF)
+
+
+def _hex(t):
+    return '#%02X%02X%02X' % t
+
+
+# Below this share of a control's opaque pixels, the planned fill is present but
+# not the field - a caption-heavy button, say. Reported, not failed: the color
+# did survive, and calling that a failure would make the gate untrustworthy.
+WEAK_FILL = 0.10
+
+
+def check_fills(plan_items, table, assets, kind):
+    """Every planned fill must be the plurality color of the control's artwork."""
+    problems, notes, checked = [], [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        planned = [(item, op) for op in item['controls'] if op.get('fill') is not None]
+        for _, op in planned:
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if c is None:
+                continue
+            tid = c.get('TLPImageID')
+            want = _rgb(op['fill'])
+            if tid is None or tid < 0:
+                problems.append(f"{kind} {item['name']!r} {name!r}: planned fill "
+                                f'{_hex(want)} but Build produced no artwork '
+                                f'(TLPImageID {tid}), so it will draw nothing')
+                continue
+            shares = _shares(assets, tid)
+            if not shares:
+                problems.append(f"{kind} {item['name']!r} {name!r}: artwork "
+                                f'{tid} is missing or fully transparent')
+                continue
+            checked += 1
+            top, top_share = max(shares.items(), key=lambda kv: kv[1])
+            if top == want:
+                continue
+            mine = shares.get(want, 0.0)
+            if mine >= WEAK_FILL:
+                notes.append(f"{kind} {item['name']!r} {name!r}: fill {_hex(want)} is "
+                             f'{mine:.0%} of the artwork, behind {_hex(top)} at '
+                             f'{top_share:.0%}')
+            else:
+                problems.append(f"{kind} {item['name']!r} {name!r}: planned fill "
+                                f'{_hex(want)} is {mine:.0%} of the built artwork; '
+                                f'it is mostly {_hex(top)} ({top_share:.0%})')
+    return problems, notes, checked
+
+
+def check_states(plan_items, table, assets, kind):
+    """A button that asked for feedback must actually show it.
+
+    The failure this exists for is silent and total: the applier wrote one
+    appearance to every state of the cloned donor, so Off and On rasterized
+    identically. The button builds, verifies against every other check, looks
+    correct in the preview - and does nothing visible when the control system
+    sets it On.
+
+    Build gives each state its own TLPImageID, so the states really are drawn
+    separately and can be compared as pixels. Two states that share an image id,
+    or whose artwork has the same plurality color, are inert - and that is a
+    problem regardless of what the model says, because the model is not what
+    the panel draws.
+    """
+    problems, notes, checked = [], [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            want = op.get('states')
+            if not want:
+                continue
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if c is None:
+                continue
+            built = c.get('States') or []
+            if len(built) < len(want):
+                problems.append(
+                    f"{kind} {item['name']!r} {name!r}: planned {len(want)} states "
+                    f'but the built control has {len(built)} - the donor could not '
+                    f'supply them, so this button shows no feedback')
+                continue
+
+            dominant = {}
+            for i, ws in enumerate(want):
+                bs = built[i]
+                checked += 1
+                if ws.get('name') and bs.get('Name') != ws['name']:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r} state {i}: named "
+                        f"{bs.get('Name')!r}, planned {ws['name']!r}")
+                tid = bs.get('TLPImageID')
+                if tid is None or tid < 0:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r} state "
+                        f"{bs.get('Name') or i!r}: Build produced no artwork "
+                        f'(TLPImageID {tid}), so it will draw nothing')
+                    continue
+                shares = _shares(assets, tid)
+                if not shares:
+                    # A deliberately transparent Off state is a real idiom -
+                    # Extron's own 'Lighting Preset' buttons are transparent
+                    # when off - so this is only wrong if a fill was planned.
+                    if ws.get('fill') is not None:
+                        problems.append(
+                            f"{kind} {item['name']!r} {name!r} state "
+                            f"{bs.get('Name') or i}: artwork {tid} is missing or "
+                            f'fully transparent, but a fill was planned')
+                    dominant[i] = (tid, None)
+                    continue
+                top, top_share = max(shares.items(), key=lambda kv: kv[1])
+                dominant[i] = (tid, top)
+                if ws.get('fill') is None:
+                    continue
+                target = _rgb(ws['fill'])
+                if top == target:
+                    continue
+                mine = shares.get(target, 0.0)
+                if mine >= WEAK_FILL:
+                    notes.append(
+                        f"{kind} {item['name']!r} {name!r} state "
+                        f"{bs.get('Name') or i}: fill {_hex(target)} is {mine:.0%} of "
+                        f'the artwork, behind {_hex(top)} at {top_share:.0%}')
+                else:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r} state "
+                        f"{bs.get('Name') or i}: planned fill {_hex(target)} is "
+                        f'{mine:.0%} of the built artwork; it is mostly '
+                        f'{_hex(top)} ({top_share:.0%})')
+
+            # The point of the whole feature. If the plan asked for two
+            # different appearances and the panel cannot tell them apart, the
+            # button is decorative.
+            planned_differ = len({_hex(_rgb(w['fill'])) if w.get('fill') else None
+                                  for w in want}) > 1
+            if planned_differ and len(dominant) > 1:
+                ids = {v[0] for v in dominant.values()}
+                colors = {v[1] for v in dominant.values()}
+                if len(ids) == 1:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r}: every state shares artwork "
+                        f'{ids.pop()}, so Off and On are the same pixels - this button '
+                        f'cannot show feedback')
+                elif len(colors) == 1:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r}: the states were planned in "
+                        f'different colors but all built {_hex(colors.pop())} - no '
+                        f'visible feedback')
+    return problems, notes, checked
+
+
+def check_fonts(plan_items, table, kind):
+    """Typography must reach the panel, not just the preview.
+
+    `Apply-GdlPlan.ps1` set no font at all for as long as it existed, so a
+    spec's `size` was honored by `gdl.spec render` and then dropped: every
+    generated label built at the donor's 20pt, every button at 13pt, every shape
+    at 14.25pt. The preview was an honest picture of a design nobody was
+    building. Worse, `gdl.spec check` enforces Extron's >=14pt body-text rule
+    against the spec, so the one gate that should have caught it was measuring a
+    number that never left the file.
+
+    Unlike fill, this one IS readable from the model - `layout.json` carries
+    Font.PointSize per control - so it needs no artwork.
+    """
+    problems, checked = [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            want = op.get('font')
+            if not want:
+                continue
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if c is None:
+                continue
+            font = c.get('Font') or {}
+            size = want.get('size')
+            if size is not None and font.get('PointSize') is not None:
+                checked += 1
+                if abs(float(font['PointSize']) - float(size)) > 0.01:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r}: planned {size}pt, built "
+                        f"{font['PointSize']}pt - the applier is leaving the donor's font")
+            if want.get('name') and font.get('Name') and font['Name'] != want['name']:
+                problems.append(f"{kind} {item['name']!r} {name!r}: planned font "
+                                f"{want['name']!r}, built {font['Name']!r}")
+            style = font.get('Style') or {}
+            for key, built in (('bold', 'Bold'), ('italic', 'Italic')):
+                if want.get(key) is not None and built in style:
+                    if bool(style[built]) != bool(want[key]):
+                        problems.append(f"{kind} {item['name']!r} {name!r}: planned "
+                                        f'{key}={want[key]}, built {style[built]}')
+    return problems, checked
+
+
+def check_page_background(plan_pages, pages, assets):
+    """The donor's background image is a separate reference from its artwork.
+
+    Clearing `<TLPImageID>` alone left `backgroundImageField` pointing at the
+    donor's image, Build re-rasterized fill and image together, and the donor's
+    artwork came back as a tint over the whole page. Reading the page asset is
+    what catches that; the fill field on its own looked correct throughout.
+    """
+    problems = []
+    for spec in plan_pages:
+        pg = pages.get(spec['name'])
+        if pg is None or spec.get('background') is None:
+            continue
+        want = _rgb(spec['background'])
+        tid = pg.get('TLPImageID')
+        if tid is None or tid < 0:
+            continue
+        shares = _shares(assets, tid)
+        if not shares:
+            continue
+        top, top_share = max(shares.items(), key=lambda kv: kv[1])
+        if top != want:
+            problems.append(f"page {spec['name']!r} background: planned {_hex(want)}, "
+                            f'artwork is mostly {_hex(top)} ({top_share:.0%}) - a donor '
+                            f'background image re-rasterized under the fill looks '
+                            f'exactly like this')
+        elif top_share < 0.99:
+            problems.append(f"page {spec['name']!r} background: {_hex(want)} covers only "
+                            f'{top_share:.0%} of the page artwork, so something else is '
+                            f'painted under the controls')
+    return problems
 
 
 def _index(page):
@@ -106,8 +380,9 @@ def check_edits(plan, j):
 
 
 def check(plan_path, built_path):
-    plan = json.load(open(plan_path))
-    j, _ = load(built_path)
+    with open(plan_path, encoding='utf-8') as fh:
+        plan = json.load(fh)
+    j, assets = load(built_path)
     if plan.get('generated_by') == 'gdl.edit':
         return check_edits(plan, j)
     pages = {p['Name']: p for p in j['Pages']}
@@ -163,6 +438,25 @@ def check(plan_path, built_path):
                 problems.append(f"page {pg['Name']!r} {c.get('Name')!r}: bound to popup "
                                 f"group {pp['GroupID']}, which the built file has no "
                                 f'record of')
+
+    # Color, read off the artwork rather than the model - see _shares().
+    for spec, table, kind in ((plan['pages'], pages, 'page'),
+                              (plan.get('popups') or [], popups, 'popup')):
+        probs, notes, n = check_fills(spec, table, assets, kind)
+        problems += probs
+        checked += n
+        for note in notes:
+            print(f'  FILL NOT DOMINANT (survived, but check it by eye): {note}')
+        probs, n = check_fonts(spec, table, kind)
+        problems += probs
+        checked += n
+        probs, notes, n = check_states(spec, table, assets, kind)
+        problems += probs
+        checked += n
+        for note in notes:
+            print(f'  STATE FILL NOT DOMINANT (survived, but check it by eye): {note}')
+    problems += check_page_background(plan['pages'], pages, assets)
+
     return problems, checked
 
 

@@ -11,9 +11,9 @@ It can. All four operations are verified end to end against GUI Designer
 | Op | What it does | Verified |
 |---|---|---|
 | `rename` | captions, wherever they actually live | 12 controls, built, 12/12 correct |
-| `restyle` | remap colours across a selection | 5 sliders, built, 5/5 correct |
+| `restyle` | remap colors across a selection | 5 sliders, built, 5/5 correct |
 | `renumber` | reassign addressable `userId`s in bands | planned + checked |
-| `retarget` | move to another panel model, optionally rescaling | **654/654 controls correct in the built file** |
+| `retarget` | move to another panel model, optionally rescaling | **654/654 on the fixture; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved** |
 
 ## The shape
 
@@ -51,7 +51,7 @@ Formatted text is the awkward one. It carries its layout inline —
 `"\t\tDevice\r\n\t\tComms"` — and it is **flattened into the artwork**, so
 `layout.json` reports it as `''` both before and after an edit. Measured:
 
-- `Displays` → `Screens` rasterised perfectly.
+- `Displays` → `Screens` rasterized perfectly.
 - `Cameras` → `Camera Control` came out as "Camera" on one line and "Control"
   on a second, unindented, over the icon.
 
@@ -73,20 +73,65 @@ default-constructed `PBTLP1535MPlatform` has the right resolution and a **null
 `partNumberField`**, and GUI Designer then titles the project
 `Unknown: file.gdl`. It identifies a panel by part number. The fix is
 `PBTouchPanelPlatformPro.CreatePlatform(project, type)`, which returns a fully
-initialised instance — after which the title bar reads
+initialized instance — after which the title bar reads
 `[TLP Pro 1535M: retargeted2.gdl]`.
 
-**Resize the popups too.** A popup's authored `widthField`/`heightField` is the
-whole canvas, even where `layout.json` reports the popup as 915x800 — that
-smaller figure is the *displayed* size, taken from the reference that shows it.
-Resizing only `Pages` left every popup at the old canvas, so all 297 scaled
-popup controls overflowed and Build moved them to 0,0. Page controls were fine,
-which made it look like a popup-specific bug rather than a missing collection.
-With `PopupPages` included: 654/654.
+**Resize the popups too — but to their own size, not the screen's.** Resizing
+only `Pages` left every popup at the old canvas, so all 297 scaled popup
+controls overflowed and Build moved them to 0,0. Page controls were fine, which
+made it look like a popup-specific bug rather than a missing collection. With
+`PopupPages` included: 654/654.
+
+The first fix for that was wrong in a way the Liberty Bank project could not
+show. It set every page *and popup* to the new **screen** size, on the reading
+that a popup's authored `widthField`/`heightField` is always the whole canvas
+and `layout.json`'s smaller 915x800 is the *displayed* size taken from the
+reference that shows it. Every popup in that project happens to be authored
+full-canvas, so both rules agree there and it verified 654/654.
+
+Extron's own Afterburn template settles it: **10 of its 29 popups are authored
+at 880x525, and the built `layout.json` reports 880x525 for them** — all 29
+built popup sizes match the authored canvas exactly. The authored size *is* the
+popup size. Forcing it to the screen size turns a modal card into a
+full-screen page in the shipped file.
+
+So `gdl.edit` now emits a size per page, each scaled by the same per-axis
+factors as its own controls. A full-canvas page lands exactly on the screen size
+(1280×1.5, 800×1.35 → 1920×1080); an 880×525 card becomes 1320×709. What matters
+is that canvas and contents move together, so nothing can overflow that did not
+overflow before. `tests/test_retarget_canvas.py` pins it.
 
 `check` catches the general form of this before the trip: any control that would
 fall outside its page after the edit is an **error**, because Build relocates it
-silently.
+silently. That check used to skip popups (`if pg['kind'] != 'page': continue`) —
+which are the only pages whose canvas may differ from the screen, and therefore
+the only place it could ever have fired. It now runs against each page's own new
+canvas.
+
+### What a retarget does and does not promise
+
+Extron ships the same Afterburn project at 1280×800 and 1920×1080, both authored
+by hand, so for once there is a ground truth to score against. Retargeting the
+1035 seed to `TLP1535M` and building it:
+
+| | |
+|---|---|
+| planned controls landing exactly where planned | **650/650** |
+| controls Build relocated to 0,0 | **0** |
+| popup canvases preserved (10 at 1320×709, 19 full-screen) | ✓ |
+| title bar / part number | `TLP Pro 1535M`, `60-2000-02` |
+| identical to Extron's own hand-authored 1535 | **22%** (median 18px, p90 54px, max 127px) |
+
+That last row is the honest bound. Per-axis linear scaling **is** the rule
+Extron used — fitting their two files against each other gives R²≈0.9997 on all
+four rect components, with slopes 1.507/1.366 against our 1.5/1.35. The residual
+is hand-nudging by their design team, not a different transform.
+
+So a retarget produces a **valid, self-consistent, buildable** panel at the new
+size, and not a reproduction of a human redesign. For a client's own project
+that is the right answer — proportional rescale is what "move this to the bigger
+panel" means. Do not read it as "indistinguishable from what a designer would
+have drawn."
 
 ## The model table
 

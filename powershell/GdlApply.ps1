@@ -9,7 +9,7 @@
         so numbers arrive as Int32 while fields are UInt16/UInt64, and
         reflection neither widens nor narrows - it throws.
       * "no such field" and "the field is null" are different, and conflating
-        them reports a missing field that is right there. Most colour and border
+        them reports a missing field that is right there. Most color and border
         fields are null on most controls because the value lives on the state.
       * clone, never construct - which applies to PBColor and to border
         references too, hence the donor lookups.
@@ -75,27 +75,27 @@ function Get-GdlDonor {
     return $null
 }
 
-$script:ColourDonor = $null
-function Find-ColourDonor {
+$script:ColorDonor = $null
+function Find-ColorDonor {
     <#  Any PBColor instance in the project, to clone when a target field is null.
 
         Needed because clone-never-construct applies to PBColor too, and a field
         being null is common - a button leaves textColorField null and carries
-        its text colour on the state instead. #>
+        its text color on the state instead. #>
     param($Project)
-    if ($script:ColourDonor) { return , $script:ColourDonor }
+    if ($script:ColorDonor) { return , $script:ColorDonor }
     foreach ($pg in @($Project.Pages) + @($Project.PopupPages)) {
         foreach ($c in $pg.Controls) {
             foreach ($n in 'borderFillColorField', 'textColorField', 'borderColorField') {
                 $v = Get-GdlField $c $n
-                if ($v) { $script:ColourDonor = $v; return , $v }
+                if ($v) { $script:ColorDonor = $v; return , $v }
             }
         }
     }
     return $null
 }
 
-function Set-GdlColour {
+function Set-GdlColor {
     <#  Set a PBColor-valued field from a packed 0xAARRGGBB int.
 
         The PBColor wrapper is cloned - from the field's current value where it
@@ -115,7 +115,7 @@ function Set-GdlColour {
     if (-not $has) { Note-Problem "no field '$Field' on $($Control.GetType().Name)"; return }
 
     $existing = Get-GdlField $Control $Field
-    if (-not $existing) { $existing = Find-ColourDonor $Project }
+    if (-not $existing) { $existing = Find-ColorDonor $Project }
     if (-not $existing) { Note-Problem "no PBColor anywhere to clone for '$Field'"; return }
 
     $c = Copy-GdlObject $existing
@@ -127,6 +127,31 @@ function Set-GdlColour {
     Set-GdlFieldIfPresent $Control $Field $c | Out-Null
 }
 
+function Get-GdlStates {
+    <#  A control's PBState objects, as a real array.
+
+        DO NOT use `$states.Count`. `PBStates` is a wrapper, not the list, and
+        its `Count` is a LOGICAL count that does not match the number of
+        PBStates: it reports 1 for a two-state Off/On button. The indexer is
+        fine - `$sts[0]` and `$sts[1]` both return a PBState - so a loop bounded
+        by `.Count` silently visits only state 0 and stops.
+
+        That is exactly what both appliers did, so every "write to every state"
+        loop here has only ever written state 0. It went unnoticed because
+        `TLPDefaultStateID` is 0: the button renders from state 0, so a panel
+        with an unwritten state 1 looks completely correct until the control
+        system sets it On.
+
+        The real list hangs off `mItems`, which is the same field gdl/project.py
+        reads for the same reason. #>
+    param($Control)
+    $sts = Get-GdlField $Control 'statesField'
+    if (-not $sts) { return @() }
+    $items = Get-GdlField $sts 'mItems'
+    if ($null -eq $items) { return @() }
+    return @($items | Where-Object { $null -ne $_ })
+}
+
 $script:BorderDonor = $null
 function Find-BorderDonor {
     param($Project)
@@ -135,8 +160,8 @@ function Find-BorderDonor {
         foreach ($c in $pg.Controls) {
             $v = Get-GdlField $c 'borderField'
             if ($v) { $script:BorderDonor = $v; return , $v }
-            $sts = Get-GdlField $c 'statesField'
-            if ($sts -and $sts.Count) {
+            $sts = Get-GdlStates $c
+            if ($sts.Count) {
                 for ($i = 0; $i -lt $sts.Count; $i++) {
                     if ($null -eq $sts[$i]) { continue }
                     $v2 = Get-GdlField $sts[$i] 'borderField'
@@ -163,7 +188,7 @@ function Set-GdlBorder {
         Note-Problem "border resource '$Name' is not in the donor project; a plan may only reference existing resources"
         return
     }
-    # Same null-vs-missing trap as colours: a button's own borderField is
+    # Same null-vs-missing trap as colors: a button's own borderField is
     # usually null and the border lives on its state, so clone a reference from
     # wherever one exists rather than reporting a field that is right there.
     $existing = Get-GdlField $Control 'borderField'
@@ -172,4 +197,90 @@ function Set-GdlBorder {
     $ref = Copy-GdlObject $existing
     Set-GdlFieldIfPresent $ref 'resourceNameField' $Name | Out-Null
     Set-GdlFieldIfPresent $Control 'borderField' $ref | Out-Null
+}
+
+function Find-FontDonor {
+    <#  Any PBFont in the project, to clone when a control's own is null.
+
+        Same null-vs-missing trap as colors and borders: a button carries its
+        font on the state rather than on the control. #>
+    param($Project)
+    if ($script:FontDonor) { return , $script:FontDonor }
+    foreach ($pg in @($Project.Pages) + @($Project.PopupPages)) {
+        foreach ($c in $pg.Controls) {
+            $v = Get-GdlField $c 'fontField'
+            if ($v) { $script:FontDonor = $v; return , $v }
+            $sts = Get-GdlStates $c
+            if ($sts.Count) {
+                for ($i = 0; $i -lt $sts.Count; $i++) {
+                    if ($null -eq $sts[$i]) { continue }
+                    $v2 = Get-GdlField $sts[$i] 'fontField'
+                    if ($v2) { $script:FontDonor = $v2; return , $v2 }
+                }
+            }
+        }
+    }
+    return $null
+}
+
+function Set-GdlFont {
+    <#  Set a control's typeface, point size and weight.
+
+        Nothing set this before, so a spec's `size` reached the preview and then
+        vanished: every generated label built at the donor's 20pt, every button
+        at 13pt and every shape at 14.25pt, whatever the spec said. The preview
+        was honest about the design and the panel was not, which is the same
+        class of failure as flattenText.
+
+        Family is deliberately conservative. GUI Designer resolves a face
+        through a named font RESOURCE, and appending a new one has never been
+        tested here - so a family the project does not already carry is a
+        reported problem rather than a silent wrong typeface. Size and weight
+        are safe: they are plain fields on the cloned PBFont and its style. #>
+    param($Project, $Control, $Font)
+    if ($null -eq $Font) { return }
+
+    $existing = Get-GdlField $Control 'fontField'
+    if (-not $existing) { $existing = Find-FontDonor $Project }
+    if (-not $existing) { Note-Problem 'no PBFont anywhere to clone'; return }
+
+    $f = Copy-GdlObject $existing
+
+    if ($Font.name) {
+        $have = @($Project.ResourceSet.Resources |
+            Where-Object { $_.GetType().Name -eq 'PBFontResource' } |
+            ForEach-Object { $_.Name })
+        $current = Get-GdlField $f 'nameField'
+        if ($Font.name -ne $current) {
+            # Match on the family the resource declares, not on the resource
+            # name - those carry a style suffix ("Forma DJR Display Regular
+            # Bold Italic") that no spec would write.
+            $ok = $have | Where-Object { $_ -and $_.StartsWith($Font.name, 'OrdinalIgnoreCase') }
+            if ($ok) {
+                Set-GdlFieldIfPresent $f 'nameField' $Font.name | Out-Null
+            } else {
+                Note-Problem ("font family '$($Font.name)' has no PBFontResource in the donor " +
+                              "project (it has: $($have -join ', ')); left as '$current'")
+            }
+        }
+    }
+
+    if ($null -ne $Font.size) {
+        # pointSizeField is a float on the object; the plan carries a JSON
+        # number, which PowerShell hands over as Int32 or Double depending on
+        # how it was written. Cast so a whole number does not fail the setter.
+        Set-GdlFieldIfPresent $f 'pointSizeField' ([single]$Font.size) | Out-Null
+    }
+
+    if ($null -ne $Font.bold -or $null -ne $Font.italic) {
+        $st = Get-GdlField $f 'styleField'
+        if ($st) {
+            $s = Copy-GdlObject $st
+            if ($null -ne $Font.bold)   { Set-GdlFieldIfPresent $s 'boldField'   ([bool]$Font.bold)   | Out-Null }
+            if ($null -ne $Font.italic) { Set-GdlFieldIfPresent $s 'italicField' ([bool]$Font.italic) | Out-Null }
+            Set-GdlFieldIfPresent $f 'styleField' $s | Out-Null
+        }
+    }
+
+    Set-GdlFieldIfPresent $Control 'fontField' $f | Out-Null
 }

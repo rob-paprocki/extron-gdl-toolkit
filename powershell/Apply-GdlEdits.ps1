@@ -57,13 +57,13 @@ function Get-GdlControlById {
 function Set-GdlStates {
     <#  Apply a change to every state of a control.
 
-        Index rather than foreach: PBStates supports .Count and [i] but
-        enumerating it yields the collection itself, so foreach silently writes
-        to the wrong object. A shape also reports a non-zero Count on an empty
-        states collection and then indexes to null, so check each one. #>
-    param($Proj, $Control, $Fields, $Colours, $FText)
-    $states = Get-GdlField $Control 'statesField'
-    if (-not $states -or -not $states.Count) { return 0 }
+        Via Get-GdlStates, which reads `mItems`. `PBStates.Count` is a LOGICAL
+        count and reports 1 for a two-state Off/On button, so this loop used to
+        rename state 0 and stop - leaving state 1 showing the old caption on
+        every button the control system switches. #>
+    param($Proj, $Control, $Fields, $Colors, $FText)
+    $states = Get-GdlStates $Control
+    if (-not $states.Count) { return 0 }
     $n = 0
     for ($i = 0; $i -lt $states.Count; $i++) {
         $st = $states[$i]
@@ -83,9 +83,9 @@ function Set-GdlStates {
             if ($old -match '^([\t\r\n ]*)') { $lead = $Matches[1] }
             Set-GdlFieldIfPresent $st 'ftextField' ($lead + $FText) | Out-Null
         }
-        if ($Colours) {
-            foreach ($f in $Colours.PSObject.Properties) {
-                Set-GdlColour $Proj $st $f.Name (ConvertTo-Argb $f.Value)
+        if ($Colors) {
+            foreach ($f in $Colors.PSObject.Properties) {
+                Set-GdlColor $Proj $st $f.Name (ConvertTo-Argb $f.Value)
             }
         }
     }
@@ -93,9 +93,9 @@ function Set-GdlStates {
 }
 
 function ConvertTo-Argb {
-    <#  '#AARRGGBB' -> the packed int Set-GdlColour wants.
+    <#  '#AARRGGBB' -> the packed int Set-GdlColor wants.
 
-        The plan carries colours as hex strings because that is what a human
+        The plan carries colors as hex strings because that is what a human
         writes in an edit spec and what gdl/edit.py matches on. #>
     param([string]$Hex)
     if (-not $Hex) { return $null }
@@ -126,7 +126,7 @@ foreach ($op in $spec.project) {
     #
     #   PBTouchPanelPlatformPro.CreatePlatform(PBProject, PlatformProTypeEnum)
     #
-    # returns a fully initialised instance, part number and all. It needs the
+    # returns a fully initialized instance, part number and all. It needs the
     # project, which is presumably why the wizard is the only thing that
     # normally calls it.
     $enumField = $proj.GetType().GetField('platformTypeField', 'Instance,Public,NonPublic')
@@ -167,16 +167,32 @@ foreach ($op in $spec.project) {
         # Pages ARE the canvas - a page left at the old size would put every
         # control outside it, and Build moves those to 0,0 without a word.
         #
-        # POPUPS TOO. A popup's authored widthField/heightField is the full
-        # canvas (1280x800 here) even though layout.json reports it as 915x800 -
-        # that smaller number is the DISPLAYED size, taken from the reference
-        # that shows it. Resizing only $proj.Pages left every popup at the old
-        # canvas, so all 297 scaled popup controls overflowed and Build put them
-        # at 0,0. Page controls were fine, which is what made it look like a
-        # popup-specific bug rather than a missing collection.
+        # POPUPS TOO, but NOT at the screen size. This used to set every page
+        # and popup to $op.size, on the belief that a popup's authored
+        # widthField/heightField is always the full canvas (1280x800 here) with
+        # layout.json's smaller 915x800 being the DISPLAYED size taken from the
+        # reference that shows it. That belief came from the Liberty Bank
+        # fixture, where every popup happens to be authored full-canvas, and it
+        # is wrong. In Extron's own Afterburn template 10 of the 29 popups are
+        # authored at 880x525, and the BUILT payload reports 880x525 for them -
+        # all 29 popup sizes in layout.json match the authored canvas exactly.
+        # The authored size IS the popup size. Forcing it to the screen size
+        # turns a modal card into a full-screen page in the shipped file.
+        #
+        # gdl.edit now emits a size per page, each scaled by the same per-axis
+        # factors as its controls, so canvas and contents move together. Fall
+        # back to the old blanket behaviour only for a plan that predates it -
+        # leaving a popup at the old canvas is the one outcome that silently
+        # destroys the layout.
+        $sized = @{}
+        foreach ($pgop in @($spec.pages)) {
+            if ($null -ne $pgop) { $sized[[string]$pgop.page] = $pgop.size }
+        }
         foreach ($pg in @($proj.Pages) + @($proj.PopupPages)) {
-            Set-GdlFieldIfPresent $pg 'widthField' ([int]$op.size[0]) | Out-Null
-            Set-GdlFieldIfPresent $pg 'heightField' ([int]$op.size[1]) | Out-Null
+            $want = $sized[[string](Get-GdlField $pg 'idField')]
+            if (-not $want) { $want = $op.size }
+            Set-GdlFieldIfPresent $pg 'widthField' ([int]$want[0]) | Out-Null
+            Set-GdlFieldIfPresent $pg 'heightField' ([int]$want[1]) | Out-Null
         }
     }
 }
@@ -204,13 +220,13 @@ foreach ($op in $spec.controls) {
                 Set-GdlFieldIfPresent $c $f.Name $f.Value | Out-Null
             }
         }
-        if ($op.colours) {
-            foreach ($f in $op.colours.PSObject.Properties) {
-                Set-GdlColour $proj $c $f.Name (ConvertTo-Argb $f.Value)
+        if ($op.colors) {
+            foreach ($f in $op.colors.PSObject.Properties) {
+                Set-GdlColor $proj $c $f.Name (ConvertTo-Argb $f.Value)
             }
         }
-        if ($op.states -or $op.states_colours -or $null -ne $op.states_ftext) {
-            Set-GdlStates $proj $c $op.states $op.states_colours $op.states_ftext | Out-Null
+        if ($op.states -or $op.states_colors -or $null -ne $op.states_ftext) {
+            Set-GdlStates $proj $c $op.states $op.states_colors $op.states_ftext | Out-Null
         }
         $applied++
     } catch {

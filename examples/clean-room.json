@@ -1,0 +1,222 @@
+{
+  "name": "Clean Room 835",
+  "model": "TLP835M",
+  "size": [
+    1280,
+    800
+  ],
+  "_brief": "A clean-room panel: authored from a seed project, so nothing of any client's is in it - no client page names, popups, artwork or retail fonts. Open Sans throughout, which is what a fresh Afterburn project carries and the one face this repo can redistribute.",
+  "_theme_note": "The documented Afterburn token set from gdl.themes.AFTERBURN, whose typeface is Open Sans - Apache 2.0, embedded in every template, and the one face this repo can redistribute.",
+  "theme": {
+    "background": "#242634",
+    "surface": "#242634",
+    "raised": "#37394E",
+    "accent": "#3D8BFD",
+    "text": "#FFFFFF",
+    "muted": "#BABCCE",
+    "font": "Open Sans",
+    "size": 16,
+    "on": "accent"
+  },
+  "pages": [
+    {
+      "name": "Room Home",
+      "number": 1000,
+      "controls": [
+        {
+          "kind": "panel",
+          "name": "TopBar",
+          "rect": [
+            0,
+            0,
+            1280,
+            96
+          ],
+          "fill": "raised",
+          "border": "rect"
+        },
+        {
+          "kind": "label",
+          "name": "RoomName",
+          "rect": [
+            40,
+            0,
+            700,
+            96
+          ],
+          "text": "Conference Room",
+          "align": "left",
+          "size": 36
+        },
+        {
+          "kind": "label",
+          "name": "RoomState",
+          "rect": [
+            580,
+            0,
+            660,
+            96
+          ],
+          "text": "Available",
+          "align": "right",
+          "size": 18,
+          "color": "muted"
+        },
+        {
+          "kind": "label",
+          "name": "SourcesLabel",
+          "rect": [
+            40,
+            124,
+            400,
+            32
+          ],
+          "text": "SOURCES",
+          "align": "left",
+          "size": 15,
+          "color": "muted"
+        },
+        {
+          "grid": {
+            "rect": [
+              40,
+              168,
+              1200,
+              264
+            ],
+            "cols": 3,
+            "gap": 20,
+            "kind": "button",
+            "fill": "raised",
+            "border": "afterburn",
+            "stroke": "muted",
+            "items": [
+              {
+                "text": "Laptop"
+              },
+              {
+                "text": "Wireless"
+              },
+              {
+                "text": "Room PC"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "panel",
+          "name": "VolumeWell",
+          "rect": [
+            40,
+            472,
+            664,
+            136
+          ],
+          "fill": "raised",
+          "border": "afterburn-flat"
+        },
+        {
+          "kind": "label",
+          "name": "VolumeLabel",
+          "rect": [
+            72,
+            472,
+            200,
+            136
+          ],
+          "text": "Volume",
+          "align": "left",
+          "size": 18,
+          "color": "muted"
+        },
+        {
+          "grid": {
+            "rect": [
+              300,
+              504,
+              396,
+              72
+            ],
+            "cols": 3,
+            "gap": 16,
+            "kind": "button",
+            "fill": "surface",
+            "border": "capsule",
+            "stroke": "muted",
+            "items": [
+              {
+                "text": "Mute"
+              },
+              {
+                "text": "–"
+              },
+              {
+                "text": "+"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "button",
+          "name": "Present",
+          "rect": [
+            744,
+            472,
+            496,
+            136
+          ],
+          "text": "Start Presenting",
+          "fill": "accent",
+          "border": "afterburn",
+          "size": 24,
+          "on": {
+            "fill": "surface",
+            "color": "muted"
+          }
+        },
+        {
+          "kind": "panel",
+          "name": "StatusStrip",
+          "rect": [
+            0,
+            704,
+            1280,
+            96
+          ],
+          "fill": "raised",
+          "border": "rect"
+        },
+        {
+          "kind": "label",
+          "name": "Status",
+          "rect": [
+            40,
+            704,
+            560,
+            96
+          ],
+          "text": "Ready",
+          "align": "left",
+          "size": 15,
+          "color": "muted"
+        },
+        {
+          "kind": "label",
+          "name": "Hint",
+          "rect": [
+            640,
+            704,
+            600,
+            96
+          ],
+          "text": "Tap a source to begin",
+          "align": "right",
+          "size": 15,
+          "color": "muted"
+        }
+      ]
+    }
+  ],
+  "_seed": "Built against seeds/Afterburn 835 (Project1).gdl - made in GUI Designer with File > New Project (Afterburn All-inclusive 1220 theme, TLP Pro 835M). See seeds/README.md and docs/from-scratch.md section 5c.",
+  "_states_note": "theme.on gives every button an On appearance. Off/On is what 94.7% of the buttons in Extron's own templates use (3475 of 3668), and 60% of those change fill between the two."
+}

@@ -4,7 +4,7 @@ Sources, all primary:
 
 - **GUI Design Standards rev E** (94pp) — Extron's design guide. Page numbers below
   are its printed page numbers.
-- **Afterburn Theme Guide** (16pp, 79-607-24 rev A) — the theme's colour system.
+- **Afterburn Theme Guide** (16pp, 79-607-24 rev A) — the theme's color system.
 - **GUI Designer 1.27.0.9 itself** — platform classes and control fields, read out
   of the installed assemblies.
 
@@ -65,7 +65,7 @@ touch-target Quick Reference table, which is a different thing.
 **Density** (pp. 49, 58) — the two numeric caps in the document:
 
 - **No more than nine buttons in a control group.** (p. 58)
-- **No more than six colours in a project.** (p. 49)
+- **No more than six colors in a project.** (p. 49)
 
 **Contrast** (p. 43)
 
@@ -90,12 +90,12 @@ touch-target Quick Reference table, which is a different thing.
 - Different font sizes *between* group label and sub-label are required, to create
   hierarchy (p. 63).
 
-**Behaviour** (pp. 8, 13, 15, 70, 71)
+**Behavior** (pp. 8, 13, 15, 70, 71)
 
 - Respond within **1 second**. (A progress indicator is required past 5 s per the
   p. 13 table, or past 10 s per the p. 8 body text — the document contradicts
   itself; take the conservative 5 s.)
-- Every tap must give obvious feedback that the request was recognised *and*
+- Every tap must give obvious feedback that the request was recognized *and*
   whether it succeeded.
 - Any costly or irreversible action needs a **modal confirmation with a cancel
   path**. Press-and-hold with no escape is called out as a failure.
@@ -108,7 +108,7 @@ touch-target Quick Reference table, which is a different thing.
 
 ## 3. Don'ts
 
-- Don't signal "selected" with a border alone — change colour *and* add a text cue.
+- Don't signal "selected" with a border alone — change color *and* add a text cue.
 - Don't use flip-flop buttons (one button whose label swaps between On/Off): the
   user cannot tell whether it shows current state or the action. Separate control
   from status. (p. 54)
@@ -120,14 +120,14 @@ touch-target Quick Reference table, which is a different thing.
 - Don't use ALL CAPS or all lowercase except sparingly; mixed case reads fastest.
 - Don't use "Yes"/"No" on a confirmation — use the verb ("End Call" / "Cancel").
 - Don't style a non-interactive label with button affordance.
-- Don't rely on colour alone; GUI Designer has a monochrome test mode for this.
+- Don't rely on color alone; GUI Designer has a monochrome test mode for this.
 - Don't use acronyms the audience may not share (VTC, ALC). HDMI/DVD/DVR/AUX are
   fine.
 
 ## 4. Themes — four of them, one documented
 
 Extron ships **Afterburn, Mach, Shockwave and Turbulence**, each with a resource
-kit, but publishes a colour guide only for Afterburn. `gdl/themes.py` handles both
+kit, but publishes a color guide only for Afterburn. `gdl/themes.py` handles both
 cases: `AFTERBURN` is the transcribed token set, and `extract(path)` reads the
 palette, borders and fonts a `.glt` template or `.gdl` project actually uses.
 
@@ -137,7 +137,7 @@ palette, borders and fonts a `.glt` template or `.gdl` project actually uses.
 reading the guide. So it can be trusted on the three undocumented themes, and on
 a client's own house style read off a panel they already have.
 
-### The Afterburn colour system — fully encodable
+### The Afterburn color system — fully encodable
 
 Straight from the theme guide. This is a complete token set.
 
@@ -151,12 +151,12 @@ Straight from the theme guide. This is a complete token set.
 | button border (pressed/selected) | `#FFFFFF` | |
 | button fill (idle) | `#37394E` | |
 | button fill (pressed/selected) | `#242634` | |
-| icon primary | `#BABCCE` | single-colour icons, strokes |
+| icon primary | `#BABCCE` | single-color icons, strokes |
 | icon secondary | `#767789` | de-emphasised icon parts |
 | icon background | `#414459` | |
 | divider lines | `#BABCCE` | |
 | shapes | `#6A6E89` | container shapes |
-| slider/level track | `#242634` (over image) or `#37394E` (over colour) | |
+| slider/level track | `#242634` (over image) or `#37394E` (over color) | |
 | slider fill | `#BABCCE` | |
 | toggle thumb (off) | `#6A6E89` | |
 
@@ -192,23 +192,23 @@ States: Not Selected, Selected, Pressed, Multi-state Status.
 
 Two routes. Images are the normal one — real panels use them heavily (the Liberty
 Bank fixture carries 38 `PBImageResource` and 1,855 `PBResourceReferenceImage`) —
-and the font is an additional convenience for single-colour icons. An earlier
+and the font is an additional convenience for single-color icons. An earlier
 draft of this file said icons "come from a font, not images", which was an
 overcorrection.
 
 **Images.** Every control has *two* image slots — `buttonImageField` (the icon)
 and `backgroundImageField` — each with its own alignment, layout, left/top offset
-and transparency key colour. A `PBImageResource` holds the bitmap
+and transparency key color. A `PBImageResource` holds the bitmap
 (`dataField` is a `System.Drawing.Bitmap`); a `PBResourceReferenceImage` names it.
 **Verified**: cloning an image resource, replacing its bitmap with a PNG from
 Extron's kit, appending it and binding it to a button built with 0 errors, and the
-icon was rasterised into the button's artwork. Set `buttonImageLayout`/alignment
+icon was rasterized into the button's artwork. Set `buttonImageLayout`/alignment
 or a 440×440 kit icon will swamp a small button.
 
 Extron's kits ship: Afterburn 3,376 files, Turbulence 1,408, Shockwave 1,124,
 Mach 596.
 
-**Icon fonts.** For single-colour icons the theme guide says to use the theme
+**Icon fonts.** For single-color icons the theme guide says to use the theme
 font instead, which needs no resource at all:
 
 | Font | Glyphs | Range |

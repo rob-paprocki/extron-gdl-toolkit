@@ -6,8 +6,12 @@ description: Use when creating, modifying or reviewing an Extron GUI Designer to
 # Building Extron touch panels
 
 This repo can read, render, check and generate Extron `.gdl` panels. The whole
-loop is proven against GUI Designer 1.27.0.9: a JSON spec became a page that GUI
-Designer opened and built with 0 errors.
+loop is proven against GUI Designer 1.27.0.9, and on a Windows box it runs
+unattended end to end — `powershell\New-GdlPanel.ps1` takes a JSON spec and
+returns a built, verified panel without anyone opening GUI Designer.
+
+So the job here is usually to turn a description into a good spec. The build is
+mechanical; the design is not.
 
 Read `docs/design-rules.md` before making design decisions and
 `docs/gdl-format.md` before touching the format. Both encode findings that were
@@ -16,8 +20,8 @@ expensive to get.
 ## The one thing to internalise
 
 **Build owns the artwork.** You never make pixels. You set semantic properties —
-a fill colour, a stroke, a *named* border resource, a font, a caption — and GUI
-Designer rasterises them on build. A control you author carries `TLPImageID = -1`
+a fill color, a stroke, a *named* border resource, a font, a caption — and GUI
+Designer rasterizes them on build. A control you author carries `TLPImageID = -1`
 until then.
 
 This is why a preview is possible at all, and why "the file looks right" is not
@@ -36,12 +40,32 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 2. **Pick the theme.** `gdl.themes.AFTERBURN` is the documented token set. For
    Mach/Shockwave/Turbulence, or a client's house style, run
    `python -m gdl.themes <template.glt>` and read the tokens off the template.
-3. **Write the spec** — see `examples/panel.json`. Use `grid`/`stack` for layout;
+3. **Write the spec** — see `examples/panel.json` for the full vocabulary and
+   `examples/huddle.json` for a small one written straight from a prose brief.
+   Use `grid`/`stack` for layout;
    never hand-type a rect. Nest them for sub-regions (a nested directive lays out
    inside its parent cell, and a `rect` at that depth is an offset into it).
+
+   **Give the buttons feedback.** A button with one appearance is inert: the
+   control system sets it On and nothing on the panel changes. Set `"on"` in
+   the theme and every button gets an On state for free:
+
+   ```json
+   "theme": { "raised": "#37394E", "accent": "#3D8BFD", "on": "accent" }
+   ```
+
+   Per button, `"on": "accent"` changes just the fill; `"on": {"fill": "surface",
+   "color": "muted", "stroke": "accent", "border": "capsule"}` changes whatever
+   it names and inherits the rest from the Off appearance. Omit `on` entirely
+   and the button keeps a single appearance, which is right for a label-like
+   button and wrong for anything the control system drives.
+
+   `Off`/`On` is what Extron's own templates use for **3475 of 3668** buttons
+   (94.7%). Multi-state idioms (`Muted`/`Level 1`/`Level 2`/`Level 3`) exist but
+   are domain-specific; do those with `gdl.edit` on a real project.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
-   ≤9 buttons per group, ≤6 colours, ≥14pt body text).
+   ≤9 buttons per group, ≤6 colors, ≥14pt body text).
 5. **Preview it**: `python -m gdl.spec render <spec.json> out/preview.png`, then
    **look at the image**. The compositor scores 2.19% against GUI Designer's own
    output, so this is a real preview, not a sketch. Iterate here — it costs
@@ -50,11 +74,48 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    <donor.gdl>`. The donor supplies every cloned control, so a type it lacks is
    unauthorable — and its page/popup names are taken, which is a build error.
    Both are free to find here and cost a Windows round trip to find there.
-7. **Emit the plan**: `python -m gdl.spec plan <spec.json> out/plan.json`.
-8. **Apply and build** — needs Windows, see below.
-9. **Verify the build**: `python tests/verify_built.py out/plan.json
-   <built.gdl>`. Do not skip this because the build was clean; that is exactly
-   when it earns its keep.
+
+   **Pick the donor deliberately — it ships in the result.** The fixtures are a
+   real client's project, so a panel cloned from one carries their page names,
+   popups, artwork and retail fonts. For anything going to a client, use a
+   *seed* from `seeds/` — fourteen themed projects made with **File > New
+   Project...**, across six theme families and several sizes (`seeds/README.md`
+   lists them; `git lfs pull` fetches them). Prefer one at the target size:
+   `retarget` builds a correct panel at another size, but only 22% of controls
+   match what Extron's own designers drew there. Extron's `.glt` templates cannot be
+   donors — they have no `PBProject`, and a file built from one makes GUI
+   Designer open empty and offer the Create Wizard. `donors` refuses them with
+   that explanation. See `docs/from-scratch.md` §5c.
+
+   `donors` checks six things, and five of them once cost a Windows round trip:
+   control types, page-name collisions, **border resources**, **font families**,
+   **canvas size** and **button states**. The font one is the sly one — a family
+   the donor has no `PBFontResource` for does not fail the build, it ships the
+   panel in the donor's face. The states one is the same shape: a donor whose
+   buttons carry a single state cannot express Off/On, the applier cannot create
+   the missing one, and the panel builds looking correct and does nothing when
+   switched. Answer its complaints before going to Windows; that is the entire
+   point of the step.
+7. **Build it.** On the Windows box this is one command, which re-runs steps 4
+   and 6 and finishes with step 8:
+
+   ```powershell
+   powershell\New-GdlPanel.ps1 -Spec examples\panel.json `
+       -Donor fixtures\gdl\Interface__alt_....gdl -Output C:\gdlwork\Boardroom.gdl
+   ```
+
+   check → donors → plan → apply → pack → open → Save and Build → wait →
+   verify. It exits 0 only if the verifier passed, so it gates rather than
+   reports. Nobody touches GUI Designer. Add `-KeepOpen` to leave it up.
+
+   Off Windows, run the steps by hand — `python -m gdl.spec plan <spec.json>
+   out/plan.json`, then the Windows half per `docs/from-scratch.md` §7.
+8. **Verify the build** (already done for you by `New-GdlPanel.ps1`):
+   `python tests/verify_built.py out/plan.json <built.gdl>`. Do not skip this
+   because the build was clean; that is exactly when it earns its keep. It
+   checks geometry, captions, popup bindings **and color** — the last read off
+   the rasterized artwork, since a built control's `BackgroundFillColor` reads
+   back transparent white whatever you authored.
 
 ### B. Modify an existing panel
 
@@ -63,7 +124,7 @@ the real project on the Mac, then apply:
 
 1. **Describe the change** - see `examples/edits.json`. Four ops:
    `rename` (captions), `retarget` (another panel model, optionally rescaling),
-   `renumber` (addressable `userId`s), `restyle` (colour remap). Selectors are
+   `renumber` (addressable `userId`s), `restyle` (color remap). Selectors are
    ANDed and support exact or regex match on name and caption.
 2. **Check it**: `python -m gdl.edit check <edits.json> <panel.gdl>`. Every
    selector resolves against the real file, so "matched nothing" is an error
@@ -81,7 +142,7 @@ Two things about renaming that are not obvious:
   breaks. `gdl.edit` writes it back wherever it found it.
 - A **formatted** caption is baked into the artwork. Making one longer wraps it
   onto an unindented second line over the icon - `check` warns, and the only
-  real verification is looking at the rasterised asset.
+  real verification is looking at the rasterized asset.
 
 Reading and rendering need nothing but Python and Pillow:
 
@@ -95,9 +156,30 @@ Writing goes through `powershell/GdlProject.ps1` on Windows. **Clone, never
 construct** — every constructor and property setter throws headless, and a failed
 setter writes the backing field *before* throwing, so it looks like it worked.
 
-## Running Windows from macOS
+## Running the Windows half
 
-Fully scriptable against the Parallels VM; `docs/from-scratch.md` §7 has detail.
+**On the Windows box, use `powershell\New-GdlPanel.ps1`** (above) and skip the
+rest of this section. A Claude Code session there is already interactive, so
+there is no VM, no remote exec and no scheduled task.
+
+Three things about driving GUI Designer that cost time here, in case you are
+scripting something it does not cover:
+
+- **Wait for a build with `powershell\Wait-GdlBuild.ps1`.** It waits for the
+  `.gdl` to be rewritten and then to stop growing. Every cheaper signal is
+  wrong: the title's trailing `*` only means unsaved changes, so a freshly
+  packed file never has one and the wait returns instantly onto a stale
+  payload; and the Build Manager window appears seconds *after* the keystroke
+  and closes ~5s *before* the file is written, so killing the process on that
+  signal truncates the payload. Measured: dialog gone at t+4s while still
+  building, file written at t+46s.
+- **`Get-Process` caches `MainWindowTitle`** — call `.Refresh()` or it reads
+  `GUI Designer` forever and your wait never ends.
+- Read the screen back with `System.Drawing`'s `CopyFromScreen`.
+
+### From macOS against a Parallels guest
+
+Fully scriptable; `docs/from-scratch.md` §7 has detail.
 
 ```bash
 # authoring - runs as SYSTEM, no desktop, fine for anything headless
@@ -119,6 +201,13 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
 
 ## Traps that have already cost time
 
+- **The font is not the donor's any more, but check that it isn't.**
+  `Apply-GdlPlan.ps1` set no font at all until 2026-09-08, so a spec's `size`
+  reached the preview and stopped there - labels built at the donor's 20pt,
+  buttons at 13pt, shapes at 14.25pt. `Set-GdlFont` now applies size, weight and
+  (where the project already carries the resource) family, on the control and on
+  every state. Family is the conservative one: a face with no `PBFontResource`
+  in the donor is reported, not silently substituted.
 - **`flattenText` bakes captions into the artwork.** A cloned button inherits it,
   so Build deduplicates every generated button to one asset carrying the donor's
   word — while `layout.json` holds the correct captions. The model reads
@@ -126,9 +215,17 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
 - **A clone inherits what you didn't ask for.** Page-level artwork, button icons,
   ids. Clear `<TLPImageID>` on a cloned page and `buttonImageField` on a cloned
   button unless you want the donor's.
-- **Buttons render from their STATE, not the control.** Set text/colour on every
+- **Buttons render from their STATE, not the control.** Set text/color on every
   state or the caption won't appear.
-- **"Field is null" is not "field is missing."** Most colour and image fields are
+- **`PBStates.Count` is not the number of states.** It is a logical count and
+  reports **1** for an ordinary two-state Off/On button, while `$sts[0]` and
+  `$sts[1]` both return a `PBState`. So `for ($i = 0; $i -lt $states.Count;
+  $i++)` writes state 0 and stops — which is what both appliers did until
+  2026-09-10, meaning *every* "write to every state" loop only ever wrote one.
+  Use `Get-GdlStates`, which reads `mItems`. Invisible from outside:
+  `TLPDefaultStateID` is 0, so the panel renders state 0 and looks perfect until
+  a control system switches it.
+- **"Field is null" is not "field is missing."** Most color and image fields are
   null on most controls; clone a donor value from elsewhere in the project.
 - **Popup bindings live in four places** and every mismatch fails *silently* —
   the file opens and builds, the binding just reads "Unassigned". Use
@@ -155,7 +252,7 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
   Appending a new `PBImageResource` and binding it to `buttonImageField` is
   proven to build. Set `buttonImageLayout`/alignment or a large icon will fill
   the button.
-- **Icon fonts** — for single-colour icons, faster and needs no resource.
+- **Icon fonts** — for single-color icons, faster and needs no resource.
   Afterburn 136 glyphs at U+E900–E98C, Mach (Extron-Lift) 121 at U+E900–E978.
   Place them as text in that face.
 
@@ -164,16 +261,17 @@ prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
 - **Render change**: `tests/score.py record` before and after, then `diff`. It
   exits non-zero on any page regressing. A change that improves one page and
   regresses twenty is the documented failure mode here.
-- **Spec change**: `python tests/test_spec.py` (50 tests).
+- **Spec change**: `python -m pytest` (102 tests: 72 spec, 23 edit, 7 fonts).
 - **Anything authored**: two gates, not one.
-  1. GUI Designer must **open and build** it — a file that merely serialises
+  1. GUI Designer must **open and build** it — a file that merely serializes
      proves nothing.
   2. `python tests/verify_built.py <plan.json> <built.gdl>` — because a build
-     that reports 0 errors still relocates controls and bakes captions. Both of
-     this repo's worst authoring bugs built perfectly clean.
+     that reports 0 errors still relocates controls, bakes captions and drops
+     fills. Every one of this repo's worst authoring bugs built perfectly
+     clean. `New-GdlPanel.ps1` runs this for you and fails the run on it.
 - Report numbers you actually ran. Never state a build succeeded on the strength
   of "no error dialog appeared" — say what you checked (payload member present,
-  N controls rasterised, verifier clean).
+  N controls rasterized, verifier clean).
 
 ## Where the design authority lives
 

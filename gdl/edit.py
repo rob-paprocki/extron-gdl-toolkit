@@ -3,7 +3,7 @@
 `gdl/spec.py` builds a panel from nothing. This is the other half of the job and
 the more common one: a client project already exists and someone wants the
 buttons renamed, the whole thing moved to a bigger panel, the IDs renumbered, or
-the colours restyled.
+the colors restyled.
 
 Same architecture, for the same reason: every decision is made here, in Python,
 where it can be tested against a real `.gdl` on a Mac, and `Apply-GdlEdits.ps1`
@@ -22,7 +22,7 @@ The four operations:
             have to agree (platform instance, platform type enum, screen size)
             and optionally rescales the layout.
   renumber  reassign the addressable IDs (`userIdField`) in per-page bands.
-  restyle   remap colours across the whole project.
+  restyle   remap colors across the whole project.
 
 Selectors are ANDed, and every one of them is resolved against the real project
 here, so `check` can say "this matched nothing" instead of the edit silently
@@ -36,9 +36,9 @@ import sys
 from .project import Project
 from .spec import MODELS, dpi, touch_minimums, MM_TOUCH_TARGET
 
-# Fields that carry a colour, and are therefore what `restyle` rewrites. A
+# Fields that carry a color, and are therefore what `restyle` rewrites. A
 # control's own three plus the page background; states carry the same three.
-COLOUR_FIELDS = ('borderFillColorField', 'borderColorField', 'textColorField')
+COLOR_FIELDS = ('borderFillColorField', 'borderColorField', 'textColorField')
 
 
 def _argb_hex(c):
@@ -49,7 +49,7 @@ def _argb_hex(c):
 
 
 def _norm(v):
-    """Any accepted colour spelling -> '#AARRGGBB'. '#RRGGBB' means opaque."""
+    """Any accepted color spelling -> '#AARRGGBB'. '#RRGGBB' means opaque."""
     if v is None:
         return None
     if isinstance(v, dict):
@@ -72,7 +72,8 @@ class Edits:
 
     @classmethod
     def load(cls, spec_path, gdl_path):
-        with open(spec_path) as fh:
+        # UTF-8, not the locale codepage - see the note in gdl/spec.py.
+        with open(spec_path, encoding='utf-8') as fh:
             return cls(json.load(fh), gdl_path)
 
     # -- selection ---------------------------------------------------------
@@ -197,10 +198,10 @@ class Edits:
             n += step
 
     def _restyle(self, e, ops, problems):
-        """Remap colours project-wide, or under a selector."""
+        """Remap colors project-wide, or under a selector."""
         table = {_norm(k): _norm(v) for k, v in (e.get('map') or {}).items()}
         if not table:
-            problems.append("restyle: needs a 'map' of old colour -> new colour")
+            problems.append("restyle: needs a 'map' of old color -> new color")
             return
         hits = self.select(e.get('select'))
         seen = set()
@@ -216,10 +217,10 @@ class Edits:
             if changes:
                 ops.append({'page': pg['id'], 'control': c['obj_id'],
                             'why': f'restyle {c["name"] or c["type"]}',
-                            'colours': changes, 'states_colours': changes})
-        self._unused_colours += [k for k in table if k not in seen]
+                            'colors': changes, 'states_colors': changes})
+        self._unused_colors += [k for k in table if k not in seen]
 
-    def _retarget(self, e, ops, problems, project_ops):
+    def _retarget(self, e, ops, problems, project_ops, page_ops):
         """Move the project to another panel model.
 
         Three fields have to agree or GUI Designer is being told two different
@@ -228,6 +229,23 @@ class Edits:
         (`platformTypeField`) and `screenSizeField`. The applier constructs the
         class, because a platform is one of the few objects that does construct
         headlessly - it holds no project state.
+
+        Every PAGE also carries its own canvas, and scaling the controls without
+        scaling the canvas is the silent-destruction case: Build moves anything
+        that no longer fits to 0,0 and reports nothing. The applier used to set
+        every page - popups included - to the new SCREEN size, on the belief
+        that a popup's authored size is always the full canvas. That came from
+        the Liberty Bank fixture, where every popup happens to be full-canvas,
+        and it is wrong: 10 of the 29 popups in Extron's own Afterburn template
+        are authored at 880x525, and the built layout.json reports 880x525 for
+        them. Blowing those up to the screen size turns a modal card into a
+        full-screen page.
+
+        So scale each page's own canvas by the same per-axis factors as its
+        controls. A full-canvas popup lands exactly on the screen size
+        (1280*1.5, 800*1.35 -> 1920x1080), and a genuinely small one keeps its
+        proportions. What matters is that canvas and contents move together, so
+        nothing can overflow that did not overflow before.
         """
         model = e.get('model')
         if model not in MODELS:
@@ -248,7 +266,16 @@ class Edits:
             return old_size, new_size
         sx = new_size[0] / old_size[0]
         sy = new_size[1] / old_size[1]
+        self._scale = (sx, sy)
         for pg in self.pages:
+            pw, ph = pg['size']
+            if None not in (pw, ph):
+                page_ops.append({
+                    'page': pg['id'], 'name': pg['name'], 'kind': pg['kind'],
+                    'why': f'scale canvas {sx:.4g}x{sy:.4g}',
+                    'was': [pw, ph],
+                    'size': [round(pw * sx), round(ph * sy)],
+                })
             for c in pg['controls']:
                 x, y, w, h = c['rect']
                 if None in (x, y, w, h):
@@ -281,10 +308,11 @@ class Edits:
 
     # -- plan and checks ---------------------------------------------------
     def plan(self):
-        ops, project_ops, problems = [], [], []
+        ops, project_ops, page_ops, problems = [], [], [], []
         self._resize = None
         self._model = None
-        self._unused_colours = []
+        self._scale = None
+        self._unused_colors = []
         for e in self.edits:
             op = e.get('op')
             if op == 'rename':
@@ -294,7 +322,7 @@ class Edits:
             elif op == 'restyle':
                 self._restyle(e, ops, problems)
             elif op == 'retarget':
-                self._resize = self._retarget(e, ops, problems, project_ops)
+                self._resize = self._retarget(e, ops, problems, project_ops, page_ops)
             else:
                 problems.append(f'unknown op {op!r}')
         return {
@@ -304,6 +332,7 @@ class Edits:
                      'PowerShell 5.1, then verify the BUILT file - a clean build '
                      'does not mean a correct one.'),
             'project': project_ops,
+            'pages': page_ops,
             'controls': ops,
         }, problems
 
@@ -323,9 +352,9 @@ class Edits:
 
         # A formatted-text caption is baked INTO the artwork at build time, and
         # its tab/CRLF scaffolding is hand-placed per line. Renaming one works -
-        # Build re-rasterises and the new word appears - but a longer caption
+        # Build re-rasterizes and the new word appears - but a longer caption
         # wraps onto a second line that has none of that indent, so it starts at
-        # x=0 on top of the icon. Measured: "Displays" -> "Screens" rasterises
+        # x=0 on top of the icon. Measured: "Displays" -> "Screens" rasterizes
         # perfectly; "Cameras" -> "Camera Control" comes out as "Camera" over
         # "Control" hanging off the left edge. Nothing in the file says so - the
         # model reads correctly and only the pixels are wrong, exactly like the
@@ -342,7 +371,7 @@ class Edits:
                     f'rename {old!r} -> {newt!r}: this caption is FORMATTED text baked '
                     f'into the artwork with hand-placed line breaks. The new text is '
                     f'longer, so it will wrap onto an unindented second line over the '
-                    f"icon. Check the rasterised asset, don't trust the model.")
+                    f"icon. Check the rasterized asset, don't trust the model.")
 
         # After the ops, does every control still fit its page? Build relocates
         # anything that does not to 0,0 - silently, with 0 errors reported - so
@@ -352,8 +381,17 @@ class Edits:
                  if 'leftField' in (o.get('fields') or {})}
         size = self._resize[1] if getattr(self, '_resize', None) else None
         if size:
+            # Against each page's OWN new canvas, popups included. Checking only
+            # standard pages was the blind spot that let the applier's blanket
+            # popup resize through: popups are exactly where the canvas and the
+            # screen are allowed to disagree, so they are the only place this
+            # check could ever have fired.
+            resized = {p['page']: p['size'] for p in plan['pages']}
             for pg in self.pages:
-                if pg['kind'] != 'page':
+                canvas = resized.get(pg['id'])
+                if canvas is None:
+                    canvas = size if pg['kind'] == 'page' else pg['size']
+                if not canvas or None in tuple(canvas):
                     continue
                 for c in pg['controls']:
                     f = moved.get((pg['id'], c['obj_id']))
@@ -364,11 +402,12 @@ class Edits:
                         x, y, w, h = c['rect']
                     if None in (x, y, w, h):
                         continue
-                    if x + w > size[0] or y + h > size[1]:
+                    if x + w > canvas[0] or y + h > canvas[1]:
                         errors.append(
                             f"{pg['name']} {c['name'] or c['type']}: {x},{y} {w}x{h} "
-                            f'falls outside the new {size[0]}x{size[1]} canvas - Build '
-                            f'moves it to 0,0 without reporting anything')
+                            f'falls outside the new {canvas[0]}x{canvas[1]} '
+                            f"{'canvas' if pg['kind'] == 'page' else 'popup canvas'} - "
+                            f'Build moves it to 0,0 without reporting anything')
 
             # Shrinking pixel-wise is not the same as shrinking physically. A
             # 1366x768 panel is bigger than a 1280x800 one, so scaling down can
@@ -447,7 +486,7 @@ def main(argv):
         print('  warning ' + p)
     if len(warnings) > 20:
         print(f'  warning ... and {len(warnings) - 20} more')
-    for c in ed._unused_colours:
+    for c in ed._unused_colors:
         print(f'  warning restyle: no control uses {c} - nothing to remap')
     print(f'{len(plan["controls"])} control op(s), '
           f'{len(plan["project"])} project op(s): {_summarise(plan)}')
@@ -459,7 +498,7 @@ def main(argv):
             print('refusing to emit a plan while there are errors')
             return 1
         out = argv[4] if len(argv) > 4 else 'out/edits-plan.json'
-        with open(out, 'w') as fh:
+        with open(out, 'w', encoding='utf-8') as fh:
             json.dump(plan, fh, indent=2)
         print(f'-> {out}')
         return 0

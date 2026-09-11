@@ -7,15 +7,17 @@ name: ci
 #          needs no Pillow, so this runs on a bare runner.
 #   CAN  - reading the authoring model out of the fixtures (gdl/project.py,
 #          gdl/nrbf.py, gdl/container.py are all stdlib).
-#   CANNOT - the render fidelity harness. It needs gdl/fonts/, which is
-#          deliberately not in git (commercial font binaries). How that fails
-#          depends on the host, and neither way is usable as a gate:
-#            - here, on a bare Linux runner, face() raises LookupError on the
-#              first face it cannot resolve. There is no Arial on Linux to fall
-#              back to, so the harness dies rather than scoring anything.
-#            - on a host that HAS Arial (Windows, macOS), it does fall back, and
-#              then reports a confident meaningless number.
-#          Fidelity stays a local gate - see CLAUDE.md.
+#   CAN  - the render fidelity harness, as of the embedded-Arial fix. This was
+#          long believed impossible: gdl/fonts/ is deliberately not in git, and
+#          Arial was thought to be a system face the format referenced without
+#          embedding, so a bare Linux runner had no way to resolve it. It was
+#          embedded the whole time - `extract` was matching sizes too strictly.
+#          Every declared face now comes back out of the tracked fixtures with
+#          stdlib alone, so the runner reproduces tests/baseline.json exactly.
+#          Extract fonts FIRST. Skip that step and this does not fail loudly on
+#          every host: on Linux face() raises, but on a host with Arial the
+#          missing faces resolve to it and the job reports a confident wrong
+#          number (2.81% against a 2.19% baseline, measured).
 #   CANNOT - anything that authors a .gdl. That needs 32-bit Windows PowerShell
 #          and an installed GUI Designer.
 
@@ -64,6 +66,25 @@ jobs:
       - name: the worked example still emits a plan
         run: python -m gdl.spec plan examples/panel.json /tmp/plan.json
 
+      - name: the prose-brief example still checks, resolves and plans
+        # Small, and the one that found the missing font application and the
+        # cp1252 spec read. Its en-dash caption is the encoding canary.
+        run: |
+          python -m gdl.spec check examples/huddle.json
+          python -m gdl.spec donors examples/huddle.json \
+            fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl
+          python -m gdl.spec plan examples/huddle.json /tmp/huddle-plan.json
+          python - <<'PY'
+          import json
+          plan = json.load(open('/tmp/huddle-plan.json', encoding='utf-8'))
+          texts = [(op.get('fields') or {}).get('textField')
+                   for op in plan['pages'][0]['controls']]
+          assert '–' in texts, f'en-dash lost on the way to the plan: {texts}'
+          sizes = {(op.get('font') or {}).get('size') for op in plan['pages'][0]['controls']}
+          assert 40 in sizes and 26 in sizes, f'font sizes missing from the plan: {sizes}'
+          print(f'  en-dash intact, {len(sizes)} distinct font sizes planned')
+          PY
+
       - name: the plan still carries a size for every popup
         # Without it the applier leaves a cloned popup at the donor's size and
         # Build moves every control that overflows to 0,0, silently.
@@ -101,6 +122,82 @@ jobs:
                  if isinstance(v, str) and v.startswith('#')}
           doc = {('#FF' + c[1:]) if len(c) == 7 else c for c in doc}
           extra = observed - doc
-          assert not extra, f'colours not in the Afterburn guide: {sorted(extra)}'
-          print(f'  {len(observed)} colours observed, all in the guide')
+          assert not extra, f'colors not in the Afterburn guide: {sorted(extra)}'
+          print(f'  {len(observed)} colors observed, all in the guide')
           PY
+
+      - name: the clean-room example checks on a canvas that is not 1280x800
+        # TLP1020T, 1024x600 at 118 DPI. No donor: it needs a seed project a
+        # human makes once, and the fixtures are client material. check and
+        # render need neither.
+        run: python -m gdl.spec check examples/clean-room.json
+
+      - name: donor fitness gates (types, names, borders, fonts, canvas)
+        # Each of these once cost a Windows round trip or, for fonts, shipped a
+        # panel in the wrong typeface with a clean build.
+        run: python tests/test_donor_gates.py
+
+      - name: more than one page per spec
+        # Every example and test used exactly one page until 2026-09-08, while
+        # the client fixture has 27 - so cross-page id allocation was untested.
+        run: python tests/test_multipage.py
+
+      - name: containers with no built payload round-trip
+        # .glt templates and unbuilt .gdl files hold only a ProjectGCP.
+        # payload_name used to raise a bare StopIteration on them.
+        run: python tests/test_container.py
+
+      - name: buttons get Off/On feedback, and an inert one is caught
+        # Every generated button was inert until 2026-09-10: the spec had no
+        # vocabulary for a second appearance, and PBStates.Count reports 1 for a
+        # two-state button, so both appliers wrote state 0 and stopped. Nothing
+        # looked wrong - TLPDefaultStateID is 0, so the panel renders state 0
+        # and only misbehaves once a control system switches it.
+        run: python tests/test_states.py
+
+      - name: a retarget scales every page's canvas, popups included
+        # `retarget --scale` scaled the controls and emitted no page size, and
+        # the applier set every page AND popup to the new screen size. Those
+        # agree only when every popup is authored full-canvas, which is true of
+        # the one project it was tested against and false in Extron's own
+        # templates. The overflow check that was supposed to catch it skipped
+        # popups - the only pages where a canvas may differ from the screen.
+        run: python tests/test_retarget_canvas.py
+
+      - name: every declared face comes back out of every fixture
+        # The gate that was missing. Arial and Arial Black were declared,
+        # embedded, and silently dropped by an over-strict size match for as
+        # long as the extractor existed, and the inference drawn from that -
+        # "they must be system faces" - reached this file, the README and the
+        # render path.
+        run: python tests/test_fonts.py
+
+  fidelity:
+    # The render harness, against GUI Designer's own snapshot exports. Runs here
+    # only because every face is recoverable from the tracked fixtures; see the
+    # note at the top of this file before assuming it can be simplified.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: install Pillow
+        run: pip install -r requirements.txt
+
+      - name: recover the embedded faces
+        # All six fixtures: no single one embeds every face.
+        run: |
+          for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
+          ls -1 gdl/fonts/
+
+      - name: score the render against ground truth
+        run: |
+          python tests/score.py record \
+            fixtures/gdl/Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl \
+            fixtures/snapshots/Individual -o /tmp/after.json
+
+      - name: no page may regress against the shipped baseline
+        run: python tests/score.py diff tests/baseline.json /tmp/after.json

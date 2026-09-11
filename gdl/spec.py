@@ -20,7 +20,7 @@ emitted here as data:
     applies. That applier is UNVERIFIED; see docs/from-scratch.md.
 
 That works because an authored control carries `TLPImageID = -1` - Build has not
-rasterised it yet - and the compositor already knows how to draw those from
+rasterized it yet - and the compositor already knows how to draw those from
 their `borderFillColor` plus a named border resource. A spec is exactly a
 description of those properties.
 
@@ -31,17 +31,21 @@ description of those properties.
 What it cannot do is prove GUI Designer will accept the result. Nothing here
 touches a real `.gdl`; see docs/from-scratch.md for what still needs a human.
 """
+import collections
 import json
 import re
 import sys
 
 # AlignmentEnum = 3*vertical + horizontal; vertical 0 bottom / 1 middle / 2 top,
-# horizontal 0 centre / 1 left / 2 right. Same convention gdl/compose.py decodes.
+# horizontal 0 center / 1 left / 2 right. Same convention gdl/compose.py decodes.
 ALIGN = {
     'top-left': 7, 'top': 6, 'top-right': 8,
-    'left': 4, 'center': 3, 'centre': 3, 'right': 5,
+    'left': 4, 'center': 3, 'right': 5,
     'bottom-left': 1, 'bottom': 0, 'bottom-right': 2,
 }
+# Accepted on input, not produced: a spec written in British English should not
+# fail over one letter.
+ALIGN['centre'] = ALIGN['center']
 
 # The border resources every fixture already carries. A generator that only
 # *references* these needs no new resource appended to the project, which is the
@@ -186,7 +190,7 @@ def part_number(model):
 MM_TOUCH_TARGET = 9.0
 MM_SPACING = 2.0
 MAX_BUTTONS_PER_GROUP = 9        # p.58
-MAX_COLOURS_PER_PROJECT = 6      # p.49
+MAX_COLORS_PER_PROJECT = 6      # p.49
 MIN_BODY_POINT_SIZE = 14         # pp.65-67
 
 
@@ -223,7 +227,7 @@ PANELS = _panels()
 MM_TOUCH_TARGET = 9.0
 MM_SPACING = 2.0
 MAX_BUTTONS_PER_GROUP = 9        # p.58
-MAX_COLOURS_PER_PROJECT = 6      # p.49
+MAX_COLORS_PER_PROJECT = 6      # p.49
 MIN_BODY_POINT_SIZE = 14         # pp.65-67
 
 
@@ -298,7 +302,7 @@ def _argb(c):
 HEX = re.compile(r'^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
 
 
-def colour(v, theme=None):
+def color(v, theme=None):
     """'#RRGGBB', '#AARRGGBB' or a theme key -> the ARGB dict layout.json uses."""
     if v is None:
         return None
@@ -308,7 +312,7 @@ def colour(v, theme=None):
         v = theme[v]
     m = HEX.match(str(v))
     if not m:
-        raise ValueError(f'not a colour or theme key: {v!r}')
+        raise ValueError(f'not a color or theme key: {v!r}')
     h = m.group(1)
     if len(h) == 6:
         h = 'FF' + h
@@ -373,7 +377,11 @@ class Panel:
 
     @classmethod
     def load(cls, path):
-        with open(path) as fh:
+        # JSON is UTF-8 by definition (RFC 8259). Without this Python uses the
+        # locale encoding, which on Windows is cp1252 - so an en-dash, a degree
+        # sign or an accented room name in a spec comes through as mojibake and
+        # gets rasterized into the panel. Silent, and invisible off Windows.
+        with open(path, encoding='utf-8') as fh:
             return cls(json.load(fh))
 
     # -- layout ------------------------------------------------------------
@@ -476,7 +484,7 @@ class Panel:
                 # choice. Recorded for the check, not authored.
                 'size': pu.get('size'),
                 'modal': bool(pu.get('modal')),
-                'background': colour(pu.get('background') or self.theme.get('background')
+                'background': color(pu.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
                 'controls': controls,
                 'group_sizes': dict(self._groups),
@@ -493,7 +501,7 @@ class Panel:
                 'number': page_no,
                 'name': pg.get('name') or f'Page {page_no}',
                 'modal': bool(pg.get('modal')),
-                'background': colour(pg.get('background') or self.theme.get('background')
+                'background': color(pg.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
                 'controls': controls,
                 'group_sizes': dict(self._groups),
@@ -504,7 +512,7 @@ class Panel:
         """The layout.json-shaped model gdl/compose.py renders, plus its fills.
 
         Every control is emitted with TLPImageID = -1, exactly as an authored
-        one is before Build rasterises it - so the preview is drawing the same
+        one is before Build rasterizes it - so the preview is drawing the same
         thing GUI Designer would be asked to build.
         """
         pages, fills = [], {}
@@ -513,7 +521,7 @@ class Panel:
             for c in pg['controls']:
                 kind = KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
                 rect = [int(v) for v in c['rect']]
-                fill = colour(c.get('fill'), self.theme)
+                fill = color(c.get('fill'), self.theme)
                 border = c.get('border')
                 if border in BORDERS:
                     border = BORDERS[border]
@@ -534,7 +542,7 @@ class Panel:
                     'Left': rect[0], 'Top': rect[1], 'Width': rect[2], 'Height': rect[3],
                     'TLPImageID': -1,
                     'Text': c.get('text') or '',
-                    'TextColor': colour(c.get('color') or self.theme.get('text')
+                    'TextColor': color(c.get('color') or self.theme.get('text')
                                         or '#FFFFFF', self.theme),
                     'TextAlignment': ALIGN.get(c.get('align', 'center'), 3),
                     'Font': {'Name': font,
@@ -549,7 +557,7 @@ class Panel:
                     # control id), the pair both models share.
                     fills[(pg['number'], out['ID'])] = {
                         'fill': fill,
-                        'stroke': colour(c.get('stroke'), self.theme),
+                        'stroke': color(c.get('stroke'), self.theme),
                         'border': {'resource': border, 'radius': radius,
                                    'thickness': thickness},
                     }
@@ -571,7 +579,7 @@ class Panel:
 
         Deliberately *data*, not code. Writing the authoring model needs 32-bit
         Windows PowerShell and GUI Designer, which cannot be tested here - so
-        the split is: Python decides everything (layout, ids, colours, which
+        the split is: Python decides everything (layout, ids, colors, which
         donor object to clone, popup grouping), and
         `powershell/Apply-GdlPlan.ps1` does nothing but apply the ops.
 
@@ -641,9 +649,9 @@ class Panel:
         out += self._popup_rules()
         out += self._name_rules()
         n = len(self.palette())
-        if n > MAX_COLOURS_PER_PROJECT:
-            out.append(f'project uses {n} distinct colours, above the '
-                       f'{MAX_COLOURS_PER_PROJECT}-colour maximum '
+        if n > MAX_COLORS_PER_PROJECT:
+            out.append(f'project uses {n} distinct colors, above the '
+                       f'{MAX_COLORS_PER_PROJECT}-color maximum '
                        f'(GUI Design Standards p.49)')
         return out
 
@@ -699,6 +707,54 @@ class Panel:
                                    f'below the {spacing}px minimum (2mm, p.56)')
         return out
 
+    def _states_for(self, c, kind, fill, stroke, text_color, border):
+        """The Off/On appearance pair a button needs to be worth pressing.
+
+        A button that looks the same in both states is inert: the control system
+        sets it On and nothing on the panel changes. Every generated button used
+        to be exactly that, because the applier wrote one appearance to every
+        state of the cloned donor.
+
+        `Off`/`On` is not a guess. A PBState carries a `nameField`, and across
+        Extron's own six theme templates plus the Liberty Bank project that name
+        pair covers 3475 of 3668 buttons (94.7%); 60% of those buttons give the
+        two states different fills and 68% different artwork. The remaining
+        idioms are domain-specific and multi-state - ('Muted', 'Level 1',
+        'Level 2', 'Level 3'), ('Disconnected', 'Connected') - and are left to
+        `gdl.edit` on a real project rather than invented here.
+
+        There is a separate `<TLPPressFeedbackStateID>` mechanism for momentary
+        press feedback. It is -1 on 7320 of the 7392 states in that corpus, so
+        it is not the idiom and this does not emit it.
+        """
+        if kind != 'button':
+            return None
+        on = c.get('on', self.theme.get('on'))
+        if not on:
+            return None
+        if on is True:                      # "give it feedback, you pick"
+            on = {'fill': 'accent'} if self.theme.get('accent') else None
+            if not on:
+                return None
+        if not isinstance(on, dict):
+            # A bare color is the common case: "on": "accent".
+            on = {'fill': on}
+        return [
+            {'name': 'Off', 'fill': _argb(fill), 'stroke': _argb(stroke),
+             'text_color': _argb(text_color), 'border': border},
+            {'name': 'On',
+             # Anything the On state does not name keeps the Off appearance, so
+             # `"on": "accent"` changes the fill and nothing else.
+             'fill': _argb(color(on['fill'], self.theme)) if 'fill' in on else _argb(fill),
+             'stroke': (_argb(color(on['stroke'], self.theme))
+                        if 'stroke' in on else _argb(stroke)),
+             'text_color': (_argb(color(on.get('color') or on.get('text_color'),
+                                        self.theme))
+                            if ('color' in on or 'text_color' in on)
+                            else _argb(text_color)),
+             'border': BORDERS.get(on.get('border'), on.get('border')) or border},
+        ]
+
     def _op_for(self, c, index):
         """One clone-control op, from a SPEC control (not a layout-model one).
 
@@ -709,7 +765,10 @@ class Panel:
         kind = c.get('kind', 'panel')
         cls = KIND_TYPE.get(kind, 'PBShape')
         rect = [int(v) for v in c['rect']]
-        fill = colour(c.get('fill'), self.theme)
+        fill = color(c.get('fill'), self.theme)
+        stroke = color(c.get('stroke'), self.theme)
+        text_color = color(c.get('color') or self.theme.get('text') or '#FFFFFF',
+                           self.theme)
         border = c.get('border')
         border = BORDERS.get(border, border)
         if border is None and fill is not None:
@@ -728,10 +787,13 @@ class Panel:
                 **(_type_fields(kind, c) or {}),
             },
             'fill': _argb(fill),
-            'stroke': _argb(colour(c.get('stroke'), self.theme)),
+            'stroke': _argb(stroke),
             'border': border,
-            'text_color': _argb(colour(c.get('color') or self.theme.get('text')
-                                       or '#FFFFFF', self.theme)),
+            'text_color': _argb(text_color),
+            # Per-state appearance, when the button asked for one. The applier
+            # falls back to the flat values above for every state when this is
+            # absent, which is what a control with no feedback wants.
+            'states': self._states_for(c, kind, fill, stroke, text_color, border),
             'alignment': ALIGN.get(c.get('align', 'center'), 3),
             'font': {'name': c.get('font') or self.theme.get('font') or 'Arial',
                      'size': c.get('size') or self.theme.get('size') or 14,
@@ -853,33 +915,149 @@ class Panel:
         """
         from .project import Project
         proj = Project.open(path)
+        out = []
+
+        # A donor must be a PROJECT, not a page library. Extron's .glt templates
+        # have no PBProject - they are pages, popups and resources with no
+        # project wrapper - and everything downstream still appears to work: the
+        # types all resolve, the applier writes 16 of 16 ops, the pack succeeds.
+        # GUI Designer then silently declines to open the result and offers the
+        # Project Create Wizard instead, which reads as "it hung" rather than as
+        # a rejection. Caught here it costs a second instead of a build cycle.
+        if next(proj.instances('PBProject'), None) is None:
+            out.append(
+                f'{path} has no PBProject, so it is a page library rather than a '
+                f'project. GUI Designer will not open a file built from it - it '
+                f'opens empty and shows the Project Create Wizard. Use a real '
+                f'.gdl as the donor; to author from Extron content with no client '
+                f'material in it, make a seed project first (File > New, pick the '
+                f'panel and theme, save) and use that.')
+
         have, names = set(), set()
         for pg in proj.pages():
             names.add(pg['name'])
             for c in pg['controls']:
                 have.add(c['type'])
-        out = [f'donor {path} has no {t} to clone - that control type cannot '
-               f'be authored from it' for t in sorted(self.needs() - have)]
+        out += [f'donor {path} has no {t} to clone - that control type cannot '
+                f'be authored from it' for t in sorted(self.needs() - have)]
+
+        # Border resources, for the same clone-never-construct reason and with a
+        # much wider spread than control types. Missed here it costs a whole
+        # Windows round trip: Set-GdlBorder reports it per control at apply time,
+        # by which point the plan has already been applied and packed.
+        # DEFINED, not referenced. border_resources() walks the references, so a
+        # donor that defines 2D Capsule but never draws with it would look like
+        # it lacked one - which is the false positive this check first produced,
+        # against a spec that had already built cleanly.
+        borders = proj.border_resource_names()
+        for want in sorted(self.needs_borders() - borders):
+            out.append(f'border resource {want!r} is not defined in {path} - a '
+                       f'spec may only name resources the donor already carries. '
+                       f'It defines: {", ".join(sorted(borders))}')
+
+        # Fonts, for the same reason but a softer failure: a family the donor
+        # lacks does not stop the build, it silently ships in the donor's face.
+        # The three-page panel built cleanly in Open Sans while its spec asked
+        # for Forma DJR Display, and only the built-file verifier noticed.
+        fonts = proj.font_resource_names()
+        for want in sorted(self.needs_fonts() - fonts):
+            out.append(f'font family {want!r} has no resource in {path}, so every '
+                       f'control asking for it will build in the donor\'s face '
+                       f'instead. It defines: {", ".join(sorted(fonts))}')
+
+        # Canvas. The spec lays out against its own `size`, but the built panel
+        # is whatever model the DONOR is - the spec's `model` only feeds the
+        # touch-target check. Author 1024x600 into a 1280x800 project and the
+        # layout is right by its own arithmetic and wrong on the panel.
+        canvas = collections.Counter(
+            tuple(pg['size']) for pg in proj.pages()
+            if pg.get('kind') != 'popup' and pg.get('size'))
+        if canvas:
+            donor_size, _ = canvas.most_common(1)[0]
+            if tuple(self.size) != donor_size:
+                out.append(
+                    f'spec canvas {tuple(self.size)} does not match the donor\'s '
+                    f'{donor_size}. The built panel is the donor\'s model, so the '
+                    f'layout would be sized for a panel this is not. Match the '
+                    f'spec to the donor, or retarget the donor first '
+                    f'(python -m gdl.edit).')
+        # Feedback states. The applier can only write states the donor's button
+        # already has - a new PBState would have to be constructed, which is the
+        # thing this pipeline exists to avoid - so a donor whose buttons carry a
+        # single state cannot express Off/On at all. It fails quietly: the
+        # button builds, looks right, and never changes when the control system
+        # sets it On.
+        if self.needs_states() > 1:
+            best = 0
+            for pg in proj.pages():
+                for c in pg['controls']:
+                    if c['type'] == 'PBButton':
+                        best = max(best, c.get('n_states') or 0)
+            if best and best < self.needs_states():
+                out.append(
+                    f'this spec asks for {self.needs_states()} button states but the best '
+                    f'donor button in {path} has {best}. The extra states cannot be '
+                    f'created, so those buttons would build with no feedback - they '
+                    f'would look identical whether the control system set them On or '
+                    f'Off. Pick a donor whose buttons have Off/On states.')
+
         for it in list(self.pages) + list(self.popups):
             if it['name'] in names:
                 out.append(f"{it['name']!r} already exists in the donor project - page and "
                            f'popup names must be unique, and Build rejects duplicates')
         return out
 
+    def needs_states(self):
+        """The most button states any control in this spec asks for."""
+        n = 1
+        for pg in self.pages + self.popups:
+            for c in pg['controls']:
+                if c.get('kind') == 'button' and (c.get('on') or self.theme.get('on')):
+                    n = max(n, 2)
+        return n
+
     def needs(self):
         """Every control class this spec requires a donor for."""
         return {KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
                 for pg in self.pages for c in pg['controls']}
 
+    def needs_borders(self):
+        """Every named border RESOURCE this spec references, already resolved.
+
+        A spec may only point at a resource the donor already carries - creating
+        one has never been tested against GUI Designer - so which donor you use
+        decides which borders are available. That varies far more than it looks:
+        the client fixture carries 32 and a fresh themed project carries 6.
+        `2D Capsule` is in the first and not the second.
+        """
+        out = set()
+        for pg in self.pages + self.popups:
+            for c in pg['controls']:
+                b = c.get('border')
+                if b:
+                    out.add(BORDERS.get(b, b))
+        return out
+
+    def needs_fonts(self):
+        """Every font family this spec asks for, theme default included."""
+        out = set()
+        default = self.theme.get('font')
+        for pg in self.pages + self.popups:
+            for c in pg['controls']:
+                f = c.get('font') or default
+                if f:
+                    out.add(f)
+        return out
+
 
     def palette(self):
-        """Every distinct colour the spec uses. p.49 caps a project at six."""
+        """Every distinct color the spec uses. p.49 caps a project at six."""
         seen = set()
         for pg in self.pages:
             seen.add(tuple(sorted((pg['background'] or {}).items())))
             for c in pg['controls']:
                 for key in ('fill', 'stroke', 'color'):
-                    v = colour(c.get(key), self.theme)
+                    v = color(c.get(key), self.theme)
                     if v:
                         seen.add(tuple(sorted(v.items())))
         return {s for s in seen if s}
@@ -916,7 +1094,7 @@ def main(argv):
                 print('  ' + p)
             return 1
         plan = panel.plan()
-        with open(argv[3], 'w') as fh:
+        with open(argv[3], 'w', encoding='utf-8') as fh:
             json.dump(plan, fh, indent=1)
         print(f'{len(plan["pages"])} page(s), '
               f'{sum(len(p["controls"]) for p in plan["pages"])} control ops -> {argv[3]}')

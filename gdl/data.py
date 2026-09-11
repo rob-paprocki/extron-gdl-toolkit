@@ -26,7 +26,7 @@ import sys
 import zipfile
 
 SIGS = (b'KP\x03\x04', b'KP\x01\x02', b'KP\x05\x06', b'KP\x07\x08')
-PT_TO_PX = 1.375  # the panel rasterises at 99 DPI, not the usual 96
+PT_TO_PX = 1.375  # the panel rasterizes at 99 DPI, not the usual 96
 NO_POPUP = 0xFFFFFFFFFFFFFFFF
 STALE_ID = re.compile(r'_ID(\d+)$')
 
@@ -131,7 +131,7 @@ def control(c, assets):
 
     states = c.get('States') or []
     # A button's own TLPImageID/Text/Font mirror States[0], but its TextColor is
-    # null on two thirds of buttons — the real colour only lives on the state.
+    # null on two thirds of buttons — the real color only lives on the state.
     default = states[c['TLPDefaultStateID']] if states and c.get('TLPDefaultStateID', 0) < len(states) else None
     src = default or c
 
@@ -145,7 +145,7 @@ def control(c, assets):
     if isinstance(base, int) and base in assets:
         out['i'] = base
 
-    # FlattenText means the caption is already rasterised into the artwork.
+    # FlattenText means the caption is already rasterized into the artwork.
     if c.get('FlattenText'):
         out['ft'] = 1
     txt = '' if c.get('FlattenText') else (src.get('Text') or c.get('Text') or '')

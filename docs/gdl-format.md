@@ -28,7 +28,7 @@ rebuilds it.
 
 Measured by diffing a project before and after a build:
 
-1. **Rasterises** every control and every button state to a PNG sized to the
+1. **Rasterizes** every control and every button state to a PNG sized to the
    control's exact rect, and writes them as `N.png`.
 2. **Deduplicates by appearance.** One asset backs many controls (a single
    asset served 24 controls in the test project). **Text is not part of the
@@ -71,7 +71,7 @@ Preload every DLL plus `GUI Designer.exe` from
 from an `AssemblyResolve` handler. Calling `LoadFrom` *inside* the handler
 recurses until the stack overflows.
 
-**Corrected 2026-09-07, measured against 1.27.0.9.** Re-serialising an
+**Corrected 2026-09-07, measured against 1.27.0.9.** Re-serializing an
 untouched project is **not** byte-identical to the original: it differs by
 **5,900 bytes** on the `_alt` fixture. But it is *stable* from the first pass
 onward - pass1 vs pass2 and pass2 vs pass3 are both **zero** differing bytes.
@@ -172,21 +172,33 @@ A generator should assert all four agree rather than trusting the writes.
   because a clone keeps the **donor's** `widthField`/`heightField`: author the
   popup's own size before adding controls to it.
 - **Build adds one full-canvas `PBPopupPageReference` per modal popup to every
-  page.** A generated page therefore comes back with more controls than were
-  authored — six more, with this donor's six modal popups. Not contamination
-  from the clone; the donor's own pages all carry the same six.
+  page — the Offline Page included only when `EnableOfflinePage` is on.** A
+  generated page therefore comes back with more controls than were authored —
+  six more with this donor, which has seven modal popups, one of them an
+  Offline Page that is switched off. Not contamination from the clone; the
+  donor's own pages all carry the same six. Measured on 2026-09-11 across all 20
+  built projects in the corpus (`tests/audit_corpus.py`): 19 have the offline
+  page off and carry one reference fewer than they have modal popups; the
+  Turbulence seed has it on and references its Offline Page too. Earlier text
+  said "one per modal popup", which is off by one on 19 of the 20.
 - **Retargeting a project needs Extron's factory, not a constructor.**
   `[Activator]::CreateInstance` on a platform class gets the resolution right
   and leaves `partNumberField` null, and GUI Designer then titles the project
   `Unknown: file.gdl` however correct `platformField`, `platformTypeField` and
   `screenSizeField` are - it identifies a panel by **part number**. Use
   `PBTouchPanelPlatformPro.CreatePlatform(PBProject, PlatformProTypeEnum)`.
-- **A popup's authored size is the whole canvas.** `widthField`/`heightField`
-  on a `PBPopupPage` are 1280x800 even where `layout.json` reports the popup as
-  915x800 - that smaller figure is the DISPLAYED size, taken from the reference
-  that shows it (Standards p.70). So a retarget must resize `PopupPages` as well
-  as `Pages`; resizing only `Pages` left every scaled popup control overflowing
-  the old canvas and Build moved all 297 of them to 0,0.
+- **A popup's authored size is its real size** — and a retarget must resize
+  `PopupPages` as well as `Pages`. Resizing only `Pages` left every scaled popup
+  control overflowing the old canvas and Build moved all 297 of them to 0,0.
+  ~~A popup's authored size is always the whole canvas, and `layout.json`'s
+  smaller figure is the DISPLAYED size taken from the reference that shows
+  it.~~ That was inferred from the Liberty Bank project, where every popup
+  happens to be authored full-canvas, and it is **wrong**: 10 of the 29 popups
+  in Extron's own Afterburn template are authored at 880x525 and the **built**
+  `layout.json` reports 880x525 for them — all 29 built popup sizes match the
+  authored canvas exactly. So resize each popup by the same factor as its own
+  contents; forcing it to the screen size turns a modal card into a full-screen
+  page in the shipped file.
 - **A caption lives in one of three places** and a control that uses one leaves
   the others empty: the control's `textField`, the first state's `textField`
   (where a button's normally is), or the first state's `ftextField` - GUI
@@ -200,6 +212,28 @@ A generator should assert all four agree rather than trusting the writes.
 - `statesField` is a `PBStates` **wrapper**, not the list. The `List<PBState>`
   hangs off its `mItems`. Reading `statesField` as a list yields nothing and
   looks like a control with no states.
+- **`PBStates.Count` is not the number of states.** It is a logical count and
+  reports **1** for an ordinary two-state Off/On button. The indexer is fine —
+  `$sts[0]` and `$sts[1]` both return a `PBState` — so `for ($i = 0; $i -lt
+  $states.Count; $i++)` visits state 0 and stops, and every "write to every
+  state" loop in both appliers did exactly that. Use `mItems`, via
+  `Get-GdlStates`. This one is invisible from the outside: `TLPDefaultStateID`
+  is 0, so a button whose state 1 was never written renders correctly, verifies
+  correctly, and only misbehaves once a control system switches it On.
+- **A button renders from its state, and its states are what make it useful.**
+  `nameField` on a `PBState` gives the state its name, and `('Off', 'On')`
+  covers **3475 of 3668** buttons (94.7%) across Extron's six theme templates
+  plus the Liberty Bank project. 60% of those give the two states different
+  fills and 68% different artwork — Build assigns each state its own
+  `TLPImageID` and rasterizes them separately. A button whose states are
+  identical is inert: the control system sets it On and nothing changes.
+  The remaining idioms are multi-state and domain-specific: `('Muted',
+  'Level 1', 'Level 2', 'Level 3')`, `('Disconnected', 'Connected')`,
+  `('Unavailable', 'Ready', 'Connected')`.
+- **Momentary press feedback is a separate mechanism, and barely used.**
+  `<TLPPressFeedbackStateID>` points at a state to show while pressed; it is
+  `-1` on 7320 of the 7392 states in that corpus. Off/On driven by the control
+  system is the idiom, not press-and-release.
 - A clean build proves the file is **acceptable**, not that it is **correct**.
   Two separate traps (`flattenText`, and the relocation above) produce a file
   that opens, builds and is wrong. Finish with `tests/verify_built.py`, which

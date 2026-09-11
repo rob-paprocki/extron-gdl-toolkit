@@ -6,7 +6,7 @@ import compose
 from compose import load, diff_stats, rgba, paste, render_control
 from PIL import Image, ImageDraw
 
-SKIN_SURFACE = (36,38,52,255)   # Afterburn "6400x4000_bg1" page colour, ARGB FF242634
+SKIN_SURFACE = (36,38,52,255)   # Afterburn "6400x4000_bg1" page color, ARGB FF242634
 SKIN_RADIUS  = 10               # skin resource "Afterburn - 10 Radius 0 Thick"
 SCRIM_ALPHA  = 165              # 65% - matches the 166 baked into asset 36
 

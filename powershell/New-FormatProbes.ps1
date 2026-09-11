@@ -95,7 +95,7 @@ $n2 = Save-GdlProject $p2 (Join-Path $Work 'testB_ProjectGCP')
 Report "B: saved testB_ProjectGCP ($n2 bytes)"
 
 # ---------------------------------------------------------------- test C ----
-# Q4: does Copy-GdlObject work ACROSS two separately deserialised graphs?
+# Q4: does Copy-GdlObject work ACROSS two separately deserialized graphs?
 # Decides whether a shared component library is possible at all.
 $src = Open-GdlProject (Join-Path $Work 'ProjectGCP')
 $dst = Open-GdlProject (Join-Path $Work 'ProjectGCP')
@@ -107,7 +107,7 @@ try {
     $ctrls = Get-GdlField $dstPage 'controlsField'
     $ctrls.Add($clone)
     $n3 = Save-GdlProject $dst (Join-Path $Work 'testC_ProjectGCP')
-    Report "C: cross-graph clone added and saved ($n3 bytes) - serialisation accepted it"
+    Report "C: cross-graph clone added and saved ($n3 bytes) - serialization accepted it"
 } catch {
     Report "C: cross-graph clone FAILED: $($_.Exception.Message)"
 }

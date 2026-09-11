@@ -11,8 +11,8 @@ kept in ProjectGCP still has them, and they are what an authoring tool sets:
                       giving shape type, corner radius and thickness
     backgroundImage / buttonImage   named image resources
 
-Build rasterises those into `N.png` and assigns TLPImageID. So a generator
-never produces artwork — it names resources and sets colours, exactly as a
+Build rasterizes those into `N.png` and assigns TLPImageID. So a generator
+never produces artwork — it names resources and sets colors, exactly as a
 designer does in the UI.
 
 This module is read-only and pure Python: it does not need GUI Designer
@@ -165,6 +165,12 @@ class Project:
             'fill': self.color(self.field(obj, 'borderFillColorField')),
             'stroke': self.color(self.field(obj, 'borderColorField')),
             'border': self.border(obj),
+            # How many appearances this control can show. A button with one
+            # state cannot give feedback, and a plan can only fill states the
+            # donor already has - see Spec.check_donor. `states` is the whole
+            # picture; this is the number a donor check needs.
+            'n_states': len(self.states(obj)),
+            'state_names': [self.field(s, 'nameField') for s in self.states(obj)],
         }
 
     def controls(self, types=CONTROL_TYPES):
@@ -180,7 +186,7 @@ class Project:
 
     # -- the page tree -----------------------------------------------------
     def items(self, lst):
-        """Elements of a serialised List<T>.
+        """Elements of a serialized List<T>.
 
         `_items` is the backing array and is over-allocated - 32 slots holding
         4 pages - so it must be sliced to `_size`. Reading the whole array
@@ -238,7 +244,7 @@ class Project:
                 yield self._page(pg, kind)
 
     def fill_map(self):
-        """(page id, control id) -> the fill Build would have rasterised.
+        """(page id, control id) -> the fill Build would have rasterized.
 
         Only controls Build left without artwork, which are the only ones whose
         appearance layout.json cannot describe. Keyed on the ids both models
@@ -253,7 +259,13 @@ class Project:
         return out
 
     def border_resources(self):
-        """Every named border resource the project can draw with."""
+        """Every named border resource the project's controls actually USE.
+
+        This walks `PBResourceReferenceBorder` - the references - so it answers
+        "what does this design draw with", not "what may I draw with". The two
+        differ a lot: the Liberty Bank fixture references 7 and defines 34.
+        Use `border_resource_names()` before authoring against a donor.
+        """
         seen = {}
         for obj in self.instances('PBResourceReferenceBorder'):
             n = self.field(obj, 'resourceNameField')
@@ -261,6 +273,48 @@ class Project:
                 m = BORDER_NAME.search(n)
                 seen[n] = {'radius': int(m.group(1)), 'thickness': int(m.group(2))} if m else {}
         return seen
+
+    def border_resource_names(self):
+        """Every border resource the project DEFINES, whether drawn with or not.
+
+        The set a spec may reference, and the same one `Set-GdlBorder` checks
+        against `ResourceSet.Resources` on the Windows side. Reading the
+        `PBBorderResource` instances out of the graph gets it without a Windows
+        box, so an unavailable border is a one-second check here instead of a
+        per-control complaint after a plan has been applied and packed.
+
+        Every project carries the ~14 GUI Designer built-ins twice - once plain
+        and once `zGD - Default ...` - plus its theme's own. A fresh Afterburn
+        1220 defines 31, the Liberty Bank fixture 34.
+        """
+        return self._resource_names('PBBorderResource')
+
+    def font_resource_names(self):
+        """Every font FAMILY the project defines a resource for.
+
+        GUI Designer resolves a typeface through a named `PBFontResource`, and
+        the resource name carries a style suffix the spec would never write -
+        `Forma DJR Display Regular Bold Italic` for the family `Forma DJR
+        Display` - so the suffix is stripped here and matching is on the family.
+
+        A spec naming a family the donor has no resource for does not fail: the
+        applier leaves the donor's font and says so. That is the right call and
+        also easy to miss, since the panel then builds cleanly in the wrong face.
+        """
+        out = set()
+        for name in self._resource_names('PBFontResource'):
+            fam = re.sub(r'(\s+(Regular|Bold|Italic|Light|Black|Semibold|Medium|Thin))+$',
+                         '', name).strip()
+            out.add(fam or name)
+        return out
+
+    def _resource_names(self, cls):
+        out = set()
+        for obj in self.instances(cls):
+            n = self.field(obj, 'PBResource+nameField') or self.field(obj, 'nameField')
+            if n:
+                out.add(n)
+        return out
 
 
 if __name__ == '__main__':
@@ -271,9 +325,9 @@ if __name__ == '__main__':
     print(f'border resources ({len(res)}):')
     for n, geo in sorted(res.items()):
         print(f'   {n:<40} {geo}')
-    unrasterised = [c for c in p.controls() if c['tlp_image'] == -1 and c['fill']]
-    print(f'\ncontrols with no built artwork but a real fill ({len(unrasterised)}) '
+    unrasterized = [c for c in p.controls() if c['tlp_image'] == -1 and c['fill']]
+    print(f'\ncontrols with no built artwork but a real fill ({len(unrasterized)}) '
           f'- these are the ones layout.json cannot describe:')
-    for c in unrasterised:
+    for c in unrasterized:
         print(f"   {c['type']:<10} {str(c['name'])[:22]:<22} {c['rect']} "
               f"fill={c['fill']} border={c['border']}")

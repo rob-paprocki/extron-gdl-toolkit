@@ -4,7 +4,7 @@ Pillow will not give these. FreeType grid-fits every advance to a whole pixel,
 and it does so whatever you pass for mode or layout_engine - measured on
 Open Sans at 22px, every glyph comes back an integer and the string length is
 their integer sum. GDI+ lays text out with *fractional* advances, so our wrap
-points and our centred/right-aligned text drift from GUI Designer's by up to
+points and our centerd/right-aligned text drift from GUI Designer's by up to
 half a pixel per glyph, accumulating across a line.
 
 So read the advances ourselves: `hmtx` scaled by `head.unitsPerEm`, with `cmap`
@@ -47,7 +47,7 @@ class Advances:
         what Pillow reports: getmetrics() returns FreeType's scaled *and
         rounded* values. On Open Sans at 22px that is ascent 24 against a true
         23.51, and a line box of 31 against 29.96 - a whole pixel per line,
-        which a vertically centred block splits in half and a two-line block
+        which a vertically centerd block splits in half and a two-line block
         pays in full.
         """
         try:

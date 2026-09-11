@@ -1,0 +1,5 @@
+- [American spelling](american-spelling.md) — "color" not "colour", everywhere, code and prose.
+- [extron-gdl-toolkit goal](extron-gdl-toolkit-goal.md) — the real target is a prose→production-GUI skill, no human in GUI Designer.
+- [extron-gdl-toolkit runs native on Windows](extron-toolkit-windows-native.md) — the prlctl/Parallels apparatus is obsolete as of 2026-09-08.
+- [Windows box commit limit](extron-box-commit-limit.md) — 8 GB RAM + 500 MB pagefile; big workflows/batch parses kill the session.
+- [Scope: project, not machine](scope-project-not-machine.md) — "nothing unique on C:" means the project and its turnover, never a machine-wide backup.
