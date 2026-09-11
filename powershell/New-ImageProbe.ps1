@@ -7,11 +7,20 @@
 # this covers everything else.
 #
 # Uses an icon from Extron's own resource kit, which is the realistic workflow.
+#
+# The icon kit is copied into vendor/extron/ (see vendor/README.md); the install
+# path is the fallback. $Repo used to default to the Parallels \\Mac\Home share.
 param(
-    [string]$Repo = '\\Mac\Home\GitHub\rob-paprocki\extron-gdl-toolkit',
+    [string]$Repo = (Split-Path -Parent $PSScriptRoot),
     [string]$Work = 'C:\gdlwork',
-    [string]$Icon = 'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources\Afterburn\Icons'
+    [string]$Icon = ''
 )
+if (-not $Icon) {
+    $Icon = Join-Path $Repo 'vendor\extron\Resources\Afterburn\Icons'
+    if (-not (Test-Path $Icon)) {
+        $Icon = 'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources\Afterburn\Icons'
+    }
+}
 $ErrorActionPreference = 'Stop'
 . (Join-Path $Repo 'powershell\GdlProject.ps1')
 Initialize-Gdl | Out-Null

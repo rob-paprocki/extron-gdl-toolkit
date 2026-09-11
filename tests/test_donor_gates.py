@@ -110,11 +110,14 @@ class TestCanvas(unittest.TestCase):
         self.assertFalse([m for m in msgs if 'canvas' in m], msgs)
 
 
-class TestPageLibraryDonors(unittest.TestCase):
-    TEMPLATE = ('C:/Users/Public/Documents/Extron/GUI Designer Templates/'
-                'TouchLink Templates/Afterburn 1020 Series.glt')
+sys.path.insert(0, HERE)
+from _corpus import template, usable  # noqa: E402
 
-    @unittest.skipUnless(os.path.exists(TEMPLATE), 'GUI Designer templates not installed')
+
+class TestPageLibraryDonors(unittest.TestCase):
+    TEMPLATE = template('Afterburn 1020 Series.glt')
+
+    @unittest.skipUnless(usable(TEMPLATE), 'Extron templates not in vendor/ or installed')
     def test_a_glt_template_is_refused(self):
         msgs = Panel(spec()).check_donor(self.TEMPLATE)
         self.assertTrue(any('PBProject' in m for m in msgs), msgs)

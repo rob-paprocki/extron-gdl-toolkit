@@ -28,8 +28,8 @@ from gdl.container import open_gdl, pack, payload_name  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURE = os.path.join(HERE, '..', 'fixtures', 'gdl',
                        'Interface__alt_J26450039_Liberty_Bank_Boardroom_2_0_0.gdl')
-TEMPLATES = ('C:/Users/Public/Documents/Extron/GUI Designer Templates/'
-             'TouchLink Templates')
+sys.path.insert(0, HERE)
+from _corpus import TEMPLATES_DIR as TEMPLATES  # noqa: E402
 
 
 def write_bare(path, gcp=b'stand-in graph'):

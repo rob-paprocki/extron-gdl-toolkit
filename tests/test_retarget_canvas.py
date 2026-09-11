@@ -135,19 +135,24 @@ class TestOverflowIsCaughtOnPopups(unittest.TestCase):
                         'popup overflow went unreported - the blind spot is back')
 
 
-class TestExtronsOwnTemplateIfPresent(unittest.TestCase):
-    """Ground truth, skipped when the seeds are not installed.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _corpus import seed, usable  # noqa: E402
 
-    The seeds live outside the repo (they are Extron's, not ours) so this can
-    only run on a machine that has GUI Designer. It is the test that actually
-    proves the premise, so it is worth having even though CI skips it.
+
+class TestExtronsOwnTemplateIfPresent(unittest.TestCase):
+    """Ground truth, skipped when the seed is not available.
+
+    The seed is in the repo under seeds/, through Git LFS, so this runs on any
+    clone that has pulled LFS objects - no GUI Designer install needed. It is
+    the test that actually proves the premise.
     """
 
-    SEED = ('C:/Users/Public/Documents/Extron/GUI Designer/Afterburn 1035.gdl')
+    SEED = seed('Afterburn 1035.gdl')
 
     def setUp(self):
-        if not os.path.exists(self.SEED):
-            self.skipTest('Afterburn seed not installed')
+        if not usable(self.SEED):
+            self.skipTest(f'Afterburn seed not available at {self.SEED} '
+                          f'(run `git lfs pull`)')
 
     def test_authored_popup_sizes_are_not_all_full_canvas(self):
         proj = Project.open(self.SEED)

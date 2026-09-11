@@ -217,6 +217,6 @@
       ]
     }
   ],
-  "_seed": "Built against a seed made in GUI Designer with File > New Project (Afterburn All-inclusive 1220 theme, TLP Pro 835M). See docs/from-scratch.md section 5c - one seed per theme, then retarget.",
+  "_seed": "Built against seeds/Afterburn 835 (Project1).gdl - made in GUI Designer with File > New Project (Afterburn All-inclusive 1220 theme, TLP Pro 835M). See seeds/README.md and docs/from-scratch.md section 5c.",
   "_states_note": "theme.on gives every button an On appearance. Off/On is what 94.7% of the buttons in Extron's own templates use (3475 of 3668), and 60% of those change fill between the two."
 }
