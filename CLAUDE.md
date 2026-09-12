@@ -12,6 +12,9 @@ boundary.
 
 `SKILL.md` is the repeatable procedure for building or modifying a panel — the
 workflows, the verification gates, and the traps. Start there for panel work.
+`docs/history.md` holds retired setups and the record of which claims changed;
+nothing in it is needed to use the toolkit, so keep dated narrative there rather
+than in these instructions.
 `docs/from-scratch.md` covers generating one; `docs/editing.md` covers changing
 one that exists.
 
@@ -45,26 +48,26 @@ A 64-bit PowerShell will load 34 of 39 assemblies and then fail on
 
 ### Where to work
 
-Three platforms now reproduce `tests/baseline.json` **exactly** — mean 2.19%,
-median 1.65%, worst 7.68%, every page within 0.01%: macOS, a Claude Code Linux
-cloud container (2026-09-07), and the Windows box natively (2026-09-08).
+**Whether GUI Designer is installed is the only environment split that matters.**
+Everything that reads, renders, previews or plans runs on any OS with Python 3
+(plus Pillow for rendering), and reproduces `tests/baseline.json` exactly —
+mean 2.19%, median 1.65%, worst 7.68%, every page within 0.01%. Everything that
+*writes* or *builds* a `.gdl` needs Windows, 32-bit PowerShell 5.1 and an
+install of GUI Designer.
 
-**If you are on the Windows box, work there.** The premise that "the Windows box
-is the scarce resource", which justified batching plans into one trip, no longer
-holds — a session there runs the Python half and drives GUI Designer in the same
-place, so author → build → verify is one loop with nothing to carry.
+If GUI Designer is on the machine you are already working on, author, build and
+verify in one session — there is no reason to batch plans for a separate
+machine. If it is not, everything in the left column still runs, and the right
+column is what waits.
 
-Off Windows, everything except the PowerShell half still runs, and the table
-below says what waits for a Windows trip.
-
-| Runs in the cloud | Needs the Windows box |
+| Runs anywhere | Needs GUI Designer installed |
 |---|---|
-| `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` | `powershell/*.ps1`, all eight |
+| `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` | `powershell/*.ps1`, all eleven |
 | `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` | File > Save and Build |
 | `gdl.spec` check / render / plan / donors | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
-| `tests/test_spec.py` (72), `test_edit.py` (23), `test_fonts.py` (7) | |
-| `tests/verify_built.py`, once the built file is carried back | |
+| the whole `python -m pytest` suite — 157 tests | |
+| `tests/verify_built.py`, once the built file is available | |
 
 Setup is two commands:
 
@@ -162,20 +165,26 @@ in every field and obvious in the artwork.
 
 Scripted, not manual — `docs/from-scratch.md` §7 has the detail.
 
-**Run Claude Code on the Windows box and this is all local.** A session there is
-already interactive (`[Environment]::UserInteractive` is true, on session 1
-with a real desktop), so nothing needs a VM, a scheduled task or a remote exec:
+**It needs a real interactive desktop session, not a service context.**
+`[Environment]::UserInteractive` must be true and the session must have a
+desktop — anything that draws a form dies otherwise. A normal logged-in session
+on a machine with GUI Designer installed satisfies this, and needs no VM,
+scheduled task or remote exec.
 
 ```powershell
-Start-Process "C:\Program Files (x86)\Extron\GUI Designer\GUI Designer.exe" -ArgumentList '"C:\gdlwork\x.gdl"'
+Start-Process "$InstallDir\GUI Designer.exe" -ArgumentList '"<work>\x.gdl"'
 powershell\Invoke-GdlMenu.ps1 -Item 'Save and Build'   # no focus needed
-powershell\Wait-GdlBuild.ps1 -ProjectFile C:\gdlwork\x.gdl
+powershell\Wait-GdlBuild.ps1 -ProjectFile <work>\x.gdl
 ```
 
 `powershell\New-GdlPanel.ps1` does all of that and the verification for you.
-`System.Drawing`'s `CopyFromScreen` reads the screen back. Use `C:\gdlwork` for
-build scratch — the repo lives on a mounted drive and GUI Designer is slow
-against it. (What was in `C:\gdlwork` up to 2026-09-10 is in `archive/gdlwork/`.)
+`System.Drawing`'s `CopyFromScreen` reads the screen back.
+
+Both locations are parameters, not facts about a particular machine. `-InstallDir`
+defaults to `C:\Program Files (x86)\Extron\GUI Designer`; `-Work` defaults to a
+per-project directory under `C:\gdlwork`. Keep build scratch on a local disk:
+GUI Designer is slow against a network or mounted drive, which is the only
+reason the default is not inside the repo.
 
 Three gotchas:
 
@@ -200,15 +209,14 @@ Three gotchas:
   window is worse because it looks right: it appears seconds *after* the menu
   click and closes about five seconds *before* the file is written, so trusting
   it truncates the payload. The file's own mtime is the only real signal — wait
-  for it to change, then to stop changing. (Until 2026-09-11 this bullet named
-  the Build Manager window as the signal; the script was right, the doc stale.)
-
-If you are instead driving a Parallels guest from macOS, the old route still
-works: `prlctl exec "Windows 11" --current-user ...` (without `--current-user`
-it runs as `nt authority\system` with `UserInteractive = False` and anything
-that draws a form dies), the host is at `\\Mac\Home\...` since the `Z:` mapping
-is per-interactive-session and invisible to `prlctl exec`, and `prlctl capture`
-reads the screen.
+  for it to change, then to stop changing.
+- **Sample the baseline mtime *before* triggering the build, not after.**
+  `Invoke-GdlMenu.ps1` blocks on the build modal, so on a machine where the
+  build finishes before the call returns, a watcher started afterwards records
+  the *post-build* mtime as its baseline and then waits for a second write that
+  never comes — a successful build reported as a timeout. How the race falls
+  depends on machine speed, so both orderings occur in practice. Pass
+  `Wait-GdlBuild.ps1 -Since <mtime captured before the trigger>`.
 
 **`Project > Verify` (Ctrl+B) is not a build.** It says "Build Complete - 0
 errors" and produces no payload; saving after it drops the payload entirely.
@@ -227,21 +235,22 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
 
 ## Environment traps that cost time
 
-- **This box has 8 GB of RAM and a 500 MB pagefile, so its commit limit is
-  8.5 GB.** Six Claude Code processes held about 2 GB between them; each
-  workflow agent adds a process, and a Python process holding many parsed
-  projects at once adds more. Past the limit, processes die mid-task and new ones
-  fail with *The paging file is too small for this operation to complete* —
+- **Check the commit limit before any large fan-out.** It is physical RAM plus
+  the pagefile, so a machine with a small or fixed-size pagefile can be far
+  tighter than its RAM suggests. Claude Code processes hold 150-600 MB each,
+  every workflow agent adds one, and a Python process holding many parsed
+  projects at once adds more. Past the limit, processes die mid-task and new
+  ones fail with *The paging file is too small for this operation to complete* —
   which is what killed both runs of `workflows/gdl-bug-hunt.js` and the first
-  version of `tests/audit_corpus.py`. Stream over projects instead of loading
-  them all, keep workflows small, or let Windows manage the pagefile.
+  version of `tests/audit_corpus.py` on a host with an 8.5 GB limit. Stream over
+  projects instead of loading them all, keep workflows small, and let the OS
+  manage the pagefile.
 - **Do not write backslash escapes through a bash heredoc.** Backslash-v and
   backslash-a get interpreted before Python sees them, leaving literal 0x0B and
-  0x07 bytes in the file. This corrupted a documented command in README.md, and
-  then corrupted this very warning on the first attempt to write it — and it
-  had left three more in `docs/from-scratch.md` §7 until 2026-09-11. A doubled
-  backslash does not survive either: `'C:\\'` in a quoted heredoc arrived as
-  `'C:\'`. Use the Write/Edit tools for any content containing backslashes.
+  0x07 bytes in the file. A doubled backslash does not survive either: `'C:\\'`
+  in a quoted heredoc arrived as `'C:\'`. This has silently corrupted documented
+  commands in these very files more than once. Use the Write/Edit tools for any
+  content containing backslashes — which means essentially every Windows path.
 - `Save-GdlProject` prints a bare `The system cannot find the file specified.
   (Exception from HRESULT: 0x80070002)` on every save. It comes from inside an
   Extron assembly during serialization, the return value is intact, and it is
@@ -252,9 +261,9 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
   `-ExecutionPolicy Bypass` on a machine that has not set it.
 - `gdl/fonts/` must be extracted from **all six** fixtures — no single one
   embeds every face.
-- **Arial is embedded. Extract it; never substitute it.** This used to read the
-  other way, and the correction is worth knowing about because the wrong version
-  cost real time. `extract()` matched `layout.json`'s declared size against the
+- **Arial is embedded. Extract it; never substitute a system copy.** The reason
+  this is easy to get backwards, and did cost real time:
+  `extract()` matched `layout.json`'s declared size against the
   measured sfnt length *exactly*, and both Arial faces carry bytes past the far
   edge of their last table — 28 for Arial, 30 for Arial Black — so neither ever
   matched, and both were written off as system faces the format referenced
@@ -292,14 +301,14 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
 
 ## Where things live
 
-Everything this project had on the Windows box's `C:` drive was moved into the
-repo on 2026-09-10, so nothing about it lives only on one machine:
+Nothing this project depends on lives only on one machine — anything that was
+working state on a build host is in the repo:
 
 | Path | What | In git |
 |---|---|---|
 | `seeds/` | fourteen themed seed projects to author from — `seeds/README.md` | Git LFS |
-| `archive/` | raw working state from `C:\gdlwork`, the job scratch dir, the Desktop, and the Claude Code transcripts and memory — the evidence behind the commits | Git LFS |
-| `research/2026-09-10/` | the scripts behind that session's numbers | yes |
+| `archive/` | raw working state from the build scratch dir, the job scratch dir, the desktop, and the Claude Code transcripts and memory — the evidence behind the commits | Git LFS |
+| `research/<date>/` | the scripts behind that session's numbers | yes |
 | `workflows/gdl-bug-hunt.js` | the planned multi-agent bug hunt; never finished — see its README | yes |
 | `tests/audit_corpus.py` | re-tests documented beliefs against every project it can reach | yes |
 | `vendor/` | Extron's templates and icons | manifest only |

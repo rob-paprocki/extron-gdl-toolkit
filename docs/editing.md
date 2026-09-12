@@ -27,7 +27,7 @@ Python against the real `.gdl` on a Mac; PowerShell only applies ops.
     python tests/verify_built.py out/edits-plan.json <built.gdl>
 
 Selectors resolve against the actual project at `check` time, so a typo is an
-error on the Mac rather than a silent no-op discovered on the panel. Errors
+error up front rather than a silent no-op discovered on the panel. Errors
 block the plan; warnings never do — a retarget of a real project always
 surfaces dozens of pre-existing touch-target violations, and refusing on those
 would mean refusing the job.
