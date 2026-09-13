@@ -35,7 +35,7 @@ together.
 | `examples/` | worked spec, edit set and authoring script, all of which run |
 | `SKILL.md` | the repeatable procedure. Start here to build or modify a panel |
 | `docs/gdl-format.md` | the format writeup. Read this first |
-| `docs/from-scratch.md` | generating a panel from a spec, and what needs Windows |
+| `docs/from-scratch.md` | generating a panel from a spec, and driving GUI Designer from a script |
 | `docs/editing.md` | changing a panel that already exists |
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
@@ -49,21 +49,48 @@ together.
 | `docs/ROADMAP.md` | what is left, in order, and who has to do it |
 | `docs/history.md` | retired setups and corrections — why a claim changed. Not needed to use the toolkit |
 
+## Setup
+
+Verified with:
+
+| Install | Version | Needed for |
+|---|---|---|
+| Python | 3.11.9 | everything; reading, editing and plan generation are stdlib-only |
+| Pillow, pytest | 12.3.0, 9.1.1 | rendering and the test suite |
+| Git LFS | 3.7.1 | `seeds/` and `archive/` |
+| Extron GUI Designer | **1.27.0.9**, the tested boundary | writing and building a `.gdl` — `CLAUDE.md` *Environment* says what else that needs |
+
+Then, from the repo root:
+
+1. `git clone`, then `git lfs pull`. Without it `seeds/` holds LFS pointer
+   files, and the seed tests skip rather than fail.
+2. `pip install -r requirements.txt pytest`
+3. Extract the fonts from every fixture — no single one embeds every face:
+   `for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done`
+4. With GUI Designer installed, repopulate `vendor/`; `vendor/README.md` has
+   the commands.
+5. `python -m pytest`, then `python tests/audit_corpus.py`. Any FAIL the audit
+   reports should already be an open item in `docs/ROADMAP.md`.
+
+Three things trip a fresh Windows machine: cloning into a deep directory needs
+`git config --global core.longpaths true`; the PowerShell entry points need
+`-ExecutionPolicy Bypass` where no policy is set; and a small fixed pagefile
+caps the commit limit well below RAM, so let the OS manage it before running
+anything that fans out agents.
+
+Optionally, `archive/claude/memory/` holds Claude Code's accumulated context for
+this project. It belongs in the per-project memory directory, whose name Claude
+Code derives from the repo's path.
+
 ## Quick start
 
 Run these from the repo root. The package is not pip-installable, so
 `python -m gdl.*` needs the repo as the working directory.
 
-Only the rendering side needs a dependency: `pip install -r requirements.txt`
-(Pillow). Reading, editing and plan generation are stdlib-only, and none of
-them need Windows.
-
 Inspect a project:
 
 ```bash
 python -m gdl.container extract "fixtures/gdl/<file>.gdl" out/
-# no single fixture embeds every face - extract from all of them
-for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
 ```
 
 Build the HTML viewer for a set of projects:
@@ -98,7 +125,7 @@ python -m gdl.edit plan  examples/edits.json "fixtures/gdl/<file>.gdl" out/edits
 ```
 
 `check` resolves every selector against the real file, so a selector that
-matches nothing is an error here rather than a silent no-op on Windows.
+matches nothing is an error here rather than a silent no-op at apply time.
 
 ## Generating a panel from a spec
 
@@ -109,17 +136,17 @@ python -m gdl.spec donors  examples/panel.json "fixtures/gdl/<donor>.gdl"
 python -m gdl.spec plan    examples/panel.json out/plan.json
 ```
 
-Look at the preview before paying for a Windows round trip. The compositor is
-scored against GUI Designer's own output, so it is a real preview. `donors`
-catches the two failures that otherwise cost a trip to the VM: a control type
-the donor cannot supply, and a page or popup name the donor already uses.
+Look at the preview before building. The compositor is scored against GUI
+Designer's own output, so it is a real preview. `donors` finds in a second what
+would otherwise surface only in a build — a control type the donor cannot
+supply, a page or popup name it already uses, a border resource or font it
+lacks. `SKILL.md` has the full procedure, and where GUI Designer is installed
+`powershell\New-GdlPanel.ps1` runs all of it, build and verification included.
 
-## Applying a plan, which needs Windows
+## Applying a plan, which needs GUI Designer
 
-Editing the project graph needs 32-bit Windows PowerShell 5.1
-(`C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe`), because .NET
-Framework still has `BinaryFormatter` and Extron's assemblies are x86. A 64-bit
-host loads most of the assemblies and then fails on `GUI Designer.exe`.
+Editing the project graph needs 32-bit Windows PowerShell 5.1 and an install of
+GUI Designer; `CLAUDE.md` *Environment* says why.
 
 ```powershell
 . .\powershell\GdlProject.ps1
@@ -149,21 +176,11 @@ relocates controls that do not fit their page and bakes captions into artwork.
 `layout.json` against the plan and exits non-zero on any control that moved or
 lost its caption.
 
-## The three things that will bite you
+## Before writing to a project
 
-1. Clone, never construct. Constructors and property setters both need runtime
-   services that are null outside the app, and a failed setter writes the
-   backing field before it throws, so it looks like it worked.
-2. Popup bindings live in four places, and every mismatch fails silently: the
-   file opens and builds, the binding just reads "Unassigned".
-   `Test-GdlPopupBinding` checks all four.
-3. Build owns the artwork. Controls are authored with `TLPImageID = -1`, and
-   GUI Designer rasterizes, deduplicates and assigns on build, so never
-   hand-author PNGs. What you author instead is `borderFillColor` plus a named
-   border resource (`"Afterburn - 10 Radius 2 Thick"`). Neither survives into
-   `layout.json`, so read them from `ProjectGCP` via `gdl/project.py`.
-
-`docs/gdl-format.md` has the full detail.
+Read `docs/gdl-format.md` — at least §2 *What Build actually does*, §4 *Clone,
+never construct* and §6 *Popup bindings live in four places*. Getting any of
+them wrong fails silently: the file opens, builds, and is wrong.
 
 ## Status
 
@@ -177,40 +194,17 @@ panel went from `examples/panel.json` through the layout pass, ID allocation,
 with 0 errors and 0 warnings. `docs/generated-built.png` is that page rendered
 from its own built payload rather than from a preview.
 
-Known gaps — `docs/ROADMAP.md` has the full list, in order:
-
-- Nothing generated has been larger than three pages yet, against a 27-page
-  client project; icons are not in the spec vocabulary; buttons get Off/On
-  feedback but not multi-state (`Muted` / `Level 1..3`).
-- A retarget builds correctly but matches Extron's own hand-authored layout at
-  another size for only 22% of controls. Prefer a native-size seed.
-- The Pillow compositor sits at a 2.19% mean and 1.65% median pixel difference
-  across 27 pages, worst page 7.68%. What remains is a size-dependent vertical
-  text residual. It can be fitted away, but the fit is degenerate, so the cause
-  is still wanted. See `docs/render-fidelity.md`.
-- Every text finding is validated against one typeface, because the scored
-  fixture only ever draws Forma DJR Display.
-- `referenceCountField` on a popup group. The semantics are unknown, and a
-  plausible value causes no visible problem.
+The compositor is scored against GUI Designer's own snapshot exports:
+`tests/baseline.json` holds the current numbers, and `docs/render-fidelity.md`
+what the residual is. Known gaps, and everything left to do, are in
+`docs/ROADMAP.md`.
 
 ## Fonts
 
-The renderer resolves faces from `gdl/fonts/` before falling back to the system
-font path, so a project renders the same on a machine with nothing installed.
-Open Sans is tracked because it is Apache 2.0 and says so in its own name
-table. The other seven files are recovered from the fixtures with the command in
-Quick start above, and `gdl/fonts/README.md` records where each one stands.
-
-**Every face a project declares is embedded in it, Arial included** — genuine
-Monotype Arial 5.10 and Arial Black 5.06, in each of the six fixtures. So the
-harness needs no fonts installed on the host, and on a host that has Arial the
-embedded copy is still the better one: it is what GUI Designer rasterized the
-ground-truth snapshots with, where the system copy is whatever build the OS
-shipped.
-
-Missing faces fail loudly: `face()` raises `LookupError` rather than degrading
-to a wrong score. The exception is a host with Arial installed, where a missing
-embedded face silently resolves to the system Arial instead.
+The renderer resolves faces from `gdl/fonts/` before the system font path, and
+fails loudly on a face it cannot resolve. `gdl/fonts/README.md` has which faces
+are tracked and why, how the rest are recovered from the fixtures, and which
+projects declare faces they do not embed.
 
 ## Provenance
 

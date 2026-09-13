@@ -41,8 +41,8 @@ Measured by diffing a project before and after a build:
    these — the app manages them.
 6. Bumps `VersionInfo` (one increment per save/build), updates `RevisionDate`,
    sets `BuildStatus=Done`, and renames the payload member to the file name
-   lowercased with underscores. Confirmed 2026-09-07: building `testB.gdl`
-   produced a member named `testb.tgz4`.
+   lowercased with underscores — building `testB.gdl` produces a member named
+   `testb.tgz4`.
 
 **`Project > Verify` (Ctrl+B) is NOT this.** It validates and reports
 "Build Complete - 0 error(s), 0 warning(s)", which reads exactly like a build,
@@ -71,13 +71,12 @@ Preload every DLL plus `GUI Designer.exe` from
 from an `AssemblyResolve` handler. Calling `LoadFrom` *inside* the handler
 recurses until the stack overflows.
 
-**Corrected 2026-09-07, measured against 1.27.0.9.** Re-serializing an
-untouched project is **not** byte-identical to the original: it differs by
-**5,900 bytes** on the `_alt` fixture. But it is *stable* from the first pass
-onward - pass1 vs pass2 and pass2 vs pass3 are both **zero** differing bytes.
+Re-serializing an untouched project is **not** byte-identical to the original:
+it differs by **5,900 bytes** on the `_alt` fixture. But it is *stable* from the
+first pass onward - pass1 vs pass2 and pass2 vs pass3 are both **zero**
+differing bytes.
 
-The difference is not "lazily-built state" as previously supposed. It is
-**every `TLPImageID` being reset to -1**: 654 of 654 controls, where the
+The difference is **every `TLPImageID` being reset to -1**: 654 of 654 controls, where the
 original had 624 assigned and 30 unassigned. A save through the bridge
 therefore invalidates all artwork assignments and correctly flips
 `BuildStatus` to `Needed`. GUI Designer's own Save-and-Build restores exactly
@@ -174,13 +173,11 @@ A generator should assert all four agree rather than trusting the writes.
 - **Build adds one full-canvas `PBPopupPageReference` per modal popup to every
   page — the Offline Page included only when `EnableOfflinePage` is on.** A
   generated page therefore comes back with more controls than were authored —
-  six more with this donor, which has seven modal popups, one of them an
-  Offline Page that is switched off. Not contamination from the clone; the
-  donor's own pages all carry the same six. Measured on 2026-09-11 across all 20
-  built projects in the corpus (`tests/audit_corpus.py`): 19 have the offline
-  page off and carry one reference fewer than they have modal popups; the
-  Turbulence seed has it on and references its Offline Page too. Earlier text
-  said "one per modal popup", which is off by one on 19 of the 20.
+  six more with the Liberty Bank donor, which has seven modal popups, one of
+  them an Offline Page that is switched off. It is not contamination from the
+  clone; the donor's own pages carry the same six. `tests/audit_corpus.py`
+  checks the rule against every built project it can reach: the Turbulence seed
+  is the one with its Offline Page on, and it references that page too.
 - **Retargeting a project needs Extron's factory, not a constructor.**
   `[Activator]::CreateInstance` on a platform class gets the resolution right
   and leaves `partNumberField` null, and GUI Designer then titles the project
@@ -188,15 +185,12 @@ A generator should assert all four agree rather than trusting the writes.
   `screenSizeField` are - it identifies a panel by **part number**. Use
   `PBTouchPanelPlatformPro.CreatePlatform(PBProject, PlatformProTypeEnum)`.
 - **A popup's authored size is its real size** — and a retarget must resize
-  `PopupPages` as well as `Pages`. Resizing only `Pages` left every scaled popup
-  control overflowing the old canvas and Build moved all 297 of them to 0,0.
-  ~~A popup's authored size is always the whole canvas, and `layout.json`'s
-  smaller figure is the DISPLAYED size taken from the reference that shows
-  it.~~ That was inferred from the Liberty Bank project, where every popup
-  happens to be authored full-canvas, and it is **wrong**: 10 of the 29 popups
-  in Extron's own Afterburn template are authored at 880x525 and the **built**
-  `layout.json` reports 880x525 for them — all 29 built popup sizes match the
-  authored canvas exactly. So resize each popup by the same factor as its own
+  `PopupPages` as well as `Pages`. Resizing only `Pages` leaves every scaled
+  popup control overflowing the old canvas, and Build moves them all to 0,0 (297
+  on Liberty Bank). Don't infer popup size from Liberty Bank, where every popup
+  happens to be authored full-canvas: 10 of the 29 popups in Extron's own
+  Afterburn template are authored at 880x525, and the **built** `layout.json`
+  reports 880x525 for them. So resize each popup by the same factor as its own
   contents; forcing it to the screen size turns a modal card into a full-screen
   page in the shipped file.
 - **A caption lives in one of three places** and a control that uses one leaves
@@ -241,12 +235,28 @@ A generator should assert all four agree rather than trusting the writes.
 
 ## 8. Where the code is
 
-| Path | Purpose |
+`README.md` *What is here* maps every module and script.
+
+## 9. What the corpus audit checks
+
+`python tests/audit_corpus.py` re-tests the claims above against every project
+it can reach — the fixtures, the seeds and Extron's installed templates — and
+reports each as PASS, FAIL or INFO. Run it rather than trusting a written
+result; its last run, over 6 fixtures, 14 seeds and 44 templates:
+
+| Invariant | Result |
 |---|---|
-| `gdl/container.py` | unmangle `KP`↔`PK`, extract and repack a `.gdl` |
-| `gdl/data.py` | parse `layout.json` into a slim render model + base64 assets |
-| `gdl/fonts.py` | recover the embedded font binaries from `ProjectGCP` |
-| `gdl/compose.py` | reference compositor (Pillow), used to score render rules |
-| `powershell/GdlProject.ps1` | the authoring bridge: load, clone, field read/write, save |
-| `viewer/` | self-contained HTML panel browser |
-| `tests/compare_snapshots.py` | score the compositor against GUI Designer's own renders |
+| Button states are countable (the `PBStates.Count` trap) | PASS |
+| Off/On is the dominant state pair | PASS - 13,589 of 13,792 two-state buttons, 98.5% |
+| A popup's built size equals its authored size | PASS on all 20 built projects |
+| `TLPDefaultStateID` is 0 | PASS |
+| Page and popup names unique per project | PASS |
+| `userId` fits in UInt16 | PASS - highest 61,091 |
+| A button's caption lives on its state | PASS - state 88.6%, formatted state 11.4% |
+| One full-canvas popup reference per shown modal popup, per page | PASS on all 20 |
+| Every declared face is recoverable | **FAIL** - declared-but-not-embedded faces; see `gdl/fonts/README.md` and `docs/ROADMAP.md` |
+| Every canvas is a model the table can target | **FAIL** - 1920x720 and 480x320, plus 1920x1200 and 986x740 (the Teams Rooms and Zoom Rooms control templates, whose platforms the table does not list); see `docs/ROADMAP.md` |
+| Border resources shared across themes | INFO - none common to all 64 projects; Afterburn 17-32, Mach 13-15, Shockwave 13-14, Turbulence 13, Zoom Rooms 16-17 |
+| Controls Build leaves unrasterized | INFO - 2 to 187 per project; the baseline to compare a suspect build against |
+
+A FAIL is either an open item in `docs/ROADMAP.md` or a new finding.

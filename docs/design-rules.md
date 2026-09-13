@@ -31,11 +31,19 @@ authoritative list — and resolutions from the matching platform class.
 | 1280 × 800 | **TLC** Pro 1026M, TLP Pro 835C/M/T, TLP Pro 1025M/T, TLP Pro 1035M/T, TLP Pro 1220MG/TG, TLP Pro 1225MG/TG, ZRTP Pro 1025M/T |
 | 1366 × 768 | TLP Pro 1520MG/TG, TLP Pro 1525MG/TG |
 | 1920 × 1080 | TLI Pro 201, TLP Pro 1535M/T, TLP Pro 1720MG/TG, TLP Pro 1725MG/TG |
+| 1920 × 720 | TLP Pro 1230WTG — read from a built project, not from the probe |
 
-Resolution not determined by this probe: TLP Pro 520M, 720C/M/T, 1020M/T,
-1230WTG, TLI Pro 101 (the class-name match failed and was not guessed at). The
-three "Extron Control for Android / iOS / Web" entries are soft clients with no
-fixed panel class.
+Resolution not determined by the probe: TLP Pro 520M, 720C/M/T, 1020M/T and TLI
+Pro 101 (the class-name match failed and was not guessed at). The three "Extron
+Control for Android / iOS / Web" entries are soft clients with no fixed panel
+class.
+
+The table gives one orientation per model, but a platform that rotates supports
+both — the TLP Pro 300M builds at 320 × 480 and 480 × 320, the 1035M at
+1280 × 800 and 800 × 1280. Extron's Teams Rooms and Zoom Rooms control
+templates also use 1920 × 1200 and 986 × 740, on platforms this table does not
+list. A built project's `layout.json` (`Platform.SupportedResolutions`) is the
+ground truth.
 
 **TLC and TLP are different product lines** — TLC Pro 521M/526M/726M/1026M are
 not TLP panels. An earlier version of this table conflated them, because the

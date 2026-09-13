@@ -24,9 +24,9 @@ is the accumulated findings, and most of them were expensive to discover.
 rules, with what is documented kept strictly separate from what we extrapolated —
 never quote an extrapolated number to a client as an Extron requirement.
 
-**The canvas is not 1280x800.** GUI Designer supports eight resolutions across 63
-panel models; the fixtures are all one model. Assume nothing about panel geometry
-from them.
+**The canvas is not 1280x800.** Resolution and DPI are set by the panel model —
+`docs/design-rules.md` §1 — and the fixtures are all one model. Assume nothing
+about panel geometry from them.
 
 ## Environment
 
@@ -50,67 +50,42 @@ A 64-bit PowerShell will load 34 of 39 assemblies and then fail on
 
 **Whether GUI Designer is installed is the only environment split that matters.**
 Everything that reads, renders, previews or plans runs on any OS with Python 3
-(plus Pillow for rendering), and reproduces `tests/baseline.json` exactly —
-mean 2.19%, median 1.65%, worst 7.68%, every page within 0.01%. Everything that
-*writes* or *builds* a `.gdl` needs Windows, 32-bit PowerShell 5.1 and an
-install of GUI Designer.
-
-If GUI Designer is on the machine you are already working on, author, build and
-verify in one session — there is no reason to batch plans for a separate
-machine. If it is not, everything in the left column still runs, and the right
-column is what waits.
+(plus Pillow for rendering), and reproduces `tests/baseline.json` exactly.
+Everything that *writes* or *builds* a `.gdl` needs Windows, 32-bit PowerShell
+5.1 and an install of GUI Designer — and where GUI Designer is installed,
+author, build and verify in one session.
 
 | Runs anywhere | Needs GUI Designer installed |
 |---|---|
-| `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` | `powershell/*.ps1`, all eleven |
+| `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` | every `powershell/*.ps1` |
 | `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` | File > Save and Build |
 | `gdl.spec` check / render / plan / donors | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
-| the whole `python -m pytest` suite — 157 tests | |
-| `tests/verify_built.py`, once the built file is available | |
+| the `python -m pytest` suite | |
+| `tests/verify_built.py`, given the built file | |
 
-Setup is two commands:
-
-```bash
-pip install -r requirements.txt
-for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
-```
-
-Only two files need to cross the boundary: `out/plan.json` over, the built
-`.gdl` back. Nothing in the repo is blocked on Windows for *reading* a project,
-previewing a design, or scoring a render change.
-
-Before working here, note that `fixtures/` is real client material — see
-*Working on the fixtures* below. A cloud session clones it into a managed
-container, and anything pushed goes to GitHub.
+Setup is in `README.md` *Setup*. `fixtures/` is real client material — see
+*Working on the fixtures* below — and anything pushed goes to GitHub.
 
 ## Four things that will waste your time if you don't know them
 
-1. **Clone, never construct.** `PBPage(PBProject)` and friends throw
-   `NullReferenceException` outside the running app. So do the property
-   setters — and a failed setter **writes the backing field before it throws**,
-   so it looks like it worked. Always `Copy-GdlObject` an existing object and
-   `Set-GdlField` its backing fields.
+Each fails silently — the file opens, builds, and is wrong. The detail is in
+`docs/gdl-format.md`.
 
-2. **Popup bindings live in four places and every mismatch fails silently.**
-   The file opens, it builds, the binding just reads "Unassigned" in the UI.
-   Call `Test-GdlPopupBinding` rather than trusting your writes.
-
-3. **A preview agreeing with the spec proves nothing about the panel.** Both of
-   this repo's silent authoring failures were the preview drawing what the spec
-   said while the applier shipped the donor's value: `flattenText` for captions,
-   and the font, which `Apply-GdlPlan.ps1` did not set at all until 2026-09-08 —
-   so every label built at the donor's 20pt, every button at 13pt, every shape
-   at 14.25pt, whatever the spec asked for. Note what that did to the gate:
-   `gdl.spec check` enforces Extron's ≥14pt body-text rule against the *spec*,
-   so the one check that should have caught it was measuring a number that never
-   left the file. Verify against the built result, not the plan.
-
-4. **Build owns the artwork.** Controls are authored with `TLPImageID = -1`;
-   GUI Designer rasterizes, deduplicates and assigns on build. What you author
-   instead is `borderFillColor` plus a **named** border resource
-   (`"Afterburn - 10 Radius 2 Thick"`). Neither survives into `layout.json` —
-   read them from `ProjectGCP` via `gdl/project.py`.
+1. **Clone, never construct** (§4). Constructors and property setters throw
+   outside the running app, and a failed setter writes the backing field before
+   it throws, so it looks like it worked. `Copy-GdlObject` an existing object,
+   then `Set-GdlField` its backing fields.
+2. **Popup bindings live in four places** (§6). Call `Test-GdlPopupBinding`
+   rather than trusting your writes.
+3. **Build owns the artwork** (§2). Author `borderFillColor` and a **named**
+   border resource, never pixels. Neither survives into `layout.json`, so read
+   them from `ProjectGCP` via `gdl/project.py`.
+4. **A preview agreeing with the spec proves nothing about the panel.** Every
+   silent authoring failure so far had the preview drawing what the spec said
+   while the applier shipped the donor's value, and `gdl.spec check` measuring a
+   number that never left the file. Verify the built result — *Verifying a
+   change* below.
 
 ## Verifying a change
 
@@ -139,7 +114,8 @@ change lands.
 
 For authoring changes, the end-to-end check is `examples/add-page-and-popup.ps1`,
 which self-asserts. A file that merely serializes proves nothing; the real test
-is that GUI Designer opens *and builds* it, and that needs a Windows box.
+is that GUI Designer opens *and builds* it, and that needs GUI Designer
+installed.
 
 A clean build is still not proof the result is *right* — Build silently
 relocates controls that don't fit their page, and bakes captions into artwork.
@@ -163,64 +139,11 @@ in every field and obvious in the artwork.
 
 ## Driving GUI Designer
 
-Scripted, not manual — `docs/from-scratch.md` §7 has the detail.
-
-**It needs a real interactive desktop session, not a service context.**
-`[Environment]::UserInteractive` must be true and the session must have a
-desktop — anything that draws a form dies otherwise. A normal logged-in session
-on a machine with GUI Designer installed satisfies this, and needs no VM,
-scheduled task or remote exec.
-
-```powershell
-Start-Process "$InstallDir\GUI Designer.exe" -ArgumentList '"<work>\x.gdl"'
-powershell\Invoke-GdlMenu.ps1 -Item 'Save and Build'   # no focus needed
-powershell\Wait-GdlBuild.ps1 -ProjectFile <work>\x.gdl
-```
-
-`powershell\New-GdlPanel.ps1` does all of that and the verification for you.
-`System.Drawing`'s `CopyFromScreen` reads the screen back.
-
-Both locations are parameters, not facts about a particular machine. `-InstallDir`
-defaults to `C:\Program Files (x86)\Extron\GUI Designer`; `-Work` defaults to a
-per-project directory under `C:\gdlwork`. Keep build scratch on a local disk:
-GUI Designer is slow against a network or mounted drive, which is the only
-reason the default is not inside the repo.
-
-Three gotchas:
-
-- **`Get-Process` caches `MainWindowTitle`.** It reads `GUI Designer` until you
-  call `.Refresh()`, and only then shows `GUI Designer - [TLP Pro 1035T:
-  x.gdl*]`. Polling the title for the project name without refreshing waits
-  forever.
-- **Trigger the build with `powershell/Invoke-GdlMenu.ps1`, not SendKeys.** UIA
-  clicks the menu item directly and needs no focus, so the pipeline runs while
-  the machine is in use. SendKeys types into whatever holds the foreground, and
-  a pipeline driven from a terminal can never take the foreground away from that
-  terminal — Windows will not hand it to a process that does not already have
-  it. `Send-GdlKeys.ps1` now verifies and refuses rather than typing blind, and
-  is only the fallback. Note `Invoke()` throws `Operation timed out
-  (0x80131505)` because it blocks on the build modal; the click landed anyway,
-  so watch the `.gdl`, not the exit code.
-- **Wait for a build with `powershell/Wait-GdlBuild.ps1`, which watches the
-  `.gdl` itself.** The two obvious signals are both wrong. The title's trailing
-  `*` only means unsaved changes, so a freshly packed file opened clean never
-  has one and the wait returns immediately onto a stale payload —
-  indistinguishable from a build that silently did nothing. The Build Manager
-  window is worse because it looks right: it appears seconds *after* the menu
-  click and closes about five seconds *before* the file is written, so trusting
-  it truncates the payload. The file's own mtime is the only real signal — wait
-  for it to change, then to stop changing.
-- **Sample the baseline mtime *before* triggering the build, not after.**
-  `Invoke-GdlMenu.ps1` blocks on the build modal, so on a machine where the
-  build finishes before the call returns, a watcher started afterwards records
-  the *post-build* mtime as its baseline and then waits for a second write that
-  never comes — a successful build reported as a timeout. How the race falls
-  depends on machine speed, so both orderings occur in practice. Pass
-  `Wait-GdlBuild.ps1 -Since <mtime captured before the trigger>`.
-
-**`Project > Verify` (Ctrl+B) is not a build.** It says "Build Complete - 0
-errors" and produces no payload; saving after it drops the payload entirely.
-The real build is **File > Save and Build (Ctrl+Shift+B)**.
+`powershell\New-GdlPanel.ps1` takes a spec to a built, verified panel with
+nobody touching GUI Designer. To script anything it does not cover, read
+`docs/from-scratch.md` §7 first: the obvious ways to trigger a build and to tell
+when it has finished are both wrong, and each fails in a way that looks like
+success.
 
 ## Conventions
 
@@ -233,6 +156,41 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
 - Don't reformat `gdl/nrbf.py` into a house style; it is a compact MS-NRBF
   reader and its terseness is deliberate.
 
+## Keeping the docs true
+
+These docs have drifted before — a stale test count, a build-completion signal
+two files had already corrected, a SendKeys command the scripts had moved past —
+each time because the same material lived in several files and only some copies
+were updated. So:
+
+- **A change and the docs it invalidates land in the same commit.** Before
+  committing, search the docs for every name, path, parameter, number and
+  behavior you touched — `git grep -n '<old thing>' -- '*.md'` — and fix each
+  hit. A known-stale doc is a bug to fix now, not a follow-up to list.
+- **Each topic has one home.** Other files get a one-line pointer, never a
+  second copy — a second copy is a future contradiction.
+
+  | Topic | Home |
+  |---|---|
+  | What is in the repo, install and setup | `README.md` |
+  | What needs GUI Designer, and why | `CLAUDE.md` *Environment* |
+  | Format facts and what Build does | `docs/gdl-format.md` |
+  | Driving GUI Designer from a script | `docs/from-scratch.md` §7 |
+  | Generating a panel, step by step | `SKILL.md` |
+  | Editing an existing panel | `docs/editing.md` |
+  | Verification gates and the render baseline | `CLAUDE.md` *Verifying a change* |
+  | Render findings | `docs/render-fidelity.md` |
+  | Extron's design standards | `docs/design-rules.md` |
+  | Fonts: recovery and licensing | `gdl/fonts/README.md` |
+  | What is left to do, and known gaps | `docs/ROADMAP.md` |
+  | Retired setups and revised beliefs | `docs/history.md` |
+
+- **No counts that drift in prose.** Don't write how many tests or scripts
+  there are; the tools report that. Measured results — baseline percentages,
+  corpus-audit figures — are fine in their home, with where they came from.
+- **Present tense only.** What used to be believed, when something was found,
+  or which machine it ran on goes in `docs/history.md`.
+
 ## Environment traps that cost time
 
 - **Check the commit limit before any large fan-out.** It is physical RAM plus
@@ -242,7 +200,7 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
   projects at once adds more. Past the limit, processes die mid-task and new
   ones fail with *The paging file is too small for this operation to complete* —
   which is what killed both runs of `workflows/gdl-bug-hunt.js` and the first
-  version of `tests/audit_corpus.py` on a host with an 8.5 GB limit. Stream over
+  version of `tests/audit_corpus.py`. Stream over
   projects instead of loading them all, keep workflows small, and let the OS
   manage the pagefile.
 - **Do not write backslash escapes through a bash heredoc.** Backslash-v and
@@ -255,68 +213,26 @@ The real build is **File > Save and Build (Ctrl+Shift+B)**.
   (Exception from HRESULT: 0x80070002)` on every save. It comes from inside an
   Extron assembly during serialization, the return value is intact, and it is
   not an error.
-- Windows long paths: the longest tracked path is 118 characters, so cloning
-  into a deep directory fails without `core.longpaths`.
-- PowerShell execution policy is per-user; the documented entry points need
-  `-ExecutionPolicy Bypass` on a machine that has not set it.
-- `gdl/fonts/` must be extracted from **all six** fixtures — no single one
-  embeds every face.
-- **Arial is embedded. Extract it; never substitute a system copy.** The reason
-  this is easy to get backwards, and did cost real time:
-  `extract()` matched `layout.json`'s declared size against the
-  measured sfnt length *exactly*, and both Arial faces carry bytes past the far
-  edge of their last table — 28 for Arial, 30 for Arial Black — so neither ever
-  matched, and both were written off as system faces the format referenced
-  without embedding. Genuine Monotype Arial 5.10 and Arial Black 5.06 are in
-  every fixture and in all 44 of Extron's installed templates, so nothing needs
-  Liberation Sans to render the fixtures. `tests/test_fonts.py` is the gate that
-  was missing.
-- **…but "every declared face is embedded" is not true of every project.** A
-  fresh project from File > New *declares* Arial Black without embedding it —
-  no sfnt table of anything like its declared 119,904 bytes is in 11 of the 14
-  seeds — the Turbulence seed declares Arial the same way, and the Shockwave
-  seeds declare `extron_shockwave.ttf` without it. Found by
-  `tests/audit_corpus.py` on 2026-09-11. Rendering a seed-built panel off
-  Windows needs those faces from somewhere else; `docs/ROADMAP.md` has the
-  follow-ups.
 
 ## Things deliberately not in git
 
-- **Seven of the nine files in `gdl/fonts/`**, regenerated with
-  `python -m gdl.fonts <file.gdl> gdl/fonts/`. Skip that and the harness does
-  not degrade, it stops — `face()` raises `LookupError` on the first face it
-  cannot resolve. The ignore is per file, not a class: Open Sans is Apache 2.0
-  and is tracked with its license; Arial, Arial Black and Forma DJR Display are
-  retail typefaces; the four Extron and Crestron icon fonts carry no license
-  grant at all. `gdl/fonts/README.md` has the per-file detail.
-  Note this keeps out a *convenient* copy, not the bytes — every face is
-  embedded in the tracked `.gdl` fixtures and recoverable from them exactly. If
-  the concern is distribution, `fixtures/` is the thing to look at.
+- **Most of `gdl/fonts/`** — retail and unlicensed faces, recovered from the
+  tracked fixtures during setup. `face()` raises `LookupError` on the first face
+  it cannot resolve, so skipping that stops the harness rather than degrading
+  it. `gdl/fonts/README.md` has the per-file licensing, and which projects
+  declare faces they do not embed. The bytes are still inside the tracked `.gdl`
+  fixtures, so if the concern is distribution, `fixtures/` is the thing to look
+  at.
 - `out/`, `__pycache__/`, built viewer HTML.
-- **`vendor/`'s contents** — Extron's 44 `.glt` templates and the Afterburn
-  icon kit, copied from the install so the tests that read them need nothing on
-  `C:`. About 470 MB of reinstallable vendor content; `vendor/MANIFEST.md` pins
-  every file by SHA-256 and `vendor/README.md` says how to repopulate it.
+- **`vendor/`'s contents** — Extron's templates and icon kit, reinstallable,
+  pinned by SHA-256 in `vendor/MANIFEST.md`; `vendor/README.md` repopulates it.
   `tests/_corpus.py` falls back to the install path when it is empty.
 
 ## Where things live
 
-Nothing this project depends on lives only on one machine — anything that was
-working state on a build host is in the repo:
-
-| Path | What | In git |
-|---|---|---|
-| `seeds/` | fourteen themed seed projects to author from — `seeds/README.md` | Git LFS |
-| `archive/` | raw working state from the build scratch dir, the job scratch dir, the desktop, and the Claude Code transcripts and memory — the evidence behind the commits | Git LFS |
-| `research/<date>/` | the scripts behind that session's numbers | yes |
-| `workflows/gdl-bug-hunt.js` | the planned multi-agent bug hunt; never finished — see its README | yes |
-| `tests/audit_corpus.py` | re-tests documented beliefs against every project it can reach | yes |
-| `vendor/` | Extron's templates and icons | manifest only |
-| `docs/ROADMAP.md` | everything left to do, in order | yes |
-
-Run `git lfs pull` after cloning. A clone without it has pointer files where the
-seeds should be; `tests/_corpus.py` treats those as absent and the seed tests
-skip rather than fail.
+`README.md` *What is here* maps the repo. `seeds/` and `archive/` are Git LFS:
+without an LFS pull they are pointer files, and the seed tests skip rather than
+fail.
 
 ## Working on the fixtures
 
@@ -333,30 +249,4 @@ handle and means nothing to a programmer.
 
 ## Known gaps
 
-- `referenceCountField` on a popup group: semantics unknown. A plausible value
-  causes no visible problem.
-- A size-dependent vertical text residual. Fitting an ascent and
-  line-height multiplier reaches 1.72% mean, but the optimum is degenerate, so
-  the cause is wanted rather than the fit. See `docs/render-fidelity.md`
-  finding 7.
-- Every text finding is validated against **one** typeface: the scored fixture
-  only ever draws Forma DJR Display.
-- Editing an existing panel: `gdl/edit.py` + `powershell/Apply-GdlEdits.ps1`.
-  Rename, retarget, renumber and restyle, all **verified end to end** against
-  GUI Designer 1.27.0.9 - including a scaled retarget of the whole Liberty Bank
-  project from a TLP Pro 1035T to a TLP Pro 1535M, 654/654 controls correct in
-  the built file. Two corrections since: until `7b3e630`, `rename` wrote only
-  state 0 (`PBStates.Count` reports 1 for an Off/On button), so a renamed button
-  showed its old caption once switched On; and a retarget builds correctly but
-  matches Extron's own hand layout at the new size for only 22% of controls.
-- Generating a panel from a spec: `gdl/spec.py` has the layout pass, control ID
-  allocation, a preview render and a build-plan emitter, all tested here.
-  `powershell/Apply-GdlPlan.ps1` applies a plan to a real project — **verified
-  end to end**: the example spec was generated, applied, packed, and built by
-  GUI Designer 1.27.0.9 with 0 errors. Use `-WhatIf` first; it dry-runs and
-  reports every unresolved donor and field. Color is verified off the built
-  artwork (`docs/from-scratch.md` §5b), and buttons get Off/On feedback states.
-
-Everything left to do, in order and by owner, is in `docs/ROADMAP.md`. **Group registration was never actually missing**;
-  `Register-GdlPopupGroup` is complete. See `docs/from-scratch.md`, which also
-  lists the six questions that need one session on a Windows box.
+Everything left to do, and every known gap, is in `docs/ROADMAP.md`.
