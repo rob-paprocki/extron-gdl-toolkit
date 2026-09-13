@@ -1,13 +1,12 @@
 # Building a panel from scratch
 
-Can you design an Extron touch panel as an artefact — a spec, a mockup, a
+Can you design an Extron touch panel as an artifact — a spec, a mockup, a
 generated layout — and turn it into a real `.gdl` that GUI Designer opens and
-builds? This is the answer as far as it can be established without Windows,
-which is further than expected.
+builds? Yes, and this is how.
 
-**Short version.** Yes, and the design space is considerably wider than early
-drafts of this file claimed. *Build owns the artwork* is real, but: the canvas is
-one of eight resolutions rather than fixed, lines can be diagonal, ~339 icons are
+**Short version.** The design space is wide. *Build owns the artwork* is real,
+but: the canvas is set by the panel model rather than fixed, lines can be
+diagonal, ~339 icons are
 available as font glyphs needing no image resource, new border resources can be
 appended (§5), and Extron ships per-panel `.glt` template libraries to clone from.
 `docs/design-rules.md` holds Extron's own rules, separated from what we guessed.
@@ -19,7 +18,7 @@ a fill color, a stroke color, and a **named** border resource that supplies
 the silhouette. GUI Designer rasterizes those on Build. So a generator never
 makes pixels; it names resources and sets colors.
 
-The obvious reading of that — and what the older notes imply — is that a
+The obvious reading of that is that a
 generator is limited to the seven border resources the shipped panel references.
 That reading is wrong. `gdl/project.py`'s `border_resources()` enumerates
 `PBResourceReferenceBorder`, which is *bindings in use*, not definitions. The
@@ -38,7 +37,7 @@ are the User-authored `Afterburn - *` ones. Read out of their `dataField`
 | | values present |
 |---|---|
 | shape | rectangle family (1), ellipse (2) |
-| style | 2D flat (0), 3D bevelled (1) |
+| style | 2D flat (0), 3D beveled (1) |
 | corner radius | 0, 5, 10, 14, 999, 9999 (9999 = capsule) |
 | thickness | 0, 1, 2, 3 |
 | 3D lighting | `depth`, `surfaceHeight` (3, 78, 117) |
@@ -81,11 +80,10 @@ rather than by the resource list.
   eight-value enum (TopLeft, TopCenter, TopRight, MiddleRight, BottomRight,
   BottomCenter, BottomLeft, MiddleLeft) plus start/end caps and thickness — so
   TopLeft→BottomRight *is* a diagonal, and since the bounding rect is arbitrary so
-  is the angle. Earlier drafts of this file said "no diagonal line"; that was wrong.
-- Canvas size is set by the panel model, **not fixed**: GUI Designer supports eight
-  resolutions from 320×240 to 1920×1080 across 63 platform classes. The fixtures are
-  all 1280×800, which is a property of this client's hardware, not of the format.
-  See `docs/design-rules.md` §1.
+  is the angle.
+- Canvas size is set by the panel model, **not fixed** — `docs/design-rules.md`
+  §1 lists the resolutions. The fixtures are all 1280×800, which is a property
+  of this client's hardware, not of the format.
 - Arbitrary raster art: unless the bitmap is already a `PBImageResource` it needs
   the resource-append step (which §5 showed works). But note this is rarely the
   binding constraint — ~339 icons are available as *font glyphs* and need no image
@@ -97,28 +95,26 @@ rather than by the resource list.
 
 | Stage | State |
 |---|---|
-| Design artefact → spec | **Built.** `examples/panel.json` is a worked spec. |
+| Design artifact → spec | **Built.** `examples/panel.json` is a worked spec. |
 | Layout pass | **Built.** `gdl/spec.py` `grid()` / `stack()`. |
-| Control ID allocation | **Built.** Per-page bands, honours pinned ids. |
+| Control ID allocation | **Built.** Per-page bands, honors pinned ids. |
 | Preview render | **Built.** Straight through `gdl/compose.py`. |
 | Spec → build plan | **Built.** `python -m gdl.spec plan`. |
 | Plan → `ProjectGCP` | **Built and verified.** `powershell/Apply-GdlPlan.ps1`; `-WhatIf` dry-runs it. |
 | Repack to `.gdl` | Built already — `gdl/container.py pack`. |
 | GUI Designer opens + builds | **Verified**, and scriptable from the host (§7). |
 
-Note one correction to `CLAUDE.md`'s gap list: **group registration is not
-missing.** `Register-GdlPopupGroup` is a complete, exercised implementation of
-the only group concept the format has (a class census finds exactly five
-`PBControlGroup` instances across the whole corpus, all popup-page groups). The
-genuine gaps were control-level ID allocation and a layout pass, and both are
-now in `gdl/spec.py`.
+Popup groups need nothing more: `Register-GdlPopupGroup` is a complete
+implementation of the only group concept the format has — a class census finds
+exactly five `PBControlGroup` instances across the whole corpus, all of them
+popup-page groups.
 
 ## 4. The preview is the point
 
-The expensive step is the round trip to a Windows box with GUI Designer
-installed. The compositor now scores **2.19% mean** differing pixels against
-GUI Designer's own snapshot exports, which makes it good enough to judge a
-design *before* paying that cost:
+Building is the slow step — apply, pack, open, Save and Build, verify. The
+compositor is scored against GUI Designer's own snapshot exports
+(`tests/baseline.json`), which makes it good enough to judge a design *before*
+building it:
 
 ```bash
 python -m gdl.spec check  examples/panel.json     # ids, off-canvas, sizes, unknown resources
@@ -199,9 +195,8 @@ Two errors, no payload. Points worth keeping:
 * Numeric `idField`s were duplicated across projects throughout this work with
   no complaint, so whatever uniqueness ids need, it is not this one.
 
-`Panel.check_donor()` now compares spec names against the donor's before
-anything leaves the Mac, and `Panel.check()` catches a spec that collides with
-itself. Renaming to `2310 - Program Volume` / `2320 - Speech Volume` cleared it:
+`Panel.check_donor()` compares spec names against the donor's before anything
+is built, and `Panel.check()` catches a spec that collides with itself. Renaming to `2310 - Program Volume` / `2320 - Speech Volume` cleared it:
 the build emitted `generated9.tgz4` with 207 PNGs (a failed build emits none),
 661 of 698 controls rasterized, and both popups came through with their own
 captions.
@@ -247,25 +242,13 @@ page, the Offline Page counting only when `EnableOfflinePage` is on — and the
 donor has seven modal popups, one of them a switched-off Offline Page. Every
 donor page carries the same six. The verifier ignores unauthored extras for this reason.
 
-### Two things the run corrected
-
-**`Project > Verify` (Ctrl+B) is not the build.** It reports "Build Complete -
-0 error(s), 0 warning(s)", which reads exactly like a build, but it only
-validates. Saving after it writes a `.gdl` containing **only `ProjectGCP`** —
-GUI Designer drops the stale payload rather than regenerating it. The real build
-is **File > Save and Build (Ctrl+Shift+B)**, which emits the payload member,
-named after the file lowercased (`testb.tgz4`).
-
-**`BuildProject()` cannot be driven headlessly.** `PBProject.BuildProject()` is
-the method the build dialog's worker calls, and `BuildManager` has a public
-constructor taking just a `PBProject` — but calling it throws
-`NullReferenceException` inside `BuildProject()`, in an interactive session as
-well as a service one. It needs state only a properly-initialized GUI Designer
-process has. Driving the real UI (§7) is the working route.
+`Project > Verify` is not the build, and `BuildProject()` cannot be called
+headlessly — `docs/gdl-format.md` §2 has both. §7 is how the real build is
+driven.
 
 ## 5b. The whole loop, closed
 
-`examples/panel.json` — a spec written on a Mac — was taken end to end:
+`examples/panel.json` was taken end to end:
 
     spec -> layout pass + ID allocation -> build plan -> Apply-GdlPlan.ps1
          -> ProjectGCP -> gdl.container pack -> GUI Designer -> Save and Build
@@ -295,6 +278,13 @@ That third one is worth remembering: the file was *correct* the whole time -
 `layout.json` had the right text - and only the rendered artwork was wrong.
 Checking the model would have said everything was fine.
 
+Color is checked the same way, off the *built artwork* rather than the model,
+because a built control's `BackgroundFillColor` reads back transparent white
+whatever was authored. On this panel 21 of 21 planned fills are the plurality
+color of their own rasterized asset — the accent button at 87% `#3D8BFD` — and
+the page artwork is 100% `#12131C`, with no trace of the donor's.
+`tests/verify_built.py` makes that a gate on every build.
+
 ## 5c. Authoring without a client project: seeds
 
 Every generated panel so far clones `fixtures/gdl/Interface__alt_...Liberty_Bank...`,
@@ -305,9 +295,9 @@ resources, artwork and retail fonts, and is pinned to their model and theme.
 The obvious fix is to clone one of Extron's own templates instead. There are 44
 of them under `GUI Designer Templates\TouchLink Templates` in the shared
 Documents folder, they are the same `KP`-swapped container, `Project.open()`
-reads all 44, and they cover six theme families across eight resolutions.
+reads all 44, and they cover six theme families across Extron's panel sizes.
 
-**It does not work, and it fails quietly.** Measured 2026-09-08 against
+**It does not work, and it fails quietly.** Measured against
 `Afterburn 1020 Series.glt`:
 
 - `gdl.spec donors` was happy — every control type resolved.
@@ -343,15 +333,14 @@ So, once per theme:
 Then pass `-Donor "seeds/<seed>.gdl"`, and nothing of anyone else's is in the
 output.
 
-`seeds/` holds fourteen, made 2026-09-09: Afterburn at five sizes, Mach at
+`seeds/` holds fourteen: Afterburn at five sizes, Mach at
 three, Shockwave at two, Turbulence, both Zoom Rooms ZRTP variants, and the 835
 seed below. `seeds/README.md` lists each one's model, canvas and resources. They
 are in Git LFS, so run `git lfs pull` on a fresh clone.
 
-**Prefer a seed at the target size; retarget is the fallback.** This section used
-to say one seed per theme was enough because `retarget` covers the other
-models. It does build correctly — 654/654 on the Liberty Bank fixture, 650/650
-on the Afterburn 1035 seed taken to a 1535M. But scored against Extron's *own*
+**Prefer a seed at the target size; retarget is the fallback.** A retarget
+builds correctly — 654/654 on the Liberty Bank fixture, 650/650 on the Afterburn
+1035 seed taken to a 1535M. But scored against Extron's *own*
 hand-authored 1535, only 22% of controls land identically, median 18px off. The
 rule is the same per-axis scale Extron used; the difference is their designers
 nudging by hand, which a native-size seed carries and a retarget cannot. See
@@ -359,9 +348,9 @@ nudging by hand, which a native-size seed carries and a retarget cannot. See
 
 ### A seed works, end to end
 
-Done 2026-09-09 against a seed a human made in about a minute (File > New
-Project, Afterburn All-inclusive 1220 theme, TLP Pro 835M) — now
-`seeds/Afterburn 835 (Project1).gdl`. `examples/multipage.json` went through `New-GdlPanel.ps1` unattended:
+Against a seed made by hand in about a minute (File > New Project, Afterburn
+All-inclusive 1220 theme, TLP Pro 835M), now `seeds/Afterburn 835 (Project1).gdl`,
+`examples/multipage.json` went through `New-GdlPanel.ps1` unattended:
 three pages, 39 authored controls, **built and verified with 0 problems**, and
 nothing of any client's in the result.
 
@@ -399,21 +388,13 @@ bad trade.
 
 ## 6. Honest limits of everything above
 
-- Questions 5 and 6 are untested.
+- Control-ID uniqueness (the other half of question 5) and question 6 are
+  untested.
 - Test 3 is only half-answered: an out-of-corpus radius/thickness *builds*, but
   nobody has looked at whether it *rasterizes* correctly. The control used was
   the Offline Window, which Build legitimately leaves unrasterized, so there is
   no artwork to inspect. Redo it against a visible control.
-- ~~Color fidelity is not there yet.~~ **Fixed in `bf0fe8b`; this bullet then sat
-  stale for longer than the bug was alive.** Re-verified 2026-09-08 on a fresh
-  run end to end — spec, plan, apply, GUI Designer Save and Build — reading the
-  color off the *built artwork* rather than the model, because a built control's
-  `BackgroundFillColor` reads back transparent white no matter what was
-  authored. 21 of 21 planned fills are the plurality color of their own
-  rasterized asset, the accent button among them at 87% `#3D8BFD`, and the page
-  artwork is 100% `#12131C` with no trace of the donor band.
-  `tests/verify_built.py` checks this now, so it is a gate rather than a memory.
-- The resource counts are from the `_alt 2_0_0` fixture, which carries 32 border
+- The resource counts are from the `_alt 2_0_0` fixture, which carries 34 border
   resources; the two archived fixtures carry 36. Across Extron's 44 installed
   templates the count runs **13 to 32**, so treat it as per-project and read it,
   never assume it. The low end matters: a Mach or Turbulence template offers 13
@@ -426,30 +407,80 @@ bad trade.
 
 ## 7. Driving GUI Designer
 
-### On a machine with GUI Designer installed (the simple case)
+This section is the one home for scripting GUI Designer; other files point
+here. `powershell\New-GdlPanel.ps1` already runs the whole loop — check, donors,
+plan, apply, pack, open, Save and Build, wait, verify — and exits 0 only if the
+verifier passed. Read on to script anything it does not cover.
 
-Work on the machine that has GUI Designer and there is no remoting layer at all.
-An ordinary logged-in session is already interactive - `UserInteractive` is
-true, with a real desktop - so the authoring bridge, the build and the screen
-capture all run in one place:
+### The session it needs
+
+Authoring — reading, cloning, editing and saving a project graph — is headless
+and runs in any context. Anything that *draws* does not: GUI Designer and every
+dialog it raises need a session where `[Environment]::UserInteractive` is true
+and a desktop exists. A service, a scheduled task, or a remote exec that lands
+as `nt authority\system` dies at the first form with "Showing a modal dialog box
+or form when the application is not running in UserInteractive mode". An
+ordinary logged-in session qualifies.
+
+### The loop
 
 ```powershell
-# 1. author. 32-bit PS 5.1: .NET Framework still has BinaryFormatter, and
-#    Extron's assemblies are x86.
+# 1. author. 32-bit PowerShell 5.1: .NET Framework still has BinaryFormatter,
+#    and Extron's assemblies are x86.
 C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -NoProfile `
     -ExecutionPolicy Bypass -File examples\add-page-and-popup.ps1 `
-    C:\gdlwork\ProjectGCP C:\gdlwork\new_ProjectGCP
+    <work>\ProjectGCP <work>\new_ProjectGCP
 
-# 2. repack, then open it
-python -m gdl.container pack template.gdl C:\gdlwork\new_ProjectGCP C:\gdlwork\out.gdl
-Start-Process "C:\Program Files (x86)\Extron\GUI Designer\GUI Designer.exe" `
-    -ArgumentList '"C:\gdlwork\out.gdl"'
+# 2. repack, open it, and wait for the project window (see the title trap below)
+python -m gdl.container pack template.gdl <work>\new_ProjectGCP <work>\x.gdl
+Start-Process "$InstallDir\GUI Designer.exe" -ArgumentList '"<work>\x.gdl"'
 
-# 3. File > Save and Build
-powershell\Send-GdlKeys.ps1 -Keys '^+b'
+# 3. Save and Build - take the baseline mtime BEFORE triggering it
+$t0 = (Get-Item <work>\x.gdl).LastWriteTime
+powershell\Invoke-GdlMenu.ps1 -Item 'Save and Build'
+powershell\Wait-GdlBuild.ps1 -ProjectFile <work>\x.gdl -Since $t0
 ```
 
-Read the screen back with `System.Drawing`:
+`$InstallDir` and `<work>` are `New-GdlPanel.ps1`'s `-InstallDir` (default
+`C:\Program Files (x86)\Extron\GUI Designer`) and `-Work` (default a
+per-project directory under `C:\gdlwork`). Keep `<work>` on a local disk: GUI
+Designer is slow against a network or mounted drive, which is the only reason
+the default is not inside the repo.
+
+### What will cost you time
+
+- **Trigger the build with `Invoke-GdlMenu.ps1`, not SendKeys.** UI Automation
+  clicks the menu item directly and needs no focus, so the pipeline runs while
+  the machine is in use. SendKeys types into whatever holds the foreground, and a
+  pipeline driven from a terminal can never take the foreground from that
+  terminal. `Send-GdlKeys.ps1` is only the fallback, and it verifies the window
+  and refuses rather than typing blind. `Invoke()` throws `Operation timed out
+  (0x80131505)` because it blocks on the build modal; the click landed anyway,
+  so watch the `.gdl`, not the exit code.
+- **Wait by watching the `.gdl` itself, with `Wait-GdlBuild.ps1`.** Both obvious
+  signals are wrong. The title's trailing `*` only means unsaved changes, so a
+  freshly packed file opened clean never has one, and a wait on it returns at
+  once onto the stale payload. The Build Manager window appears seconds *after*
+  the click and closes about five seconds *before* the file is written, so
+  trusting it truncates the payload. The file's mtime is the real signal: wait
+  for it to change, then to stop changing.
+- **Take the baseline mtime before triggering, and pass it as `-Since`.**
+  `Invoke-GdlMenu.ps1` blocks on the build modal, so when the build finishes
+  before that call returns, a baseline sampled afterwards is already the
+  post-build mtime, and the wait times out on a build that succeeded. Machine
+  speed decides which way the race falls.
+- **`Get-Process` caches `MainWindowTitle`.** It reads `GUI Designer` until you
+  call `.Refresh()`, and only then shows `GUI Designer - [TLP Pro 1035T:
+  x.gdl]`. Polling for the project name without refreshing waits forever.
+- **`Responding = False` during a save is not a hang.** A *Please wait while the
+  project is being saved* overlay is up, and the process reports it
+  intermittently until the write finishes.
+- **`Project > Verify` (Ctrl+B) is not a build**, and `PBProject.BuildProject()`
+  cannot be called headlessly — `docs/gdl-format.md` §2 has both. The build is
+  **File > Save and Build (Ctrl+Shift+B)**.
+- **The Project Create Wizard cannot be driven at all** — see §5c.
+
+### Reading the screen back
 
 ```powershell
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
@@ -458,34 +489,3 @@ $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
 [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
 $bmp.Save('shot.png', [System.Drawing.Imaging.ImageFormat]::Png)
 ```
-
-Three things that will cost you time:
-
-- **`Get-Process` caches `MainWindowTitle`.** It keeps reading `GUI Designer`
-  long after the project is open; call `.Refresh()` and it becomes
-  `GUI Designer - [TLP Pro 1035T: out.gdl*]`. Polling the cached title for the
-  project name, or for the dirty marker, waits forever.
-- **The trailing `*` is the completion signal.** Save and Build clears it. Until
-  then a *Please wait while the project is being saved* overlay is up, and the
-  process reports `Responding = False` intermittently, which is not a hang.
-- **Work under the build scratch dir, not the repo.** If the repo is on a mounted drive
-  GUI Designer is slow against it, and only two files need to move: the plan in,
-  the built `.gdl` back.
-
-### The session context this needs
-
-Authoring — reading, cloning, editing and saving a project graph — is headless
-and runs in any context. Anything that *draws* does not: GUI Designer and every
-dialog it raises need a session where `[Environment]::UserInteractive` is true
-and a real desktop exists. Run it as a service, a scheduled task, or any
-remote-exec that lands as `nt authority\system`, and the first form dies with
-"Showing a modal dialog box or form when the application is not running in
-UserInteractive mode".
-
-A normal logged-in session on a machine with GUI Designer installed satisfies
-this, and needs no VM or remote-exec apparatus.
-
-`powershell/Send-GdlKeys.ps1` activates GUI Designer's window and sends
-keystrokes, which is enough to drive Open / Verify / Save and Build — but it is
-the fallback. Prefer `powershell/Invoke-GdlMenu.ps1`, which clicks the menu item
-through UI Automation and needs no foreground at all.

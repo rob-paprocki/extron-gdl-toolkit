@@ -45,14 +45,22 @@ If the concern is distribution rather than convenience, the thing to look at is
 
 ## Arial is embedded too
 
-It was long assumed that GUI Designer referenced Arial and Arial Black without
-embedding them, so a Linux host had no way to resolve either and the render
-died. That was an artifact of the extractor, not of the format. `extract()`
-matched `layout.json`'s declared size against the measured sfnt length
-*exactly*, and both Arial faces carry bytes past the far edge of their last
-table — 28 for Arial, 30 for Arial Black — so neither ever matched. Genuine
-Monotype Arial 5.10 and Arial Black 5.06 sit in every fixture and in all 44 of
-Extron's installed templates, and now come out with everything else.
+Genuine Monotype Arial 5.10 and Arial Black 5.06 are embedded in every fixture
+and in all 44 of Extron's installed templates, and `python -m gdl.fonts`
+recovers them with everything else — so never substitute a system copy. They
+are easy to miss: both carry bytes past the far edge of their last sfnt table
+(28 for Arial, 30 for Arial Black), so an extractor that matches `layout.json`'s
+declared size against the measured table length *exactly* finds neither.
+`tests/test_fonts.py` pins this.
+
+## …but not every project embeds every face it declares
+
+A fresh project from File > New *declares* Arial Black without embedding it: 11
+of the 14 seeds carry no sfnt table of anything like its declared 119,904
+bytes. The Turbulence seed declares Arial the same way, and the Shockwave seeds
+`extron_shockwave.ttf`. GUI Designer supplies these itself at build time; the
+renderer has no such source, so rendering a seed-built panel can raise
+`LookupError`. `docs/ROADMAP.md` tracks the fix.
 
 Prefer the embedded copy over an installed one even on a host that has Arial.
 The embedded face is the one GUI Designer rasterized the ground-truth snapshots

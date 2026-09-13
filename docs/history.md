@@ -96,3 +96,41 @@ statement is in the live docs; this is the record that it changed.
   `Copy-Item -Recurse` copies a folder's contents rather than the folder when
   the destination does not exist, so on a fresh clone — the exact case the
   instructions were written for — the templates landed one directory too high.
+- **`Apply-GdlPlan.ps1` set no font until 2026-09-08.** Every label built at the
+  donor's 20pt, every button at 13pt, every shape at 14.25pt, whatever the spec
+  said — while `gdl.spec check` enforced Extron's ≥14pt rule against the *spec*,
+  a number that never left the file. Hence the rule in `CLAUDE.md`: verify
+  against the built result, not the plan.
+- **Both appliers wrote only state 0 until 2026-09-10**, because they looped to
+  `PBStates.Count`, which reports 1 for an Off/On button.
+- **Re-serializing a project was once thought byte-identical**, and the
+  difference then put down to "lazily-built state". Measured on 2026-09-07, it
+  is every `TLPImageID` reset to -1 (`docs/gdl-format.md` §3).
+- **Color fidelity sat in `docs/from-scratch.md`'s limits** for longer than the
+  bug was alive: `bf0fe8b` fixed it, and it was re-verified off the built
+  artwork on 2026-09-08. `tests/verify_built.py` has checked it since.
+- **One seed per theme was thought enough**, on the grounds that `retarget`
+  covers the other sizes. It builds correctly, but matches Extron's own
+  hand-authored layout at another size for only 22% of controls
+  (`docs/editing.md`).
+- **Touch-target minimums were keyed off resolution.** DPI is per model, and
+  varies 1.76x within 1280x800 alone (`docs/editing.md`).
+- **The fixture docs said a popup's authored size is always the whole canvas.**
+  True of every Liberty Bank popup and false of Extron's own Afterburn template,
+  where 10 of 29 are authored — and built — at 880x525.
+- **`renumber` was described as verified end to end** alongside the other three
+  edit operations. Its own table in `docs/editing.md` always said "planned +
+  checked"; it has never been through a build.
+- **"Eight resolutions across 63 panel models"** stood in `CLAUDE.md` while
+  `MODELS_FULL` held 55 and a seed built at 1920x720, a resolution the table
+  lacked. `docs/design-rules.md` §1 is now the one list.
+- **`docs/from-scratch.md` gave the `_alt 2_0_0` fixture 32 border resources** in
+  one section and 34 in another. It has 34.
+
+## Dated facts moved out of the live docs
+
+- **Seeds** were made by hand on 2026-09-09; the 835 seed a day earlier (it was
+  recovered from the Recycle Bin on 2026-09-10).
+- **Both bug-hunt runs** died on a host with 8 GB of RAM and a pagefile pinned at
+  500 MB — an 8.5 GB commit limit, of which six Claude processes already held
+  about 2 GB.

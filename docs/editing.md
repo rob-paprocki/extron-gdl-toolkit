@@ -5,8 +5,9 @@ the impressive demo; changing one that already exists is the job. A client says
 "rename those three buttons, and we're moving to the bigger panel" and the
 question is whether that can be done reliably rather than by hand.
 
-It can. All four operations are verified end to end against GUI Designer
-1.27.0.9, on the real Liberty Bank project.
+It can. Three of the four operations are verified end to end against GUI
+Designer 1.27.0.9 on the real Liberty Bank project; `renumber` is planned and
+checked, but has not been through a build.
 
 | Op | What it does | Verified |
 |---|---|---|
@@ -18,7 +19,7 @@ It can. All four operations are verified end to end against GUI Designer
 ## The shape
 
 Identical to the spec pipeline, for the same reason. Decisions are made in
-Python against the real `.gdl` on a Mac; PowerShell only applies ops.
+Python against the real `.gdl`, on any OS; PowerShell only applies ops.
 
     python -m gdl.edit check <edits.json> <panel.gdl>
     python -m gdl.edit plan  <edits.json> <panel.gdl> out/edits-plan.json
@@ -101,12 +102,11 @@ factors as its own controls. A full-canvas page lands exactly on the screen size
 is that canvas and contents move together, so nothing can overflow that did not
 overflow before. `tests/test_retarget_canvas.py` pins it.
 
-`check` catches the general form of this before the trip: any control that would
+`check` catches the general form of this before anything is built: any control that would
 fall outside its page after the edit is an **error**, because Build relocates it
-silently. That check used to skip popups (`if pg['kind'] != 'page': continue`) —
-which are the only pages whose canvas may differ from the screen, and therefore
-the only place it could ever have fired. It now runs against each page's own new
-canvas.
+silently. It runs against each page's own new canvas, popups included — they
+are the only pages whose canvas may differ from the screen, so they are where it
+matters most.
 
 ### What a retarget does and does not promise
 
@@ -144,9 +144,8 @@ The correction that matters: **DPI is per model, not per resolution.** 1280x800
 alone spans 124.75 (TLP Pro 1220/1225), 149 (TLC 1026M, TLP Pro 1025/1035,
 ZRTP 1025), 188.68 (TLP Pro 835) and 220 (virtual Android). That is a 1.76x
 spread and it lands directly on the touch-target minimum: 44px, 53px, 67px,
-78px for the same 9mm rule. Keying the minimum off the resolution — which is
-what this repo did until now — was right only for the model whose row happened
-to be transcribed.
+78px for the same 9mm rule. Keying the minimum off the resolution is right only
+for whichever model that resolution's row was measured on.
 
 So name the model. `touch_minimums('TLP1035T')` is the right answer;
 `touch_minimums((1280, 800))` is a safe one, using the densest *physical* panel

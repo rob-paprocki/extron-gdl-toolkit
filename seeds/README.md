@@ -5,13 +5,11 @@ as donors for clean-room authoring: a panel generated from one of these carries
 nothing of any client's. They are Git LFS objects - run `git lfs pull` on a
 fresh clone, or `git lfs pull --include "seeds/Afterburn 1035.gdl"` for one.
 
-Made by hand on 2026-09-09 (the 835 one a day earlier; it had been moved to the
-Recycle Bin and was copied back out on 2026-09-10). `PBProject` cannot be
-constructed headlessly and the Project Create Wizard exposes nothing to UI
-Automation, so a seed is the one step that needs a person - about a minute each.
-docs/from-scratch.md section 5c has the recipe.
+`PBProject` cannot be constructed headlessly and the Project Create Wizard
+exposes nothing to UI Automation, so a seed is the one step that needs a person -
+about a minute each. `docs/from-scratch.md` §5c has the recipe.
 
-| File | Project name | Model(s) by part number | Part | Canvas | Pages | Popups | Controls | Borders | Embedded fonts |
+| File | Project name | Model(s) by part number | Part | Canvas | Pages | Popups | Controls | Borders | Declared fonts |
 |---|---|---|---|---|---:|---:|---:|---:|---|
 | `Afterburn 1035.gdl` | Afterburn All-inclusive 1220 | TLP1035M, TLP1035T | 60-1999-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 1230W.gdl` | Afterburn All-inclusive 1230 | TLP1230WTG | 60-1668-02 | 1920x720 | 12 | 26 | 878 | 18 | Arial, Arial Black, Extron-Afterburn, Open Sans |
@@ -44,8 +42,9 @@ part and fonts from each seed's own built `layout.json`.
   define 17-31, Mach/Shockwave/Turbulence 13-14, the Zoom Rooms seeds 16. A spec
   that names `2D Capsule` or an Afterburn radius resolves in one family and not
   another; `donors` says which are missing.
-- **Fonts differ too.** The Zoom Rooms seeds embed Arial only; Afterburn carries
-  Open Sans; Mach and Shockwave add their icon fonts.
+- **Fonts differ too.** The Zoom Rooms seeds declare only Arial and Arial Black;
+  Afterburn adds Open Sans; Mach and Shockwave add their icon fonts. A declared
+  face is not always an embedded one — see `gdl/fonts/README.md`.
 - **Three pairs are the same project at two sizes** - Afterburn, Mach and
   Shockwave at 1035 and 1535. They are ground truth for `retarget`
   (research/2026-09-10/retarget_truth.py).

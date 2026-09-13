@@ -2,9 +2,8 @@
 
 ## gdl-bug-hunt.js - planned, never completed
 
-A multi-agent hunt for latent bugs of the shape that produced both of
-2026-09-10's findings: **the code is confident, the format disagrees, and
-nothing fails loudly.** It is a Claude Code Workflow script (run it with the
+A multi-agent hunt for latent bugs of the shape this repo's worst ones have
+had: **the code is confident, the format disagrees, and nothing fails loudly.** It is a Claude Code Workflow script (run it with the
 Workflow tool, `scriptPath: workflows/gdl-bug-hunt.js`).
 
 | Phase | Model | What |
@@ -21,10 +20,9 @@ output to each finding.
 
 Both attempts (runs `wf_3d13556c-96d` and `wf_35446858-866`) died about 90
 seconds in, with the three extract agents healthy and mid-read. The cause was
-the machine, not the script: **8 GB of RAM and a pagefile pinned at 500 MB**
-gives a commit limit of 8.5 GB, six Claude processes already held about 2 GB,
-and each workflow agent adds a process. The session under the workflow was
-killed, and the next command failed with "The paging file is too small for this
+the host's commit limit, not the script: the limit is RAM plus pagefile, every
+workflow agent adds a process, and past it the session under the workflow is
+killed and the next command fails with "The paging file is too small for this
 operation to complete". Partial agent transcripts are in
 `archive/claude/sessions/9fe2c865-.../subagents/`.
 

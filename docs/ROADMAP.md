@@ -12,52 +12,9 @@ opening GUI Designer.**
 - Also proven: Arial recovery, font application, UTF-8 specs, multi-page panels,
   clean-room authoring, retarget from a seed (650/650), popup canvases that keep
   their own size, and Off/On button feedback.
-- `python -m pytest` is 157 tests and they pass. For live branch and PR state,
-  ask `git` and `gh` — a status snapshot written into a doc is stale the next
-  time anything merges.
-
-## Setting up a working machine
-
-Nothing this project needs lives only on one machine: everything that was
-working state is in the repo, and everything else is installed software or GUI
-Designer's own shipped content, which a reinstall restores. Login tokens are
-deliberately not in the repo — sign in again.
-
-What this project needs, with the versions it has been verified against:
-
-| Install | Version | Why |
-|---|---|---|
-| Extron GUI Designer | **1.27.0.9** | the tested boundary; builds and the authoring bridge need it |
-| Python | 3.11.9 | then `pip install -r requirements.txt pytest` (Pillow 12.3.0, pytest 9.1.1) |
-| Git + Git LFS | 2.55 / 3.7.1 | `seeds/` and `archive/` are LFS objects |
-| GitHub CLI | 2.100 | PRs and issues, as `rob-paprocki` |
-| VS Code (optional) | 1.136 | with `ms-python.python`, `ms-vscode.powershell`, `anthropic.claude-code` |
-| Extron Global Configurator Professional | 3.33.0.38 | not used by this repo; it was installed for other Extron work |
-
-Then:
-
-1. **Let the OS manage the pagefile** (System > About > Advanced system
-   settings > Performance Settings > Advanced > Virtual memory > *Automatically
-   manage paging file size*). The commit limit is RAM plus pagefile, so a fixed
-   small pagefile can be far tighter than the RAM suggests. A host limited to
-   8.5 GB this way killed both runs of the bug-hunt workflow about 90 seconds in
-   and made the next command fail with *The paging file is too small*.
-2. `git clone`, then `git lfs pull`.
-3. `pip install -r requirements.txt pytest`, then extract the fonts:
-   `for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done`.
-   All six fixtures — no single one embeds every face.
-4. **Repopulate `vendor/`** from the GUI Designer install -
-   `vendor/README.md` has the commands, and `vendor/MANIFEST.md` the
-   SHA-256 of every file, so a changed template shows up.
-5. `python -m pytest`, then `python tests/audit_corpus.py` - both should match
-   what is recorded here. The audit is expected to report 2 FAIL of 12
-   invariants; they are *Mine* #1 and #2 below, not a broken checkout.
-6. **Restore Claude Code's memory for this folder** if you want the accumulated
-   project context: `archive/claude/memory/` is the copy. It belongs in the
-   per-project memory directory, whose name Claude Code derives from the repo's
-   working path — so it changes if the repo moves.
-7. Keep build scratch on a local disk (`-Work`, default under `C:\gdlwork`).
-   GUI Designer is slow against a network or mounted drive.
+- For test results and branch or PR state, run `python -m pytest`, `git` and
+  `gh` — a snapshot written into a doc is stale the next time anything merges.
+  Setting up a machine is in `README.md` *Setup*.
 
 ## Yours
 
@@ -89,8 +46,8 @@ Then:
    Shockwave for `extron_shockwave.ttf`. GUI Designer supplies them itself at
    build time - its temp held Monotype Arial Black 5.06 and Arial 5.10 while
    building from a seed that embeds neither (`archive/gui-designer/`). The
-   renderer has no such source, so a preview of a seed-built panel off Windows
-   can raise `LookupError`. Also: `fonts.extract()` keys results by file name,
+   renderer has no such source, so a preview of a seed-built panel can raise
+   `LookupError`. Also: `fonts.extract()` keys results by file name,
    and Shockwave declares `arial.ttf` twice, so a missing one hides behind a
    found one.
 3. **Run the bug hunt** (`workflows/gdl-bug-hunt.js`) on a host with enough
@@ -125,9 +82,12 @@ Then:
 
 ## Backlog - real, not urgent
 
-- `docs/from-scratch.md` §6: questions 5 and 6 untested; an out-of-corpus border
-  radius/thickness *builds* but was never checked to *rasterize* correctly;
-  preview fidelity on a fully synthetic page rests on one control.
+- `renumber` is planned and checked but has never been through a build. Build
+  one and run `tests/verify_built.py` against it.
+- `docs/from-scratch.md` §6: control-ID uniqueness and `referenceCountField`
+  (question 6) are untested; an out-of-corpus border radius/thickness *builds*
+  but was never checked to *rasterize* correctly; preview fidelity on a fully
+  synthetic page rests on one control.
 - The 5.86% render residual on the TLP1035 pages. Not the typeface; cause
   unknown.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
@@ -136,28 +96,6 @@ Then:
   (`docs/render-fidelity.md` finding 7); every text finding validated against
   one typeface.
 
-## Corpus audit, 2026-09-11
-
-`python tests/audit_corpus.py` over every project on the box - 6 fixtures, 14
-seeds, 44 templates - after the Offline Page correction below.
-
-| Invariant | Result |
-|---|---|
-| Button states are countable (the `PBStates.Count` trap) | PASS |
-| Off/On is the dominant state pair | PASS - 13,589 of 13,792 two-state buttons, 98.5% |
-| A popup's built size equals its authored size | PASS on all 20 built projects |
-| `TLPDefaultStateID` is 0 | PASS |
-| Page and popup names unique per project | PASS |
-| `userId` fits in UInt16 | PASS - highest 61,091 |
-| A button's caption lives on its state | PASS - state 88.6%, formatted state 11.4% |
-| One full-canvas popup reference per shown modal popup, per page | PASS on all 20 - after correcting the rule (below) |
-| Every declared face is recoverable | **FAIL** - see *Mine* #2 |
-| Every canvas is a model the table can target | **FAIL** - 1920x720 and 480x320 (*Mine* #1); also 1920x1200 and 986x740, the Teams Rooms and Zoom Rooms control templates, whose platforms the table does not list |
-| Border resources shared across themes | INFO - none common to all 64 projects; Afterburn 17-32, Mach 13-15, Shockwave 13-14, Turbulence 13, Zoom Rooms 16-17 |
-| Controls Build leaves unrasterized | INFO - 2 to 187 per project; the baseline to compare a suspect build against |
-
-The modal-reference rule took two corrections, both found by this audit. The
-docs said Build adds one full-canvas reference per modal popup; that was one
-too many on 19 of the 20 built projects. "All but the Offline Page" then failed
-only the Turbulence seed - the one project with `EnableOfflinePage` on. The
-rule is: one per modal popup, the Offline Page counting only when it is enabled.
+`python tests/audit_corpus.py` checks the documented invariants against every
+project it can reach; `docs/gdl-format.md` §9 has what it checks and its last
+result.
