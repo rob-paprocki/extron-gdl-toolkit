@@ -16,17 +16,20 @@
     Runs the applier under 32-bit PowerShell 5.1 itself, so it does not matter
     which host you start it from.
 
-    IT NEEDS THE DESKTOP TO ITSELF. Save and Build is driven by SendKeys, which
-    types into whatever holds focus, so this script has to bring GUI Designer to
-    the foreground - and Windows only grants that to a process that already has
-    it or has just received input. Anything else grabbing focus while this runs
-    makes the keystroke unsendable, and the run stops at that step rather than
-    typing Ctrl+Shift+B into someone else's window.
+    It does NOT need the foreground. Save and Build is triggered through
+    Invoke-GdlMenu.ps1, which uses UI Automation to click the menu item
+    directly, so the pipeline runs while the machine is in use.
 
-    In practice that means: do not use the machine while it runs, and do not
-    poll it from another shell. Polling was what broke the first two attempts at
-    a three-page build - every command run from a terminal brings that terminal
-    forward, and the pipeline could not take the foreground back.
+    Send-GdlKeys.ps1 is only the fallback if the UIA click fails, and that path
+    does need the foreground - it types into whatever holds focus, and a
+    pipeline driven from a terminal can never take the foreground away from that
+    terminal, because Windows will not hand it to a process that does not
+    already have it. So a run that falls back is a run that will stop at that
+    step rather than type Ctrl+Shift+B into someone else's window. Send-GdlKeys
+    verifies and refuses rather than typing blind.
+
+    It does need a real interactive desktop session - UserInteractive true, with
+    a desktop to draw on - not a service or scheduled-task context.
 
     -KeepOpen leaves GUI Designer up to look at. By default it is closed, since
     an instance holding the file open blocks the next run.
@@ -164,6 +167,11 @@ try {
     Write-Output "  $($proc.MainWindowTitle)"
 
     Step 'File > Save and Build'
+    # Capture the baseline BEFORE triggering, because the invoke below blocks on
+    # the build modal. Sampling it afterwards can read a mtime the build has
+    # already moved, leaving Wait-GdlBuild waiting for a second write that never
+    # comes. See its header.
+    $buildFrom = (Get-Item $Output).LastWriteTime
     # UIA first: it clicks the menu item directly and needs no focus, so this
     # works while the machine is in use. SendKeys is the fallback and cannot,
     # since a pipeline driven from a terminal can never take the foreground away
@@ -179,7 +187,8 @@ try {
     }
     Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
                 (Join-Path $PSScriptRoot 'Wait-GdlBuild.ps1'),
-                '-ProjectFile', $Output, '-TimeoutSeconds', $TimeoutSeconds) 'build'
+                '-ProjectFile', $Output, '-TimeoutSeconds', $TimeoutSeconds,
+                '-Since', $buildFrom.ToString('o')) 'build'
 
     if (-not $KeepOpen) {
         Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue |

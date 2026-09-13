@@ -11,7 +11,8 @@
 #
 # This half needs no GUI. Only the open-and-build check does.
 param(
-    [string]$Repo = '\\Mac\Home\GitHub\rob-paprocki\extron-gdl-toolkit',
+    # Defaults to this script's own checkout, so it works from anywhere.
+    [string]$Repo = (Split-Path -Parent $PSScriptRoot),
     [string]$Work = 'C:\gdlwork'
 )
 $ErrorActionPreference = 'Stop'

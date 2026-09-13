@@ -41,7 +41,8 @@ try {
 
 
 
-$repo = '\\Mac\Home\GitHub\rob-paprocki\extron-gdl-toolkit'
+# Derived from this script's own location, so the file works from any checkout.
+$repo = Split-Path -Parent $PSScriptRoot
 Import-Module -Name (Join-Path $repo 'powershell\GdlProject.ps1') -ErrorAction SilentlyContinue
 if (-not (Get-Command Initialize-Gdl -ErrorAction SilentlyContinue)) {
     # Import-Module will not take a .ps1; fall back to reading and invoking it.

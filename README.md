@@ -44,9 +44,10 @@ together.
 | `tests/audit_corpus.py` | re-tests the repo's documented beliefs against every project it can reach |
 | `research/` | measured findings and unshipped render improvements, with their numbers and scripts |
 | `workflows/` | the planned multi-agent bug hunt, not yet run |
-| `archive/` | raw working state carried off the Windows box, kept as evidence (Git LFS) |
+| `archive/` | raw working state carried off an earlier build host, kept as evidence (Git LFS) |
 | `vendor/` | Extron's templates and icons, on disk but not pushed - see its README |
 | `docs/ROADMAP.md` | what is left, in order, and who has to do it |
+| `docs/history.md` | retired setups and corrections — why a claim changed. Not needed to use the toolkit |
 
 ## Quick start
 

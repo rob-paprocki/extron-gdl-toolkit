@@ -1,41 +1,29 @@
-# Roadmap and turnover
+# Roadmap
 
-Everything left to do on this project, in order, split by who has to do it, and
-how to pick it back up. Written 2026-09-11, when the Windows box it was built
-on was about to be reimaged and everything the project had on `C:` was moved
-into this repo. The goal is unchanged: **prose in, production-ready Extron panel
-out, with nobody opening GUI Designer.**
+Everything left to do on this project, in order, split by who has to do it. The
+goal is unchanged: **prose in, production-ready Extron panel out, with nobody
+opening GUI Designer.**
 
 ## Where things stand
 
-- Branch `fix/embedded-arial-native-windows`, pushed, with a pull request open
-  against `main`. 157 tests pass.
 - Proven end to end on real hardware: spec → plan → apply → pack → GUI Designer
   Save and Build → verify, unattended and without taking the foreground
   (`powershell/New-GdlPanel.ps1`), from a client project or from a clean seed.
-- Proven this week: Arial recovery, font application, UTF-8 specs, multi-page
-  panels, clean-room authoring, retarget from a seed (650/650), popup canvases
-  that keep their own size, and Off/On button feedback.
+- Also proven: Arial recovery, font application, UTF-8 specs, multi-page panels,
+  clean-room authoring, retarget from a seed (650/650), popup canvases that keep
+  their own size, and Off/On button feedback.
+- `python -m pytest` is 157 tests and they pass. For live branch and PR state,
+  ask `git` and `gh` — a status snapshot written into a doc is stale the next
+  time anything merges.
 
-## Nothing of the project is left on `C:`
+## Setting up a working machine
 
-| Was on `C:` | Now |
-|---|---|
-| The 13 seeds in `Public\Documents\Extron\GUI Designer`, and `Project1.gdl` (the 835 seed, found in the Recycle Bin) | `seeds/` |
-| `C:\gdlwork` - every build from 2026-09-08/09 | `archive/gdlwork/` |
-| The 2026-09-09/10 job scratch (retarget and feedback-state builds, measurement scripts) | `archive/job-9fe2c865/`, `research/2026-09-10/` |
-| `Desktop\gdl-retarget-proof` | `archive/desktop/` |
-| Claude Code transcripts, memory and the bug-hunt workflow script for this project | `archive/claude/`, `workflows/` |
-| GUI Designer's build font temp and its user settings | `archive/gui-designer/` |
-| Extron's 44 `.glt` templates and the Afterburn icon kit | `vendor/` on this drive (manifest in git) |
+Nothing this project needs lives only on one machine: everything that was
+working state is in the repo, and everything else is installed software or GUI
+Designer's own shipped content, which a reinstall restores. Login tokens are
+deliberately not in the repo — sign in again.
 
-What stays on `C:` is installed software and GUI Designer's own shipped content,
-all of which comes back with a reinstall. Login tokens (Claude Code, `gh`, Git
-Credential Manager) were deliberately not copied: sign in again.
-
-## After the reimage: rebuilding the Windows box
-
-What this project needs, with the versions it was verified on:
+What this project needs, with the versions it has been verified against:
 
 | Install | Version | Why |
 |---|---|---|
@@ -48,47 +36,43 @@ What this project needs, with the versions it was verified on:
 
 Then:
 
-1. **Let Windows manage the pagefile** (System > About > Advanced system
+1. **Let the OS manage the pagefile** (System > About > Advanced system
    settings > Performance Settings > Advanced > Virtual memory > *Automatically
-   manage paging file size*). The old install had 8 GB of RAM and a pagefile
-   pinned at 500 MB - a commit limit of 8.5 GB - and that is what killed both runs
-   of the bug-hunt workflow about 90 seconds in and made the next command fail
-   with *The paging file is too small*.
-2. **Set up the `rob-paprocki` identity the way the folder's `CLAUDE.md`
-   describes** - `includeIf` to `~/.config/git/rob-paprocki.gitconfig`, the
-   identity guard hook, `gh auth login --user rob-paprocki`. None of that was
-   present on the old install: `~/.gitconfig` had only `[safe]` entries, and
-   commits here were authored through a repo-local `user.name` / `user.email`.
-   The GitHub MCP server's `GITHUB_PERSONAL_ACCESS_TOKEN` was also dead.
-3. `git clone`, then `git lfs pull`.
-4. **Repopulate `vendor/`** from the fresh GUI Designer install -
-   `vendor/README.md` has the three commands, and `vendor/MANIFEST.md` the
+   manage paging file size*). The commit limit is RAM plus pagefile, so a fixed
+   small pagefile can be far tighter than the RAM suggests. A host limited to
+   8.5 GB this way killed both runs of the bug-hunt workflow about 90 seconds in
+   and made the next command fail with *The paging file is too small*.
+2. `git clone`, then `git lfs pull`.
+3. `pip install -r requirements.txt pytest`, then extract the fonts:
+   `for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done`.
+   All six fixtures — no single one embeds every face.
+4. **Repopulate `vendor/`** from the GUI Designer install -
+   `vendor/README.md` has the commands, and `vendor/MANIFEST.md` the
    SHA-256 of every file, so a changed template shows up.
 5. `python -m pytest`, then `python tests/audit_corpus.py` - both should match
-   what is recorded here.
-6. **Restore Claude Code's memory for this folder.** It lived on `C:` and was
-   wiped with the rest; `archive/claude/memory/` is the copy. Put the files back
-   in `~\.claude\projects\Z--GitHub-rob-paprocki\memory\` (the directory name
-   is derived from the working path, so it stays the same as long as the repo
-   is still at `Z:\GitHub\rob-paprocki\`).
-7. Build scratch goes in `C:\gdlwork` again; GUI Designer is slow against a
-   mounted drive.
+   what is recorded here. The audit is expected to report 2 FAIL of 12
+   invariants; they are *Mine* #1 and #2 below, not a broken checkout.
+6. **Restore Claude Code's memory for this folder** if you want the accumulated
+   project context: `archive/claude/memory/` is the copy. It belongs in the
+   per-project memory directory, whose name Claude Code derives from the repo's
+   working path — so it changes if the repo moves.
+7. Keep build scratch on a local disk (`-Work`, default under `C:\gdlwork`).
+   GUI Designer is slow against a network or mounted drive.
 
 ## Yours
 
-1. **Review and merge the pull request.**
-2. **Decide what `fixtures/` should be.** It is a real client's project
+1. **Decide what `fixtures/` should be.** It is a real client's project
    (Liberty Bank, job J26450039), on GitHub, private. Seeds mean it no longer
    has to be the donor in the examples and CI - but the render baseline is
    scored against its snapshot exports, so it cannot simply be deleted. Keep
    it; keep it but move examples and CI onto seeds; or replace it with a
    synthetic fixture and re-baseline (about a day).
-3. **Make seeds at the sizes you deliver on.** `seeds/README.md` lists the gaps:
+2. **Make seeds at the sizes you deliver on.** `seeds/README.md` lists the gaps:
    the Teams Rooms family, Zoom Rooms at 725 and 986x740, and 1024x600, 1366x768,
    800x480, 1280x720 and 320x240. About a minute each in GUI Designer; a
    native-size seed beats a retarget, which matches Extron's own hand layout
    for only 22% of controls.
-4. **Say whether `vendor/` should be pushed** (about 470 MB of Extron's
+3. **Say whether `vendor/` should be pushed** (about 470 MB of Extron's
    reinstallable content; one `git add -f vendor/extron` plus an LFS rule).
 
 ## Mine, in order
@@ -109,8 +93,8 @@ Then:
    can raise `LookupError`. Also: `fonts.extract()` keys results by file name,
    and Shockwave declares `arial.ttf` twice, so a missing one hides behind a
    found one.
-3. **Run the bug hunt** (`workflows/gdl-bug-hunt.js`) on the rebuilt box with a
-   managed pagefile. `tests/audit_corpus.py` has done the cheap deterministic
+3. **Run the bug hunt** (`workflows/gdl-bug-hunt.js`) on a host with enough
+   commit limit for the fan-out. `tests/audit_corpus.py` has done the cheap deterministic
    part; the workflow is for the judgment-heavy dimensions: collection traps,
    dead guards, silent no-ops, plan-contract drift, verifier blind spots,
    fields a clone inherits, what is secretly Afterburn-only, layout-math edges.
@@ -151,7 +135,6 @@ Then:
 - `referenceCountField` semantics; the size-dependent vertical text residual
   (`docs/render-fidelity.md` finding 7); every text finding validated against
   one typeface.
-- The test counts in `CLAUDE.md`'s *Where to work* table are stale.
 
 ## Corpus audit, 2026-09-11
 

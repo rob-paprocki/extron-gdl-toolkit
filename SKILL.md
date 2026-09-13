@@ -6,8 +6,8 @@ description: Use when creating, modifying or reviewing an Extron GUI Designer to
 # Building Extron touch panels
 
 This repo can read, render, check and generate Extron `.gdl` panels. The whole
-loop is proven against GUI Designer 1.27.0.9, and on a Windows box it runs
-unattended end to end — `powershell\New-GdlPanel.ps1` takes a JSON spec and
+loop is proven against GUI Designer 1.27.0.9, and on a machine with GUI
+Designer installed it runs unattended end to end — `powershell\New-GdlPanel.ps1` takes a JSON spec and
 returns a built, verified panel without anyone opening GUI Designer.
 
 So the job here is usually to turn a description into a good spec. The build is
@@ -96,7 +96,7 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    the missing one, and the panel builds looking correct and does nothing when
    switched. Answer its complaints before going to Windows; that is the entire
    point of the step.
-7. **Build it.** On the Windows box this is one command, which re-runs steps 4
+7. **Build it.** With GUI Designer installed this is one command, which re-runs steps 4
    and 6 and finishes with step 8:
 
    ```powershell
@@ -120,7 +120,7 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 ### B. Modify an existing panel
 
 There is a vocabulary for this - write the change as JSON, resolve it against
-the real project on the Mac, then apply:
+the real project, then apply:
 
 1. **Describe the change** - see `examples/edits.json`. Four ops:
    `rename` (captions), `retarget` (another panel model, optionally rescaling),
@@ -158,7 +158,7 @@ setter writes the backing field *before* throwing, so it looks like it worked.
 
 ## Running the Windows half
 
-**On the Windows box, use `powershell\New-GdlPanel.ps1`** (above) and skip the
+**With GUI Designer installed, use `powershell\New-GdlPanel.ps1`** (above) and skip the
 rest of this section. A Claude Code session there is already interactive, so
 there is no VM, no remote exec and no scheduled task.
 
@@ -177,22 +177,13 @@ scripting something it does not cover:
   `GUI Designer` forever and your wait never ends.
 - Read the screen back with `System.Drawing`'s `CopyFromScreen`.
 
-### From macOS against a Parallels guest
-
-Fully scriptable; `docs/from-scratch.md` §7 has detail.
-
-```bash
-# authoring - runs as SYSTEM, no desktop, fine for anything headless
-prlctl exec "Windows 11" 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe' \
-    -NoProfile -ExecutionPolicy Bypass -File '\\Mac\Home\...\script.ps1'
-
-# anything that draws - MUST have --current-user or it dies on the first dialog
-prlctl exec "Windows 11" --current-user ... -File '...\out\sendkeys.ps1' -Keys '^+b'
-prlctl capture "Windows 11" --file /tmp/vm.png     # read the screen back
-```
-
-- The host is at `\\Mac\Home\...` in the guest. The `Z:` mapping is
-  per-interactive-session and **invisible** to `prlctl exec`.
+- **Headless authoring is fine; anything that draws needs a desktop.** Reading,
+  cloning and saving a project graph works in any context. The moment something
+  shows a form — which includes GUI Designer itself — it needs a session where
+  `[Environment]::UserInteractive` is true and a desktop exists, or it dies with
+  "Showing a modal dialog box or form when the application is not running in
+  UserInteractive mode". A service, scheduled task or remote-exec context that
+  runs as `nt authority\system` does not qualify.
 - **`Project > Verify` (Ctrl+B) is not a build.** It says "Build Complete - 0
   errors" and emits no payload; saving after it drops the payload entirely. The
   real build is **File > Save and Build (Ctrl+Shift+B)**.

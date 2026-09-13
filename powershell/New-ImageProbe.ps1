@@ -9,7 +9,7 @@
 # Uses an icon from Extron's own resource kit, which is the realistic workflow.
 #
 # The icon kit is copied into vendor/extron/ (see vendor/README.md); the install
-# path is the fallback. $Repo used to default to the Parallels \\Mac\Home share.
+# path is the fallback.
 param(
     [string]$Repo = (Split-Path -Parent $PSScriptRoot),
     [string]$Work = 'C:\gdlwork',

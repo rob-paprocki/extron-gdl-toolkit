@@ -9,8 +9,11 @@ export const meta = {
   ],
 }
 
-const REPO = 'Z:/GitHub/rob-paprocki/extron-gdl-toolkit'
-const SEEDS = `${REPO}/seeds`   // was the GUI Designer Documents folder; moved into the repo 2026-09-10
+// Run this from the repo root, or set GDL_REPO. Never hardcode a checkout path:
+// this pointed at a drive letter that stopped existing when the repo moved,
+// which would have failed the run on its first line.
+const REPO = process.env.GDL_REPO ?? process.cwd()
+const SEEDS = `${REPO}/seeds`
 
 const CONTEXT = `
 You are bug-hunting in a Python + PowerShell toolkit that reads and writes Extron

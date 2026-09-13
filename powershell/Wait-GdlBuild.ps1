@@ -27,23 +27,48 @@
 
     So: wait for the file to change, then wait for it to stop changing. Exits 0
     when the payload is written and stable, 1 on timeout.
+
+    Capture the mtime BEFORE triggering the build and pass it as -Since:
+
+        $t0 = (Get-Item $f).LastWriteTime
+        powershell\Invoke-GdlMenu.ps1 -Item 'Save and Build'
+        powershell\Wait-GdlBuild.ps1 -ProjectFile $f -Since $t0
+
+    Without it there is a race. Invoke-GdlMenu blocks on the build modal, so if
+    the build finishes before that call returns, a baseline sampled here is
+    already the post-build mtime and the wait can never be satisfied - it burns
+    the full timeout and reports failure for a build that in fact succeeded.
+    Machine speed decides which way it falls, so it is not reproducible.
 #>
 param(
     [Parameter(Mandatory)][string]$ProjectFile,
     [int]$TimeoutSeconds = 900,
     [int]$StableSeconds = 6,
-    [int]$PollSeconds = 2
+    [int]$PollSeconds = 2,
+    [Nullable[DateTime]]$Since = $null
 )
 
 if (-not (Test-Path $ProjectFile)) { throw "not found: $ProjectFile" }
 
 $before = Get-Item $ProjectFile
-$t0 = $before.LastWriteTime
+
+# The caller should capture the mtime BEFORE triggering the build and pass it as
+# -Since. Invoke-GdlMenu blocks on the build modal, so on a machine where the
+# build completes before that call returns, sampling the baseline here reads the
+# post-build mtime and the wait below can never be satisfied - a successful build
+# reported as a timeout. Which way the race falls depends on machine speed, so
+# both orderings happen in practice. Falling back to the current mtime keeps the
+# old single-argument behaviour working for callers that do not pass -Since.
+$t0 = if ($null -ne $Since) { $Since } else { $before.LastWriteTime }
+
 $sw = [Diagnostics.Stopwatch]::StartNew()
 Write-Output ("waiting for a build to rewrite {0} (was {1:HH:mm:ss}, {2:N0} bytes)" -f
               [System.IO.Path]::GetFileName($ProjectFile), $t0, $before.Length)
 
-$written = $false
+# If the file already moved past the baseline, the build we were waiting for has
+# happened - fall straight through to the stability check rather than hanging.
+$written = ($before.LastWriteTime -ne $t0)
+if ($written) { Write-Output '  already rewritten before the wait started' }
 $lastSize = -1
 $stableFor = 0
 

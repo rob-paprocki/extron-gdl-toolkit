@@ -140,7 +140,6 @@ set.
 
 ## 5. Tested against GUI Designer 1.27.0.9 — results
 
-Run on 2026-09-07 in a Parallels Windows 11 VM with GUI Designer installed.
 Each test project was authored **headlessly** by PowerShell, packed with
 `gdl.container pack`, then opened and built in the real application. See §7 for
 how that was driven, which is fully scriptable.
@@ -427,12 +426,12 @@ bad trade.
 
 ## 7. Driving GUI Designer
 
-### On the Windows box (the simple case)
+### On a machine with GUI Designer installed (the simple case)
 
-Run Claude Code on the machine that has GUI Designer and there is no remoting
-layer at all. A session there is already interactive - `UserInteractive` is
-true, on session 1 with a real desktop - so the authoring bridge, the build and
-the screen capture all run in one place:
+Work on the machine that has GUI Designer and there is no remoting layer at all.
+An ordinary logged-in session is already interactive - `UserInteractive` is
+true, with a real desktop - so the authoring bridge, the build and the screen
+capture all run in one place:
 
 ```powershell
 # 1. author. 32-bit PS 5.1: .NET Framework still has BinaryFormatter, and
@@ -469,34 +468,24 @@ Three things that will cost you time:
 - **The trailing `*` is the completion signal.** Save and Build clears it. Until
   then a *Please wait while the project is being saved* overlay is up, and the
   process reports `Responding = False` intermittently, which is not a hang.
-- **Work under `C:\gdlwork`, not the repo.** If the repo is on a mounted drive
+- **Work under the build scratch dir, not the repo.** If the repo is on a mounted drive
   GUI Designer is slow against it, and only two files need to move: the plan in,
   the built `.gdl` back.
 
-### From macOS against a Parallels guest
+### The session context this needs
 
-Still works, and is what made §5 cheap enough to do properly.
+Authoring — reading, cloning, editing and saving a project graph — is headless
+and runs in any context. Anything that *draws* does not: GUI Designer and every
+dialog it raises need a session where `[Environment]::UserInteractive` is true
+and a real desktop exists. Run it as a service, a scheduled task, or any
+remote-exec that lands as `nt authority\system`, and the first form dies with
+"Showing a modal dialog box or form when the application is not running in
+UserInteractive mode".
 
-```bash
-# runs as SYSTEM, non-interactive - fine for authoring, no UI
-prlctl exec "Windows 11" 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe'     -NoProfile -ExecutionPolicy Bypass -File '\Mac\Home\...\out\make-tests.ps1'
+A normal logged-in session on a machine with GUI Designer installed satisfies
+this, and needs no VM or remote-exec apparatus.
 
-# runs as the logged-on user WITH a desktop - needed for anything that draws
-prlctl exec "Windows 11" --current-user ... -File '...\out\sendkeys.ps1' -Keys '^+b'
-
-prlctl capture "Windows 11" --file /tmp/vm.png     # read the result back
-```
-
-Two things to know:
-
-- **`--current-user` is the whole trick.** Without it `prlctl exec` runs as
-  `nt authority\system` with `UserInteractive = False`, and anything that shows
-  a form dies with "Showing a modal dialog box or form when the application is
-  not running in UserInteractive mode".
-- The host filesystem is reachable in the guest at `\Mac\Home\...`. The `Z:`
-  mapping is per-interactive-session and is **not** visible to `prlctl exec`;
-  use the UNC path.
-
-`out/sendkeys.ps1` and `powershell/Send-GdlKeys.ps1` both activate GUI Designer's
-window and send keystrokes, which is enough to drive Open / Verify / Save and
-Build.
+`powershell/Send-GdlKeys.ps1` activates GUI Designer's window and sends
+keystrokes, which is enough to drive Open / Verify / Save and Build — but it is
+the fallback. Prefer `powershell/Invoke-GdlMenu.ps1`, which clicks the menu item
+through UI Automation and needs no foreground at all.
