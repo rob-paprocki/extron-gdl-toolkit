@@ -256,9 +256,15 @@ class Edits:
         new_size = MODELS[model]
         self._model = model
         old_size = self._screen_size()
+        # No `platform_class` hint here on purpose. It used to carry
+        # f'Extron.GUICPro.PB{model}Platform', which is wrong for 9 of the 55
+        # models - TLP720T is PBTLP720TVPlatform, TLP1230WTG is the bare
+        # PBTouchPanelPlatformPro, and so on. Nothing read it: the applier
+        # resolves the class through Enum.Parse + CreatePlatform, which is
+        # Extron's own code and always right. A hint that is wrong 16% of the
+        # time and authoritative 0% of the time is worse than no hint.
         project_ops.append({'why': f'retarget to {model} ({new_size[0]}x{new_size[1]})',
-                            'model': model, 'size': list(new_size),
-                            'platform_class': f'Extron.GUICPro.PB{model}Platform'})
+                            'model': model, 'size': list(new_size)})
         if not e.get('scale'):
             return old_size, new_size
         if not old_size:

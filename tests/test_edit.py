@@ -14,6 +14,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from gdl.edit import Edits, _norm  # noqa: E402
+from gdl.spec import MODELS_FULL  # noqa: E402
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIXTURE = os.path.join(
@@ -167,14 +168,34 @@ class TestRetarget(unittest.TestCase):
         self.assertTrue(errors)
         self.assertIn('TLP1720MG', errors[0])
 
+    def test_cci700_is_gone(self):
+        """GUI Designer 1.28 dropped CCI700 from PlatformProTypeEnum.
+
+        It has to be absent from MODELS too, or `check()` passes a retarget the
+        applier cannot perform - and because the control-geometry ops are a
+        separate pass from the project ops, a half-applied retarget writes a
+        file whose controls are scaled for one panel on another panel's canvas.
+        """
+        self.assertNotIn('CCI700', MODELS_FULL)
+        _, errors, _ = _edits([{'op': 'retarget', 'model': 'CCI700'}]).check()
+        self.assertTrue(errors, 'a CCI700 retarget must not pass check()')
+
+    def test_ecp_is_a_known_model(self):
+        """Extron Control Pro, new in 1.28. Read out of the assemblies:
+        CreatePlatform -> PBVTLPEcpPlatform, 1920x1080 @ 220 DPI, 60-sVTLPEcp."""
+        self.assertEqual(MODELS_FULL['VTLPEcp'], (1920, 1080, 220.0, '60-sVTLPEcp'))
+
     def test_a_real_model_sets_all_three_fields(self):
         plan, errors, _ = _edits([{'op': 'retarget', 'model': 'TLP1535M',
                                    'scale': True}]).check()
         self.assertEqual(errors, [], 'scaling up should not overflow')
         self.assertEqual(len(plan['project']), 1)
         self.assertEqual(plan['project'][0]['size'], [1920, 1080])
-        self.assertEqual(plan['project'][0]['platform_class'],
-                         'Extron.GUICPro.PBTLP1535MPlatform')
+        self.assertEqual(plan['project'][0]['model'], 'TLP1535M')
+        # The plan names the MODEL, never a platform class. The applier gets the
+        # class from Enum.Parse + CreatePlatform; a guessed class name was wrong
+        # for 9 of the 55 models and read by nothing.
+        self.assertNotIn('platform_class', plan['project'][0])
 
     def test_scaling_moves_every_control(self):
         plan, _, _ = _edits([{'op': 'retarget', 'model': 'TLP1535M',

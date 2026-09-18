@@ -96,13 +96,17 @@ BORDER_GEOMETRY = {
 #
 # Two things it is NOT:
 #   * not a catalogue of purchasable panels. Retired models (TLP Pro 1720MG/TG)
-#     and the virtual targets (VTLP Web/iOS/Android) are here because GUI
+#     and the virtual targets (VTLP Web/iOS/Android/Ecp) are here because GUI
 #     Designer still builds for them.
-#   * not the enum. `PlatformProTypeEnum` has 60 members to these 55 platforms;
-#     `Unknown`, the MLC 84 button panels, TLP 1022W and TLP 1230WTG have no
+#   * not the enum. `PlatformProTypeEnum` has 60 members to these 55 platforms.
+#     `Unknown`, the three MLC 84 button panels and TLP 1022W have no
 #     touch-panel platform class behind them, and CreatePlatform returns null.
+#     TLP 1230WTG is a sixth odd one out in the other direction: CreatePlatform
+#     hands back the *base* `PBTouchPanelPlatformPro` rather than a model class,
+#     so it carries a part number but GetDefaultResolutionDpi falls through to
+#     the 800x480 default. Its real 1920x720 canvas is read off a built project
+#     instead - see `docs/design-rules.md` section 1.
 MODELS_FULL = {
-    'CCI700': (320, 240, 114.29, '60-1206-02'),
     'TLC1026M': (1280, 800, 149.0, '60-1855-02'),
     'TLC521M': (800, 480, 187.0, '60-1284-02'),
     'TLC526M': (800, 480, 186.59, '60-1853-02'),
@@ -151,6 +155,7 @@ MODELS_FULL = {
     'TLP835M': (1280, 800, 188.68, '60-1996-02'),
     'TLP835T': (1280, 800, 188.68, '60-1997-02'),
     'VTLPAndroid': (1280, 800, 220.0, '79-600-01'),
+    'VTLPEcp': (1920, 1080, 220.0, '60-sVTLPEcp'),
     'VTLPWeb': (1920, 1080, 220.0, '60-sVTLP'),
     'VTLPiOS': (1920, 1080, 220.0, '79-559'),
     'ZRTP1025M': (1280, 800, 149.0, '60-1566-212'),
@@ -275,9 +280,17 @@ def _type_fields(kind, c):
     if kind in ('slider', 'level'):
         out['orientationField'] = ORIENT.get(c.get('orientation', 'up'), 2)
         if kind == 'slider':
-            out['sliderTrackWidthField'] = c.get('track', 10)
-            out['sliderIndicatorWidthField'] = c.get('thumb', 50)
-            out['sliderIndicatorHeightField'] = c.get('thumb', 50)
+            # These three carry NO `Field` suffix, unlike `orientationField`
+            # right beside them. Read off `Extron.GUICPro.PBSlider` in
+            # `GUI Designer.exe` - which is NOT the same type as
+            # `Extron.GUICPro.Layout.Data.PBSlider` in Layout.NET, where the
+            # same four values are auto-properties with `k__BackingField`
+            # names. The authoring graph holds the former. Getting this wrong
+            # is invisible: Set-GdlFieldIfPresent warns and continues, so the
+            # slider builds fine at the donor's dimensions.
+            out['sliderTrackWidth'] = c.get('track', 10)
+            out['sliderThumbWidth'] = c.get('thumb', 50)
+            out['sliderThumbHeight'] = c.get('thumb', 50)
     if kind == 'line':
         # Endpoints are an eight-position enum on the control's own rect, so a
         # diagonal is TopLeft -> BottomRight at whatever angle the rect gives.

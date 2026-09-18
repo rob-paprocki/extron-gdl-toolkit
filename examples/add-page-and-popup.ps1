@@ -4,7 +4,7 @@
     Takes an existing project and adds a page, a button, a standard popup in a
     newly registered group, and a popup page reference binding them — then
     removes a popup and every reference to it. The output of this script opened
-    in GUI Designer 1.27.0.9 and built successfully.
+    in GUI Designer 1.28.0.7 and built successfully.
 
     RUN UNDER 32-BIT WINDOWS POWERSHELL 5.1:
       C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -File examples\add-page-and-popup.ps1 <in> <out>

@@ -7,7 +7,7 @@ Guidance for Claude Code working in this repository.
 A toolkit for reading, rendering and **authoring** Extron GUI Designer `.gdl`
 touch-panel projects. It was reverse-engineered from project files, GUI
 Designer's own snapshot exports, and the installed assemblies — **no Extron
-documentation exists for any of this**. Version 1.27.0.9 is the tested
+documentation exists for any of this**. Version 1.28.0.7 is the tested
 boundary.
 
 `SKILL.md` is the repeatable procedure for building or modifying a panel — the
@@ -144,6 +144,13 @@ nobody touching GUI Designer. To script anything it does not cover, read
 `docs/from-scratch.md` §7 first: the obvious ways to trigger a build and to tell
 when it has finished are both wrong, and each fails in a way that looks like
 success.
+
+**After upgrading GUI Designer, do that before trusting an unattended build.**
+Preferences are stored per version, so an upgrade resets them, and the restored
+default for *Automatically Remove Unused Resource Library Items During Save and
+Build* is to ask. The first build then blocks on a modal that exposes no UIA
+patterns, `Wait-GdlBuild.ps1` times out with no diagnosis, and nothing is
+written. `docs/from-scratch.md` §7 *What will cost you time* has the fix.
 
 ## Conventions
 

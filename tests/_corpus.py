@@ -5,7 +5,7 @@ they only ran on a machine with GUI Designer installed and silently skipped
 everywhere else. The files now live in the repo:
 
   seeds/                          one themed project per theme/size, in Git LFS
-  vendor/extron/TouchLink Templates/   Extron's 44 .glt templates, local only
+  vendor/extron/TouchLink Templates/   Extron's 50 .glt templates, local only
 
 and the install paths are the fallback. A clone that has not run
 `git lfs pull` holds 130-byte pointer files where the seeds should be, which

@@ -24,6 +24,23 @@ function Note-Problem([string]$m) {
     Write-Warning $m
 }
 
+# A problem that makes the output file WRONG rather than merely incomplete, so
+# writing it would be worse than writing nothing.
+#
+# The case this exists for: a retarget whose platform cannot be resolved. The
+# project-level ops (platform instance, enum, screen size, page canvases) and
+# the per-control geometry ops are two independent passes, and the plan's
+# control geometry was already scaled toward the NEW model by `gdl.edit`. Skip
+# only the project half and the file on disk has controls sized for one panel
+# on a canvas sized for another - it opens, it builds, and it is silently
+# wrong. Nothing downstream re-checks that, so the abort has to happen here.
+$script:Fatal = @()
+function Note-Fatal([string]$m) {
+    $script:Fatal += $m
+    $script:Problems += $m
+    Write-Warning "FATAL: $m"
+}
+
 function Set-GdlFieldIfPresent {
     <#  Set a backing field, but report-and-continue when it does not exist.
         A generated plan that names one field wrong should tell you about all

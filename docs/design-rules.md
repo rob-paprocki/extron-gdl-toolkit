@@ -5,7 +5,7 @@ Sources, all primary:
 - **GUI Design Standards rev E** (94pp) — Extron's design guide. Page numbers below
   are its printed page numbers.
 - **Afterburn Theme Guide** (16pp, 79-607-24 rev A) — the theme's color system.
-- **GUI Designer 1.27.0.9 itself** — platform classes and control fields, read out
+- **GUI Designer 1.28.0.7 itself** — platform classes and control fields, read out
   of the installed assemblies.
 
 The point of this file is to separate three things that are easy to blur: what
@@ -17,13 +17,16 @@ never be presented to a client as an Extron requirement.
 
 ## 1. Panels and resolutions
 
-The canvas is **not** fixed. GUI Designer 1.27.0.9's Project Create Wizard offers
+The canvas is **not** fixed. GUI Designer 1.28.0.7's Project Create Wizard offers
 **55 panel types**. Model names below are read from that dropdown — the shipped,
 authoritative list — and resolutions from the matching platform class.
 
+Still 55 in 1.28, but not the same 55: **CCI Pro 700 is gone** and **Extron
+Control Pro (ECP) is new**. A count check would have missed the swap.
+
 | Resolution | Models |
 |---|---|
-| 320 × 240 | CCI Pro 700, TLP Pro 320C, TLP Pro 320M |
+| 320 × 240 | TLP Pro 320C, TLP Pro 320M |
 | 320 × 480 | TLP Pro 300M |
 | 800 × 480 | **TLC** Pro 521M, **TLC** Pro 526M, TLP Pro 525C/M/T |
 | 1024 × 600 | **TLC** Pro 726M, TLP Pro 725C/M/T, TLP Pro 1022M/T, ZRTP Pro 725M/T |
@@ -34,9 +37,22 @@ authoritative list — and resolutions from the matching platform class.
 | 1920 × 720 | TLP Pro 1230WTG — read from a built project, not from the probe |
 
 Resolution not determined by the probe: TLP Pro 520M, 720C/M/T, 1020M/T and TLI
-Pro 101 (the class-name match failed and was not guessed at). The three "Extron
-Control for Android / iOS / Web" entries are soft clients with no fixed panel
-class.
+Pro 101 (the class-name match failed and was not guessed at). The four "Extron
+Control Pro" and "Extron Control for Android / iOS / Web" entries are soft
+clients with no fixed panel class.
+
+**Extron Control Pro (ECP)** is the one 1.28 added: `PlatformProTypeEnum.VTLPEcp`,
+class `PBVTLPEcpPlatform`, 1920 × 1080 at 220 DPI, part number `60-sVTLPEcp`. It
+sits beside the other VTLP soft clients — `FamilyTag` `TLP`, and
+`SupportsVideoControls` false, like Extron Control for Web. Extron ships six
+templates for it (Afterburn / Mach / Shockwave × ECP 16-9 and ECP 16-10), and
+the 16-10 pair author their pages at 1280 × 800 rather than the platform's own
+1920 × 1080 — another reason to read a built project rather than assume.
+
+**CCI Pro 700 is the one 1.28 removed.** `PlatformProTypeEnum` lost the member
+outright (its integer slot, 19, is now an orphaned gap) and no `PBCCI700Platform`
+remains, so GUI Designer 1.28 cannot construct it and the wizard no longer lists
+it. The hardware is discontinued.
 
 The table gives one orientation per model, but a platform that rotates supports
 both — the TLP Pro 300M builds at 320 × 480 and 480 × 320, the 1035M at

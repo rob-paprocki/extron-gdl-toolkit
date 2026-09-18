@@ -7,7 +7,7 @@
       C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass `
         -File powershell\Apply-GdlPlan.ps1 out\ProjectGCP plan.json out\new_ProjectGCP
 
-    Verified end to end against GUI Designer 1.27.0.9: pages, popups, popup
+    Verified end to end against GUI Designer 1.28.0.7: pages, popups, popup
     groups and bindings all survive open + Save and Build. What it cannot tell
     you is whether the RESULT is right - Build silently relocates and rewrites
     things - so always finish with

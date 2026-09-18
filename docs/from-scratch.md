@@ -134,7 +134,7 @@ The preview is honest about what it is drawing: every control is emitted with
 preview draws from the same fill-plus-named-border properties a writer would
 set.
 
-## 5. Tested against GUI Designer 1.27.0.9 — results
+## 5. Tested against GUI Designer 1.28.0.7 — results
 
 Each test project was authored **headlessly** by PowerShell, packed with
 `gdl.container pack`, then opened and built in the real application. See §7 for
@@ -292,10 +292,13 @@ which is a **real client project** for job J26450039. That is fine for testing a
 wrong for delivery: the result inherits that client's page names, popups,
 resources, artwork and retail fonts, and is pinned to their model and theme.
 
-The obvious fix is to clone one of Extron's own templates instead. There are 44
+The obvious fix is to clone one of Extron's own templates instead. There are 50
 of them under `GUI Designer Templates\TouchLink Templates` in the shared
 Documents folder, they are the same `KP`-swapped container, `Project.open()`
-reads all 44, and they cover six theme families across Extron's panel sizes.
+reads all 50, and they cover six theme families across Extron's panel sizes.
+(1.28 added six: Afterburn, Mach and Shockwave each gained an ECP 16-9 and an
+ECP 16-10 variant. They are new sizes inside existing families, not a seventh
+family.)
 
 **It does not work, and it fails quietly.** Measured against
 `Afterburn 1020 Series.glt`:
@@ -367,24 +370,43 @@ Two things that seed taught, both now checked by `gdl.spec donors`:
   the donor is - this seed is an 835M - and `model` only feeds the touch-target
   check. A spec whose canvas differs from the donor's is now refused.
 
-### Do not try to automate the wizard
+### Automating the wizard: partly possible in 1.28, still not worth it
 
-It cannot be driven through UI Automation. `AutomationElement.FromHandle` on the
-wizard's HWND returns the window — name and class come back correctly — and its
-descendant tree is then **empty**: zero combo boxes, zero radio buttons, zero
-buttons. The controls expose no UIA providers, so there is nothing to find by
-name and nothing to invoke.
+**This changed in 1.28 and the old advice here was "it exposes no UIA providers
+at all".** That is no longer true. The wizard's descendant tree is now populated:
+the Panel Type, Theme and Application combo boxes expose `Value` and
+`ExpandCollapse`, the dropdown's items expose `Invoke`, `SelectionItem` and
+`ScrollItem`, and expanding Panel Type enumerates all 56 entries ("Select Your
+Panel" plus the 55 models) — which is a convenient way to read the shipped panel
+list without reflecting over the assemblies.
 
-Two things that mislead on the way to finding that out. `InvokePattern.Invoke()`
-on the menu item that opens the wizard throws `Operation timed out
-(0x80131505)`, because the call blocks on the modal — the dialog *does* open, so
-query it from a separate call rather than believing the exception. And
-`FindFirst` from `RootElement` does not see the wizard at all while those modals
-are up; only `FromHandle` on an `EnumWindows` result reaches it.
+What still does not work is **committing** a choice:
 
-What is left is coordinate clicking or blind `SendKeys` tabbing, both of which
-depend on window size and dialog layout. For a step run once per theme, that is a
-bad trade.
+- `ValuePattern.SetValue` on the Panel Type combo writes the edit text and
+  nothing else. The combo then *reads* "Extron Control Pro" while the preview
+  still says "No Panel Type Selected", Step 2 stays greyed and Create stays
+  disabled. It desynchronises the control from the model, and the wizard has to
+  be cancelled to recover.
+- `SelectionItemPattern.Select()` on the right list item highlights it but does
+  not commit either.
+- Clicking the highlighted item by its rectangle closes the dropdown and leaves
+  the same un-selected state.
+
+After that the wizard's UIA subtree stops responding — `FindAll` from
+`RootElement` throws `Operation timed out (0x80131505)` until the dialog is
+dismissed. `Create` and `Cancel` are `Pane` elements with no patterns at all, so
+they need a coordinate click regardless.
+
+Two things that mislead on the way in. `InvokePattern.Invoke()` on the menu item
+that opens the wizard throws `Operation timed out (0x80131505)` because the call
+blocks on the modal — the dialog *does* open, so query it from a separate call
+rather than believing the exception. And a coordinate click goes to whatever
+window is on top, so bring the wizard forward with `SetForegroundWindow` first
+and confirm with `WindowFromPoint` before clicking; otherwise the click lands in
+your terminal and nothing appears to happen.
+
+So: read the panel list through UIA if it is useful, but make the seed by hand.
+For a step run once per theme, fighting the commit path is still a bad trade.
 
 ## 6. Honest limits of everything above
 
@@ -395,7 +417,7 @@ bad trade.
   the Offline Window, which Build legitimately leaves unrasterized, so there is
   no artwork to inspect. Redo it against a visible control.
 - The resource counts are from the `_alt 2_0_0` fixture, which carries 34 border
-  resources; the two archived fixtures carry 36. Across Extron's 44 installed
+  resources; the two archived fixtures carry 36. Across Extron's 50 installed
   templates the count runs **13 to 32**, so treat it as per-project and read it,
   never assume it. The low end matters: a Mach or Turbulence template offers 13
   borders, so a spec that names a radius/thickness the target project has no
@@ -449,6 +471,42 @@ the default is not inside the repo.
 
 ### What will cost you time
 
+- **After any GUI Designer upgrade, clear the Save-and-Build prompt before
+  expecting an unattended build.** GUI Designer's preferences live in a
+  *per-version* `user.config`:
+
+  ```
+  %LOCALAPPDATA%\Extron\GUI_Designer.exe_Url_<hash>\<version>\user.config
+  ```
+
+  A new version gets a new folder, so every preference you had answered falls
+  back to its default. The one that matters is *Automatically Remove Unused
+  Resource Library Items During Save and Build*, whose default is to **ask**.
+  The first Save and Build after an upgrade therefore opens a modal called
+  **Save and Build Optimization** (Keep / Remove, plus "Don't show again") and
+  waits. Nothing is written while it is up, so `Wait-GdlBuild.ps1` simply times
+  out with no diagnosis — it is watching a file that will never change.
+
+  The dialog's own controls expose **no UIA patterns**, so `Invoke-GdlMenu.ps1`
+  cannot dismiss it; it is a coordinate click or nothing. Set the preference
+  instead, with GUI Designer closed (it rewrites the file on exit):
+
+  ```xml
+  <setting name="ShowRemoveUnusedResourcesWarning" serializeAs="String">
+      <value>False</value>          <!-- stop asking -->
+  </setting>
+  <setting name="RemoveUnusedResources" serializeAs="String">
+      <value>False</value>          <!-- and Keep, not Remove -->
+  </setting>
+  ```
+
+  Keep `RemoveUnusedResources` false. The shipped default is **true**, and
+  answering "Remove" — or ticking "Don't show again" on that side — makes every
+  later build silently strip unused Resource Library items, which is exactly the
+  kind of invisible mutation `tests/verify_built.py` exists to catch.
+
+  This is not a 1.28 feature; the preference is long-standing. It is an
+  *upgrade* trap, and it will fire again on the next version.
 - **Trigger the build with `Invoke-GdlMenu.ps1`, not SendKeys.** UI Automation
   clicks the menu item directly and needs no focus, so the pipeline runs while
   the machine is in use. SendKeys types into whatever holds the foreground, and a

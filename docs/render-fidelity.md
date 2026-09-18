@@ -241,12 +241,15 @@ here is therefore validated against a single typeface; the corpus's Arial,
 Open Sans and Afterburn text is flattened into artwork on these pages. Treat the
 constants as measured for Forma and plausible elsewhere.
 
-The way out of that is now on disk. Extron ships 44 `.glt` templates with GUI
+The way out of that is now on disk. Extron ships 50 `.glt` templates with GUI
 Designer (`C:\Users\Public\Documents\Extron\GUI Designer Templates\TouchLink
 Templates`), they are the same `KP`-swapped container, `Project.open()` reads
-all 44 unchanged, and between them they embed **15 distinct faces** against the
-seven in `gdl/fonts/` — Open Sans, Roboto Thin and Light, Segoe UI and Segoe UI
-Semibold, FluentSystemIcons, four Extron icon families, and Arial. What they do
+all 50 unchanged, and between them they declare **12 distinct font families**
+against the seven in `gdl/fonts/` — Arial, Open Sans, Roboto, Segoe UI,
+FluentSystemIcons-Regular, and seven Extron families (Afterburn, Shockwave,
+Lift and Extron-Lift, GUI Configurator, and two GUIC Video Conference faces).
+Weight variants are separate embedded faces but collapse to these families in
+`font_resource_names()`. What they do
 *not* ship is ground truth: a template carries no built payload, so there are no
 snapshots to score against and one would have to be built first.
 
