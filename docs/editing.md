@@ -6,7 +6,7 @@ the impressive demo; changing one that already exists is the job. A client says
 question is whether that can be done reliably rather than by hand.
 
 It can. Three of the four operations are verified end to end against GUI
-Designer 1.27.0.9 on the real Liberty Bank project; `renumber` is planned and
+Designer 1.28.0.7 on the real Liberty Bank project; `renumber` is planned and
 checked, but has not been through a build.
 
 | Op | What it does | Verified |

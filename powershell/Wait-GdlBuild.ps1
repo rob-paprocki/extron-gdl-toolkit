@@ -5,8 +5,9 @@
 
     Getting this wrong costs a whole round trip and does not look like a
     failure - you read the pre-build payload and see a build that "did nothing".
-    Three signals were tried; only the last one is real. Measured against GUI
-    Designer 1.27.0.9 on a 29-control page:
+    Three signals were tried; only the last one is real. Timings measured on GUI
+    Designer 1.27.0.9 on a 29-control page; the behaviour still holds on
+    1.28.0.7, where a rebuilt seed took about 110 seconds to settle:
 
       * The title bar's trailing '*' means unsaved changes, nothing more. A file
         packed on disk and opened clean never has one, so the wait returns

@@ -46,7 +46,7 @@ If the concern is distribution rather than convenience, the thing to look at is
 ## Arial is embedded too
 
 Genuine Monotype Arial 5.10 and Arial Black 5.06 are embedded in every fixture
-and in all 44 of Extron's installed templates, and `python -m gdl.fonts`
+and in all 50 of Extron's installed templates, and `python -m gdl.fonts`
 recovers them with everything else — so never substitute a system copy. They
 are easy to miss: both carry bytes past the far edge of their last sfnt table
 (28 for Arial, 30 for Arial Black), so an extractor that matches `layout.json`'s

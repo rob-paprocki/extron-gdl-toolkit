@@ -47,12 +47,69 @@ machine you are already working on.
 - **2026-09-11** — re-cloned to a local disk after the reimage. Paths of the
   form `Z:\GitHub\...` in older commits and transcripts refer to the previous
   mounted-drive checkout and no longer resolve anywhere.
+- **2026-09-17/18 — GUI Designer 1.27.0.9 → 1.28.0.7.** The first version
+  change the toolkit has been through, so it is also the first evidence of what
+  an upgrade does and does not break.
+
+  Nothing in the format moved. A 1.27-authored `ProjectGCP` still deserializes,
+  because `Initialize-Gdl` resolves assemblies by simple name and ignores the
+  version — which matters, since `Extron.GUICPro.Layout.Contracts` went
+  **4.22.0.0 → 5.6.0.0** and `GUI Designer.exe.config` carries no binding
+  redirect for it. Output written under 1.28 is restamped `1.28.0.7` /
+  `5.6.0.0`, so files this toolkit writes are probably not openable in 1.27;
+  that was not tested, because 1.27 was gone. `pytest` was unaffected (157
+  passing before the upgrade, 157 after), the authoring example ran clean, and a
+  real Liberty Bank project opened with no conversion prompt and rebuilt twice
+  with identical page, control, border and font counts.
+
+  Two catalogue changes, both invisible to a count check because they cancel
+  out at 60 enum members and 55 platforms: **CCI700 was removed** (its integer
+  slot, 19, is now an orphaned gap, and the hardware is discontinued) and
+  **VTLPEcp — Extron Control Pro — was added**. Extron's release notes list only
+  two features, Dynamic Images and ECP theme support; everything else here had
+  to be found by reflection and diffing.
+
+  The upgrade's actual cost was none of that. It was a *Save and Build
+  Optimization* modal on the first build, which blocked an unattended run for
+  the full 900-second timeout with no diagnosis. The preference behind it is
+  long-standing; what fired it was that `user.config` is per-version, so the
+  upgrade reset it to its "ask" default. The live warning is in
+  `docs/from-scratch.md` §7.
+
+  One belief corrected on the way: the Project Create Wizard is no longer
+  entirely opaque to UI Automation. See *Corrections worth remembering*.
 
 ## Corrections worth remembering
 
 Each of these was believed, written down, and later found wrong. The current
 statement is in the live docs; this is the record that it changed.
 
+- **The Project Create Wizard "exposes no UIA providers at all".** True of
+  1.27.0.9; `docs/from-scratch.md` §7 said its descendant tree came back empty,
+  zero combo boxes and zero buttons. In 1.28.0.7 the tree is populated: the
+  combos expose `Value` and `ExpandCollapse`, list items expose `Invoke` and
+  `SelectionItem`, and expanding Panel Type enumerates all 55 models. The
+  conclusion survives for a different reason — no route found actually
+  *commits* a selection, `ValuePattern.SetValue` desynchronises the control from
+  the model, and the subtree stops responding afterwards — but the stated reason
+  was version-specific and is now wrong.
+- **`gdl/edit.py` annotated each retarget plan with a `platform_class`.** It was
+  `f'Extron.GUICPro.PB{model}Platform'`, which is wrong for 9 of the 55 models
+  (TLP720T is `PBTLP720TVPlatform`; TLP1230WTG is the bare
+  `PBTouchPanelPlatformPro`). Nothing ever read it — the applier resolves the
+  class through `Enum.Parse` + `CreatePlatform` — so it was removed rather than
+  corrected.
+- **`gdl/spec.py` wrote three PBSlider fields that do not exist.**
+  `sliderTrackWidthField` / `sliderIndicatorWidthField` /
+  `sliderIndicatorHeightField`, authored before the code had ever run against a
+  real install. The real names carry no `Field` suffix —
+  `sliderTrackWidth` / `sliderThumbWidth` / `sliderThumbHeight`. Two things made
+  it survive: `Set-GdlFieldIfPresent` warns and continues, so a slider just
+  built at the donor's dimensions; and there are **two** `PBSlider` types, so
+  reflecting over the wrong one (`Extron.GUICPro.Layout.Data.PBSlider` in
+  Layout.NET, where they are auto-properties with `k__BackingField` names)
+  produces a confident, equally wrong answer. The authoring graph holds
+  `Extron.GUICPro.PBSlider` from `GUI Designer.exe`.
 - **Arial is embedded in the fixtures.** The docs previously said the opposite —
   that Arial and Arial Black were system faces the format merely referenced.
   `fonts.extract()` matched a declared size against the measured sfnt length

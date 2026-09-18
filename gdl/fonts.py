@@ -54,7 +54,7 @@ def scan(buf):
 
 # A declared file size can exceed the measured sfnt length, because the file may
 # carry bytes after its last table. Measured across the six fixtures and Extron's
-# 44 installed templates the overhang is 0 (both OTFs, and the Extron icon TTFs),
+# 50 installed templates the overhang is 0 (both OTFs, and the Extron icon TTFs),
 # 28 (Arial) or 30 (Arial Black); 64 leaves room without letting a face match the
 # wrong blob, since the smallest gap between two embedded faces is ~33 KB.
 SIZE_SLACK = 64

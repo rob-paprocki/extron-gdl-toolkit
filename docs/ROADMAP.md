@@ -92,6 +92,19 @@ opening GUI Designer.**
   unknown.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
   sizes.
+- **No seed for Extron Control Pro.** 1.28 added the `VTLPEcp` platform and six
+  ECP templates (Afterburn / Mach / Shockwave × 16-9 and 16-10), and
+  `MODELS_FULL` now has the row, but `seeds/` has nothing at that size class, so
+  nothing exercises it. Making one needs the Project Create Wizard by hand —
+  packing an ECP `.glt`'s `ProjectGCP` straight into a `.gdl` does not open as a
+  project, and the wizard still cannot be driven to *commit* a panel choice
+  (`docs/from-scratch.md` §7).
+- **`powershell/New-FormatProbes.ps1` has not been re-run on 1.28.0.7.** Its
+  recorded 0-errors/0-warnings result is carried over from 1.27.0.9.
+- **The 1.28-written `.gdl` has not been opened in 1.27.** Output is now stamped
+  `Layout.Contracts 5.6.0.0`, so files this toolkit writes are probably not
+  backward-compatible; 1.27 was uninstalled by the upgrade, so it is untested
+  either way. Matters only if a client is still on the old version.
 - `referenceCountField` semantics; the size-dependent vertical text residual
   (`docs/render-fidelity.md` finding 7); every text finding validated against
   one typeface.
