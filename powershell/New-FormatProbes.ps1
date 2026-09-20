@@ -1,11 +1,11 @@
 # Author the format-probe projects for docs/from-scratch.md section 5, headlessly.
 #
-# RESULTS: all three opened and built with 0 errors, 0 warnings, measured on
-# GUI Designer 1.27.0.9. See docs/from-scratch.md section 5. NOT yet re-run on
-# 1.28.0.7 - the round trip, the authoring example and a real client project
-# were all re-verified there, but these three probes were not, so treat the
-# result as carried over rather than confirmed. Re-running them is the point of
-# keeping this script.
+# RESULTS: all three opened and built with 0 errors, 0 warnings on GUI Designer
+# 1.27.0.9, and all three still author, open and build on 1.28.0.7 - re-run
+# there against the same `_alt 2_0_0` fixture, each producing a payload, with
+# probe B's appended `Claude - 20 Radius 1 Thick` still present in the built
+# file (35 border resources against the fixture's 34). See
+# docs/from-scratch.md section 5.
 #
 # Each writes one ProjectGCP that answers one question when GUI Designer opens
 # and builds it. Kept separate so a failure identifies its own cause - one

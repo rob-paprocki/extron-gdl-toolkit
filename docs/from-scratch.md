@@ -140,6 +140,13 @@ Each test project was authored **headlessly** by PowerShell, packed with
 `gdl.container pack`, then opened and built in the real application. See §7 for
 how that was driven, which is fully scriptable.
 
+The error and warning counts below were read off 1.27.0.9. `New-FormatProbes.ps1`
+was re-run on 1.28.0.7 and all three still author, open and build, each producing
+a payload; probe 2's appended resource is still in the built file afterwards (35
+border resources against the fixture's 34). The counts themselves were not
+re-read from the Build Manager, so treat "0 errors, 0 warnings" as the 1.27
+measurement and "builds and keeps the resource" as the 1.28 one.
+
 | | Question | Answer |
 |---|---|---|
 | 1 | Reference an existing but never-referenced border resource? | **YES** |

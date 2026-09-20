@@ -97,8 +97,10 @@ opening GUI Designer.**
   tablet canvases, four of which are wider than any physical panel — have no
   seed, and Mach and Shockwave have no ECP seed at all. Each is one wizard run
   away now that the wizard can be driven (`docs/from-scratch.md` §7).
-- **`powershell/New-FormatProbes.ps1` has not been re-run on 1.28.0.7.** Its
-  recorded 0-errors/0-warnings result is carried over from 1.27.0.9.
+- **The probes' error and warning counts are still 1.27.0.9 numbers.**
+  `New-FormatProbes.ps1` has been re-run on 1.28.0.7 and all three still author,
+  open and build, but the Build Manager's own 0-errors/0-warnings readout was not
+  re-read — only the resulting files were checked.
 - **The 1.28-written `.gdl` has not been opened in 1.27.** Output is now stamped
   `Layout.Contracts 5.6.0.0`, so files this toolkit writes are probably not
   backward-compatible; 1.27 was uninstalled by the upgrade, so it is untested
