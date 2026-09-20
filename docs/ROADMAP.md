@@ -92,11 +92,13 @@ opening GUI Designer.**
   unknown.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
   sizes.
-- **ECP is seeded at 16:9 only.** `seeds/Afterburn ECP 16-9 (Project1).gdl`
-  covers the TouchLink Panel (16:9) preset. The other six presets — the phone and
-  tablet canvases, four of which are wider than any physical panel — have no
-  seed, and Mach and Shockwave have no ECP seed at all. Each is one wizard run
-  away now that the wizard can be driven (`docs/from-scratch.md` §7).
+- **ECP's phone and tablet canvases have no donor, and cannot have one.** The
+  six themable combinations (Afterburn / Mach / Shockwave × 16-9 and 16-10) are
+  all seeded. The other five presets — iPhone, Android Phone, iPad, Android
+  Tablet and Custom — only offer Blank in the wizard, and a blank ECP project is
+  1 page and 3 controls, so there is nothing useful to clone from. Authoring for
+  a phone canvas therefore means `retarget` off a 16-9 seed, which has never been
+  measured against an ECP target.
 - **The probes' error and warning counts are still 1.27.0.9 numbers.**
   `New-FormatProbes.ps1` has been re-run on 1.28.0.7 and all three still author,
   open and build, but the Build Manager's own 0-errors/0-warnings readout was not

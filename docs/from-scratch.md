@@ -387,8 +387,8 @@ the Panel Type, Theme and Application combo boxes expose `Value` and
 Panel" plus the 55 models) — which is a convenient way to read the shipped panel
 list without reflecting over the assemblies.
 
-**It can be driven end to end.** `seeds/Afterburn ECP 16-9 (Project1).gdl` was
-made this way, with no hands on the mouse. The working sequence is the plain one
+**It can be driven end to end.** All six `seeds/*ECP*.gdl` were made this way,
+with no hands on the mouse. The working sequence is the plain one
 — for each combo in turn, click it to expand, then click the list item you want:
 
 1. Panel Type. Expanding it lists 56 entries ("Select Your Panel" plus the 55
@@ -396,6 +396,15 @@ made this way, with no hands on the mouse. The working sequence is the plain one
 2. For a soft client, a **Resolution** combo appears once the panel is chosen.
 3. Step 2's Blank / Theme radios, then Theme, then Application.
 4. Create.
+
+**Click the Blank/Theme radio yourself, and verify it took.** Step 2's Theme and
+Application combos populate on their own as soon as a themable resolution is
+chosen, so the wizard can read `Theme: Mach` while `Blank` is still the selected
+radio — and Create is enabled either way. Two seeds were built blank before this
+was noticed. The radios are `Pane` elements with no toggle state to read back, so
+the only checks are a screenshot before Create, or the page count after: a blank
+ECP project has 1 page, 1 popup and 3 controls against a themed one's 7-8 pages
+and 500-650 controls.
 
 **Do not set a combo by value.** `ValuePattern.SetValue` writes the edit text
 without raising the selection, so the combo *reads* "Extron Control Pro" while

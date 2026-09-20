@@ -93,9 +93,16 @@ statement is in the live docs; this is the record that it changed.
   `ValuePattern.SetValue`, which desynchronises the combo from the model and
   poisons the dialog for everything after it. Every later attempt was measuring
   the damage from that, not the wizard. Expanding a combo and clicking the list
-  item — the plain thing — works, and `seeds/Afterburn ECP 16-9 (Project1).gdl`
-  was made that way with no hands on the mouse. Making a seed is no longer a
-  step that needs a person.
+  item — the plain thing — works, and all six `seeds/*ECP*.gdl` were made that
+  way with no hands on the mouse. Making a seed is no longer a step that needs a
+  person.
+
+  A second trap sits behind the first. Step 2's Theme and Application combos
+  populate by themselves once a themable resolution is picked, so the wizard can
+  read `Theme: Mach` while `Blank` is still the selected radio, with Create
+  enabled either way. Two seeds were built blank before anyone checked the page
+  count. The radios expose no toggle state, so there is nothing to assert
+  against — only a screenshot, or the built result.
 - **`gdl/edit.py` annotated each retarget plan with a `platform_class`.** It was
   `f'Extron.GUICPro.PB{model}Platform'`, which is wrong for 9 of the 55 models
   (TLP720T is `PBTLP720TVPlatform`; TLP1230WTG is the bare

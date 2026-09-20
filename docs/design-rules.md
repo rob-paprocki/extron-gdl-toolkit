@@ -66,8 +66,14 @@ default, not a constraint. The real list, read from a built project's
 | Custom | anything (`0 × 0` until set) |
 
 Four of those are larger than any physical Extron panel, so an ECP project is the
-one place a canvas over 1920 wide is normal. `seeds/Afterburn ECP 16-9
-(Project1).gdl` is the 16:9 preset.
+one place a canvas over 1920 wide is normal.
+
+**Only the two TouchLink presets can carry a theme.** Pick a phone or tablet
+canvas, or Custom, and the wizard's Theme radio greys out — Blank is the only
+option, and a blank ECP project is 1 page, 1 popup and 3 controls. That is why
+Extron ships exactly six ECP templates (Afterburn / Mach / Shockwave × 16-9 and
+16-10) rather than one per preset, and why `seeds/` carries those same six and no
+others.
 
 **CCI Pro 700 is the one 1.28 removed.** `PlatformProTypeEnum` lost the member
 outright (its integer slot, 19, is now an orphaned gap) and no `PBCCI700Platform`
@@ -275,6 +281,31 @@ A `.glt` is the same container as a `.gdl` (KP-mangled ZIP, one `ProjectGCP`) bu
 has **no `PBProject`** — it is a bare library of pages and popups. `gdl/project.py`
 reads them. This answers "where does a generator get donor objects to clone" with
 an official per-panel-model answer.
+
+### …and the source art for the themes, under `Resources\`
+
+Alongside `TouchLink Templates\` is `Resources\<theme>\`, about **687 MB across
+5,096 files**, which is where Extron's own theme artwork comes from. Nothing in
+this repo reads it, and it is not in `vendor/` — but it is the answer to "how do I
+make a custom element that matches the theme", so it is worth knowing it exists.
+
+| Theme | What ships | Editable source |
+|---|---|---|
+| Afterburn | Backgrounds, Buttons, Font, Icons, Sliders & Toggles — 3,376 files, 44 MB | **SVG**: 983 button and 659 icon vectors beside their PNGs |
+| Mach | Backgrounds, Buttons, Font, Icons, Presets, Recording Controls, Transport Icons, Volume and Slider — 596 files, 581 MB | **`Style Sheet\Mach Styles.psd`** (222 MB), plus `Mach Styles 1_2_0.psd` |
+| Shockwave | backgrounds, buttons, cables, Font, icons, presets, Slider, transport icons, volume — 1,124 files, 63 MB | **`Shockwave Styles.psd`** (12 MB) |
+| Turbulence | no `Resources\Turbulence\` in 1.28 | `Sample Projects\Resources\Turbulence\Turbulence Styles.psd` (1.55 GB), dated 2019 |
+
+So the two approaches differ by theme: **Afterburn is vector** (open the SVG,
+restyle, export a PNG at the size you need), while **Mach and Shockwave are
+Photoshop** — the PSD's layer groups are the element construction, and are the
+only documentation of it. There is no readme anywhere in that tree; the PSDs are
+the spec.
+
+Note the size before reaching for them: the two Mach PSDs are 443 MB between
+them, and Turbulence's is 1.55 GB on its own. They are reinstallable Extron
+content, so they stay on disk and out of git — the same rule `vendor/README.md`
+applies to the templates.
 
 ## 8. What the standards do NOT specify
 
