@@ -130,11 +130,13 @@ foreach ($op in $spec.project) {
     # project, which is presumably why the wizard is the only thing that
     # normally calls it.
     $enumField = $proj.GetType().GetField('platformTypeField', 'Instance,Public,NonPublic')
-    if (-not $enumField) { Note-Problem 'no platformTypeField on the project'; continue }
+    if (-not $enumField) { Note-Fatal 'no platformTypeField on the project'; continue }
     try {
         $etype = [Enum]::Parse($enumField.FieldType, $op.model)
     } catch {
-        Note-Problem "PlatformProTypeEnum has no member '$($op.model)'"
+        Note-Fatal ("PlatformProTypeEnum has no member '$($op.model)'. GUI Designer " +
+                    '1.28 dropped CCI700; a model that is in gdl/spec.py but not in ' +
+                    'the installed assemblies lands here.')
         continue
     }
 
@@ -143,17 +145,17 @@ foreach ($op in $spec.project) {
     $flags = [Reflection.BindingFlags]'Static,Public,NonPublic,FlattenHierarchy'
     $create = $base.GetMethods($flags) |
               Where-Object { $_.Name -eq 'CreatePlatform' } | Select-Object -First 1
-    if (-not $create) { Note-Problem 'PBTouchPanelPlatformPro has no CreatePlatform'; continue }
+    if (-not $create) { Note-Fatal 'PBTouchPanelPlatformPro has no CreatePlatform'; continue }
 
     $inst = $null
     try { $inst = $create.Invoke($null, [object[]]@($proj, $etype)) }
     catch {
         $inner = $_.Exception.InnerException
-        Note-Problem "CreatePlatform($($op.model)) threw $(if($inner){$inner.GetType().Name}else{'?'})"
+        Note-Fatal "CreatePlatform($($op.model)) threw $(if($inner){$inner.GetType().Name}else{'?'})"
         continue
     }
     if (-not $inst) {
-        Note-Problem "CreatePlatform returned null for '$($op.model)' - the enum has no touch-panel platform behind it (the MLC 84 button panels and TLP 1022W are like this)"
+        Note-Fatal "CreatePlatform returned null for '$($op.model)' - the enum has no touch-panel platform behind it (the MLC 84 button panels and TLP 1022W are like this)"
         continue
     }
     Write-Output "   platform $($inst.GetType().Name) part $(Get-GdlField $inst 'partNumberField')"
@@ -242,6 +244,18 @@ if ($script:Problems.Count) {
     $script:Problems | ForEach-Object { Write-Output "   $_" }
 }
 
+if ($script:Fatal.Count) {
+    Write-Output ''
+    Write-Output "NOT WRITING $($script:Fatal.Count) fatal problem(s) - the project ops were"
+    Write-Output 'skipped but the control ops were not, so the result would be internally'
+    Write-Output 'inconsistent (controls scaled for one panel, canvas sized for another).'
+    Write-Error "refusing to write: $($script:Fatal -join '; ')" -ErrorAction Continue
+    # `exit`, not `throw`. A terminating error here unwinds through the
+    # AppDomain.AssemblyResolve handler installed by Initialize-Gdl while .NET
+    # is resolving types to format the exception, and that recursion ends in a
+    # StackOverflowException that kills the process with no usable message.
+    exit 1
+}
 if ($WhatIf) {
     Write-Output '-WhatIf: nothing was written'
     return

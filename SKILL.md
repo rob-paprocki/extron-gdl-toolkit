@@ -6,7 +6,7 @@ description: Use when creating, modifying or reviewing an Extron GUI Designer to
 # Building Extron touch panels
 
 This repo can read, render, check and generate Extron `.gdl` panels. The whole
-loop is proven against GUI Designer 1.27.0.9, and on a machine with GUI
+loop is proven against GUI Designer 1.28.0.7, and on a machine with GUI
 Designer installed it runs unattended end to end — `powershell\New-GdlPanel.ps1` takes a JSON spec and
 returns a built, verified panel without anyone opening GUI Designer.
 

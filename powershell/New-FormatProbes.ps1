@@ -1,9 +1,11 @@
 # Author the format-probe projects for docs/from-scratch.md section 5, headlessly.
 #
-# RESULTS (2026-09-07, GUI Designer 1.27.0.9): all three opened and built with
-# 0 errors, 0 warnings. See docs/from-scratch.md section 5. Kept so the probes
-# can be re-run against another version, which is the point - 1.27.0.9 is the
-# tested boundary, not a guarantee.
+# RESULTS: all three opened and built with 0 errors, 0 warnings, measured on
+# GUI Designer 1.27.0.9. See docs/from-scratch.md section 5. NOT yet re-run on
+# 1.28.0.7 - the round trip, the authoring example and a real client project
+# were all re-verified there, but these three probes were not, so treat the
+# result as carried over rather than confirmed. Re-running them is the point of
+# keeping this script.
 #
 # Each writes one ProjectGCP that answers one question when GUI Designer opens
 # and builds it. Kept separate so a failure identifies its own cause - one

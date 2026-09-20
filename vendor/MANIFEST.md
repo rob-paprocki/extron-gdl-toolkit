@@ -1,11 +1,11 @@
 # vendor/ manifest
 
 What `vendor/extron/` should contain. Copied from this machine's GUI Designer
-1.27.0.9 install on 2026-09-10; see `vendor/README.md` for why it is not pushed.
+1.28.0.7 install; see `vendor/README.md` for why it is not pushed.
 
 ## TouchLink Templates
 
-46 files, 475,358,250 bytes, from
+52 files, 514,100,487 bytes, from
 `C:/Users/Public/Documents/Extron/GUI Designer Templates/TouchLink Templates/`.
 
 | File | Bytes | SHA-256 |
@@ -15,7 +15,7 @@ What `vendor/extron/` should contain. Copied from this machine's GUI Designer
 | 725 ZRTP Dark.glt | 957,825 | `d4d3b6ee551187bd97e98b768e4a02afd7fb802b2032d65886b7dd27fc382b0b` |
 | 725 ZRTP Light.glt | 1,234,785 | `9633e8eb3a451a2dd71c0ec05e598771b5071318cd94e5709f23fcb9a0a56c96` |
 | Afterburn 1020 Series.glt | 1,780,268 | `b2fccdfd39fda17f2ca3492fef34a3e71c6d84cd216baf3f4af3a023e91927fa` |
-| Afterburn 1220 Series.glt | 1,771,715 | `5f05205341010e6cd192843a8022322a3048a77d1987b125cadf343428ac8657` |
+| Afterburn 1220 Series.glt | 1,771,708 | `2558d86da824de0f5b3552b77cd544791e74512d97bdebc36fdebc77bd78e003` |
 | Afterburn 1230 Series.glt | 1,887,247 | `f005aa9abcfe1511058892bb9dfc201105bf069ae19f3685541204844cc6822d` |
 | Afterburn 1520 Series.glt | 1,784,721 | `5594dccad5281510207ce9eecc03274025a17244889e8a1690bbc82898e97b47` |
 | Afterburn 1720 Series.glt | 1,811,962 | `8b584d0ba91ea45f80aa5c2e83eefddd7fa3e711c2987d5f02e016815a32bc1a` |
@@ -25,6 +25,8 @@ What `vendor/extron/` should contain. Copied from this machine's GUI Designer
 | Afterburn 320 Series.glt | 1,092,131 | `2f869fdbb2a79d6810c3abef8886709ec6d81dbda9d0d92631a6f1b30765552f` |
 | Afterburn 520 Series.glt | 1,280,310 | `27876b66ffc5cd77eaedf1c73b12a990d4ed2acf0cef029c78f3e8b3f17857ae` |
 | Afterburn 535 Series.glt | 1,268,490 | `6f8f90ab021b6cd4b63b10ee9a8aca968a62a524ba75381d2aa7350b16d7452c` |
+| Afterburn ECP 16-10 Series.glt | 1,771,899 | `3c69771c60da7833a005cffe319d621dc2032f3e3eddff175f7e29777af56281` |
+| Afterburn ECP 16-9 Series.glt | 1,780,666 | `0c6f3ad160e0c9f59c3f9cb06deaa55484312912c80a5dc2a8aa3700cbefc0d9` |
 | ECW for Teams Rooms 16x10_2.0.0.glt | 5,892,517 | `65e8d2759968a4e7ac2024068b738170eff70b3407156968dd4140356ee3274e` |
 | ECW for Teams Rooms 16x9_2.0.0.glt | 5,880,767 | `be6de877bfbcdb7a3322ecbcb895edeeb84ec8448794d102c97e0788cf3eac7d` |
 | Extron Control for Teams Rooms 16x10.glt | 5,887,616 | `8bd59f8e2f808ee57f40eeb147ad6fc06ca1610a772f5410878ed57b334a3a2c` |
@@ -40,6 +42,8 @@ What `vendor/extron/` should contain. Copied from this machine's GUI Designer
 | Mach 520 Series.glt | 10,597,062 | `3d5a50df2dc58e3b82cb697fdd79edd5c10aafd218e97da687ca96bf0b0670bc` |
 | Mach 535 Series.glt | 11,130,555 | `7d4d5a1a99e58c63091a8d11a0186e3171b0f8eb7d9bebaa9bf24c9e2f974349` |
 | Mach 720 Series.glt | 10,914,412 | `1c26e337224159534e441678e8d5a6970124406e42a7d22bcbf29bc37a0fd12c` |
+| Mach ECP 16-10 Series.glt | 11,638,317 | `c96dbce802da119c18c6bf93a1d1079d7e4355dd17d2edbab76d861a4c5c6bcc` |
+| Mach ECP 16-9 Series.glt | 13,385,913 | `167c2166c62c2a627244023f2b08a033a10faeed8105d6f13e5f4f640b03561b` |
 | Shockwave 1020 Series.glt | 4,699,393 | `591e1c7e1c2a97797dfefe333daf0fb12b9af87cd91c35315e1c98cc07f9a5f2` |
 | Shockwave 1220 Series.glt | 4,746,751 | `f1ed899e35b70ceb9b6c3dfdaaf9e623c9c5e081c5dc9bf801137b29ea73e9b4` |
 | Shockwave 1520 Series.glt | 4,839,880 | `a07b8488e6a1cff76c7d15b21b417b8096217614e0cb5f34a571ccf3d8c95c7c` |
@@ -48,8 +52,10 @@ What `vendor/extron/` should contain. Copied from this machine's GUI Designer
 | Shockwave 520 Series.glt | 3,008,447 | `ff4d66269ee202300f77c011da650f85e6f372ede44a4e54fc19ea30709385da` |
 | Shockwave 535 Series.glt | 3,649,214 | `5919c7a6b731cf5c7a9da761cc0929d564c45baf5e53422c1882f04299d46d9c` |
 | Shockwave 720 Series.glt | 4,595,743 | `985165f0c39cef884aa034e7112f8d24d6d56e729746a848b8c50b9a1936159d` |
-| TemplateInfoTable.config | 3,465,374 | `059afe75e5b4fd8b908e77ce3f83521ea44ef84fb375132d1f602b5e4bdb7920` |
-| TemplateInstallerInfoTable.config | 4,380,182 | `21c39792dee96acffa8b10a630c1ad89422f66681e1b0447d59ed1369b1abaf7` |
+| Shockwave ECP 16-10 Series.glt | 4,738,773 | `cf034b69741a86e23814f48f19882b01215f03b780714483bb58f5d8e2e61e87` |
+| Shockwave ECP 16-9 Series.glt | 4,927,681 | `8cc894734441c708cb5e13190bdb765255b42da6c71a55439029d976a42e75f6` |
+| TemplateInfoTable.config | 3,964,369 | `de2683e91cf16d9f542f0bd5346c502cbaef70c5205003a87c8469f8d6d37f74` |
+| TemplateInstallerInfoTable.config | 4,380,182 | `8c59be689ea7e315d91525a14d819188e30a362ec9fa3d8b12465f106851e95c` |
 | Turbulence 1020 Series.glt | 59,048,265 | `1f736a8a2602e3ccef1c0744015c832645e000af84e965c5616bfaf69922a38a` |
 | Turbulence 1220 Series.glt | 59,682,609 | `cffe9e975975a262f1ff20b7a3dda5f322ba32feb7e75b2cf7b5b3737df613f0` |
 | Turbulence 1520 Series.glt | 62,523,069 | `36fc34c54d947b27b176f37ed0fcee31e999ff16c7a085d7bbd9f6d274ab0c4c` |
@@ -59,6 +65,7 @@ What `vendor/extron/` should contain. Copied from this machine's GUI Designer
 
 ## Resources/Afterburn/Icons
 
-1316 files, 12,412,728 bytes, from
+1,316 files, 12,412,728 bytes, from
 `C:/Users/Public/Documents/Extron/GUI Designer Templates/Resources/Afterburn/Icons/`.
-The default icon source for `powershell/New-ImageProbe.ps1`.
+No per-file table: nothing in this repo reads an individual icon by name,
+`powershell/New-ImageProbe.ps1` just walks the directory.

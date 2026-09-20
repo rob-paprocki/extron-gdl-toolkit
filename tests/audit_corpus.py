@@ -13,14 +13,14 @@ Both were found by measuring rather than reasoning. This runs that measurement
 over the whole corpus, so the next one is found before it ships.
 
     python tests/audit_corpus.py                  # fixtures + seeds + templates
-    python tests/audit_corpus.py --no-templates   # skip Extron's 44 .glt (faster)
+    python tests/audit_corpus.py --no-templates   # skip Extron's 50 .glt (faster)
     python tests/audit_corpus.py <dir> [<dir>..]  # anywhere else
 
 It prints one line per project, then each invariant as PASS, FAIL or INFO. Exit
 code is the number of FAILs, so it works as a gate.
 
 STREAMING, deliberately. The first version loaded every project before checking
-anything - 19 projects plus 44 templates, ~600 MB of .gdl parsed into Python
+anything - 19 projects plus 50 templates, ~600 MB of .gdl parsed into Python
 objects at once - on a box with 8 GB of RAM and a 500 MB pagefile, and it took
 the machine's commit charge to the limit ("The paging file is too small"). Each
 project is now reduced to a small dict of facts and released before the next

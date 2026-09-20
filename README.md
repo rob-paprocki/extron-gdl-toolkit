@@ -3,7 +3,7 @@
 Read, render, edit and author Extron GUI Designer `.gdl` touch-panel projects
 from code.
 
-Verified against GUI Designer 1.27.0.9. Files written by this toolkit open in
+Verified against GUI Designer 1.28.0.7. Files written by this toolkit open in
 the application, survive structural edits (adding and removing pages, popup
 pages, popup page references and controls) and build successfully.
 
@@ -58,7 +58,7 @@ Verified with:
 | Python | 3.11.9 | everything; reading, editing and plan generation are stdlib-only |
 | Pillow, pytest | 12.3.0, 9.1.1 | rendering and the test suite |
 | Git LFS | 3.7.1 | `seeds/` and `archive/` |
-| Extron GUI Designer | **1.27.0.9**, the tested boundary | writing and building a `.gdl` — `CLAUDE.md` *Environment* says what else that needs |
+| Extron GUI Designer | **1.28.0.7**, the tested boundary | writing and building a `.gdl` — `CLAUDE.md` *Environment* says what else that needs |
 
 Then, from the repo root:
 
@@ -185,7 +185,7 @@ them wrong fails silently: the file opens, builds, and is wrong.
 ## Status
 
 Reading, rendering, editing, generating, round-tripping and building all work
-and are verified against 1.27.0.9.
+and are verified against 1.28.0.7.
 
 A retarget of the whole Liberty Bank project from a TLP Pro 1035T to a TLP Pro
 1535M came back 654 of 654 controls correct in the built file. A generated
@@ -209,6 +209,6 @@ projects declare faces they do not embed.
 ## Provenance
 
 Reverse-engineered from project files, GUI Designer's own snapshot exports and
-the installed assemblies. No Extron documentation was involved, so 1.27.0.9 is
+the installed assemblies. No Extron documentation was involved, so 1.28.0.7 is
 the tested boundary. The `fixtures/` files are real Liberty Bank project files
 kept as test data.

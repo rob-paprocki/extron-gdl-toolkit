@@ -197,8 +197,10 @@ class TestControlTypes(unittest.TestCase):
         self.assertEqual(op['donor_type'], 'PBSlider')
         f = op['fields']
         self.assertEqual(f['orientationField'], 3)          # down
-        self.assertEqual(f['sliderTrackWidthField'], 14)
-        self.assertEqual(f['sliderIndicatorWidthField'], 40)
+        # No `Field` suffix on these three, unlike orientationField above.
+        # Verified by writing them onto a live Extron.GUICPro.PBSlider.
+        self.assertEqual(f['sliderTrackWidth'], 14)
+        self.assertEqual(f['sliderThumbWidth'], 40)
 
     def test_line_endpoints_are_the_eight_position_enum(self):
         # A diagonal is TopLeft -> BottomRight; the angle comes from the rect.
@@ -222,7 +224,7 @@ class TestControlTypes(unittest.TestCase):
         # Computing them in plan() silently yielded defaults, because plan()
         # iterates the layout model which has no 'thumb' or 'from'.
         op = self._ops({'kind': 'slider', 'rect': [0, 0, 60, 300], 'thumb': 33})
-        self.assertEqual(op['fields']['sliderIndicatorWidthField'], 33)
+        self.assertEqual(op['fields']['sliderThumbWidth'], 33)
 
     def test_a_slider_is_a_touch_target_but_a_level_is_not(self):
         small = {'rect': [0, 0, 20, 20]}

@@ -3,5 +3,5 @@
 #   gdl.container / gdl.data / gdl.fonts / gdl.nrbf / gdl.project  -> stdlib only
 #   gdl.compose / tests/compare_snapshots.py                       -> Pillow
 #   powershell/GdlProject.ps1  -> 32-bit Windows PowerShell 5.1 and an install
-#                                 of Extron GUI Designer 1.27.0.9 (not pip)
+#                                 of Extron GUI Designer 1.28.0.7 (not pip)
 Pillow>=10

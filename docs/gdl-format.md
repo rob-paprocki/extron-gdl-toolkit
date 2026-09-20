@@ -1,12 +1,12 @@
 # Extron `.gdl` — format and programmatic authoring
 
-Notes from reverse-engineering Extron GUI Designer **1.27.0.9** project files,
+Notes from reverse-engineering Extron GUI Designer **1.28.0.7** project files,
 verified end to end: machine-written `.gdl` files open in GUI Designer, survive
 structural edits, and **build successfully**.
 
 Everything here was derived from the files in `fixtures/gdl/`, GUI Designer's own
 snapshot renders, and the installed assemblies. Nothing came from Extron
-documentation, so treat version 1.27.0.9 as the tested boundary.
+documentation, so treat version 1.28.0.7 as the tested boundary.
 
 ---
 
@@ -232,6 +232,27 @@ A generator should assert all four agree rather than trusting the writes.
   Two separate traps (`flattenText`, and the relocation above) produce a file
   that opens, builds and is wrong. Finish with `tests/verify_built.py`, which
   diffs the built `layout.json` against the plan that produced it.
+- **A "Dynamic Image" is not a new object type.** 1.28 added the feature —
+  images the control system can swap at runtime without redeploying — and it
+  needs nothing new from this format. `ObjectTypeEnum` still has only `Image`
+  and `Video`; what makes an image dynamic is that it carries an object ID, in
+  the `TLPImageID` field that already lives on `PBControl` (and `IStateInfo`)
+  for every control. So a clone-and-retarget round trip carries it across
+  untouched, and no code here needed changing.
+
+  There is no platform gate on it in the graph. Extron's release notes scope
+  the feature to the TLP Pro x35 series, Extron Control for Web and the Extron
+  Control Pro app; the bundled help spells the first of those out as 535 / 835 /
+  1035 / 1535 Series and omits ECP, which is a UI-availability statement rather
+  than a format constraint. Whether a given panel honours it at runtime is
+  firmware, not something this file can tell you.
+- **`ApplicationBuildVersionInfo` in the built `layout.json` lags one build
+  behind on a project carried across versions.** Open a 1.27-authored project in
+  1.28 and Save and Build: the `ProjectGCP` is restamped immediately
+  (`GUI Designer 1.28.0.7`, `Extron.GUICPro.Layout.Contracts 5.6.0.0`) but the
+  payload still reports `1.27.0.9`, because that first build reuses the cached
+  payload. The second build regenerates it. `gdl/data.py` surfaces this as
+  `'app'`, so do not treat it as "which version built this".
 
 ## 8. Where the code is
 

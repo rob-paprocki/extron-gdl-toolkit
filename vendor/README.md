@@ -1,11 +1,11 @@
 # vendor/
 
-Extron's own content, copied from the GUI Designer 1.27.0.9 install so the tests
+Extron's own content, copied from the GUI Designer 1.28.0.7 install so the tests
 and scripts that read it need nothing outside this directory.
 
 | Here | From |
 |---|---|
-| `extron/TouchLink Templates/` | `C:\Users\Public\Documents\Extron\GUI Designer Templates\TouchLink Templates` - the 44 `.glt` theme templates |
+| `extron/TouchLink Templates/` | `C:\Users\Public\Documents\Extron\GUI Designer Templates\TouchLink Templates` - the 50 `.glt` theme templates |
 | `extron/Resources/Afterburn/Icons/` | the Afterburn icon kit, 1,316 PNGs - `powershell/New-ImageProbe.ps1`'s default icon source |
 
 **Only this README and `MANIFEST.md` are in git.** The files themselves (about
@@ -20,7 +20,7 @@ To repopulate on a fresh clone, on a machine with GUI Designer installed:
 $src = 'C:\Users\Public\Documents\Extron\GUI Designer Templates'
 # Create each destination BEFORE copying into it. Copy-Item -Recurse copies a
 # folder's *contents* when the destination does not exist, and copies the folder
-# itself when it does - so without this line the 46 template files land directly
+# itself when it does - so without this line the 52 template files land directly
 # in vendor\extron\ with no "TouchLink Templates" level, which is exactly the
 # state a fresh clone is in.
 New-Item -ItemType Directory -Force 'vendor\extron' | Out-Null
@@ -29,7 +29,7 @@ New-Item -ItemType Directory -Force 'vendor\extron\Resources\Afterburn' | Out-Nu
 Copy-Item "$src\Resources\Afterburn\Icons" 'vendor\extron\Resources\Afterburn\' -Recurse
 ```
 
-Verify afterwards — `vendor\extron\TouchLink Templates` should hold 46 files (44
+Verify afterwards — `vendor\extron\TouchLink Templates` should hold 52 files (50
 `.glt` plus two `.config`), and `vendor\extron\Resources\Afterburn\Icons` 1,316
 files. `MANIFEST.md` has the SHA-256 of every one. Note that GUI Designer
 rewrites `TemplateInfoTable.config` and `TemplateInstallerInfoTable.config` as
