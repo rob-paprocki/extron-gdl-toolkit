@@ -42,12 +42,32 @@ Control Pro" and "Extron Control for Android / iOS / Web" entries are soft
 clients with no fixed panel class.
 
 **Extron Control Pro (ECP)** is the one 1.28 added: `PlatformProTypeEnum.VTLPEcp`,
-class `PBVTLPEcpPlatform`, 1920 × 1080 at 220 DPI, part number `60-sVTLPEcp`. It
-sits beside the other VTLP soft clients — `FamilyTag` `TLP`, and
-`SupportsVideoControls` false, like Extron Control for Web. Extron ships six
-templates for it (Afterburn / Mach / Shockwave × ECP 16-9 and ECP 16-10), and
-the 16-10 pair author their pages at 1280 × 800 rather than the platform's own
-1920 × 1080 — another reason to read a built project rather than assume.
+class `PBVTLPEcpPlatform`, part number `60-sVTLPEcp`, 220 DPI. It sits beside the
+other VTLP soft clients — `FamilyTag` `TLP`, and `SupportsVideoControls` false,
+like Extron Control for Web. Extron ships six templates for it (Afterburn / Mach
+/ Shockwave × ECP 16-9 and ECP 16-10), and the wizard offers only those three
+themes when ECP is the panel type.
+
+**ECP is the one entry whose canvas is a choice, not a property.** Every other
+row in this table is a panel with a fixed resolution; ECP is an app, and the
+wizard adds a *Resolution* dropdown with seven presets. `MODELS_FULL` carries
+1920 × 1080 because that is what `GetDefaultResolutionDpi` reports, but that is a
+default, not a constraint. The real list, read from a built project's
+`Platform.SupportedResolutions`:
+
+| Preset | Canvas |
+|---|---|
+| iPhone (19.5:9) | 2622 × 1206 |
+| Android Phone (20:9) | 2424 × 1080 |
+| iPad (4:3) | 2360 × 1640 |
+| Android Tablet (16:10) | 2560 × 1600 |
+| TouchLink Panel (16:10) | 1280 × 800 |
+| TouchLink Panel (16:9) | 1920 × 1080 |
+| Custom | anything (`0 × 0` until set) |
+
+Four of those are larger than any physical Extron panel, so an ECP project is the
+one place a canvas over 1920 wide is normal. `seeds/Afterburn ECP 16-9
+(Project1).gdl` is the 16:9 preset.
 
 **CCI Pro 700 is the one 1.28 removed.** `PlatformProTypeEnum` lost the member
 outright (its integer slot, 19, is now an orphaned gap) and no `PBCCI700Platform`

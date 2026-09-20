@@ -92,13 +92,11 @@ opening GUI Designer.**
   unknown.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
   sizes.
-- **No seed for Extron Control Pro.** 1.28 added the `VTLPEcp` platform and six
-  ECP templates (Afterburn / Mach / Shockwave × 16-9 and 16-10), and
-  `MODELS_FULL` now has the row, but `seeds/` has nothing at that size class, so
-  nothing exercises it. Making one needs the Project Create Wizard by hand —
-  packing an ECP `.glt`'s `ProjectGCP` straight into a `.gdl` does not open as a
-  project, and the wizard still cannot be driven to *commit* a panel choice
-  (`docs/from-scratch.md` §7).
+- **ECP is seeded at 16:9 only.** `seeds/Afterburn ECP 16-9 (Project1).gdl`
+  covers the TouchLink Panel (16:9) preset. The other six presets — the phone and
+  tablet canvases, four of which are wider than any physical panel — have no
+  seed, and Mach and Shockwave have no ECP seed at all. Each is one wizard run
+  away now that the wizard can be driven (`docs/from-scratch.md` §7).
 - **`powershell/New-FormatProbes.ps1` has not been re-run on 1.28.0.7.** Its
   recorded 0-errors/0-warnings result is carried over from 1.27.0.9.
 - **The 1.28-written `.gdl` has not been opened in 1.27.** Output is now stamped
