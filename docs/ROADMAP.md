@@ -92,15 +92,17 @@ opening GUI Designer.**
   unknown.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
   sizes.
-- **No seed for Extron Control Pro.** 1.28 added the `VTLPEcp` platform and six
-  ECP templates (Afterburn / Mach / Shockwave × 16-9 and 16-10), and
-  `MODELS_FULL` now has the row, but `seeds/` has nothing at that size class, so
-  nothing exercises it. Making one needs the Project Create Wizard by hand —
-  packing an ECP `.glt`'s `ProjectGCP` straight into a `.gdl` does not open as a
-  project, and the wizard still cannot be driven to *commit* a panel choice
-  (`docs/from-scratch.md` §7).
-- **`powershell/New-FormatProbes.ps1` has not been re-run on 1.28.0.7.** Its
-  recorded 0-errors/0-warnings result is carried over from 1.27.0.9.
+- **ECP's phone and tablet canvases have no donor, and cannot have one.** The
+  six themable combinations (Afterburn / Mach / Shockwave × 16-9 and 16-10) are
+  all seeded. The other five presets — iPhone, Android Phone, iPad, Android
+  Tablet and Custom — only offer Blank in the wizard, and a blank ECP project is
+  1 page and 3 controls, so there is nothing useful to clone from. Authoring for
+  a phone canvas therefore means `retarget` off a 16-9 seed, which has never been
+  measured against an ECP target.
+- **The probes' error and warning counts are still 1.27.0.9 numbers.**
+  `New-FormatProbes.ps1` has been re-run on 1.28.0.7 and all three still author,
+  open and build, but the Build Manager's own 0-errors/0-warnings readout was not
+  re-read — only the resulting files were checked.
 - **The 1.28-written `.gdl` has not been opened in 1.27.** Output is now stamped
   `Layout.Contracts 5.6.0.0`, so files this toolkit writes are probably not
   backward-compatible; 1.27 was uninstalled by the upgrade, so it is untested

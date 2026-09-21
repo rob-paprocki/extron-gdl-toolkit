@@ -84,15 +84,25 @@ machine you are already working on.
 Each of these was believed, written down, and later found wrong. The current
 statement is in the live docs; this is the record that it changed.
 
-- **The Project Create Wizard "exposes no UIA providers at all".** True of
-  1.27.0.9; `docs/from-scratch.md` §7 said its descendant tree came back empty,
-  zero combo boxes and zero buttons. In 1.28.0.7 the tree is populated: the
-  combos expose `Value` and `ExpandCollapse`, list items expose `Invoke` and
-  `SelectionItem`, and expanding Panel Type enumerates all 55 models. The
-  conclusion survives for a different reason — no route found actually
-  *commits* a selection, `ValuePattern.SetValue` desynchronises the control from
-  the model, and the subtree stops responding afterwards — but the stated reason
-  was version-specific and is now wrong.
+- **The Project Create Wizard cannot be automated.** Twice wrong, in different
+  ways. The original claim, true of 1.27.0.9, was that its descendant tree came
+  back empty — zero combo boxes, zero buttons. In 1.28.0.7 the tree is populated,
+  so that reason expired. The *replacement* claim, written the same day, was that
+  it still could not be driven because nothing committed a selection. That was
+  wrong too, and for an avoidable reason: the first thing tried was
+  `ValuePattern.SetValue`, which desynchronises the combo from the model and
+  poisons the dialog for everything after it. Every later attempt was measuring
+  the damage from that, not the wizard. Expanding a combo and clicking the list
+  item — the plain thing — works, and all six `seeds/*ECP*.gdl` were made that
+  way with no hands on the mouse. Making a seed is no longer a step that needs a
+  person.
+
+  A second trap sits behind the first. Step 2's Theme and Application combos
+  populate by themselves once a themable resolution is picked, so the wizard can
+  read `Theme: Mach` while `Blank` is still the selected radio, with Create
+  enabled either way. Two seeds were built blank before anyone checked the page
+  count. The radios expose no toggle state, so there is nothing to assert
+  against — only a screenshot, or the built result.
 - **`gdl/edit.py` annotated each retarget plan with a `platform_class`.** It was
   `f'Extron.GUICPro.PB{model}Platform'`, which is wrong for 9 of the 55 models
   (TLP720T is `PBTLP720TVPlatform`; TLP1230WTG is the bare

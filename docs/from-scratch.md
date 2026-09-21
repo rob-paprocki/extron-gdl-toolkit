@@ -140,6 +140,13 @@ Each test project was authored **headlessly** by PowerShell, packed with
 `gdl.container pack`, then opened and built in the real application. See §7 for
 how that was driven, which is fully scriptable.
 
+The error and warning counts below were read off 1.27.0.9. `New-FormatProbes.ps1`
+was re-run on 1.28.0.7 and all three still author, open and build, each producing
+a payload; probe 2's appended resource is still in the built file afterwards (35
+border resources against the fixture's 34). The counts themselves were not
+re-read from the Build Manager, so treat "0 errors, 0 warnings" as the 1.27
+measurement and "builds and keeps the resource" as the 1.28 one.
+
 | | Question | Answer |
 |---|---|---|
 | 1 | Reference an existing but never-referenced border resource? | **YES** |
@@ -370,7 +377,7 @@ Two things that seed taught, both now checked by `gdl.spec donors`:
   the donor is - this seed is an 835M - and `model` only feeds the touch-target
   check. A spec whose canvas differs from the donor's is now refused.
 
-### Automating the wizard: partly possible in 1.28, still not worth it
+### Automating the wizard: it works in 1.28
 
 **This changed in 1.28 and the old advice here was "it exposes no UIA providers
 at all".** That is no longer true. The wizard's descendant tree is now populated:
@@ -380,33 +387,46 @@ the Panel Type, Theme and Application combo boxes expose `Value` and
 Panel" plus the 55 models) — which is a convenient way to read the shipped panel
 list without reflecting over the assemblies.
 
-What still does not work is **committing** a choice:
+**It can be driven end to end.** All six `seeds/*ECP*.gdl` were made this way,
+with no hands on the mouse. The working sequence is the plain one
+— for each combo in turn, click it to expand, then click the list item you want:
 
-- `ValuePattern.SetValue` on the Panel Type combo writes the edit text and
-  nothing else. The combo then *reads* "Extron Control Pro" while the preview
-  still says "No Panel Type Selected", Step 2 stays greyed and Create stays
-  disabled. It desynchronises the control from the model, and the wizard has to
-  be cancelled to recover.
-- `SelectionItemPattern.Select()` on the right list item highlights it but does
-  not commit either.
-- Clicking the highlighted item by its rectangle closes the dropdown and leaves
-  the same un-selected state.
+1. Panel Type. Expanding it lists 56 entries ("Select Your Panel" plus the 55
+   models), which is also a convenient way to read the shipped panel list.
+2. For a soft client, a **Resolution** combo appears once the panel is chosen.
+3. Step 2's Blank / Theme radios, then Theme, then Application.
+4. Create.
 
-After that the wizard's UIA subtree stops responding — `FindAll` from
-`RootElement` throws `Operation timed out (0x80131505)` until the dialog is
-dismissed. `Create` and `Cancel` are `Pane` elements with no patterns at all, so
-they need a coordinate click regardless.
+**Click the Blank/Theme radio yourself, and verify it took.** Step 2's Theme and
+Application combos populate on their own as soon as a themable resolution is
+chosen, so the wizard can read `Theme: Mach` while `Blank` is still the selected
+radio — and Create is enabled either way. Two seeds were built blank before this
+was noticed. The radios are `Pane` elements with no toggle state to read back, so
+the only checks are a screenshot before Create, or the page count after: a blank
+ECP project has 1 page, 1 popup and 3 controls against a themed one's 7-8 pages
+and 500-650 controls.
+
+**Do not set a combo by value.** `ValuePattern.SetValue` writes the edit text
+without raising the selection, so the combo *reads* "Extron Control Pro" while
+the preview still says "No Panel Type Selected", Step 2 stays greyed and Create
+stays disabled. Worse, it desynchronises the control from the model: nothing
+afterwards commits, the wizard's own accessibility subtree stops responding
+(`FindAll` throws `Operation timed out (0x80131505)`), and the only way out is
+Cancel. `SelectionItemPattern.Select()` is the same trap — it highlights without
+committing. Only a real click on the list item works.
+
+`Create` and `Cancel` expose no patterns, so they need a click by position.
 
 Two things that mislead on the way in. `InvokePattern.Invoke()` on the menu item
 that opens the wizard throws `Operation timed out (0x80131505)` because the call
 blocks on the modal — the dialog *does* open, so query it from a separate call
-rather than believing the exception. And a coordinate click goes to whatever
-window is on top, so bring the wizard forward with `SetForegroundWindow` first
-and confirm with `WindowFromPoint` before clicking; otherwise the click lands in
-your terminal and nothing appears to happen.
+rather than believing the exception. And a click by position goes to whatever
+window is on top, so raise the wizard first and confirm what is under the point
+before clicking; otherwise it lands in your terminal and nothing appears to
+happen.
 
-So: read the panel list through UIA if it is useful, but make the seed by hand.
-For a step run once per theme, fighting the commit path is still a bad trade.
+One consequence worth stating plainly: a seed is no longer the step that needs a
+person. It still needs GUI Designer running and a desktop to draw on.
 
 ## 6. Honest limits of everything above
 
