@@ -307,6 +307,68 @@ them, and Turbulence's is 1.55 GB on its own. They are reinstallable Extron
 content, so they stay on disk and out of git — the same rule `vendor/README.md`
 applies to the templates.
 
+#### What the style sheets actually encode
+
+The PSDs are not just artwork; their **layer names carry the rules**. You can
+read those without Photoshop and without loading any pixel data, by scanning the
+layer-and-mask section for `8BIM`+`luni` blocks (a 4-byte length, a 4-byte
+character count, then UTF-16BE). Mach Styles.psd is 8448 × 5696 with 244 named
+layers; Shockwave Styles.psd is 8448 × 3648 with 501.
+
+**Mach's palette, from its `Colors` layer group:**
+
+| Name | Hex |
+|---|---|
+| gray dark | `#1F292E` |
+| gray med | `#415058` |
+| gray light 2 | `#C8CDD0` |
+| gray light 1 | `#F2F2F3` |
+| green | `#86D161` |
+| blue | `#B0C4DE` |
+| yellow | `#EDB95E` |
+| red | `#E23636` |
+
+**Selected and unselected are the same colour at different alpha.** Mach's button
+BG layers are named as `alpha, R, G, B`, and the RGB never changes between
+states — only the alpha:
+
+| Swatch | RGB | Selected α | Unselected α |
+|---|---|---:|---:|
+| Green | 134, 209, 97 (`#86D161`) | 210 | 80 |
+| Blue | 176, 196, 222 (`#B0C4DE`) | 210 | 80 |
+| Red | 226, 54, 54 (`#E23636`) | 210 | 80 |
+| Yellow | 237, 185, 94 (`#EDB95E`) | 210 | 80 |
+| White | 255, 255, 255 | 120 | 50 |
+| Gray | 0, 0, 0 | 120 and 180 — the PSD does not label which is which |
+
+That is a rule a generator can apply directly: to add a Mach-consistent button
+state, keep the RGB and move the alpha, rather than picking a new colour. One
+Mach layer is explicitly named `white bg (do not use)`.
+
+Cross-checked against a real project as far as the format allows:
+`Project.fill_map()` on `seeds/Mach ECP 16-9.gdl` returns exactly one authored
+fill, **A=180 R=0 G=0 B=0** — the PSD's Gray swatch at its higher alpha. That is
+one data point, not a survey: Build rasterizes fill into the artwork and leaves
+`BackgroundFillColor` reading transparent white (§2 of `docs/gdl-format.md`), so
+most of these values are not recoverable from a built file at all. Treat the
+table as Extron's source of truth and the seed as corroboration.
+
+**The element-size vocabulary** is also in the layer names, and matches the PNG
+filenames under each theme's `Buttons\` and `Icons\`:
+
+| Theme | Buttons | Icons | Slider |
+|---|---|---|---|
+| Mach | 440×440, 960×440, 1376×440 source buttons; 80×60 | 348², 256², 189², 180², 168², 166², 160² | track `8×500` (`8x500_mach_track_bg` / `_track_fill`), thumb 38×38 (`40_mach_thumb`) |
+| Shockwave | 440×440, 504×440, 712×440, 744×456, 960×440, 1248×440, in Square / Rounded / Rectangle variants | 224² and 260² "Icon Boundary" | track and fill `52×342`, thumb `52×34` |
+
+Mach's sheet is laid out against a `1280x800 Mockup` layer, and its `READ ME`
+layer states the theme uses **Open Sans and Open Sans Light** — which matches
+what the Mach seeds declare.
+
+Shockwave's sheet has no hex-named colour group; it carries `Selected Rectangle`
+and `Unselected Rectangle` layers per swatch instead, with the same five swatches
+(Green, Blue, Red, Yellow, Gray).
+
 ## 8. What the standards do NOT specify
 
 A generator has to decide these itself, and should say so rather than implying
