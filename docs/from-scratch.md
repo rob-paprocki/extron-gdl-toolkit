@@ -95,9 +95,10 @@ rather than by the resource list.
 
 | Stage | State |
 |---|---|
-| Design artifact → spec | **Built.** `examples/panel.json` is a worked spec. |
+| Brief → spec | **By hand**, following `SKILL.md`. `examples/huddle.json` and `examples/huddle-program.json` were written from prose briefs. |
+| Behavior → control program | **Built and verified against a build.** `python -m gdl.behavior`, `docs/behavior.md`. |
 | Layout pass | **Built.** `gdl/spec.py` `grid()` / `stack()`. |
-| Control ID allocation | **Built.** Per-page bands, honors pinned ids. |
+| Control ID allocation | **Built.** Per-page bands, unique across the project, honors pinned ids. |
 | Preview render | **Built.** Straight through `gdl/compose.py`. |
 | Spec → build plan | **Built.** `python -m gdl.spec plan`. |
 | Plan → `ProjectGCP` | **Built and verified.** `powershell/Apply-GdlPlan.ps1`; `-WhatIf` dry-runs it. |

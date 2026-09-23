@@ -172,6 +172,26 @@ jobs:
         # render path.
         run: python tests/test_fonts.py
 
+      - name: behavior - the vocabulary and every check on it
+        # What controls DO: nav, device calls, confirmations, the navigation
+        # graph. docs/behavior.md is the home.
+        run: python tests/test_behavior.py
+
+      - name: the generated program runs against a strict fake extronlib
+        # extronlib only exists on a processor, so tests/fake_extronlib enforces
+        # the ControlScript reference's contracts instead - event names, handler
+        # arity, holdTime, pages by name - and the program is pressed through.
+        run: python tests/test_behavior_sim.py
+
+      - name: the program verifier fails on what Build can break
+        run: python tests/test_verify_behavior.py
+
+      - name: the behavior example checks and generates
+        run: |
+          python -m gdl.behavior check examples/huddle-program.json
+          python -m gdl.behavior generate examples/huddle-program.json /tmp/program
+          test -f /tmp/program/ui_events.py && test -f /tmp/program/handoff.md
+
   fidelity:
     # The render harness, against GUI Designer's own snapshot exports. Runs here
     # only because every face is recoverable from the tracked fixtures; see the
@@ -186,6 +206,11 @@ jobs:
 
       - name: install Pillow
         run: pip install -r requirements.txt
+
+      - name: the layout verifier checks start page, modal popups and IDs
+        # Here rather than in `test`: verify_built imports the compositor, so
+        # these skip without Pillow.
+        run: python tests/test_verify_built.py
 
       - name: recover the embedded faces
         # All six fixtures: no single one embeds every face.

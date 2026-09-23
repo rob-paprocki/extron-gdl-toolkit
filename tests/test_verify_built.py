@@ -88,6 +88,22 @@ class TestModalPopups(unittest.TestCase):
         self.assertTrue(any('modal' in p for p in problems), problems)
 
 
+class TestEditIds(unittest.TestCase):
+    """A renumber is verified by comparing the built control's ID - which the
+    verifier looked up as 'UserID', a key layout.json never writes, so the
+    comparison was skipped every time."""
+
+    def test_a_renumber_that_did_not_take_is_reported(self):
+        vb = _vb(self)
+        plan = {'controls': [{'page': 51, 'control': 3,
+                              'fields': {'userIdField': 2001}}]}
+        j = {'Pages': [{'ID': 51, 'Name': 'Home', 'Controls': [
+            {'ID': 3, 'Name': 'Mute', 'UserId': 1011, 'States': []}]}],
+             'PopupPages': []}
+        problems, _ = vb.check_edits(plan, j)
+        self.assertTrue(any('UserId' in p and '2001' in p for p in problems), problems)
+
+
 class TestTypeNames(unittest.TestCase):
     """TYPE_NAME once said Line 9, DateTime 12, Slider 14 and Level 15. Every
     message naming one of those types was wrong."""

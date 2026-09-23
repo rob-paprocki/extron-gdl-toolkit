@@ -367,9 +367,12 @@ def check_edits(plan, j):
             # that is really a lookup in the wrong place. Say so instead: the
             # only real check is looking at the asset.
             unverifiable.append(f"{pg['Name']!r} {c.get('Name')!r} -> {want_text!r}")
+        # 'UserId', as layout.json spells it. This said 'UserID', matched no
+        # key, and the `key not in c` guard below skipped it - so a renumber
+        # was never actually checked against the build.
         for f, key in (('leftField', 'Left'), ('topField', 'Top'),
                        ('widthField', 'Width'), ('heightField', 'Height'),
-                       ('userIdField', 'UserID')):
+                       ('userIdField', 'UserId')):
             want = (op.get('fields') or {}).get(f)
             if want is None or key not in c:
                 continue

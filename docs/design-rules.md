@@ -156,6 +156,10 @@ touch-target Quick Reference table, which is a different thing.
 - A modal covers the page and any active non-modal popups with a translucent
   overlay, disabling them. (p. 71)
 
+`python -m gdl.behavior check` encodes the confirmation, reachability and
+feedback rules for a spec that says what its controls do (`docs/behavior.md`
+§3).
+
 ## 3. Don'ts
 
 - Don't signal "selected" with a border alone — change color *and* add a text cue.

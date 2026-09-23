@@ -61,8 +61,9 @@ author, build and verify in one session.
 | `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` | File > Save and Build |
 | `gdl.spec` check / render / plan / donors | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
+| `gdl.behavior` check / generate | |
 | the `python -m pytest` suite | |
-| `tests/verify_built.py`, given the built file | |
+| `tests/verify_built.py`, `tests/verify_behavior.py`, given the built file | |
 
 Setup is in `README.md` *Setup*. `fixtures/` is real client material — see
 *Working on the fixtures* below — and anything pushed goes to GitHub.
@@ -138,6 +139,17 @@ takes the plurality opaque color of each control's own asset, and reads the page
 asset too — a donor background image re-rasterized under the fill is invisible
 in every field and obvious in the artwork.
 
+A spec with behavior has a second gate, for the program generated from it:
+
+```bash
+python tests/verify_behavior.py out/program out/generated.gdl
+```
+
+It parses the generated Python and checks every page and popup name it shows,
+and every control ID it addresses, against the built file - Build renumbers
+pages and keeps the donor's alongside, so agreement with the spec is not
+agreement with the panel. `docs/behavior.md` §5 has what else it checks.
+
 ## Driving GUI Designer
 
 `powershell\New-GdlPanel.ps1` takes a spec to a built, verified panel with
@@ -185,6 +197,7 @@ were updated. So:
   | Format facts and what Build does | `docs/gdl-format.md` |
   | Driving GUI Designer from a script | `docs/from-scratch.md` §7 |
   | Generating a panel, step by step | `SKILL.md` |
+| What controls do, and the generated program | `docs/behavior.md` |
   | Editing an existing panel | `docs/editing.md` |
   | Verification gates and the render baseline | `CLAUDE.md` *Verifying a change* |
   | Render findings | `docs/render-fidelity.md` |

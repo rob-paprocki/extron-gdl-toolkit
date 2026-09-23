@@ -1,0 +1,157 @@
+{
+  "name": "Huddle Room",
+  "model": "TLP1035T",
+  "size": [1280, 800],
+  "start_page": "Huddle Home",
+
+  "_brief": "The huddle brief of examples/huddle.json, plus what it DOES, as a verbal overview: 'The three sources route to the display, and the panel shows which one is live. Volume steps while you hold it, and Mute shows whether it is muted. The top bar shows whether a call is up. End Call asks first - ending a call is not undoable - and Cancel backs out. A Help page explains how to share. Ten minutes untouched and it goes back to the start.' Every sentence of that is a key below; `python -m gdl.behavior generate` turns them into a Global Scripter program and a handoff, and the panel itself builds from the same file.",
+  "_seed": "Clean-room: built against seeds/Afterburn 1035.gdl, so Open Sans rather than the client fixture's retail face.",
+
+  "theme": {
+    "background": "#12131C",
+    "surface": "#242634",
+    "raised": "#2E3142",
+    "danger": "#C0392B",
+    "text": "#FFFFFF",
+    "muted": "#BABCCE",
+    "accent": "#3D8BFD",
+    "font": "Open Sans",
+    "size": 18,
+    "on": "accent"
+  },
+
+  "behavior": {
+    "panel_alias": "HuddleTLP",
+    "devices": {
+      "switcher": "presentation switcher feeding the display",
+      "dsp": "room audio DSP",
+      "codec": "video conferencing codec"
+    },
+    "inactivity": {
+      "seconds": 600,
+      "do": [ { "do": "hide_all_popups" },
+              { "do": "show_page", "target": "Huddle Home" } ]
+    }
+  },
+
+  "pages": [
+    {
+      "name": "Huddle Home",
+      "number": 1000,
+      "controls": [
+        { "kind": "panel", "name": "TopBar", "rect": [0, 0, 1280, 112],
+          "fill": "surface", "border": "rect" },
+        { "kind": "label", "name": "RoomName", "rect": [40, 0, 520, 112],
+          "text": "Huddle Room", "align": "left", "size": 40 },
+        { "kind": "label", "name": "CallState", "rect": [560, 0, 440, 112],
+          "text": "No call in progress", "align": "right", "size": 20,
+          "color": "muted", "bind": "call.status" },
+        { "kind": "button", "name": "HelpBtn", "rect": [1040, 24, 200, 64],
+          "text": "Help", "fill": "raised", "border": "afterburn",
+          "nav": "Huddle Help" },
+
+        { "kind": "label", "name": "PickSource", "rect": [40, 148, 700, 36],
+          "text": "Share something", "align": "left", "size": 16,
+          "color": "muted" },
+
+        { "grid": {
+            "rect": [40, 196, 1200, 272],
+            "cols": 3, "gap": 24,
+            "kind": "button", "fill": "raised", "border": "afterburn",
+            "select_group": "Sources",
+            "items": [
+              { "name": "Laptop", "text": "Laptop",
+                "press": { "do": "call", "device": "switcher", "op": "route",
+                           "args": { "source": "laptop" } } },
+              { "name": "Wireless", "text": "Wireless",
+                "press": { "do": "call", "device": "switcher", "op": "route",
+                           "args": { "source": "wireless" } } },
+              { "name": "RoomPC", "text": "Room PC",
+                "press": { "do": "call", "device": "switcher", "op": "route",
+                           "args": { "source": "room_pc" } } }
+            ]
+          }
+        },
+
+        { "kind": "panel", "name": "VolumeWell", "rect": [40, 500, 760, 220],
+          "fill": "surface", "border": "afterburn-flat" },
+        { "kind": "label", "name": "VolumeLabel", "rect": [72, 500, 300, 60],
+          "text": "Volume", "align": "left", "size": 20, "color": "muted" },
+        { "kind": "slider", "name": "VolumeSlider", "rect": [72, 564, 696, 60],
+          "orientation": "right", "fill": "raised", "range": [0, 100],
+          "bind": "audio.volume",
+          "change": { "do": "call", "device": "dsp", "op": "set_volume" } },
+        { "grid": {
+            "rect": [72, 636, 696, 72],
+            "cols": 3, "gap": 16,
+            "kind": "button", "fill": "raised", "border": "afterburn",
+            "items": [
+              { "name": "Mute", "text": "Mute", "on": "danger", "bind": "audio.muted",
+                "press": { "do": "call", "device": "dsp", "op": "toggle_mute" } },
+              { "name": "VolDown", "text": "–", "hold_time": 0.5, "repeat_time": 0.2,
+                "press": { "do": "call", "device": "dsp", "op": "step_volume",
+                           "args": { "db": -2 } },
+                "repeat": { "do": "call", "device": "dsp", "op": "step_volume",
+                            "args": { "db": -2 } } },
+              { "name": "VolUp", "text": "+", "hold_time": 0.5, "repeat_time": 0.2,
+                "press": { "do": "call", "device": "dsp", "op": "step_volume",
+                           "args": { "db": 2 } },
+                "repeat": { "do": "call", "device": "dsp", "op": "step_volume",
+                            "args": { "db": 2 } } }
+            ]
+          }
+        },
+
+        { "kind": "button", "name": "EndCall", "rect": [872, 500, 368, 220],
+          "text": "End Call", "fill": "danger", "border": "afterburn",
+          "size": 26, "nav": "Confirm End Call" },
+
+        { "kind": "panel", "name": "StatusStrip", "rect": [0, 736, 1280, 64],
+          "fill": "surface", "border": "rect" },
+        { "kind": "label", "name": "Status", "rect": [40, 736, 800, 64],
+          "text": "Ready", "align": "left", "size": 16, "color": "muted",
+          "bind": "room.status" }
+      ]
+    },
+    {
+      "name": "Huddle Help",
+      "number": 1100,
+      "controls": [
+        { "kind": "panel", "name": "HelpBar", "rect": [0, 0, 1280, 112],
+          "fill": "surface", "border": "rect" },
+        { "kind": "label", "name": "HelpTitle", "rect": [40, 0, 700, 112],
+          "text": "How to share", "align": "left", "size": 40 },
+        { "kind": "label", "name": "Step1", "rect": [40, 160, 1200, 60],
+          "text": "1. Connect your laptop, or start wireless sharing.", "align": "left" },
+        { "kind": "label", "name": "Step2", "rect": [40, 240, 1200, 60],
+          "text": "2. Tap its button on the home page.", "align": "left" },
+        { "kind": "label", "name": "Step3", "rect": [40, 320, 1200, 60],
+          "text": "3. End the call from the red button when you are done.", "align": "left" },
+        { "kind": "button", "name": "Back", "rect": [40, 640, 280, 100],
+          "text": "Back", "fill": "raised", "border": "afterburn",
+          "nav": "Huddle Home" }
+      ]
+    }
+  ],
+
+  "popups": [
+    {
+      "name": "Confirm End Call",
+      "number": 9100,
+      "modal": true,
+      "controls": [
+        { "kind": "panel", "name": "Card", "rect": [380, 250, 520, 300],
+          "fill": "surface", "border": "afterburn-flat" },
+        { "kind": "label", "name": "Question", "rect": [400, 270, 480, 120],
+          "text": "End the call for everyone?", "size": 22 },
+        { "kind": "button", "name": "ConfirmEnd", "rect": [410, 440, 220, 80],
+          "text": "End Call", "fill": "danger", "border": "afterburn",
+          "press": [ { "do": "call", "device": "codec", "op": "hang_up", "costly": true },
+                     { "do": "hide_popup", "target": "Confirm End Call" } ] },
+        { "kind": "button", "name": "CancelEnd", "rect": [650, 440, 220, 80],
+          "text": "Cancel", "fill": "raised", "border": "afterburn",
+          "press": { "do": "hide_popup", "target": "Confirm End Call" } }
+      ]
+    }
+  ]
+}

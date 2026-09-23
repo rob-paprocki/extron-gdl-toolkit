@@ -33,11 +33,18 @@
 
     -KeepOpen leaves GUI Designer up to look at. By default it is closed, since
     an instance holding the file open blocks the next run.
+
+    -Program <dir> also writes the control program the spec's behavior keys
+    describe (python -m gdl.behavior generate) and verifies it against the
+    BUILT panel (tests/verify_behavior.py): every page and popup name it shows
+    and every control ID it addresses. Behavior is checked before anything is
+    built, so a broken program costs a second, not a build.
 #>
 param(
     [Parameter(Mandatory)][string]$Spec,
     [Parameter(Mandatory)][string]$Donor,
     [Parameter(Mandatory)][string]$Output,
+    [string]$Program,
     [string]$Work,
     [string]$Python = 'python',
     [string]$InstallDir = 'C:\Program Files (x86)\Extron\GUI Designer',
@@ -115,6 +122,11 @@ try {
 
     Step 'spec check - ids, canvas, and Extron design rules'
     Run $Python @('-m', 'gdl.spec', 'check', $Spec) 'spec check'
+
+    if ($Program) {
+        Step 'behavior check - targets, confirmations, navigation'
+        Run $Python @('-m', 'gdl.behavior', 'check', $Spec) 'behavior check'
+    }
 
     Step 'donor check - every cloned type available, no page name collision'
     Run $Python @('-m', 'gdl.spec', 'donors', $Spec, $Donor) 'donor check'
@@ -200,8 +212,21 @@ try {
     # fit, bakes captions into artwork, and drops fills - all reporting 0 errors.
     Run $Python @((Join-Path $repo 'tests\verify_built.py'), $plan, $Output) 'verification'
 
+    if ($Program) {
+        $Program = [System.IO.Path]::GetFullPath($Program)
+        Step 'generate the control program'
+        Run $Python @('-m', 'gdl.behavior', 'generate', $Spec, $Program) 'program generation'
+
+        Step 'verify the program against the build'
+        # Build renumbers pages and keeps the donor's alongside, so the names and
+        # IDs the program uses are checked against what was actually built.
+        Run $Python @((Join-Path $repo 'tests\verify_behavior.py'), $Program, $Output) `
+            'program verification'
+    }
+
     Write-Output ''
     Write-Output "PANEL BUILT AND VERIFIED -> $Output"
+    if ($Program) { Write-Output "PROGRAM GENERATED AND VERIFIED -> $Program" }
 } finally {
     Pop-Location
 }
