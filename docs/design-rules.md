@@ -363,7 +363,9 @@ filenames under each theme's `Buttons\` and `Icons\`:
 
 Mach's sheet is laid out against a `1280x800 Mockup` layer, and its `READ ME`
 layer states the theme uses **Open Sans and Open Sans Light** — which matches
-what the Mach seeds declare.
+what the Mach seeds declare. Declared is not authorable, though: no Mach seed has
+a font resource for Open Sans Light, so a spec cannot ask for it yet
+(`seeds/README.md`).
 
 Shockwave's sheet has no hex-named colour group; it carries `Selected Rectangle`
 and `Unselected Rectangle` layers per swatch instead, with the same five swatches

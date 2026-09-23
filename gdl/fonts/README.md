@@ -55,10 +55,11 @@ declared size against the measured table length *exactly* finds neither.
 
 ## …but not every project embeds every face it declares
 
-A fresh project from File > New *declares* Arial Black without embedding it: 11
-of the 14 seeds carry no sfnt table of anything like its declared 119,904
-bytes. The Turbulence seed declares Arial the same way, and the Shockwave seeds
-`extron_shockwave.ttf`. GUI Designer supplies these itself at build time; the
+A fresh project from File > New *declares* Arial Black without embedding it.
+Run over `seeds/`, `python -m gdl.fonts` finds no sfnt table of anything like
+its declared 119,904 bytes in every Afterburn seed, Mach 300M Portrait,
+Turbulence or either Zoom Rooms seed. The Turbulence seed declares Arial the
+same way, and every Shockwave seed `extron_shockwave.ttf`. GUI Designer supplies these itself at build time; the
 renderer has no such source, so rendering a seed-built panel can raise
 `LookupError`. `docs/ROADMAP.md` tracks the fix.
 

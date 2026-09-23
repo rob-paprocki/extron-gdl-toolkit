@@ -40,7 +40,7 @@ together.
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
 | `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |
-| `seeds/` | fourteen themed seed projects to author from without client material (Git LFS) |
+| `seeds/` | themed seed projects to author from without client material (Git LFS); its README lists them |
 | `tests/audit_corpus.py` | re-tests the repo's documented beliefs against every project it can reach |
 | `research/` | measured findings and unshipped render improvements, with their numbers and scripts |
 | `workflows/` | the planned multi-agent bug hunt, not yet run |

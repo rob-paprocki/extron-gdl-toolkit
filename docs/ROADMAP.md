@@ -41,15 +41,17 @@ opening GUI Designer.**
    platforms support both (300M 320x480 and 480x320; 1035M 1280x800 and
    800x1280), so a portrait 1035 or a landscape 300M cannot be targeted.
    `layout.json`'s `Platform.SupportedResolutions` is the ground truth.
-2. **Fonts that are declared but not embedded.** 11 of the 14 seeds declare
-   Arial Black without embedding it; Turbulence does the same for Arial and
-   Shockwave for `extron_shockwave.ttf`. GUI Designer supplies them itself at
-   build time - its temp held Monotype Arial Black 5.06 and Arial 5.10 while
-   building from a seed that embeds neither (`archive/gui-designer/`). The
-   renderer has no such source, so a preview of a seed-built panel can raise
-   `LookupError`. Also: `fonts.extract()` keys results by file name,
-   and Shockwave declares `arial.ttf` twice, so a missing one hides behind a
-   found one.
+2. **Fonts that are declared but not embedded, or not authorable.** Most seeds
+   declare Arial Black without embedding it; Turbulence does the same for Arial
+   and Shockwave for `extron_shockwave.ttf` (`gdl/fonts/README.md` has which).
+   GUI Designer supplies them itself at build time - its temp held Monotype
+   Arial Black 5.06 and Arial 5.10 while building from a seed that embeds neither
+   (`archive/gui-designer/`). The renderer has no such source, so a preview of a
+   seed-built panel can raise `LookupError`. Also: `fonts.extract()` keys
+   results by file name, and Shockwave declares `arial.ttf` twice, so a missing
+   one hides behind a found one. Separately, no seed has a `PBFontResource` for
+   Arial Black, nor Mach or Turbulence for Open Sans Light, so a spec cannot ask
+   for either (`seeds/README.md`) - and the applier cannot add one.
 3. **Run the bug hunt** (`workflows/gdl-bug-hunt.js`) on a host with enough
    commit limit for the fan-out. `tests/audit_corpus.py` has done the cheap deterministic
    part; the workflow is for the judgment-heavy dimensions: collection traps,

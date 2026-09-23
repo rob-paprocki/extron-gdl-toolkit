@@ -79,9 +79,9 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    **Pick the donor deliberately — it ships in the result.** The fixtures are a
    real client's project, so a panel cloned from one carries their page names,
    popups, artwork and retail fonts. For anything going to a client, use a
-   *seed* from `seeds/` — fourteen themed projects made with **File > New
-   Project...**, across six theme families and several sizes (`seeds/README.md`
-   lists them; `git lfs pull` fetches them). Prefer one at the target size:
+   *seed* from `seeds/` — themed projects made with **File > New Project...**,
+   across several theme families and sizes (`seeds/README.md` lists them; `git
+   lfs pull` fetches them). Prefer one at the target size:
    `retarget` builds a correct panel at another size, but only 22% of controls
    match what Extron's own designers drew there. Extron's `.glt` templates cannot be
    donors — they have no `PBProject`, and a file built from one makes GUI

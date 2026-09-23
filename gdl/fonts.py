@@ -108,6 +108,8 @@ if __name__ == '__main__':
     absent = [r['EmbeddedFileName'] for r in (layout.get('NonDefaultFontResources') or [])
               if r.get('EmbeddedFileName') not in found]
     if absent:
-        # Not expected: every face a project declares has been embedded in every
-        # file looked at so far. Treat this as a finding, not as normal output.
+        # Normal for a fresh File > New project, which declares faces such as
+        # Arial Black that GUI Designer supplies itself at build time. The
+        # renderer has no such source, so these are the faces a preview of
+        # this file cannot draw. gdl/fonts/README.md has which seeds do it.
         print('  DECLARED BUT NOT FOUND:', ', '.join(absent))
