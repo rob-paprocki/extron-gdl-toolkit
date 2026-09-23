@@ -76,14 +76,12 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    anything else, since neither kind can otherwise be shown.
 
    **Say what it does.** A brief describes functions as well as a layout - "the
-   sources route to the display and show which is live; End Call asks first".
-   Turn each sentence into behavior keys: `nav` for page and popup flips, `press`
-   / `hold` / `repeat` / `change` with a device `call`, `select_group` for
-   one-of-N, `bind` for state the panel shows, and `costly` on anything that
-   must be confirmed. `docs/behavior.md` has the vocabulary and
-   `examples/huddle-program.json` a brief worked all the way through. Then
-   `python -m gdl.behavior check <spec.json>` - it rejects a nav to nowhere, a
-   confirmation with no cancel, a page nothing reaches.
+   sources route to the display and show which is live; Help explains sharing".
+   Page and popup flips are `nav` on the button, which is checked; everything
+   else is `does`, in words, for the programmer's ID map. `docs/idmap.md` has
+   the keys and `examples/huddle-functions.json` a brief worked through. Then
+   `python -m gdl.idmap check <spec.json>` - it rejects a nav to nowhere, a
+   popup that cannot appear where it is shown, a page nothing reaches.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
    ≤9 buttons per group, ≤6 colors, ≥14pt body text).
@@ -128,8 +126,8 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    check → donors → plan → apply → pack → open → Save and Build → wait →
    verify. It exits 0 only if the verifier passed, so it gates rather than
    reports. Nobody touches GUI Designer. Add `-KeepOpen` to leave it up, and
-   `-Program <dir>` to also generate the Global Scripter program and the
-   programmer's handoff, verified against the built panel.
+   `-IdMap <dir>` to also write the programmer's ID map, verified against the
+   built panel.
 
    Without GUI Designer, stop at `python -m gdl.spec plan <spec.json>
    out/plan.json`; the rest runs where it is installed, per

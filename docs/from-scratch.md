@@ -95,8 +95,8 @@ rather than by the resource list.
 
 | Stage | State |
 |---|---|
-| Brief → spec | **By hand**, following `SKILL.md`. `examples/huddle.json` and `examples/huddle-program.json` were written from prose briefs. |
-| Behavior → control program | **Built and verified against a build.** `python -m gdl.behavior`, `docs/behavior.md`. |
+| Brief → spec | **By hand**, following `SKILL.md`. `examples/huddle.json` and `examples/huddle-functions.json` were written from prose briefs. |
+| Functions → the programmer's ID map | **Built and verified against a build.** `python -m gdl.idmap`, `docs/idmap.md`. |
 | Layout pass | **Built.** `gdl/spec.py` `grid()` / `stack()`. |
 | Control ID allocation | **Built.** Per-page bands, unique across the project, honors pinned ids. |
 | Preview render | **Built.** Straight through `gdl/compose.py`. |
