@@ -622,5 +622,150 @@ class TestSpecsAreUTF8(unittest.TestCase):
         self.assertIn('–', texts)
 
 
+def _project(pages=(), popups=(), **top):
+    spec = {'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+            'pages': list(pages), 'popups': list(popups)}
+    spec.update(top)
+    return Panel(spec)
+
+
+def _label(**kw):
+    return dict({'kind': 'label', 'rect': [0, 0, 10, 10]}, **kw)
+
+
+class TestProjectWideIds(unittest.TestCase):
+    """A control ID is what the control program addresses, and extronlib binds
+    one object per ID across the WHOLE panel - so an ID handed to two unrelated
+    controls makes one button's handler fire for another's press."""
+
+    def test_unnumbered_popups_get_disjoint_ids(self):
+        # The defaults used to be popup numbers 9000 and 9001, whose bands start
+        # at 9001 and 9002: the second popup's first control got the first
+        # popup's second ID, and check() said nothing.
+        p = _project(
+            pages=[{'name': 'P', 'number': 1000, 'controls': [
+                {'kind': 'popup_ref', 'rect': [0, 0, 100, 100], 'group': 'G'}]}],
+            popups=[{'name': n, 'group': 'G', 'size': [100, 100],
+                     'controls': [_label(), _label(rect=[20, 0, 10, 10])]}
+                    for n in ('A', 'B')])
+        ids = [c['id'] for pu in p.popups for c in pu['controls']]
+        self.assertEqual(len(ids), len(set(ids)), f'popup ids collided: {ids}')
+
+    def test_overlapping_page_bands_do_not_reuse_ids(self):
+        p = _project(pages=[
+            {'name': 'A', 'number': 1000, 'controls': [_label(rect=[i * 11, 0, 10, 10])
+                                                       for i in range(3)]},
+            {'name': 'B', 'number': 1001, 'controls': [_label(rect=[i * 11, 0, 10, 10])
+                                                       for i in range(3)]}])
+        ids = [c['id'] for pg in p.pages for c in pg['controls']]
+        self.assertEqual(len(ids), len(set(ids)), f'page ids collided: {ids}')
+
+    def test_an_id_pinned_on_another_page_is_not_handed_out(self):
+        p = _project(pages=[
+            {'name': 'A', 'number': 1000, 'controls': [_label()]},
+            {'name': 'B', 'number': 2000, 'controls': [_label(id=1001)]}])
+        self.assertNotEqual(p.pages[0]['controls'][0]['id'], 1001)
+
+    def test_a_pinned_id_may_repeat_across_pages(self):
+        # Deliberate: Extron's own projects mirror one button onto several
+        # popups under one ID (Liberty Bank reuses 81/82 across confirmations).
+        p = _project(pages=[
+            {'name': 'A', 'number': 1000, 'controls': [_label(id=500)]},
+            {'name': 'B', 'number': 2000, 'controls': [_label(id=500)]}])
+        self.assertEqual(p.check(), [])
+
+    def test_a_duplicate_id_inside_a_popup_is_reported(self):
+        p = _project(
+            pages=[{'name': 'P', 'number': 1000, 'controls': [
+                {'kind': 'popup_ref', 'rect': [0, 0, 100, 100], 'group': 'G'}]}],
+            popups=[{'name': 'A', 'group': 'G', 'size': [100, 100],
+                     'controls': [_label(id=7), _label(id=7, rect=[20, 0, 10, 10])]}])
+        self.assertTrue(any('already used' in m for m in p.check()), p.check())
+
+    def test_needs_counts_popup_controls(self):
+        # Donor checks key off needs(); a type used only inside a popup used to
+        # be skipped, so a donor lacking it passed and the build could not
+        # author it.
+        p = _project(
+            pages=[{'name': 'P', 'number': 1000, 'controls': [
+                {'kind': 'popup_ref', 'rect': [0, 0, 100, 100], 'group': 'G'}]}],
+            popups=[{'name': 'A', 'group': 'G', 'size': [100, 100],
+                     'controls': [{'kind': 'slider', 'rect': [0, 0, 60, 90]}]}])
+        self.assertIn('PBSlider', p.needs())
+
+
+class TestStartPage(unittest.TestCase):
+    """A generated panel used to boot into the DONOR's start page: the built
+    DefaultPage stayed pointing at the client's '1000 - Home'."""
+
+    PAGES = [{'name': 'Home', 'number': 1000, 'controls': [_label()]},
+             {'name': 'Settings', 'number': 1100, 'controls': [_label()]}]
+
+    def test_default_is_the_first_spec_page(self):
+        self.assertEqual(_project(pages=self.PAGES).plan()['default_page'], 'Home')
+
+    def test_an_explicit_start_page_reaches_the_plan(self):
+        p = _project(pages=self.PAGES, start_page='Settings')
+        self.assertEqual(p.plan()['default_page'], 'Settings')
+
+    def test_an_unknown_start_page_is_reported(self):
+        p = _project(pages=self.PAGES, start_page='Nowhere')
+        self.assertTrue(any('start_page' in m for m in p.check()), p.check())
+
+    def test_a_popup_cannot_be_the_start_page(self):
+        p = _project(pages=self.PAGES, start_page='Pop',
+                     popups=[{'name': 'Pop', 'modal': True, 'controls': []}])
+        self.assertTrue(any('start_page' in m for m in p.check()), p.check())
+
+
+class TestModalPopups(unittest.TestCase):
+    """The applier used to write modalField = false on every popup, so a spec's
+    modal confirmation built as an ungrouped STANDARD popup - which no
+    reference can ever show."""
+
+    def _p(self, popup):
+        return _project(pages=[{'name': 'Home', 'number': 1000, 'controls': [_label()]}],
+                        popups=[popup])
+
+    def test_modal_reaches_the_plan(self):
+        op = self._p({'name': 'Confirm', 'modal': True, 'controls': []}).plan()['popups'][0]
+        self.assertTrue(op['modal'])
+
+    def test_a_modal_popup_without_a_size_is_given_the_canvas(self):
+        op = self._p({'name': 'Confirm', 'modal': True, 'controls': []}).plan()['popups'][0]
+        self.assertEqual(op['size'], [1280, 800])
+
+    def test_a_modal_popup_smaller_than_the_canvas_is_reported(self):
+        p = self._p({'name': 'Confirm', 'modal': True, 'size': [600, 400], 'controls': []})
+        self.assertTrue(any('modal' in m and 'canvas' in m for m in p.check()), p.check())
+
+    def test_a_full_canvas_modal_is_clean(self):
+        p = self._p({'name': 'Confirm', 'modal': True, 'size': [1280, 800],
+                     'controls': [_label()]})
+        self.assertEqual(p.check(), [])
+
+    def test_a_standard_popup_with_no_group_is_reported(self):
+        # Only a reference can show a standard popup, and a reference binds to
+        # a group. With no group it can never appear.
+        p = self._p({'name': 'Loose', 'size': [100, 100], 'controls': []})
+        self.assertTrue(any('group' in m for m in p.check()), p.check())
+
+    def test_an_authored_reference_is_never_modal(self):
+        # PBPopupPageReference has its own modalField, True on the references
+        # Build generates for modal popups. A seed's first reference is one of
+        # those, so a clone inherited True and Build discarded the authored
+        # group reference on the next build - silently, 0 errors.
+        p = _project(pages=[{'name': 'Home', 'number': 1000, 'controls': [
+            {'kind': 'popup_ref', 'rect': [0, 0, 100, 100], 'group': 'G'}]}],
+            popups=[{'name': 'A', 'group': 'G', 'size': [100, 100], 'controls': []}])
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertIs(op['fields']['modalField'], False)
+
+    def test_a_modal_control_off_the_canvas_is_reported(self):
+        p = self._p({'name': 'Confirm', 'modal': True,
+                     'controls': [_label(rect=[1275, 0, 10, 10])]})
+        self.assertTrue(any('does not fit' in m for m in p.check()), p.check())
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -64,6 +64,16 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    `Off`/`On` is what Extron's own templates use for **3475 of 3668** buttons
    (94.7%). Multi-state idioms (`Muted`/`Level 1`/`Level 2`/`Level 3`) exist but
    are domain-specific; do those with `gdl.edit` on a real project.
+
+   **Say where the panel boots.** `"start_page": "<page name>"` - the first page
+   when omitted - is written into the project, because otherwise the built panel
+   opens on the donor's start page.
+
+   **Popups are one of two kinds.** A *standard* popup sits in a `group` and
+   shows through a `popup_ref` bound to that group, at the reference's size. A
+   *modal* one (`"modal": true`) covers the whole canvas - draw the confirmation
+   card inside it - and needs no reference; Build places those. `check` rejects
+   anything else, since neither kind can otherwise be shown.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
    ≤9 buttons per group, ≤6 colors, ≥14pt body text).
