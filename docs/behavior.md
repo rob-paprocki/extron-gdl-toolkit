@@ -106,13 +106,17 @@ comes from.
 | An unknown action, a malformed action, or `nav` together with `press` | The generated code would be wrong |
 | An event the kind cannot raise, or behavior on a panel, image, line, clock or popup reference | Only button, slider, label and level have extronlib objects (ControlScript reference) |
 | A `show_page`, `show_popup` or `nav` target that is not a page or popup here, or is the wrong kind | The program would address a name the panel does not have |
-| A call to an undeclared device; an op or argument that is not a Python identifier; a slider call with an argument named `value` | Each becomes Python source |
+| A call to an undeclared device; an op or argument that is not a Python identifier, or an argument named `self`; a slider call with an argument named `value` | Each becomes Python source |
+| Two devices that meet in `devices.py` (`roomDsp` and `RoomDsp` both become class `RoomDsp`), or a device named `ProgramLog` | The second silently rebinds the first |
 | `hold`, `repeat` or `tap` without `hold_time`; `repeat` without `repeat_time`; a time that is not positive | Held, Repeated and Tapped are timers the Button object runs from `holdTime` |
+| `release` with `hold_time` but no `tap` | "If button is released before holdTime expires, a Tapped event is triggered instead of a Released event", so the release action would not run on a quick press |
+| `behavior.inactivity` with no actions | It would arm the panel's timer to do nothing |
+| A level `range` that is not whole numbers | `Level.SetRange` takes ints |
 | `duration` on anything but `show_popup`, or negative | `ShowPopup(popup, duration)` |
 | A bound button with no `on` state; one bind path on controls of different value types; two paths that become the same Python name; `bind` and `select_group` on one button | `SetState(1)` on a single-state button shows nothing; one value cannot be both text and on/off |
 | A `select_group` member that is not a button or has no `on` state | An MESet selects with `SetState` |
 | Controls sharing an ID but differing in kind or behavior | extronlib keeps one handler per object ("last handler assigned will be called") |
-| A grouped popup shown from a page with no reference to its group | A standard popup appears only through such a reference (`docs/gdl-format.md` §5) |
+| A grouped popup shown where the page beneath has no reference to its group. For a popup shown from another popup, that means every page the first can be showing over. | A standard popup appears only through such a reference (`docs/gdl-format.md` §5) |
 | A `costly` call outside a modal popup, or a modal confirming one with no cancel | GUI Design Standards p.71 |
 | A page or popup nothing navigates to, unless it is `reached_by: "program"` | Dead layout, or a missing `nav` |
 | A modal with no close path: nothing in it hides it, and it is never shown with a duration | p.71: a modal disables everything beneath it, so this locks the panel |
@@ -145,7 +149,9 @@ pages in a layout-only spec are a layout, not a broken program.
   SHA-256, so a stale or hand-edited one is caught.
 - **`devices.py` and `main.py` are never touched again.** If the spec later
   calls an op that `devices.py` lacks, `generate` prints a stub ready to paste
-  and exits 1.
+  and exits 1. It reads `devices.py` without running it. A device built from a
+  class imported from another module can't be checked, and it gets a note
+  rather than a false alarm.
 - **To change a generated handler**, re-register it with `@event` in `main.py`.
   extronlib keeps the last handler assigned.
 
@@ -187,9 +193,17 @@ flat, as in `import devices`.
   - every page and popup name it shows exists, as the right kind;
   - every control ID it addresses is where the handoff says, with that ID and
     that type;
+  - every control of that name, not just the first;
   - selectable and bound buttons built with two states;
   - no other control in a generated page shares an addressed ID;
-  - every popup it shows has a reference on the page that shows it.
+  - no donor control shares the ID of one whose handler makes a costly call,
+    since pressing it would skip the confirmation (any other donor share is a
+    note);
+  - no page or popup name appears twice;
+  - every popup it shows can appear over every page it can be shown on.
+
+  Page and popup names written as literals in `devices.py` and `main.py` are
+  checked too. Names your own code computes cannot be.
 
   Exits non-zero on any problem. `tests/test_verify_behavior.py` makes it fail on
   each of those.

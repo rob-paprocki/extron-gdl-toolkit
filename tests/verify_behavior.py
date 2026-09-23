@@ -75,7 +75,71 @@ def read_program(out_dir):
             elif not (isinstance(a, ast.Name) and a.id == 'START_PAGE'):
                 problems.append(f'ui_events.py line {n.lineno}: {n.func.attr} not given a name - '
                                 f'pages and popups are addressed by name')
+    # The programmer's own files, best effort: a device handler that jumps to
+    # a page by a typo'd name is the same failure, just hand-written. Only
+    # literal names can be checked; anything computed is theirs to own.
+    for name in ('devices.py', 'main.py'):
+        path = os.path.join(out_dir, name)
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding='utf-8') as fh:
+            try:
+                tree = ast.parse(fh.read())
+            except SyntaxError as e:
+                problems.append(f'{name} does not parse: {e}')
+                continue
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and \
+                    n.func.attr in ('ShowPage', 'ShowPopup', 'HidePopup') and n.args and \
+                    isinstance(n.args[0], ast.Constant) and isinstance(n.args[0].value, str):
+                shows.append((n.func.attr, n.args[0].value))
     return handoff, objects, shows, start, problems
+
+
+def _index(items, kind, problems):
+    """Name -> built page or popup, reporting a name that appears twice rather
+    than letting the second silently replace the first."""
+    out = {}
+    for p in items:
+        if p['Name'] in out:
+            problems.append(f"{kind} {p['Name']!r} appears twice in the built file - every "
+                            f'check on it would see only one')
+        out[p['Name']] = p
+    return out
+
+
+def _hosts(handoff, pages, popups):
+    """Container -> the generated pages it can be showing over, from the
+    program's own navigation. A popup appears over whichever page is up when it
+    is shown; a standard one only where that page references its group."""
+    ours_pages = {p['name'] for p in handoff['pages']}
+    hosts = {p: {p} for p in ours_pages}
+    wide = {p['name'] for p in handoff['popups'] if p.get('reached_by') == 'program'}
+    wide |= {d.split("'")[1] for d in (handoff.get('inactivity') or {}).get('do', [])
+             if d.startswith('show popup ')}
+
+    def only(target, over):
+        pu = popups.get(target)
+        if pu is None or pu.get('Modal'):
+            return set(over)
+        return {p for p in over if p in pages and any(
+            (x.get('PopupPageID') or {}).get('IsPopupGroupIdValid')
+            and (x.get('PopupPageID') or {}).get('GroupID') == pu.get('GroupID')
+            for x in pages[p].get('Controls') or [] if x.get('Type') == REF_TYPE)}
+
+    for p in handoff['popups']:
+        hosts[p['name']] = only(p['name'], ours_pages if p['name'] in wide else set())
+    changed = True
+    while changed:
+        changed = False
+        for s, t in handoff['navigation']:
+            if t in ours_pages:
+                continue
+            add = only(t, hosts.get(s, set()))
+            if not add <= hosts.setdefault(t, set()):
+                hosts[t] |= add
+                changed = True
+    return hosts
 
 
 def check(out_dir, built_path):
@@ -87,8 +151,8 @@ def check_layout(out_dir, j):
     """The same, against an already-read layout.json."""
     handoff, objects, shows, start, problems = read_program(out_dir)
     notes, checked = [], 0
-    pages = {p['Name']: p for p in j['Pages']}
-    popups = {p['Name']: p for p in j['PopupPages']}
+    pages = _index(j['Pages'], 'page', problems)
+    popups = _index(j['PopupPages'], 'popup', problems)
     ours = {p['name'] for p in handoff['pages']} | {p['name'] for p in handoff['popups']}
 
     # V1: every page and popup name the code passes exists, as the right kind.
@@ -114,6 +178,12 @@ def check_layout(out_dir, j):
     # V2/V3: each addressed control is where the handoff says, with that ID and
     # that type - and no other control in a generated container shares its ID.
     addressed = set(listed)
+    costly = {c['id'] for c in handoff['controls'] if c.get('costly')}
+    expected = {}
+    for c in handoff['controls']:
+        for at in c['at']:
+            key = (at['container'], at['name'])
+            expected[key] = expected.get(key, 0) + 1
     for c in handoff['controls']:
         for at in c['at']:
             box = pages.get(at['container']) or popups.get(at['container'])
@@ -126,19 +196,25 @@ def check_layout(out_dir, j):
                 problems.append(f"{at['container']!r}: {at['name']!r} (ID {c['id']}) is not in "
                                 f'the built file')
                 continue
-            x = got[0]
-            if x.get('UserId') != c['id']:
-                problems.append(f"{at['container']!r} {at['name']!r}: built ID {x.get('UserId')}, "
-                                f"the program addresses {c['id']}")
-            if x.get('__type') != CLASS_TYPE[c['class']]:
-                problems.append(f"{at['container']!r} {at['name']!r}: built as "
-                                f"{x.get('__type')}, the program makes it a {c['class']}")
-            # V4: a control the program switches On must have an On to show.
-            if c['class'] == 'Button' and (c['bind'] or c['select_group']) and \
-                    len(x.get('States') or []) < 2:
-                problems.append(f"{at['container']!r} {at['name']!r}: the program sets its "
-                                f"state, but it built with {len(x.get('States') or [])} state(s)")
-    expected = {(at['container'], at['name']) for c in handoff['controls'] for at in c['at']}
+            # Every control of that name, not the first: the one that is wrong
+            # need not be the one that sorts first.
+            if len(got) > expected[(at['container'], at['name'])]:
+                problems.append(f"{at['container']!r}: {len(got)} controls are named "
+                                f"{at['name']!r}, the program expects "
+                                f"{expected[(at['container'], at['name'])]}")
+            for x in got:
+                if x.get('UserId') != c['id']:
+                    problems.append(f"{at['container']!r} {at['name']!r}: built ID "
+                                    f"{x.get('UserId')}, the program addresses {c['id']}")
+                if x.get('__type') != CLASS_TYPE[c['class']]:
+                    problems.append(f"{at['container']!r} {at['name']!r}: built as "
+                                    f"{x.get('__type')}, the program makes it a {c['class']}")
+                # V4: a control the program switches On must have an On to show.
+                if c['class'] == 'Button' and (c['bind'] or c['select_group']) and \
+                        len(x.get('States') or []) < 2:
+                    problems.append(f"{at['container']!r} {at['name']!r}: the program sets its "
+                                    f"state, but it built with {len(x.get('States') or [])} "
+                                    f'state(s)')
     for box in list(pages.values()) + list(popups.values()):
         for x in box.get('Controls') or []:
             if x.get('UserId') not in addressed or x.get('Type') == REF_TYPE:
@@ -146,29 +222,42 @@ def check_layout(out_dir, j):
             if box['Name'] in ours and (box['Name'], x.get('Name')) not in expected:
                 problems.append(f"{box['Name']!r} {x.get('Name')!r} carries ID {x['UserId']}, "
                                 f'which the program uses for a different control')
+            elif box['Name'] not in ours and x['UserId'] in costly:
+                # extronlib binds by ID alone: pressing this runs the costly
+                # call with no confirmation in front of it.
+                problems.append(f"donor page {box['Name']!r} {x.get('Name')!r} carries ID "
+                                f"{x['UserId']}, whose handler makes a costly call - shown, it "
+                                f'would run it with no confirmation')
             elif box['Name'] not in ours:
                 notes.append(f"donor page {box['Name']!r} {x.get('Name')!r} also carries ID "
                              f"{x['UserId']} - unreachable from the generated pages, but it "
                              f'shares their events and feedback if shown')
 
-    # V5: a shown popup can actually appear on the page that shows it. A
-    # standard popup needs a reference bound to its group on that page; a modal
-    # needs the reference Build places for it on every page.
+    # V5: a shown popup can actually appear over every page it can be shown
+    # on. A standard popup needs a reference bound to its group on that page;
+    # a modal needs the reference Build places for it on every page. A popup
+    # shown from another popup appears over the pages THAT one can be over.
+    hosts = _hosts(handoff, pages, popups)
     for src, target in handoff['navigation']:
         pu = popups.get(target)
-        if pu is None or src not in pages:
+        if pu is None:
             continue
-        refs = [x.get('PopupPageID') or {} for x in pages[src].get('Controls') or []
-                if x.get('Type') == REF_TYPE]
-        checked += 1
-        if pu.get('Modal'):
-            ok = any(r.get('IsPopupPageIdValid') and r.get('PopupID') == pu['ID'] for r in refs)
-        else:
-            ok = any(r.get('IsPopupGroupIdValid') and r.get('GroupID') == pu.get('GroupID')
-                     for r in refs)
-        if not ok:
-            problems.append(f'page {src!r} shows popup {target!r}, but the built page has no '
-                            f'reference that can display it')
+        for page in sorted(hosts.get(src, ())):
+            if page not in pages:
+                continue
+            refs = [x.get('PopupPageID') or {} for x in pages[page].get('Controls') or []
+                    if x.get('Type') == REF_TYPE]
+            checked += 1
+            if pu.get('Modal'):
+                ok = any(r.get('IsPopupPageIdValid') and r.get('PopupID') == pu['ID']
+                         for r in refs)
+            else:
+                ok = any(r.get('IsPopupGroupIdValid') and r.get('GroupID') == pu.get('GroupID')
+                         for r in refs)
+            if not ok:
+                via = '' if src == page else f' (shown from {src!r})'
+                problems.append(f'popup {target!r}{via} cannot appear over page {page!r}: the '
+                                f'built page has no reference that can display it')
     return problems, notes, checked
 
 

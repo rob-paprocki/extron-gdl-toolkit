@@ -85,6 +85,11 @@ def _camel(s):
     return ''.join(p[:1].upper() + p[1:] for p in s.split('_') if p) or 'Device'
 
 
+def _cell(s):
+    """Text safe inside a Markdown table cell: a `|` would split it."""
+    return str(s).replace('|', '\\|').replace('\r', ' ').replace('\n', ' ')
+
+
 class Program:
     """A loaded spec's behavior, checked, and ready to generate."""
 
@@ -99,6 +104,7 @@ class Program:
         self.inactivity = b.get('inactivity')
         self.start_page = panel.start_page
         self._problems, self._notes = [], []
+        self.drift_notes = []
 
         self.page_names = [pg['name'] for pg in panel.pages]
         self.popup_by_name = {pu['name']: pu for pu in panel.popups}
@@ -190,11 +196,17 @@ class Program:
             r = rec['range']
             if kind not in ('level', 'slider'):
                 self._problems.append(f'{where}: range belongs on a level or slider')
-            elif not (isinstance(r, list) and len(r) == 2
-                      and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in r)
-                      and r[0] < r[1]):
-                self._problems.append(f'{where}: range must be [min, max] with min < max, '
-                                      f'not {r!r}')
+            else:
+                # Level.SetRange takes ints (ControlScript reference); Slider's
+                # takes int or float.
+                ok = (int,) if kind == 'level' else (int, float)
+                if not (isinstance(r, list) and len(r) == 2
+                        and all(isinstance(v, ok) and not isinstance(v, bool) for v in r)
+                        and r[0] < r[1]):
+                    self._problems.append(
+                        f'{where}: range must be [min, max] with min < max'
+                        + (', whole numbers for a level' if kind == 'level' else '')
+                        + f', not {r!r}')
         return rec
 
     def _timing(self, rec, c, where):
@@ -217,6 +229,15 @@ class Program:
                                       f'Button object runs from holdTime')
         if 'Repeated' in ev and c.get('repeat_time') is None:
             self._problems.append(f'{where}: Repeated needs repeat_time as well as hold_time')
+        # The same reference, the other way round: "If button is released
+        # before holdTime expires, a Tapped event is triggered instead of a
+        # Released event." With hold_time set, a release action alone would not
+        # run on an ordinary quick press.
+        if 'Released' in ev and c.get('hold_time') is not None and 'Tapped' not in ev:
+            self._problems.append(f'{where}: release with hold_time but no tap - a quick '
+                                  f'release fires Tapped instead of Released, so the release '
+                                  f'action would only run after a long hold. Add tap for the '
+                                  f'quick case, or use hold for the long one')
 
     def _nav(self, target, where):
         if target in self.page_names:
@@ -277,9 +298,11 @@ class Program:
                     self._problems.append(f'{where}: op {op!r} must be a Python identifier - it '
                                           f'becomes a method in devices.py')
                     continue
-                if not isinstance(args, dict) or not all(_ident(k) for k in args):
+                if not isinstance(args, dict) or not all(_ident(k) and k != 'self'
+                                                         for k in args):
                     self._problems.append(f'{where}: args {args!r} must map identifiers to JSON '
-                                          f'values - each becomes a keyword argument')
+                                          f"values - each becomes a keyword argument, so 'self' "
+                                          f'and Python keywords cannot be used')
                     continue
                 if kind == 'slider' and 'value' in args:
                     self._problems.append(f"{where}: a slider passes its own value= to every "
@@ -297,8 +320,12 @@ class Program:
         if isinstance(s, bool) or not isinstance(s, (int, float)) or s <= 0:
             self._problems.append(f'behavior.inactivity.seconds must be a positive number, '
                                   f'not {s!r}')
-        return self._actions(ia.get('do', []) if isinstance(ia, dict) else [],
+        acts = self._actions(ia.get('do', []) if isinstance(ia, dict) else [],
                              'behavior.inactivity', 'do')
+        if not acts:
+            self._problems.append('behavior.inactivity has no actions - it would arm the '
+                                  "panel's inactivity timer to do nothing")
+        return acts
 
     # -- lookups -------------------------------------------------------------
     def control(self, uid):
@@ -379,10 +406,25 @@ class Program:
             notes.append(f'behavior.panel_alias not given; the program addresses the panel '
                          f"as {DEFAULT_ALIAS!r}, which must match its UI Device alias in "
                          f'Global Scripter')
+        classes = {}
         for name in self.devices:
             if not _ident(name):
                 problems.append(f'device {name!r} must be a Python identifier - it becomes an '
                                 f'object in devices.py')
+                continue
+            # devices.py holds one class per device and one object per device,
+            # in one namespace next to its ProgramLog import. Two names that
+            # meet there silently rebind each other: 'roomDsp' and 'RoomDsp'
+            # both become class RoomDsp, and the second class wins.
+            cls = _camel(name)
+            clash = [n for n in (classes.get(cls),) if n] + \
+                [n for n in self.devices if n != name and n == cls]
+            if name == 'ProgramLog' or cls == 'ProgramLog':
+                problems.append(f"device {name!r} would shadow devices.py's ProgramLog import")
+            elif clash:
+                problems.append(f"devices {clash[0]!r} and {name!r} collide in devices.py as "
+                                f'class {cls} - rename one')
+            classes[cls] = name
         problems += self._feedback_rules()
         problems += self._mirror_rules()
         problems += self._showability_rules()
@@ -458,14 +500,48 @@ class Program:
                            f"{', '.join(r['where'] for r in recs)}")
         return out
 
+    def host_pages(self):
+        """Container -> the pages it can be showing over.
+
+        A page hosts itself. A popup appears over whichever page is up when it
+        is shown, so it inherits the hosts of everything that shows it - and a
+        standard popup only on those of them that reference its group. Code the
+        spec cannot see (`reached_by: program`, the inactivity handler) may
+        show it over any page.
+        """
+        pages = [ct['name'] for ct in self.containers if ct['kind'] == 'page']
+        hosts = {p: {p} for p in pages}
+        anywhere = {a['target'] for a in self.inactivity_actions if a['do'] == 'show_popup'}
+        for ct in self.containers:
+            if ct['kind'] == 'popup':
+                wide = ct['reached_by'] == 'program' or ct['name'] in anywhere
+                hosts[ct['name']] = self._only_referencing(ct, set(pages) if wide else set())
+        edges = self.nav_edges()
+        changed = True
+        while changed:
+            changed = False
+            for s, t in edges:
+                tgt = self.container(t)
+                if tgt['kind'] == 'page':
+                    continue
+                add = self._only_referencing(tgt, hosts.get(s, set()))
+                if not add <= hosts[t]:
+                    hosts[t] |= add
+                    changed = True
+        return hosts
+
+    def _only_referencing(self, popup, pages):
+        if popup['modal'] or not popup['group']:
+            return set(pages)
+        return {p for p in pages if popup['group'] in self.container(p)['refs']}
+
     def _showability_rules(self):
         """A standard popup shows only through a reference to its group on the
-        page that is up. A page source is the one case known statically."""
+        page beneath - which, for a popup shown from another popup, is every
+        page that popup can itself be showing over."""
         out = []
+        hosts = self.host_pages()
         for r in self.controls:
-            src = self.container(r['container'])
-            if src['kind'] != 'page':
-                continue
             for acts in r['events'].values():
                 for a in acts:
                     if a['do'] != 'show_popup':
@@ -473,10 +549,14 @@ class Program:
                     pu = self.popup_by_name[a['target']]
                     if pu['modal'] or not pu['group']:
                         continue
-                    if pu['group'] not in src['refs']:
-                        out.append(f"{r['where']}: shows popup {a['target']!r}, but page "
-                                   f"{src['name']!r} has no reference to its group "
-                                   f"{pu['group']!r}, so it would not appear there")
+                    lacking = sorted(p for p in hosts.get(r['container'], ())
+                                     if pu['group'] not in self.container(p)['refs'])
+                    if lacking:
+                        out.append(f"{r['where']}: shows popup {a['target']!r}, but page"
+                                   f"{'s' if len(lacking) > 1 else ''} "
+                                   f"{', '.join(repr(p) for p in lacking)} beneath it "
+                                   f"{'have' if len(lacking) > 1 else 'has'} no reference to "
+                                   f"its group {pu['group']!r}, so it would not appear there")
         return out
 
     def _confirmation_rules(self):
@@ -568,8 +648,10 @@ class Program:
         out = []
         if self.uses_behavior:
             for r in self.controls:
-                if r['kind'] == 'button' and not r['events'] and not r['select_group'] \
-                        and not r['bind']:
+                # any(), not the dict: "press": [] declares an event and does
+                # nothing, and the generated handler is a bare `pass`.
+                if r['kind'] == 'button' and not any(r['events'].values()) \
+                        and not r['select_group'] and not r['bind']:
                     out.append(f"{r['where']}: does nothing when pressed (every tap needs "
                                f'a visible result, Standards p.13)')
         used = {dev for dev, _ in self.calls()}
@@ -679,8 +761,8 @@ class Program:
         ranged = [(uid, recs[0]) for uid, recs in addressed.items()
                   if recs[0]['kind'] in ('level', 'slider')]
         if ranged:
-            lines += ['', "# Always set, so the spec's range is the contract: a Slider defaults to",
-                      '# 0-100, and the reference documents no default for a Level.']
+            lines += ['', "# Always set, so the spec's range is the contract rather than the",
+                      "# library's 0-100 default."]
             for uid, r in ranged:
                 lo, hi = r['range'] or (0, 100)
                 lines.append(f'{names[uid]}.SetRange({lo!r}, {hi!r})')
@@ -807,8 +889,17 @@ class Program:
         return '\n'.join(lines) + '\n'
 
     @staticmethod
-    def _stub(dev, op, spec):
-        params = list(spec['args']) + (['value'] if spec['value'] else [])
+    def _params(spec):
+        """An op's parameters: every argument name its callers pass, plus the
+        value= a slider passes. Deduplicated - a preset button passing value=3
+        and a slider passing its own value= to one op mean ONE `value`, and a
+        repeated parameter is a SyntaxError that ast.parse does not catch."""
+        return list(spec['args']) + (['value'] if spec['value']
+                                     and 'value' not in spec['args'] else [])
+
+    @classmethod
+    def _stub(cls, dev, op, spec):
+        params = cls._params(spec)
         sig = ', '.join(['self'] + [f'{p}=None' for p in params])
         shown = ', '.join(f'{p}={{{i}!r}}' for i, p in enumerate(params))
         fmt = f'.format({", ".join(params)})' if params else ''
@@ -841,8 +932,10 @@ class Program:
         except SyntaxError as e:
             return [f'{path} does not parse ({e}), so its device ops cannot be checked']
         classes = {n.name: n for n in tree.body if isinstance(n, ast.ClassDef)}
-        objects = {}
+        objects, bound = {}, set()
         for n in tree.body:
+            if isinstance(n, (ast.Import, ast.ImportFrom)):
+                bound |= {(a.asname or a.name).split('.')[0] for a in n.names}
             if not isinstance(n, ast.Assign):
                 continue
             pairs = []
@@ -852,19 +945,32 @@ class Program:
                 elif isinstance(t, ast.Tuple) and isinstance(n.value, ast.Tuple):
                     pairs += list(zip(t.elts, n.value.elts))
             for t, v in pairs:
-                if isinstance(t, ast.Name) and isinstance(v, ast.Call) \
-                        and isinstance(v.func, ast.Name):
+                if not isinstance(t, ast.Name):
+                    continue
+                bound.add(t.id)
+                if isinstance(v, ast.Call) and isinstance(v.func, ast.Name):
                     objects[t.id] = v.func.id
         out = []
+        # Where a device comes from somewhere this cannot read - a class
+        # imported from its own module, a factory - its ops cannot be checked
+        # here. Say so rather than calling it missing: splitting drivers into
+        # their own files is ordinary.
+        self.drift_notes = []
         for (dev, op), spec in self.calls().items():
             cls = classes.get(objects.get(dev))
             if cls is None:
-                out.append(f'devices.py has no {dev!r} object made from a class in the file - '
-                           f'the program calls {dev}.{op}()')
+                if dev in bound:
+                    note = (f'devices.py builds {dev!r} from outside the file, so its ops '
+                            f'cannot be checked here')
+                    if note not in self.drift_notes:
+                        self.drift_notes.append(note)
+                else:
+                    out.append(f'devices.py has no {dev!r} object - the program calls '
+                               f'{dev}.{op}()')
                 continue
             fn = next((n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == op),
                       None)
-            want = list(spec['args']) + (['value'] if spec['value'] else [])
+            want = self._params(spec)
             if fn is None:
                 out.append(f'devices.py: {dev} has no {op}() - paste into class '
                            f"{cls.name}:\n" + '\n'.join(self._stub(dev, op, spec)))
@@ -890,6 +996,10 @@ class Program:
                 'at': [{'container': x['container'], 'name': x['name'], 'text': x['text']}
                        for x in recs],
                 'events': ev, 'bind': r['bind'], 'select_group': r['select_group'],
+                # Structured, for tests/verify_behavior.py: a donor control
+                # sharing this ID would run the call with no confirmation.
+                'costly': any(a['do'] == 'call' and a['costly']
+                              for acts in r['events'].values() for a in acts),
                 'hold_time': r['hold_time'], 'repeat_time': r['repeat_time'],
                 'range': (r['range'] or [0, 100]) if r['kind'] in ('level', 'slider') else None,
             })
@@ -911,7 +1021,7 @@ class Program:
                              'python': 'ui_feedback.' + p.replace('.', '_')}
                          for p, recs in self.binds().items()},
             'devices': {d: {'note': n,
-                            'ops': {op: spec['args'] + (['value'] if spec['value'] else [])
+                            'ops': {op: self._params(spec)
                                     for (dd, op), spec in self.calls().items() if dd == d}}
                         for d, n in self.devices.items()},
             'inactivity': ({'seconds': self.inactivity.get('seconds'),
@@ -953,18 +1063,18 @@ class Program:
             by = ', '.join(x for x in [by] + sorted(into[pg['name']]) if x)
             if pg['reached_by'] == 'program':
                 by = (by + ', ' if by else '') + '**your code**'
-            out.append(f"| {pg['name']} | page | {by or '-'} |")
+            out.append(f"| {_cell(pg['name'])} | page | {_cell(by) or '-'} |")
         for pu in h['popups']:
             kind = 'modal popup' if pu['modal'] else f"popup, group {pu['group']}"
             by = ', '.join(sorted(into[pu['name']]))
             if pu['reached_by'] == 'program':
                 by = (by + ', ' if by else '') + '**your code**'
-            out.append(f"| {pu['name']} | {kind} | {by or '-'} |")
+            out.append(f"| {_cell(pu['name'])} | {_cell(kind)} | {_cell(by) or '-'} |")
         out += ['', '## Controls', '',
                 '| ID | Class | Where | Caption | Does |', '|---|---|---|---|---|']
         for c in h['controls']:
-            where = '; '.join(f"{a['container']} / {a['name']}" for a in c['at'])
-            caption = (c['at'][0]['text'] or '').replace('|', '\\|').replace('\n', ' ')
+            where = _cell('; '.join(f"{a['container']} / {a['name']}" for a in c['at']))
+            caption = _cell(c['at'][0]['text'] or '')
             does = []
             for event, acts in c['events'].items():
                 does.append(f"{event}: {'; '.join(acts) or '-'}")
@@ -1028,6 +1138,8 @@ def main(argv):
         print(f'  wrote {w}')
     for d in drift:
         print('  ' + d)
+    for n in prog.drift_notes:
+        print('  note: ' + n)
     print(f'{len(written)} file(s) -> {argv[3]}; {len(drift)} device op(s) missing')
     return 1 if drift else 0
 

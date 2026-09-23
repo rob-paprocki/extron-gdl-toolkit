@@ -66,10 +66,25 @@ class Button(_Control):
             raise RuntimeError('{0} cannot fire on a Button with no holdTime'.format(name))
         if name == 'Repeated' and (self.holdTime is None or self.repeatTime is None):
             raise RuntimeError('Repeated needs holdTime and repeatTime')
+        if name in ('Released', 'Tapped') and self.holdTime is not None:
+            # Which one a release raises depends on how long it was held, so
+            # firing either by name would hide the substitution below.
+            raise RuntimeError('with holdTime set, use release(held) - a quick release is '
+                               'Tapped, not Released')
         h = HANDLERS.get((id(self), name))
         if h:
             h(self, name)
         return h is not None
+
+    def release(self, held):
+        """Let go after `held` seconds. The reference: "If button is released
+        before holdTime expires, a Tapped event is triggered instead of a
+        Released event." Returns the event that fired."""
+        name = 'Tapped' if self.holdTime is not None and held < self.holdTime else 'Released'
+        h = HANDLERS.get((id(self), name))
+        if h:
+            h(self, name)
+        return name
 
 
 class Label(_Control):

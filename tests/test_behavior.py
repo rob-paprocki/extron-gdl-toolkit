@@ -321,6 +321,96 @@ class TestNavigationGraph(unittest.TestCase):
         self.assertTrue(has(notes(p), 'End', 'dead end'), notes(p))
 
 
+class TestReviewFindings(unittest.TestCase):
+    """Each of these was found by the adversarial review, reproduced, and fixed.
+    Several produced a devices.py that does not compile while check() said 0."""
+
+    def test_release_with_hold_time_but_no_tap_is_a_problem(self):
+        # ControlScript reference, Button: "If button is released before
+        # holdTime expires, a Tapped event is triggered instead of a Released
+        # event." So the release action would not run on an ordinary tap.
+        p = program([page('Home', btn('Go', hold_time=0.5, hold={'do': 'hide_all_popups'},
+                                      release={'do': 'hide_all_popups'}))])
+        self.assertTrue(has(problems(p), 'release', 'Tapped'), problems(p))
+
+    def test_release_with_hold_time_and_tap_is_fine(self):
+        p = program([page('Home', btn('Go', nav='Home', hold_time=0.5,
+                                      tap={'do': 'hide_all_popups'},
+                                      release={'do': 'hide_all_popups'}))])
+        self.assertEqual(problems(p), [])
+
+    def test_a_value_argument_shared_with_a_slider_compiles(self):
+        import tempfile
+        p = program([page('Home', btn('Preset', press={'do': 'call', 'device': 'dsp',
+                                                       'op': 'level', 'args': {'value': 3}}),
+                          {'kind': 'slider', 'name': 'S', 'rect': [300, 0, 400, 80],
+                           'change': {'do': 'call', 'device': 'dsp', 'op': 'level'}})],
+                    behavior=DEVICES)
+        d = tempfile.mkdtemp()
+        p.generate(d)
+        with open(os.path.join(d, 'devices.py'), encoding='utf-8') as fh:
+            compile(fh.read(), 'devices.py', 'exec')
+
+    def test_an_argument_named_self_is_a_problem(self):
+        p = program([page('Home', btn('Go', press={'do': 'call', 'device': 'dsp', 'op': 'set',
+                                                   'args': {'self': 1}}))], behavior=DEVICES)
+        self.assertTrue(has(problems(p), 'self'), problems(p))
+
+    def test_devices_that_become_one_class_are_a_problem(self):
+        p = program([page('Home', btn('A', press={'do': 'call', 'device': 'roomDsp', 'op': 'mute'}),
+                          btn('B', x=200, press={'do': 'call', 'device': 'RoomDsp',
+                                                 'op': 'power_on'}))],
+                    behavior={'devices': {'roomDsp': 'x', 'RoomDsp': 'y'}})
+        self.assertTrue(has(problems(p), 'roomDsp', 'RoomDsp'), problems(p))
+
+    def test_a_device_may_not_shadow_program_log(self):
+        p = program([page('Home', btn('A', press={'do': 'call', 'device': 'ProgramLog',
+                                                  'op': 'x'}))],
+                    behavior={'devices': {'ProgramLog': 'x'}})
+        self.assertTrue(has(problems(p), 'ProgramLog'), problems(p))
+
+    def test_an_empty_action_list_still_does_nothing(self):
+        p = program([page('Home', btn('Go', nav='Home'), btn('Idle', x=200, press=[]))])
+        self.assertTrue(has(notes(p), 'Idle', 'does nothing'), notes(p))
+
+    def test_inactivity_with_no_actions_is_a_problem(self):
+        p = program([page('Home', btn('Go', nav='Home'))],
+                    behavior={'inactivity': {'seconds': 300}})
+        self.assertTrue(has(problems(p), 'inactivity'), problems(p))
+
+    def test_a_level_range_must_be_whole_numbers(self):
+        # ControlScript reference, Level.SetRange: Min, Max and Step are ints.
+        p = program([page('Home', {'kind': 'level', 'name': 'L', 'rect': [0, 0, 400, 20],
+                                   'range': [0, 1.5]})])
+        self.assertTrue(has(problems(p), 'range'), problems(p))
+
+    def test_a_pipe_in_a_name_does_not_break_the_handoff_tables(self):
+        import re
+        import tempfile
+        p = program([page('Home | Main', btn('Go | Now', nav='Home | Main'))])
+        d = tempfile.mkdtemp()
+        p.generate(d)
+        with open(os.path.join(d, 'handoff.md'), encoding='utf-8') as fh:
+            rows = [l for l in fh.read().splitlines() if l.startswith('| ')]
+        for row in rows:
+            cells = re.split(r'(?<!\\)\|', row)[1:-1]
+            self.assertIn(len(cells), (3, 5), row)
+
+    def test_a_popup_shown_from_a_popup_needs_a_reference_on_the_page_beneath(self):
+        # Popup B appears through the page under popup A, so that page must
+        # reference B's group; a reference on some other page does not help.
+        ref = lambda g, x=0: {'kind': 'popup_ref', 'name': 'Ref' + g, 'rect': [x, 0, 300, 200],
+                              'group': g}
+        p = program(
+            [page('Home', ref('g1'), btn('Open', nav='A'), number=1000),
+             page('Elsewhere', ref('g2'), btn('Back', nav='Home'), number=1100,
+                  reached_by='program')],
+            [{'name': 'A', 'number': 9100, 'group': 'g1', 'size': [300, 200],
+              'controls': [btn('ShowB', x=10, rect=[10, 10, 100, 80], nav='B')]},
+             {'name': 'B', 'number': 9200, 'group': 'g2', 'size': [300, 200], 'controls': []}])
+        self.assertTrue(has(problems(p), "'B'", 'Home'), problems(p))
+
+
 class TestNotes(unittest.TestCase):
     def test_a_button_that_does_nothing_is_noted(self):
         p = program([page('Home', btn('Go', nav='Home'), btn('Idle', x=200))])

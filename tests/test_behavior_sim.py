@@ -161,6 +161,8 @@ class TestHuddle(Sim):
                     del self.x.JOURNAL[:]
                     if r['kind'] == 'slider':
                         o.fire(event, 50)
+                    elif event in ('Released', 'Tapped') and o.holdTime is not None:
+                        o.release(0 if event == 'Tapped' else o.holdTime + 1)
                     else:
                         o.fire(event)
                     for e in self.journal('ShowPage', 'ShowPopup'):
@@ -168,6 +170,66 @@ class TestHuddle(Sim):
                         todo.append(e[2])
         self.assertEqual(observed, self.prog.nav_edges())
         self.assertEqual(seen, {ct['name'] for ct in self.prog.containers})
+
+
+class TestEveryEvent(Sim):
+    """Every event the vocabulary can bind, fired. The huddle example uses only
+    press, repeat and change, so a code-generation bug specific to release,
+    tap, hold or a slider's press/release would otherwise pass unseen."""
+
+    SPEC_DICT = {
+        'name': 'Every event', 'size': [1280, 800],
+        'theme': {'text': '#FFFFFF', 'raised': '#2E3142', 'accent': '#3D8BFD', 'on': 'accent'},
+        'behavior': {'panel_alias': 'T', 'devices': {'dev': 'a test device'}},
+        'pages': [{'name': 'Home', 'number': 1000, 'controls': [
+            {'kind': 'button', 'name': 'Multi', 'rect': [0, 0, 200, 100], 'fill': 'raised',
+             'hold_time': 0.5, 'repeat_time': 0.2,
+             'press': {'do': 'call', 'device': 'dev', 'op': 'pressed'},
+             'release': {'do': 'call', 'device': 'dev', 'op': 'released'},
+             'tap': {'do': 'call', 'device': 'dev', 'op': 'tapped'},
+             'hold': {'do': 'call', 'device': 'dev', 'op': 'held'},
+             'repeat': {'do': 'call', 'device': 'dev', 'op': 'repeated'}},
+            {'kind': 'slider', 'name': 'Fader', 'rect': [300, 0, 100, 400],
+             'press': {'do': 'call', 'device': 'dev', 'op': 'grab'},
+             'release': {'do': 'call', 'device': 'dev', 'op': 'drop'},
+             'change': {'do': 'call', 'device': 'dev', 'op': 'move'}}]}],
+    }
+
+    def setUp(self):
+        self.specdir = tempfile.mkdtemp()
+        self.SPEC = os.path.join(self.specdir, 'spec.json')
+        with open(self.SPEC, 'w', encoding='utf-8') as fh:
+            json.dump(self.SPEC_DICT, fh)
+        Sim.setUp(self)
+
+    def tearDown(self):
+        Sim.tearDown(self)
+        shutil.rmtree(self.specdir, ignore_errors=True)
+
+    def test_press_hold_and_repeat(self):
+        b = self.by_name('Multi')
+        b.fire('Pressed')
+        b.fire('Held')
+        b.fire('Repeated')
+        self.assertEqual(self.device_calls(), ['stub: dev.pressed()', 'stub: dev.held()',
+                                               'stub: dev.repeated()'])
+
+    def test_a_quick_release_is_a_tap(self):
+        self.assertEqual(self.by_name('Multi').release(0.1), 'Tapped')
+        self.assertEqual(self.device_calls(), ['stub: dev.tapped()'])
+
+    def test_a_long_release_is_a_release(self):
+        self.assertEqual(self.by_name('Multi').release(2.0), 'Released')
+        self.assertEqual(self.device_calls(), ['stub: dev.released()'])
+
+    def test_a_slider_passes_its_value_on_every_event(self):
+        s = self.by_name('Fader')
+        s.fire('Pressed', 10)
+        s.fire('Changed', 20)
+        s.fire('Released', 30)
+        self.assertEqual(self.device_calls(), ['stub: dev.grab(value=10)',
+                                               'stub: dev.move(value=20)',
+                                               'stub: dev.drop(value=30)'])
 
 
 class TestProgramShape(unittest.TestCase):
@@ -272,6 +334,25 @@ class TestRegeneration(unittest.TestCase):
             fh.write(src.replace('def hang_up(', 'def hang_up_old('))
         _, drift = self.prog.generate(self.dir)
         self.assertTrue(any('hang_up' in d and 'def hang_up(self)' in d for d in drift), drift)
+
+    def test_a_driver_imported_from_its_own_module_is_not_called_missing(self):
+        # Splitting drivers into their own files is ordinary; devices.py then
+        # builds the object from an imported class this cannot read.
+        path = os.path.join(self.dir, 'devices.py')
+        with open(path, 'w', encoding='utf-8') as fh:
+            fh.write('from drivers import Switcher, Dsp, Codec\n\n'
+                     'switcher, dsp, codec = Switcher(), Dsp(), Codec()\n')
+        _, drift = self.prog.generate(self.dir)
+        self.assertEqual(drift, [])
+        self.assertTrue(any('switcher' in n for n in self.prog.drift_notes),
+                        self.prog.drift_notes)
+
+    def test_a_device_with_no_object_at_all_is_reported(self):
+        path = os.path.join(self.dir, 'devices.py')
+        with open(path, 'w', encoding='utf-8') as fh:
+            fh.write('switcher = None\n')
+        _, drift = self.prog.generate(self.dir)
+        self.assertTrue(any("no 'dsp' object" in d for d in drift), drift)
 
     def test_a_missing_argument_is_reported(self):
         path = os.path.join(self.dir, 'devices.py')
