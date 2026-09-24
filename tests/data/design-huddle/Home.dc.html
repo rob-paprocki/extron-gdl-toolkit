@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huddle Home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0;background:#242634}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Huddle Home" start="true" does="The room's home page: share a source, set volume, end the call." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.Panel" name="TopBar" fill="raised" border="rect" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 112px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="RoomName" type="title" style="position: absolute; left: 40px; top: 0px; width: 520px; height: 112px">Huddle Room</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="CallState" type="subheading" color="text-secondary" align="right" does="Shows the codec's call status." style="position: absolute; left: 560px; top: 0px; width: 440px; height: 112px">No call in progress</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="HelpBtn" nav="Help" style="position: absolute; left: 1040px; top: 24px; width: 200px; height: 64px">Help</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="PickSource" type="body" style="position: absolute; left: 40px; top: 148px; width: 700px; height: 36px">Share something</x-import>
+<div style="position: absolute; left: 40px; top: 196px; width: 1200px; height: 272px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Laptop" type="button-large" states='[{"name":"No Signal","fill":"page","color":"text-secondary"},"Ready",{"name":"Live","fill":"accent","color":"page"}]' press="Live" does="Routes the laptop input to the display. No Signal until a laptop is connected, Ready once one is, Live while it is on the display.">Laptop</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Wireless" type="button-large" states='[{"name":"No Signal","fill":"page","color":"text-secondary"},"Ready",{"name":"Live","fill":"accent","color":"page"}]' press="Live" does="Routes wireless presentation to the display. No Signal until someone is sharing, Ready once they are, Live while it is on the display.">Wireless</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="RoomPC" type="button-large" states='[{"name":"No Signal","fill":"page","color":"text-secondary"},"Ready",{"name":"Live","fill":"accent","color":"page"}]' press="Live" does="Routes the room PC to the display. No Signal while the PC is asleep, Ready when it is awake, Live while it is on the display.">Room PC</x-import>
+</div>
+<x-import component-from-global-scope="ExtronAfterburn.Panel" name="VolumeWell" fill="raised" style="position: absolute; left: 40px; top: 500px; width: 760px; height: 220px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="VolumeLabel" type="subheading" style="position: absolute; left: 72px; top: 500px; width: 300px; height: 60px">Volume</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Slider" name="VolumeSlider" fill="page" does="Sets program volume, 0-100; follows the DSP's level." style="position: absolute; left: 72px; top: 564px; width: 696px; height: 60px"></x-import>
+<div style="position: absolute; left: 72px; top: 636px; width: 696px; height: 72px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Mute" variant="inverse" states='["Off",{"name":"On","fill":"alert"}]' does="Toggles program mute; On while muted.">Mute</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="VolDown" variant="inverse" type="button-large" does="Volume down one step; repeats while held.">–</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="VolUp" variant="inverse" type="button-large" does="Volume up one step; repeats while held.">+</x-import>
+</div>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="EndCall" type="button-large" fill="alert" does="Ends the call." style="position: absolute; left: 872px; top: 500px; width: 368px; height: 220px">End Call</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Panel" name="StatusStrip" fill="raised" border="rect" style="position: absolute; left: 0px; top: 736px; width: 1280px; height: 64px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="Status" type="body" color="text-secondary" does="Shows room status messages." style="position: absolute; left: 40px; top: 736px; width: 800px; height: 64px">Ready</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Display" variant="inverse" states='["Off",{"name":"Warming","fill":"page","text":"Warming Up"},{"name":"On","fill":"accent","color":"page","text":"Display On"},{"name":"Cooling","fill":"page","text":"Cooling Down"}]' press="On" does="Toggles display power. Shows the display's power state: Off, Warming, On or Cooling." style="position: absolute; left: 860px; top: 740px; width: 180px; height: 56px">Display Off</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="RoomOff" variant="inverse" nav="ConfirmRoomOff" style="position: absolute; left: 1060px; top: 740px; width: 180px; height: 56px">Room Off</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

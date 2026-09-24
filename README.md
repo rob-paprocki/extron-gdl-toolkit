@@ -25,6 +25,8 @@ together.
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
 | `gdl/edit.py` | change vocabulary for an existing panel: rename, restyle, states, retarget, renumber |
 | `gdl/idmap.py` | the ID map a programmer works from: every addressable control, where it is, what it does |
+| `gdl/designsys/` | an Extron template as a Claude Design design system: its profile, and the components every template shares |
+| `gdl/design.py` | turns a Claude Design canvas into a spec, laying it out in headless Chrome |
 | `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
 | `powershell/GdlProject.ps1` | authoring bridge: load, clone, edit, save a real project graph |
 | `powershell/Apply-GdlPlan.ps1` | applies a build plan to a real project. `-WhatIf` dry-runs it |
@@ -39,6 +41,7 @@ together.
 | `docs/gdl-format.md` | the format writeup. Read this first |
 | `docs/from-scratch.md` | generating a panel from a spec, and driving GUI Designer from a script |
 | `docs/editing.md` | changing a panel that already exists |
+| `docs/claude-design.md` | designing a panel in Claude Design and building it from the canvas |
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
 | `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |

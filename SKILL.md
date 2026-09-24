@@ -29,6 +29,10 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 
 ## Two workflows
 
+A panel designed in Claude Design with an Extron template's design system
+comes in through workflow A: `python -m gdl.design translate` writes its spec,
+and every step from 4 on applies to it. `docs/claude-design.md`.
+
 ### A. Generate a panel from a description
 
 1. **Pick the panel model first**, and put it in the spec as `"model"`.

@@ -132,13 +132,5 @@ verified with 0 problems.
 
 ## 6. Designing in Claude Design
 
-The same keys are the target for a Claude Design canvas:
-
-| Design canvas | Spec |
-|---|---|
-| A prototype link `<a href="X.dc.html">` | `nav: "X"` |
-| A component's annotation or description | `does` |
-| A component's state variants, in order | `states` |
-| Repeated component instances | `grid` / `stack`, with per-item overrides |
-
-The translator itself is on `docs/ROADMAP.md`.
+A Claude Design canvas carries the same keys - a prototype link is `nav`, a
+component's function is `does`, its variants are `states`. `docs/claude-design.md`.

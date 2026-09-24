@@ -1,0 +1,17 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-09-24T10:35:00Z"},
+  "title": "Huddle Room - Afterburn",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Home.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 800, "title": "Huddle Home", "is_interactive": true},
+    "Help.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Huddle Help", "is_interactive": true},
+    "ConfirmRoomOff.dc.html": {"x": 2720, "y": 0, "w": 1280, "h": 800, "title": "Confirm Room Off", "is_interactive": true}
+  },
+  "order": ["Home.dc.html", "Help.dc.html", "ConfirmRoomOff.dc.html"],
+  "notes": {},
+  "designSystems": [
+    {"title": "Extron Afterburn", "namespace": "extronafterburn", "artifact": "https://claude.ai/artifact/1nZsxvdm7HsXpfoSXBVjvx", "version": "1790245226-73a7", "copiedAt": "2026-09-24T10:35:00Z"}
+  ]
+}

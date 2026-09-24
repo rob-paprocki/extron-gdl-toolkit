@@ -62,6 +62,7 @@ author, build and verify in one session.
 | `gdl.spec` check / render / plan / donors | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
 | `gdl.idmap` check / write | |
+| `gdl.designsys` build; `gdl.design` translate (needs headless Chrome) | |
 | the `python -m pytest` suite | |
 | `tests/verify_built.py`, `tests/verify_idmap.py`, given the built file | |
 
@@ -198,7 +199,8 @@ were updated. So:
   | Format facts and what Build does | `docs/gdl-format.md` |
   | Driving GUI Designer from a script | `docs/from-scratch.md` §7 |
   | Generating a panel, step by step | `SKILL.md` |
-| What controls do, and the ID map | `docs/idmap.md` |
+  | What controls do, and the ID map | `docs/idmap.md` |
+  | Designing a panel in Claude Design | `docs/claude-design.md` |
   | Editing an existing panel | `docs/editing.md` |
   | Verification gates and the render baseline | `CLAUDE.md` *Verifying a change* |
   | Render findings | `docs/render-fidelity.md` |

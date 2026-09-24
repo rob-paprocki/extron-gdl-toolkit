@@ -13,6 +13,8 @@ opening GUI Designer.**
   clean-room authoring, retarget from a seed (650/650), popup canvases that keep
   their own size, and button feedback with any number of named states - authored
   from a spec, or edited state by state on an existing panel.
+- **Designed in Claude Design**: a canvas drawn with an Extron template's
+  design system translates to a spec and builds (`docs/claude-design.md`).
 - **What the controls do**, from the same spec: `gdl.idmap` checks the page
   flips and writes the programmer's ID map, verified against the built panel
   (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
@@ -67,12 +69,11 @@ opening GUI Designer.**
    and per-page popup references is where the next class of bug lives. With `nav`
    the page flow is part of the spec, and `verify_idmap.py` checks it against
    the build.
-5. **Claude Design as a front end.** A design system published to Claude Design
-   whose components are exactly the spec's kinds (buttons and their states, labels,
-   sliders, popup regions) and whose tokens are the themes already mined. Plus a
-   translator from a canvas to a spec: lay out each artboard in a headless
-   browser at the panel's resolution, read every component's box and props, and
-   map prototype links to `nav`. `docs/idmap.md` §6 has the mapping.
+5. **Claude Design as the front end: the other three templates.** Afterburn is
+   a design system, and a canvas drawn with it translates, builds and verifies
+   end to end. Mach, Shockwave and Turbulence need their profiles, then a
+   side-by-side of each artboard and the built panel for sign-off.
+   `docs/claude-design.md` §7.
 6. **Icons in the spec vocabulary.** Both routes are proven by probe - font
    glyphs (~339 icons, no image resource) and appended image resources
    (`powershell/New-ImageProbe.ps1`) - and neither can be written in a spec.

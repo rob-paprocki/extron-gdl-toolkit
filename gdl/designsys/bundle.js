@@ -1,0 +1,307 @@
+/* @ds-bundle: __HEADER__ */
+/*
+ * Extron touch-panel components for Claude Design - one template's look.
+ *
+ * Written by gdl/designsys, which puts a template's profile in P below.
+ * Every component draws the template's own look and carries its
+ * spec fields on one element as data-gdl JSON, which is what
+ * gdl/design.py reads to turn a canvas into a spec. The drawing is for the
+ * designer; the data-gdl is the contract. Keep the two in step.
+ *
+ * A classic script: no import, no eval, no network, and no closing script tag
+ * or HTML comment opener anywhere in it (consumers inline it).
+ */
+(function () {
+  'use strict';
+  var P = __PROFILE__;
+  var React = window.React;
+  var h = React.createElement;
+  var Ctx = React.createContext(null);
+
+  // -- the template's colors, per accent scheme ---------------------------
+  function schemeColors(id) {
+    var first = P.schemes[0].id;
+    var out = {};
+    P.colors.forEach(function (c) {
+      var v = c.value;
+      if (v && typeof v === 'object') v = v[id] || v[first];
+      out[c.name] = v;
+    });
+    Object.keys(out).forEach(function (k) {
+      var v = out[k];
+      if (typeof v === 'string' && v.charAt(0) === '{') out[k] = out[v.slice(1, -1)];
+    });
+    return out;
+  }
+  function schemeId(s) {
+    for (var i = 0; i < P.schemes.length; i++) if (P.schemes[i].id === s) return s;
+    return P.schemes[0].id;
+  }
+  function useLook() {
+    return React.useContext(Ctx) || { scheme: P.schemes[0].id, colors: schemeColors(P.schemes[0].id) };
+  }
+  // A token name or a literal hex -> a CSS color. A name the template does
+  // not have paints magenta, so it is seen in the design, not only in the
+  // translator's report.
+  function paint(colors, v) {
+    if (v == null || v === '' || v === 'none') return 'transparent';
+    v = String(v);
+    if (v.charAt(0) === '#') return v;
+    return colors[v] || '#FF00FF';
+  }
+
+  // -- units: sizes are POINTS, as in the spec and GUI Designer -------------
+  function px(pt) { return Math.round(Number(pt) * P.pt * 100) / 100 + 'px'; }
+  function typeStyle(name) {
+    for (var i = 0; i < P.type.length; i++) if (P.type[i].name === name) return P.type[i];
+    return null;
+  }
+  function font(props, fallbackType) {
+    var t = typeStyle(props.type) || typeStyle(fallbackType) || P.type[P.type.length - 1];
+    var size = props.size != null ? Number(props.size) : t.pt;
+    var bold = props.bold != null ? truthy(props.bold) : t.weight >= 600;
+    return { size: size, bold: bold,
+             css: (bold ? 700 : 400) + ' ' + px(size) + '/1.2 ' + P.font.stack };
+  }
+  function truthy(v) { return v === true || v === 'true' || v === 'yes' || v === '1'; }
+
+  // -- props that arrive as text from markup --------------------------------
+  // `states` may be "Off, On" or a JSON list '[{"name":"Off"}, ...]', or an
+  // array from a {{hole}}.
+  function list(v) {
+    if (v == null || v === '') return null;
+    if (Array.isArray(v)) return v;
+    var s = String(v).trim();
+    if (s.charAt(0) === '[') {
+      try { return JSON.parse(s); } catch (e) { return [{ name: 'states is not valid JSON' }]; }
+    }
+    return s.split(',').map(function (n) { return n.trim(); }).filter(Boolean);
+  }
+  function find(xs, name) {
+    for (var i = 0; xs && i < xs.length; i++) if (xs[i] && xs[i].name === name) return xs[i];
+    return null;
+  }
+  function textOf(children, fallback) {
+    var parts = [];
+    React.Children.forEach(children, function (c) {
+      if (typeof c === 'string' || typeof c === 'number') parts.push(String(c));
+    });
+    var s = parts.join('').trim();
+    return s || (fallback != null ? String(fallback) : '');
+  }
+  function gdl(fields) {
+    var o = {};
+    Object.keys(fields).forEach(function (k) {
+      var v = fields[k];
+      if (v != null && v !== '' && !(Array.isArray(v) && !v.length)) o[k] = v;
+    });
+    return JSON.stringify(o);
+  }
+  function radius(b, w, hgt) {
+    if (!b) return '0';
+    if (b.radius < 0) return '50%';
+    if (b.radius >= 9999) return '9999px';
+    return b.radius + 'px';
+  }
+  function edge(b, colors, stroke) {
+    if (!b || !b.thickness || !stroke) return 'none';
+    return b.thickness + 'px solid ' + paint(colors, stroke);
+  }
+  function navHref(nav) {
+    nav = String(nav);
+    return /\.dc\.html$/.test(nav) ? nav : nav + '.dc.html';
+  }
+  var ALIGN = { left: 'flex-start', center: 'center', right: 'flex-end' };
+
+  // -- Page: the artboard's one root ----------------------------------------
+  function Page(props) {
+    var kind = props.kind === 'popup' || props.kind === 'modal' ? props.kind : 'page';
+    var scheme = schemeId(props.scheme);
+    var colors = schemeColors(scheme);
+    var full = kind !== 'popup';
+    var w = Number(props.width) || (full ? P.size[0] : P.popup[0]);
+    var ht = Number(props.height) || (full ? P.size[1] : P.popup[1]);
+    var bg = props.background || (kind === 'modal' ? 'scrim' : P.defaults.page.background);
+    var style = {
+      position: 'relative', boxSizing: 'border-box', overflow: 'hidden',
+      width: w + 'px', height: ht + 'px', background: paint(colors, bg),
+      color: colors.text, font: font({}, 'body').css
+    };
+    Object.keys(colors).forEach(function (k) { style['--' + k] = colors[k]; });
+    var data = gdl({
+      kind: kind === 'page' ? 'page' : 'popup', modal: kind === 'modal' || null,
+      name: props.name, group: props.group, start: truthy(props.start) || null,
+      reached_by: props.reachedBy, background: bg, scheme: scheme,
+      template: P.template, size: [w, ht], does: props.does
+    });
+    return h(Ctx.Provider, { value: { scheme: scheme, colors: colors } },
+      h('div', { 'data-gdl': data, 'data-theme': scheme, className: 'xgdl-page', style: style },
+        props.children));
+  }
+
+  // -- Button ---------------------------------------------------------------
+  function Button(props) {
+    var L = useLook();
+    var variant = P.buttons[props.variant] ? props.variant : P.defaults.button.variant;
+    var V = P.buttons[variant];
+    var caption = textOf(props.children, props.text);
+    var own = {};
+    ['fill', 'stroke', 'color', 'border'].forEach(function (k) { if (props[k] != null) own[k] = props[k]; });
+    var look = Object.assign({}, V.look, own);
+    var states = (list(props.states) || V.states).map(function (s) {
+      s = typeof s === 'string' ? { name: s } : Object.assign({}, s);
+      // A state named like one of the variant's (Off, On) starts from its look.
+      return Object.assign({}, find(V.states, s.name) || {}, s);
+    });
+    var shown = find(states, props.show) || states[0] || {};
+    var now = Object.assign({}, look, shown);
+    var f = font(props, P.defaults.button.type);
+    var b = P.borders[now.border];
+    var align = props.align || 'center';
+    var style = {
+      boxSizing: 'border-box', width: '100%', height: '100%',
+      minWidth: P.touch + 'px', minHeight: P.touch + 'px',
+      display: 'flex', alignItems: 'center', justifyContent: ALIGN[align] || 'center',
+      padding: '0 10px', margin: 0, textAlign: align, whiteSpace: 'pre-line',
+      background: paint(L.colors, now.fill), border: edge(b, L.colors, now.stroke),
+      borderRadius: radius(b), color: paint(L.colors, now.color || 'text'),
+      font: f.css, textDecoration: 'none', cursor: 'pointer'
+    };
+    var attrs = {
+      className: 'xgdl xgdl-button', style: style,
+      'aria-label': props['aria-label'] || props.ariaLabel,
+      'data-gdl': gdl({
+        kind: 'button', name: props.name, id: props.id != null ? Number(props.id) : null,
+        variant: variant, text: caption, fill: look.fill, stroke: look.stroke,
+        color: look.color, border: look.border, size: f.size, bold: f.bold,
+        align: align === 'center' ? null : align,
+        states: states, press: props.press, nav: props.nav, does: props.does,
+        icon: props.icon
+      })
+    };
+    if (props.nav) attrs.href = navHref(props.nav); else attrs.type = 'button';
+    var label = shown.text != null ? shown.text : caption;
+    if (props.icon && !label) label = '[' + props.icon + ']';
+    return h(props.nav ? 'a' : 'button', attrs, label);
+  }
+
+  // -- Label ----------------------------------------------------------------
+  function Label(props) {
+    var L = useLook();
+    var f = font(props, P.defaults.label.type);
+    var color = props.color || P.defaults.label.color;
+    var align = props.align || 'left';
+    return h('div', {
+      className: 'xgdl xgdl-label',
+      style: {
+        boxSizing: 'border-box', width: '100%', height: '100%', display: 'flex',
+        alignItems: 'center', justifyContent: ALIGN[align] || 'flex-start',
+        textAlign: align, whiteSpace: 'pre-line', color: paint(L.colors, color), font: f.css
+      },
+      'data-gdl': gdl({ kind: 'label', name: props.name, id: props.id != null ? Number(props.id) : null,
+                        text: textOf(props.children, props.text), color: color, size: f.size,
+                        bold: f.bold, align: align, does: props.does })
+    }, textOf(props.children, props.text));
+  }
+
+  // -- Panel: a filled shape behind other controls --------------------------
+  function Panel(props) {
+    var L = useLook();
+    var fill = props.fill || P.defaults.panel.fill;
+    var border = props.border || P.defaults.panel.border;
+    var b = P.borders[border];
+    return h('div', {
+      className: 'xgdl xgdl-panel',
+      style: { boxSizing: 'border-box', width: '100%', height: '100%',
+               background: paint(L.colors, fill), border: edge(b, L.colors, props.stroke),
+               borderRadius: radius(b) },
+      'data-gdl': gdl({ kind: 'panel', name: props.name, fill: fill, stroke: props.stroke,
+                        border: border })
+    });
+  }
+
+  // -- Line: a divider ------------------------------------------------------
+  function Line(props) {
+    var L = useLook();
+    var color = props.color || P.defaults.line.color;
+    var t = Number(props.thickness) || P.defaults.line.thickness;
+    var vertical = props.orientation === 'vertical';
+    return h('div', {
+      className: 'xgdl xgdl-line',
+      style: { boxSizing: 'border-box', width: vertical ? t + 'px' : '100%',
+               height: vertical ? '100%' : t + 'px', background: paint(L.colors, color) },
+      'data-gdl': gdl({ kind: 'line', name: props.name, fill: color, thickness: t,
+                        from: vertical ? 'TopCenter' : 'MiddleLeft',
+                        to: vertical ? 'BottomCenter' : 'MiddleRight' })
+    });
+  }
+
+  // -- Slider and Level ------------------------------------------------------
+  function track(kind, props) {
+    var L = useLook();
+    var d = P.defaults[kind];
+    var fill = props.fill || d.fill;
+    var b = P.borders[props.border || d.border];
+    var o = props.orientation || 'right';
+    var across = o === 'up' || o === 'down';
+    var pct = props.value != null ? Math.max(0, Math.min(100, Number(props.value))) : 60;
+    var bar = { position: 'absolute', background: paint(L.colors, d.value), borderRadius: radius(b) };
+    if (across) { bar.left = 0; bar.right = 0; bar.height = pct + '%'; bar[o === 'up' ? 'bottom' : 'top'] = 0; }
+    else { bar.top = 0; bar.bottom = 0; bar.width = pct + '%'; bar[o === 'right' ? 'left' : 'right'] = 0; }
+    var kids = [h('div', { key: 'v', style: bar })];
+    if (kind === 'slider') {
+      var s = P.touch;
+      var thumb = { position: 'absolute', width: s + 'px', height: s + 'px', borderRadius: '50%',
+                    background: paint(L.colors, d.thumb) };
+      if (across) { thumb.left = '50%'; thumb.marginLeft = -s / 2 + 'px';
+                    thumb[o === 'up' ? 'bottom' : 'top'] = 'calc(' + pct + '% - ' + s / 2 + 'px)'; }
+      else { thumb.top = '50%'; thumb.marginTop = -s / 2 + 'px';
+             thumb[o === 'right' ? 'left' : 'right'] = 'calc(' + pct + '% - ' + s / 2 + 'px)'; }
+      kids.push(h('div', { key: 't', style: thumb }));
+    }
+    return h('div', {
+      className: 'xgdl xgdl-' + kind,
+      style: { position: 'relative', boxSizing: 'border-box', width: '100%', height: '100%',
+               background: paint(L.colors, fill), borderRadius: radius(b) },
+      'data-gdl': gdl({ kind: kind, name: props.name, id: props.id != null ? Number(props.id) : null,
+                        fill: fill, border: props.border || d.border, orientation: o,
+                        does: props.does })
+    }, kids);
+  }
+  function Slider(props) { return track('slider', props); }
+  function Level(props) { return track('level', props); }
+
+  // -- Clock ----------------------------------------------------------------
+  function Clock(props) {
+    var L = useLook();
+    var f = font(props, P.defaults.clock.type);
+    var color = props.color || P.defaults.clock.color;
+    var fmt = props.format || 'time';
+    var sample = fmt === 'date' ? 'Thursday, September 24' : '10:24 AM';
+    return h('div', {
+      className: 'xgdl xgdl-clock',
+      style: { boxSizing: 'border-box', width: '100%', height: '100%', display: 'flex',
+               alignItems: 'center', color: paint(L.colors, color), font: f.css },
+      'data-gdl': gdl({ kind: 'datetime', name: props.name, color: color, size: f.size,
+                        bold: f.bold, format: fmt })
+    }, sample);
+  }
+
+  // -- PopupRegion: where a group's popups appear ---------------------------
+  function PopupRegion(props) {
+    var L = useLook();
+    return h('div', {
+      className: 'xgdl xgdl-popupregion',
+      style: { boxSizing: 'border-box', width: '100%', height: '100%', display: 'flex',
+               alignItems: 'center', justifyContent: 'center',
+               border: '2px dashed ' + paint(L.colors, 'text-secondary'),
+               color: paint(L.colors, 'text-secondary'), font: font({}, 'body').css },
+      'data-gdl': gdl({ kind: 'popup_ref', name: props.name, group: props.group })
+    }, 'Popups in ' + (props.group || '(no group)'));
+  }
+
+  var api = { Page: Page, Button: Button, Label: Label, Panel: Panel, Line: Line,
+              Slider: Slider, Level: Level, Clock: Clock, PopupRegion: PopupRegion,
+              profile: P };
+  window[P.namespace] = Object.assign(window[P.namespace] || {}, api);
+})();
