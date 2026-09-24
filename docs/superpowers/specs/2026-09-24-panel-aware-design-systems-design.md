@@ -159,9 +159,16 @@ derivation adds - rail buttons, Previous, Next, Back - is navigation, with no
 program ID.
 
 **Preview**: a Page's `preview` panel draws the artboard as that panel derives
-it, scaled to fit, its derived popups and pages reachable in Play. Phase 0
-checks Claude Design shows that; if it cannot, derived layouts are seen on the
-sign-off page only.
+it, its derived popups and pages reachable in Play. Checked in Claude Design
+(Phase 0, a scratch canvas beside the huddle boards): a Page set to 1024×600
+draws at exactly that size - on a 1280×800 board in its top-left corner with
+the rest of the board empty, on a 1024×600 board filling it. So `preview` sets
+the Page's own width and height from the panel, and resizing the board to
+match is a nicety, not a requirement; the translator sets its own viewport per
+panel and ignores board size. The same check showed what `preview` must fix:
+MainArea and the rails stay at the design panel's coordinates and clip. Five
+boards carrying the bundle were slow to render in Chrome, so one preview board
+per page, switched by `preview`, beats a board per panel.
 
 ### 4.3 Translation, seeds, build, ID map, sign-off
 
