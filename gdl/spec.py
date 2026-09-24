@@ -33,6 +33,7 @@ touches a real `.gdl`; see docs/from-scratch.md for what still needs a human.
 """
 import collections
 import json
+import os
 import re
 import sys
 
@@ -60,21 +61,40 @@ BORDERS = {
     'rounded-3d': '3D Rounded Rectangle',
     'capsule-3d': '3D Capsule',
     'gradient': '3D Gradient',
+    # The pressed halves of the 3D pairs: Turbulence and Shockwave buttons
+    # change border per state, from one to its Selected twin.
+    'gradient-selected': '3D Gradient Selected',
+    'rounded-3d-selected': '3D Rounded Rectangle Selected',
+    # No border at all: a kit image button draws its own shape, and the
+    # template's own ones reference a border resource named ''. A clone kept
+    # the donor's border when the spec named none.
+    'none': '',
     'afterburn': 'Afterburn - 10 Radius 2 Thick',
     'afterburn-flat': 'Afterburn - 10 Radius 0 Thick',
     'afterburn-14': 'Afterburn - 14 Radius 0 Thick',
+    # An icon button's pressed fill: a circle behind the icon.
+    'afterburn-ellipse': 'Afterburn - Elipse 0 Thick',
+    # Mach's one border of its own (seeds/Mach 1035.gdl).
+    'mach': 'Mach - 10 Radius 2 Thick',
 }
 # radius/thickness per resource, read from the fixtures' own PBBorderResource
 # dataField. Only what the preview needs to draw; the real geometry is Build's.
 BORDER_GEOMETRY = {
+    '': (0, 0),
     '2D Rectangle': (0, 3), '2D Rectangle_1': (0, 0),
     '2D Rounded Rectangle': (10, 3), '2D Capsule': (9999, 3), '2D Ellipse': (0, 3),
     '3D Rectangle': (0, 1), '3D Rounded Rectangle': (10, 1), '3D Capsule': (9999, 1),
     '3D Gradient': (5, 1),
+    # Assumed the same as their unselected twins; not read off a dataField.
+    '3D Gradient Selected': (5, 1), '3D Rounded Rectangle Selected': (10, 1),
+    'Mach - 10 Radius 2 Thick': (10, 2),
     'Afterburn - 10 Radius 0 Thick': (10, 0),
     'Afterburn - 10 Radius 2 Thick': (10, 2),
     'Afterburn - 14 Radius 0 Thick': (14, 0),
     'Afterburn - Elipse 3 Thick': (10, 3),
+    # An ellipse, drawn as a capsule: the preview clamps the radius to half the
+    # box, which in the square boxes these take is the circle Build draws.
+    'Afterburn - Elipse 0 Thick': (9999, 0),
 }
 # Every panel GUI Designer can target: (width, height, DPI, Extron part number).
 #
@@ -264,13 +284,23 @@ TOUCHABLE = {'button', 'slider'}
 # 256 on PBProject, on the TLP Pro 1035 platform and on PBButton, read through
 # the installed assemblies. The corpus never goes past four.
 MAX_STATES = 256
-STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text'}
+STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text', 'image'}
+# How a button's image sits in it, as Extron's own image buttons all have it:
+# ImageLayoutEnum Fill (fit, keeping the aspect) and AlignmentEnum
+# MiddleCenter. The kit draws each icon, its selection line and its label room
+# at the button's own aspect, so fitting it fills the button.
+IMAGE_LAYOUT, IMAGE_ALIGN = 0, 3
 # The two per-button pointers into the state list, as backing fields.
 # TLPDefaultStateID is 0 on every button in the corpus. TLPPressFeedbackStateID
 # is the state shown while the button is held: On (1) on all 7518 Off/On
 # buttons in the seeds and fixtures, the last state on Extron's own 4-state
 # volume mute.
 PRESS_FIELD = '<TLPPressFeedbackStateID>k__BackingField'
+# Whether the panel shows a button's press state, its state feedback and its
+# state captions at all. False on all 7943 buttons in the seeds and fixtures.
+PRESS_FEEDBACK = {'<HidePressFeedback>k__BackingField': False,
+                  '<HideVisualFeedback>k__BackingField': False,
+                  '<HideTextFeedback>k__BackingField': False}
 DEFAULT_FIELD = '<TLPDefaultStateID>k__BackingField'
 
 # Orientation, as gdl/compose.py decodes it when clipping a level's value fill.
@@ -301,7 +331,41 @@ def _type_fields(kind, c):
         out['startPointField'] = LINE_POS.get(c.get('from', 'MiddleLeft'), 6)
         out['endPointField'] = LINE_POS.get(c.get('to', 'MiddleRight'), 2)
         out['thicknessField'] = c.get('thickness', 2)
+    if kind == 'button':
+        # Written, not inherited: a clone keeps its donor's, and a donor button
+        # with either set would build a panel whose buttons never show their
+        # press state - every button in the seeds and fixtures has both off,
+        # but a client's project need not.
+        out.update(PRESS_FEEDBACK)
+    if kind == 'datetime':
+        pattern = clock_pattern(c.get('format'))
+        out['patternField'] = pattern
+        out['textField'] = clock_sample(pattern)
     return out
+
+
+# A clock's format is the .NET date pattern in `patternField`; PBDateTime has
+# no format enum. `textField` holds that pattern rendered for 28 September 1960
+# at midnight - the sample every Extron seed carries, and what layout.json
+# reports as the clock's Text. A cloned clock kept the donor's pattern, so a
+# "date" clock built showing the date and the time.
+CLOCK_FORMATS = {'date': 'MMMM d', 'time': 'h:mm tt', 'datetime': 'MMMM d, h:mm tt'}
+_CLOCK_TOKEN = re.compile(r"MMMM|MMM|MM|M|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|mm|m|ss|s|tt|t|'[^']*'|.")
+
+
+def clock_pattern(fmt):
+    """A spec clock's `format` - date, time, datetime, or a .NET pattern."""
+    return CLOCK_FORMATS.get(fmt or 'time', fmt)
+
+
+def clock_sample(pattern):
+    """`pattern` rendered for Wednesday 28 September 1960, 00:00:00."""
+    words = {'MMMM': 'September', 'MMM': 'Sep', 'MM': '09', 'M': '9',
+             'dddd': 'Wednesday', 'ddd': 'Wed', 'dd': '28', 'd': '28',
+             'yyyy': '1960', 'yy': '60', 'HH': '00', 'H': '0', 'hh': '12', 'h': '12',
+             'mm': '00', 'm': '0', 'ss': '00', 's': '0', 'tt': 'AM', 't': 'A'}
+    return ''.join(words.get(t, t.strip("'") if t.startswith("'") else t)
+                   for t in _CLOCK_TOKEN.findall(pattern))
 
 
 # Extron.GUICPro.ControlLinePositionEnum, read out of the assemblies.
@@ -316,15 +380,44 @@ def _argb(c):
     return (c['A'] << 24) | (c['R'] << 16) | (c['G'] << 8) | c['B']
 
 
+# Where a spec's `images` paths resolve when relative: Extron's theme resource
+# kits, from vendor/ (vendor/README.md) or the install.
+RESOURCE_ROOTS = (
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                 'vendor', 'extron', 'Resources'),
+    r'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources',
+)
+
+
+def resolve_image(path):
+    """A spec `images` path -> an existing file, or None."""
+    if not path:
+        return None
+    if os.path.isabs(path):
+        return path if os.path.exists(path) else None
+    for root in RESOURCE_ROOTS:
+        p = os.path.join(root, *path.replace('\\', '/').split('/'))
+        if os.path.exists(p):
+            return p
+    return None
+
+
 HEX = re.compile(r'^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
+# Written where a spec gives no color, so the clone does not keep its donor's.
+TRANSPARENT = {'A': 0, 'R': 0, 'G': 0, 'B': 0}
 
 
 def color(v, theme=None):
-    """'#RRGGBB', '#AARRGGBB' or a theme key -> the ARGB dict layout.json uses."""
+    """'#RRGGBB', '#AARRGGBB' or a theme key -> the ARGB dict layout.json uses.
+
+    `none` is transparent: how a design turns a state's fill or outline off.
+    Leaving the key out keeps the button's own instead."""
     if v is None:
         return None
     if isinstance(v, dict):
         return v
+    if v == 'none':
+        return dict(TRANSPARENT)
     if theme and v in theme:
         v = theme[v]
     m = HEX.match(str(v))
@@ -390,6 +483,10 @@ class Panel:
         self.pages = []
         self.popups = []
         self._groups = {}
+        # Image resources the spec brings with it: name -> file (resolve_image).
+        # A page's `background_image` names one of these or one the donor
+        # already defines.
+        self.images = dict(spec.get('images') or {})
         self._build()
 
     @classmethod
@@ -520,6 +617,12 @@ class Panel:
                 'modal': bool(pg.get('modal')),
                 'background': color(pg.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
+                # Drawn over the background color, fitted to the page (Fill,
+                # as the Afterburn seeds lay theirs out - the applier sets it). One
+                # image on every page is the themes' own rule, so the theme can
+                # name it once.
+                'background_image': pg.get('background_image',
+                                           self.theme.get('background_image')),
                 'controls': controls,
                 'group_sizes': groups,
             })
@@ -595,7 +698,10 @@ class Panel:
                     'Name': c.get('name') or c.get('text') or kind,
                     'Left': rect[0], 'Top': rect[1], 'Width': rect[2], 'Height': rect[3],
                     'TLPImageID': -1,
-                    'Text': c.get('text') or '',
+                    # A clock has no text of its own; it shows its pattern's
+                    # sample, as GUI Designer does.
+                    'Text': c.get('text') or _type_fields(c.get('kind', 'panel'), c)
+                    .get('textField', ''),
                     'TextColor': color(c.get('color') or self.theme.get('text')
                                         or '#FFFFFF', self.theme),
                     'TextAlignment': ALIGN.get(c.get('align', 'center'), 3),
@@ -605,7 +711,8 @@ class Panel:
                                        'Italic': bool(c.get('italic'))}},
                 }
                 controls.append(out)
-                if fill:
+                image = resolve_image(self.images.get(c.get('image'))) if c.get('image') else None
+                if fill or image:
                     radius, thickness = BORDER_GEOMETRY.get(border, (0, 0))
                     # Keyed the way gdl/compose.py looks it up: (page id,
                     # control id), the pair both models share.
@@ -614,10 +721,16 @@ class Panel:
                         'stroke': color(c.get('stroke'), self.theme),
                         'border': {'resource': border, 'radius': radius,
                                    'thickness': thickness},
+                        'image': image,
                     }
+            image = (resolve_image(self.images.get(pg['background_image']))
+                     if pg.get('background_image') else None)
             pages.append({
                 'ID': pg['number'], 'Name': pg['name'], 'TLPImageID': -1,
                 'Modal': pg['modal'], 'BackgroundFillColor': pg['background'],
+                # Only when the spec brings the file: an image the donor
+                # carries is not on this machine to draw.
+                '_background_image': image,
                 'Controls': controls,
             })
         return {'Pages': pages, 'PopupPages': []}, fills
@@ -648,6 +761,7 @@ class Panel:
                 'name': pg['name'],
                 'modal': pg['modal'],
                 'background': _argb(pg['background']),
+                'background_image': self._image_op(pg.get('background_image')),
                 'clear_controls': True,
                 # Same helper popups use. Building these two separately is what
                 # dropped 'group' from every page op and left popup references
@@ -662,6 +776,9 @@ class Panel:
             'default_page': self.start_page,
             'popup_groups': sorted({p['group'] for p in self.popups if p['group']}),
             'popups': self._popup_ops(),
+            # Appended to the donor's resource library where it lacks them;
+            # the applier leaves one it already has alone.
+            'images': [{'name': n, 'file': resolve_image(f)} for n, f in self.images.items()],
             'canvas': list(self.size),
             'note': ('Apply with powershell/Apply-GdlPlan.ps1 under 32-bit '
                      'Windows PowerShell 5.1. Page ids are assigned by the '
@@ -670,10 +787,22 @@ class Panel:
             'pages': pages,
         }
 
+    def _image_op(self, name):
+        """A page's background image, or a button state's, for the plan: its
+        resource name, and its file when the spec brings it - the verifier
+        composites that file to check the built artwork."""
+        if not name:
+            return None
+        return {'name': name, 'file': resolve_image(self.images.get(name))}
+
     # -- checks ------------------------------------------------------------
     def check(self):
         """Problems a human would otherwise find on the Windows box."""
         out = []
+        for name, f in self.images.items():
+            if not resolve_image(f):
+                out.append(f'image {name!r}: {f!r} is not a file here or under '
+                           f"{' or '.join(RESOURCE_ROOTS)}")
         for pg in self.pages:
             seen = {}
             # Two controls with identical type and rect are almost always a
@@ -768,12 +897,12 @@ class Panel:
                     # Only complain about neighbours: overlapping on one axis
                     # and separated on the other.
                     if gap_x < 0 and 0 <= gap_y < spacing:
-                        out.append(f"page {pg['number']} {a.get('text') or '?'} / "
-                                   f"{b2.get('text') or '?'}: {gap_y}px vertical gap is "
+                        out.append(f"page {pg['number']} {a.get('name') or a.get('text') or '?'} / "
+                                   f"{b2.get('name') or b2.get('text') or '?'}: {gap_y}px vertical gap is "
                                    f'below the {spacing}px minimum (2mm, p.56)')
                     elif gap_y < 0 and 0 <= gap_x < spacing:
-                        out.append(f"page {pg['number']} {a.get('text') or '?'} / "
-                                   f"{b2.get('text') or '?'}: {gap_x}px horizontal gap is "
+                        out.append(f"page {pg['number']} {a.get('name') or a.get('text') or '?'} / "
+                                   f"{b2.get('name') or b2.get('text') or '?'}: {gap_x}px horizontal gap is "
                                    f'below the {spacing}px minimum (2mm, p.56)')
         return out
 
@@ -834,8 +963,11 @@ class Panel:
                            if 'stroke' in s else _argb(stroke)),
                 'text_color': (_argb(color(s.get('color') or s.get('text_color'), self.theme))
                                if has_color else _argb(text_color)),
-                'border': BORDERS.get(s.get('border'), s.get('border')) or border,
+                'border': (BORDERS.get(s['border'], s['border']) if s.get('border') is not None
+                           else border),
                 'text': s['text'] if 'text' in s else (c.get('text') or ''),
+                'image': self._image_op(None if s.get('image') == 'none' else
+                                        s['image'] if 'image' in s else c.get('image')),
             })
         return out
 
@@ -861,7 +993,7 @@ class Panel:
             return c
         s0 = st[0]
         out = dict(c)
-        for k in ('fill', 'stroke', 'border', 'text'):
+        for k in ('fill', 'stroke', 'border', 'text', 'image'):
             if k in s0:
                 out[k] = s0[k]
         if 'color' in s0 or 'text_color' in s0:
@@ -869,15 +1001,29 @@ class Panel:
         return out
 
     def _base_look(self, c):
-        """(fill, stroke, text color, border) for a spec control, as authored."""
-        fill = color(c.get('fill'), self.theme)
-        stroke = color(c.get('stroke'), self.theme)
+        """(fill, stroke, text color, border) for a spec control, as authored.
+
+        No stroke is a TRANSPARENT stroke, written as one. The applier skips a
+        color it is not given, so a control with none kept its donor's outline:
+        a panel with no `stroke` built with the seed's #6A6E89 edge while the
+        preview drew none, found by putting the canvas beside the build.
+
+        A button with no fill is a TRANSPARENT one, for the same reason, state
+        by state: a state the spec gives no fill kept its donor state's, and
+        the Afterburn seed's On state is #37394E - so a kit image button's
+        Ready, On and Muted states built on a raised slab, found by
+        verify_built's image check.
+        """
+        fill = color(c.get('fill'), self.theme) if c.get('fill') != 'none' else None
+        stroke = color(c.get('stroke'), self.theme) or dict(TRANSPARENT)
         text_color = color(c.get('color') or self.theme.get('text') or '#FFFFFF',
                            self.theme)
         border = c.get('border')
         border = BORDERS.get(border, border)
         if border is None and fill is not None:
             border = BORDERS['rounded']
+        if fill is None and c.get('kind') == 'button':
+            fill = dict(TRANSPARENT)
         return fill, stroke, text_color, border
 
     def _state_rules(self):
@@ -940,16 +1086,17 @@ class Panel:
             if dup:
                 out.append(f"{where}: state name(s) {', '.join(map(repr, dup))} used twice - "
                            f'the program and the ID map tell states apart by name')
-            if not out:
-                look = self._states_for(c, *self._base_look(c)) or []
-                for i, a in enumerate(look):
-                    for b in look[i + 1:]:
-                        if {k: v for k, v in a.items() if k != 'name'} == \
-                                {k: v for k, v in b.items() if k != 'name'}:
-                            out.append(f"{where}: states {a['name']!r} and {b['name']!r} look "
-                                       f'identical - the program could set either and the '
-                                       f'panel would show no difference. Give one its own '
-                                       f'fill, stroke, color, border or text')
+        # `on` and theme.on make states too, and can make two alike.
+        if not out and self._feedback(c):
+            look = self._states_for(c, *self._base_look(c)) or []
+            for i, a in enumerate(look):
+                for b in look[i + 1:]:
+                    if {k: v for k, v in a.items() if k != 'name'} == \
+                            {k: v for k, v in b.items() if k != 'name'}:
+                        out.append(f"{where}: states {a['name']!r} and {b['name']!r} look "
+                                   f'identical - the program could set either and the '
+                                   f'panel would show no difference. Give one its own '
+                                   f'fill, stroke, color, border, text or image')
         if 'press' in c:
             specs = self._feedback(c) or []
             names = [s.get('name') for s in specs]
@@ -959,6 +1106,12 @@ class Panel:
             elif c['press'] not in names:
                 out.append(f"{where}: press {c['press']!r} is not one of its states "
                            f"({', '.join(map(repr, names))})")
+            # The panel boots into state 0 and shows the press state while
+            # held: naming state 0 on a button with others shows no press.
+            elif len(specs) > 1 and names.index(c['press']) == 0:
+                out.append(f"{where}: press {c['press']!r} is the state the button rests in, "
+                           f'so holding it would show nothing - name another state, or leave '
+                           f'`press` out for the second')
         return out
 
     def _op_for(self, c, index):
@@ -1009,13 +1162,22 @@ class Panel:
             # Only meaningful on a popup reference; the applier ignores it
             # elsewhere.
             'group': c.get('group'),
+            # A kit image on every state, or none: a clone's donor icon is
+            # cleared either way.
+            'image': self._image_op(c.get('image')),
+            'image_layout': IMAGE_LAYOUT,
+            'image_align': IMAGE_ALIGN,
+            # A slider's thumb, where the template draws it from its kit
+            # (Afterburn: sliderThumbImageField, in the secondary accent).
+            'thumb_image': self._image_op(c.get('thumb_image')) if kind == 'slider' else None,
         }
         if states:
             # Build renders the button from state 0, so that is what the
             # control-level fields - and verify_built's checks of them - carry.
             first = states[0]
             op.update(fill=first['fill'], stroke=first['stroke'],
-                      text_color=first['text_color'], border=first['border'])
+                      text_color=first['text_color'], border=first['border'],
+                      image=first['image'])
             op['fields']['textField'] = first['text']
             op['fields'][DEFAULT_FIELD] = 0
             op['fields'][PRESS_FIELD] = self._press(c, states)
@@ -1226,6 +1388,27 @@ class Panel:
                     f'adding or removing states - the applier refuses to resize it, so '
                     f'no button in this spec would get the states it names')
 
+        # An image the spec does not bring must be one the donor has.
+        images = proj._resource_names('PBImageResource')
+        for pg in self.pages:
+            want = pg.get('background_image')
+            if want and want not in self.images and want not in images:
+                out.append(f"page {pg['name']!r}: background image {want!r} is neither in "
+                           f"the spec's `images` nor defined in {path}")
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for pg in items:
+                for c in pg['controls']:
+                    # Through _feedback, as plan() reads them: an `on` of
+                    # {"image": ...} names one as surely as `states` does.
+                    named = [c.get('image'), c.get('thumb_image')] + [
+                        st.get('image') for st in self._feedback(c) or []]
+                    for want in sorted({n for n in named if n}):
+                        if want not in self.images and want not in images:
+                            out.append(f"{kind} {pg['name']!r} "
+                                       f"{c.get('name') or c.get('text') or '?'}: image "
+                                       f"{want!r} is neither in the spec's `images` nor "
+                                       f'defined in {path}')
+
         for it in list(self.pages) + list(self.popups):
             if it['name'] in names:
                 out.append(f"{it['name']!r} already exists in the donor project - page and "
@@ -1252,7 +1435,8 @@ class Panel:
                 # A state can name its own border, and it needs a resource too.
                 for look in [c] + (self._feedback(c) or []):
                     b = look.get('border')
-                    if b:
+                    # `none` is an empty name, not a resource.
+                    if b and BORDERS.get(b, b):
                         out.add(BORDERS.get(b, b))
         return out
 
@@ -1279,11 +1463,14 @@ class Panel:
         seen = set()
 
         def add(v):
-            if v:
+            if v and v.get('A'):            # a transparent color draws nothing
                 seen.add(tuple(sorted(v.items())))
 
         for pg in self.pages + self.popups:
-            add(pg['background'])
+            # A modal's background never reaches the panel: Build draws every
+            # modal as the page beneath under black at alpha 166.
+            if not pg.get('modal'):
+                add(pg['background'])
             for c in pg['controls']:
                 # A state's colors are on the panel as much as the control's
                 # own - an On fill included.

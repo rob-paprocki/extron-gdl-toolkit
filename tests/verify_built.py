@@ -35,7 +35,7 @@ import sys
 # the split is a no-op, so the import below fails with ModuleNotFoundError.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PIL import Image  # noqa: E402
+from PIL import Image, ImageChops  # noqa: E402
 
 from gdl.compose import load  # noqa: E402
 
@@ -85,6 +85,20 @@ def _hex(t):
     return '#%02X%02X%02X' % t
 
 
+def _painted(argb):
+    """A planned fill that paints. The spec writes a button with no fill as a
+    transparent one (alpha 0), so the donor's does not bleed through - that is
+    no fill to find in the artwork."""
+    return argb is not None and (argb >> 24) & 0xFF > 0
+
+
+def _opaque(argb):
+    """A planned fill the artwork's opaque pixels can confirm. _shares()
+    counts only pixels over alpha 250, so a translucent fill - Mach's `shade`,
+    Shockwave's `overlay` - built exactly right would read as missing."""
+    return argb is not None and (argb >> 24) & 0xFF == 0xFF
+
+
 # Below this share of a control's opaque pixels, the planned fill is present but
 # not the field - a caption-heavy button, say. Reported, not failed: the color
 # did survive, and calling that a failure would make the gate untrustworthy.
@@ -99,7 +113,13 @@ def check_fills(plan_items, table, assets, kind):
         if got is None:
             continue
         by_name = _index(got)
-        planned = [(item, op) for op in item['controls'] if op.get('fill') is not None]
+        planned = [(item, op) for op in item['controls'] if _opaque(op.get('fill'))]
+        for op in item['controls']:
+            if _painted(op.get('fill')) and not _opaque(op.get('fill')):
+                notes.append(f"{kind} {item['name']!r} "
+                             f"{(op.get('fields') or {}).get('nameField')!r}: translucent fill "
+                             f"{_hex(_rgb(op['fill']))} at alpha {(op['fill'] >> 24) & 0xFF} is "
+                             f'not checked off the artwork')
         for _, op in planned:
             name = (op.get('fields') or {}).get('nameField')
             c = by_name.get(name)
@@ -161,7 +181,7 @@ def check_states(plan_items, table, assets, kind):
         by_name = _index(got)
         for op in item['controls']:
             want = op.get('states')
-            if not want:
+            if not want and not op.get('image'):
                 continue
             name = (op.get('fields') or {}).get('nameField')
             c = by_name.get(name)
@@ -169,6 +189,14 @@ def check_states(plan_items, table, assets, kind):
                 continue
             where = f"{kind} {item['name']!r} {name!r}"
             built = c.get('States') or []
+            if not want:
+                # One image on every state - an icon that is not feedback. A
+                # control with no states draws from itself.
+                for i, bs in enumerate(built or [c]):
+                    checked += 1
+                    problems += _state_image(where, i, bs, c, op['image'], op.get('fill'),
+                                             assets)
+                continue
             if len(built) != len(want):
                 extra = [s.get('Name') for s in built[len(want):]]
                 problems.append(
@@ -217,12 +245,14 @@ def check_states(plan_items, table, assets, kind):
                         f"{bs.get('Name') or i!r}: Build produced no artwork "
                         f'(TLPImageID {tid}), so it will draw nothing')
                     continue
+                problems += _state_image(where, i, bs, c, ws.get('image'), ws.get('fill'),
+                                         assets)
                 shares = _shares(assets, tid)
                 if not shares:
                     # A deliberately transparent Off state is a real idiom -
                     # Extron's own 'Lighting Preset' buttons are transparent
                     # when off - so this is only wrong if a fill was planned.
-                    if ws.get('fill') is not None:
+                    if _opaque(ws.get('fill')):
                         problems.append(
                             f"{kind} {item['name']!r} {name!r} state "
                             f"{bs.get('Name') or i}: artwork {tid} is missing or "
@@ -231,7 +261,7 @@ def check_states(plan_items, table, assets, kind):
                     continue
                 top, top_share = max(shares.items(), key=lambda kv: kv[1])
                 dominant[i] = (tid, top)
-                if ws.get('fill') is None:
+                if not _opaque(ws.get('fill')):
                     continue
                 target = _rgb(ws['fill'])
                 if top == target:
@@ -256,9 +286,9 @@ def check_states(plan_items, table, assets, kind):
             # caption and its color are drawn live from layout.json - the
             # applier clears flattenText - so 'Warming Up' and 'Cooling Down' on
             # one fill share an image and are still two states; the caption and
-            # text-color checks above cover them.
+            # text-color checks above cover them. A kit image is in the artwork.
             def look(w):
-                return tuple(str(w.get(k)) for k in ('fill', 'stroke', 'border'))
+                return tuple(str(w.get(k)) for k in ('fill', 'stroke', 'border', 'image'))
             for i in range(len(want)):
                 for j in range(i + 1, len(want)):
                     if look(want[i]) == look(want[j]):
@@ -273,9 +303,12 @@ def check_states(plan_items, table, assets, kind):
             # The point of the whole feature. If the plan asked for two
             # different appearances and the panel cannot tell them apart, the
             # button is decorative.
-            planned_differ = len({_hex(_rgb(w['fill'])) if w.get('fill') else None
-                                  for w in want}) > 1
-            if planned_differ and len(dominant) > 1:
+            fills_differ = len({_hex(_rgb(w['fill'])) if _painted(w.get('fill')) else None
+                                for w in want}) > 1
+            images = [(w.get('image') or {}).get('name') for w in want]
+            # Stroke and border are in the artwork too: two states apart only
+            # in outline are still two states that must not share one image.
+            if len({look(w) for w in want}) > 1 and len(dominant) > 1:
                 ids = {v[0] for v in dominant.values()}
                 colors = {v[1] for v in dominant.values()}
                 if len(ids) == 1:
@@ -283,12 +316,53 @@ def check_states(plan_items, table, assets, kind):
                         f"{kind} {item['name']!r} {name!r}: every state shares artwork "
                         f'{ids.pop()}, so Off and On are the same pixels - this button '
                         f'cannot show feedback')
-                elif len(colors) == 1:
+                # By plurality color only where there are no kit images: two
+                # speaker icons are both mostly their #414459 ground, and each
+                # state's image is checked against its own artwork above.
+                elif fills_differ and not any(images) and len(colors) == 1:
                     problems.append(
                         f"{kind} {item['name']!r} {name!r}: the states were planned in "
                         f'different colors but all built {_hex(colors.pop())} - no '
                         f'visible feedback')
     return problems, notes, checked
+
+
+def check_thumbs(plan_items, table, assets, kind):
+    """A slider's thumb must be the kit image the plan gave it.
+
+    It is an image (sliderThumbImageField), not a color, and a clone keeps its
+    donor's: an Afterburn slider built under the medium-blue scheme came back
+    with the seed's scheme-1 periwinkle thumb while every field that names a
+    color read right. Build draws the thumb as its own asset,
+    SliderIndicatorImageID, so that is what is compared.
+    """
+    problems, checked = [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            img = op.get('thumb_image')
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if not img or c is None:
+                continue
+            checked += 1
+            where = f"{kind} {item['name']!r} {name!r} thumb"
+            tid = c.get('SliderIndicatorImageID')
+            if tid is None or tid < 0 or tid not in assets:
+                problems.append(f'{where}: planned {img["name"]!r}, but Build drew no thumb '
+                                f'(SliderIndicatorImageID {tid})')
+                continue
+            if not img.get('file') or not os.path.exists(img['file']):
+                continue
+            w, h = Image.open(io.BytesIO(assets[tid])).size
+            off = image_mismatch(img['file'], assets[tid], w, h)
+            if off > IMAGE_OFF:
+                problems.append(f"{where}: {off:.0%} of it differs from the planned "
+                                f"{img['name']!r} - it is not that image")
+    return problems, checked
 
 
 def check_fonts(plan_items, table, kind):
@@ -339,6 +413,147 @@ def check_fonts(plan_items, table, kind):
     return problems, checked
 
 
+# Mean difference per channel, 0-255, above which a page's artwork is not the
+# planned image over the planned fill. Resampling a 6400x4000 image to the page
+# accounts for a few levels.
+IMAGE_TOLERANCE = 12
+
+
+def fit_image(file, w, h):
+    """`file` drawn into a w x h box as Build draws a button's image:
+    ImageLayoutEnum Fill (fit, keeping the aspect), MiddleCenter."""
+    src = Image.open(file).convert('RGBA')
+    k = min(w / src.width, h / src.height)
+    src = src.resize((max(1, round(src.width * k)), max(1, round(src.height * k))),
+                     Image.Resampling.LANCZOS)
+    out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    out.alpha_composite(src, ((w - src.width) // 2, (h - src.height) // 2))
+    return out
+
+
+# A built state's image is judged by drawing what the plan asked for - its fill,
+# then its image fitted - and comparing it with the artwork both ways: a pixel
+# either one inks that the other does not. Both ways, because one icon can be
+# a subset of the next (a speaker with one wave inside a speaker with two). The
+# edge of the box is left out, which is where the border and rounded corners
+# are; the caption is drawn live, so it is not in the artwork. A pixel is off
+# when a channel differs by more than IMAGE_PIXEL levels; more than IMAGE_OFF
+# of the inked pixels off and it is another image. Measured on the Afterburn
+# 1035 seed's 117 captionless image states against their own kit files: all
+# under 8%, bar a round button whose 3 px ellipse ring nothing here draws
+# (36%). Against the other states' files - another icon, the unselected
+# variant, another accent's - 50% and up. The blind spot is one volume level
+# against the next: at 64 px they differ by one thin wave, 7%.
+IMAGE_PIXEL, IMAGE_OFF, IMAGE_INSET = 60, 0.25, 4
+
+
+def _max_channel(im):
+    r, g, b = im.split()[:3]
+    return ImageChops.lighter(ImageChops.lighter(r, g), b)
+
+
+def image_mismatch(file, art_bytes, w, h, fill=None):
+    """Share of the inked pixels that differ between the built artwork and
+    `file` fitted into w x h over `fill` (an ARGB int, or None)."""
+    base = (((fill >> 16) & 255, (fill >> 8) & 255, fill & 255, (fill >> 24) & 255)
+            if fill is not None else (0, 0, 0, 0))
+    want = Image.new('RGBA', (w, h), base)
+    want.alpha_composite(fit_image(file, w, h))
+    got = Image.open(io.BytesIO(art_bytes)).convert('RGBA')
+    if got.size != (w, h):
+        got = got.resize((w, h))
+    # Onto one opaque key color, so a transparent pixel compares as itself.
+    key = Image.new('RGBA', (w, h), (255, 0, 255, 255))
+    plain = Image.alpha_composite(key, Image.new('RGBA', (w, h), base)).convert('RGB')
+    a = Image.alpha_composite(key, want).convert('RGB')
+    b = Image.alpha_composite(key, got).convert('RGB')
+
+    def over(im):
+        return _max_channel(im).point(lambda d: 255 if d > IMAGE_PIXEL else 0)
+
+    # Inked: neither the fill nor nothing. The border resource decides the
+    # fill's shape - Extron's round Power button is an ellipse - so a pixel
+    # that is fill on one side and empty on the other is the border's
+    # business, not the image's.
+    empty = key.convert('RGB')
+
+    def ink(im):
+        return ImageChops.multiply(over(ImageChops.difference(im, plain)),
+                                   over(ImageChops.difference(im, empty)))
+
+    region = Image.new('L', (w, h), 0)
+    region.paste(255, (IMAGE_INSET, IMAGE_INSET, w - IMAGE_INSET, h - IMAGE_INSET))
+    inked = ImageChops.multiply(ImageChops.lighter(ink(a), ink(b)), region)
+    # A pixel is off when nothing within one pixel of it on the other side
+    # matches - a 2 px kit line downscaled sevenfold lands a pixel apart in
+    # GDI+ and in Pillow - looked at from both sides, or a thin extra stroke
+    # would find the empty pixels beside it and pass.
+    def unmatched(x, y):
+        near = None
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                d = _max_channel(ImageChops.difference(x, ImageChops.offset(y, dx, dy)))
+                near = d if near is None else ImageChops.darker(near, d)
+        return near.point(lambda d: 255 if d > IMAGE_PIXEL else 0)
+
+    off = ImageChops.multiply(ImageChops.lighter(unmatched(a, b), unmatched(b, a)), inked)
+    n = inked.histogram()[255]
+    return off.histogram()[255] / n if n else 0.0
+
+
+def _state_image(where, i, bs, c, image, fill, assets):
+    """A state's artwork must be the kit image the plan gave it.
+
+    The button's model names no image once built - layout.json carries only
+    the artwork - so the artwork is compared with the image fitted over the
+    planned fill (image_mismatch)."""
+    if not image:
+        return []
+    tid = bs.get('TLPImageID')
+    label = f"{where} state {bs.get('Name') or i!r}"
+    if tid is None or tid < 0 or tid not in assets:
+        return [f"{label}: planned image {image['name']!r}, but the state built with no "
+                f'artwork (TLPImageID {tid})']
+    if not image.get('file') or not os.path.exists(image['file']):
+        return []
+    off = image_mismatch(image['file'], assets[tid], c['Width'], c['Height'], fill)
+    if off > IMAGE_OFF:
+        return [f"{label}: {off:.0%} of the artwork differs from the planned image "
+                f"{image['name']!r} - it is not that image"]
+    return []
+
+
+def _check_background_image(spec, pg, assets):
+    """The page's artwork must be its planned image, fitted over its fill.
+
+    layout.json does not name a page's background image, so the artwork is
+    the only witness. With the image's file at hand, composite it the way the
+    page draws it and compare; without one, at least the page must not have
+    built as a flat fill.
+    """
+    img = spec['background_image']
+    tid = pg.get('TLPImageID')
+    where = f"page {spec['name']!r} background image {img['name']!r}"
+    if tid is None or tid < 0 or tid not in assets:
+        return [f'{where}: the page built with no artwork (TLPImageID {tid})']
+    art = Image.open(io.BytesIO(assets[tid])).convert('RGB')
+    if img.get('file') and os.path.exists(img['file']):
+        fill = spec['background']
+        want = Image.new('RGBA', art.size, _rgb(fill) + ((fill >> 24) & 0xFF,))
+        want = Image.alpha_composite(want, fit_image(img['file'], *art.size)).convert('RGB')
+        hist = ImageChops.difference(art, want).convert('L').histogram()
+        mean = sum(i * n for i, n in enumerate(hist)) / max(1, sum(hist))
+        if mean > IMAGE_TOLERANCE:
+            return [f'{where}: the page artwork differs from the image over its fill by '
+                    f'{mean:.0f} levels on average - it is not the planned image']
+        return []
+    shares = _shares(assets, tid)
+    if shares and max(shares.values()) >= 0.99:
+        return [f'{where}: the page artwork is a single flat color, so the image did not '
+                f'reach it']
+    return []
+
+
 def check_page_background(plan_pages, pages, assets):
     """The donor's background image is a separate reference from its artwork.
 
@@ -351,6 +566,9 @@ def check_page_background(plan_pages, pages, assets):
     for spec in plan_pages:
         pg = pages.get(spec['name'])
         if pg is None or spec.get('background') is None:
+            continue
+        if spec.get('background_image'):
+            problems += _check_background_image(spec, pg, assets)
             continue
         want = _rgb(spec['background'])
         tid = pg.get('TLPImageID')
@@ -634,18 +852,11 @@ def check_modal(plan, j):
     return out
 
 
-def check(plan_path, built_path):
-    with open(plan_path, encoding='utf-8') as fh:
-        plan = json.load(fh)
-    j, assets = load(built_path)
-    if plan.get('generated_by') == 'gdl.edit':
-        return check_edits(plan, j, assets)
-    pages = {p['Name']: p for p in j['Pages']}
-    popups = {p['Name']: p for p in j['PopupPages']}
-
+def check_placed(plan, pages, popups):
+    """Each authored control is in the built file, where it was put, and
+    captioned - or, for a clock, patterned - as planned."""
     problems = []
     checked = 0
-
     for spec, table, kind in ((plan['pages'], pages, 'page'),
                               (plan.get('popups') or [], popups, 'popup')):
         for item in spec:
@@ -679,6 +890,33 @@ def check(plan_path, built_path):
                 if want_text is not None and _caption(c) != want_text:
                     problems.append(f"{kind} {item['name']!r} {name!r}: caption "
                                     f'{_caption(c)!r}, planned {want_text!r}')
+                # A hidden press or state feedback builds a button that
+                # never shows what the plan drew for it, and a clone brings
+                # its donor's flags.
+                for key in ('HidePressFeedback', 'HideVisualFeedback', 'HideTextFeedback'):
+                    want_flag = f.get(f'<{key}>k__BackingField')
+                    if want_flag is not None and c.get(key) != want_flag:
+                        problems.append(f"{kind} {item['name']!r} {name!r}: {key} is "
+                                        f"{c.get(key)}, planned {want_flag}")
+                # A clock's caption is only a sample; what it shows on the
+                # panel is its pattern.
+                want_pattern = f.get('patternField')
+                if want_pattern is not None and c.get('Pattern') != want_pattern:
+                    problems.append(f"{kind} {item['name']!r} {name!r}: clock pattern "
+                                    f"{c.get('Pattern')!r}, planned {want_pattern!r}")
+    return problems, checked
+
+
+def check(plan_path, built_path):
+    with open(plan_path, encoding='utf-8') as fh:
+        plan = json.load(fh)
+    j, assets = load(built_path)
+    if plan.get('generated_by') == 'gdl.edit':
+        return check_edits(plan, j, assets)
+    pages = {p['Name']: p for p in j['Pages']}
+    popups = {p['Name']: p for p in j['PopupPages']}
+
+    problems, checked = check_placed(plan, pages, popups)
 
     # A popup reference bound to nothing reads "Unassigned" on the panel and is
     # invisible in the file, so check the binding survived rather than trusting
@@ -706,6 +944,9 @@ def check(plan_path, built_path):
         problems += probs
         checked += n
         probs, notes, n = check_states(spec, table, assets, kind)
+        problems += probs
+        checked += n
+        probs, n = check_thumbs(spec, table, assets, kind)
         problems += probs
         checked += n
         for note in notes:

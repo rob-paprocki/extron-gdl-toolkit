@@ -273,6 +273,78 @@ function Set-GdlStateOrder {
     return $true
 }
 
+function Add-GdlImageResource {
+    <#  Make sure the project's resource library has an image named $Name,
+        appending one from $File if it does not. Returns $true when it is there.
+
+        Clone-never-construct: an existing PBImageResource is copied and its
+        bitmap replaced - the route New-ImageProbe.ps1 proved for icons. #>
+    param($Project, [string]$Name, [string]$File)
+    $resources = Get-GdlField $Project.ResourceSet 'resourcesField'
+    $donor = $null
+    foreach ($r in $resources) {
+        if ($r.GetType().Name -ne 'PBImageResource') { continue }
+        if ((Get-GdlField $r 'nameField') -eq $Name) { return $true }
+        if (-not $donor) { $donor = $r }
+    }
+    if (-not $File -or -not (Test-Path $File)) {
+        Note-Problem "image '$Name' is not in the project and its file '$File' was not found"
+        return $false
+    }
+    if (-not $donor) { Note-Problem "no PBImageResource in the project to clone for '$Name'"; return $false }
+    Add-Type -AssemblyName System.Drawing
+    $bmp = New-Object System.Drawing.Bitmap($File)
+    $new = Copy-GdlObject $donor
+    Set-GdlField $new 'nameField' $Name
+    Set-GdlField $new 'dataField' $bmp
+    Set-GdlField $new 'widthField' $bmp.Width
+    Set-GdlField $new 'heightField' $bmp.Height
+    Set-GdlField $new 'sizeField' ([int](Get-Item $File).Length)
+    Set-GdlFieldIfPresent $new 'filenameField' ([System.IO.Path]::GetFileName($File)) | Out-Null
+    $resources.Add($new)
+    return $true
+}
+
+function Set-GdlImage {
+    <#  Point an image slot - a page's backgroundImageField, a state's
+        buttonImageField - at the image resource named $Name, by a clone of an
+        existing reference (Find-GdlImageRef): clone, never construct. #>
+    param($Target, [string]$Field, $Ref, [string]$Name)
+    if (-not $Ref) {
+        Note-Problem "no image reference in the project to clone for '$Name'"
+        return
+    }
+    $new = Copy-GdlObject $Ref
+    Set-GdlField $new 'resourceNameField' $Name
+    Set-GdlFieldIfPresent $Target $Field $new | Out-Null
+}
+
+function Find-GdlImageRef {
+    <#  A PBResourceReferenceImage to clone: a page's background image first,
+        then any control's or state's image. #>
+    param($Project)
+    foreach ($pg in @($Project.Pages) + @($Project.PopupPages)) {
+        $v = Get-GdlField $pg 'backgroundImageField'
+        if ($v) { return , $v }
+    }
+    foreach ($pg in @($Project.Pages) + @($Project.PopupPages)) {
+        foreach ($c in $pg.Controls) {
+            foreach ($f in 'backgroundImageField', 'buttonImageField') {
+                $v = Get-GdlField $c $f
+                if ($v) { return , $v }
+            }
+            foreach ($st in @(Get-GdlStates $c)) {
+                if ($null -eq $st) { continue }
+                foreach ($f in 'backgroundImageField', 'buttonImageField') {
+                    $v = Get-GdlField $st $f
+                    if ($v) { return , $v }
+                }
+            }
+        }
+    }
+    return $null
+}
+
 $script:BorderDonor = $null
 function Find-BorderDonor {
     param($Project)
@@ -299,13 +371,17 @@ function Set-GdlBorder {
 
         Referencing an existing resource is the whole design: appending a NEW
         PBBorderResource has never been tested against GUI Designer, so a plan
-        may only name resources the donor already carries. This checks that. #>
-    param($Project, $Control, [string]$Name)
-    if (-not $Name) { return }
+        may only name resources the donor already carries. This checks that.
+
+        $null leaves the border as it is. '' is NO border, which is how
+        Extron's own image buttons reference one: a clone otherwise keeps its
+        donor's outline around the kit's artwork. #>
+    param($Project, $Control, $Name)
+    if ($null -eq $Name) { return }
     $known = @($Project.ResourceSet.Resources |
         Where-Object { $_.GetType().Name -eq 'PBBorderResource' } |
         ForEach-Object { $_.Name })
-    if ($known -and ($known -notcontains $Name)) {
+    if ($Name -and $known -and ($known -notcontains $Name)) {
         Note-Problem "border resource '$Name' is not in the donor project; a plan may only reference existing resources"
         return
     }

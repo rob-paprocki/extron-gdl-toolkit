@@ -530,7 +530,11 @@ the default is not inside the repo.
   *upgrade* trap, and it will fire again on the next version.
 - **Trigger the build with `Invoke-GdlMenu.ps1`, not SendKeys.** UI Automation
   clicks the menu item directly and needs no focus, so the pipeline runs while
-  the machine is in use. SendKeys types into whatever holds the foreground, and a
+  the machine is in use - or while no one is looking at it, since a minimized
+  Remote Desktop session holds no foreground window at all. The menu is
+  expanded from a background job, a fresh PowerShell that takes seconds to
+  start, and its items do not exist until it has, so the script polls for the
+  item (`-MenuWaitSeconds`, 30 by default) rather than sleeping. SendKeys types into whatever holds the foreground, and a
   pipeline driven from a terminal can never take the foreground from that
   terminal. `Send-GdlKeys.ps1` is only the fallback, and it verifies the window
   and refuses rather than typing blind. `Invoke()` throws `Operation timed out

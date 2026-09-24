@@ -29,6 +29,10 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 
 ## Two workflows
 
+A panel designed in Claude Design with an Extron template's design system
+comes in through workflow A: `python -m gdl.design translate` writes its spec,
+and every step from 4 on applies to it. `docs/claude-design.md`.
+
 ### A. Generate a panel from a description
 
 1. **Pick the panel model first**, and put it in the spec as `"model"`.
@@ -77,12 +81,26 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 
    The program sets a state by its index - its position here - and the ID map
    lists them that way. `press` names the state shown while the button is held;
-   it defaults to the second. Two states that look identical are a problem, as
-   is a mirror (a shared `id`) with different states.
+   it defaults to the second, and naming the first - the state the button rests
+   in - is a problem, since holding it would show nothing. Two states that look
+   identical are a problem, whether `states` or `on` made them, as is a mirror
+   (a shared `id`) with different states. In a state, `none` turns its fill or
+   outline off; leaving the key out keeps the button's own.
 
    **Say where the panel boots.** `"start_page": "<page name>"` - the first page
    when omitted - is written into the project, because otherwise the built panel
    opens on the donor's start page.
+
+   **Name the page art and the clock format.** A page's `background_image` - or
+   the theme's, for every page - names an image drawn fitted, keeping its
+   aspect, over the page's `background`. One the donor lacks needs `"images": {"<name>": "<path>"}`,
+   the path relative to the theme resource kits (`vendor/extron/Resources`, or
+   the install), and the applier appends it. A button's icon is an `image` the
+   same way, on the button or on each state (*Icons* below). A `datetime` control's `format` is
+   `time` (the default), `date`, `datetime` or any .NET date pattern
+   (`"MMMM d, yyyy"`). Both are written explicitly, because a clone keeps the
+   donor's: the donor's background under every page, its clock pattern on every
+   clock.
 
    **Popups are one of two kinds.** A *standard* popup sits in a `group` and
    shows through a `popup_ref` bound to that group, at the reference's size. A
@@ -246,9 +264,15 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 
 - **Images** — the normal route, and what real panels use. Extron's kits ship
   1,316 (Afterburn), 596 (Mach), 1,124 (Shockwave), 1,408 (Turbulence) assets.
-  Appending a new `PBImageResource` and binding it to `buttonImageField` is
-  proven to build. Set `buttonImageLayout`/alignment or a large icon will fill
-  the button.
+  A spec button names one by its file name as `image`, on the button or per
+  state (`{"name": "On", "image": "756x756_laptop-orange_sel.png"}`), with
+  `"border": "none"` since the kit image draws the button; `images` brings any
+  the donor lacks. The applier appends it and draws it the way every image
+  button in the Afterburn seeds is drawn — `Fill` (fit, keeping the aspect),
+  `MiddleCenter` — so size the button to the image's shape. A button with no
+  `fill` is written transparent, so a state does not keep its donor's. A
+  slider's thumb is a kit image too: `thumb_image`, in the scheme's secondary
+  accent (Afterburn: `440x440_thumb-1-<color>_sel.png`).
 - **Icon fonts** — for single-color icons, faster and needs no resource.
   Afterburn 136 glyphs at U+E900–E98C, Mach (Extron-Lift) 121 at U+E900–E978.
   Place them as text in that face.

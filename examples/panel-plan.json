@@ -33,7 +33,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4290428110,
      "states": null,
@@ -44,7 +44,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -58,26 +62,35 @@
       "topField": 24,
       "widthField": 164,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Mute",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Mute",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -87,7 +100,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -101,26 +118,35 @@
       "topField": 24,
       "widthField": 164,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "-",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "-",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -130,7 +156,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -144,26 +174,35 @@
       "topField": 24,
       "widthField": 164,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "+",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "+",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -173,7 +212,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -187,26 +230,35 @@
       "topField": 24,
       "widthField": 164,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4282223613,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Presets",
+       "image": null
       },
       {
        "name": "On",
-       "fill": 4282223613,
-       "stroke": null,
+       "fill": 4281217346,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Presets",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -216,7 +268,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     }
    ]
   },
@@ -248,7 +304,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4290428110,
      "states": null,
@@ -259,7 +315,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -273,26 +333,35 @@
       "topField": 24,
       "widthField": 224,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Mute",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Mute",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -302,7 +371,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -316,26 +389,35 @@
       "topField": 24,
       "widthField": 224,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "-",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "-",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -345,7 +427,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -359,26 +445,35 @@
       "topField": 24,
       "widthField": 224,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "+",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "+",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -388,11 +483,16 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     }
    ]
   }
  ],
+ "images": [],
  "canvas": [
   1280,
   800
@@ -405,6 +505,7 @@
    "name": "Home",
    "modal": false,
    "background": 4279374620,
+   "background_image": null,
    "clear_controls": true,
    "controls": [
     {
@@ -422,7 +523,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": 4280559156,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Rectangle",
      "text_color": 4294967295,
      "states": null,
@@ -433,7 +534,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -450,7 +555,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4294967295,
      "states": null,
@@ -461,7 +566,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -478,7 +587,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4290428110,
      "states": null,
@@ -489,7 +598,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -506,7 +619,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": 4280559156,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Rectangle",
      "text_color": 4294967295,
      "states": null,
@@ -517,7 +630,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -531,7 +648,12 @@
       "topField": 120,
       "widthField": 200,
       "heightField": 70,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
      "stroke": 4290428110,
@@ -543,14 +665,18 @@
        "fill": 4281217346,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Presentation",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Presentation",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -560,7 +686,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -574,7 +704,12 @@
       "topField": 202,
       "widthField": 200,
       "heightField": 70,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
      "stroke": 4290428110,
@@ -586,14 +721,18 @@
        "fill": 4281217346,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Video Call",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Video Call",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -603,7 +742,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -617,7 +760,12 @@
       "topField": 285,
       "widthField": 200,
       "heightField": 70,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
      "stroke": 4290428110,
@@ -629,14 +777,18 @@
        "fill": 4281217346,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Cameras",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Cameras",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -646,7 +798,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -660,7 +816,12 @@
       "topField": 367,
       "widthField": 200,
       "heightField": 70,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
      "stroke": 4290428110,
@@ -672,14 +833,18 @@
        "fill": 4281217346,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Audio",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Audio",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -689,7 +854,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -703,7 +872,12 @@
       "topField": 450,
       "widthField": 200,
       "heightField": 70,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
      "stroke": 4290428110,
@@ -715,14 +889,18 @@
        "fill": 4281217346,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Lighting",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
        "stroke": 4290428110,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Lighting",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -732,7 +910,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -749,7 +931,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4290428110,
      "states": null,
@@ -760,7 +942,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -774,26 +960,35 @@
       "topField": 152,
       "widthField": 315,
       "heightField": 122,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 2 Thick",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Laptop HDMI",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Laptop HDMI",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -803,7 +998,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -817,26 +1016,35 @@
       "topField": 152,
       "widthField": 315,
       "heightField": 122,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 2 Thick",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Wireless",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Wireless",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -846,7 +1054,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -860,26 +1072,35 @@
       "topField": 152,
       "widthField": 315,
       "heightField": 122,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 2 Thick",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Room PC",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Room PC",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -889,7 +1110,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -903,26 +1128,35 @@
       "topField": 294,
       "widthField": 315,
       "heightField": 122,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 2 Thick",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Cable TV",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Cable TV",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -932,7 +1166,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -946,26 +1184,35 @@
       "topField": 294,
       "widthField": 315,
       "heightField": 122,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 2 Thick",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Camera",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Camera",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -975,7 +1222,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -989,26 +1240,35 @@
       "topField": 294,
       "widthField": 315,
       "heightField": 122,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 2 Thick",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Doc Cam",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Doc Cam",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -1018,7 +1278,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1035,7 +1299,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4290428110,
      "states": null,
@@ -1046,7 +1310,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1060,26 +1328,35 @@
       "topField": 476,
       "widthField": 482,
       "heightField": 120,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 2 Thick",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Left Display",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Left Display",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -1089,7 +1366,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1103,26 +1384,35 @@
       "topField": 476,
       "widthField": 482,
       "heightField": 120,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 2 Thick",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Right Display",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "Afterburn - 10 Radius 2 Thick"
+       "border": "Afterburn - 10 Radius 2 Thick",
+       "text": "Right Display",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -1132,7 +1422,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1149,7 +1443,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": 4280559156,
-     "stroke": null,
+     "stroke": 0,
      "border": "Afterburn - 10 Radius 0 Thick",
      "text_color": 4294967295,
      "states": null,
@@ -1160,7 +1454,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1177,7 +1475,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4290428110,
      "states": null,
@@ -1188,7 +1486,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1202,26 +1504,35 @@
       "topField": 644,
       "widthField": 164,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Mute",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Mute",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -1231,7 +1542,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1245,26 +1560,35 @@
       "topField": 644,
       "widthField": 164,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "-",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "-",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -1274,7 +1598,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1288,26 +1616,35 @@
       "topField": 644,
       "widthField": 164,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4281217346,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4281217346,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "+",
+       "image": null
       },
       {
        "name": "On",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "+",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -1317,7 +1654,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1331,26 +1672,35 @@
       "topField": 644,
       "widthField": 164,
       "heightField": 60,
-      "<TLPImageID>k__BackingField": -1
+      "<TLPImageID>k__BackingField": -1,
+      "<HidePressFeedback>k__BackingField": false,
+      "<HideVisualFeedback>k__BackingField": false,
+      "<HideTextFeedback>k__BackingField": false,
+      "<TLPDefaultStateID>k__BackingField": 0,
+      "<TLPPressFeedbackStateID>k__BackingField": 1
      },
      "fill": 4282223613,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Capsule",
      "text_color": 4294967295,
      "states": [
       {
        "name": "Off",
        "fill": 4282223613,
-       "stroke": null,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Presets",
+       "image": null
       },
       {
        "name": "On",
-       "fill": 4282223613,
-       "stroke": null,
+       "fill": 4281217346,
+       "stroke": 0,
        "text_color": 4294967295,
-       "border": "2D Capsule"
+       "border": "2D Capsule",
+       "text": "Presets",
+       "image": null
       }
      ],
      "alignment": 3,
@@ -1360,7 +1710,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1377,7 +1731,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": 4280559156,
-     "stroke": null,
+     "stroke": 0,
      "border": "2D Rectangle",
      "text_color": 4294967295,
      "states": null,
@@ -1388,7 +1742,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1405,7 +1763,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4290428110,
      "states": null,
@@ -1416,7 +1774,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1433,7 +1795,7 @@
       "<TLPImageID>k__BackingField": -1
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4290428110,
      "states": null,
@@ -1444,7 +1806,11 @@
       "bold": false,
       "italic": false
      },
-     "group": null
+     "group": null,
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     },
     {
      "op": "clone-control",
@@ -1462,7 +1828,7 @@
       "modalField": false
      },
      "fill": null,
-     "stroke": null,
+     "stroke": 0,
      "border": null,
      "text_color": 4294967295,
      "states": null,
@@ -1473,7 +1839,11 @@
       "bold": false,
       "italic": false
      },
-     "group": "Volume"
+     "group": "Volume",
+     "image": null,
+     "image_layout": 0,
+     "image_align": 3,
+     "thumb_image": null
     }
    ]
   }

@@ -46,9 +46,9 @@ AFTERBURN = {
     'track_on_image': '#242634',
     'fill': '#BABCCE',                    # slider fill
     'thumb_off': '#6A6E89',
-    # The modal scrim. NOTE: the guide says #242634 at 20% transparency, but the
-    # Liberty Bank fixture uses opaque black with the dimming baked into artwork.
-    # See docs/render-fidelity.md - this is why the scrim rule was unobservable.
+    # The modal scrim, as the guide gives it. It is NOT what ships: Build draws
+    # every modal as black at alpha 166 over the page beneath, whatever its
+    # background (docs/design-rules.md section 4).
     'modal_scrim': '#33242634',
 }
 

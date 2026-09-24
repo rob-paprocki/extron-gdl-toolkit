@@ -277,7 +277,11 @@ A generator should assert all four agree rather than trusting the writes.
   inherits its donor's, which may name a state the clone no longer has, so the
   applier sets it. Each `PBState` also carries its own
   `<TLPPressFeedbackStateID>`, which is `-1` on 7320 of 7392 states and is not
-  the one that matters.
+  the one that matters. Whether the panel shows it at all is the button's
+  `<HidePressFeedback>` (and `<HideVisualFeedback>`, `<HideTextFeedback>` for
+  its state looks and captions), exported under those names: `False` on all
+  7943 buttons in the seeds and fixtures, but a clone keeps its donor's, so
+  the spec writes all three.
 - A clean build proves the file is **acceptable**, not that it is **correct**.
   Two separate traps (`flattenText`, and the relocation above) produce a file
   that opens, builds and is wrong. Finish with `tests/verify_built.py`, which
@@ -296,6 +300,39 @@ A generator should assert all four agree rather than trusting the writes.
   1035 / 1535 Series and omits ECP, which is a UI-availability statement rather
   than a format constraint. Whether a given panel honours it at runtime is
   firmware, not something this file can tell you.
+- **A clock's format is its `patternField`**, a .NET date pattern (`'MMMM d'`,
+  `'h:mm tt'`); `PBDateTime` has no format enum. `textField` holds that pattern
+  drawn for 28 September 1960 at midnight (`'September 28'`), and layout.json
+  reports the two as `Pattern` and `Text`. A cloned clock keeps its donor's
+  pattern: a "date" clock cloned from the Afterburn 1035 seed built as
+  `September 28, 12:00 AM`.
+- **A slider's thumb is an image, and its fill a color.** The Afterburn
+  seeds' volume slider has `sliderThumbTypeField` 2 and its thumb in
+  `sliderThumbImageField` - `440x440_thumb-1-periwinkle_sel.png`, the scheme-1
+  secondary accent, from the kit's `Sliders & Toggles` - and the filled part in
+  `sliderFillColorField`, `#BABCCE`. Build draws the thumb as its own asset,
+  `SliderIndicatorImageID`, so a clone under another scheme keeps the
+  periwinkle thumb until the image is set.
+- **A page's background image is a named `PBImageResource`**, referenced from
+  `backgroundImageField` by a `PBResourceReferenceImage` and drawn by
+  `backgroundImageLayoutField` over the page fill - the Afterburn seeds fit
+  `6400x4000_bg1.png` over `#242634`. `ImageLayoutEnum` is `Fill` 0 (fit,
+  keeping the aspect, as CSS `contain`), `Stretch` 1, `Tile` 2, `Native` 3,
+  `Offset` 4. Build rasterizes the two into
+  the page's asset and layout.json does not name the image, so it is verified
+  off that asset. An image the project lacks is appended by cloning an existing
+  `PBImageResource` and setting its bitmap, name and size
+  (`Add-GdlImageResource`).
+- **A kit image button carries its image on each state, not on the control.**
+  Every image button in the Afterburn 1035 and 1535 seeds has an empty
+  control-level `buttonImageField` and one per state, drawn `Fill` and
+  `MiddleCenter`, with a border reference whose resource name is empty - the
+  kit's image is the whole button, selection line included. Its caption is
+  placed by the caption itself: two CRLFs put a source's label under the icon,
+  leading spaces put a list button's past it (a formatted-text caption in the
+  seed, which Build bakes into the artwork; a plain one is drawn live). Build
+  rasterizes image, fill and border into the state's artwork, and layout.json
+  does not name the image, so it is verified off that artwork.
 - **`ApplicationBuildVersionInfo` in the built `layout.json` lags one build
   behind on a project carried across versions.** Open a 1.27-authored project in
   1.28 and Save and Build: the `ProjectGCP` is restamped immediately

@@ -13,6 +13,8 @@ opening GUI Designer.**
   clean-room authoring, retarget from a seed (650/650), popup canvases that keep
   their own size, and button feedback with any number of named states - authored
   from a spec, or edited state by state on an existing panel.
+- **Designed in Claude Design**: a canvas drawn with an Extron template's
+  design system translates to a spec and builds (`docs/claude-design.md`).
 - **What the controls do**, from the same spec: `gdl.idmap` checks the page
   flips and writes the programmer's ID map, verified against the built panel
   (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
@@ -67,22 +69,24 @@ opening GUI Designer.**
    and per-page popup references is where the next class of bug lives. With `nav`
    the page flow is part of the spec, and `verify_idmap.py` checks it against
    the build.
-5. **Claude Design as a front end.** A design system published to Claude Design
-   whose components are exactly the spec's kinds (buttons and their states, labels,
-   sliders, popup regions) and whose tokens are the themes already mined. Plus a
-   translator from a canvas to a spec: lay out each artboard in a headless
-   browser at the panel's resolution, read every component's box and props, and
-   map prototype links to `nav`. `docs/idmap.md` §6 has the mapping.
-6. **Icons in the spec vocabulary.** Both routes are proven by probe - font
-   glyphs (~339 icons, no image resource) and appended image resources
-   (`powershell/New-ImageProbe.ps1`) - and neither can be written in a spec.
+5. **Claude Design as the front end: the other three templates.** Afterburn is
+   a design system, and a canvas drawn with it translates, builds and verifies
+   end to end, with a side-by-side of each artboard and the built panel for
+   sign-off. Mach, Shockwave and Turbulence need their profiles, each checked
+   against its seed's built artwork. `docs/claude-design.md` §7.
+6. **Icon-font glyphs in the spec vocabulary.** Kit images are in it - a
+   button's `image`, on itself or per state, which is how the Claude Design
+   systems draw icons - but the other proven route, font glyphs (~339 icons, no
+   image resource), still cannot be written in a spec.
 7. **Pick the seed automatically** - `gdl.spec donors --auto` choosing from
    `seeds/` by theme and canvas, so a prose brief needs no file path.
 8. **Theme-portable borders.** No border resource is defined by every project
    in the corpus. A spec that says `rounded` or `capsule` should resolve to
    whatever the donor's family calls it.
-9. **Close `verify_built.py`'s remaining blind spots**: text alignment, and
-   donor controls that ride along on a generated page unasked.
+9. **Close `verify_built.py`'s remaining blind spots**: text alignment, donor
+   controls that ride along on a generated page unasked, and one volume-level
+   icon built in place of the next - at 64 px they differ by one thin wave, 7%
+   of the inked pixels, under the image check's 25%.
 10. **Run the seed ground-truth test in CI** with
     `git lfs pull --include "seeds/Afterburn 1035.gdl"` (about 3 MB of LFS
     bandwidth per build).
@@ -105,6 +109,12 @@ opening GUI Designer.**
   synthetic page rests on one control.
 - The 5.86% render residual on the TLP1035 pages. Not the typeface; cause
   unknown.
+- **`gdl.compose` draws bold Open Sans as regular.** `gdl/fonts/` carries Open
+  Sans Regular and Light only, and `face()` falls back to the regular file, so
+  a bold caption on a seed-built panel renders regular - the largest remaining
+  difference in `gdl.design compare`. Open Sans Bold is Apache 2.0 like the
+  others; adding it is a render change, so it needs `tests/score.py` before and
+  after.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
   sizes.
 - **ECP's phone and tablet canvases have no donor, and cannot have one.** The

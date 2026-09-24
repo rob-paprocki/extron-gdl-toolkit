@@ -81,6 +81,14 @@ So `SCRIM_ALPHA = 165` is a plausible generalisation with zero observable
 consequence in this corpus. It is left in `research/` rather than shipped into
 the maintained compositor, where it would read as a measured rule.
 
+What does hold, and makes the rule unnecessary: **Build bakes the scrim into
+every modal's artwork** - full-canvas black at alpha 166 - whatever background
+the popup was authored with. Every modal in the Afterburn, Mach and Shockwave
+seeds carries it, and so did a modal built from a spec with a `#242634`
+background. The compositor pastes that artwork like any other; to show what the
+panel shows, composite it over the page beneath (`gdl.design compare` does,
+over the start page).
+
 ## 2. Compositing uses a binary alpha test
 
 GUI Designer renders each control into its own bitmap and composites it with a

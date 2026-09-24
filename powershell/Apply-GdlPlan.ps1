@@ -83,6 +83,11 @@ function Add-GdlControls {
         Set-GdlFieldIfPresent $c 'buttonImageField' $null | Out-Null
         Set-GdlFieldIfPresent $c 'backgroundImageField' $null | Out-Null
         Set-GdlBorder $Project $c $op.border
+            # A slider's thumb is a kit image, not a color, and a clone keeps
+            # its donor's - Afterburn's scheme-1 periwinkle under every scheme.
+            if ($op.thumb_image) {
+                Set-GdlImage $c 'sliderThumbImageField' $imageRef $op.thumb_image.name
+            }
             Set-GdlFont $Project $c $op.font
             Set-GdlFieldIfPresent $c 'textAlignmentField' $op.alignment | Out-Null
 
@@ -125,13 +130,22 @@ function Add-GdlControls {
                     $fill   = if ($s) { $s.fill }       else { $op.fill }
                     $stroke = if ($s) { $s.stroke }     else { $op.stroke }
                     $tcolor = if ($s) { $s.text_color } else { $op.text_color }
-                    $bord   = if ($s -and $s.border) { $s.border } else { $op.border }
+                    # '' is a real answer - no border - so test for null.
+                    $bord   = if ($s -and $null -ne $s.border) { $s.border } else { $op.border }
+                    $img    = if ($s) { $s.image } else { $op.image }
 
                     # The donor's own caption and icon ride along on a clone, so
                     # a state that is not rewritten renders the donor's text. A
                     # state may carry its own caption ('Ready' / 'Connected').
                     $text = if ($s -and $null -ne $s.text) { $s.text } else { $op.fields.textField }
                     Set-GdlFieldIfPresent $st 'buttonImageField' $null | Out-Null
+                    # ...and then the kit image the plan names for this state:
+                    # the icon, a list button's selection line, a toggle.
+                    if ($img) {
+                        Set-GdlImage $st 'buttonImageField' $imageRef $img.name
+                        Set-GdlFieldIfPresent $st 'buttonImageLayoutField' $op.image_layout | Out-Null
+                        Set-GdlFieldIfPresent $st 'buttonImageAlignmentField' $op.image_align | Out-Null
+                    }
                     Set-GdlFieldIfPresent $st 'textField' $text | Out-Null
                     Set-GdlFieldIfPresent $st 'textAlignmentField' $op.alignment | Out-Null
                     # A state names itself - 'Off' / 'On' is what 94.7% of the
@@ -196,6 +210,14 @@ Write-Output "plan: $(@($spec.pages).Count) page(s), canvas $($spec.canvas -join
 $donorPage = @($project.Pages)[0]
 if (-not $donorPage) { throw 'donor project has no pages to clone from' }
 
+# Images the spec brings: appended where the donor lacks them. Captured before
+# any page is cloned, the reference a page's background image is cloned from.
+foreach ($im in @($spec.images)) {
+    if ($null -eq $im) { continue }
+    if (Add-GdlImageResource $project $im.name $im.file) { Write-Output "image '$($im.name)' ready" }
+}
+$imageRef = Find-GdlImageRef $project
+
 $pageIds = @{}
 foreach ($pg in $spec.pages) {
     $pageId = Get-GdlNextPageId $project
@@ -214,6 +236,15 @@ foreach ($pg in $spec.pages) {
     # page asset, so the donor's art comes back looking like a stray tint.
     Set-GdlFieldIfPresent $newPage '<TLPImageID>k__BackingField' -1 | Out-Null
     Set-GdlFieldIfPresent $newPage 'backgroundImageField' $null | Out-Null
+    # ...and then the image the SPEC names, if any, by a fresh reference. The
+    # layout fields (stretch, alignment, offsets) come from the donor page.
+    if ($pg.background_image) {
+        Set-GdlImage $newPage 'backgroundImageField' $imageRef $pg.background_image.name
+        # Fill and MiddleCenter, as the Afterburn seeds lay out theirs - set,
+        # not inherited, so the page draws the same whatever the donor is.
+        Set-GdlFieldIfPresent $newPage 'backgroundImageLayoutField' 0 | Out-Null
+        Set-GdlFieldIfPresent $newPage 'backgroundImageAlignmentField' 3 | Out-Null
+    }
 
     # Start from an empty page: the donor's controls carry its ids and popup
     # references, and inherited references are the documented way to end up

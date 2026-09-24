@@ -174,6 +174,54 @@ statement is in the live docs; this is the record that it changed.
   every state, On included. Nothing was reported, and the verifier never
   checked an edit's colors at all. Both now edit state by state, and colors are
   read off the built artwork.
+- **The Liberty Bank fixture was thought to deviate from Afterburn's modal
+  scrim.** Its modals are black at alpha 166 where the guide says `#242634` at
+  20% transparency. On 2026-09-24 every modal in three seeds, and one built from
+  a spec with a `#242634` background, turned out the same: Build draws the scrim
+  itself.
+- **A spec control with no stroke kept its donor's** (until 2026-09-24). The
+  applier skips a color it is not given, so a panel with no `stroke` built with
+  the seed's `#6A6E89` outline while the preview drew none. Found by putting a
+  Claude Design canvas beside the panel built from it; no stroke is now written
+  as transparent.
+- **A button state with no fill kept its donor state's** (until 2026-09-24),
+  as the stroke had. The Afterburn seed's On state is `#37394E`, so the first
+  build of the icon canvas put a raised slab behind every kit image after
+  state 0 - caught by the new check of each state's image against its
+  artwork. A button with no fill is now written transparent. The same build
+  showed a slider thumb still the seed's periwinkle under the Grape theme (it
+  is a kit image, and nothing set it) and a left-aligned clock built centered
+  (the component left `align` out when it was `left`, and the spec's default
+  is `center`).
+- **`Invoke-GdlMenu.ps1` waited a fixed 3 s for the File menu** (until
+  2026-09-24). The menu is expanded by a background PowerShell job that has to
+  start first; on a busy machine the item was not there yet, the build fell
+  back to SendKeys, and that could not take the foreground from a minimized
+  Remote Desktop session. It now polls for the item.
+- **A spec clock kept its donor's format** (until 2026-09-24). The format is
+  `PBDateTime.patternField`, which nothing wrote, so a "date" and a "time"
+  clock both built as the Afterburn seed's `September 28, 12:00 AM`. The
+  verifier caught the caption; the pattern is now written and checked.
+- **The first Afterburn design system misread the theme** (2026-09-24, caught
+  by the user): a slider drawn as a filled slab where Afterburn's is a 10 px
+  rail with a `#BABCCE` fill and a periwinkle thumb; `accent` used as a button
+  fill, where the guide keeps it to selection lines and the seed to active
+  captions; a panel with no `#6A6E89` outline. Corrected against the seed's
+  built artwork, which is now how every template's profile is checked.
+- **Afterburn's design system colored captions red, and drew no icons**
+  (until 2026-09-24, caught by the user). Its `alert` token was read as a
+  caption color off the seed's two record buttons - whose captions are empty;
+  the red is their icon's - and a mute or End Call turned its caption red. The
+  guide has no red at all: Afterburn shows state with kit icons in the accent,
+  and an alert is a red fill with a white caption. Icons had been left out
+  pending a decision on putting Extron's artwork in claude.ai; the owner agreed
+  to downscaled kit images in their private design system, and every image
+  button is now drawn from the kit as the seed draws it. Two more from the
+  owner's review of that canvas: its Shut Down was an alert, and shutting down
+  is no alert condition, so an alert is now kept to faults and warnings; and
+  its slider thumb was a circle the size of the 50 px thumb box, where the
+  kit's circle is 65% of it - half as wide again as the panel's. The canvas now
+  draws the kit's own thumb.
 - **The six-color check counted only colors a spec names, and only on pages**
   (until 2026-09-24). A caption with no `color` draws in the theme's text
   color, and popups are on the panel too. `examples/huddle-functions.json`

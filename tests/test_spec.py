@@ -767,6 +767,169 @@ class TestModalPopups(unittest.TestCase):
         self.assertTrue(any('does not fit' in m for m in p.check()), p.check())
 
 
+class TestBackgroundImage(unittest.TestCase):
+    """A page's background image: the theme's, named once, drawn on every page."""
+
+    def _spec(self, images, **theme):
+        return _project([{'name': 'Home', 'controls': []}, {'name': 'Help', 'controls': []}],
+                        images=images, theme=dict({'text': '#FFFFFF'}, **theme))
+
+    def test_the_theme_puts_it_on_every_page_and_the_plan_carries_its_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, 'bg.png')
+            open(f, 'wb').write(b'x')
+            plan = self._spec({'bg.png': f}, background_image='bg.png').plan()
+            self.assertEqual([p['background_image'] for p in plan['pages']],
+                             [{'name': 'bg.png', 'file': f}] * 2)
+            self.assertEqual(plan['images'], [{'name': 'bg.png', 'file': f}])
+
+    def test_an_image_the_donor_has_needs_no_file(self):
+        plan = self._spec({}, background_image='6400x4000_bg1.png').plan()
+        self.assertEqual(plan['pages'][0]['background_image'],
+                         {'name': '6400x4000_bg1.png', 'file': None})
+
+    def test_an_image_file_that_is_not_there_is_a_problem(self):
+        p = self._spec({'x.png': 'Nowhere/x.png'}, background_image='x.png')
+        self.assertTrue(any("image 'x.png'" in m for m in p.check()), p.check())
+
+    def test_the_preview_draws_it_fitted_over_the_fill(self):
+        """The build draws it, so the preview must: it once showed the flat
+        fill where the panel had the theme's art."""
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed')
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, 'bg.png')
+            # Twice as wide as tall: fitted to a 1.6:1 page it leaves a band
+            # of fill above and below, where a stretch would leave none.
+            Image.new('RGBA', (200, 100), (200, 20, 20, 255)).save(f)
+            spec = self._spec({'bg.png': f}, background_image='bg.png')
+            spec.theme['background'] = '#242634'
+            spec.pages[0]['background'] = {'A': 255, 'R': 0x24, 'G': 0x26, 'B': 0x34}
+            im = spec.render(0).convert('RGB')
+            w, h = im.size
+            self.assertEqual(im.getpixel((w // 2, h // 2)), (200, 20, 20))
+            self.assertEqual(im.getpixel((w // 2, 3)), (0x24, 0x26, 0x34))
+
+
+class TestButtonImages(unittest.TestCase):
+    """A kit image per state: Afterburn's icons, list buttons and toggles."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.off, self.on = (os.path.join(self.dir, n) for n in ('off.png', 'on.png'))
+        for f in (self.off, self.on):
+            open(f, 'wb').write(b'x')
+
+    def _spec(self, **c):
+        c = dict({'kind': 'button', 'name': 'Laptop', 'rect': [0, 0, 110, 110],
+                  'border': 'none', 'text': 'Laptop'}, **c)
+        return _project([{'name': 'Home', 'controls': [c]}],
+                        images={'off.png': self.off, 'on.png': self.on})
+
+    def test_each_state_carries_its_image_and_no_border(self):
+        op = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                                {'name': 'On', 'image': 'on.png', 'fill': '#242634'}]
+                        ).plan()['pages'][0]['controls'][0]
+        self.assertEqual([s['image'] for s in op['states']],
+                         [{'name': 'off.png', 'file': self.off},
+                          {'name': 'on.png', 'file': self.on}])
+        self.assertEqual([s['border'] for s in op['states']], ['', ''])
+        self.assertEqual((op['image_layout'], op['image_align']), (0, 3))
+
+    def test_a_press_on_the_resting_state_is_a_problem(self):
+        """The panel rests in state 0 and shows the press state while held, so
+        pressing to state 0 shows nothing."""
+        p = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                               {'name': 'On', 'image': 'on.png'}], press='Off')
+        self.assertTrue(any('rests in' in m for m in p.check()), p.check())
+        ok = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                                {'name': 'On', 'image': 'on.png'}], press='On')
+        self.assertFalse(any('rests in' in m for m in ok.check()), ok.check())
+
+    def test_on_shorthand_that_changes_nothing_is_a_problem(self):
+        """`on` makes states too, and its On can be the button's own look."""
+        p = _project([{'name': 'Home', 'controls': [
+            {'kind': 'button', 'name': 'B', 'rect': [0, 0, 120, 64], 'text': 'B',
+             'fill': '#37394E', 'on': {'fill': '#37394E'}}]}])
+        self.assertTrue(any('look identical' in m for m in p.check()), p.check())
+
+    def test_a_state_of_none_is_transparent_not_the_buttons_own(self):
+        """A state's `none` turns its fill off; left out, it keeps the button's."""
+        op = self._spec(fill='#37394E', states=[{'name': 'Off', 'fill': 'none'},
+                                                {'name': 'On', 'image': 'none'}]
+                        ).plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['states'][0]['fill'], 0)
+        self.assertEqual(op['states'][1]['fill'], 0xFF37394E)
+        self.assertIsNone(op['states'][1]['image'])
+
+    def test_press_feedback_is_written_on(self):
+        """A clone keeps its donor's flags, and a donor with them set would
+        build buttons that never show their press state."""
+        f = self._spec().plan()['pages'][0]['controls'][0]['fields']
+        for key in ('HidePressFeedback', 'HideVisualFeedback', 'HideTextFeedback'):
+            self.assertIs(f[f'<{key}>k__BackingField'], False, key)
+
+    def test_a_state_with_no_fill_is_written_transparent(self):
+        """Skipped, it kept the donor state's fill: the Afterburn seed's On is
+        #37394E, and a kit image button's Ready built on a raised slab."""
+        op = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                                {'name': 'On', 'image': 'on.png'}]
+                        ).plan()['pages'][0]['controls'][0]
+        self.assertEqual([s['fill'] for s in op['states']], [0, 0])
+        self.assertEqual(self._spec().plan()['pages'][0]['controls'][0]['fill'], 0)
+
+    def test_a_button_image_goes_on_every_state(self):
+        op = self._spec(image='on.png').plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['image'], {'name': 'on.png', 'file': self.on})
+
+    def test_states_that_differ_only_by_image_are_distinct(self):
+        p = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                               {'name': 'On', 'image': 'on.png'}])
+        self.assertFalse(any('identical' in m for m in p.check()), p.check())
+
+    def test_a_slider_carries_its_thumb_image(self):
+        c = {'kind': 'slider', 'name': 'Volume', 'rect': [0, 0, 54, 380], 'fill': '#37394E',
+             'thumb_image': 'on.png'}
+        p = _project([{'name': 'Home', 'controls': [c]}], images={'on.png': self.on})
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['thumb_image'], {'name': 'on.png', 'file': self.on})
+
+    def test_an_on_image_the_donor_lacks_is_a_donor_problem(self):
+        """`on` is shorthand for Off and On states, so its image is checked as
+        a state's would be."""
+        seed = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            'seeds', 'Afterburn 1035.gdl')
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from _corpus import usable
+        if not usable(seed):
+            self.skipTest('seed not present (git lfs pull)')
+        p = self._spec(on={'image': 'no-such-icon.png'})
+        self.assertTrue(any("'no-such-icon.png'" in m for m in p.check_donor(seed)),
+                        p.check_donor(seed))
+
+    def test_none_needs_no_border_resource(self):
+        self.assertEqual(self._spec().needs_borders(), set())
+
+
+class TestClock(unittest.TestCase):
+    """A clock's format is its .NET pattern. A clone kept the donor's, so a
+    "date" clock built as 'September 28, 12:00 AM' with 0 errors."""
+
+    def _op(self, **kw):
+        c = dict({'kind': 'datetime', 'name': 'Clock', 'rect': [0, 0, 300, 40]}, **kw)
+        return _project([{'name': 'Home', 'controls': [c]}]).plan()['pages'][0]['controls'][0]
+
+    def test_a_format_writes_its_pattern_and_that_patterns_sample(self):
+        for fmt, pattern, sample in (('date', 'MMMM d', 'September 28'),
+                                     (None, 'h:mm tt', '12:00 AM'),
+                                     ('MMMM dd, yyyy - hh:mm tt', 'MMMM dd, yyyy - hh:mm tt',
+                                      'September 28, 1960 - 12:00 AM')):
+            f = self._op(**({'format': fmt} if fmt else {}))['fields']
+            self.assertEqual((f['patternField'], f['textField']), (pattern, sample))
+
+
 class TestPalette(unittest.TestCase):
     """p.49's six colors are counted off what the panel draws. Counting only
     the colors a spec names let examples/huddle-functions.json pass at six
@@ -804,6 +967,17 @@ class TestPalette(unittest.TestCase):
         pal = self._pal([], popups=[{'name': 'Pop', 'controls': [
             _label(text='x', color='#123456')]}])
         self.assertIn((('A', 255), ('B', 0x56), ('G', 0x34), ('R', 0x12)), pal)
+
+    def test_no_stroke_is_written_as_transparent(self):
+        """The applier skips a color it is not given, so a stroke left unset
+        kept the donor's - a panel built with the seed's outline while the
+        preview drew none."""
+        p = _project([dict({'name': 'P', 'controls': [
+            {'kind': 'panel', 'name': 'Bar', 'rect': [0, 0, 100, 40], 'fill': '#123456',
+             'border': 'rect'}]}, **self.BG)])
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['stroke'], 0)
+        self.assertNotIn((('A', 0), ('B', 0), ('G', 0), ('R', 0)), p.palette())
 
     def test_seven_drawn_colors_are_reported(self):
         controls = [_label(text='x', fill=f) for f in
