@@ -33,6 +33,7 @@ touches a real `.gdl`; see docs/from-scratch.md for what still needs a human.
 """
 import collections
 import json
+import math
 import os
 import re
 import sys
@@ -193,6 +194,18 @@ MODELS_FULL = {
 MODELS_FULL['TLP300M'] = (320, 480, MODELS_FULL['TLP300M'][2],
                           MODELS_FULL['TLP300M'][3])
 
+# TLP Pro 1230WTG: CreatePlatform returns the base PBTouchPanelPlatformPro, so
+# GetDefaultResolutionDpi falls through to 800x480 at 0 DPI (the note above the
+# table). Extron's own TemplateInfoTable.config - the template installer's
+# table, NRBF, readable with gdl/nrbf.py - gives its "Afterburn 1230 Series"
+# 1920x720 at 166.0 DPI, the canvas a built 1230W project reports too
+# (docs/design-rules.md section 1).
+MODELS_FULL['TLP1230WTG'] = (1920, 720, 166.0, MODELS_FULL['TLP1230WTG'][3])
+
+# A model whose panel runs either way up. The 300M's templates come portrait and
+# landscape (Afterburn 300 Portrait and Landscape Series, both 164.83 DPI).
+ORIENTATIONS = {'TLP300M': ((320, 480), (480, 320))}
+
 # name -> (width, height). The common case; the rest of MODELS_FULL is there
 # when you need the DPI or the part number.
 MODELS = {k: (v[0], v[1]) for k, v in MODELS_FULL.items()}
@@ -208,6 +221,41 @@ def part_number(model):
     """The Extron part number GUI Designer identifies the panel by."""
     e = MODELS_FULL.get(model)
     return e[3] if e else None
+
+
+def sizes(model):
+    """Every canvas a model runs at: its one resolution, or both orientations."""
+    return ORIENTATIONS.get(model) or ((MODELS_FULL[model][0], MODELS_FULL[model][1]),)
+
+
+# Soft clients and interfaces run on a screen their model does not define, so
+# the table's DPI for them is GUI Designer's default, not a physical fact.
+SOFT_CLIENTS = ('TLI101', 'TLI201', 'VTLPAndroid', 'VTLPEcp', 'VTLPWeb', 'VTLPiOS')
+
+# Structural tiers by physical diagonal - this toolkit's reading of Extron's own
+# per-series templates, not an Extron rule. Every theme's >= 7in series (720,
+# 1020, 1220, 1520, 1720) share one full structure; its ~5in series (520, 535)
+# fold it into a hub page and popups; its ~3.5in ones (300, 320) into
+# single-purpose pages. docs/design-rules.md section 1.
+TIER_A_INCHES = 6.5
+TIER_B_INCHES = 4.0
+
+
+def diagonal(model):
+    """A model's screen diagonal in inches, from pixels and DPI; None for a soft
+    client or a model with no DPI."""
+    if model in SOFT_CLIENTS or not dpi(model):
+        return None
+    w, h = MODELS_FULL[model][:2]
+    return math.hypot(w, h) / dpi(model)
+
+
+def tier(model):
+    """'A' (the full layout), 'B' (a hub page) or 'C' (single-purpose pages)."""
+    d = diagonal(model)
+    if d is None:
+        return None
+    return 'A' if d >= TIER_A_INCHES else ('B' if d >= TIER_B_INCHES else 'C')
 
 
 def _panels():
@@ -226,8 +274,9 @@ def _panels():
     model list, and asking for one by name still gives its own figure.
     """
     out = {}
-    for model, (w, h, d, _) in MODELS_FULL.items():
-        out.setdefault((w, h), []).append((model, d))
+    for model, (_, _, d, _) in MODELS_FULL.items():
+        for size in sizes(model):
+            out.setdefault(size, []).append((model, d))
     res = {}
     for size, ms in out.items():
         physical = [d for m, d in ms if not m.startswith('VTLP') and d]
@@ -863,6 +912,10 @@ class Panel:
         """
         out = []
         target, spacing = touch_minimums(self.model or self.size)
+        if target is None:
+            out.append(f"page {pg['number']}: no touch minimum for "
+                       f"{self.model or '%dx%d' % tuple(self.size)} - name the panel's "
+                       f"model so 9mm can be converted (GUI Design Standards p.55)")
         for c in pg['controls']:
             x, y, w, h = (int(v) for v in c['rect'])
             where = f"page {pg['number']} {c.get('name') or c.get('text') or '?'}"

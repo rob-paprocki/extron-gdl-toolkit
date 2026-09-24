@@ -396,6 +396,42 @@ class TestExtronRules(unittest.TestCase):
         from gdl.spec import touch_minimums
         self.assertEqual(touch_minimums('TLP535M'), (104, 23))
 
+    def test_the_1230w_is_its_real_wide_canvas(self):
+        """CreatePlatform hands the 1230WTG back as the base platform class, so
+        the probe read 800x480 at 0 DPI - which made its touch check a silent
+        no-op. Extron's template table says 1920x720 at 166 DPI."""
+        from gdl.spec import MODELS, dpi, touch_minimums
+        self.assertEqual(MODELS['TLP1230WTG'], (1920, 720))
+        self.assertEqual(dpi('TLP1230WTG'), 166.0)
+        self.assertEqual(touch_minimums('TLP1230WTG'), (59, 13))
+
+    def test_a_landscape_300m_has_a_minimum(self):
+        """The 300M runs both ways up; a size-only spec at 480x320 had no row
+        to find, so no touch check at all."""
+        from gdl.spec import touch_minimums
+        self.assertEqual(touch_minimums((480, 320)), touch_minimums('TLP300M'))
+        self.assertEqual(touch_minimums((320, 480)), touch_minimums('TLP300M'))
+
+    def test_every_panel_has_a_diagonal_and_a_tier(self):
+        """Tiers are this toolkit's reading of Extron's templates, not an Extron
+        rule: >= 6.5in full layout, 4-6.5in a hub page, under 4in single-purpose
+        pages. Soft clients run on a screen their model does not define."""
+        from gdl.spec import diagonal, tier
+        self.assertAlmostEqual(diagonal('TLP1035T'), 10.13, places=2)
+        for model, want in (('TLP1035T', 'A'), ('TLP835M', 'A'), ('TLP725T', 'A'),
+                            ('TLP720T', 'A'), ('TLP1230WTG', 'A'), ('TLP525T', 'B'),
+                            ('TLP520M', 'B'), ('TLP535M', 'B'), ('TLP320M', 'C'),
+                            ('TLP300M', 'C'), ('VTLPEcp', None), ('TLI201', None)):
+            self.assertEqual(tier(model), want, model)
+
+    def test_a_panel_with_no_known_minimum_says_so(self):
+        """A custom canvas has no DPI to convert 9mm with. Passing quietly would
+        read as 'meets the touch minimum'."""
+        p = Panel({'name': 'T', 'size': [1000, 700], 'theme': {'text': '#FFFFFF'},
+                   'pages': [{'name': 'P', 'number': 1000, 'controls': [
+                       {'kind': 'button', 'rect': [0, 0, 20, 20], 'text': 'x'}]}]})
+        self.assertTrue(any('no touch minimum' in m for m in p.check()), p.check())
+
     def test_undersized_button_is_caught(self):
         p = _spec([{'kind': 'button', 'rect': [0, 0, 40, 40], 'text': 'tiny'}])
         self.assertTrue(any('touch target' in m for m in p.check()))

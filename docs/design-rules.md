@@ -34,7 +34,14 @@ Control Pro (ECP) is new**. A count check would have missed the swap.
 | 1280 × 800 | **TLC** Pro 1026M, TLP Pro 835C/M/T, TLP Pro 1025M/T, TLP Pro 1035M/T, TLP Pro 1220MG/TG, TLP Pro 1225MG/TG, ZRTP Pro 1025M/T |
 | 1366 × 768 | TLP Pro 1520MG/TG, TLP Pro 1525MG/TG |
 | 1920 × 1080 | TLI Pro 201, TLP Pro 1535M/T, TLP Pro 1720MG/TG, TLP Pro 1725MG/TG |
-| 1920 × 720 | TLP Pro 1230WTG — read from a built project, not from the probe |
+| 1920 × 720 | TLP Pro 1230WTG — 166 DPI, from Extron's TemplateInfoTable.config; the probe reads the base platform class |
+
+**Tiers** - this toolkit's reading of Extron's per-series templates, not an
+Extron rule. By physical diagonal (`gdl.spec.tier`): **A**, 6.5" and up, the
+full layout, resized; **B**, 4 to 6.5", a hub page with popups; **C**, under 4",
+single-purpose pages. The 520 and 720 are both 800 × 480, at 4.96" and 7.00":
+pixels alone cannot place a panel. Soft clients (ECP, the VTLP targets, TLI Pro)
+have no tier - their screen is the host's.
 
 Resolution not determined by the probe: TLP Pro 520M, 720C/M/T, 1020M/T and TLI
 Pro 101 (the class-name match failed and was not guessed at). The four "Extron

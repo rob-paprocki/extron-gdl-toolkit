@@ -41,13 +41,12 @@ opening GUI Designer.**
 
 ## Mine, in order
 
-1. **Fix the model table.** `MODELS_FULL['TLP1230WTG']` is 800x480 at 0 DPI -
-   the generic platform class's default - but Extron's own 1230W project builds
-   at 1920x720, its only supported resolution, so `retarget` to that model sets
-   the wrong screen size. And every entry holds one orientation where the
-   platforms support both (300M 320x480 and 480x320; 1035M 1280x800 and
-   800x1280), so a portrait 1035 or a landscape 300M cannot be targeted.
-   `layout.json`'s `Platform.SupportedResolutions` is the ground truth.
+1. **Both orientations as targets.** Every `MODELS_FULL` entry holds one
+   orientation where the platforms support both (300M 320x480 and 480x320;
+   1035M 1280x800 and 800x1280), so `retarget` cannot make a portrait 1035 or a
+   landscape 300M. The touch check already knows the 300M both ways
+   (`gdl.spec.ORIENTATIONS`). `layout.json`'s `Platform.SupportedResolutions` is
+   the ground truth.
 2. **Fonts that are declared but not embedded, or not authorable.** Most seeds
    declare Arial Black without embedding it; Turbulence does the same for Arial
    and Shockwave for `extron_shockwave.ttf` (`gdl/fonts/README.md` has which).
