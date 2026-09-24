@@ -984,6 +984,12 @@ class Panel:
         color it is not given, so a control with none kept its donor's outline:
         a panel with no `stroke` built with the seed's #6A6E89 edge while the
         preview drew none, found by putting the canvas beside the build.
+
+        A button with no fill is a TRANSPARENT one, for the same reason, state
+        by state: a state the spec gives no fill kept its donor state's, and
+        the Afterburn seed's On state is #37394E - so a kit image button's
+        Ready, On and Muted states built on a raised slab, found by
+        verify_built's image check.
         """
         fill = color(c.get('fill'), self.theme)
         stroke = color(c.get('stroke'), self.theme) or dict(TRANSPARENT)
@@ -993,6 +999,8 @@ class Panel:
         border = BORDERS.get(border, border)
         if border is None and fill is not None:
             border = BORDERS['rounded']
+        if fill is None and c.get('kind') == 'button':
+            fill = dict(TRANSPARENT)
         return fill, stroke, text_color, border
 
     def _state_rules(self):
@@ -1129,6 +1137,9 @@ class Panel:
             'image': self._image_op(c.get('image')),
             'image_layout': IMAGE_LAYOUT,
             'image_align': IMAGE_ALIGN,
+            # A slider's thumb, where the template draws it from its kit
+            # (Afterburn: sliderThumbImageField, in the secondary accent).
+            'thumb_image': self._image_op(c.get('thumb_image')) if kind == 'slider' else None,
         }
         if states:
             # Build renders the button from state 0, so that is what the
@@ -1357,8 +1368,8 @@ class Panel:
         for kind, items in (('page', self.pages), ('popup', self.popups)):
             for pg in items:
                 for c in pg['controls']:
-                    named = [c.get('image')] + [st.get('image') for st in c.get('states') or []
-                                                if isinstance(st, dict)]
+                    named = [c.get('image'), c.get('thumb_image')] + [
+                        st.get('image') for st in c.get('states') or [] if isinstance(st, dict)]
                     for want in sorted({n for n in named if n}):
                         if want not in self.images and want not in images:
                             out.append(f"{kind} {pg['name']!r} "

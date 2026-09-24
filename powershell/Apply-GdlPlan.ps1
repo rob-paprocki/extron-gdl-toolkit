@@ -83,6 +83,11 @@ function Add-GdlControls {
         Set-GdlFieldIfPresent $c 'buttonImageField' $null | Out-Null
         Set-GdlFieldIfPresent $c 'backgroundImageField' $null | Out-Null
         Set-GdlBorder $Project $c $op.border
+            # A slider's thumb is a kit image, not a color, and a clone keeps
+            # its donor's - Afterburn's scheme-1 periwinkle under every scheme.
+            if ($op.thumb_image) {
+                Set-GdlImage $c 'sliderThumbImageField' $imageRef $op.thumb_image.name
+            }
             Set-GdlFont $Project $c $op.font
             Set-GdlFieldIfPresent $c 'textAlignmentField' $op.alignment | Out-Null
 

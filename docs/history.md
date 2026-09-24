@@ -184,6 +184,20 @@ statement is in the live docs; this is the record that it changed.
   the seed's `#6A6E89` outline while the preview drew none. Found by putting a
   Claude Design canvas beside the panel built from it; no stroke is now written
   as transparent.
+- **A button state with no fill kept its donor state's** (until 2026-09-24),
+  as the stroke had. The Afterburn seed's On state is `#37394E`, so the first
+  build of the icon canvas put a raised slab behind every kit image after
+  state 0 - caught by the new check of each state's image against its
+  artwork. A button with no fill is now written transparent. The same build
+  showed a slider thumb still the seed's periwinkle under the Grape theme (it
+  is a kit image, and nothing set it) and a left-aligned clock built centered
+  (the component left `align` out when it was `left`, and the spec's default
+  is `center`).
+- **`Invoke-GdlMenu.ps1` waited a fixed 3 s for the File menu** (until
+  2026-09-24). The menu is expanded by a background PowerShell job that has to
+  start first; on a busy machine the item was not there yet, the build fell
+  back to SendKeys, and that could not take the foreground from a minimized
+  Remote Desktop session. It now polls for the item.
 - **A spec clock kept its donor's format** (until 2026-09-24). The format is
   `PBDateTime.patternField`, which nothing wrote, so a "date" and a "time"
   clock both built as the Afterburn seed's `September 28, 12:00 AM`. The

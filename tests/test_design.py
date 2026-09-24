@@ -225,6 +225,12 @@ class TestInChrome(unittest.TestCase):
                              ['756x756_laptop_nsel.png', '756x756_laptop_nsel.png',
                               '756x756_laptop-med-blue_sel.png'])
             self.assertIn('756x756_laptop-med-blue_sel.png', spec['images'])
+            # Its slider thumb is the scheme's secondary accent: gold.
+            slider = home['VolumeSlider']
+            self.assertEqual(slider['thumb_image'], '440x440_thumb-1-gold_sel.png')
+            self.assertIn(slider['thumb_image'], spec['images'])
+        # A left clock says so: the spec's own default is center.
+        self.assertEqual(home['Date']['align'], 'left')
         self.assertEqual(Panel(spec).check(), [])
 
     def test_a_stray_painted_element_is_refused(self):

@@ -243,10 +243,16 @@ class Canvas:
 
         colors = self._colors(profile, scheme)
         self.template = profile['template']
+        # A slider's thumb is a kit image in the scheme's secondary accent. The
+        # canvas draws it in that color; a clone would keep the donor's.
+        thumb = designsys.slider_thumb(profile, scheme)
         for item in pages + popups:
             item['controls'] = [c for c in (self._control(item['name'], raw, stems)
                                             for raw in item.pop('_raw')) if c]
             item.pop('_board')
+            for c in item['controls']:
+                if c['kind'] == 'slider' and thumb:
+                    c['thumb_image'] = thumb[0]
         used = sorted({v for item in pages + popups for v in _colors_in(item)})
         unknown = [u for u in used if u not in colors and not u.startswith('#')]
         for u in unknown:
@@ -271,8 +277,12 @@ class Canvas:
         used = {pg['background_image'] for pg in pages if pg.get('background_image')}
         buttons = {s['image'] for item in pages + popups for c in item['controls']
                    for s in c.get('states') or [] if isinstance(s, dict) and s.get('image')}
+        buttons |= {c['thumb_image'] for item in pages + popups for c in item['controls']
+                    if c.get('thumb_image')}
         if buttons:
             files.update(designsys.kit_index(profile)['paths'])
+            if thumb:
+                files[thumb[0]] = thumb[1]
             for n in sorted(buttons - set(files)):
                 problems.append(f'image {n!r} is not in the {profile["template"]} kit on this '
                                 f'machine (vendor/extron/Resources or the install)')

@@ -78,7 +78,7 @@ Claude Code publishes the result with the Artifact tool.
 | **Borders** | Only border resources the seed defines and the spec names (`BORDERS`), so a design cannot ask for a shape the panel cannot draw. |
 | **Button archetypes** | The looks the seed's own buttons use, per state. Afterburn's captioned ones are outlined (the most common), ghost and inverse, and an alert - a red fill with a white caption. Its image ones - source, list, icon and toggle, and outlined with an icon - are each drawn from the kit as the seed draws them: the image, the fill it takes when selected, and where the caption goes. Afterburn shows state with its icons, never fills a button with an accent, and never colors a caption red. |
 | **Icons** | The template's resource kit, indexed by name and look (`gdl.designsys.kit_index`) and embedded in the bundle downscaled, as WebP - about 1.8 MB for Afterburn's thousand. Extron's artwork, so only in the owner's private design system, with their agreement (`docs/history.md`). A state asks for an icon unselected or selected; selected is the scheme's primary accent for an icon drawn in the primary accents, its secondary for one drawn in the secondary ones (toggles, volume levels). |
-| **Sliders and levels** | As the seed's built ones draw: a thin rounded rail (Afterburn's is 10 px, filled `#BABCCE`) with a round thumb (50 px, the secondary accent). |
+| **Sliders and levels** | As the seed's built ones draw: a thin rounded rail (Afterburn's is 10 px, filled `#BABCCE`) with a round thumb (50 px, the secondary accent). The thumb is a kit image, not a color, so the translator gives each slider the scheme's (`gdl.designsys.slider_thumb`); a clone keeps its donor's. |
 | **Modals** | As Build draws them: the page beneath under black at alpha 166, whatever background the popup has. So a modal carries no background of its own. |
 | **Spacing and sizes** | The panel's touch minimum and spacing for its model (`touch_minimums`), and GUI Designer's 10 px nudge. |
 | **README** | The panel's rules and its function vocabulary: what Claude Design reads first. |
@@ -117,7 +117,7 @@ pixels. On the canvas they are `<x-import component-from-global-scope=
 | Label | `label` | text, `type` or `size`, `color`, `align`, `does` |
 | Panel | `panel` | `fill`, `stroke`, `border` |
 | Line | `line` | orientation, `color`, `thickness` |
-| Slider, Level | `slider`, `level` | `orientation`, `fill`, `track` and `thumb` sizes, `does` |
+| Slider, Level | `slider`, `level` | `orientation`, `fill`, `track` and `thumb` sizes, `does`; a slider also gets its scheme's `thumb_image` |
 | Clock | `datetime` | `format` (`time`, `date`, `datetime` or a .NET pattern), `color`, `size`, `align` |
 | PopupRegion | `popup_ref` | the popup `group` shown there |
 
@@ -168,22 +168,20 @@ that paints outside one. Chrome is the only new runtime need, and only here.
   pixel's slack either side. On the Afterburn 1035 seed's own image buttons
   that comes to under 8% against their own files and 50% or more against a
   wrong one; the gate is 25%.
-- **End to end**, on GUI Designer 1.28.0.7, before the kit icons: the huddle
-  brief drawn in Claude Design with *Extron Afterburn* (Home, Help and a Room
-  Off confirmation, with three-state sources and a four-state Display button,
-  all captioned) translated to a spec
+- **End to end**, on GUI Designer 1.28.0.7: the huddle brief drawn in Claude
+  Design with *Extron Afterburn* on its Grape theme (Home, Help and a Room Off
+  confirmation; three-state source buttons, a four-state Display toggle, a
+  two-state mute icon, help and power icons, End Call with its kit icon and
+  Shut Down as an alert) translated to a spec
   with 0 problems from `gdl.spec check` and `gdl.idmap check`, built on
-  `seeds/Afterburn 1035.gdl` with `New-GdlPanel.ps1 -IdMap`, and verified:
-  layout 108 controls, 0 problems; ID map 28 references, 0 problems.
-  `gdl.design compare` then put 1.3% of Home's pixels, 0.9% of Help's and 3.0%
-  of the Room Off confirmation's apart from the build - most of it bold
-  captions, which the renderer draws regular (`docs/ROADMAP.md`).
+  `seeds/Afterburn 1035.gdl` with `New-GdlPanel.ps1 -IdMap`, unattended, and
+  verified: layout 84 controls, 0 problems, the kit image on every state and
+  the slider's thumb included; ID map 26 references, 0 problems.
+  `gdl.design compare` then put 1.3% of Home's pixels, 0.6% of Help's and 1.9%
+  of the Room Off confirmation's apart from the build.
 
 ## 7. What is left
 
-- A GUI Designer build of the canvas with kit icons. Its spec checks clean
-  and the applier appends its images; the build and its verification have not
-  run.
 - Mach, Shockwave and Turbulence as design systems.
 - A Page's `does` reaches the spec as `_does` and goes no further: the ID map
   has nowhere to say what a page is for yet.

@@ -399,7 +399,9 @@
                alignItems: 'center', justifyContent: ALIGN[align] || 'flex-start',
                color: paint(L.colors, color), font: f.css },
       'data-gdl': gdl({ kind: 'datetime', name: props.name, color: color, size: f.size,
-                        bold: f.bold, align: align === 'left' ? null : align, format: fmt })
+                        // Always: the spec's own default is center, so a
+                        // left clock that said nothing built centered.
+                        bold: f.bold, align: align, format: fmt })
     }, sample);
   }
 

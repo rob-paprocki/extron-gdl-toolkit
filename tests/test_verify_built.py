@@ -222,6 +222,45 @@ class TestStateImage(unittest.TestCase):
         problems = self._check('one.png', None)
         self.assertTrue(any('no artwork' in p for p in problems), problems)
 
+    def test_a_slider_thumb_is_checked_off_its_own_asset(self):
+        """A clone keeps its donor's thumb image: the seed's periwinkle under
+        a scheme that asked for gold."""
+        op = {'fields': {'nameField': 'Volume'},
+              'thumb_image': {'name': 'two.png', 'file': self.files['two.png']}}
+        for built, bad in (('two.png', False), ('one.png', True)):
+            table = {'Home': {'Name': 'Home', 'Controls': [
+                {'ID': 1, 'Name': 'Volume', 'SliderIndicatorImageID': 7}]}}
+            problems, n = self.vb.check_thumbs([{'name': 'Home', 'controls': [op]}], table,
+                                               {7: self.art[built]}, 'page')
+            self.assertEqual((n, bool(problems)), (1, bad), problems)
+
+    def test_two_icons_on_one_ground_are_not_called_alike(self):
+        """Afterburn's mute: both speaker icons are mostly their #414459
+        ground, so their artwork has one plurality color and still differs."""
+        import io
+        from PIL import Image, ImageDraw
+        files, art = {}, {}
+        for i, (name, mark) in enumerate((('a.png', (20, 20, 40, 40)),
+                                          ('b.png', (60, 60, 80, 80))), 1):
+            im = Image.new('RGBA', (100, 100), (0, 0, 0, 0))
+            d = ImageDraw.Draw(im)
+            d.rectangle((0, 0, 99, 99), fill=(65, 68, 89, 255))
+            d.rectangle(mark, fill=(186, 188, 206, 255))
+            files[name] = os.path.join(self.dir, name)
+            im.save(files[name])
+            buf = io.BytesIO()
+            self.vb.fit_image(files[name], 64, 64).save(buf, 'PNG')
+            art[i] = buf.getvalue()
+        op = {'fields': {'nameField': 'Mute'}, 'states': [
+            {'name': 'Unmuted', 'fill': 0, 'image': {'name': 'a.png', 'file': files['a.png']}},
+            {'name': 'Muted', 'fill': 0, 'image': {'name': 'b.png', 'file': files['b.png']}}]}
+        table = {'Home': {'Name': 'Home', 'Controls': [
+            {'ID': 1, 'Name': 'Mute', 'Width': 64, 'Height': 64, 'States': [
+                {'Name': 'Unmuted', 'TLPImageID': 1}, {'Name': 'Muted', 'TLPImageID': 2}]}]}}
+        problems, _, _ = self.vb.check_states([{'name': 'Home', 'controls': [op]}], table, art,
+                                              'page')
+        self.assertEqual(problems, [])
+
 
 class TestEditStates(unittest.TestCase):
     """An edit writes each state by index, so each is verified by index -

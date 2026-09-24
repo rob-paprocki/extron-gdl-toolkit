@@ -302,6 +302,13 @@ A generator should assert all four agree rather than trusting the writes.
   reports the two as `Pattern` and `Text`. A cloned clock keeps its donor's
   pattern: a "date" clock cloned from the Afterburn 1035 seed built as
   `September 28, 12:00 AM`.
+- **A slider's thumb is an image, and its fill a color.** The Afterburn
+  seeds' volume slider has `sliderThumbTypeField` 2 and its thumb in
+  `sliderThumbImageField` - `440x440_thumb-1-periwinkle_sel.png`, the scheme-1
+  secondary accent, from the kit's `Sliders & Toggles` - and the filled part in
+  `sliderFillColorField`, `#BABCCE`. Build draws the thumb as its own asset,
+  `SliderIndicatorImageID`, so a clone under another scheme keeps the
+  periwinkle thumb until the image is set.
 - **A page's background image is a named `PBImageResource`**, referenced from
   `backgroundImageField` by a `PBResourceReferenceImage` and drawn by
   `backgroundImageLayoutField` over the page fill - the Afterburn seeds fit

@@ -167,26 +167,27 @@ def kit_look(stem):
     return stem, look or 'plain'
 
 
-def kit_root(p):
-    """The template's button kit on this machine, or None."""
+def kit_root(p, part='root'):
+    """A part of the template's kit on this machine, or None: `root` its
+    buttons, `thumbs` its slider thumbs."""
     from ..spec import RESOURCE_ROOTS
-    if not p.get('kit'):
+    if not (p.get('kit') or {}).get(part):
         return None
     for root in RESOURCE_ROOTS:
-        d = os.path.join(root, *p['kit']['root'].split('/'))
+        d = os.path.join(root, *p['kit'][part].split('/'))
         if os.path.isdir(d):
             return d
     return None
 
 
-def kit_index(p):
+def kit_index(p, part='root'):
     """{'files': {size: {icon: {look: file}}}, 'paths': {file: kit path}}.
 
     The paths are relative to the resource roots, as a spec's `images` takes
     them. Empty where the kit is not installed.
     """
     files, paths = {}, {}
-    root = kit_root(p)
+    root = kit_root(p, part)
     if not root:
         return {'files': files, 'paths': paths}
     for d, _, names in sorted(os.walk(root)):
@@ -200,13 +201,32 @@ def kit_index(p):
             # beside help-orange_sel would be one look).
             files.setdefault(size, {}).setdefault(icon, {}).setdefault(look, f)
             rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
-            paths.setdefault(f, p['kit']['root'] + '/' + rel)
+            paths.setdefault(f, p['kit'][part] + '/' + rel)
     return {'files': files, 'paths': paths}
 
 
 # kit root -> kit_art()'s result. A thousand WebP encodes take most of a
 # minute, and a build or a test run asks more than once.
 _ART = {}
+
+
+def slider_thumb(p, scheme):
+    """(file, kit path) of the slider thumb for an accent scheme, or None.
+
+    Afterburn's thumb is a kit image in the secondary accent
+    (`sliderThumbImageField`), not a color, so a clone keeps its donor's -
+    periwinkle, scheme 1 - under every other scheme.
+    """
+    family = ((p.get('defaults') or {}).get('slider') or {}).get('thumb_image')
+    if not family:
+        return None
+    index = kit_index(p, 'thumbs')
+    for icons in index['files'].values():
+        looks = icons.get(family) or {}
+        f = looks.get(p['kit']['secondary'].get(scheme))
+        if f:
+            return f, index['paths'][f]
+    return None
 
 
 def kit_art(p, index):

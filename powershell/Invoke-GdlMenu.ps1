@@ -27,7 +27,7 @@ param(
     [Parameter(Mandatory)][string]$Item,
     [string]$Menu = 'File',
     [string]$Window = 'GUI Designer*',
-    [int]$MenuWaitSeconds = 3
+    [int]$MenuWaitSeconds = 30
 )
 
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
@@ -68,15 +68,21 @@ $job = Start-Job -ArgumentList $Window, $Menu -ScriptBlock {
         }
     }
 }
-Start-Sleep -Seconds $MenuWaitSeconds
-
+# Poll for the item rather than sleep a fixed time. The job is a fresh
+# powershell.exe that has to start and load UIA before it can expand the menu,
+# and the items do not exist until it has: a fixed 3 s wait missed them on a
+# busy machine, and the menu opened a moment after this had given up.
 $target = $null
-foreach ($m in $gd.FindAll($TS::Descendants,
-        (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, $CT::MenuItem)))) {
-    if ($m.Current.Name -like "$Item*") { $target = $m; break }
+$deadline = (Get-Date).AddSeconds($MenuWaitSeconds)
+while (-not $target -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds 500
+    foreach ($m in $gd.FindAll($TS::Descendants,
+            (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, $CT::MenuItem)))) {
+        if ($m.Current.Name -like "$Item*") { $target = $m; break }
+    }
 }
 if (-not $target) {
-    Write-Output "no menu item matching '$Item' under '$Menu'"
+    Write-Output "no menu item matching '$Item' under '$Menu' within $MenuWaitSeconds s"
     Stop-Job $job -ErrorAction SilentlyContinue
     Remove-Job $job -Force -ErrorAction SilentlyContinue
     exit 2

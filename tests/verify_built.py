@@ -85,6 +85,13 @@ def _hex(t):
     return '#%02X%02X%02X' % t
 
 
+def _painted(argb):
+    """A planned fill that paints. The spec writes a button with no fill as a
+    transparent one (alpha 0), so the donor's does not bleed through - that is
+    no fill to find in the artwork."""
+    return argb is not None and (argb >> 24) & 0xFF > 0
+
+
 # Below this share of a control's opaque pixels, the planned fill is present but
 # not the field - a caption-heavy button, say. Reported, not failed: the color
 # did survive, and calling that a failure would make the gate untrustworthy.
@@ -99,7 +106,7 @@ def check_fills(plan_items, table, assets, kind):
         if got is None:
             continue
         by_name = _index(got)
-        planned = [(item, op) for op in item['controls'] if op.get('fill') is not None]
+        planned = [(item, op) for op in item['controls'] if _painted(op.get('fill'))]
         for _, op in planned:
             name = (op.get('fields') or {}).get('nameField')
             c = by_name.get(name)
@@ -231,7 +238,7 @@ def check_states(plan_items, table, assets, kind):
                     # A deliberately transparent Off state is a real idiom -
                     # Extron's own 'Lighting Preset' buttons are transparent
                     # when off - so this is only wrong if a fill was planned.
-                    if ws.get('fill') is not None:
+                    if _painted(ws.get('fill')):
                         problems.append(
                             f"{kind} {item['name']!r} {name!r} state "
                             f"{bs.get('Name') or i}: artwork {tid} is missing or "
@@ -240,7 +247,7 @@ def check_states(plan_items, table, assets, kind):
                     continue
                 top, top_share = max(shares.items(), key=lambda kv: kv[1])
                 dominant[i] = (tid, top)
-                if ws.get('fill') is None:
+                if not _painted(ws.get('fill')):
                     continue
                 target = _rgb(ws['fill'])
                 if top == target:
@@ -282,9 +289,10 @@ def check_states(plan_items, table, assets, kind):
             # The point of the whole feature. If the plan asked for two
             # different appearances and the panel cannot tell them apart, the
             # button is decorative.
-            planned_differ = len({(_hex(_rgb(w['fill'])) if w.get('fill') else None,
-                                   (w.get('image') or {}).get('name')) for w in want}) > 1
-            if planned_differ and len(dominant) > 1:
+            fills_differ = len({_hex(_rgb(w['fill'])) if _painted(w.get('fill')) else None
+                                for w in want}) > 1
+            images = [(w.get('image') or {}).get('name') for w in want]
+            if (fills_differ or len(set(images)) > 1) and len(dominant) > 1:
                 ids = {v[0] for v in dominant.values()}
                 colors = {v[1] for v in dominant.values()}
                 if len(ids) == 1:
@@ -292,12 +300,53 @@ def check_states(plan_items, table, assets, kind):
                         f"{kind} {item['name']!r} {name!r}: every state shares artwork "
                         f'{ids.pop()}, so Off and On are the same pixels - this button '
                         f'cannot show feedback')
-                elif len(colors) == 1:
+                # By plurality color only where there are no kit images: two
+                # speaker icons are both mostly their #414459 ground, and each
+                # state's image is checked against its own artwork above.
+                elif fills_differ and not any(images) and len(colors) == 1:
                     problems.append(
                         f"{kind} {item['name']!r} {name!r}: the states were planned in "
                         f'different colors but all built {_hex(colors.pop())} - no '
                         f'visible feedback')
     return problems, notes, checked
+
+
+def check_thumbs(plan_items, table, assets, kind):
+    """A slider's thumb must be the kit image the plan gave it.
+
+    It is an image (sliderThumbImageField), not a color, and a clone keeps its
+    donor's: an Afterburn slider built under the medium-blue scheme came back
+    with the seed's scheme-1 periwinkle thumb while every field that names a
+    color read right. Build draws the thumb as its own asset,
+    SliderIndicatorImageID, so that is what is compared.
+    """
+    problems, checked = [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            img = op.get('thumb_image')
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if not img or c is None:
+                continue
+            checked += 1
+            where = f"{kind} {item['name']!r} {name!r} thumb"
+            tid = c.get('SliderIndicatorImageID')
+            if tid is None or tid < 0 or tid not in assets:
+                problems.append(f'{where}: planned {img["name"]!r}, but Build drew no thumb '
+                                f'(SliderIndicatorImageID {tid})')
+                continue
+            if not img.get('file') or not os.path.exists(img['file']):
+                continue
+            w, h = Image.open(io.BytesIO(assets[tid])).size
+            off = image_mismatch(img['file'], assets[tid], w, h)
+            if off > IMAGE_OFF:
+                problems.append(f"{where}: {off:.0%} of it differs from the planned "
+                                f"{img['name']!r} - it is not that image")
+    return problems, checked
 
 
 def check_fonts(plan_items, table, kind):
@@ -872,6 +921,9 @@ def check(plan_path, built_path):
         problems += probs
         checked += n
         probs, notes, n = check_states(spec, table, assets, kind)
+        problems += probs
+        checked += n
+        probs, n = check_thumbs(spec, table, assets, kind)
         problems += probs
         checked += n
         for note in notes:

@@ -385,6 +385,7 @@
   },
   "kit": {
     "root": "Afterburn/Buttons/PNG",
+    "thumbs": "Afterburn/Sliders & Toggles",
     "note": "Extron's Afterburn resource kit. Each icon comes unselected (`off`) and selected in each accent's color; a family drawn in the primary accents (orange, light-blue, gold, med-blue) selects in the scheme's primary, one drawn in the secondary accents (periwinkle, light-green, gold) - toggles, volume levels - in its secondary.",
     "primary": {
       "orange": "orange",
@@ -435,7 +436,8 @@
       "track": 10,
       "thumb": 50,
       "value": "text-secondary",
-      "thumb_color": "accent-2"
+      "thumb_color": "accent-2",
+      "thumb_image": "thumb-1"
     },
     "level": {
       "fill": "raised",

@@ -818,6 +818,15 @@ class TestButtonImages(unittest.TestCase):
         self.assertEqual([s['border'] for s in op['states']], ['', ''])
         self.assertEqual((op['image_layout'], op['image_align']), (0, 3))
 
+    def test_a_state_with_no_fill_is_written_transparent(self):
+        """Skipped, it kept the donor state's fill: the Afterburn seed's On is
+        #37394E, and a kit image button's Ready built on a raised slab."""
+        op = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                                {'name': 'On', 'image': 'on.png'}]
+                        ).plan()['pages'][0]['controls'][0]
+        self.assertEqual([s['fill'] for s in op['states']], [0, 0])
+        self.assertEqual(self._spec().plan()['pages'][0]['controls'][0]['fill'], 0)
+
     def test_a_button_image_goes_on_every_state(self):
         op = self._spec(image='on.png').plan()['pages'][0]['controls'][0]
         self.assertEqual(op['image'], {'name': 'on.png', 'file': self.on})
@@ -826,6 +835,13 @@ class TestButtonImages(unittest.TestCase):
         p = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
                                {'name': 'On', 'image': 'on.png'}])
         self.assertFalse(any('identical' in m for m in p.check()), p.check())
+
+    def test_a_slider_carries_its_thumb_image(self):
+        c = {'kind': 'slider', 'name': 'Volume', 'rect': [0, 0, 54, 380], 'fill': '#37394E',
+             'thumb_image': 'on.png'}
+        p = _project([{'name': 'Home', 'controls': [c]}], images={'on.png': self.on})
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['thumb_image'], {'name': 'on.png', 'file': self.on})
 
     def test_none_needs_no_border_resource(self):
         self.assertEqual(self._spec().needs_borders(), set())
