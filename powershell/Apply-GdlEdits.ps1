@@ -57,10 +57,11 @@ function Get-GdlControlById {
 function Set-GdlStates {
     <#  Apply a change to every state of a control.
 
-        Via Get-GdlStates, which reads `mItems`. `PBStates.Count` is a LOGICAL
-        count and reports 1 for a two-state Off/On button, so this loop used to
-        rename state 0 and stop - leaving state 1 showing the old caption on
-        every button the control system switches. #>
+        Via Get-GdlStates, which reads `mItems`. `$states.Count` on a PBStates
+        reads 1 whatever the count - PBStates has no Count, and PowerShell
+        answers 1 for it - so this loop used to rename state 0 and stop, leaving
+        state 1 showing the old caption on every button the control system
+        switches. #>
     param($Proj, $Control, $Fields, $Colors, $FText)
     $states = Get-GdlStates $Control
     if (-not $states.Count) { return 0 }

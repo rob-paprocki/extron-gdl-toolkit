@@ -6,8 +6,9 @@ that: a rule that is true of that project and false in general.
 
   * "a popup's authored size is always the whole canvas" - true of Liberty Bank,
     false in Extron's Afterburn template, where 10 of 29 popups are 880x525.
-  * "PBStates.Count is the number of states" - it is a logical count and returns
-    1 for an ordinary two-state button, so every applier loop wrote state 0.
+  * "PBStates.Count is the number of states" - PBStates has no Count, and
+    PowerShell answers 1 for it on every button, so every applier loop wrote
+    state 0.
 
 Both were found by measuring rather than reasoning. This runs that measurement
 over the whole corpus, so the next one is found before it ships.
@@ -83,7 +84,7 @@ def facts(path):
     f['canvas'] = sizes.most_common(1)[0][0] if sizes else None
 
     state_counts, state_pairs, caption_in = (collections.Counter() for _ in range(3))
-    max_uid = 0
+    max_uid, flagged = 0, 0
     for g in pages:
         for c in g['controls']:
             if isinstance(c.get('id'), int):
@@ -91,12 +92,14 @@ def facts(path):
             if c['type'] != 'PBButton':
                 continue
             state_counts[c['n_states']] += 1
+            if c.get('state_flags'):
+                flagged += 1
             if c['n_states'] == 2:
                 state_pairs[tuple(str(s) for s in c['state_names'])] += 1
             if c['caption']:
                 caption_in[c['caption_in']] += 1
     f.update(state_counts=state_counts, state_pairs=state_pairs,
-             caption_in=caption_in, max_uid=max_uid)
+             caption_in=caption_in, max_uid=max_uid, state_flagged=flagged)
 
     names = collections.Counter(g['name'] for g in pages if g['name'])
     f['dup_names'] = {k: v for k, v in names.items() if v > 1}
@@ -125,6 +128,7 @@ def facts(path):
     f['fonts'] = sorted(p.font_resource_names())
 
     f['popup_mismatch'], f['default_state'], f['unrasterized'] = [], collections.Counter(), 0
+    f['press_bad'], f['press_total'] = 0, 0
     f['fonts_missing'], f['fonts_error'] = None, None
     if lay:
         authored = {g['name']: tuple(g['size']) for g in pages if g['kind'] == 'popup'}
@@ -138,6 +142,12 @@ def facts(path):
                     d = c.get('TLPDefaultStateID')
                     if d not in (None, 0):
                         f['default_state'][d] += 1
+                    st = c.get('States') or []
+                    if c.get('__type') == 'PBButton' and st:
+                        f['press_total'] += 1
+                        ps = c.get('TLPPressFeedbackStateID')
+                        if not (isinstance(ps, int) and 0 <= ps < len(st)):
+                            f['press_bad'] += 1
                     if c.get('TLPImageID') == -1:
                         f['unrasterized'] += 1
         declared = [r for r in lay.get('NonDefaultFontResources') or []
@@ -165,7 +175,8 @@ def inv_states_countable(F):
 
 
 def inv_off_on(F):
-    """gdl/spec.py names every generated button's states Off/On."""
+    """gdl/spec.py names a button's states Off/On when it asks for feedback
+    with `on` rather than naming its own `states`."""
     total = collections.Counter()
     for f in F:
         total.update(f['state_pairs'])
@@ -266,6 +277,22 @@ def inv_borders(F):
     return 'INFO', lines
 
 
+def inv_press_state(F):
+    """Every button shows one of its own states while held. The applier sets
+    this pointer rather than inheriting it, because a resized clone may no
+    longer have the state its donor's pointed at."""
+    total = sum(f['press_total'] for f in F)
+    bad = [f"{f['name']}: {f['press_bad']} of {f['press_total']}" for f in F if f['press_bad']]
+    return ('FAIL' if bad else 'PASS'), bad or [f'{total} built buttons, every one valid']
+
+
+def inv_state_flags(F):
+    """PBStates.statusField (PBState.StatusFlags) is 0 everywhere, so the
+    applier can grow and trim any donor button's states."""
+    bad = [f"{f['name']}: {f['state_flagged']} button(s)" for f in F if f['state_flagged']]
+    return ('FAIL' if bad else 'PASS'), bad
+
+
 def inv_unrasterized(F):
     """Controls Build left at TLPImageID -1. Some are legitimate (the Offline
     Window); a jump in this number is what a broken build looks like."""
@@ -278,6 +305,8 @@ INVARIANTS = [
     ('Off/On is the dominant state pair', inv_off_on),
     ('built popup size == authored popup size', inv_popup_size),
     ('TLPDefaultStateID is 0', inv_default_state),
+    ('a button presses to one of its own states', inv_press_state),
+    ('no button forbids adding or removing states', inv_state_flags),
     ('page and popup names unique per project', inv_unique_names),
     ('userId fits in UInt16', inv_userid),
     ('a button caption lives on its state', inv_caption),

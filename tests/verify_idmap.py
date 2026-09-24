@@ -78,6 +78,25 @@ def _hosts(m, pages, popups):
     return hosts
 
 
+def _states(c, at, x):
+    """A program sets a button's feedback by index, so the built states must be
+    the map's, in the map's order - and the state it shows while held, too."""
+    want = c.get('states')
+    if not want:
+        return []
+    where = f"{at['container']!r} {at['name']!r}"
+    built = [s.get('Name') for s in x.get('States') or []]
+    if built != want:
+        return [f'{where}: built states are {built}, the map numbers them {want}']
+    out = []
+    press = x.get('TLPPressFeedbackStateID')
+    if c.get('press') and (not isinstance(press, int) or not 0 <= press < len(built)
+                           or built[press] != c['press']):
+        got = built[press] if isinstance(press, int) and 0 <= press < len(built) else press
+        out.append(f"{where}: shows {got!r} while pressed, the map says {c['press']!r}")
+    return out
+
+
 def check(idmap_dir, built_path):
     """(problems, notes, checked) for an ID map directory and a built .gdl."""
     return check_layout(idmap_dir, json.loads(open_payload(built_path).read('layout.json')))
@@ -137,6 +156,7 @@ def check_layout(idmap_dir, j):
                 if x.get('__type') != TYPE[c['type']]:
                     problems.append(f"{at['container']!r} {at['name']!r}: built as "
                                     f"{x.get('__type')}, the map says {c['type']}")
+                problems += _states(c, at, x)
     for box in list(pages.values()) + list(popups.values()):
         for x in box.get('Controls') or []:
             if x.get('UserId') not in addressed or x.get('Type') == REF_TYPE:

@@ -62,8 +62,23 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    button and wrong for anything the control system drives.
 
    `Off`/`On` is what Extron's own templates use for **3475 of 3668** buttons
-   (94.7%). Multi-state idioms (`Muted`/`Level 1`/`Level 2`/`Level 3`) exist but
-   are domain-specific; do those with `gdl.edit` on a real project.
+   (94.7%). When a button shows more than that, name its `states` in order -
+   each a name, or a name with its own `fill`, `stroke`, `color`, `border` and
+   `text`, inheriting the rest from the button:
+
+   ```json
+   { "kind": "button", "name": "Display", "text": "Display Off", "fill": "raised",
+     "states": ["Off",
+                {"name": "Warming", "fill": "surface", "text": "Warming Up"},
+                {"name": "On", "fill": "accent", "text": "Display On"},
+                {"name": "Cooling", "fill": "surface", "text": "Cooling Down"}],
+     "press": "On" }
+   ```
+
+   The program sets a state by its index - its position here - and the ID map
+   lists them that way. `press` names the state shown while the button is held;
+   it defaults to the second. Two states that look identical are a problem, as
+   is a mirror (a shared `id`) with different states.
 
    **Say where the panel boots.** `"start_page": "<page name>"` - the first page
    when omitted - is written into the project, because otherwise the built panel
@@ -110,11 +125,11 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    control types, page-name collisions, **border resources**, **font families**,
    **canvas size** and **button states**. The font one is the sly one — a family
    the donor has no `PBFontResource` for does not fail the build, it ships the
-   panel in the donor's face. The states one is the same shape: a donor whose
-   buttons carry a single state cannot express Off/On, the applier cannot create
-   the missing one, and the panel builds looking correct and does nothing when
-   switched. Answer its complaints before building; that is the entire
-   point of the step.
+   panel in the donor's face. The states one is a guard: the applier gives each
+   button exactly the states the spec names by resizing the cloned donor's, and
+   refuses a donor button whose states are flagged against that - which no
+   project in the corpus does. Answer its complaints before building; that is
+   the entire point of the step.
 7. **Build it.** With GUI Designer installed this is one command, which re-runs steps 4
    and 6 and finishes with step 8:
 
@@ -199,8 +214,14 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 - **Clear what a clone inherits:** `<TLPImageID>` on a cloned page,
   `buttonImageField` on a cloned button.
 - **Buttons render from their states.** Set text and color on every state, and
-  reach them with `Get-GdlStates` — `PBStates.Count` reports 1 for an Off/On
-  button, so a loop to `.Count` writes state 0 only.
+  reach them with `Get-GdlStates` — `$states.Count` reads 1 whatever the count,
+  because `PBStates` has no `Count` and PowerShell answers 1 for it, so a loop
+  to `.Count` writes state 0 only. Resize with `Set-GdlStateCount`, never by
+  constructing a `PBState`.
+- **Wrap an `if` in `@()`, not the other way round.** `$x = if (...) { @($a) }`
+  unrolls a one-element array into a bare object, and a `PSCustomObject`'s
+  `.Count` is `$null` on 5.1 - which silently skipped resizing a one-state
+  button. Write `$x = @(if (...) { $a })`.
 - **"Field is null" is not "field is missing."** Clone a donor value from
   elsewhere in the project.
 - **Popups go through `Register-GdlPopupGroup`, checked by

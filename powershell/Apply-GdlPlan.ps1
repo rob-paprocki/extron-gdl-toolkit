@@ -92,14 +92,22 @@ function Add-GdlControls {
             # Index rather than foreach: PBStates is a collection object that
             # supports .Count and [i], but enumerating it yields the collection
             # itself, so foreach would silently write to the wrong thing.
-            # Get-GdlStates, NOT $states.Count - PBStates.Count is a logical
-            # count that reports 1 for a two-state button, so a loop bounded by
-            # it writes state 0 and stops. See the note on Get-GdlStates.
-            $states = Get-GdlStates $c
+            # Get-GdlStates, NOT $states.Count - PBStates has no Count, so
+            # PowerShell answers 1 for any button, and a loop bounded by it
+            # writes state 0 and stops. See the note on Get-GdlStates.
             $script:StateWrites = 0
             # @($null) is an array of ONE null, so a control with no `states` in
-            # the plan would otherwise look like it asked for one state.
-            $want = if ($null -ne $op.states) { @($op.states) } else { @() }
+            # the plan would otherwise look like it asked for one state. The @()
+            # goes OUTSIDE the `if`: an `if` unrolls its output, so a one-state
+            # list came back as a bare PSCustomObject, whose .Count is $null on
+            # PowerShell 5.1 - and a one-state button was silently not resized.
+            $want = @(if ($null -ne $op.states) { $op.states })
+            # The plan says how many states the button has, so the donor's count
+            # must not decide it - see Set-GdlStateCount.
+            if ($want.Count) {
+                Set-GdlStateCount $c $want.Count | Out-Null
+            }
+            $states = Get-GdlStates $c
             if ($states.Count) {
                 for ($si = 0; $si -lt $states.Count; $si++) {
                     $st = $states[$si]
@@ -120,9 +128,11 @@ function Add-GdlControls {
                     $bord   = if ($s -and $s.border) { $s.border } else { $op.border }
 
                     # The donor's own caption and icon ride along on a clone, so
-                    # a state that is not rewritten renders the donor's text.
+                    # a state that is not rewritten renders the donor's text. A
+                    # state may carry its own caption ('Ready' / 'Connected').
+                    $text = if ($s -and $null -ne $s.text) { $s.text } else { $op.fields.textField }
                     Set-GdlFieldIfPresent $st 'buttonImageField' $null | Out-Null
-                    Set-GdlFieldIfPresent $st 'textField' $op.fields.textField | Out-Null
+                    Set-GdlFieldIfPresent $st 'textField' $text | Out-Null
                     Set-GdlFieldIfPresent $st 'textAlignmentField' $op.alignment | Out-Null
                     # A state names itself - 'Off' / 'On' is what 94.7% of the
                     # buttons in Extron's own templates use, and the name is how
@@ -143,16 +153,14 @@ function Add-GdlControls {
                 }
             }
 
-            # Asking for feedback the donor cannot carry has to be loud. A new
-            # PBState would have to be CONSTRUCTED, and constructing Extron
-            # types headlessly is the thing this whole pipeline avoids - so the
-            # honest outcome is a report, not a button that silently ships with
-            # one state and no feedback.
-            if ($want.Count -gt $script:StateWrites) {
+            # Set-GdlStateCount reports why it could not resize; this catches a
+            # button that still ended up with the wrong number, in either
+            # direction - too few cannot show the feedback the spec asked for,
+            # too many ships states the spec never named.
+            if ($want.Count -and $want.Count -ne $script:StateWrites) {
                 Note-Problem ("'$($op.fields.nameField)': the spec asks for $($want.Count) states " +
-                    "but the donor control only has $($script:StateWrites) - the extra " +
-                    'state(s) were NOT created, so this button will not show feedback. ' +
-                    'Pick a donor whose buttons have Off/On states.')
+                    "but the button has $($script:StateWrites) - it will not show the " +
+                    'feedback the spec describes.')
             }
 
             if ($op.donor_type -eq 'PBButton' -and $script:StateWrites -eq 0) {

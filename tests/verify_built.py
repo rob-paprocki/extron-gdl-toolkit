@@ -147,6 +147,11 @@ def check_states(plan_items, table, assets, kind):
     or whose artwork has the same plurality color, are inert - and that is a
     problem regardless of what the model says, because the model is not what
     the panel draws.
+
+    The count must match exactly, in both directions. Too few and the feedback
+    the spec described cannot be shown; too many and the program can set a
+    state nobody drew - a clone keeps its donor's states unless the applier
+    resizes it.
     """
     problems, notes, checked = [], [], 0
     for item in plan_items:
@@ -162,13 +167,24 @@ def check_states(plan_items, table, assets, kind):
             c = by_name.get(name)
             if c is None:
                 continue
+            where = f"{kind} {item['name']!r} {name!r}"
             built = c.get('States') or []
-            if len(built) < len(want):
+            if len(built) != len(want):
+                extra = [s.get('Name') for s in built[len(want):]]
                 problems.append(
-                    f"{kind} {item['name']!r} {name!r}: planned {len(want)} states "
-                    f'but the built control has {len(built)} - the donor could not '
-                    f'supply them, so this button shows no feedback')
+                    f'{where}: planned {len(want)} states but the built control has '
+                    f'{len(built)}' + (f" - {', '.join(map(repr, extra))} the spec never "
+                                        f'named' if extra else ' - it cannot show the '
+                                        f'feedback the spec describes'))
                 continue
+
+            fields = op.get('fields') or {}
+            for key, label in (('<TLPPressFeedbackStateID>k__BackingField', 'press'),
+                               ('<TLPDefaultStateID>k__BackingField', 'default')):
+                bkey = key[1:key.index('>')]
+                if key in fields and c.get(bkey) != fields[key]:
+                    problems.append(f'{where}: {label} state is {c.get(bkey)}, planned '
+                                    f'{fields[key]}')
 
             dominant = {}
             for i, ws in enumerate(want):
@@ -176,8 +192,24 @@ def check_states(plan_items, table, assets, kind):
                 checked += 1
                 if ws.get('name') and bs.get('Name') != ws['name']:
                     problems.append(
-                        f"{kind} {item['name']!r} {name!r} state {i}: named "
-                        f"{bs.get('Name')!r}, planned {ws['name']!r}")
+                        f"{where} state {i}: named {bs.get('Name')!r}, planned {ws['name']!r}")
+                if 'text' in ws and not c.get('FlattenText') and \
+                        (bs.get('Text') or '') != ws['text']:
+                    problems.append(f"{where} state {bs.get('Name') or i!r}: caption "
+                                    f"{bs.get('Text')!r}, planned {ws['text']!r}")
+                # The caption is drawn live, so its color is in the model, not
+                # the artwork - read it there.
+                tc = bs.get('TextColor')
+                if ws.get('text_color') is not None:
+                    if not isinstance(tc, dict):
+                        problems.append(f"{where} state {bs.get('Name') or i!r}: planned text "
+                                        f"color {_hex(_rgb(ws['text_color']))}, but the built "
+                                        f'state carries none')
+                    elif (tc.get('R'), tc.get('G'), tc.get('B')) != _rgb(ws['text_color']):
+                        problems.append(
+                            f"{where} state {bs.get('Name') or i!r}: text color "
+                            f"{_hex((tc.get('R'), tc.get('G'), tc.get('B')))}, planned "
+                            f"{_hex(_rgb(ws['text_color']))}")
                 tid = bs.get('TLPImageID')
                 if tid is None or tid < 0:
                     problems.append(
@@ -216,6 +248,27 @@ def check_states(plan_items, table, assets, kind):
                         f"{bs.get('Name') or i}: planned fill {_hex(target)} is "
                         f'{mine:.0%} of the built artwork; it is mostly '
                         f'{_hex(top)} ({top_share:.0%})')
+
+            # Pairwise, for any number of states: Build rasterizes each state
+            # and dedupes identical images to one TLPImageID, so two states the
+            # plan drew differently but that built as one image are one state to
+            # the eye. Only fill, stroke and border are in the artwork. A
+            # caption and its color are drawn live from layout.json - the
+            # applier clears flattenText - so 'Warming Up' and 'Cooling Down' on
+            # one fill share an image and are still two states; the caption and
+            # text-color checks above cover them.
+            def look(w):
+                return tuple(str(w.get(k)) for k in ('fill', 'stroke', 'border'))
+            for i in range(len(want)):
+                for j in range(i + 1, len(want)):
+                    if look(want[i]) == look(want[j]):
+                        continue
+                    ti, tj = built[i].get('TLPImageID'), built[j].get('TLPImageID')
+                    if ti is not None and ti >= 0 and ti == tj:
+                        problems.append(
+                            f"{where}: states {want[i].get('name')!r} and "
+                            f"{want[j].get('name')!r} were planned differently but built "
+                            f'as the same artwork {ti} - the panel cannot tell them apart')
 
             # The point of the whole feature. If the plan asked for two
             # different appearances and the panel cannot tell them apart, the

@@ -4,7 +4,7 @@
   "size": [1280, 800],
   "start_page": "Huddle Home",
 
-  "_brief": "The huddle brief of examples/huddle.json, plus what it DOES, as a verbal overview: 'The three sources route to the display, and the panel shows which one is live. Volume steps while you hold it, and Mute shows whether it is muted. The top bar shows whether a call is up. End Call ends it. Room Off asks first. A Help page explains how to share. Ten minutes untouched and it goes back to the start.' Page flips are `nav`, which is checked; everything else is `does`, in words, for the programmer. `python -m gdl.idmap write` turns it into the ID map.",
+  "_brief": "The huddle brief of examples/huddle.json, plus what it DOES, as a verbal overview: 'The three sources route to the display, and the panel shows which one is live. Volume steps while you hold it, and Mute shows whether it is muted. The top bar shows whether a call is up. End Call ends it. Room Off asks first. A Help page explains how to share. Ten minutes untouched and it goes back to the start. Each source shows No Signal, Ready or Live; the Display button shows Off, Warming, On or Cooling.' Page flips are `nav`, which is checked; everything else is `does`, in words, for the programmer. Buttons with more than Off/On name their `states`. `python -m gdl.idmap write` turns it into the ID map.",
   "_seed": "Clean-room: built against seeds/Afterburn 1035.gdl, so Open Sans rather than the client fixture's retail face.",
 
   "theme": {
@@ -46,13 +46,19 @@
             "rect": [40, 196, 1200, 272],
             "cols": 3, "gap": 24,
             "kind": "button", "fill": "raised", "border": "afterburn",
+            "states": [
+              { "name": "No Signal", "fill": "surface", "color": "muted" },
+              "Ready",
+              { "name": "Live", "fill": "accent" }
+            ],
+            "press": "Live",
             "items": [
               { "name": "Laptop", "text": "Laptop",
-                "does": "Routes the laptop input to the display; On while it is the live source." },
+                "does": "Routes the laptop input to the display. No Signal until a laptop is connected, Ready once one is, Live while it is on the display." },
               { "name": "Wireless", "text": "Wireless",
-                "does": "Routes wireless presentation to the display; On while it is the live source." },
+                "does": "Routes wireless presentation to the display. No Signal until someone is sharing, Ready once they are, Live while it is on the display." },
               { "name": "RoomPC", "text": "Room PC",
-                "does": "Routes the room PC to the display; On while it is the live source." }
+                "does": "Routes the room PC to the display. No Signal while the PC is asleep, Ready when it is awake, Live while it is on the display." }
             ]
           }
         },
@@ -88,6 +94,16 @@
         { "kind": "label", "name": "Status", "rect": [40, 736, 800, 64],
           "text": "Ready", "align": "left", "size": 16, "color": "muted",
           "does": "Shows room status messages." },
+        { "kind": "button", "name": "Display", "rect": [860, 740, 180, 56],
+          "text": "Display Off", "fill": "raised", "border": "afterburn", "size": 16,
+          "states": [
+            "Off",
+            { "name": "Warming", "fill": "surface", "color": "muted", "text": "Warming Up" },
+            { "name": "On", "fill": "accent", "text": "Display On" },
+            { "name": "Cooling", "fill": "surface", "color": "muted", "text": "Cooling Down" }
+          ],
+          "press": "On",
+          "does": "Toggles display power. Shows the display's power state: Off, Warming, On or Cooling." },
         { "kind": "button", "name": "RoomOff", "rect": [1060, 740, 180, 56],
           "text": "Room Off", "fill": "raised", "border": "afterburn", "size": 16,
           "nav": "Confirm Room Off" }

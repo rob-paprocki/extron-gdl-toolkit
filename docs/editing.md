@@ -48,6 +48,9 @@ A selector that compared the control's `textField` matched **nothing** on a real
 project. `Project.caption_at()` returns both the caption and where it lives, and
 `gdl.edit` writes the new one back to the same place.
 
+`rename` and `restyle` treat a button's states as one - see `docs/ROADMAP.md`
+*Editing a multi-state button*.
+
 Formatted text is the awkward one. It carries its layout inline —
 `"\t\tDevice\r\n\t\tComms"` — and it is **flattened into the artwork**, so
 `layout.json` reports it as `''` both before and after an edit. Measured:
