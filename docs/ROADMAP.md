@@ -69,11 +69,13 @@ opening GUI Designer.**
    and per-page popup references is where the next class of bug lives. With `nav`
    the page flow is part of the spec, and `verify_idmap.py` checks it against
    the build.
-5. **Claude Design as the front end: the other three templates.** Afterburn is
-   a design system, and a canvas drawn with it translates, builds and verifies
-   end to end, with a side-by-side of each artboard and the built panel for
-   sign-off. Mach, Shockwave and Turbulence need their profiles, each checked
-   against its seed's built artwork. `docs/claude-design.md` §7.
+5. **Claude Design as the front end: every panel, then the other three
+   templates.** Afterburn is a design system, and a canvas drawn with it
+   translates, builds and verifies end to end, with a side-by-side of each
+   artboard and the built panel for sign-off - for the 1280×800 TLP Pro 1025/1035
+   only. Next, one canvas building for every panel a room has, each sized for its
+   physical screen; then Mach, Shockwave and Turbulence on the same footing.
+   Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
 6. **Icon-font glyphs in the spec vocabulary.** Kit images are in it - a
    button's `image`, on itself or per state, which is how the Claude Design
    systems draw icons - but the other proven route, font glyphs (~339 icons, no

@@ -263,6 +263,7 @@ that paints outside one. Chrome is the only new runtime need, and only here.
 
 ## 7. What is left
 
-- Mach, Shockwave and Turbulence as design systems.
+- Every panel a room has from one canvas, then Mach, Shockwave and Turbulence
+  as design systems: `docs/ROADMAP.md` item 5.
 - A Page's `does` reaches the spec as `_does` and goes no further: the ID map
   has nowhere to say what a page is for yet.

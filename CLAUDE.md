@@ -207,6 +207,7 @@ were updated. So:
   | Extron's design standards | `docs/design-rules.md` |
   | Fonts: recovery and licensing | `gdl/fonts/README.md` |
   | What is left to do, and known gaps | `docs/ROADMAP.md` |
+  | The approved design for work in progress | `docs/superpowers/specs/` |
   | Retired setups and revised beliefs | `docs/history.md` |
 
 - **No counts that drift in prose.** Don't write how many tests or scripts
