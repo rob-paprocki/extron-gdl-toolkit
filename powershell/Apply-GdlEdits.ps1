@@ -71,7 +71,8 @@ function Set-GdlStateOps {
     foreach ($so in @($StateOps)) {
         if ($null -eq $so) { continue }
         $i = [int]$so.index
-        if ($null -eq $states -or $i -ge $states.Count -or $null -eq $states[$i]) {
+        # A negative index would wrap to the end of the list in PowerShell.
+        if ($null -eq $states -or $i -lt 0 -or $i -ge $states.Count -or $null -eq $states[$i]) {
             Note-Problem "'$Why': the control has no state $i"
             continue
         }
@@ -231,10 +232,11 @@ foreach ($op in $spec.controls) {
         continue
     }
     try {
-        if ($null -ne $op.state_count) {
-            # The `states` op: grow by cloning the last state, trim from the
-            # end, renumber - the same code the spec applier uses.
-            if (-not (Set-GdlStateCount $c ([int]$op.state_count))) { continue }
+        if ($null -ne $op.state_order) {
+            # The `states` op: rebuild the list from the button's own states,
+            # each new one taken from the existing state gdl.edit matched it
+            # to by name.
+            if (-not (Set-GdlStateOrder $c $op.state_order)) { continue }
         }
         if ($op.fields) {
             foreach ($f in $op.fields.PSObject.Properties) {

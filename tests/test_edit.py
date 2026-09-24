@@ -377,13 +377,46 @@ class TestStatesOp(unittest.TestCase):
         self.assertEqual(exp[3]['fill'], '#FF2E3040')
         self.assertEqual(exp[0]['text'], 'Display Off')
 
-    def test_the_press_state_is_kept_or_named(self):
+    def test_the_press_state_follows_its_state_or_is_named(self):
+        # Display pressed to On (1); with Warming inserted, On is 2.
         op, _ = self._op(self.FOUR)
-        self.assertEqual(op['fields'][PRESS], 1)
-        op, _ = self._op(self.FOUR, press='On')
         self.assertEqual(op['fields'][PRESS], 2)
+        op, _ = self._op(self.FOUR, press='Cooling')
+        self.assertEqual(op['fields'][PRESS], 3)
         op, _ = self._op(['Only'])
         self.assertEqual(op['fields'][PRESS], 0)
+
+    def test_a_state_keeps_its_identity_when_one_is_inserted_before_it(self):
+        """The review's repro. Matched by position, inserting Middle before
+        On left the press pointer on Middle, gave On the look of Extra, and
+        every check passed - the plan itself was wrong."""
+        extra = {'A': 255, 'R': 0x5A, 'G': 0x5C, 'B': 0x70}
+        preset = _button('Display', [_st('Off', 'P', GREY), _st('On', 'P', BLUE),
+                                     _st('Extra', 'P', extra)])
+        op, problems = self._op(['Off', 'Middle', 'On'], preset)
+        self.assertEqual(problems, [])
+        self.assertEqual(op['state_order'], [0, 2, 1])
+        self.assertEqual(op['fields'][PRESS], 2)
+        self.assertEqual(op['expect_states'][2]['fill'], '#FF3D8BFD')
+
+    def test_a_new_name_renames_the_state_in_its_place(self):
+        op, _ = self._op(['Off', {'name': 'Live', 'fill': '#2266EE'}])
+        self.assertEqual(op['state_order'], [0, 1])
+        self.assertEqual(op['fields'][PRESS], 1)
+
+    def test_states_can_be_reordered(self):
+        op, _ = self._op(['On', 'Off'])
+        self.assertEqual(op['state_order'], [1, 0])
+        self.assertEqual(op['fields'][PRESS], 0)
+        self.assertEqual(op['expect_states'][0]['text'], 'Display On')
+
+    def test_a_dropped_press_state_goes_to_on(self):
+        """A camera preset pressed to On_1; trimmed to Off/On it presses On."""
+        preset = _button('Display', [_st('Off', '1', GREY), _st('On', '1', BLUE),
+                                     _st('On_1', '1', NAVY)], press=2)
+        op, _ = self._op(['Off', 'On'], preset)
+        self.assertEqual(op['state_order'], [0, 1])
+        self.assertEqual(op['fields'][PRESS], 1)
 
     def test_a_new_state_that_copies_the_last_unchanged_is_an_error(self):
         _, problems = self._op(['Off', 'On', 'Standby'])

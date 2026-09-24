@@ -224,8 +224,8 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 - **Buttons render from their states.** Set text and color on every state, and
   reach them with `Get-GdlStates` — `$states.Count` reads 1 whatever the count,
   because `PBStates` has no `Count` and PowerShell answers 1 for it, so a loop
-  to `.Count` writes state 0 only. Resize with `Set-GdlStateCount`, never by
-  constructing a `PBState`.
+  to `.Count` writes state 0 only. Resize with `Set-GdlStateCount`, or reorder
+  with `Set-GdlStateOrder`, never by constructing a `PBState`.
 - **Wrap an `if` in `@()`, not the other way round.** `$x = if (...) { @($a) }`
   unrolls a one-element array into a bare object, and a `PSCustomObject`'s
   `.Count` is `$null` on 5.1 - which silently skipped resizing a one-state

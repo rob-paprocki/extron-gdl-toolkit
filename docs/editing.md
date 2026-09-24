@@ -13,7 +13,7 @@ checked, but has not been through a build.
 |---|---|---|
 | `rename` | captions, state by state, wherever they actually live | 12 controls built: 9 plain captions correct on both states; 3 formatted ones are in the artwork (below) |
 | `restyle` | remap colors on each control and each state, text color included | 5 sliders built, 5/5 off the artwork; a fill held only on a state and a text color, built and correct |
-| `states` | give a button the states it should have: add, remove or rename them, and set each one's look | grown 2 to 3 and trimmed 3 to 2, built, every state correct |
+| `states` | give a button the states it should have: add, remove, rename or reorder them, and set each one's look | grown 2 to 3, trimmed 3 to 2, and a state inserted before On; built, every state and press state correct |
 | `renumber` | reassign addressable `userId`s in bands | planned + checked |
 | `retarget` | move to another panel model, optionally rescaling | **654/654 on the fixture; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved** |
 
@@ -88,15 +88,21 @@ which is also the number the control program sets.
     "press": "On" }
   ```
 
-  State *i* keeps the look of the button's existing state *i*. A new state
-  starts as a copy of the last one, which is how the applier grows the list,
-  and whatever it names is written over that. A state takes `name`, `text`,
-  `fill`, `stroke` and `color` (the text color). Extra states are dropped from
-  the end. The press state stays where it was, unless `press` names another or
-  the state it pointed at is gone. A three-state camera preset whose press
-  state was `On_1`, trimmed to Off/On, presses to On. `check` refuses a copy
-  that would look exactly like the state it was copied from: the program could
-  set either, and the panel would show no difference. Every op is planned
+  States are matched **by name**. A name the button already has keeps that
+  state - its look, caption and press role - wherever it moves in the list.
+  Any other name renames the state at its position if nothing else claimed
+  it, and otherwise starts as a copy of the last state. Existing states nobody
+  names are dropped. Whatever a state sets is written over what it starts
+  from: `name`, `text`, `fill`, `stroke` and `color` (the text color).
+
+  The press state follows its state, unless `press` names another. Inserting
+  Recalling before On on a camera preset leaves it pressing On, now at index 2.
+  Matched by position instead, it pressed Recalling and every check passed,
+  because the plan itself was wrong. If the press state was dropped, it goes
+  to On: a preset pressing `On_1`, trimmed to Off/On, presses On.
+
+  `check` refuses a copy that would look exactly like the state it was copied
+  from: the program could set either, and the panel would show no difference. Every op is planned
   against the file on disk, so `check` also refuses a `states` op on a button
   that another op changes the states of. Put that caption or color in the
   `states` op instead.

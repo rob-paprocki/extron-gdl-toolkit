@@ -309,13 +309,19 @@ class Edits:
         self._unused_colors += [k for k in table if k not in seen]
 
     def _states(self, e, ops, problems):
-        """Give a button exactly the states `states` lists.
+        """Give a button exactly the states `states` lists, matched by NAME.
 
-        State i keeps the look of the button's existing state i, and a new
-        state starts as a copy of the last one - which is how the applier
-        grows the list (`Set-GdlStateCount`). Anything a state names is
-        written over that. The press state is kept unless `press` names
-        another or the one it points at is gone.
+        A name the button already has keeps that state - its look, caption
+        and press role - wherever it moves in the list. Any other name
+        renames the state at its position if nothing else claimed it, and
+        otherwise starts as a copy of the last state. Existing states nobody
+        claimed are dropped. Anything a state names is written over what it
+        starts from.
+
+        By name because a position is not an identity: matched by index,
+        inserting 'Middle' before 'On' left the press pointer on index 1 -
+        now Middle - and gave 'On' the look of whatever used to be third, and
+        every check still passed, because the plan itself was wrong.
         """
         want = e.get('states')
         if not isinstance(want, list) or not want:
@@ -340,14 +346,15 @@ class Edits:
             if not have:
                 problems.append(f'{where} has no state to copy a new one from')
                 continue
-            if c.get('state_flags') and len(specs) != len(have):
+            order, kept = self._state_sources(names, [s['name'] for s in have])
+            if c.get('state_flags') and order != list(range(len(have))):
                 problems.append(f"{where}: its states carry status flags "
-                                f"{c['state_flags']}, which may forbid adding or "
-                                f'removing them; the applier will not resize it')
+                                f"{c['state_flags']}, which may forbid adding, removing "
+                                f'or reordering them; the applier will not change them')
                 continue
             per, looks = [], []
             for i, s in enumerate(specs):
-                src = have[min(i, len(have) - 1)]
+                src = have[order[i]]
                 entry = {'index': i, 'fields': {'nameField': s['name']}}
                 colors = {field: _norm(s[k]) for field, k in
                           (('borderFillColorField', 'fill'), ('borderColorField', 'stroke'),
@@ -370,7 +377,7 @@ class Edits:
                     # Which existing state it starts as. Two states that start
                     # as the same one share everything this cannot see - icon,
                     # border, image - so only they can be compared exactly.
-                    'from': min(i, len(have) - 1),
+                    'from': order[i],
                 })
             for i, a in enumerate(looks):
                 for b in looks[i + 1:]:
@@ -380,26 +387,68 @@ class Edits:
                             f"{where}: {a['name']!r} and {b['name']!r} would look "
                             f'identical - a new state is a copy of the last one, so '
                             f'give it its own fill, stroke, color or text')
-            press = c.get('press')
-            if 'press' in e:
-                press = names.index(e['press'])
-            elif press is None or not 0 <= press < len(specs):
-                press = 1 if len(specs) > 1 else 0
-            default = c.get('default_state')
-            if default is None or not 0 <= default < len(specs):
-                default = 0
             ops.append({
                 'page': pg['id'], 'control': c['obj_id'],
                 'why': f"states {c['name'] or c['type']}: {', '.join(names)}",
                 'was': [s['name'] for s in have],
                 'state_count': len(specs),
-                'fields': {PRESS_FIELD: press, DEFAULT_FIELD: default},
+                # For each new state, the existing state it is taken from; a
+                # source used twice is copied. The applier rebuilds the list
+                # in this order.
+                'state_order': order,
+                'fields': {PRESS_FIELD: self._follow(c.get('press'), kept, names,
+                                                     e.get('press')),
+                           DEFAULT_FIELD: self._follow(c.get('default_state'), kept,
+                                                       names, None, fallback=0)},
                 'per_state': per,
                 # What every state should look like once built, for
                 # verify_built - including the ones this op does not write.
                 'expect_states': [{k: v for k, v in lk.items() if k != 'from'}
                                   for lk in looks],
             })
+
+    @staticmethod
+    def _state_sources(names, old):
+        """(order, kept): for each wanted state, the index of the existing
+        state it is taken from - see _states for the rule - and, for each
+        existing state that survives as itself, its new position.
+
+        `kept` is what a pointer follows. A copy of a state is not that state:
+        Warming, copied from On and listed before it, must not take On's
+        press role.
+        """
+        claimed = {n: old.index(n) for n in names if n in old}
+        taken = set(claimed.values())
+        order, kept = [], {}
+        for i, n in enumerate(names):
+            if n in claimed:
+                order.append(claimed[n])
+                kept[claimed[n]] = i
+            elif i < len(old) and i not in taken:
+                order.append(i)                 # renamed in place
+                taken.add(i)
+                kept[i] = i
+            else:
+                order.append(len(old) - 1)      # a copy of the last
+        return order, kept
+
+    @staticmethod
+    def _follow(pointer, kept, names, named, fallback=None):
+        """Where a state pointer lands after the states are rebuilt.
+
+        It follows the state it pointed at. If that state was dropped, it goes
+        to 'On' - the press state of all 7518 Off/On buttons in the corpus -
+        or to the second state, or the first.
+        """
+        if named is not None:
+            return names.index(named)
+        if pointer is not None and pointer in kept:
+            return kept[pointer]
+        if fallback is not None:
+            return fallback
+        if 'On' in names:
+            return names.index('On')
+        return 1 if len(names) > 1 else 0
 
     @staticmethod
     def _state_spec_problems(specs, press):
