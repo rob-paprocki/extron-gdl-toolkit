@@ -1,12 +1,13 @@
 {
   "_source": [
-    "Colors: Extron's Afterburn theme guide, transcribed in docs/design-rules.md section 4; `alert` from the seed's own buttons.",
+    "Colors: Extron's Afterburn theme guide, transcribed in docs/design-rules.md section 4; `alert` from the seed's own record icon.",
     "Type, borders, button archetypes and sizes: surveyed off seeds/Afterburn 1035.gdl (its fonts, border resources and every button's per-state fill, stroke and text color).",
     "Point sizes draw at 1.375 px per point, GUI Designer's 99 DPI (gdl/compose.py PT).",
     "Slider and level: the seed's built sliders (Audio Settings) - a 10 px rail (SliderTrackWidth) in a 50 x 395 control, the empty rail the control's fill (#242634, TLPMinValueImageID), the filled rail #BABCCE (TLPMaxValueImageID), a 50 px #626ACF thumb (SliderIndicatorImageID) - matching the guide's track, slider-fill and secondary-accent rows.",
     "Panel: the seed's filled container - raised fill, #6A6E89 stroke, Afterburn - 10 Radius 2 Thick - and the guide's 'shapes #6A6E89' row.",
     "Themes: the guide's four background images and Extron's recommended accent scheme for each (Default + 1, Anthracite + 3, Blue Slate + 2, Grape + 4; guide pp.8-9), from the resource kit's Backgrounds/6400x4000/TLP 1025 & 1220 files - the variant the seed's own 6400x4000_bg1.png was made from (its recorded filename and byte size match). The image is the raised card that elevates the page's main area, transparent around it so the page color shows.",
-    "Layout: the seed's own pages (Start, Main Select Source, Main VC, Main SD), rendered from their built artwork: every page puts its task in the background image's squircle and the same few controls in the rails either side."
+    "Layout: the seed's own pages (Start, Main Select Source, Main VC, Main SD), rendered from their built artwork: every page puts its task in the background image's squircle and the same few controls in the rails either side.",
+    "Image buttons and the kit: every image button in the Afterburn 1035 and 1535 seeds - the kit file on each state (buttonImageField), drawn Fill and MiddleCenter, with no border resource; the fill, caption and indent each archetype uses; and the kit's own naming (Resources/Afterburn/Buttons/PNG: <size>_<icon>_nsel for unselected, <size>_<icon>-<accent>_sel per accent). Icon anatomy: the guide's p.4."
   ],
   "template": "Afterburn",
   "namespace": "ExtronAfterburn",
@@ -101,7 +102,7 @@
         "gold": "#D6B961",
         "medium-blue": "#4695D6"
       },
-      "usage": "Selection lines and selected icons, and the caption of a button in its active state - the seed's own buttons turn their caption this color when On. Not a fill: Afterburn never fills a button with it. One scheme per project."
+      "usage": "Selection lines and selected icons - the kit's `_sel` images draw both, in the scheme's accent - and the caption of a selected text-only button (a numbered preset, a search result), as the seed's are. Not a fill: Afterburn never fills a button with it. One scheme per project."
     },
     {
       "name": "accent-2",
@@ -116,7 +117,7 @@
     {
       "name": "alert",
       "value": "#D32929",
-      "usage": "A caption that warns: the seed's own buttons turn their caption this red when On, for an active mute or a fault. From the seed, not the guide; not a fill."
+      "usage": "An alert: a red fill with a white caption, for a warning or a destructive action. Never a caption color - Afterburn shows state with icons in the accent colors, not with colored text. The red is the seed's own record icon's."
     },
     {
       "name": "scrim",
@@ -204,11 +205,23 @@
       "radius": -1,
       "thickness": 3,
       "usage": "A circle or ellipse."
+    },
+    "afterburn-ellipse": {
+      "resource": "Afterburn - Elipse 0 Thick",
+      "radius": -1,
+      "thickness": 0,
+      "usage": "An icon button's pressed fill: a circle behind the icon (guide Fig. 7)."
+    },
+    "none": {
+      "resource": "",
+      "radius": 0,
+      "thickness": 0,
+      "usage": "No border at all: a kit image button, whose image draws the whole button."
     }
   },
   "buttons": {
     "outlined": {
-      "usage": "The default button: a raised fill and a text-secondary border, pressed fill and a white border when On. The seed's most common look.",
+      "usage": "The default button: a raised fill and a text-secondary border, pressed fill and a white border when On. The seed's most common look. With an `icon` the icon sits at its left and the caption after it (Swap, Contacts, End Call); with an icon and no caption, the icon is centered (a keyboard key).",
       "look": {
         "fill": "raised",
         "stroke": "text-secondary",
@@ -224,7 +237,13 @@
           "fill": "pressed",
           "stroke": "text"
         }
-      ]
+      ],
+      "with_icon": {
+        "kit": "1059x440",
+        "bare": "440x440",
+        "caption": "indent",
+        "indent": 12
+      }
     },
     "ghost": {
       "usage": "No fill until pressed or selected: list rows, tabs, icon buttons.",
@@ -258,6 +277,133 @@
           "fill": "raised"
         }
       ]
+    },
+    "source": {
+      "usage": "A horizontal list button: a large icon with its label under it, for choosing a source or a camera. Selected, it takes the pressed fill and the kit draws the icon in the accent with an accent line along the bottom. The seed's are 110x110 in a row.",
+      "kit": "756x756",
+      "caption": "below",
+      "look": {
+        "border": "none",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off",
+          "look": "off"
+        },
+        {
+          "name": "On",
+          "look": "on",
+          "fill": "pressed"
+        }
+      ]
+    },
+    "list": {
+      "usage": "A vertical list button: an icon, then its label, for a set of options down the left rail (Display, Lighting, Make Call). Selected, it takes the raised fill and the kit draws the icon in the accent with an accent line down the left. The seed's are 178x50.",
+      "kit": "1224x344",
+      "caption": "indent",
+      "indent": 15,
+      "align": "left",
+      "look": {
+        "border": "none",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off",
+          "look": "off"
+        },
+        {
+          "name": "On",
+          "look": "on",
+          "fill": "raised"
+        }
+      ]
+    },
+    "icon": {
+      "usage": "An icon button: the icon alone, no outline, for a stand-alone control (Help, Power, Close, mute under the volume slider). Pressed, a round fill behind it, and the icon in the accent where the kit has a selected one. The seed's are 64x64.",
+      "kit": "440x440",
+      "caption": "none",
+      "look": {
+        "border": "none",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off",
+          "look": "off"
+        },
+        {
+          "name": "On",
+          "look": "on",
+          "fill": "pressed",
+          "border": "afterburn-ellipse"
+        }
+      ]
+    },
+    "toggle": {
+      "usage": "A toggle: its label at the left and the switch at the right, for turning one thing on or off (a display's power, a mute). The thumb moves and takes the secondary accent when On. The seed's are 178x50.",
+      "kit": "1224x344",
+      "icon": "toggle-1",
+      "caption": "indent",
+      "indent": 4,
+      "align": "left",
+      "look": {
+        "border": "none",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off",
+          "look": "off"
+        },
+        {
+          "name": "On",
+          "look": "on"
+        }
+      ]
+    },
+    "alert": {
+      "usage": "An alert: a red fill and a white caption, for a warning or a destructive confirmation (Shut Down). Use it sparingly - one per screen at most.",
+      "look": {
+        "fill": "alert",
+        "border": "afterburn-flat",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "pressed",
+          "stroke": "alert",
+          "border": "afterburn"
+        }
+      ]
+    }
+  },
+  "kit": {
+    "root": "Afterburn/Buttons/PNG",
+    "note": "Extron's Afterburn resource kit. Each icon comes unselected (`off`) and selected in each accent's color; a family drawn in the primary accents (orange, light-blue, gold, med-blue) selects in the scheme's primary, one drawn in the secondary accents (periwinkle, light-green, gold) - toggles, volume levels - in its secondary.",
+    "primary": {
+      "orange": "orange",
+      "light-blue": "light-blue",
+      "gold": "gold",
+      "medium-blue": "med-blue"
+    },
+    "secondary": {
+      "orange": "periwinkle",
+      "light-blue": "light-green",
+      "gold": "light-green",
+      "medium-blue": "gold"
+    },
+    "scale": {
+      "440x440": 96,
+      "756x756": 160,
+      "1224x344": 267,
+      "1059x440": 231,
+      "1224x464": 267
     }
   },
   "defaults": {
@@ -313,10 +459,10 @@
     "pattern": "rounded tiles cut at the Afterburn 10 px radius"
   },
   "examples": {
-    "states": "[{\"name\":\"No Signal\",\"color\":\"text-secondary\"},\"Ready\",{\"name\":\"Live\",\"fill\":\"pressed\",\"stroke\":\"text\",\"color\":\"accent\"}]",
-    "states_note": "In Afterburn an active state is the pressed fill and a white border, its caption in `accent` for a selection or `alert` for a warning. Afterburn never fills a button with an accent.",
+    "states": "[{\"name\":\"No Signal\",\"look\":\"off\",\"color\":\"text-secondary\"},{\"name\":\"Ready\",\"look\":\"off\"},{\"name\":\"Live\",\"look\":\"on\",\"fill\":\"pressed\"}]",
+    "states_note": "In Afterburn a state shows itself with its icon: the kit's selected image draws the icon in the accent, with the selection line for a list button, and the button takes the pressed fill. A text-only button that is selected shows its caption in `accent`. Never color a caption red.",
     "on_off": "[\"Off\",{\"name\":\"On\",\"color\":\"accent\"}]",
-    "color_rule": "`page` behind everything; `raised` for idle buttons and panels, with `shape` outlining a card; `pressed` and a `text` border for On; `text` and `text-secondary` for type; `accent` only for selection lines and an active caption, and `alert` only for a warning caption - Afterburn fills nothing with either; `accent-2` is the slider thumb and a level's fill."
+    "color_rule": "`page` behind everything; `raised` for idle buttons and panels, with `shape` outlining a card; `pressed` and a `text` border for On; `text` and `text-secondary` for type; `accent` only through the kit's selected icons and selection lines, and the caption of a selected text-only button; `alert` only as an alert's fill, with a `text` caption; `accent-2` is the slider thumb, a level's fill and a toggle's thumb."
   },
   "themes": [
     {

@@ -48,7 +48,7 @@ FIELDS = {
     'popup_ref': ('group',),
 }
 COLOR_KEYS = ('fill', 'stroke', 'color')
-STATE_LOOK = ('fill', 'stroke', 'color', 'text')
+STATE_LOOK = ('fill', 'stroke', 'color', 'text', 'border', 'image')
 
 # Runs inside each artboard once it has rendered. It reports every component
 # and every element that paints outside one, relative to the Page's own box.
@@ -157,6 +157,7 @@ class Canvas:
             self.index = json.load(fh)
         self.chrome = find_chrome(chrome)
         self.problems, self.notes = [], []
+        self.template = None
 
     def boards(self):
         order = list(self.index.get('order') or [])
@@ -241,6 +242,7 @@ class Canvas:
             return None, problems or ['no artboard has a Page'], notes
 
         colors = self._colors(profile, scheme)
+        self.template = profile['template']
         for item in pages + popups:
             item['controls'] = [c for c in (self._control(item['name'], raw, stems)
                                             for raw in item.pop('_raw')) if c]
@@ -261,11 +263,20 @@ class Canvas:
             'pages': pages,
             'popups': popups,
         }
-        # A background image goes with the file it comes from: the seed already
-        # carries its own theme's, and the applier appends the others.
+        # An image goes with the file it comes from, relative to the resource
+        # kits: the seed carries some already, and the applier appends the
+        # rest. Background images are the themes'; button images the kit's.
         files = {th['image']: th['file'] for th in designsys.themes(profile)
                  if th.get('image') and th.get('file')}
         used = {pg['background_image'] for pg in pages if pg.get('background_image')}
+        buttons = {s['image'] for item in pages + popups for c in item['controls']
+                   for s in c.get('states') or [] if isinstance(s, dict) and s.get('image')}
+        if buttons:
+            files.update(designsys.kit_index(profile)['paths'])
+            for n in sorted(buttons - set(files)):
+                problems.append(f'image {n!r} is not in the {profile["template"]} kit on this '
+                                f'machine (vendor/extron/Resources or the install)')
+        used |= buttons
         if used:
             spec['images'] = {n: files[n] for n in sorted(used) if n in files}
         if start:
@@ -312,13 +323,15 @@ class Canvas:
             c['name'] = g['name']
         c['rect'] = [round(v) for v in raw['rect']]
         for k in FIELDS[kind]:
-            # `none` is how a design switches an outline off: no key at all.
-            if k in g and g[k] != 'none':
+            # `none` is how a design switches a color off: no key at all. A
+            # border of `none` is a value - no border - and is kept.
+            if k in g and (g[k] != 'none' or k == 'border'):
                 c[k] = g[k]
         if kind == 'button':
-            if g.get('icon'):
-                self.problems.append(f"{where}: icon {g['icon']!r} - a panel built from a "
-                                     f'canvas has no icons yet; use a caption')
+            for m in g.get('missing_icon') or []:
+                size, icon = m.split(' ', 1)
+                self.problems.append(f"{where}: icon {icon!r} is not in {self.template}'s "
+                                     f'{size} kit')
             if 'states' in c:
                 c['states'] = [_state(s) for s in c['states']]
             if 'nav' in c:
@@ -341,7 +354,7 @@ def css_to_argb(v):
 def _state(s):
     if isinstance(s, str):
         return s
-    look = {k: s[k] for k in STATE_LOOK if k in s and s[k] != 'none'}
+    look = {k: s[k] for k in STATE_LOOK if k in s and (s[k] != 'none' or k == 'border')}
     return dict(name=s.get('name'), **look) if look else s.get('name')
 
 

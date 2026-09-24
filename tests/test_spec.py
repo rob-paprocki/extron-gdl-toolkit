@@ -793,6 +793,44 @@ class TestBackgroundImage(unittest.TestCase):
         self.assertTrue(any("image 'x.png'" in m for m in p.check()), p.check())
 
 
+class TestButtonImages(unittest.TestCase):
+    """A kit image per state: Afterburn's icons, list buttons and toggles."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.off, self.on = (os.path.join(self.dir, n) for n in ('off.png', 'on.png'))
+        for f in (self.off, self.on):
+            open(f, 'wb').write(b'x')
+
+    def _spec(self, **c):
+        c = dict({'kind': 'button', 'name': 'Laptop', 'rect': [0, 0, 110, 110],
+                  'border': 'none', 'text': 'Laptop'}, **c)
+        return _project([{'name': 'Home', 'controls': [c]}],
+                        images={'off.png': self.off, 'on.png': self.on})
+
+    def test_each_state_carries_its_image_and_no_border(self):
+        op = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                                {'name': 'On', 'image': 'on.png', 'fill': '#242634'}]
+                        ).plan()['pages'][0]['controls'][0]
+        self.assertEqual([s['image'] for s in op['states']],
+                         [{'name': 'off.png', 'file': self.off},
+                          {'name': 'on.png', 'file': self.on}])
+        self.assertEqual([s['border'] for s in op['states']], ['', ''])
+        self.assertEqual((op['image_layout'], op['image_align']), (0, 3))
+
+    def test_a_button_image_goes_on_every_state(self):
+        op = self._spec(image='on.png').plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['image'], {'name': 'on.png', 'file': self.on})
+
+    def test_states_that_differ_only_by_image_are_distinct(self):
+        p = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                               {'name': 'On', 'image': 'on.png'}])
+        self.assertFalse(any('identical' in m for m in p.check()), p.check())
+
+    def test_none_needs_no_border_resource(self):
+        self.assertEqual(self._spec().needs_borders(), set())
+
+
 class TestClock(unittest.TestCase):
     """A clock's format is its .NET pattern. A clone kept the donor's, so a
     "date" clock built as 'September 28, 12:00 AM' with 0 errors."""

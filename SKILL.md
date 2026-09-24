@@ -92,7 +92,8 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
    the theme's, for every page - names an image drawn stretched over the page's
    `background`. One the donor lacks needs `"images": {"<name>": "<path>"}`,
    the path relative to the theme resource kits (`vendor/extron/Resources`, or
-   the install), and the applier appends it. A `datetime` control's `format` is
+   the install), and the applier appends it. A button's icon is an `image` the
+   same way, on the button or on each state (*Icons* below). A `datetime` control's `format` is
    `time` (the default), `date`, `datetime` or any .NET date pattern
    (`"MMMM d, yyyy"`). Both are written explicitly, because a clone keeps the
    donor's: the donor's background under every page, its clock pattern on every
@@ -260,9 +261,12 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 
 - **Images** — the normal route, and what real panels use. Extron's kits ship
   1,316 (Afterburn), 596 (Mach), 1,124 (Shockwave), 1,408 (Turbulence) assets.
-  Appending a new `PBImageResource` and binding it to `buttonImageField` is
-  proven to build. Set `buttonImageLayout`/alignment or a large icon will fill
-  the button.
+  A spec button names one by its file name as `image`, on the button or per
+  state (`{"name": "On", "image": "756x756_laptop-orange_sel.png"}`), with
+  `"border": "none"` since the kit image draws the button; `images` brings any
+  the donor lacks. The applier appends it and draws it the way every image
+  button in the Afterburn seeds is drawn — `Fill` (fit, keeping the aspect),
+  `MiddleCenter` — so size the button to the image's shape.
 - **Icon fonts** — for single-color icons, faster and needs no resource.
   Afterburn 136 glyphs at U+E900–E98C, Mach (Extron-Lift) 121 at U+E900–E978.
   Place them as text in that face.

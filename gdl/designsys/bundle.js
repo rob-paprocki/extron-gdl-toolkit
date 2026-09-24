@@ -168,49 +168,108 @@
     return h('div', { className: 'xgdl-main', style: style }, props.children);
   }
 
+  // -- the resource kit ------------------------------------------------------
+  // P.kit.files: {size: {icon: {look: file}}}, a look being `off`, a color,
+  // `sel` or `plain`; P.kit.art: {file: data URI}. A state asks for `off` or
+  // `on`, and `on` is the scheme's primary accent for an icon family drawn in
+  // the primary accents, its secondary for one drawn in the secondary ones
+  // (toggles, volume levels), else whatever the family has.
+  var KIT = P.kit || null;
+  var PRIMARY_ONLY = ['orange', 'light-blue', 'med-blue'];
+  function kitFile(size, icon, look, scheme) {
+    var fam = KIT && KIT.files && KIT.files[size] && KIT.files[size][icon];
+    if (!fam) return null;
+    var primary = PRIMARY_ONLY.some(function (c) { return fam[c]; });
+    function on() {
+      return (primary ? fam[KIT.primary[scheme]] : fam[KIT.secondary[scheme]])
+        || fam.sel || fam.red || fam.plain || fam.off || null;
+    }
+    if (look === 'on') return on();
+    if (look === 'off') return fam.off || fam.gray || fam.plain || on();
+    return fam[look] || null;
+  }
+  // How the variant draws its image, if it has one: the kit size, and where
+  // the caption goes - `below` the icon, `indent`ed past it, or `none`.
+  function imageOf(V, props, caption) {
+    if (V.kit) return { kit: V.kit, caption: V.caption, indent: V.indent, icon: props.icon || V.icon };
+    if (props.icon && V.with_icon) {
+      var W = V.with_icon;
+      return caption ? { kit: W.kit, caption: W.caption, indent: W.indent, icon: props.icon }
+                     : { kit: W.bare, caption: 'none', icon: props.icon };
+    }
+    return null;
+  }
+  // The caption as the panel draws it: the kit leaves the label room below or
+  // beside the icon, and the template's own buttons reach it with line breaks
+  // or leading spaces in the caption itself.
+  function placed(img, text) {
+    if (!img || text == null) return text;
+    if (img.caption === 'none') return '';
+    if (img.caption === 'below') return text ? '\r\n\r\n' + text : text;
+    if (img.caption === 'indent') return text ? new Array((img.indent || 0) + 1).join(' ') + text : text;
+    return text;
+  }
+
   // -- Button ---------------------------------------------------------------
   function Button(props) {
     var L = useLook();
     var variant = P.buttons[props.variant] ? props.variant : P.defaults.button.variant;
     var V = P.buttons[variant];
     var caption = textOf(props.children, props.text);
+    var img = imageOf(V, props, caption);
     var own = {};
     ['fill', 'stroke', 'color', 'border'].forEach(function (k) { if (props[k] != null) own[k] = props[k]; });
     var look = Object.assign({}, V.look, own);
-    var states = (list(props.states) || V.states).map(function (s) {
+    // Icons the kit does not have, by size: the translator refuses them.
+    var missing = [];
+    var states = (list(props.states) || V.states).map(function (s, i) {
       s = typeof s === 'string' ? { name: s } : Object.assign({}, s);
       // A state named like one of the variant's (Off, On) starts from its look.
-      return Object.assign({}, find(V.states, s.name) || {}, s);
+      s = Object.assign({}, find(V.states, s.name) || {}, s);
+      if (img) {
+        var icon = s.icon || img.icon;
+        var want = s.look || (i === 0 ? 'off' : 'on');
+        s.image = kitFile(img.kit, icon, want, L.scheme);
+        if (!s.image) missing.push(img.kit + ' ' + icon);
+        if (s.text != null) s.text = placed(img, s.text);
+      }
+      delete s.look; delete s.icon;
+      return s;
     });
     var shown = find(states, props.show) || states[0] || {};
     var now = Object.assign({}, look, shown);
     var f = font(props, P.defaults.button.type);
     var b = P.borders[now.border];
-    var align = props.align || 'center';
+    var align = props.align || (img && img.caption === 'indent' ? 'left' : V.align) || 'center';
+    var art = now.image && KIT && KIT.art ? KIT.art[now.image] : null;
     var style = {
       boxSizing: 'border-box', width: '100%', height: '100%',
       minWidth: P.touch + 'px', minHeight: P.touch + 'px',
       display: 'flex', alignItems: 'center', justifyContent: ALIGN[align] || 'center',
-      padding: '0 10px', margin: 0, textAlign: align, whiteSpace: 'pre-line',
-      background: paint(L.colors, now.fill), border: edge(b, L.colors, now.stroke),
+      padding: img ? 0 : '0 10px', margin: 0, textAlign: align,
+      whiteSpace: img ? 'pre' : 'pre-line',
+      background: (art ? 'url("' + art + '") center / contain no-repeat, ' : '') + paint(L.colors, now.fill),
+      border: edge(b, L.colors, now.stroke),
       borderRadius: radius(b), color: paint(L.colors, now.color || 'text'),
       font: f.css, textDecoration: 'none', cursor: 'pointer'
     };
+    if (missing.length) style.outline = '2px dashed #FF00FF';
+    var text = img ? placed(img, caption) : caption;
     var attrs = {
       className: 'xgdl xgdl-button', style: style,
-      'aria-label': props['aria-label'] || props.ariaLabel,
+      'aria-label': props['aria-label'] || props.ariaLabel || (img && !caption ? img.icon : null),
       'data-gdl': gdl({
         kind: 'button', name: props.name, id: props.id != null ? Number(props.id) : null,
-        variant: variant, text: caption, fill: look.fill, stroke: look.stroke,
+        variant: variant, text: text, fill: look.fill, stroke: look.stroke,
         color: look.color, border: look.border, size: f.size, bold: f.bold,
         align: align === 'center' ? null : align,
         states: states, press: props.press, nav: props.nav, does: props.does,
-        icon: props.icon
+        missing_icon: missing.length ? missing : null
       })
     };
     if (props.nav) attrs.href = navHref(props.nav); else attrs.type = 'button';
-    var label = shown.text != null ? shown.text : caption;
-    if (props.icon && !label) label = '[' + props.icon + ']';
+    var label = shown.text != null ? shown.text : text;
+    if (missing.length && !label) label = '[' + missing[0] + ']';
     return h(props.nav ? 'a' : 'button', attrs, label);
   }
 

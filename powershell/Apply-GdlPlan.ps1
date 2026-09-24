@@ -125,13 +125,22 @@ function Add-GdlControls {
                     $fill   = if ($s) { $s.fill }       else { $op.fill }
                     $stroke = if ($s) { $s.stroke }     else { $op.stroke }
                     $tcolor = if ($s) { $s.text_color } else { $op.text_color }
-                    $bord   = if ($s -and $s.border) { $s.border } else { $op.border }
+                    # '' is a real answer - no border - so test for null.
+                    $bord   = if ($s -and $null -ne $s.border) { $s.border } else { $op.border }
+                    $img    = if ($s) { $s.image } else { $op.image }
 
                     # The donor's own caption and icon ride along on a clone, so
                     # a state that is not rewritten renders the donor's text. A
                     # state may carry its own caption ('Ready' / 'Connected').
                     $text = if ($s -and $null -ne $s.text) { $s.text } else { $op.fields.textField }
                     Set-GdlFieldIfPresent $st 'buttonImageField' $null | Out-Null
+                    # ...and then the kit image the plan names for this state:
+                    # the icon, a list button's selection line, a toggle.
+                    if ($img) {
+                        Set-GdlImage $st 'buttonImageField' $imageRef $img.name
+                        Set-GdlFieldIfPresent $st 'buttonImageLayoutField' $op.image_layout | Out-Null
+                        Set-GdlFieldIfPresent $st 'buttonImageAlignmentField' $op.image_align | Out-Null
+                    }
                     Set-GdlFieldIfPresent $st 'textField' $text | Out-Null
                     Set-GdlFieldIfPresent $st 'textAlignmentField' $op.alignment | Out-Null
                     # A state names itself - 'Off' / 'On' is what 94.7% of the
@@ -225,13 +234,7 @@ foreach ($pg in $spec.pages) {
     # ...and then the image the SPEC names, if any, by a fresh reference. The
     # layout fields (stretch, alignment, offsets) come from the donor page.
     if ($pg.background_image) {
-        if (-not $imageRef) {
-            Note-Problem "page '$($pg.name)': no image reference in the project to clone for its background image"
-        } else {
-            $ref = Copy-GdlObject $imageRef
-            Set-GdlField $ref 'resourceNameField' $pg.background_image.name
-            Set-GdlFieldIfPresent $newPage 'backgroundImageField' $ref | Out-Null
-        }
+        Set-GdlImage $newPage 'backgroundImageField' $imageRef $pg.background_image.name
     }
 
     # Start from an empty page: the donor's controls carry its ids and popup

@@ -305,6 +305,20 @@ function Add-GdlImageResource {
     return $true
 }
 
+function Set-GdlImage {
+    <#  Point an image slot - a page's backgroundImageField, a state's
+        buttonImageField - at the image resource named $Name, by a clone of an
+        existing reference (Find-GdlImageRef): clone, never construct. #>
+    param($Target, [string]$Field, $Ref, [string]$Name)
+    if (-not $Ref) {
+        Note-Problem "no image reference in the project to clone for '$Name'"
+        return
+    }
+    $new = Copy-GdlObject $Ref
+    Set-GdlField $new 'resourceNameField' $Name
+    Set-GdlFieldIfPresent $Target $Field $new | Out-Null
+}
+
 function Find-GdlImageRef {
     <#  A PBResourceReferenceImage to clone: a page's background image first,
         then any control's or state's image. #>
@@ -357,13 +371,17 @@ function Set-GdlBorder {
 
         Referencing an existing resource is the whole design: appending a NEW
         PBBorderResource has never been tested against GUI Designer, so a plan
-        may only name resources the donor already carries. This checks that. #>
-    param($Project, $Control, [string]$Name)
-    if (-not $Name) { return }
+        may only name resources the donor already carries. This checks that.
+
+        $null leaves the border as it is. '' is NO border, which is how
+        Extron's own image buttons reference one: a clone otherwise keeps its
+        donor's outline around the kit's artwork. #>
+    param($Project, $Control, $Name)
+    if ($null -eq $Name) { return }
     $known = @($Project.ResourceSet.Resources |
         Where-Object { $_.GetType().Name -eq 'PBBorderResource' } |
         ForEach-Object { $_.Name })
-    if ($known -and ($known -notcontains $Name)) {
+    if ($Name -and $known -and ($known -notcontains $Name)) {
         Note-Problem "border resource '$Name' is not in the donor project; a plan may only reference existing resources"
         return
     }

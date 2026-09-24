@@ -304,12 +304,24 @@ A generator should assert all four agree rather than trusting the writes.
   `September 28, 12:00 AM`.
 - **A page's background image is a named `PBImageResource`**, referenced from
   `backgroundImageField` by a `PBResourceReferenceImage` and drawn by
-  `backgroundImageLayoutField` over the page fill - the Afterburn seeds stretch
-  (layout 0) `6400x4000_bg1.png` over `#242634`. Build rasterizes the two into
+  `backgroundImageLayoutField` over the page fill - the Afterburn seeds fit
+  `6400x4000_bg1.png` over `#242634`. `ImageLayoutEnum` is `Fill` 0 (fit,
+  keeping the aspect, as CSS `contain`), `Stretch` 1, `Tile` 2, `Native` 3,
+  `Offset` 4. Build rasterizes the two into
   the page's asset and layout.json does not name the image, so it is verified
   off that asset. An image the project lacks is appended by cloning an existing
   `PBImageResource` and setting its bitmap, name and size
   (`Add-GdlImageResource`).
+- **A kit image button carries its image on each state, not on the control.**
+  Every image button in the Afterburn 1035 and 1535 seeds has an empty
+  control-level `buttonImageField` and one per state, drawn `Fill` and
+  `MiddleCenter`, with a border reference whose resource name is empty - the
+  kit's image is the whole button, selection line included. Its caption is
+  placed by the caption itself: two CRLFs put a source's label under the icon,
+  leading spaces put a list button's past it (a formatted-text caption in the
+  seed, which Build bakes into the artwork; a plain one is drawn live). Build
+  rasterizes image, fill and border into the state's artwork, and layout.json
+  does not name the image, so it is verified off that artwork.
 - **`ApplicationBuildVersionInfo` in the built `layout.json` lags one build
   behind on a project carried across versions.** Open a 1.27-authored project in
   1.28 and Save and Build: the `ProjectGCP` is restamped immediately

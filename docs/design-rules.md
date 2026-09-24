@@ -259,8 +259,9 @@ and transparency key color. A `PBImageResource` holds the bitmap
 (`dataField` is a `System.Drawing.Bitmap`); a `PBResourceReferenceImage` names it.
 **Verified**: cloning an image resource, replacing its bitmap with a PNG from
 Extron's kit, appending it and binding it to a button built with 0 errors, and the
-icon was rasterized into the button's artwork. Set `buttonImageLayout`/alignment
-or a 440×440 kit icon will swamp a small button.
+icon was rasterized into the button's artwork. Extron's own image buttons carry
+the image on each state and fit it, keeping its aspect (`docs/gdl-format.md`
+§7), which is what a spec's `image` does.
 
 Extron's kits ship: Afterburn 3,376 files, Turbulence 1,408, Shockwave 1,124,
 Mach 596.

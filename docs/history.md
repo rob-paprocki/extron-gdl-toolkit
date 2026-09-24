@@ -194,6 +194,15 @@ statement is in the live docs; this is the record that it changed.
   fill, where the guide keeps it to selection lines and the seed to active
   captions; a panel with no `#6A6E89` outline. Corrected against the seed's
   built artwork, which is now how every template's profile is checked.
+- **Afterburn's design system colored captions red, and drew no icons**
+  (until 2026-09-24, caught by the user). Its `alert` token was read as a
+  caption color off the seed's two record buttons - whose captions are empty;
+  the red is their icon's - and a mute or End Call turned its caption red. The
+  guide has no red at all: Afterburn shows state with kit icons in the accent,
+  and an alert is a red fill with a white caption. Icons had been left out
+  pending a decision on putting Extron's artwork in claude.ai; the owner agreed
+  to downscaled kit images in their private design system, and every image
+  button is now drawn from the kit as the seed draws it.
 - **The six-color check counted only colors a spec names, and only on pages**
   (until 2026-09-24). A caption with no `color` draws in the theme's text
   color, and popups are on the panel too. `examples/huddle-functions.json`

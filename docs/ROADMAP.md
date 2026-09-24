@@ -74,16 +74,19 @@ opening GUI Designer.**
    end to end, with a side-by-side of each artboard and the built panel for
    sign-off. Mach, Shockwave and Turbulence need their profiles, each checked
    against its seed's built artwork. `docs/claude-design.md` §7.
-6. **Icons in the spec vocabulary.** Both routes are proven by probe - font
-   glyphs (~339 icons, no image resource) and appended image resources
-   (`powershell/New-ImageProbe.ps1`) - and neither can be written in a spec.
+6. **Icon-font glyphs in the spec vocabulary.** Kit images are in it - a
+   button's `image`, on itself or per state, which is how the Claude Design
+   systems draw icons - but the other proven route, font glyphs (~339 icons, no
+   image resource), still cannot be written in a spec.
 7. **Pick the seed automatically** - `gdl.spec donors --auto` choosing from
    `seeds/` by theme and canvas, so a prose brief needs no file path.
 8. **Theme-portable borders.** No border resource is defined by every project
    in the corpus. A spec that says `rounded` or `capsule` should resolve to
    whatever the donor's family calls it.
-9. **Close `verify_built.py`'s remaining blind spots**: text alignment, and
-   donor controls that ride along on a generated page unasked.
+9. **Close `verify_built.py`'s remaining blind spots**: text alignment, donor
+   controls that ride along on a generated page unasked, and one volume-level
+   icon built in place of the next - at 64 px they differ by one thin wave, 7%
+   of the inked pixels, under the image check's 25%.
 10. **Run the seed ground-truth test in CI** with
     `git lfs pull --include "seeds/Afterburn 1035.gdl"` (about 3 MB of LFS
     bandwidth per build).

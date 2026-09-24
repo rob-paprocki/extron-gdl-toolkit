@@ -65,15 +65,22 @@ BORDERS = {
     # change border per state, from one to its Selected twin.
     'gradient-selected': '3D Gradient Selected',
     'rounded-3d-selected': '3D Rounded Rectangle Selected',
+    # No border at all: a kit image button draws its own shape, and the
+    # template's own ones reference a border resource named ''. A clone kept
+    # the donor's border when the spec named none.
+    'none': '',
     'afterburn': 'Afterburn - 10 Radius 2 Thick',
     'afterburn-flat': 'Afterburn - 10 Radius 0 Thick',
     'afterburn-14': 'Afterburn - 14 Radius 0 Thick',
+    # An icon button's pressed fill: a circle behind the icon.
+    'afterburn-ellipse': 'Afterburn - Elipse 0 Thick',
     # Mach's one border of its own (seeds/Mach 1035.gdl).
     'mach': 'Mach - 10 Radius 2 Thick',
 }
 # radius/thickness per resource, read from the fixtures' own PBBorderResource
 # dataField. Only what the preview needs to draw; the real geometry is Build's.
 BORDER_GEOMETRY = {
+    '': (0, 0),
     '2D Rectangle': (0, 3), '2D Rectangle_1': (0, 0),
     '2D Rounded Rectangle': (10, 3), '2D Capsule': (9999, 3), '2D Ellipse': (0, 3),
     '3D Rectangle': (0, 1), '3D Rounded Rectangle': (10, 1), '3D Capsule': (9999, 1),
@@ -85,6 +92,9 @@ BORDER_GEOMETRY = {
     'Afterburn - 10 Radius 2 Thick': (10, 2),
     'Afterburn - 14 Radius 0 Thick': (14, 0),
     'Afterburn - Elipse 3 Thick': (10, 3),
+    # An ellipse, drawn as a capsule: the preview clamps the radius to half the
+    # box, which in the square boxes these take is the circle Build draws.
+    'Afterburn - Elipse 0 Thick': (9999, 0),
 }
 # Every panel GUI Designer can target: (width, height, DPI, Extron part number).
 #
@@ -274,7 +284,12 @@ TOUCHABLE = {'button', 'slider'}
 # 256 on PBProject, on the TLP Pro 1035 platform and on PBButton, read through
 # the installed assemblies. The corpus never goes past four.
 MAX_STATES = 256
-STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text'}
+STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text', 'image'}
+# How a button's image sits in it, as Extron's own image buttons all have it:
+# ImageLayoutEnum Fill (fit, keeping the aspect) and AlignmentEnum
+# MiddleCenter. The kit draws each icon, its selection line and its label room
+# at the button's own aspect, so fitting it fills the button.
+IMAGE_LAYOUT, IMAGE_ALIGN = 0, 3
 # The two per-button pointers into the state list, as backing fields.
 # TLPDefaultStateID is 0 on every button in the corpus. TLPPressFeedbackStateID
 # is the state shown while the button is held: On (1) on all 7518 Off/On
@@ -679,7 +694,8 @@ class Panel:
                                        'Italic': bool(c.get('italic'))}},
                 }
                 controls.append(out)
-                if fill:
+                image = resolve_image(self.images.get(c.get('image'))) if c.get('image') else None
+                if fill or image:
                     radius, thickness = BORDER_GEOMETRY.get(border, (0, 0))
                     # Keyed the way gdl/compose.py looks it up: (page id,
                     # control id), the pair both models share.
@@ -688,6 +704,7 @@ class Panel:
                         'stroke': color(c.get('stroke'), self.theme),
                         'border': {'resource': border, 'radius': radius,
                                    'thickness': thickness},
+                        'image': image,
                     }
             pages.append({
                 'ID': pg['number'], 'Name': pg['name'], 'TLPImageID': -1,
@@ -749,9 +766,9 @@ class Panel:
         }
 
     def _image_op(self, name):
-        """A page's background image for the plan: its resource name, and its
-        file when the spec brings it - the verifier composites that file to
-        check the built page."""
+        """A page's background image, or a button state's, for the plan: its
+        resource name, and its file when the spec brings it - the verifier
+        composites that file to check the built artwork."""
         if not name:
             return None
         return {'name': name, 'file': resolve_image(self.images.get(name))}
@@ -858,12 +875,12 @@ class Panel:
                     # Only complain about neighbours: overlapping on one axis
                     # and separated on the other.
                     if gap_x < 0 and 0 <= gap_y < spacing:
-                        out.append(f"page {pg['number']} {a.get('text') or '?'} / "
-                                   f"{b2.get('text') or '?'}: {gap_y}px vertical gap is "
+                        out.append(f"page {pg['number']} {a.get('name') or a.get('text') or '?'} / "
+                                   f"{b2.get('name') or b2.get('text') or '?'}: {gap_y}px vertical gap is "
                                    f'below the {spacing}px minimum (2mm, p.56)')
                     elif gap_y < 0 and 0 <= gap_x < spacing:
-                        out.append(f"page {pg['number']} {a.get('text') or '?'} / "
-                                   f"{b2.get('text') or '?'}: {gap_x}px horizontal gap is "
+                        out.append(f"page {pg['number']} {a.get('name') or a.get('text') or '?'} / "
+                                   f"{b2.get('name') or b2.get('text') or '?'}: {gap_x}px horizontal gap is "
                                    f'below the {spacing}px minimum (2mm, p.56)')
         return out
 
@@ -924,8 +941,10 @@ class Panel:
                            if 'stroke' in s else _argb(stroke)),
                 'text_color': (_argb(color(s.get('color') or s.get('text_color'), self.theme))
                                if has_color else _argb(text_color)),
-                'border': BORDERS.get(s.get('border'), s.get('border')) or border,
+                'border': (BORDERS.get(s['border'], s['border']) if s.get('border') is not None
+                           else border),
                 'text': s['text'] if 'text' in s else (c.get('text') or ''),
+                'image': self._image_op(s['image'] if 'image' in s else c.get('image')),
             })
         return out
 
@@ -951,7 +970,7 @@ class Panel:
             return c
         s0 = st[0]
         out = dict(c)
-        for k in ('fill', 'stroke', 'border', 'text'):
+        for k in ('fill', 'stroke', 'border', 'text', 'image'):
             if k in s0:
                 out[k] = s0[k]
         if 'color' in s0 or 'text_color' in s0:
@@ -1045,7 +1064,7 @@ class Panel:
                             out.append(f"{where}: states {a['name']!r} and {b['name']!r} look "
                                        f'identical - the program could set either and the '
                                        f'panel would show no difference. Give one its own '
-                                       f'fill, stroke, color, border or text')
+                                       f'fill, stroke, color, border, text or image')
         if 'press' in c:
             specs = self._feedback(c) or []
             names = [s.get('name') for s in specs]
@@ -1105,13 +1124,19 @@ class Panel:
             # Only meaningful on a popup reference; the applier ignores it
             # elsewhere.
             'group': c.get('group'),
+            # A kit image on every state, or none: a clone's donor icon is
+            # cleared either way.
+            'image': self._image_op(c.get('image')),
+            'image_layout': IMAGE_LAYOUT,
+            'image_align': IMAGE_ALIGN,
         }
         if states:
             # Build renders the button from state 0, so that is what the
             # control-level fields - and verify_built's checks of them - carry.
             first = states[0]
             op.update(fill=first['fill'], stroke=first['stroke'],
-                      text_color=first['text_color'], border=first['border'])
+                      text_color=first['text_color'], border=first['border'],
+                      image=first['image'])
             op['fields']['textField'] = first['text']
             op['fields'][DEFAULT_FIELD] = 0
             op['fields'][PRESS_FIELD] = self._press(c, states)
@@ -1322,13 +1347,24 @@ class Panel:
                     f'adding or removing states - the applier refuses to resize it, so '
                     f'no button in this spec would get the states it names')
 
-        # A background image the spec does not bring must be one the donor has.
+        # An image the spec does not bring must be one the donor has.
         images = proj._resource_names('PBImageResource')
         for pg in self.pages:
             want = pg.get('background_image')
             if want and want not in self.images and want not in images:
                 out.append(f"page {pg['name']!r}: background image {want!r} is neither in "
                            f"the spec's `images` nor defined in {path}")
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for pg in items:
+                for c in pg['controls']:
+                    named = [c.get('image')] + [st.get('image') for st in c.get('states') or []
+                                                if isinstance(st, dict)]
+                    for want in sorted({n for n in named if n}):
+                        if want not in self.images and want not in images:
+                            out.append(f"{kind} {pg['name']!r} "
+                                       f"{c.get('name') or c.get('text') or '?'}: image "
+                                       f"{want!r} is neither in the spec's `images` nor "
+                                       f'defined in {path}')
 
         for it in list(self.pages) + list(self.popups):
             if it['name'] in names:
@@ -1356,7 +1392,8 @@ class Panel:
                 # A state can name its own border, and it needs a resource too.
                 for look in [c] + (self._feedback(c) or []):
                     b = look.get('border')
-                    if b:
+                    # `none` is an empty name, not a resource.
+                    if b and BORDERS.get(b, b):
                         out.add(BORDERS.get(b, b))
         return out
 

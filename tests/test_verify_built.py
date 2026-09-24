@@ -177,6 +177,52 @@ class TestBackgroundImage(unittest.TestCase):
         self.assertTrue(any('single flat color' in p for p in problems), problems)
 
 
+class TestStateImage(unittest.TestCase):
+    """layout.json names no image once built, so a state's kit image is
+    checked against its artwork."""
+
+    def setUp(self):
+        self.vb = _vb(self)
+        import io
+        import tempfile
+        from PIL import Image, ImageDraw
+        self.dir = tempfile.mkdtemp()
+        self.files = {}
+        # A 'speaker' and the same with a wave - the subset case.
+        for name, wave in (('one.png', False), ('two.png', True)):
+            im = Image.new('RGBA', (440, 440), (0, 0, 0, 0))
+            d = ImageDraw.Draw(im)
+            d.rectangle((60, 150, 200, 290), fill=(186, 188, 206, 255))
+            if wave:
+                d.rectangle((260, 80, 380, 360), fill=(98, 106, 207, 255))
+            self.files[name] = os.path.join(self.dir, name)
+            im.save(self.files[name])
+        self.art = {}
+        for name, f in self.files.items():
+            buf = io.BytesIO()
+            self.vb.fit_image(f, 64, 64).save(buf, 'PNG')
+            self.art[name] = buf.getvalue()
+
+    def _check(self, planned, built):
+        c = {'Width': 64, 'Height': 64}
+        bs = {'Name': 'On', 'TLPImageID': 7}
+        img = {'name': planned, 'file': self.files[planned]}
+        return self.vb._state_image('page Home Mute', 1, bs, c, img, None,
+                                    {7: self.art[built]} if built else {})
+
+    def test_the_planned_image_passes(self):
+        self.assertEqual(self._check('two.png', 'two.png'), [])
+
+    def test_another_image_is_reported_both_ways(self):
+        for planned, built in (('two.png', 'one.png'), ('one.png', 'two.png')):
+            problems = self._check(planned, built)
+            self.assertTrue(any('not that image' in p for p in problems), problems)
+
+    def test_a_state_with_no_artwork_is_reported(self):
+        problems = self._check('one.png', None)
+        self.assertTrue(any('no artwork' in p for p in problems), problems)
+
+
 class TestEditStates(unittest.TestCase):
     """An edit writes each state by index, so each is verified by index -
     captions and names off the model, fills off that state's own artwork."""

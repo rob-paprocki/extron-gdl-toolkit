@@ -135,7 +135,114 @@ def backdrops(p):
     return out
 
 
-def bundle(p):
+# -- the resource kit -------------------------------------------------------------
+# The accent colors Extron's kits name their selected images by. A name ends
+# `_nsel` unselected, and `-<color>_sel` (or `-<color>-sel`, or `-<color>` with
+# no suffix, or `-<color>_<n>` for a level) selected in one accent.
+KIT_COLORS = ('light-blue', 'med-blue', 'light-green', 'periwinkle', 'orange', 'gold',
+              'red', 'gray')
+# Spelled so in Extron's Afterburn kit.
+KIT_TYPOS = {'ligh-blue': 'light-blue', 'ornage': 'orange'}
+_KIT_FILE = re.compile(r'^(\d+x\d+)_([^ ]+)\.png$', re.I)
+_KIT_COLOR = re.compile(r'[-_](' + '|'.join(KIT_COLORS + tuple(KIT_TYPOS)) + r')(?=$|[-_])')
+
+
+def kit_look(stem):
+    """A kit file's stem (no size, no .png) -> (icon, look).
+
+    'laptop_nsel' -> ('laptop', 'off'); 'laptop-orange_sel' -> ('laptop',
+    'orange'); 'speaker-volume-periwinkle_3' -> ('speaker-volume_3',
+    'periwinkle'); 'power' -> ('power', 'plain'); 'stop_sel' -> ('stop', 'sel').
+    """
+    look = None
+    for suffix, what in (('_nsel', 'off'), ('-nsel', 'off'), ('_sel', 'sel'), ('-sel', 'sel')):
+        if stem.endswith(suffix):
+            stem, look = stem[:-len(suffix)], what
+            break
+    # A color wins over the suffix: the kit spells a few selected images
+    # `-<color>_nsel` (756x756_dual-display-1-gold_nsel.png).
+    m = _KIT_COLOR.search(stem)
+    if m:
+        stem, look = stem[:m.start()] + stem[m.end():], KIT_TYPOS.get(m.group(1), m.group(1))
+    return stem, look or 'plain'
+
+
+def kit_root(p):
+    """The template's button kit on this machine, or None."""
+    from ..spec import RESOURCE_ROOTS
+    if not p.get('kit'):
+        return None
+    for root in RESOURCE_ROOTS:
+        d = os.path.join(root, *p['kit']['root'].split('/'))
+        if os.path.isdir(d):
+            return d
+    return None
+
+
+def kit_index(p):
+    """{'files': {size: {icon: {look: file}}}, 'paths': {file: kit path}}.
+
+    The paths are relative to the resource roots, as a spec's `images` takes
+    them. Empty where the kit is not installed.
+    """
+    files, paths = {}, {}
+    root = kit_root(p)
+    if not root:
+        return {'files': files, 'paths': paths}
+    for d, _, names in sorted(os.walk(root)):
+        for f in sorted(names):
+            m = _KIT_FILE.match(f)
+            if not m:
+                continue
+            size, stem = m.groups()
+            icon, look = kit_look(stem)
+            # The first spelling wins where the kit has two (help-orange-sel
+            # beside help-orange_sel would be one look).
+            files.setdefault(size, {}).setdefault(icon, {}).setdefault(look, f)
+            rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
+            paths.setdefault(f, p['kit']['root'] + '/' + rel)
+    return {'files': files, 'paths': paths}
+
+
+# kit root -> kit_art()'s result. A thousand WebP encodes take most of a
+# minute, and a build or a test run asks more than once.
+_ART = {}
+
+
+def kit_art(p, index):
+    """{file: data URI}: each kit image downscaled for the canvas, as WebP.
+
+    In the bundle, not uploaded beside it, because a canvas copies a system's
+    bundle but not its other files - the reason backdrops() embeds too. About
+    1.8 MB for Afterburn's thousand. Extron's artwork: it goes into the
+    owner's private design system only (docs/claude-design.md section 2).
+    """
+    import base64
+    import io
+    from PIL import Image
+    root = kit_root(p)
+    if root in _ART:
+        return _ART[root]
+    out = _ART[root] = {}
+    scale = p['kit'].get('scale') or {}
+    for size, icons in index['files'].items():
+        w = scale.get(size, 160)
+        for looks in icons.values():
+            for f in looks.values():
+                if f in out:
+                    continue
+                rel = index['paths'][f][len(p['kit']['root']) + 1:]
+                path = os.path.join(root, *rel.split('/'))
+                im = Image.open(path).convert('RGBA')
+                im = im.resize((w, max(1, round(w * im.height / im.width))),
+                               Image.Resampling.LANCZOS)
+                buf = io.BytesIO()
+                im.save(buf, 'WEBP', quality=80, method=4)
+                out[f] = 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()
+    return out
+
+
+def bundle(p, art=True):
     header = json.dumps({'format': 4, 'namespace': p['namespace'],
                          'components': [{'name': n} for n, _, _ in COMPONENTS]},
                         separators=(',', ':'))
@@ -145,6 +252,10 @@ def bundle(p):
     profile['themes'] = themes(p)
     profile['layout'] = p.get('layout') or {}
     profile['backdrops'] = backdrops(p)
+    if p.get('kit'):
+        index = kit_index(p)
+        profile['kit'] = dict(p['kit'], files=index['files'],
+                              art=kit_art(p, index) if art and index['files'] else {})
     js = _read('bundle.js')
     for mark, value in (('__HEADER__', header),
                         ('__PROFILE__', json.dumps(profile, separators=(',', ':')))):
@@ -178,6 +289,36 @@ def _main_words(p):
         return 'the whole page.'
     return (f"{m[2]}x{m[3]} at {m[0]},{m[1]} on the {p['size'][0]}x{p['size'][1]} page. "
             + (p['layout'].get('main_note') or ''))
+
+
+def icon_names(p):
+    """{variant: [icon names]} - what `icon` can be on each image variant,
+    from the kit on this machine. Empty where the kit is not installed."""
+    files = kit_index(p)['files']
+    out = {}
+    # A variant with an icon of its own (a toggle's `toggle-1`) takes that
+    # family, and only it; the others sharing its kit size leave it out.
+    claimed = {}
+    for k, v in p['buttons'].items():
+        if v.get('kit') and v.get('icon'):
+            family = v['icon'].rsplit('-', 1)[0]
+            claimed[k] = sorted(n for n in files.get(v['kit'], {}) if n.startswith(family))
+    taken = {n for names in claimed.values() for n in names}
+    for k, v in p['buttons'].items():
+        size = v.get('kit') or (v.get('with_icon') or {}).get('kit')
+        if k in claimed:
+            out[k] = claimed[k]
+        elif size and files.get(size):
+            out[k] = sorted(set(files[size]) - taken)
+    return out
+
+
+def _icons_md(p):
+    names = icon_names(p)
+    if not names:
+        return ('The kit was not installed where this system was built, so it lists no icon '
+                'names.')
+    return '\n'.join(f"- `{k}`: {', '.join(f'`{n}`' for n in v)}" for k, v in names.items())
 
 
 def component_docs(p):
@@ -220,7 +361,9 @@ Props:
 - The caption is the element's text. `type`: `button` (14 pt, default) or `button-large` (20 pt bold); `size` in points overrides it.
 - `variant`:
 {variants}
-- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color) and `text` (its own caption). Off and On start from the variant's look. Every state must look different. {p['examples']['states_note']}
+- `icon`: an icon from {t}'s resource kit, by name, for the image variants - `source`, `list`, `icon`, `toggle` (default `toggle-1`) - or on an `outlined` button, where it sits left of the caption. The kit draws each icon unselected and selected in every accent, with the selection line where the variant has one, so the button's states show themselves: state 0 unselected, the rest selected in the page's accent. The names, by variant:
+{_icons_md(p)}
+- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own icon: a mute button is `speaker-volume_3` when live and `speaker-mute-1` when muted). Off and On start from the variant's look. Every state must look different. {p['examples']['states_note']}
 - `press`: the state shown while the button is held. Default: On, else the second state.
 - `nav`: the artboard this button shows, by its file name without `.dc.html` - `nav="Help"` shows `Help.dc.html`. The button becomes that link, so Play follows it.
 - `does`: anything else it does, in a sentence for the programmer: "Routes the laptop to the display; Live while it is routed."
@@ -228,16 +371,20 @@ Props:
 - `name`: the control's name; `id` pins its number.
 - `fill`, `stroke`, `color`, `border` override the variant for every state.
 
+Size an image button to its kit image's shape, or the image is letterboxed: `source` square (110x110 as the seed has them), `icon` square (64x64), `list` and `toggle` about 3.6:1 (192x54), an `outlined` button with an icon 2.4:1 (154x64).
+
 ```html
 {_x(p, 'Button', ' name="Laptop" type="button-large" states="Off, On" does="Routes the laptop to the display."', 'Laptop', 'width: 280px; height: 120px')}
 {_x(p, 'Button', ' name="HelpBtn" nav="Help"', 'Help', 'width: 200px; height: 64px')}
+{_x(p, 'Button', ' name="Wireless" variant="source" icon="sharelink-1" states="Off, On" does="Routes wireless presentation to the display."', 'Wireless', 'width: 110px; height: 110px')}
+{_x(p, 'Button', ' name="Power" variant="icon" icon="power" nav="ConfirmOff"', '', 'width: 64px; height: 64px')}
 ```
 """,
         'Label': f"""# Label
 
 Text on the panel: a title, a status line, a caption beside a control. It fills its box and centers the text vertically.
 
-Props: the text is the element's text; `type` (`title`, `heading`, `subheading`, `body`, `body-strong`), `size` in points, `bold`, `align` (`left`, `center`, `right`), `color` (a token: `text`, `text-secondary`, `accent`, `alert`), `name`, `does` - when the program changes the text, say so: "Shows the codec's call status."
+Props: the text is the element's text; `type` (`title`, `heading`, `subheading`, `body`, `body-strong`), `size` in points, `bold`, `align` (`left`, `center`, `right`), `color` (a token: `text`, `text-secondary`, `accent`), `name`, `does` - when the program changes the text, say so: "Shows the codec's call status."
 
 ```html
 {_x(p, 'Label', ' name="RoomName" type="title"', 'Huddle Room', 'width: 520px; height: 112px')}
@@ -323,8 +470,13 @@ def previews(p):
                      + str(s[0]) + 'px", margin: "16px" } }, h(N.Page, { name: "Home" }, '
                      'h(N.MainArea, null, h("div", { style: { position: "absolute", left: 0, right: 0, top: "300px", height: "120px" } }, '
                      'h(N.Label, { type: "title", align: "center" }, "Main area")))))'),
-        'Button': ('row(Object.keys(N.profile.buttons).map(function (v) { return [box(180, 64, h(N.Button, { key: v, variant: v }, v)), '
-                   'box(180, 64, h(N.Button, { key: v + "on", variant: v, show: "On" }, v + " On"))]; }))'),
+        'Button': ('row(Object.keys(N.profile.buttons).filter(function (v) { return !N.profile.buttons[v].kit; })'
+                   '.map(function (v) { return [box(180, 64, h(N.Button, { key: v, variant: v }, v)), '
+                   'box(180, 64, h(N.Button, { key: v + "on", variant: v, show: "On" }, v + " On"))]; })'
+                   '.concat(N.profile.kit ? [["source", "laptop", 110, 110, "Laptop"], ["list", "display", 192, 54, "Display"], '
+                   '["icon", "help", 64, 64, ""], ["toggle", null, 192, 54, "Power"], ["outlined", "swap", 154, 64, "Swap"]]'
+                   '.map(function (x) { return ["Off", "On"].map(function (st) { return box(x[2], x[3], '
+                   'h(N.Button, { key: x[0] + st, variant: x[0], icon: x[1] || undefined, show: st }, x[4])); }); }) : []))'),
         'Label': ('row(["title", "heading", "body", "body-strong"].map(function (t) { '
                   'return box(260, 60, h(N.Label, { key: t, type: t }, t)); }))'),
         'Panel': 'row([box(260, 90, h(N.Panel, { key: 1 })), box(260, 90, h(N.Panel, { key: 2, fill: "pressed", border: "rect" }))])',
@@ -379,7 +531,8 @@ svg{{position:absolute;left:0;top:0}}
 
 def index_dts(p):
     ns = p['namespace']
-    states = "string | Array<string | { name: string; fill?: string; stroke?: string; color?: string; text?: string }>"
+    states = ("string | Array<string | { name: string; fill?: string; stroke?: string; color?: string; "
+              "border?: string; text?: string; look?: 'off' | 'on'; icon?: string }>")
     return f"""import type * as React from 'react';
 /** Colors are token names ({', '.join(c['name'] for c in p['colors'])}) or '#RRGGBB'. Sizes are points. */
 type Token = string;
@@ -457,7 +610,12 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 
 ## Iconography
 
-Not yet: a panel built from a canvas has no icons. `icon` on a Button draws its name in brackets and is reported, so use a caption.
+{t} shows state with icons, not with colored text. Every icon comes from {t}'s own resource kit through a Button's `icon` - never draw one, and never color a caption red.
+
+- **Anatomy** (the guide's p.4): a `text-secondary` ({_hex_of(p, 'text-secondary')}) stroke and primary elements, `text-subtle` ({_hex_of(p, 'text-subtle')}) secondary elements, an `icon-ground` ({_hex_of(p, 'icon-ground')}) background inside the icon, and - selected - the supporting element in the accent. The kit already draws all of this, for every accent scheme.
+- **Which button**: a stand-alone control (help, power, close, mute) is `variant="icon"`, 64x64. Sources and cameras are `source`, a row of squares with the label under the icon. Options down the left rail are `list`, a selection line at the left when chosen. On and off is `toggle`. An important action with a label is `outlined` with an `icon` (End Call, Swap).
+- **Feedback**: state 0 draws the icon unselected, the others selected - in the accent, with the variant's selection line and fill. A single-image icon (`power`, `call_connected`) still shows it is pressed.
+- **Alerts** are `variant="alert"`: a red fill with a white caption, one per screen at most.
 
 ## Example
 
@@ -467,6 +625,10 @@ Not yet: a panel built from a canvas has no icons. `icon` on a Button draws its 
 """
 
 
+def _hex_of(p, name):
+    return next((c['value'] for c in p['colors'] if c['name'] == name), '?')
+
+
 def _example(p):
     """A start page composed the template's way."""
     states = "'" + p['examples']['on_off'] + "'"
@@ -474,15 +636,22 @@ def _example(p):
     inner = [
         _x(p, 'Label', ' name="RoomName" type="title" align="center"', 'Huddle Room',
            'position: absolute; left: 0px; top: 90px; width: 100%; height: 100px'),
-        _x(p, 'Button', f' name="Laptop" type="button-large" states={states} '
-                        'does="Routes the laptop to the display."',
-           'Laptop', 'position: absolute; left: 318px; top: 330px; width: 280px; height: 120px'),
+        (_x(p, 'Button', ' name="Laptop" variant="source" icon="laptop" states="Off, On" '
+                         'does="Routes the laptop to the display."',
+            'Laptop', 'position: absolute; left: 403px; top: 320px; width: 110px; height: 110px')
+         if p.get('kit') else
+         _x(p, 'Button', f' name="Laptop" type="button-large" states={states} '
+                         'does="Routes the laptop to the display."',
+            'Laptop', 'position: absolute; left: 318px; top: 330px; width: 280px; height: 120px')),
         _x(p, 'Clock', ' name="Date" format="date"', '',
            'position: absolute; left: 17px; top: 696px; width: 360px; height: 40px'),
     ]
     body = [_x(p, 'MainArea', '', '\n    ' + '\n    '.join(inner) + '\n  ')] if main else inner
     if main:
-        body.append(_x(p, 'Button', ' name="HelpBtn" variant="ghost" nav="Help"', 'Help',
+        body.append(_x(p, 'Button', ' name="HelpBtn" variant="icon" icon="help" nav="Help"', '',
+                       'position: absolute; left: 1157px; top: 706px; width: 64px; height: 64px')
+                    if p.get('kit') else
+                    _x(p, 'Button', ' name="HelpBtn" variant="ghost" nav="Help"', 'Help',
                        'position: absolute; left: 1121px; top: 706px; width: 144px; height: 64px'))
     return _x(p, 'Page', ' name="Home" start="true"', '\n  ' + '\n  '.join(body) + '\n')
 

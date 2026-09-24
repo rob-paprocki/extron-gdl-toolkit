@@ -126,6 +126,35 @@ class TestProfile(unittest.TestCase):
         self.assertIn(self.p['font']['family'], Project.open(seed).font_resource_names())
 
 
+class TestKit(unittest.TestCase):
+    """Extron's resource-kit names, read into an icon and a look. The kit
+    spells them several ways, and a few wrongly."""
+
+    def test_kit_file_names_parse_to_icon_and_look(self):
+        for stem, want in (
+                ('laptop_nsel', ('laptop', 'off')),
+                ('laptop-orange_sel', ('laptop', 'orange')),
+                ('help-orange-sel', ('help', 'orange')),
+                ('speaker-volume-periwinkle_3', ('speaker-volume_3', 'periwinkle')),
+                ('power', ('power', 'plain')),
+                ('stop_sel', ('stop', 'sel')),
+                ('record_red_sel', ('record', 'red')),
+                ('make-call-orange_connected', ('make-call_connected', 'orange')),
+                # Selected, though the suffix says otherwise; and misspelled.
+                ('dual-display-1-gold_nsel', ('dual-display-1', 'gold')),
+                ('disc-ligh-blue_sel', ('disc', 'light-blue'))):
+            self.assertEqual(designsys.kit_look(stem), want, stem)
+
+    def test_a_toggle_offers_only_toggles(self):
+        p = designsys.load('afterburn')
+        if not designsys.kit_root(p):
+            self.skipTest("Extron's Afterburn kit is not installed here")
+        names = designsys.icon_names(p)
+        self.assertEqual(names['toggle'], ['toggle-1', 'toggle-2'])
+        self.assertNotIn('toggle-1', names['list'])
+        self.assertIn('call_connected', names['icon'])
+
+
 class TestBundle(unittest.TestCase):
     def setUp(self):
         self.p = designsys.load('afterburn')

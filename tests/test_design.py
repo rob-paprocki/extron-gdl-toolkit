@@ -145,10 +145,27 @@ class TestTranslate(unittest.TestCase):
                                                       'errors': []}})
         self.assertTrue(any('exactly one Page' in p for p in problems), problems)
 
-    def test_an_icon_is_reported(self):
+    def test_an_icon_the_kit_lacks_is_refused(self):
         _, problems, _ = translate({'Home.dc.html': out(
-            HOME, ctl([0, 0, 100, 64], **dict(BTN, icon='Power')))})
-        self.assertTrue(any("icon 'Power'" in p for p in problems), problems)
+            HOME, ctl([0, 0, 100, 64], **dict(BTN, missing_icon=['440x440 rocket'])))})
+        self.assertTrue(any("icon 'rocket' is not in Afterburn's 440x440 kit" in p
+                            for p in problems), problems)
+
+    def test_a_state_image_brings_its_kit_file_and_no_border_stays(self):
+        if not designsys.kit_root(designsys.load('afterburn')):
+            self.skipTest("Extron's Afterburn kit is not installed here")
+        states = [{'name': 'Off', 'image': '440x440_help_nsel.png'},
+                  {'name': 'On', 'image': '440x440_help-orange_sel.png', 'fill': 'pressed',
+                   'border': 'afterburn-ellipse'}]
+        spec, problems, _ = translate({'Home.dc.html': out(HOME, ctl(
+            [0, 0, 64, 64], **dict(BTN, border='none', fill='none', stroke='none',
+                                   states=states)))})
+        self.assertEqual(problems, [])
+        c = spec['pages'][0]['controls'][0]
+        self.assertEqual(c['border'], 'none')
+        self.assertEqual(c['states'][1]['border'], 'afterburn-ellipse')
+        self.assertEqual(spec['images']['440x440_help_nsel.png'],
+                         'Afterburn/Buttons/PNG/440x440/Help/440x440_help_nsel.png')
 
     def test_states_keep_only_their_looks(self):
         states = [{'name': 'Off'}, {'name': 'Live', 'fill': 'accent', 'color': 'page'}]
@@ -195,11 +212,19 @@ class TestInChrome(unittest.TestCase):
         self.assertEqual(problems, [])
         self.assertEqual([p['name'] for p in spec['pages']], ['Huddle Home', 'Huddle Help'])
         home = {c['name']: c for c in spec['pages'][0]['controls']}
-        # A grid cell inside the MainArea, measured after layout: three columns of
-        # 600 with gaps of 20, offset by the squircle's 183,24.
-        self.assertEqual(home['Wireless']['rect'], [548, 344, 187, 120])
-        self.assertEqual(spec['images'], {'6400x4000_bg4-grape.png': 'Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png'})
+        # A flex cell inside the MainArea, measured after layout: three 110 px
+        # sources spread across 440 at 238,330, offset by the squircle's 183,24.
+        self.assertEqual(home['Wireless']['rect'], [586, 354, 110, 110])
+        self.assertEqual(spec['images']['6400x4000_bg4-grape.png'],
+                         'Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png')
         self.assertEqual(home['RoomOff']['nav'], 'Confirm Room Off')
+        if designsys.kit_root(designsys.load('afterburn')):
+            # Grape pairs with the medium-blue scheme, so a selected source
+            # draws the kit's med-blue image; the unselected ones, no accent.
+            self.assertEqual([s['image'] for s in home['Laptop']['states']],
+                             ['756x756_laptop_nsel.png', '756x756_laptop_nsel.png',
+                              '756x756_laptop-med-blue_sel.png'])
+            self.assertIn('756x756_laptop-med-blue_sel.png', spec['images'])
         self.assertEqual(Panel(spec).check(), [])
 
     def test_a_stray_painted_element_is_refused(self):
