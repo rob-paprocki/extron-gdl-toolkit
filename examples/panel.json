@@ -243,7 +243,8 @@
               },
               {
                 "text": "Presets",
-                "fill": "accent"
+                "fill": "accent",
+                "on": "raised"
               }
             ]
           }
@@ -352,7 +353,8 @@
               },
               {
                 "text": "Presets",
-                "fill": "accent"
+                "fill": "accent",
+                "on": "raised"
               }
             ]
           }

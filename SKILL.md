@@ -81,8 +81,11 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
 
    The program sets a state by its index - its position here - and the ID map
    lists them that way. `press` names the state shown while the button is held;
-   it defaults to the second. Two states that look identical are a problem, as
-   is a mirror (a shared `id`) with different states.
+   it defaults to the second, and naming the first - the state the button rests
+   in - is a problem, since holding it would show nothing. Two states that look
+   identical are a problem, whether `states` or `on` made them, as is a mirror
+   (a shared `id`) with different states. In a state, `none` turns its fill or
+   outline off; leaving the key out keeps the button's own.
 
    **Say where the panel boots.** `"start_page": "<page name>"` - the first page
    when omitted - is written into the project, because otherwise the built panel

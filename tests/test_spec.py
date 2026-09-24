@@ -838,6 +838,32 @@ class TestButtonImages(unittest.TestCase):
         self.assertEqual([s['border'] for s in op['states']], ['', ''])
         self.assertEqual((op['image_layout'], op['image_align']), (0, 3))
 
+    def test_a_press_on_the_resting_state_is_a_problem(self):
+        """The panel rests in state 0 and shows the press state while held, so
+        pressing to state 0 shows nothing."""
+        p = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                               {'name': 'On', 'image': 'on.png'}], press='Off')
+        self.assertTrue(any('rests in' in m for m in p.check()), p.check())
+        ok = self._spec(states=[{'name': 'Off', 'image': 'off.png'},
+                                {'name': 'On', 'image': 'on.png'}], press='On')
+        self.assertFalse(any('rests in' in m for m in ok.check()), ok.check())
+
+    def test_on_shorthand_that_changes_nothing_is_a_problem(self):
+        """`on` makes states too, and its On can be the button's own look."""
+        p = _project([{'name': 'Home', 'controls': [
+            {'kind': 'button', 'name': 'B', 'rect': [0, 0, 120, 64], 'text': 'B',
+             'fill': '#37394E', 'on': {'fill': '#37394E'}}]}])
+        self.assertTrue(any('look identical' in m for m in p.check()), p.check())
+
+    def test_a_state_of_none_is_transparent_not_the_buttons_own(self):
+        """A state's `none` turns its fill off; left out, it keeps the button's."""
+        op = self._spec(fill='#37394E', states=[{'name': 'Off', 'fill': 'none'},
+                                                {'name': 'On', 'image': 'none'}]
+                        ).plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['states'][0]['fill'], 0)
+        self.assertEqual(op['states'][1]['fill'], 0xFF37394E)
+        self.assertIsNone(op['states'][1]['image'])
+
     def test_press_feedback_is_written_on(self):
         """A clone keeps its donor's flags, and a donor with them set would
         build buttons that never show their press state."""

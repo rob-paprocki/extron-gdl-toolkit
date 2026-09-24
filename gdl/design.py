@@ -369,7 +369,10 @@ def css_to_argb(v):
 def _state(s):
     if isinstance(s, str):
         return s
-    look = {k: s[k] for k in STATE_LOOK if k in s and (s[k] != 'none' or k == 'border')}
+    # In a state, `none` is an instruction - this state has no fill, outline
+    # or image - where on the control it only means "no override". Dropped,
+    # the state fell back to the button's own fill.
+    look = {k: s[k] for k in STATE_LOOK if k in s}
     return dict(name=s.get('name'), **look) if look else s.get('name')
 
 
@@ -383,7 +386,8 @@ def _colors_in(item):
         for s in c.get('states') or []:
             if isinstance(s, dict):
                 for k in COLOR_KEYS:
-                    if s.get(k):
+                    # `none` is transparent, not a token.
+                    if s.get(k) and s[k] != 'none':
                         yield s[k]
 
 

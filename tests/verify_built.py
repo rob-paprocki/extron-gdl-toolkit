@@ -306,7 +306,9 @@ def check_states(plan_items, table, assets, kind):
             fills_differ = len({_hex(_rgb(w['fill'])) if _painted(w.get('fill')) else None
                                 for w in want}) > 1
             images = [(w.get('image') or {}).get('name') for w in want]
-            if (fills_differ or len(set(images)) > 1) and len(dominant) > 1:
+            # Stroke and border are in the artwork too: two states apart only
+            # in outline are still two states that must not share one image.
+            if len({look(w) for w in want}) > 1 and len(dominant) > 1:
                 ids = {v[0] for v in dominant.values()}
                 colors = {v[1] for v in dominant.values()}
                 if len(ids) == 1:

@@ -408,11 +408,16 @@ TRANSPARENT = {'A': 0, 'R': 0, 'G': 0, 'B': 0}
 
 
 def color(v, theme=None):
-    """'#RRGGBB', '#AARRGGBB' or a theme key -> the ARGB dict layout.json uses."""
+    """'#RRGGBB', '#AARRGGBB' or a theme key -> the ARGB dict layout.json uses.
+
+    `none` is transparent: how a design turns a state's fill or outline off.
+    Leaving the key out keeps the button's own instead."""
     if v is None:
         return None
     if isinstance(v, dict):
         return v
+    if v == 'none':
+        return dict(TRANSPARENT)
     if theme and v in theme:
         v = theme[v]
     m = HEX.match(str(v))
@@ -961,7 +966,8 @@ class Panel:
                 'border': (BORDERS.get(s['border'], s['border']) if s.get('border') is not None
                            else border),
                 'text': s['text'] if 'text' in s else (c.get('text') or ''),
-                'image': self._image_op(s['image'] if 'image' in s else c.get('image')),
+                'image': self._image_op(None if s.get('image') == 'none' else
+                                        s['image'] if 'image' in s else c.get('image')),
             })
         return out
 
@@ -1008,7 +1014,7 @@ class Panel:
         Ready, On and Muted states built on a raised slab, found by
         verify_built's image check.
         """
-        fill = color(c.get('fill'), self.theme)
+        fill = color(c.get('fill'), self.theme) if c.get('fill') != 'none' else None
         stroke = color(c.get('stroke'), self.theme) or dict(TRANSPARENT)
         text_color = color(c.get('color') or self.theme.get('text') or '#FFFFFF',
                            self.theme)
@@ -1080,16 +1086,17 @@ class Panel:
             if dup:
                 out.append(f"{where}: state name(s) {', '.join(map(repr, dup))} used twice - "
                            f'the program and the ID map tell states apart by name')
-            if not out:
-                look = self._states_for(c, *self._base_look(c)) or []
-                for i, a in enumerate(look):
-                    for b in look[i + 1:]:
-                        if {k: v for k, v in a.items() if k != 'name'} == \
-                                {k: v for k, v in b.items() if k != 'name'}:
-                            out.append(f"{where}: states {a['name']!r} and {b['name']!r} look "
-                                       f'identical - the program could set either and the '
-                                       f'panel would show no difference. Give one its own '
-                                       f'fill, stroke, color, border, text or image')
+        # `on` and theme.on make states too, and can make two alike.
+        if not out and self._feedback(c):
+            look = self._states_for(c, *self._base_look(c)) or []
+            for i, a in enumerate(look):
+                for b in look[i + 1:]:
+                    if {k: v for k, v in a.items() if k != 'name'} == \
+                            {k: v for k, v in b.items() if k != 'name'}:
+                        out.append(f"{where}: states {a['name']!r} and {b['name']!r} look "
+                                   f'identical - the program could set either and the '
+                                   f'panel would show no difference. Give one its own '
+                                   f'fill, stroke, color, border, text or image')
         if 'press' in c:
             specs = self._feedback(c) or []
             names = [s.get('name') for s in specs]
@@ -1099,6 +1106,12 @@ class Panel:
             elif c['press'] not in names:
                 out.append(f"{where}: press {c['press']!r} is not one of its states "
                            f"({', '.join(map(repr, names))})")
+            # The panel boots into state 0 and shows the press state while
+            # held: naming state 0 on a button with others shows no press.
+            elif len(specs) > 1 and names.index(c['press']) == 0:
+                out.append(f"{where}: press {c['press']!r} is the state the button rests in, "
+                           f'so holding it would show nothing - name another state, or leave '
+                           f'`press` out for the second')
         return out
 
     def _op_for(self, c, index):
