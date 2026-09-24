@@ -154,6 +154,17 @@ class TestKit(unittest.TestCase):
         looks = designsys.kit_index(p)['files']['1224x344']['record']
         self.assertEqual(looks['red'], '1224x344_record_red_sel.png')
 
+    def test_every_scheme_has_its_slider_thumb(self):
+        """Drawn from the kit, not as a circle the size of its box: the kit's
+        circle is 65% of it, and a full-box one was half as wide again as the
+        panel's."""
+        p = designsys.load('afterburn')
+        if not designsys.kit_root(p, 'thumbs'):
+            self.skipTest("Extron's Afterburn kit is not installed here")
+        art = designsys.thumb_art(p)
+        self.assertEqual(sorted(art), sorted(s['id'] for s in p['schemes']))
+        self.assertTrue(all(v.startswith('data:image/webp;base64,') for v in art.values()))
+
     def test_a_toggle_offers_only_toggles(self):
         p = designsys.load('afterburn')
         if not designsys.kit_root(p):

@@ -249,8 +249,6 @@ def kit_art(p, index):
     1.8 MB for Afterburn's thousand. Extron's artwork: it goes into the
     owner's private design system only (docs/claude-design.md section 2).
     """
-    import base64
-    import io
     try:
         from PIL import Image
     except ImportError:
@@ -269,12 +267,39 @@ def kit_art(p, index):
                     continue
                 rel = index['paths'][f][len(p['kit']['root']) + 1:]
                 path = os.path.join(root, *rel.split('/'))
-                im = Image.open(path).convert('RGBA')
-                im = im.resize((w, max(1, round(w * im.height / im.width))),
-                               Image.Resampling.LANCZOS)
-                buf = io.BytesIO()
-                im.save(buf, 'WEBP', quality=80, method=4)
-                out[f] = 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()
+                out[f] = _webp(Image, path, w)
+    return out
+
+
+def _webp(Image, path, w):
+    import base64
+    import io
+    im = Image.open(path).convert('RGBA')
+    im = im.resize((w, max(1, round(w * im.height / im.width))), Image.Resampling.LANCZOS)
+    buf = io.BytesIO()
+    im.save(buf, 'WEBP', quality=80, method=4)
+    return 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()
+
+
+def thumb_art(p):
+    """{scheme id: data URI} - each scheme's slider thumb, from the kit.
+
+    The kit draws the thumb's circle across 65% of its box, with its shadow
+    around it, so a 50 px thumb shows a circle of about 32 px - which is what
+    the seed's built slider shows. A circle drawn to the whole box was half as
+    wide again as the panel's.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return {}
+    from ..spec import resolve_image
+    out = {}
+    for s in p['schemes']:
+        t = slider_thumb(p, s['id'])
+        f = resolve_image(t[1]) if t else None
+        if f:
+            out[s['id']] = _webp(Image, f, 100)
     return out
 
 
@@ -291,7 +316,8 @@ def bundle(p, art=True):
     if p.get('kit'):
         index = kit_index(p)
         profile['kit'] = dict(p['kit'], files=index['files'],
-                              art=kit_art(p, index) if art and index['files'] else {})
+                              art=kit_art(p, index) if art and index['files'] else {},
+                              thumb_art=thumb_art(p) if art else {})
     js = _read('bundle.js')
     for mark, value in (('__HEADER__', header),
                         ('__PROFILE__', json.dumps(profile, separators=(',', ':')))):
@@ -444,7 +470,7 @@ A divider. `orientation` (`horizontal`, default, or `vertical`), `color` (defaul
 """,
         'Slider': f"""# Slider
 
-A control the user drags: volume, a light level. Drawn as {t} builds it: a rounded rail `track` px wide (default {p['defaults']['slider']['track']}) down the middle of the control's box, the rail's filled part in `{p['defaults']['slider']['value']}`, and a round thumb `thumb` px across (default {p['defaults']['slider']['thumb']}) in `{p['defaults']['slider']['thumb_color']}`. The box is the touch area: make it at least as wide as the thumb. `orientation`: the direction the value grows, `{p['defaults']['slider']['orientation']}` by default as {t}'s own volume sliders are (`up`, `down`, `left`, `right`). `fill`: the rail's empty part, default `{p['defaults']['slider']['fill']}` - on a `raised` panel use `page`. `name`, and `does` - what it sets and whether it follows feedback. `value` (0-100) only draws the canvas. The filled part and the thumb come from the template's own slider, so they are not props.
+A control the user drags: volume, a light level. Drawn as {t} builds it: a rounded rail `track` px wide (default {p['defaults']['slider']['track']}) down the middle of the control's box, the rail's filled part in `{p['defaults']['slider']['value']}`, and a round thumb in `{p['defaults']['slider']['thumb_color']}` whose box is `thumb` px (default {p['defaults']['slider']['thumb']}) - the circle itself about two-thirds of that, with a shadow round it, as the panel draws it. The box is the touch area: make it at least as wide as the thumb. `orientation`: the direction the value grows, `{p['defaults']['slider']['orientation']}` by default as {t}'s own volume sliders are (`up`, `down`, `left`, `right`). `fill`: the rail's empty part, default `{p['defaults']['slider']['fill']}` - on a `raised` panel use `page`. `name`, and `does` - what it sets and whether it follows feedback. `value` (0-100) only draws the canvas. The filled part and the thumb come from the template's own slider, so they are not props.
 
 ```html
 {_x(p, 'Slider', ' name="Volume" does="Sets program volume; follows the DSP level."', '', 'width: 50px; height: 395px')}
@@ -651,7 +677,7 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 - **Anatomy** (the guide's p.4): a `text-secondary` ({_hex_of(p, 'text-secondary')}) stroke and primary elements, `text-subtle` ({_hex_of(p, 'text-subtle')}) secondary elements, an `icon-ground` ({_hex_of(p, 'icon-ground')}) background inside the icon, and - selected - the supporting element in the accent. The kit already draws all of this, for every accent scheme.
 - **Which button**: a stand-alone control (help, power, close, mute) is `variant="icon"`, 64x64. Sources and cameras are `source`, a row of squares with the label under the icon. Options down the left rail are `list`, a selection line at the left when chosen. On and off is `toggle`. An important action with a label is `outlined` with an `icon` (End Call, Swap).
 - **Feedback**: state 0 draws the icon unselected, the others selected - in the accent, with the variant's selection line and fill. A single-image icon (`power`, `call_connected`) still shows it is pressed.
-- **Alerts** are `variant="alert"`: a red fill with a white caption, one per screen at most.
+- **Alerts** are `variant="alert"`: a red fill with a white caption, for a condition someone has to act on - a fault, a warning - and one per screen at most. An ordinary action, even a final one like shutting the room down, is an outlined button unless the designer asks for red.
 
 ## Example
 

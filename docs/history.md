@@ -216,7 +216,12 @@ statement is in the live docs; this is the record that it changed.
   and an alert is a red fill with a white caption. Icons had been left out
   pending a decision on putting Extron's artwork in claude.ai; the owner agreed
   to downscaled kit images in their private design system, and every image
-  button is now drawn from the kit as the seed draws it.
+  button is now drawn from the kit as the seed draws it. Two more from the
+  owner's review of that canvas: its Shut Down was an alert, and shutting down
+  is no alert condition, so an alert is now kept to faults and warnings; and
+  its slider thumb was a circle the size of the 50 px thumb box, where the
+  kit's circle is 65% of it - half as wide again as the panel's. The canvas now
+  draws the kit's own thumb.
 - **The six-color check counted only colors a spec names, and only on pages**
   (until 2026-09-24). A caption with no `color` draws in the theme's text
   color, and popups are on the panel too. `examples/huddle-functions.json`

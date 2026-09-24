@@ -356,9 +356,17 @@
     }
     var kids = [h('div', { key: 'r', style: rail }), h('div', { key: 'v', style: bar })];
     if (s) {
-      var thumb = { position: 'absolute', width: s + 'px', height: s + 'px', borderRadius: '50%',
-                    boxSizing: 'border-box', border: '1px solid rgba(0, 0, 0, 0.55)',
-                    background: paint(L.colors, d.thumb_color) };
+      // The kit's own thumb for the scheme, where the system carries it: its
+      // circle is 65% of the thumb's box, with a shadow round it, as the
+      // panel draws it. Without it, a circle of that size in the color.
+      var art = kind === 'slider' && P.kit && P.kit.thumb_art ? P.kit.thumb_art[L.scheme] : null;
+      var dot = Math.round(s * (d.thumb_circle || 1));
+      var thumb = art
+        ? { position: 'absolute', width: s + 'px', height: s + 'px',
+            background: 'url("' + art + '") center / contain no-repeat' }
+        : { position: 'absolute', width: s + 'px', height: s + 'px',
+            background: 'radial-gradient(circle, ' + paint(L.colors, d.thumb_color) + ' '
+              + (dot / 2 - 0.5) + 'px, transparent ' + dot / 2 + 'px)' };
       var at = 'calc((100% - ' + s + 'px) * ' + pct / 100 + ')';
       if (along) { thumb.left = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'up' ? 'bottom' : 'top'] = at; }
       else { thumb.top = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'right' ? 'left' : 'right'] = at; }

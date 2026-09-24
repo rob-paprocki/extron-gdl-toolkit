@@ -1,17 +1,54 @@
 {
   "v": 3,
-  "createdOnFiles": {"v": 1, "at": "2026-09-24T10:35:00Z"},
-  "title": "Huddle Room - Afterburn",
-  "launch": {"view": "canvas"},
-  "pages": [],
+  "attachments": {},
   "boards": {
-    "Home.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 800, "title": "Huddle Home", "is_interactive": true},
-    "Help.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Huddle Help", "is_interactive": true},
-    "ConfirmRoomOff.dc.html": {"x": 2720, "y": 0, "w": 1280, "h": 800, "title": "Confirm Room Off", "is_interactive": true}
+    "ConfirmRoomOff.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Confirm Room Off",
+      "w": 1280,
+      "x": 2720,
+      "y": 0
+    },
+    "Help.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Huddle Help",
+      "w": 1280,
+      "x": 1360,
+      "y": 0
+    },
+    "Home.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Huddle Home",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    }
   },
-  "order": ["Home.dc.html", "Help.dc.html", "ConfirmRoomOff.dc.html"],
-  "notes": {},
+  "createdOnFiles": {
+    "at": "2026-09-24T10:35:00Z",
+    "v": 1
+  },
   "designSystems": [
-    {"title": "Extron Afterburn", "namespace": "extronafterburn", "artifact": "https://claude.ai/artifact/1nZsxvdm7HsXpfoSXBVjvx", "version": "1790262724-72fe", "copiedAt": "2026-09-24T15:12:00Z"}
-  ]
+    {
+      "artifact": "https://claude.ai/artifact/1nZsxvdm7HsXpfoSXBVjvx",
+      "copiedAt": "2026-09-24T15:12:00Z",
+      "namespace": "extronafterburn",
+      "title": "Extron Afterburn",
+      "version": "1790262724-72fe"
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {},
+  "order": [
+    "Home.dc.html",
+    "Help.dc.html",
+    "ConfirmRoomOff.dc.html"
+  ],
+  "pages": [],
+  "title": "Huddle Room - Afterburn"
 }

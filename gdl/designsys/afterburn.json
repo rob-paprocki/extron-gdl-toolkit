@@ -7,7 +7,8 @@
     "Panel: the seed's filled container - raised fill, #6A6E89 stroke, Afterburn - 10 Radius 2 Thick - and the guide's 'shapes #6A6E89' row.",
     "Themes: the guide's four background images and Extron's recommended accent scheme for each (Default + 1, Anthracite + 3, Blue Slate + 2, Grape + 4; guide pp.8-9), from the resource kit's Backgrounds/6400x4000/TLP 1025 & 1220 files - the variant the seed's own 6400x4000_bg1.png was made from (its recorded filename and byte size match). The image is the raised card that elevates the page's main area, transparent around it so the page color shows.",
     "Layout: the seed's own pages (Start, Main Select Source, Main VC, Main SD), rendered from their built artwork: every page puts its task in the background image's squircle and the same few controls in the rails either side.",
-    "Image buttons and the kit: every image button in the Afterburn 1035 and 1535 seeds - the kit file on each state (buttonImageField), drawn Fill and MiddleCenter, with no border resource; the fill, caption and indent each archetype uses; and the kit's own naming (Resources/Afterburn/Buttons/PNG: <size>_<icon>_nsel for unselected, <size>_<icon>-<accent>_sel per accent). Icon anatomy: the guide's p.4."
+    "Image buttons and the kit: every image button in the Afterburn 1035 and 1535 seeds - the kit file on each state (buttonImageField), drawn Fill and MiddleCenter, with no border resource; the fill, caption and indent each archetype uses; and the kit's own naming (Resources/Afterburn/Buttons/PNG: <size>_<icon>_nsel for unselected, <size>_<icon>-<accent>_sel per accent). Icon anatomy: the guide's p.4.",
+    "Slider thumb: the kit's 440x440_thumb-1 draws its circle across 286 of 440 px (65%), and the seed's built 50 px thumb shows a circle 31-32 px across - so the canvas draws the kit's own thumb, not a circle the size of the box."
   ],
   "template": "Afterburn",
   "namespace": "ExtronAfterburn",
@@ -117,7 +118,7 @@
     {
       "name": "alert",
       "value": "#D32929",
-      "usage": "An alert: a red fill with a white caption, for a warning or a destructive action. Never a caption color - Afterburn shows state with icons in the accent colors, not with colored text. The red is the seed's own record icon's."
+      "usage": "An alert: a red fill with a white caption, for a condition someone has to act on - a fault, a warning. Not for an ordinary action such as shutting down. Never a caption color - Afterburn shows state with icons in the accent colors, not with colored text. The red is the seed's own record icon's."
     },
     {
       "name": "scrim",
@@ -364,7 +365,7 @@
       ]
     },
     "alert": {
-      "usage": "An alert: a red fill and a white caption, for a warning or a destructive confirmation (Shut Down). Use it sparingly - one per screen at most.",
+      "usage": "An alert: a red fill and a white caption, for a condition someone has to act on - a fault, a warning, an alarm. Not for an ordinary action, even a final one like shutting the room down: a confirmation is an outlined button. A designer can still choose red where they want it.",
       "look": {
         "fill": "alert",
         "border": "afterburn-flat",
@@ -437,7 +438,8 @@
       "thumb": 50,
       "value": "text-secondary",
       "thumb_color": "accent-2",
-      "thumb_image": "thumb-1"
+      "thumb_image": "thumb-1",
+      "thumb_circle": 0.65
     },
     "level": {
       "fill": "raised",
