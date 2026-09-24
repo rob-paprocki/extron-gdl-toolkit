@@ -190,15 +190,6 @@ def part_number(model):
     return e[3] if e else None
 
 
-# Extron's own numbers, GUI Design Standards rev E pp.55-56: a touch target must
-# be 9mm square, and touchable elements must be 2mm apart.
-MM_TOUCH_TARGET = 9.0
-MM_SPACING = 2.0
-MAX_BUTTONS_PER_GROUP = 9        # p.58
-MAX_COLORS_PER_PROJECT = 6      # p.49
-MIN_BODY_POINT_SIZE = 14         # pp.65-67
-
-
 def _panels():
     """resolution -> (models sharing it, the DENSEST model's DPI).
 
@@ -1278,19 +1269,45 @@ class Panel:
 
 
     def palette(self):
-        """Every distinct color the spec uses. p.49 caps a project at six."""
+        """Every distinct color the panel shows. p.49 caps a project at six.
+
+        Counted from what each control draws, not only from what the spec
+        names: a caption with no `color` is drawn in the theme's text color, or
+        white, and a popup is on the panel as much as a page is. Counting only
+        named colors let a spec pass at six while the panel showed seven.
+        """
         seen = set()
-        for pg in self.pages:
-            seen.add(tuple(sorted((pg['background'] or {}).items())))
+
+        def add(v):
+            if v:
+                seen.add(tuple(sorted(v.items())))
+
+        for pg in self.pages + self.popups:
+            add(pg['background'])
             for c in pg['controls']:
                 # A state's colors are on the panel as much as the control's
                 # own - an On fill included.
                 for look in [c] + (self._feedback(c) or []):
                     for key in ('fill', 'stroke', 'color', 'text_color'):
-                        v = color(look.get(key), self.theme)
-                        if v:
-                            seen.add(tuple(sorted(v.items())))
-        return {s for s in seen if s}
+                        add(color(look.get(key), self.theme))
+                if self._default_text_shown(c):
+                    # Resolved only when something draws in it, as the
+                    # applier does (_base_look).
+                    add(color(self.theme.get('text') or '#FFFFFF', self.theme))
+        return seen
+
+    def _default_text_shown(self, c):
+        """Does any caption on this control draw in the default text color?
+
+        A clock draws the time whatever its `text`, so it always has one.
+        """
+        if c.get('color'):
+            return False
+        specs = self._feedback(c)
+        if not specs:
+            return bool(c.get('text')) or c.get('kind') == 'datetime'
+        return any(s.get('text', c.get('text')) and not ('color' in s or 'text_color' in s)
+                   for s in specs)
 
 
 def main(argv):

@@ -171,7 +171,9 @@ function Get-GdlStates {
 }
 
 function Set-GdlStateCount {
-    <#  Give a cloned control exactly $Count states. Returns $true on success.
+    <#  Give a control exactly $Count states. Returns $true on success. Used on
+        a cloned donor by Apply-GdlPlan and on an existing button by
+        Apply-GdlEdits' `states` op.
 
         A donor button has however many states its author gave it - Off/On for
         nearly all, four for Extron's volume mute - and a clone keeps them. So a
@@ -196,12 +198,12 @@ function Set-GdlStateCount {
     if (-not $sts) { Note-Problem "no statesField on $($Control.GetType().Name)"; return $false }
     $items = Get-GdlField $sts 'mItems'
     if ($null -eq $items -or $items.Count -lt 1) {
-        Note-Problem "donor $($Control.GetType().Name) has no state to clone"
+        Note-Problem "$($Control.GetType().Name) '$(Get-GdlField $Control 'nameField')' has no state to clone"
         return $false
     }
     $flags = Get-GdlField $sts 'statusField'
     if ($flags -and $items.Count -ne $Count) {
-        Note-Problem "donor $($Control.GetType().Name) has state status flags $flags - its states cannot be added or removed"
+        Note-Problem "$($Control.GetType().Name) '$(Get-GdlField $Control 'nameField')' has state status flags $flags - its states cannot be added or removed"
         return $false
     }
     while ($items.Count -lt $Count) {

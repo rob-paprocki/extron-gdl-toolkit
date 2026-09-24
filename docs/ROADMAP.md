@@ -11,7 +11,8 @@ opening GUI Designer.**
   (`powershell/New-GdlPanel.ps1`), from a client project or from a clean seed.
 - Also proven: Arial recovery, font application, UTF-8 specs, multi-page panels,
   clean-room authoring, retarget from a seed (650/650), popup canvases that keep
-  their own size, and button feedback with any number of named states.
+  their own size, and button feedback with any number of named states - authored
+  from a spec, or edited state by state on an existing panel.
 - **What the controls do**, from the same spec: `gdl.idmap` checks the page
   flips and writes the programmer's ID map, verified against the built panel
   (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
@@ -61,33 +62,28 @@ opening GUI Designer.**
    part; the workflow is for the judgment-heavy dimensions: collection traps,
    dead guards, silent no-ops, plan-contract drift, verifier blind spots,
    fields a clone inherits, what is secretly Afterburn-only, layout-math edges.
-4. **Re-verify anything edited with `rename` before `7b3e630`.** Until then it
-   wrote only state 0, so a renamed button shows its old caption once the
-   control system switches it On. The 12/12 rename verification never looked at
-   state 1. Extend `verify_built.check_edits` to every state and re-run the
-   worked edit.
-5. **A real-size panel.** Nothing generated has exceeded three pages; the client
+4. **A real-size panel.** Nothing generated has exceeded three pages; the client
    project has 27. A 20+ page spec with navigation, popups shared across pages
    and per-page popup references is where the next class of bug lives. With `nav`
    the page flow is part of the spec, and `verify_idmap.py` checks it against
    the build.
-6. **Claude Design as a front end.** A design system published to Claude Design
+5. **Claude Design as a front end.** A design system published to Claude Design
    whose components are exactly the spec's kinds (buttons and their states, labels,
    sliders, popup regions) and whose tokens are the themes already mined. Plus a
    translator from a canvas to a spec: lay out each artboard in a headless
    browser at the panel's resolution, read every component's box and props, and
    map prototype links to `nav`. `docs/idmap.md` §6 has the mapping.
-7. **Icons in the spec vocabulary.** Both routes are proven by probe - font
+6. **Icons in the spec vocabulary.** Both routes are proven by probe - font
    glyphs (~339 icons, no image resource) and appended image resources
    (`powershell/New-ImageProbe.ps1`) - and neither can be written in a spec.
-8. **Pick the seed automatically** - `gdl.spec donors --auto` choosing from
+7. **Pick the seed automatically** - `gdl.spec donors --auto` choosing from
    `seeds/` by theme and canvas, so a prose brief needs no file path.
-9. **Theme-portable borders.** No border resource is defined by every project
+8. **Theme-portable borders.** No border resource is defined by every project
    in the corpus. A spec that says `rounded` or `capsule` should resolve to
    whatever the donor's family calls it.
-10. **Close `verify_built.py`'s remaining blind spots**: text alignment, and
-    donor controls that ride along on a generated page unasked.
-11. **Run the seed ground-truth test in CI** with
+9. **Close `verify_built.py`'s remaining blind spots**: text alignment, and
+   donor controls that ride along on a generated page unasked.
+10. **Run the seed ground-truth test in CI** with
     `git lfs pull --include "seeds/Afterburn 1035.gdl"` (about 3 MB of LFS
     bandwidth per build).
 
@@ -100,15 +96,6 @@ opening GUI Designer.**
 - **Behavior the format carries but the spec cannot yet say:** the Offline Page
   and its enable flag, and a popup's auto-hide timeout (0 on every popup in the
   corpus). Both are applier work.
-- **Editing a multi-state button.** `gdl.edit`'s `rename` writes one caption
-  to every state, and `restyle` matches only a control's own colors - so a
-  button whose colors live on its states, which is every multi-state button in
-  the Afterburn 1035 seed, is not matched, and one that is gets the same new
-  color on every state. Neither is reported, and no edit adds or removes a
-  state. Authoring from a spec does all three (`SKILL.md` step 3).
-- **`palette()` counts only colors a spec names.** A control with no `color`
-  renders in the theme's text color, or white, and the p.49 six-color check
-  never counts it - so a spec can pass at six while the panel shows seven.
 - **An ID map for an existing panel.** `gdl.idmap` reads a spec; a client
   project that was never a spec has none, though its built `layout.json` holds
   every ID, type, page and caption a map needs.

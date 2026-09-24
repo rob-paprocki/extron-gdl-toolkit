@@ -380,17 +380,141 @@ def _index(page):
     return out
 
 
-def check_edits(plan, j):
+def _hex_rgb(h):
+    """'#AARRGGBB' -> ((r, g, b), alpha), from an edit plan."""
+    v = int(h.lstrip('#'), 16)
+    return _rgb(v), (v >> 24) & 0xFF
+
+
+def _edit_fill(where, tid, want, assets):
+    """(problem or None, note or None): is `want` the plurality color of the
+    artwork `tid`? The same test check_fills applies to an authored control."""
+    rgb, alpha = _hex_rgb(want)
+    if alpha != 0xFF:
+        return None, None               # a translucent fill has no opaque pixels
+    if tid is None or tid < 0:
+        return (f'{where}: fill {_hex(rgb)} was asked for, but Build produced no '
+                f'artwork (TLPImageID {tid})'), None
+    shares = _shares(assets, tid)
+    if not shares:
+        return f'{where}: artwork {tid} is missing or fully transparent', None
+    top, top_share = max(shares.items(), key=lambda kv: kv[1])
+    if top == rgb:
+        return None, None
+    mine = shares.get(rgb, 0.0)
+    if mine >= WEAK_FILL:
+        return None, (f'{where}: fill {_hex(rgb)} is {mine:.0%} of the artwork, '
+                      f'behind {_hex(top)} at {top_share:.0%}')
+    return (f'{where}: fill {_hex(rgb)} is {mine:.0%} of the built artwork; it is '
+            f'mostly {_hex(top)} ({top_share:.0%})'), None
+
+
+def _edit_text_color(where, got, want):
+    rgb, _ = _hex_rgb(want)
+    if not isinstance(got, dict):
+        return f'{where}: text color {_hex(rgb)} was asked for, but it built with none'
+    have = (got.get('R'), got.get('G'), got.get('B'))
+    if have != rgb:
+        return f'{where}: text color is {_hex(have)}, the edit asked for {_hex(rgb)}'
+    return None
+
+
+def check_edit_states(op, c, label, assets):
+    """Each state an edit wrote, and - for the `states` op - every state.
+
+    (problems, notes, unverifiable). A state is found by index, which is what
+    the plan addressed and what the control program sets. Colors are read the
+    way check_fills reads them: a fill off the state's own artwork, a text
+    color off the model, because the caption is drawn live.
+    """
+    problems, notes, unverifiable = [], [], []
+    built = c.get('States') or []
+    fields = op.get('fields') or {}
+    if op.get('state_count') is not None:
+        if len(built) != op['state_count']:
+            names = [s.get('Name') for s in built]
+            return ([f"{label}: {len(built)} states built ({', '.join(map(repr, names))}), "
+                     f"the edit asked for {op['state_count']}"], [], [])
+        for key, what in (('<TLPPressFeedbackStateID>k__BackingField', 'press'),
+                          ('<TLPDefaultStateID>k__BackingField', 'default')):
+            bkey = key[1:key.index('>')]
+            if key in fields and c.get(bkey) != fields[key]:
+                problems.append(f'{label}: {what} state is {c.get(bkey)}, the edit asked '
+                                f'for {fields[key]}')
+
+    want = {}
+    for i, s in enumerate(op.get('expect_states') or []):
+        want[i] = {k: v for k, v in s.items() if v is not None}
+    for ps in op.get('per_state') or []:
+        w = want.setdefault(ps['index'], {})
+        f, col = ps.get('fields') or {}, ps.get('colors') or {}
+        if 'nameField' in f:
+            w['name'] = f['nameField']
+        if 'textField' in f:
+            w['text'] = f['textField']
+        if ps.get('flattened'):
+            w.pop('text', None)
+            w['ftext'] = ps['ftext']
+        for field, key in (('borderFillColorField', 'fill'), ('textColorField', 'text_color'),
+                           ('borderColorField', 'stroke')):
+            if field in col:
+                w[key] = col[field]
+
+    for i, w in sorted(want.items()):
+        if i >= len(built):
+            problems.append(f'{label}: the edit wrote state {i}, but it built with '
+                            f'{len(built)} state(s)')
+            continue
+        bs = built[i]
+        where = f"{label} state {i} {bs.get('Name')!r}"
+        if 'name' in w and bs.get('Name') != w['name']:
+            problems.append(f"{label} state {i}: named {bs.get('Name')!r}, the edit asked "
+                            f"for {w['name']!r}")
+        if 'ftext' in w:
+            # Formatted text is baked into the artwork and reads back as ''.
+            unverifiable.append(f"{where} -> {w['ftext']!r}")
+        elif 'text' in w and not c.get('FlattenText') and \
+                (bs.get('Text') or '') != w['text']:
+            problems.append(f"{where}: caption is {bs.get('Text')!r}, the edit asked for "
+                            f"{w['text']!r}")
+        if 'text_color' in w:
+            p = _edit_text_color(where, bs.get('TextColor'), w['text_color'])
+            if p:
+                problems.append(p)
+        if 'fill' in w:
+            p, n = _edit_fill(where, bs.get('TLPImageID'), w['fill'], assets)
+            if p:
+                problems.append(p)
+            if n:
+                notes.append(n)
+
+    # Two states the edit made look different must be two images. Only fill
+    # and stroke are in the artwork; a caption and its color are drawn live.
+    exp = op.get('expect_states') or []
+    for i in range(len(exp)):
+        for k in range(i + 1, min(len(exp), len(built))):
+            if (exp[i].get('fill'), exp[i].get('stroke')) == \
+                    (exp[k].get('fill'), exp[k].get('stroke')):
+                continue
+            ti, tk = built[i].get('TLPImageID'), built[k].get('TLPImageID')
+            if ti is not None and ti >= 0 and ti == tk:
+                problems.append(f"{label}: states {exp[i]['name']!r} and {exp[k]['name']!r} "
+                                f'were meant to look different but built as the same '
+                                f'artwork {ti}')
+    return problems, notes, unverifiable
+
+
+def check_edits(plan, j, assets=None):
     """An EDIT plan addresses existing controls by id, so verification is a
     direct lookup: did the field we asked for actually change?
 
-    Captions need care. The plan may write `textField` on the control, on every
-    state, or `ftextField` on every state, and the built `layout.json` reports
-    one merged caption - so compare against that rather than against whichever
-    field the op happened to name.
+    Captions and colors are checked state by state (check_edit_states), since
+    that is how the plan writes them. A control's own caption, where it has no
+    states, is compared with the merged caption layout.json reports.
     """
+    assets = assets or {}
     pages = {p['ID']: p for p in j['Pages'] + j['PopupPages']}
-    problems, checked, unverifiable = [], 0, []
+    problems, checked, unverifiable, notes = [], 0, [], []
     for op in plan['controls']:
         pg = pages.get(op['page'])
         if pg is None:
@@ -402,24 +526,32 @@ def check_edits(plan, j):
             problems.append(f"control id {op['control']} is not on page {pg['Name']!r}")
             continue
         checked += 1
-        want_text = None
-        for src in (op.get('fields') or {}, op.get('states') or {}):
-            if 'textField' in src:
-                want_text = src['textField']
-        if op.get('states_ftext') is not None:
-            want_text = op['states_ftext']
-        if want_text is not None and not op.get('flattened'):
+        label = f"{pg['Name']!r} {c.get('Name')!r}"
+        if op.get('states') or op.get('states_colors') or op.get('states_ftext') is not None:
+            problems.append(f"{label}: this plan writes every state alike - re-plan it "
+                            f'with gdl.edit, which writes each state by index')
+            continue
+        want_text = (op.get('fields') or {}).get('textField')
+        if want_text is not None and not op.get('per_state'):
             got = (_caption(c) or '').replace('\t', '').replace('\r\n', ' ').strip()
             if got != want_text:
-                problems.append(f"{pg['Name']!r} {c.get('Name')!r}: caption is {got!r}, "
-                                f'the edit asked for {want_text!r}')
-        elif want_text is not None:
-            # A formatted-text caption is baked into the artwork, and
-            # layout.json reports it as '' both before and after the edit. There
-            # is nothing here to compare, so checking it would report a failure
-            # that is really a lookup in the wrong place. Say so instead: the
-            # only real check is looking at the asset.
-            unverifiable.append(f"{pg['Name']!r} {c.get('Name')!r} -> {want_text!r}")
+                problems.append(f'{label}: caption is {got!r}, the edit asked for '
+                                f'{want_text!r}')
+        own = op.get('colors') or {}
+        if 'textColorField' in own and not c.get('States'):
+            p = _edit_text_color(label, c.get('TextColor'), own['textColorField'])
+            if p:
+                problems.append(p)
+        if 'borderFillColorField' in own and not c.get('States'):
+            p, n = _edit_fill(label, c.get('TLPImageID'), own['borderFillColorField'], assets)
+            if p:
+                problems.append(p)
+            if n:
+                notes.append(n)
+        p, n, u = check_edit_states(op, c, label, assets)
+        problems += p
+        notes += n
+        unverifiable += u
         # 'UserId', as layout.json spells it. This said 'UserID', matched no
         # key, and the `key not in c` guard below skipped it - so a renumber
         # was never actually checked against the build.
@@ -433,8 +565,14 @@ def check_edits(plan, j):
                 problems.append(f"{pg['Name']!r} {c.get('Name')!r}: {key} is {c[key]}, "
                                 f'the edit asked for {want}')
     for u in unverifiable:
+        # A formatted-text caption is baked into the artwork, and layout.json
+        # reports it as '' both before and after the edit. There is nothing
+        # here to compare, so checking it would report a failure that is
+        # really a lookup in the wrong place. Say so instead.
         print(f'  NOT VERIFIABLE HERE (caption is baked into the artwork, '
               f'compare the asset PNG): {u}')
+    for n in notes:
+        print(f'  FILL NOT DOMINANT (survived, but check it by eye): {n}')
     return problems, checked
 
 
@@ -501,7 +639,7 @@ def check(plan_path, built_path):
         plan = json.load(fh)
     j, assets = load(built_path)
     if plan.get('generated_by') == 'gdl.edit':
-        return check_edits(plan, j)
+        return check_edits(plan, j, assets)
     pages = {p['Name']: p for p in j['Pages']}
     popups = {p['Name']: p for p in j['PopupPages']}
 

@@ -13,32 +13,46 @@ should never be where a selector gets debugged.
     python -m gdl.edit check <edits.json> <panel.gdl>
     python -m gdl.edit plan  <edits.json> <panel.gdl> out/edits-plan.json
 
-The four operations:
+The five operations:
 
-  rename    change captions. Rewrites the control AND every state, because a
-            button renders from its state and a caption set only on the control
-            builds blank.
+  rename    change captions, state by state. A button renders from its states,
+            and they need not all say the same thing.
+  restyle   remap colors across the whole project, on each state's own colors
+            as well as the control's.
+  states    give a button the states it should have: add, remove or rename
+            them, and set how each looks.
   retarget  move the project to another panel model. Sets the three fields that
             have to agree (platform instance, platform type enum, screen size)
             and optionally rescales the layout.
   renumber  reassign the addressable IDs (`userIdField`) in per-page bands.
-  restyle   remap colors across the whole project.
 
 Selectors are ANDed, and every one of them is resolved against the real project
 here, so `check` can say "this matched nothing" instead of the edit silently
 doing nothing on Windows - which is the failure mode that makes this kind of
 tool untrustworthy.
+
+A control op writes the control's own `fields` and `colors`, and each state it
+touches through `per_state`, which addresses the state by index. The index is
+what the control program sets, so it is also what the edit has to be exact
+about.
 """
 import json
 import re
 import sys
 
 from .project import Project
-from .spec import MODELS, dpi, touch_minimums, MM_TOUCH_TARGET
+from .spec import (HEX, MAX_STATES, MODELS, PRESS_FIELD, DEFAULT_FIELD, dpi,
+                   touch_minimums, MM_TOUCH_TARGET)
 
-# Fields that carry a color, and are therefore what `restyle` rewrites. A
-# control's own three plus the page background; states carry the same three.
-COLOR_FIELDS = ('borderFillColorField', 'borderColorField', 'textColorField')
+# The colors `restyle` rewrites, on the control and on each state: the field,
+# and the key gdl/project.py reads it into.
+COLOR_KEYS = (('borderFillColorField', 'fill'), ('borderColorField', 'stroke'),
+              ('textColorField', 'text_color'))
+
+# What a state in a `states` edit may set. `color` is the text color, spelled
+# as the spec spells it. No border: a border is a named resource, and the edit
+# applier writes colors and captions only.
+STATE_KEYS = {'name', 'text', 'fill', 'stroke', 'color'}
 
 
 def _argb_hex(c):
@@ -58,6 +72,15 @@ def _norm(v):
     if len(s) == 6:
         s = 'FF' + s
     return '#' + s
+
+
+def _captions(c):
+    """Everything a control says: its caption, and each state's."""
+    return [c['caption'] or ''] + [s['caption'] or '' for s in c.get('states') or []]
+
+
+def _label(pg, c):
+    return f"{pg['name']!r} {c['name'] or c['caption'] or c['type']}"
 
 
 class Edits:
@@ -94,7 +117,9 @@ class Edits:
 
         Keys are ANDed. `text` and `name` are exact; `text_matches` and
         `name_matches` are regexes, because "every button whose caption starts
-        with Cam" is the request people actually have.
+        with Cam" is the request people actually have. `text` matches a caption
+        in any state, so a button that says 'Display Off' and 'Display On' is
+        found by either.
         """
         sel = sel or {}
         out = []
@@ -107,23 +132,38 @@ class Edits:
                 # Match on the CAPTION, not on textField: a button's wording
                 # usually lives in its state, so selecting on the control's own
                 # text silently matches nothing. See Project.caption_at().
-                if 'text' in sel and (c['caption'] or '') != sel['text']:
+                if 'text' in sel and sel['text'] not in _captions(c):
                     continue
                 if 'id' in sel and c['id'] != sel['id']:
                     continue
                 if 'name_matches' in sel and not re.search(sel['name_matches'],
                                                            c['name'] or ''):
                     continue
-                if 'text_matches' in sel and not re.search(sel['text_matches'],
-                                                           c['caption'] or ''):
+                if 'text_matches' in sel and not any(
+                        re.search(sel['text_matches'], t) for t in _captions(c)):
                     continue
                 out.append((pg, c))
         return out
 
     # -- the ops -----------------------------------------------------------
     def _rename(self, e, ops, problems):
-        """Captions. Also rewrites every state - see the module docstring."""
+        """Captions, state by state.
+
+        `map` renames whatever says the old caption, and only that: a button
+        saying 'Display Off' and 'Display On' keeps 'Display On' when the map
+        names only the first. `text` renames the whole control, and so is
+        refused on a button whose states say different things - one caption
+        on every state would erase the feedback wording. `state` narrows it to
+        the states named.
+        """
         pairs = e.get('map')
+        names = e.get('state')
+        if names is not None:
+            names = names if isinstance(names, list) else [names]
+            if pairs:
+                problems.append("rename: `state` goes with `text` - `map` already picks "
+                                'the states that say each old caption')
+                return
         if pairs:
             # {"old caption": "new caption"} across whatever the selector covers.
             base = e.get('select') or {}
@@ -133,7 +173,7 @@ class Edits:
                     problems.append(f'rename: nothing has the caption {old!r}'
                                     + (f" under {base}" if base else ''))
                 for pg, c in hits:
-                    ops.append(self._text_op(pg, c, new))
+                    ops.append(self._text_op(pg, c, new, match=old))
             return
         new = e.get('text')
         if new is None:
@@ -143,31 +183,62 @@ class Edits:
         if not hits:
             problems.append(f"rename: selector {e.get('select')} matched nothing")
         for pg, c in hits:
-            ops.append(self._text_op(pg, c, new))
+            states = c.get('states') or []
+            if names is not None:
+                have = [s['name'] for s in states]
+                missing = [n for n in names if n not in have]
+                if missing:
+                    problems.append(f"rename: {_label(pg, c)} has no state "
+                                    f"{', '.join(map(repr, missing))} - its states are "
+                                    f"{', '.join(map(repr, have)) or 'none'}")
+                    continue
+            elif c.get('caption_in') in ('state', 'fstate') and \
+                    len({s['caption'] or '' for s in states}) > 1:
+                says = ', '.join(f"{s['name']} {s['caption'] or ''!r}" for s in states)
+                problems.append(f'rename: {_label(pg, c)} says something different in '
+                                f'each state ({says}) - one caption on every state '
+                                f'would erase that. Give `state` to rename some of '
+                                f'them, or `map` each old caption to its new one')
+                continue
+            ops.append(self._text_op(pg, c, new, names=names))
 
-    def _text_op(self, pg, c, new):
-        """Write the caption back where the old one was.
+    def _text_op(self, pg, c, new, match=None, names=None):
+        """Write the caption back where the old one was, in each state it is in.
 
         `caption_in` says which of the three places holds it. Writing the wrong
         one leaves the original text showing - the control still has it, and
-        whichever field the renderer prefers wins.
+        whichever field the renderer prefers wins. Each state is written where
+        its own caption lives, and only the states that `match` the old
+        caption, or are `names`d, are written at all.
         """
-        where = c.get('caption_in')
-        op = {'page': pg['id'], 'control': c['obj_id'], 'was': c['caption'],
-              'why': f'rename {c["caption"]!r} -> {new!r}'}
-        if where == 'fstate':
-            op['flattened'] = True
-            # Formatted text carries tab/CRLF layout markers that are part of
-            # how it draws, so keep the leading whitespace of the original.
-            op['states_ftext'] = new
-        elif where == 'state':
-            op['states'] = {'textField': new}
-        else:
+        states = c.get('states') or []
+        op = {'page': pg['id'], 'control': c['obj_id'],
+              'was': match if match is not None else c['caption'],
+              'why': f'rename {match if match is not None else c["caption"]!r} -> {new!r}'}
+        if c.get('caption_in') in (None, 'control') and not names:
             # No caption anywhere (an icon-only button), or it is on the
             # control. Set both: a button renders from its state, and a caption
             # written only on the control builds blank.
             op['fields'] = {'textField': new}
-            op['states'] = {'textField': new}
+            op['per_state'] = [{'index': i, 'fields': {'textField': new}}
+                               for i in range(len(states))]
+            return op
+        per = []
+        for i, s in enumerate(states):
+            if names is not None and s['name'] not in names:
+                continue
+            if match is not None and (s['caption'] or '') != match:
+                continue
+            entry = {'index': i, 'was': s['caption']}
+            if s['caption_in'] == 'fstate':
+                # Formatted text carries tab/CRLF layout markers that are part
+                # of how it draws; the applier keeps the original's leading
+                # whitespace and replaces the words.
+                entry.update(ftext=new, flattened=True)
+            else:
+                entry['fields'] = {'textField': new}
+            per.append(entry)
+        op['per_state'] = per
         return op
 
     def _renumber(self, e, ops, problems):
@@ -198,27 +269,172 @@ class Edits:
             n += step
 
     def _restyle(self, e, ops, problems):
-        """Remap colors project-wide, or under a selector."""
+        """Remap colors project-wide, or under a selector.
+
+        Each state is remapped from its OWN colors. A button's look lives on
+        its states - 288 of the 442 buttons in the Liberty Bank fixture have no
+        fill of their own - so matching only the control's colors missed most
+        buttons, and writing the control's new color to every state would have
+        painted an On state the Off color.
+        """
         table = {_norm(k): _norm(v) for k, v in (e.get('map') or {}).items()}
         if not table:
             problems.append("restyle: needs a 'map' of old color -> new color")
             return
         hits = self.select(e.get('select'))
         seen = set()
-        for pg, c in hits:
+
+        def remap(look):
             changes = {}
-            for field, key in (('borderFillColorField', 'fill'),
-                               ('borderColorField', 'stroke')):
-                have = _norm(c.get(key))
+            for field, key in COLOR_KEYS:
+                have = _norm(look.get(key))
                 if have:
                     seen.add(have)
                 if have in table:
                     changes[field] = table[have]
-            if changes:
-                ops.append({'page': pg['id'], 'control': c['obj_id'],
-                            'why': f'restyle {c["name"] or c["type"]}',
-                            'colors': changes, 'states_colors': changes})
+            return changes
+
+        for pg, c in hits:
+            own = remap(c)
+            per = [{'index': i, 'colors': ch}
+                   for i, ch in enumerate(remap(s) for s in c.get('states') or []) if ch]
+            if own or per:
+                op = {'page': pg['id'], 'control': c['obj_id'],
+                      'why': f'restyle {c["name"] or c["type"]}'}
+                if own:
+                    op['colors'] = own
+                if per:
+                    op['per_state'] = per
+                ops.append(op)
         self._unused_colors += [k for k in table if k not in seen]
+
+    def _states(self, e, ops, problems):
+        """Give a button exactly the states `states` lists.
+
+        State i keeps the look of the button's existing state i, and a new
+        state starts as a copy of the last one - which is how the applier
+        grows the list (`Set-GdlStateCount`). Anything a state names is
+        written over that. The press state is kept unless `press` names
+        another or the one it points at is gone.
+        """
+        want = e.get('states')
+        if not isinstance(want, list) or not want:
+            problems.append('states: needs `states`, a list of at least one state')
+            return
+        specs = [dict(s) if isinstance(s, dict) else {'name': s} for s in want]
+        bad = self._state_spec_problems(specs, e.get('press'))
+        if bad:
+            problems += bad
+            return
+        hits = self.select(e.get('select'))
+        if not hits:
+            problems.append(f"states: selector {e.get('select')} matched nothing")
+        names = [s['name'] for s in specs]
+        for pg, c in hits:
+            where = f'states: {_label(pg, c)}'
+            have = c.get('states') or []
+            if c['type'] != 'PBButton':
+                problems.append(f"{where} is a {c['type']} - only a button has "
+                                f'feedback states')
+                continue
+            if not have:
+                problems.append(f'{where} has no state to copy a new one from')
+                continue
+            if c.get('state_flags') and len(specs) != len(have):
+                problems.append(f"{where}: its states carry status flags "
+                                f"{c['state_flags']}, which may forbid adding or "
+                                f'removing them; the applier will not resize it')
+                continue
+            per, looks = [], []
+            for i, s in enumerate(specs):
+                src = have[min(i, len(have) - 1)]
+                entry = {'index': i, 'fields': {'nameField': s['name']}}
+                colors = {field: _norm(s[k]) for field, k in
+                          (('borderFillColorField', 'fill'), ('borderColorField', 'stroke'),
+                           ('textColorField', 'color')) if k in s}
+                if colors:
+                    entry['colors'] = colors
+                if 'text' in s:
+                    if src['caption_in'] == 'fstate':
+                        entry.update(ftext=s['text'], flattened=True, was=src['caption'])
+                    else:
+                        entry['fields']['textField'] = s['text']
+                per.append(entry)
+                looks.append({
+                    'name': s['name'],
+                    'text': s['text'] if 'text' in s else (src['caption'] or ''),
+                    'fill': _norm(s['fill']) if 'fill' in s else _norm(src['fill']),
+                    'stroke': _norm(s['stroke']) if 'stroke' in s else _norm(src['stroke']),
+                    'text_color': (_norm(s['color']) if 'color' in s
+                                   else _norm(src['text_color'])),
+                    # Which existing state it starts as. Two states that start
+                    # as the same one share everything this cannot see - icon,
+                    # border, image - so only they can be compared exactly.
+                    'from': min(i, len(have) - 1),
+                })
+            for i, a in enumerate(looks):
+                for b in looks[i + 1:]:
+                    if a['from'] == b['from'] and all(
+                            a[k] == b[k] for k in ('text', 'fill', 'stroke', 'text_color')):
+                        problems.append(
+                            f"{where}: {a['name']!r} and {b['name']!r} would look "
+                            f'identical - a new state is a copy of the last one, so '
+                            f'give it its own fill, stroke, color or text')
+            press = c.get('press')
+            if 'press' in e:
+                press = names.index(e['press'])
+            elif press is None or not 0 <= press < len(specs):
+                press = 1 if len(specs) > 1 else 0
+            default = c.get('default_state')
+            if default is None or not 0 <= default < len(specs):
+                default = 0
+            ops.append({
+                'page': pg['id'], 'control': c['obj_id'],
+                'why': f"states {c['name'] or c['type']}: {', '.join(names)}",
+                'was': [s['name'] for s in have],
+                'state_count': len(specs),
+                'fields': {PRESS_FIELD: press, DEFAULT_FIELD: default},
+                'per_state': per,
+                # What every state should look like once built, for
+                # verify_built - including the ones this op does not write.
+                'expect_states': [{k: v for k, v in lk.items() if k != 'from'}
+                                  for lk in looks],
+            })
+
+    @staticmethod
+    def _state_spec_problems(specs, press):
+        out = []
+        if len(specs) > MAX_STATES:
+            out.append(f'states: {len(specs)} is more than the {MAX_STATES} GUI Designer '
+                       f'allows on a button')
+        names = []
+        for i, s in enumerate(specs):
+            extra = sorted(set(s) - STATE_KEYS)
+            if extra:
+                out.append(f"states: state {i} has unknown key(s) {', '.join(extra)} - a "
+                           f"state takes {', '.join(sorted(STATE_KEYS))}")
+            nulls = sorted(k for k in STATE_KEYS if k in s and s[k] is None)
+            if nulls:
+                out.append(f"states: state {i}: {', '.join(nulls)} is null - leave the key "
+                           f'out to keep what the state has')
+            for k in ('fill', 'stroke', 'color'):
+                if s.get(k) is not None and not HEX.match(str(s[k])):
+                    out.append(f'states: state {i}: {k} {s[k]!r} is not #RRGGBB or '
+                               f'#AARRGGBB')
+            n = s.get('name')
+            if not isinstance(n, str) or not n.strip():
+                out.append(f'states: state {i} has no name - a state is a name, or an '
+                           f'object with a name')
+                continue
+            names.append(n)
+        dup = sorted({n for n in names if names.count(n) > 1})
+        if dup:
+            out.append(f"states: state name(s) {', '.join(map(repr, dup))} used twice - "
+                       f'the program and the ID map tell states apart by name')
+        if press is not None and press not in names:
+            out.append(f"states: press {press!r} is not one of the states "
+                       f"({', '.join(map(repr, names))})")
+        return out
 
     def _retarget(self, e, ops, problems, project_ops, page_ops):
         """Move the project to another panel model.
@@ -327,6 +543,8 @@ class Edits:
                 self._renumber(e, ops, problems)
             elif op == 'restyle':
                 self._restyle(e, ops, problems)
+            elif op == 'states':
+                self._states(e, ops, problems)
             elif op == 'retarget':
                 self._resize = self._retarget(e, ops, problems, project_ops, page_ops)
             else:
@@ -366,13 +584,16 @@ class Edits:
         # model reads correctly and only the pixels are wrong, exactly like the
         # flattenText trap.
         for o in plan['controls']:
-            if not o.get('flattened'):
-                continue
-            old, newt = o.get('was') or '', ''
-            for src in (o.get('states') or {},):
-                newt = src.get('textField') or newt
-            newt = o.get('states_ftext') or newt
-            if len(newt.split()) > len(old.split()) or len(newt) > len(old):
+            said = set()        # once per control, not once per state
+            for ps in o.get('per_state') or []:
+                if not ps.get('flattened'):
+                    continue
+                old, newt = ps.get('was') or '', ps['ftext']
+                if len(newt.split()) <= len(old.split()) and len(newt) <= len(old):
+                    continue
+                if (old, newt) in said:
+                    continue
+                said.add((old, newt))
                 warnings.append(
                     f'rename {old!r} -> {newt!r}: this caption is FORMATTED text baked '
                     f'into the artwork with hand-placed line breaks. The new text is '
@@ -445,6 +666,22 @@ class Edits:
                             f'{w}x{h} is under the {target}px touch target for a '
                             f'{self._model or f"{size[0]}x{size[1]}"} panel '
                             f'({MM_TOUCH_TARGET}mm at {dpi(self._model)} DPI){was}')
+
+        # Every op is planned against the project as it is on disk, so a
+        # `states` op cannot see what another op does to the same button's
+        # states first - a rename before it, or a restyle of a state it is about
+        # to drop. Say so rather than verify against the wrong expectation.
+        touching = {}
+        for o in plan['controls']:
+            if o.get('per_state') is not None:
+                touching.setdefault((o['page'], o['control']), []).append(o)
+        for ops in touching.values():
+            if len(ops) > 1 and any(o.get('state_count') is not None for o in ops):
+                errors.append(
+                    f"{' and '.join(o['why'].split()[0] for o in ops)} both change the "
+                    f"states of control {ops[0]['control']} on page {ops[0]['page']} - put "
+                    f"the caption or color in the `states` op, as that state's `text`, "
+                    f'`fill`, `stroke` or `color`')
 
         # Renumbering to an ID something else already has is legal in the format
         # (Extron uses duplicates for feedback mirrors) but is almost never what
