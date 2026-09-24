@@ -108,6 +108,21 @@ class TestTranslate(unittest.TestCase):
         self.assertEqual(spec['theme']['pressed'], '#242634')   # an alias, resolved
         self.assertNotIn('alert', spec['theme'])
 
+    def test_a_translucent_token_reaches_the_spec_alpha_first(self):
+        """CSS writes alpha last, the spec first: Afterburn's scrim is black at
+        alpha 166 - #000000A6 in CSS, #A6000000 in the spec."""
+        card = page('Card', kind='popup', group='G', size=[880, 525], background='scrim')
+        spec, _, _ = translate({'Home.dc.html': out(HOME), 'Card.dc.html': out(card)})
+        self.assertEqual(spec['theme']['scrim'], '#A6000000')
+        self.assertEqual(design.css_to_argb('#37394E'), '#37394E')
+
+    def test_a_modal_carries_no_background(self):
+        """Build draws every modal as the page beneath under black at alpha
+        166, whatever background it was given."""
+        modal = page('Confirm', kind='popup', modal=True, background='page')
+        spec, _, _ = translate({'Home.dc.html': out(HOME), 'Confirm.dc.html': out(modal)})
+        self.assertNotIn('background', spec['popups'][0])
+
     def test_the_scheme_picks_the_accent(self):
         home = page('Home', scheme='gold')
         spec, _, _ = translate({'Home.dc.html': out(

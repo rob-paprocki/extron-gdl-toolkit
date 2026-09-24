@@ -805,6 +805,17 @@ class TestPalette(unittest.TestCase):
             _label(text='x', color='#123456')]}])
         self.assertIn((('A', 255), ('B', 0x56), ('G', 0x34), ('R', 0x12)), pal)
 
+    def test_no_stroke_is_written_as_transparent(self):
+        """The applier skips a color it is not given, so a stroke left unset
+        kept the donor's - a panel built with the seed's outline while the
+        preview drew none."""
+        p = _project([dict({'name': 'P', 'controls': [
+            {'kind': 'panel', 'name': 'Bar', 'rect': [0, 0, 100, 40], 'fill': '#123456',
+             'border': 'rect'}]}, **self.BG)])
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['stroke'], 0)
+        self.assertNotIn((('A', 0), ('B', 0), ('G', 0), ('R', 0)), p.palette())
+
     def test_seven_drawn_colors_are_reported(self):
         controls = [_label(text='x', fill=f) for f in
                     ('#111111', '#222222', '#333333', '#444444', '#555555')]

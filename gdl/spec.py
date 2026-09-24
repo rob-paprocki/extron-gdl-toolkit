@@ -60,9 +60,15 @@ BORDERS = {
     'rounded-3d': '3D Rounded Rectangle',
     'capsule-3d': '3D Capsule',
     'gradient': '3D Gradient',
+    # The pressed halves of the 3D pairs: Turbulence and Shockwave buttons
+    # change border per state, from one to its Selected twin.
+    'gradient-selected': '3D Gradient Selected',
+    'rounded-3d-selected': '3D Rounded Rectangle Selected',
     'afterburn': 'Afterburn - 10 Radius 2 Thick',
     'afterburn-flat': 'Afterburn - 10 Radius 0 Thick',
     'afterburn-14': 'Afterburn - 14 Radius 0 Thick',
+    # Mach's one border of its own (seeds/Mach 1035.gdl).
+    'mach': 'Mach - 10 Radius 2 Thick',
 }
 # radius/thickness per resource, read from the fixtures' own PBBorderResource
 # dataField. Only what the preview needs to draw; the real geometry is Build's.
@@ -71,6 +77,9 @@ BORDER_GEOMETRY = {
     '2D Rounded Rectangle': (10, 3), '2D Capsule': (9999, 3), '2D Ellipse': (0, 3),
     '3D Rectangle': (0, 1), '3D Rounded Rectangle': (10, 1), '3D Capsule': (9999, 1),
     '3D Gradient': (5, 1),
+    # Assumed the same as their unselected twins; not read off a dataField.
+    '3D Gradient Selected': (5, 1), '3D Rounded Rectangle Selected': (10, 1),
+    'Mach - 10 Radius 2 Thick': (10, 2),
     'Afterburn - 10 Radius 0 Thick': (10, 0),
     'Afterburn - 10 Radius 2 Thick': (10, 2),
     'Afterburn - 14 Radius 0 Thick': (14, 0),
@@ -317,6 +326,8 @@ def _argb(c):
 
 
 HEX = re.compile(r'^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
+# Written where a spec gives no color, so the clone does not keep its donor's.
+TRANSPARENT = {'A': 0, 'R': 0, 'G': 0, 'B': 0}
 
 
 def color(v, theme=None):
@@ -869,9 +880,15 @@ class Panel:
         return out
 
     def _base_look(self, c):
-        """(fill, stroke, text color, border) for a spec control, as authored."""
+        """(fill, stroke, text color, border) for a spec control, as authored.
+
+        No stroke is a TRANSPARENT stroke, written as one. The applier skips a
+        color it is not given, so a control with none kept its donor's outline:
+        a panel with no `stroke` built with the seed's #6A6E89 edge while the
+        preview drew none, found by putting the canvas beside the build.
+        """
         fill = color(c.get('fill'), self.theme)
-        stroke = color(c.get('stroke'), self.theme)
+        stroke = color(c.get('stroke'), self.theme) or dict(TRANSPARENT)
         text_color = color(c.get('color') or self.theme.get('text') or '#FFFFFF',
                            self.theme)
         border = c.get('border')
@@ -1279,11 +1296,14 @@ class Panel:
         seen = set()
 
         def add(v):
-            if v:
+            if v and v.get('A'):            # a transparent color draws nothing
                 seen.add(tuple(sorted(v.items())))
 
         for pg in self.pages + self.popups:
-            add(pg['background'])
+            # A modal's background never reaches the panel: Build draws every
+            # modal as the page beneath under black at alpha 166.
+            if not pg.get('modal'):
+                add(pg['background'])
             for c in pg['controls']:
                 # A state's colors are on the panel as much as the control's
                 # own - an On fill included.

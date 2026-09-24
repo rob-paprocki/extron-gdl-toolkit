@@ -12,6 +12,6 @@
   "order": ["Home.dc.html", "Help.dc.html", "ConfirmRoomOff.dc.html"],
   "notes": {},
   "designSystems": [
-    {"title": "Extron Afterburn", "namespace": "extronafterburn", "artifact": "https://claude.ai/artifact/1nZsxvdm7HsXpfoSXBVjvx", "version": "1790245226-73a7", "copiedAt": "2026-09-24T10:35:00Z"}
+    {"title": "Extron Afterburn", "namespace": "extronafterburn", "artifact": "https://claude.ai/artifact/1nZsxvdm7HsXpfoSXBVjvx", "version": "1790246956-065c", "copiedAt": "2026-09-24T11:08:00Z"}
   ]
 }

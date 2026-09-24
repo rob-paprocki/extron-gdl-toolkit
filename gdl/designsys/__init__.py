@@ -157,7 +157,7 @@ Props:
 - The caption is the element's text. `type`: `button` (14 pt, default) or `button-large` (20 pt bold); `size` in points overrides it.
 - `variant`:
 {variants}
-- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'[{{"name":"No Signal","color":"text-subtle"}},"Ready",{{"name":"Live","fill":"accent","color":"page"}}]'`. A state takes `name`, `fill`, `stroke`, `color` (caption color) and `text` (its own caption). Off and On start from the variant's look. Every state must look different.
+- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color) and `text` (its own caption). Off and On start from the variant's look. Every state must look different. {p['examples']['states_note']}
 - `press`: the state shown while the button is held. Default: On, else the second state.
 - `nav`: the artboard this button shows, by its file name without `.dc.html` - `nav="Help"` shows `Help.dc.html`. The button becomes that link, so Play follows it.
 - `does`: anything else it does, in a sentence for the programmer: "Routes the laptop to the display; Live while it is routed."
@@ -182,7 +182,7 @@ Props: the text is the element's text; `type` (`title`, `heading`, `subheading`,
 """,
         'Panel': f"""# Panel
 
-A filled shape behind other controls: a bar, a card, a well. `fill` (default `raised`), `stroke`, `border` ({', '.join(f'`{k}`' for k in p['borders'])}), `name`. A panel is drawn, not touched; put controls on top of it, later in the markup.
+A filled shape behind other controls: a bar, a card, a well. `fill` (default `{p['defaults']['panel']['fill']}`), `stroke` (default `{p['defaults']['panel'].get('stroke', 'none')}`; `none` for no outline), `border` ({', '.join(f'`{k}`' for k in p['borders'])}; default `{p['defaults']['panel']['border']}`), `name`. A panel is drawn, not touched; put controls on top of it, later in the markup.
 
 ```html
 {_x(p, 'Panel', ' name="TopBar" fill="raised" border="rect"', '', 'width: 1280px; height: 112px')}
@@ -198,15 +198,15 @@ A divider. `orientation` (`horizontal`, default, or `vertical`), `color` (defaul
 """,
         'Slider': f"""# Slider
 
-A control the user drags: volume, a light level. `orientation` (`right`, default, `left`, `up`, `down` - the direction the value grows), `fill` (the track, default `raised`), `name`, `does` - what it sets and whether it shows feedback. `value` (0-100) only draws the canvas.
+A control the user drags: volume, a light level. Drawn as {t} builds it: a rounded rail `track` px wide (default {p['defaults']['slider']['track']}) down the middle of the control's box, the rail's filled part in `{p['defaults']['slider']['value']}`, and a round thumb `thumb` px across (default {p['defaults']['slider']['thumb']}) in `{p['defaults']['slider']['thumb_color']}`. The box is the touch area: make it at least as wide as the thumb. `orientation`: the direction the value grows, `{p['defaults']['slider']['orientation']}` by default as {t}'s own volume sliders are (`up`, `down`, `left`, `right`). `fill`: the rail's empty part, default `{p['defaults']['slider']['fill']}` - on a `raised` panel use `page`. `name`, and `does` - what it sets and whether it follows feedback. `value` (0-100) only draws the canvas. The filled part and the thumb come from the template's own slider, so they are not props.
 
 ```html
-{_x(p, 'Slider', ' name="Volume" does="Sets program volume; follows the DSP level."', '', 'width: 696px; height: 60px')}
+{_x(p, 'Slider', ' name="Volume" does="Sets program volume; follows the DSP level."', '', 'width: 50px; height: 395px')}
 ```
 """,
         'Level': f"""# Level
 
-A meter the program drives: signal level, a countdown. Like Slider without the thumb, and not touchable. `orientation`, `fill`, `name`, `does`.
+A meter the program drives: signal level, a countdown. A rail like Slider's with no thumb, filled in `{p['defaults']['level']['value']}`, and not touchable. `orientation` (default `{p['defaults']['level']['orientation']}`), `track`, `fill`, `name`, `does`.
 
 ```html
 {_x(p, 'Level', ' name="MicLevel" orientation="up" does="Shows the microphone level."', '', 'width: 40px; height: 240px')}
@@ -273,7 +273,7 @@ def previews(p):
 def cover(p):
     """The cover: the template's colors as blocks, cut at its own radius."""
     blocks = p['cover']['blocks']
-    r = p['borders']['afterburn-flat']['radius'] if 'afterburn-flat' in p['borders'] else 10
+    r = p['cover'].get('radius', 10)
     tiles = []
     for i in range(4):
         for j in range(3):
@@ -340,7 +340,7 @@ declare global {{ interface Window {{ {ns}: {{ Page: typeof Page; Button: typeof
 def readme(p):
     ns, t = p['namespace'], p['template']
     w, ht = p['size']
-    states = '\'[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]\''
+    states = "'" + p['examples']['on_off'] + "'"
     example = _x(p, 'Page', ' name="Home" start="true"', '\n  ' + '\n  '.join((
         _x(p, 'Label', ' name="RoomName" type="title"', 'Huddle Room',
            'position: absolute; left: 40px; top: 0px; width: 520px; height: 112px'),
@@ -365,7 +365,7 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 
 ## Visual foundations
 
-- **Color.** Use the tokens by name - `page` behind everything, `raised` for idle buttons and panels, `pressed` for On, `text` and `text-secondary` for type, `accent` for selection, `alert` for warnings. Extron caps a project at **six colors** (Design Standards p.49), captions included: pick six and keep to them. One accent scheme per panel, set on every Page.
+- **Color.** Use the tokens by name, each for what its note says. {p['examples']['color_rule']} Extron caps a project at **six colors** (Design Standards p.49), captions included: pick six and keep to them. One accent scheme per panel, set on every Page.
 - **Type** is {p['font']['family']}. Sizes are points, drawn at {p['pt']} px per point as GUI Designer draws them: `title` 38, `heading` 23.5 bold, `subheading` 21, `button-large` 20 bold, `body` 16, `button` 14. Nothing under 14 pt.
 - **Shapes** come from the template's border resources only: `afterburn` (10 px corners with a 2 px stroke), `afterburn-flat` (10 px, no stroke), `afterburn-14` (tracks), `rect`, `capsule`, `ellipse`. The panel cannot draw any other corner, a gradient, a shadow or transparency effects.
 - **Size and spacing** follow the panel's physical size: every button and slider at least {p['touch']} px each way (9 mm on a {p['model']}), at least {p['spacing']} px between touchable controls (2 mm), no more than nine buttons in one group, and place things on GUI Designer's 10 px nudge. {t}'s usual button is {p['defaults']['button']['height']} px tall.

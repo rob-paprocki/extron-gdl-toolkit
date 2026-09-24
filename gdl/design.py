@@ -42,8 +42,8 @@ FIELDS = {
     'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does'),
     'panel': ('fill', 'stroke', 'border'),
     'line': ('fill', 'thickness', 'from', 'to'),
-    'slider': ('id', 'fill', 'border', 'orientation', 'does'),
-    'level': ('id', 'fill', 'border', 'orientation', 'does'),
+    'slider': ('id', 'fill', 'border', 'orientation', 'track', 'thumb', 'does'),
+    'level': ('id', 'fill', 'border', 'orientation', 'track', 'does'),
     'datetime': ('color', 'size', 'bold'),
     'popup_ref': ('group',),
 }
@@ -210,7 +210,9 @@ class Canvas:
             names[name] = b
             stems[b.rsplit('/', 1)[-1].rsplit('.dc.html', 1)[0]] = name
             item = {'name': name, 'controls': [], '_board': b}
-            if pg.get('background'):
+            # Build draws a modal as the page beneath under black at alpha 166
+            # and ignores its background, so a modal carries none.
+            if pg.get('background') and not pg.get('modal'):
                 item['background'] = pg['background']
             if pg.get('reached_by'):
                 item['reached_by'] = pg['reached_by']
@@ -272,6 +274,13 @@ class Canvas:
 
     @staticmethod
     def _colors(profile, scheme):
+        """Token -> spec color for one scheme.
+
+        A design token is CSS, so an 8-digit value is #RRGGBBAA - alpha LAST.
+        The spec reads #AARRGGBB, alpha FIRST, as GUI Designer's ARGB does.
+        Passed through unchanged, Afterburn's scrim #242634CC would build as
+        alpha 0x24 over #2634CC.
+        """
         first = profile['schemes'][0]['id']
         out = {}
         for c in profile['colors']:
@@ -280,7 +289,7 @@ class Canvas:
         for k, v in out.items():
             if v.startswith('{'):
                 out[k] = out[v[1:-1]]
-        return out
+        return {k: css_to_argb(v) for k, v in out.items()}
 
     def _control(self, page, raw, stems):
         g = json.loads(raw['gdl'])
@@ -294,7 +303,8 @@ class Canvas:
             c['name'] = g['name']
         c['rect'] = [round(v) for v in raw['rect']]
         for k in FIELDS[kind]:
-            if k in g:
+            # `none` is how a design switches an outline off: no key at all.
+            if k in g and g[k] != 'none':
                 c[k] = g[k]
         if kind == 'button':
             if g.get('icon'):
@@ -312,10 +322,17 @@ class Canvas:
         return c
 
 
+def css_to_argb(v):
+    """'#RRGGBBAA' (CSS) -> '#AARRGGBB' (the spec). Six digits pass through."""
+    if isinstance(v, str) and re.fullmatch(r'#[0-9A-Fa-f]{8}', v):
+        return '#' + v[7:9] + v[1:7]
+    return v
+
+
 def _state(s):
     if isinstance(s, str):
         return s
-    look = {k: s[k] for k in STATE_LOOK if k in s}
+    look = {k: s[k] for k in STATE_LOOK if k in s and s[k] != 'none'}
     return dict(name=s.get('name'), **look) if look else s.get('name')
 
 
@@ -337,11 +354,111 @@ def _box(r):
     return f'{round(r[0])},{round(r[1])} {round(r[2])}x{round(r[3])}'
 
 
+def screenshot(board_path, chrome, size, png, timeout=90):
+    """The artboard as the designer sees it, at its own size."""
+    subprocess.run(
+        [chrome, '--headless=new', '--disable-gpu', '--allow-file-access-from-files',
+         '--hide-scrollbars', '--virtual-time-budget=15000',
+         f'--window-size={size[0]},{size[1]}', f'--screenshot={os.path.abspath(png)}',
+         'file:///' + os.path.abspath(board_path).replace('\\', '/').lstrip('/')],
+        capture_output=True, timeout=timeout)
+    if not os.path.exists(png):
+        raise RuntimeError(f'{os.path.basename(board_path)}: no screenshot')
+
+
+def compare(folder, built, out_dir, chrome=None):
+    """Each artboard beside the page GUI Designer built from it, for sign-off.
+
+    Claude Design does not draw like GUI Designer, so a client signs off on
+    the built panel, not on the canvas. The built side is gdl.compose's render
+    of the built file's own artwork - scored against GUI Designer's snapshots
+    (CLAUDE.md, Verifying a change) - so what shows there is what the panel
+    shows. Writes <out_dir>/index.html and a PNG pair per artboard; returns
+    [(page name, % of pixels that differ)].
+    """
+    from .compose import diff_stats, fill_index, load, render_page, render_snapshot  # Pillow
+    from PIL import Image
+    import io
+
+    canvas = Canvas(folder, chrome)
+    if not canvas.chrome:
+        raise RuntimeError('no Chrome found - pass --chrome or set CHROME')
+    j, assets = load(built)
+    fills = fill_index(built)
+    by_name = {p['Name']: p for p in j['Pages'] + j['PopupPages']}
+    os.makedirs(out_dir, exist_ok=True)
+    rows, scores = [], []
+    for b in canvas.boards():
+        w = canvas.index['boards'].get(b) or {}
+        size = (int(w.get('w') or 1280), int(w.get('h') or 800))
+        stem = re.sub(r'[^A-Za-z0-9_.-]', '_', b.rsplit('.dc.html', 1)[0])
+        path = os.path.join(folder, *b.split('/'))
+        out = render(path, canvas.chrome, size)
+        name = json.loads(out['page']['gdl']).get('name') if out.get('page') else None
+        design_png = os.path.join(out_dir, f'{stem}-design.png')
+        screenshot(path, canvas.chrome, size, design_png)
+        pg = by_name.get(name)
+        if pg is None:
+            rows.append((name or b, f'{stem}-design.png', None, None))
+            continue
+        psize = (pg.get('Width') or size[0], pg.get('Height') or size[1])
+        if pg.get('Modal'):
+            # What the panel shows: the start page, Build's alpha-166 scrim
+            # (the modal's own artwork), then the modal's controls on top.
+            start = j.get('DefaultPage') or j['Pages'][0]['ID']
+            img = render_snapshot(j, start, assets, psize, fills=fills).convert('RGBA')
+            if pg.get('TLPImageID', -1) in assets:
+                scrim = Image.open(io.BytesIO(assets[pg['TLPImageID']])).convert('RGBA')
+                img = Image.alpha_composite(img, scrim.resize(img.size))
+            bare = dict(pg, TLPImageID=-1, BackgroundFillColor=None)
+            top = render_page(bare, assets, psize, fills=fills, flat=False)
+            img = Image.alpha_composite(img, top).convert('RGB')
+        else:
+            img = render_snapshot(j, pg['ID'], assets, psize, fills=fills)
+        built_png = os.path.join(out_dir, f'{stem}-built.png')
+        img.save(built_png)
+        a = Image.open(design_png).convert('RGB')
+        pct = diff_stats(a.resize(img.size) if a.size != img.size else a, img)['pct_bad']
+        rows.append((name, f'{stem}-design.png', f'{stem}-built.png', pct))
+        scores.append((name, pct))
+    cells = ''.join(
+        f'<section><h2>{html.escape(n)}</h2><div class="pair">'
+        f'<figure><img src="{d}" alt="{html.escape(n)} as designed"><figcaption>Designed'
+        f'</figcaption></figure>'
+        + (f'<figure><img src="{bpng}" alt="{html.escape(n)} as built"><figcaption>Built'
+           f' &middot; {pct:.1f}% of pixels differ</figcaption></figure>' if bpng else
+           '<figure><figcaption>Not in the built file</figcaption></figure>')
+        + '</div></section>' for n, d, bpng, pct in rows)
+    with open(os.path.join(out_dir, 'index.html'), 'w', encoding='utf-8') as fh:
+        fh.write(f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>{html.escape(canvas.index.get('title') or 'Panel')} - designed and built</title>
+<style>
+body{{margin:0;padding:24px;font:15px/1.4 system-ui,sans-serif;background:#16171d;color:#e8e8ee}}
+h1{{font-size:22px;margin:0 0 20px}} h2{{font-size:17px;margin:28px 0 10px}}
+.pair{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}}
+figure{{margin:0}} img{{width:100%;height:auto;display:block;border:1px solid #33343f}}
+figcaption{{margin-top:6px;color:#a9aab8}}
+@media (max-width:700px){{.pair{{grid-template-columns:1fr}}}}
+</style></head><body>
+<h1>{html.escape(canvas.index.get('title') or 'Panel')}: as designed, and as GUI Designer built it</h1>
+{cells}
+</body></html>
+""")
+    return scores
+
+
 def main(argv):
+    if len(argv) >= 5 and argv[1] == 'compare':
+        chrome = argv[argv.index('--chrome') + 1] if '--chrome' in argv else None
+        for name, pct in compare(argv[2], argv[3], argv[4], chrome):
+            print(f'  {pct:5.1f}%  {name}')
+        print(f"-> {os.path.join(argv[4], 'index.html')}")
+        return 0
     if len(argv) < 4 or argv[1] != 'translate':
         print(__doc__.strip().split('\n\n')[0])
         print('\n  python -m gdl.design translate <canvas dir> <out spec.json> '
-              '[--chrome PATH] [--lenient]')
+              '[--chrome PATH] [--lenient]'
+              '\n  python -m gdl.design compare <canvas dir> <built.gdl> <out dir>')
         return 2
     chrome = argv[argv.index('--chrome') + 1] if '--chrome' in argv else None
     canvas = Canvas(argv[2], chrome)

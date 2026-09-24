@@ -174,6 +174,22 @@ statement is in the live docs; this is the record that it changed.
   every state, On included. Nothing was reported, and the verifier never
   checked an edit's colors at all. Both now edit state by state, and colors are
   read off the built artwork.
+- **The Liberty Bank fixture was thought to deviate from Afterburn's modal
+  scrim.** Its modals are black at alpha 166 where the guide says `#242634` at
+  20% transparency. On 2026-09-24 every modal in three seeds, and one built from
+  a spec with a `#242634` background, turned out the same: Build draws the scrim
+  itself.
+- **A spec control with no stroke kept its donor's** (until 2026-09-24). The
+  applier skips a color it is not given, so a panel with no `stroke` built with
+  the seed's `#6A6E89` outline while the preview drew none. Found by putting a
+  Claude Design canvas beside the panel built from it; no stroke is now written
+  as transparent.
+- **The first Afterburn design system misread the theme** (2026-09-24, caught
+  by the user): a slider drawn as a filled slab where Afterburn's is a 10 px
+  rail with a `#BABCCE` fill and a periwinkle thumb; `accent` used as a button
+  fill, where the guide keeps it to selection lines and the seed to active
+  captions; a panel with no `#6A6E89` outline. Corrected against the seed's
+  built artwork, which is now how every template's profile is checked.
 - **The six-color check counted only colors a spec names, and only on pages**
   (until 2026-09-24). A caption with no `color` draws in the theme's text
   color, and popups are on the panel too. `examples/huddle-functions.json`

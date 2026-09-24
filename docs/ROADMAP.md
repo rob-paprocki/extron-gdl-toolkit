@@ -71,9 +71,9 @@ opening GUI Designer.**
    the build.
 5. **Claude Design as the front end: the other three templates.** Afterburn is
    a design system, and a canvas drawn with it translates, builds and verifies
-   end to end. Mach, Shockwave and Turbulence need their profiles, then a
-   side-by-side of each artboard and the built panel for sign-off.
-   `docs/claude-design.md` §7.
+   end to end, with a side-by-side of each artboard and the built panel for
+   sign-off. Mach, Shockwave and Turbulence need their profiles, each checked
+   against its seed's built artwork. `docs/claude-design.md` §7.
 6. **Icons in the spec vocabulary.** Both routes are proven by probe - font
    glyphs (~339 icons, no image resource) and appended image resources
    (`powershell/New-ImageProbe.ps1`) - and neither can be written in a spec.
@@ -106,6 +106,12 @@ opening GUI Designer.**
   synthetic page rests on one control.
 - The 5.86% render residual on the TLP1035 pages. Not the typeface; cause
   unknown.
+- **`gdl.compose` draws bold Open Sans as regular.** `gdl/fonts/` carries Open
+  Sans Regular and Light only, and `face()` falls back to the regular file, so
+  a bold caption on a seed-built panel renders regular - the largest remaining
+  difference in `gdl.design compare`. Open Sans Bold is Apache 2.0 like the
+  others; adding it is a render change, so it needs `tests/score.py` before and
+  after.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
   sizes.
 - **ECP's phone and tablet canvases have no donor, and cannot have one.** The

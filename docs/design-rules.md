@@ -224,11 +224,13 @@ Four accent schemes; pick one per project and keep it:
 | 3 | Gold `#D6B961` | Light Green `#84B266` |
 | 4 | Medium Blue `#4695D6` | Gold `#D6B961` |
 
-**Note the discrepancy:** the guide specifies the modal background as `#242634` at
-20% transparency. The Liberty Bank fixture instead uses **opaque black** on every
-modal, with the dimming baked into artwork asset 36 at alpha 166 (~65% opacity).
-So the fixture deviates from the theme, which is why the scrim rule in
-`research/final_patch.py` was unobservable there — see `docs/render-fidelity.md`.
+**What ships is not the guide's scrim.** The guide specifies the modal background
+as `#242634` at 20% transparency. Build draws every modal popup as full-canvas
+**black at alpha 166** (~65% opacity) over the page beneath, whatever background
+the popup was given: every modal in the Afterburn, Mach and Shockwave seeds and
+the Liberty Bank fixture, and a modal built from a spec with a `#242634`
+background. So a modal's own background never reaches the panel.
+`docs/render-fidelity.md` has what this means for the compositor.
 
 ## 5. Four button archetypes
 

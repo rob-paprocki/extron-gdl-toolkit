@@ -2,7 +2,9 @@
   "_source": [
     "Colors: Extron's Afterburn theme guide, transcribed in docs/design-rules.md section 4; `alert` from the seed's own buttons.",
     "Type, borders, button archetypes and sizes: surveyed off seeds/Afterburn 1035.gdl (its fonts, border resources and every button's per-state fill, stroke and text color).",
-    "Point sizes draw at 1.375 px per point, GUI Designer's 99 DPI (gdl/compose.py PT)."
+    "Point sizes draw at 1.375 px per point, GUI Designer's 99 DPI (gdl/compose.py PT).",
+    "Slider and level: the seed's built sliders (Audio Settings) - a 10 px rail (SliderTrackWidth) in a 50 x 395 control, the empty rail the control's fill (#242634, TLPMinValueImageID), the filled rail #BABCCE (TLPMaxValueImageID), a 50 px #626ACF thumb (SliderIndicatorImageID) - matching the guide's track, slider-fill and secondary-accent rows.",
+    "Panel: the seed's filled container - raised fill, #6A6E89 stroke, Afterburn - 10 Radius 2 Thick - and the guide's 'shapes #6A6E89' row."
   ],
   "template": "Afterburn",
   "namespace": "ExtronAfterburn",
@@ -10,8 +12,14 @@
   "tagline": "Extron's Afterburn touch-panel template, for TLP Pro panels.",
   "seed": "seeds/Afterburn 1035.gdl",
   "model": "TLP1035T",
-  "size": [1280, 800],
-  "popup": [880, 525],
+  "size": [
+    1280,
+    800
+  ],
+  "popup": [
+    880,
+    525
+  ],
   "pt": 1.375,
   "touch": 53,
   "spacing": 12,
@@ -21,68 +29,291 @@
     "google": "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap"
   },
   "schemes": [
-    {"id": "orange", "name": "Orange and Periwinkle", "usage": "Accent scheme 1, the default."},
-    {"id": "light-blue", "name": "Light Blue and Light Green", "usage": "Accent scheme 2."},
-    {"id": "gold", "name": "Gold and Light Green", "usage": "Accent scheme 3."},
-    {"id": "medium-blue", "name": "Medium Blue and Gold", "usage": "Accent scheme 4."}
+    {
+      "id": "orange",
+      "name": "Orange and Periwinkle",
+      "usage": "Accent scheme 1, the default."
+    },
+    {
+      "id": "light-blue",
+      "name": "Light Blue and Light Green",
+      "usage": "Accent scheme 2."
+    },
+    {
+      "id": "gold",
+      "name": "Gold and Light Green",
+      "usage": "Accent scheme 3."
+    },
+    {
+      "id": "medium-blue",
+      "name": "Medium Blue and Gold",
+      "usage": "Accent scheme 4."
+    }
   ],
   "colors": [
-    {"name": "page", "value": "#242634", "usage": "Page and popup background."},
-    {"name": "raised", "value": "#37394E", "usage": "Button fill when idle; panels and cards; a slider or level track over a color."},
-    {"name": "pressed", "value": "{page}", "usage": "Button fill when pressed or selected (the On state). The same value as page."},
-    {"name": "text", "value": "#FFFFFF", "usage": "Headings, button captions, paragraphs; the border of a pressed outlined button. On page, raised and pressed."},
-    {"name": "text-secondary", "value": "#BABCCE", "usage": "Subheadings, date and time, divider lines, the border of an idle outlined button, a slider's fill, single-color icons. On page and raised."},
-    {"name": "text-subtle", "value": "#767789", "usage": "De-emphasised icon parts and disabled captions. Under 4.5:1 on page and raised, so not for text people have to read: the guide's value, kept."},
-    {"name": "icon-ground", "value": "#414459", "usage": "The background behind an icon."},
-    {"name": "shape", "value": "#6A6E89", "usage": "Container shapes and outlines; a toggle's thumb when off."},
-    {"name": "accent", "value": {"orange": "#D69B61", "light-blue": "#6ACFE8", "gold": "#D6B961", "medium-blue": "#4695D6"}, "usage": "Selection lines and selected icons; a caption that marks an active state. One scheme per project."},
-    {"name": "accent-2", "value": {"orange": "#626ACF", "light-blue": "#84B266", "gold": "#84B266", "medium-blue": "#D6B961"}, "usage": "A toggle or slider thumb and a level's fill. One scheme per project."},
-    {"name": "alert", "value": "#D32929", "usage": "A caption or fill that warns: a fault, an active mute. From the seed's own buttons, not the guide."},
-    {"name": "scrim", "value": "#242634CC", "usage": "Behind a modal popup's card: page at 20% transparency, as the guide words it."}
+    {
+      "name": "page",
+      "value": "#242634",
+      "usage": "Page and popup background; a slider or level's empty track over an image, or on a raised panel."
+    },
+    {
+      "name": "raised",
+      "value": "#37394E",
+      "usage": "Button fill when idle; panels and cards; a slider or level's empty track over a color."
+    },
+    {
+      "name": "pressed",
+      "value": "{page}",
+      "usage": "Button fill when pressed or selected (the On state). The same value as page."
+    },
+    {
+      "name": "text",
+      "value": "#FFFFFF",
+      "usage": "Headings, button captions, paragraphs; the border of a pressed outlined button. On page, raised and pressed."
+    },
+    {
+      "name": "text-secondary",
+      "value": "#BABCCE",
+      "usage": "Subheadings, date and time, divider lines, the border of an idle outlined button, the filled part of a slider, single-color icons. On page and raised."
+    },
+    {
+      "name": "text-subtle",
+      "value": "#767789",
+      "usage": "Icon secondary in the guide: the de-emphasised parts of an icon. Under 4.5:1 on page and raised, so never for text people have to read."
+    },
+    {
+      "name": "icon-ground",
+      "value": "#414459",
+      "usage": "The background behind an icon."
+    },
+    {
+      "name": "shape",
+      "value": "#6A6E89",
+      "usage": "Container shapes: the outline of a panel or card (over a raised fill, as the seed's own container draws it) and of the seed's round indicators; a toggle's thumb when off."
+    },
+    {
+      "name": "accent",
+      "value": {
+        "orange": "#D69B61",
+        "light-blue": "#6ACFE8",
+        "gold": "#D6B961",
+        "medium-blue": "#4695D6"
+      },
+      "usage": "Selection lines and selected icons, and the caption of a button in its active state - the seed's own buttons turn their caption this color when On. Not a fill: Afterburn never fills a button with it. One scheme per project."
+    },
+    {
+      "name": "accent-2",
+      "value": {
+        "orange": "#626ACF",
+        "light-blue": "#84B266",
+        "gold": "#84B266",
+        "medium-blue": "#D6B961"
+      },
+      "usage": "A slider's thumb and a level's fill (the guide's secondary accent). One scheme per project."
+    },
+    {
+      "name": "alert",
+      "value": "#D32929",
+      "usage": "A caption that warns: the seed's own buttons turn their caption this red when On, for an active mute or a fault. From the seed, not the guide; not a fill."
+    },
+    {
+      "name": "scrim",
+      "value": "#000000A6",
+      "usage": "What the panel shows behind a modal popup's card: the page beneath, under black at 65% (alpha 166). Build draws it over every modal whatever background it was given - measured on the Afterburn, Mach and Shockwave seeds and on a panel built from a canvas - so it is not one of a panel's six colors. The guide's #242634 at 20% transparency is not what ships."
+    }
   ],
   "type": [
-    {"name": "title", "pt": 38, "weight": 400, "usage": "A page's title - the seed's largest label."},
-    {"name": "heading", "pt": 23.5, "weight": 700, "usage": "A popup's or a section's heading."},
-    {"name": "subheading", "pt": 21, "weight": 400, "usage": "A secondary heading, in text-secondary."},
-    {"name": "button-large", "pt": 20, "weight": 700, "usage": "The caption of a large button: a source, a main action."},
-    {"name": "body", "pt": 16, "weight": 400, "usage": "Labels, status and paragraphs; the clock."},
-    {"name": "body-strong", "pt": 16, "weight": 700, "usage": "A label that names a group of controls."},
-    {"name": "button", "pt": 14, "weight": 400, "usage": "The caption of a small button. Afterburn's own small buttons use 13 pt, under the 14 pt minimum the toolkit checks, so 14 is the floor here."}
+    {
+      "name": "title",
+      "pt": 38,
+      "weight": 400,
+      "usage": "A page's title - the seed's largest label."
+    },
+    {
+      "name": "heading",
+      "pt": 23.5,
+      "weight": 700,
+      "usage": "A popup's or a section's heading."
+    },
+    {
+      "name": "subheading",
+      "pt": 21,
+      "weight": 400,
+      "usage": "A secondary heading, in text-secondary."
+    },
+    {
+      "name": "button-large",
+      "pt": 20,
+      "weight": 700,
+      "usage": "The caption of a large button: a source, a main action."
+    },
+    {
+      "name": "body",
+      "pt": 16,
+      "weight": 400,
+      "usage": "Labels, status and paragraphs; the clock."
+    },
+    {
+      "name": "body-strong",
+      "pt": 16,
+      "weight": 700,
+      "usage": "A label that names a group of controls."
+    },
+    {
+      "name": "button",
+      "pt": 14,
+      "weight": 400,
+      "usage": "The caption of a small button. Afterburn's own small buttons use 13 pt, under the 14 pt minimum the toolkit checks, so 14 is the floor here."
+    }
   ],
   "borders": {
-    "afterburn": {"resource": "Afterburn - 10 Radius 2 Thick", "radius": 10, "thickness": 2, "usage": "An outlined button: rounded, with its stroke drawn."},
-    "afterburn-flat": {"resource": "Afterburn - 10 Radius 0 Thick", "radius": 10, "thickness": 0, "usage": "A rounded fill with no stroke: ghost buttons, panels, cards."},
-    "afterburn-14": {"resource": "Afterburn - 14 Radius 0 Thick", "radius": 14, "thickness": 0, "usage": "A slider or level track."},
-    "rect": {"resource": "2D Rectangle", "radius": 0, "thickness": 3, "usage": "A square-cornered fill: a full-width bar."},
-    "capsule": {"resource": "2D Capsule", "radius": 9999, "thickness": 3, "usage": "A pill."},
-    "ellipse": {"resource": "2D Ellipse", "radius": -1, "thickness": 3, "usage": "A circle or ellipse."}
+    "afterburn": {
+      "resource": "Afterburn - 10 Radius 2 Thick",
+      "radius": 10,
+      "thickness": 2,
+      "usage": "An outlined button: rounded, with its stroke drawn."
+    },
+    "afterburn-flat": {
+      "resource": "Afterburn - 10 Radius 0 Thick",
+      "radius": 10,
+      "thickness": 0,
+      "usage": "A rounded fill with no stroke: ghost buttons, panels, cards."
+    },
+    "afterburn-14": {
+      "resource": "Afterburn - 14 Radius 0 Thick",
+      "radius": 14,
+      "thickness": 0,
+      "usage": "A slider or level track."
+    },
+    "rect": {
+      "resource": "2D Rectangle",
+      "radius": 0,
+      "thickness": 3,
+      "usage": "A square-cornered fill: a full-width bar."
+    },
+    "capsule": {
+      "resource": "2D Capsule",
+      "radius": 9999,
+      "thickness": 3,
+      "usage": "A pill."
+    },
+    "ellipse": {
+      "resource": "2D Ellipse",
+      "radius": -1,
+      "thickness": 3,
+      "usage": "A circle or ellipse."
+    }
   },
   "buttons": {
     "outlined": {
       "usage": "The default button: a raised fill and a text-secondary border, pressed fill and a white border when On. The seed's most common look.",
-      "look": {"fill": "raised", "stroke": "text-secondary", "border": "afterburn", "color": "text"},
-      "states": [{"name": "Off"}, {"name": "On", "fill": "pressed", "stroke": "text"}]
+      "look": {
+        "fill": "raised",
+        "stroke": "text-secondary",
+        "border": "afterburn",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "pressed",
+          "stroke": "text"
+        }
+      ]
     },
     "ghost": {
       "usage": "No fill until pressed or selected: list rows, tabs, icon buttons.",
-      "look": {"border": "afterburn-flat", "color": "text"},
-      "states": [{"name": "Off"}, {"name": "On", "fill": "pressed"}]
+      "look": {
+        "border": "afterburn-flat",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "pressed"
+        }
+      ]
     },
     "inverse": {
       "usage": "For a button sitting on a raised panel: pressed fill when idle, raised when On.",
-      "look": {"fill": "pressed", "border": "afterburn-flat", "color": "text"},
-      "states": [{"name": "Off"}, {"name": "On", "fill": "raised"}]
+      "look": {
+        "fill": "pressed",
+        "border": "afterburn-flat",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "raised"
+        }
+      ]
     }
   },
   "defaults": {
-    "page": {"background": "page"},
-    "button": {"variant": "outlined", "type": "button", "height": 64},
-    "label": {"type": "body", "color": "text"},
-    "panel": {"fill": "raised", "border": "afterburn-flat"},
-    "line": {"color": "text-secondary", "thickness": 2},
-    "slider": {"fill": "raised", "border": "afterburn-14", "value": "text-secondary", "thumb": "accent-2"},
-    "level": {"fill": "raised", "border": "afterburn-14", "value": "accent-2"},
-    "clock": {"type": "body", "color": "text-secondary"}
+    "page": {
+      "background": "page"
+    },
+    "button": {
+      "variant": "outlined",
+      "type": "button",
+      "height": 64
+    },
+    "label": {
+      "type": "body",
+      "color": "text"
+    },
+    "panel": {
+      "fill": "raised",
+      "stroke": "shape",
+      "border": "afterburn"
+    },
+    "line": {
+      "color": "text-secondary",
+      "thickness": 2
+    },
+    "slider": {
+      "fill": "raised",
+      "border": "afterburn-14",
+      "orientation": "up",
+      "track": 10,
+      "thumb": 50,
+      "value": "text-secondary",
+      "thumb_color": "accent-2"
+    },
+    "level": {
+      "fill": "raised",
+      "border": "afterburn-14",
+      "orientation": "up",
+      "track": 10,
+      "value": "accent-2"
+    },
+    "clock": {
+      "type": "body",
+      "color": "text-secondary"
+    }
   },
-  "cover": {"blocks": ["raised", "accent", "accent-2", "text-secondary"], "pattern": "rounded tiles cut at the Afterburn 10 px radius"}
+  "cover": {
+    "blocks": [
+      "raised",
+      "accent",
+      "accent-2",
+      "text-secondary"
+    ],
+    "pattern": "rounded tiles cut at the Afterburn 10 px radius"
+  },
+  "examples": {
+    "states": "[{\"name\":\"No Signal\",\"color\":\"text-secondary\"},\"Ready\",{\"name\":\"Live\",\"fill\":\"pressed\",\"stroke\":\"text\",\"color\":\"accent\"}]",
+    "states_note": "In Afterburn an active state is the pressed fill and a white border, its caption in `accent` for a selection or `alert` for a warning. Afterburn never fills a button with an accent.",
+    "on_off": "[\"Off\",{\"name\":\"On\",\"color\":\"accent\"}]",
+    "color_rule": "`page` behind everything; `raised` for idle buttons and panels, with `shape` outlining a card; `pressed` and a `text` border for On; `text` and `text-secondary` for type; `accent` only for selection lines and an active caption, and `alert` only for a warning caption - Afterburn fills nothing with either; `accent-2` is the slider thumb and a level's fill."
+  }
 }

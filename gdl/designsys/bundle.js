@@ -121,10 +121,16 @@
     var full = kind !== 'popup';
     var w = Number(props.width) || (full ? P.size[0] : P.popup[0]);
     var ht = Number(props.height) || (full ? P.size[1] : P.popup[1]);
-    var bg = props.background || (kind === 'modal' ? 'scrim' : P.defaults.page.background);
+    // Build draws every modal popup as the page beneath under a black scrim,
+    // whatever background it is given, so a modal shows that and carries none.
+    var bg = kind === 'modal' ? null : props.background || P.defaults.page.background;
     var style = {
       position: 'relative', boxSizing: 'border-box', overflow: 'hidden',
-      width: w + 'px', height: ht + 'px', background: paint(colors, bg),
+      width: w + 'px', height: ht + 'px',
+      background: kind === 'modal'
+        ? 'linear-gradient(' + paint(colors, 'scrim') + ', ' + paint(colors, 'scrim') + '), '
+          + paint(colors, P.defaults.page.background)
+        : paint(colors, bg),
       color: colors.text, font: font({}, 'body').css
     };
     Object.keys(colors).forEach(function (k) { style['--' + k] = colors[k]; });
@@ -209,13 +215,14 @@
     var L = useLook();
     var fill = props.fill || P.defaults.panel.fill;
     var border = props.border || P.defaults.panel.border;
+    var stroke = props.stroke || P.defaults.panel.stroke;
     var b = P.borders[border];
     return h('div', {
       className: 'xgdl xgdl-panel',
       style: { boxSizing: 'border-box', width: '100%', height: '100%',
-               background: paint(L.colors, fill), border: edge(b, L.colors, props.stroke),
+               background: paint(L.colors, fill), border: edge(b, L.colors, stroke),
                borderRadius: radius(b) },
-      'data-gdl': gdl({ kind: 'panel', name: props.name, fill: fill, stroke: props.stroke,
+      'data-gdl': gdl({ kind: 'panel', name: props.name, fill: fill, stroke: stroke,
                         border: border })
     });
   }
@@ -237,35 +244,50 @@
   }
 
   // -- Slider and Level ------------------------------------------------------
+  // As the template builds them: a thin rounded rail `track` px wide, centred
+  // in the control's box, which is the touch area. The rail's empty part is
+  // `fill`; the part up to the value is the template's fill color; a slider
+  // adds a round thumb `thumb` px across. Afterburn's own: a 10 px rail in a
+  // 50 px wide control, #BABCCE fill, a 50 px periwinkle thumb.
   function track(kind, props) {
     var L = useLook();
     var d = P.defaults[kind];
     var fill = props.fill || d.fill;
-    var b = P.borders[props.border || d.border];
-    var o = props.orientation || 'right';
-    var across = o === 'up' || o === 'down';
+    var o = props.orientation || d.orientation || 'up';
+    var along = o === 'up' || o === 'down';            // the value runs vertically
+    var t = Number(props.track) || d.track;
+    var s = kind === 'slider' ? Number(props.thumb) || d.thumb : 0;
     var pct = props.value != null ? Math.max(0, Math.min(100, Number(props.value))) : 60;
-    var bar = { position: 'absolute', background: paint(L.colors, d.value), borderRadius: radius(b) };
-    if (across) { bar.left = 0; bar.right = 0; bar.height = pct + '%'; bar[o === 'up' ? 'bottom' : 'top'] = 0; }
-    else { bar.top = 0; bar.bottom = 0; bar.width = pct + '%'; bar[o === 'right' ? 'left' : 'right'] = 0; }
-    var kids = [h('div', { key: 'v', style: bar })];
-    if (kind === 'slider') {
-      var s = P.touch;
+    var end = s / 2;                                   // the rail stops where the thumb's centre can reach
+    var rail = { position: 'absolute', borderRadius: t / 2 + 'px', background: paint(L.colors, fill) };
+    var bar = { position: 'absolute', borderRadius: t / 2 + 'px', background: paint(L.colors, d.value) };
+    var span = 'calc(100% - ' + 2 * end + 'px)';
+    var reach = 'calc((100% - ' + 2 * end + 'px) * ' + pct / 100 + ')';
+    if (along) {
+      rail.left = bar.left = 'calc(50% - ' + t / 2 + 'px)'; rail.width = bar.width = t + 'px';
+      rail.top = end + 'px'; rail.height = span;
+      bar.height = reach; bar[o === 'up' ? 'bottom' : 'top'] = end + 'px';
+    } else {
+      rail.top = bar.top = 'calc(50% - ' + t / 2 + 'px)'; rail.height = bar.height = t + 'px';
+      rail.left = end + 'px'; rail.width = span;
+      bar.width = reach; bar[o === 'right' ? 'left' : 'right'] = end + 'px';
+    }
+    var kids = [h('div', { key: 'r', style: rail }), h('div', { key: 'v', style: bar })];
+    if (s) {
       var thumb = { position: 'absolute', width: s + 'px', height: s + 'px', borderRadius: '50%',
-                    background: paint(L.colors, d.thumb) };
-      if (across) { thumb.left = '50%'; thumb.marginLeft = -s / 2 + 'px';
-                    thumb[o === 'up' ? 'bottom' : 'top'] = 'calc(' + pct + '% - ' + s / 2 + 'px)'; }
-      else { thumb.top = '50%'; thumb.marginTop = -s / 2 + 'px';
-             thumb[o === 'right' ? 'left' : 'right'] = 'calc(' + pct + '% - ' + s / 2 + 'px)'; }
+                    boxSizing: 'border-box', border: '1px solid rgba(0, 0, 0, 0.55)',
+                    background: paint(L.colors, d.thumb_color) };
+      var at = 'calc((100% - ' + s + 'px) * ' + pct / 100 + ')';
+      if (along) { thumb.left = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'up' ? 'bottom' : 'top'] = at; }
+      else { thumb.top = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'right' ? 'left' : 'right'] = at; }
       kids.push(h('div', { key: 't', style: thumb }));
     }
     return h('div', {
       className: 'xgdl xgdl-' + kind,
-      style: { position: 'relative', boxSizing: 'border-box', width: '100%', height: '100%',
-               background: paint(L.colors, fill), borderRadius: radius(b) },
+      style: { position: 'relative', boxSizing: 'border-box', width: '100%', height: '100%' },
       'data-gdl': gdl({ kind: kind, name: props.name, id: props.id != null ? Number(props.id) : null,
                         fill: fill, border: props.border || d.border, orientation: o,
-                        does: props.does })
+                        track: t, thumb: s || null, does: props.does })
     }, kids);
   }
   function Slider(props) { return track('slider', props); }

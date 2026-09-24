@@ -99,7 +99,7 @@ class TestProfile(unittest.TestCase):
         types = {t['name'] for t in self.p['type']}
         for kind, d in self.p['defaults'].items():
             for k, v in d.items():
-                if k in ('fill', 'stroke', 'color', 'value', 'thumb', 'background'):
+                if k in ('fill', 'stroke', 'color', 'value', 'thumb_color', 'background'):
                     self.assertIn(v, self.colors, f'defaults.{kind}.{k}')
                 if k == 'border':
                     self.assertIn(v, self.p['borders'], f'defaults.{kind}')
