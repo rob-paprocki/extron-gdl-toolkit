@@ -172,6 +172,20 @@ jobs:
         # render path.
         run: python tests/test_fonts.py
 
+      - name: the ID map - navigation checks and output
+        # Every addressable control's ID, page, caption and function, and the
+        # page flips checked. docs/idmap.md is the home.
+        run: python tests/test_idmap.py
+
+      - name: the ID map verifier fails on what Build can break
+        run: python tests/test_verify_idmap.py
+
+      - name: the functions example checks and writes its ID map
+        run: |
+          python -m gdl.idmap check examples/huddle-functions.json
+          python -m gdl.idmap write examples/huddle-functions.json /tmp/idmap
+          test -f /tmp/idmap/idmap.md && test -f /tmp/idmap/idmap.csv
+
   fidelity:
     # The render harness, against GUI Designer's own snapshot exports. Runs here
     # only because every face is recoverable from the tracked fixtures; see the
@@ -186,6 +200,11 @@ jobs:
 
       - name: install Pillow
         run: pip install -r requirements.txt
+
+      - name: the layout verifier checks start page, modal popups and IDs
+        # Here rather than in `test`: verify_built imports the compositor, so
+        # these skip without Pillow.
+        run: python tests/test_verify_built.py
 
       - name: recover the embedded faces
         # All six fixtures: no single one embeds every face.

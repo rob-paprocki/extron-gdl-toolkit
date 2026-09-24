@@ -114,8 +114,10 @@ Backing fields worth knowing:
 | `leftField` `topField` `widthField` `heightField` | `PBDrawObject` | |
 | `modalField`, `groupIDField`, `groupNameField` | `PBPopupPage` | |
 | `popupReferencesField`, `hasReferencesField` | `PBPopupPage` | back-pointers |
+| `modalField` | `PBPopupPageReference` | the reference's **own** flag - see §5 |
 | `popupIDField`, `groupIDField` | `PBPopupPageID` | on the reference control |
 | `popupPageGroupsField` | `PBProject` | the group registry |
+| `defaultPageField` | `PBProject` | the start page, as a page's `idField` - see §7 |
 
 ## 5. Modal vs standard popups
 
@@ -128,6 +130,22 @@ A clean split, and it drives everything about references:
 | Placement | invoked directly; references auto-created by Build | placed by a popup page reference bound to its **group** |
 
 Cloning a modal popup as the target of a hand-authored reference is a dead end.
+
+Every modal in the corpus is full-canvas: 7 in Liberty Bank, 19 in the
+Afterburn 1035 seed, 13 in Shockwave. To author one, clone a **modal** donor
+popup, empty its `popupReferencesField` and set `hasReferencesField` false - the
+donor's back-pointers name references that belong to the donor - and let Build
+write the new popup's references. Flipping `modalField` on a standard clone is
+untested.
+
+**A reference control carries its own `modalField`**, separate from the popup's.
+It is `True` on the references Build generates for modal popups - 126 of the
+Afterburn 1035 seed's 131 references - and `False` on a group reference. A
+clone inherits it, and Build **discards** an authored group reference that says
+`True`, as one of its own, on the next build: the file builds with 0 errors and
+the reference is simply gone. The Liberty Bank donor hides this because its
+first reference happens to be a group reference; every seed exposes it. An
+authored reference must be written `False`.
 
 ## 6. Popup bindings live in four places
 
@@ -178,6 +196,15 @@ A generator should assert all four agree rather than trusting the writes.
   clone; the donor's own pages carry the same six. `tests/audit_corpus.py`
   checks the rule against every built project it can reach: the Turbulence seed
   is the one with its Offline Page on, and it references that page too.
+- **A page's `userIdField` does not survive Build.** A generated page authored
+  with `userIdField` 1000 comes back from Build with `UserId` equal to its `ID`
+  (51 on the Liberty Bank donor), and every donor page and popup has
+  `ID == UserId`. So the control program addresses pages and popups by **name**;
+  only a control's `userIdField` is a stable number.
+- **The start page is `PBProject.defaultPageField`**, a page's `idField`, and the
+  built `layout.json` reports it as `DefaultPage`. A generated panel keeps the
+  donor's unless it is written: one built from the Liberty Bank donor booted
+  into the client's `1000 - Home`.
 - **Retargeting a project needs Extron's factory, not a constructor.**
   `[Activator]::CreateInstance` on a platform class gets the resolution right
   and leaves `partNumberField` null, and GUI Designer then titles the project

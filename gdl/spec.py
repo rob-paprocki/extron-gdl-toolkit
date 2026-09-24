@@ -17,7 +17,7 @@ emitted here as data:
     the same compositor that scores 2.19% against GUI Designer's own snapshot
     exports, so a design can be judged before it reaches a Windows box
   * a **plan** (`plan`) - the clone-and-set ops `powershell/Apply-GdlPlan.ps1`
-    applies. That applier is UNVERIFIED; see docs/from-scratch.md.
+    applies, verified end to end by `powershell/New-GdlPanel.ps1`.
 
 That works because an authored control carries `TLPImageID = -1` - Build has not
 rasterized it yet - and the compositor already knows how to draw those from
@@ -460,15 +460,23 @@ class Panel:
         return [parent[0] + rect[0], parent[1] + rect[1], rect[2], rect[3]]
 
     # -- ids ---------------------------------------------------------------
-    def _allocate(self, page, controls, base):
+    @staticmethod
+    def _allocate(controls, base, taken):
         """Hand out userIds in a per-page band, honouring anything pinned.
 
         Extron numbers a page's controls in a band related to the page number
         (a 2000-series page carries 2000-series ids), which is convention rather
         than anything the engine enforces - but a generated panel that ignores
         it reads as generated.
+
+        `taken` is shared across the WHOLE project, because the control program
+        addresses a control by ID alone: extronlib binds one object per ID on a
+        panel, so an ID handed to two unrelated controls makes one button's
+        handler fire for the other's press. It arrives pre-seeded with every
+        pinned ID, so allocation never lands on one - and a pinned ID may still
+        repeat, deliberately, because mirroring one button onto several popups
+        under one ID is Extron's own practice (Liberty Bank's 81/82).
         """
-        taken = {c['id'] for c in controls if c.get('id')}
         nxt = base
         for c in controls:
             if c.get('id'):
@@ -482,34 +490,26 @@ class Panel:
 
     # -- build -------------------------------------------------------------
     def _build(self):
-        self.popups = []
-        for i, pu in enumerate(self.spec.get('popups') or []):
+        # Flatten every container first: allocation needs every pinned ID in
+        # the project before it hands out the first free one.
+        flat_popups = []
+        for pu in self.spec.get('popups') or []:
             self._groups = {}
-            controls = self._controls(pu.get('controls') or [], [])
-            number = pu.get('number', 9000 + i)
-            self._allocate(pu, controls, pu.get('id_base') or number + 1)
-            self.popups.append({
-                'number': number,
-                'name': pu.get('name') or f'Popup {number}',
-                'group': pu.get('group'),
-                # A popup inherits its reference's dimensions (GUI Design
-                # Standards p.70), so its own size is the anchor's, not its own
-                # choice. Recorded for the check, not authored.
-                'size': pu.get('size'),
-                'modal': bool(pu.get('modal')),
-                'background': color(pu.get('background') or self.theme.get('background')
-                                     or '#000000', self.theme),
-                'controls': controls,
-                'group_sizes': dict(self._groups),
-            })
-        page_no = None
-        for i, pg in enumerate(self.spec.get('pages') or []):
+            flat_popups.append((pu, self._controls(pu.get('controls') or [], []),
+                                dict(self._groups)))
+        flat_pages = []
+        for pg in self.spec.get('pages') or []:
             self._groups = {}
-            controls = self._controls(pg.get('controls') or [], [])
+            flat_pages.append((pg, self._controls(pg.get('controls') or [], []),
+                               dict(self._groups)))
+        taken = {c['id'] for _, cs, _ in flat_pages + flat_popups for c in cs
+                 if c.get('id')}
+
+        for i, (pg, controls, groups) in enumerate(flat_pages):
             page_no = pg.get('number')
             if page_no is None:
                 page_no = 1000 * (i + 1)
-            self._allocate(pg, controls, pg.get('id_base') or page_no + 1)
+            self._allocate(controls, pg.get('id_base') or page_no + 1, taken)
             self.pages.append({
                 'number': page_no,
                 'name': pg.get('name') or f'Page {page_no}',
@@ -517,8 +517,43 @@ class Panel:
                 'background': color(pg.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
                 'controls': controls,
-                'group_sizes': dict(self._groups),
+                'group_sizes': groups,
             })
+
+        self.popups = []
+        for i, (pu, controls, groups) in enumerate(flat_popups):
+            # A band per popup. The default used to be 9000 + i, so popup i's
+            # band began inside popup i-1's and two unnumbered popups shared IDs.
+            number = pu.get('number', 9000 + 100 * i)
+            self._allocate(controls, pu.get('id_base') or number + 1, taken)
+            modal = bool(pu.get('modal'))
+            size = pu.get('size')
+            if modal and not size:
+                # Every modal popup in the corpus is full-canvas - 7 in Liberty
+                # Bank, 19 in the Afterburn seed, 13 in Shockwave - and Build
+                # places a full-canvas reference for each on every page. So the
+                # canvas is the modal's size, not a choice.
+                size = list(self.size)
+            self.popups.append({
+                'number': number,
+                'name': pu.get('name') or f'Popup {number}',
+                'group': pu.get('group'),
+                # A popup inherits its reference's dimensions (GUI Design
+                # Standards p.70), so its own size is the anchor's, not its own
+                # choice. Recorded for the check, not authored.
+                'size': size,
+                'modal': modal,
+                'background': color(pu.get('background') or self.theme.get('background')
+                                     or '#000000', self.theme),
+                'controls': controls,
+                'group_sizes': groups,
+            })
+
+        # The page the panel boots into. Without it a generated panel opens on
+        # the DONOR's start page - a built panel from the Liberty Bank donor
+        # reported DefaultPage 21, the client's '1000 - Home'.
+        self.start_page = self.spec.get('start_page') or (
+            self.pages[0]['name'] if self.pages else None)
 
     # -- emit --------------------------------------------------------------
     def layout(self):
@@ -616,6 +651,9 @@ class Panel:
 
         return {
             'generated_by': 'gdl.spec',
+            # By NAME: the applier resolves it to the id it gives that page,
+            # which only exists once the donor has decided what is free.
+            'default_page': self.start_page,
             'popup_groups': sorted({p['group'] for p in self.popups if p['group']}),
             'popups': self._popup_ops(),
             'canvas': list(self.size),
@@ -659,8 +697,20 @@ class Panel:
                     out.append(f'{where}: unknown border resource {b!r} - a generator may '
                                f'only reference resources the project already carries')
             out += self._house_rules(pg)
+        for pu in self.popups:
+            seen = {}
+            for c in pu['controls']:
+                where = f"popup {pu['name']!r} {c.get('name') or c.get('text') or '?'}"
+                if c['id'] in seen:
+                    out.append(f"{where}: id {c['id']} already used by {seen[c['id']]}")
+                seen[c['id']] = where
         out += self._popup_rules()
         out += self._name_rules()
+        if self.start_page is not None and \
+                self.start_page not in {pg['name'] for pg in self.pages}:
+            out.append(f'start_page {self.start_page!r} is not a page in this spec - the '
+                       f'panel boots into it, so it must be one of the pages authored '
+                       f'here (a popup cannot be a start page)')
         n = len(self.palette())
         if n > MAX_COLORS_PER_PROJECT:
             out.append(f'project uses {n} distinct colors, above the '
@@ -798,6 +848,13 @@ class Panel:
                 'widthField': rect[2], 'heightField': rect[3],
                 '<TLPImageID>k__BackingField': -1,
                 **(_type_fields(kind, c) or {}),
+                # A reference has its OWN modalField, True on the references
+                # Build generates for modal popups - and a seed's first
+                # reference is one of those (126 of 131 in the Afterburn 1035
+                # seed). A clone inherited True, and Build dropped the authored
+                # group reference as one of its own on the next build, with 0
+                # errors. The Liberty Bank donor hid it: its first is grouped.
+                **({'modalField': False} if kind == 'popup_ref' else {}),
             },
             'fill': _argb(fill),
             'stroke': _argb(stroke),
@@ -885,6 +942,15 @@ class Panel:
             if pu['modal'] and pu['group']:
                 out.append(f"popup {pu['name']!r} is modal AND grouped - modal popups are "
                            f'always ungrouped, and Build makes their references')
+            if pu['modal'] and pu['size'] and tuple(pu['size']) != tuple(self.size):
+                out.append(f"popup {pu['name']!r} is modal but {pu['size'][0]}x"
+                           f"{pu['size'][1]}, not the {self.size[0]}x{self.size[1]} canvas - "
+                           f'every modal in the corpus is full-canvas, and Build shows it '
+                           f'through a full-canvas reference. Draw the card inside it.')
+            if not pu['modal'] and not pu['group']:
+                out.append(f"popup {pu['name']!r} is neither modal nor in a group, so no "
+                           f'reference can show it - a standard popup is shown through a '
+                           f'reference bound to its group')
             if not pu['group'] or not pu['size']:
                 continue
             for rect in refs.get(pu['group'], []):
@@ -1032,7 +1098,7 @@ class Panel:
     def needs(self):
         """Every control class this spec requires a donor for."""
         return {KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
-                for pg in self.pages for c in pg['controls']}
+                for pg in self.pages + self.popups for c in pg['controls']}
 
     def needs_borders(self):
         """Every named border RESOURCE this spec references, already resolved.

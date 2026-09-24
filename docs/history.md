@@ -129,6 +129,27 @@ statement is in the live docs; this is the record that it changed.
 - **…but "every declared face is embedded" is not true of every project.** Found
   by `tests/audit_corpus.py`: a fresh project declares Arial Black without
   embedding it. `docs/ROADMAP.md` *Mine* #2.
+- **Generated popups and start pages were assumed to work because the builds
+  were clean.** Three silent failures sat behind that, found when the behavior
+  layer first needed them:
+  - The applier wrote `modalField = false` on every popup, so a modal
+    confirmation built as an ungrouped standard popup that nothing could show.
+  - A generated panel kept the donor's start page.
+  - Every popup reference authored from a **seed** was discarded by Build. The
+    clone inherited the reference's own `modalField = True` from one of Build's
+    modal references, and Build then treated it as its own. The Liberty Bank
+    donor, whose first reference is a group reference, hid it in every earlier
+    build.
+
+  `docs/gdl-format.md` §5 and §7 have the rules; `tests/verify_built.py` checks
+  the first two.
+- **Page numbers were treated as addresses.** A spec's page `number` is written
+  to `userIdField`, but Build reports every page's `UserId` as its `ID`, so
+  pages and popups are addressed by name.
+- **Two unnumbered popups shared control IDs.** Their default numbers were 9000
+  and 9001, so the second popup's ID band started inside the first's, and
+  `check()` never looked inside popups for duplicates. Allocation is now
+  project-wide.
 - **"No ECP seed declares Arial Black"** stood in `seeds/README.md` for the
   first days of the ECP seeds. Every ECP seed declares it, like every other
   seed; the six ECP rows had been read from `ProjectGCP`'s font resources while

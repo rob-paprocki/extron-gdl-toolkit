@@ -39,9 +39,12 @@ from PIL import Image  # noqa: E402
 
 from gdl.compose import load  # noqa: E402
 
-# Type numbers as layout.json writes them, for the message only.
-TYPE_NAME = {6: 'PopupPageReference', 7: 'Button', 11: 'Label', 13: 'Shape',
-             9: 'Line', 10: 'Image', 14: 'Slider', 15: 'Level', 12: 'DateTime'}
+# Type numbers as layout.json writes them, for the message only. Tabulated off
+# built files - the Liberty Bank donor and two seeds - against each control's
+# `__type`; this once said Line 9, DateTime 12, Slider 14 and Level 15.
+# tests/test_verify_built.py pins it.
+TYPE_NAME = {6: 'PopupPageReference', 7: 'Button', 8: 'DateTime', 9: 'Level',
+             10: 'Image', 11: 'Label', 12: 'Line', 13: 'Shape', 27: 'Slider'}
 
 
 def _caption(c):
@@ -364,9 +367,12 @@ def check_edits(plan, j):
             # that is really a lookup in the wrong place. Say so instead: the
             # only real check is looking at the asset.
             unverifiable.append(f"{pg['Name']!r} {c.get('Name')!r} -> {want_text!r}")
+        # 'UserId', as layout.json spells it. This said 'UserID', matched no
+        # key, and the `key not in c` guard below skipped it - so a renumber
+        # was never actually checked against the build.
         for f, key in (('leftField', 'Left'), ('topField', 'Top'),
                        ('widthField', 'Width'), ('heightField', 'Height'),
-                       ('userIdField', 'UserID')):
+                       ('userIdField', 'UserId')):
             want = (op.get('fields') or {}).get(f)
             if want is None or key not in c:
                 continue
@@ -377,6 +383,64 @@ def check_edits(plan, j):
         print(f'  NOT VERIFIABLE HERE (caption is baked into the artwork, '
               f'compare the asset PNG): {u}')
     return problems, checked
+
+
+def check_start_page(plan, j):
+    """Does the panel boot into the page the plan asked for?
+
+    A page's ID only exists once the applier has picked a free one, so the plan
+    names the page and this joins on the name. Without the check a generated
+    panel booted into the donor's start page - DefaultPage 21, the client's
+    '1000 - Home' - and nothing noticed.
+    """
+    want = plan.get('default_page')
+    if not want:
+        return []
+    page = next((p for p in j['Pages'] if p['Name'] == want), None)
+    if page is None:
+        return [f'start page {want!r} is not in the built file']
+    got = j.get('DefaultPage')
+    if got != page['ID']:
+        name = next((p['Name'] for p in j['Pages'] if p['ID'] == got), '?')
+        return [f'the panel boots into {name!r} (DefaultPage {got}), not the planned '
+                f"start page {want!r} (ID {page['ID']})"]
+    return []
+
+
+def check_modal(plan, j):
+    """Did each popup build modal or standard as planned, and can a modal show?
+
+    The applier once wrote modalField = false on every popup, so a modal
+    confirmation built as an ungrouped standard popup that no reference can
+    show. Build places one full-canvas reference per modal popup on every page,
+    with PopupPageID.PopupID set to the popup's own ID - so a modal with no such
+    reference on a generated page cannot appear there.
+    """
+    out = []
+    popups = {p['Name']: p for p in j['PopupPages']}
+    pages = {p['Name']: p for p in j['Pages']}
+    for pu in plan.get('popups') or []:
+        got = popups.get(pu['name'])
+        if got is None:
+            continue                     # check() already reports a missing popup
+        want = bool(pu.get('modal'))
+        if bool(got.get('Modal')) != want:
+            out.append(f"popup {pu['name']!r} built {'modal' if got.get('Modal') else 'standard'}"
+                       f", the plan asked for {'modal' if want else 'standard'}")
+            continue
+        if not want:
+            continue
+        for pg in plan.get('pages') or []:
+            built = pages.get(pg['name'])
+            if built is None:
+                continue
+            if not any(c.get('Type') == 6 and isinstance(c.get('PopupPageID'), dict)
+                       and c['PopupPageID'].get('IsPopupPageIdValid')
+                       and c['PopupPageID'].get('PopupID') == got['ID']
+                       for c in built.get('Controls') or []):
+                out.append(f"page {pg['name']!r} has no reference to modal popup "
+                           f"{pu['name']!r}, so it cannot be shown there")
+    return out
 
 
 def check(plan_path, built_path):
@@ -456,6 +520,8 @@ def check(plan_path, built_path):
         for note in notes:
             print(f'  STATE FILL NOT DOMINANT (survived, but check it by eye): {note}')
     problems += check_page_background(plan['pages'], pages, assets)
+    problems += check_start_page(plan, j)
+    problems += check_modal(plan, j)
 
     return problems, checked
 

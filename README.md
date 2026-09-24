@@ -24,6 +24,7 @@ together.
 | `gdl/nrbf.py`, `gdl/project.py` | pure-Python reader for the authoring model, no GUI Designer needed |
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
 | `gdl/edit.py` | change vocabulary for an existing panel: rename, retarget, renumber, restyle |
+| `gdl/idmap.py` | the ID map a programmer works from: every addressable control, where it is, what it does |
 | `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
 | `powershell/GdlProject.ps1` | authoring bridge: load, clone, edit, save a real project graph |
 | `powershell/Apply-GdlPlan.ps1` | applies a build plan to a real project. `-WhatIf` dry-runs it |
@@ -32,6 +33,7 @@ together.
 | `tests/score.py` | scores the render against ground truth and fails on any regression |
 | `tests/compare_snapshots.py` | the same comparison, printed per page |
 | `tests/verify_built.py` | diffs a built `layout.json` against the plan that produced it |
+| `tests/verify_idmap.py` | checks an ID map's page names and control IDs against the built panel |
 | `examples/` | worked spec, edit set and authoring script, all of which run |
 | `SKILL.md` | the repeatable procedure. Start here to build or modify a panel |
 | `docs/gdl-format.md` | the format writeup. Read this first |
@@ -134,6 +136,9 @@ python -m gdl.spec check   examples/panel.json          # ids, off-canvas, sizes
 python -m gdl.spec render  examples/panel.json out/preview.png
 python -m gdl.spec donors  examples/panel.json "fixtures/gdl/<donor>.gdl"
 python -m gdl.spec plan    examples/panel.json out/plan.json
+
+python -m gdl.idmap check examples/huddle-functions.json   # what the controls do
+python -m gdl.idmap write examples/huddle-functions.json out/idmap
 ```
 
 Look at the preview before building. The compositor is scored against GUI
@@ -142,6 +147,8 @@ would otherwise surface only in a build — a control type the donor cannot
 supply, a page or popup name it already uses, a border resource or font it
 lacks. `SKILL.md` has the full procedure, and where GUI Designer is installed
 `powershell\New-GdlPanel.ps1` runs all of it, build and verification included.
+A spec can also say what its controls do; `gdl.idmap` checks the page flips and
+writes the programmer's ID map from the same file (`docs/idmap.md`).
 
 ## Applying a plan, which needs GUI Designer
 

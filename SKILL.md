@@ -64,6 +64,24 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    `Off`/`On` is what Extron's own templates use for **3475 of 3668** buttons
    (94.7%). Multi-state idioms (`Muted`/`Level 1`/`Level 2`/`Level 3`) exist but
    are domain-specific; do those with `gdl.edit` on a real project.
+
+   **Say where the panel boots.** `"start_page": "<page name>"` - the first page
+   when omitted - is written into the project, because otherwise the built panel
+   opens on the donor's start page.
+
+   **Popups are one of two kinds.** A *standard* popup sits in a `group` and
+   shows through a `popup_ref` bound to that group, at the reference's size. A
+   *modal* one (`"modal": true`) covers the whole canvas - draw the confirmation
+   card inside it - and needs no reference; Build places those. `check` rejects
+   anything else, since neither kind can otherwise be shown.
+
+   **Say what it does.** A brief describes functions as well as a layout - "the
+   sources route to the display and show which is live; Help explains sharing".
+   Page and popup flips are `nav` on the button, which is checked; everything
+   else is `does`, in words, for the programmer's ID map. `docs/idmap.md` has
+   the keys and `examples/huddle-functions.json` a brief worked through. Then
+   `python -m gdl.idmap check <spec.json>` - it rejects a nav to nowhere, a
+   popup that cannot appear where it is shown, a page nothing reaches.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
    ≤9 buttons per group, ≤6 colors, ≥14pt body text).
@@ -107,7 +125,9 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 
    check → donors → plan → apply → pack → open → Save and Build → wait →
    verify. It exits 0 only if the verifier passed, so it gates rather than
-   reports. Nobody touches GUI Designer. Add `-KeepOpen` to leave it up.
+   reports. Nobody touches GUI Designer. Add `-KeepOpen` to leave it up, and
+   `-IdMap <dir>` to also write the programmer's ID map, verified against the
+   built panel.
 
    Without GUI Designer, stop at `python -m gdl.spec plan <spec.json>
    out/plan.json`; the rest runs where it is installed, per

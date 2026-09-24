@@ -156,6 +156,11 @@ touch-target Quick Reference table, which is a different thing.
 - A modal covers the page and any active non-modal popups with a translucent
   overlay, disabling them. (p. 71)
 
+`python -m gdl.idmap check` checks page flips and reachability for a spec that
+says what its controls do (`docs/idmap.md` §3). It does not enforce the p.71
+confirmation: modern call controls end a call with one tap, so whether an action
+asks first is left to the design.
+
 ## 3. Don'ts
 
 - Don't signal "selected" with a border alone — change color *and* add a text cue.

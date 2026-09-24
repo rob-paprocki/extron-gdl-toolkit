@@ -61,8 +61,9 @@ author, build and verify in one session.
 | `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` | File > Save and Build |
 | `gdl.spec` check / render / plan / donors | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
+| `gdl.idmap` check / write | |
 | the `python -m pytest` suite | |
-| `tests/verify_built.py`, given the built file | |
+| `tests/verify_built.py`, `tests/verify_idmap.py`, given the built file | |
 
 Setup is in `README.md` *Setup*. `fixtures/` is real client material — see
 *Working on the fixtures* below — and anything pushed goes to GitHub.
@@ -127,7 +128,8 @@ python tests/verify_built.py out/plan.json out/generated.gdl
 
 It diffs the built `layout.json` against the plan that produced it and exits
 non-zero on any authored control that moved, lost its caption, or came back at
-the donor's font size instead of the spec's.
+the donor's font size instead of the spec's - and on a panel that boots into the
+wrong page, or a popup that built as the wrong kind.
 
 It also checks **color, off the artwork rather than the model.** That
 distinction is the whole point: a built control's `BackgroundFillColor` reads
@@ -136,6 +138,17 @@ border and caption into a PNG and leaves a `TLPImageID` behind. So the check
 takes the plurality opaque color of each control's own asset, and reads the page
 asset too — a donor background image re-rasterized under the fill is invisible
 in every field and obvious in the artwork.
+
+The ID map a programmer works from has a second gate:
+
+```bash
+python tests/verify_idmap.py out/idmap out/generated.gdl
+```
+
+It checks every page and popup name and every control ID in the map against the
+built file - Build renumbers pages and keeps the donor's alongside, so agreement
+with the spec is not agreement with the panel. `docs/idmap.md` §5 has what else
+it checks.
 
 ## Driving GUI Designer
 
@@ -184,6 +197,7 @@ were updated. So:
   | Format facts and what Build does | `docs/gdl-format.md` |
   | Driving GUI Designer from a script | `docs/from-scratch.md` §7 |
   | Generating a panel, step by step | `SKILL.md` |
+| What controls do, and the ID map | `docs/idmap.md` |
   | Editing an existing panel | `docs/editing.md` |
   | Verification gates and the render baseline | `CLAUDE.md` *Verifying a change* |
   | Render findings | `docs/render-fidelity.md` |

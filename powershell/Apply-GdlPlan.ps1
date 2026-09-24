@@ -188,8 +188,10 @@ Write-Output "plan: $(@($spec.pages).Count) page(s), canvas $($spec.canvas -join
 $donorPage = @($project.Pages)[0]
 if (-not $donorPage) { throw 'donor project has no pages to clone from' }
 
+$pageIds = @{}
 foreach ($pg in $spec.pages) {
     $pageId = Get-GdlNextPageId $project
+    $pageIds[$pg.name] = $pageId
     Write-Output "page '$($pg.name)' -> id $pageId"
 
     $newPage = Copy-GdlObject $donorPage
@@ -222,6 +224,21 @@ foreach ($pg in $spec.pages) {
     }
 }
 
+# The page the panel boots into. Left alone, a generated panel opens on the
+# DONOR's start page - Build kept DefaultPage 21, the client's '1000 - Home'.
+# defaultPageField holds a page's idField, which only exists now that the
+# donor has decided what is free; the plan names the page for that reason.
+if ($spec.default_page) {
+    $startId = $pageIds[$spec.default_page]
+    if ($null -eq $startId) {
+        Note-Problem "default_page '$($spec.default_page)' is not a page this plan authors"
+    } elseif (-not $WhatIf) {
+        if (Set-GdlFieldIfPresent $project 'defaultPageField' $startId) {
+            Write-Output "start page '$($spec.default_page)' -> id $startId"
+        }
+    }
+}
+
 
 # -- popups --------------------------------------------------------------------
 # Deliberately last: a popup binding lives in FOUR places and every mismatch
@@ -236,18 +253,42 @@ if (@($spec.popups).Count) {
     }
 
     # Only a STANDARD popup can be the target of a hand-authored reference;
-    # modal popups are ungrouped and Build makes their references.
+    # modal popups are ungrouped and Build makes their references - one
+    # full-canvas reference per modal, on every page.
+    #
+    # Each kind clones from its own kind. This used to clone every popup from a
+    # standard donor and write modalField = false unconditionally, so a spec's
+    # modal confirmation built as an ungrouped standard popup that nothing could
+    # show - with every spec-side check passing.
     $donorPopup = $project.PopupPages | Where-Object { -not $_.Modal } | Select-Object -First 1
-    if (-not $donorPopup) { throw 'donor project has no standard popup to clone' }
+    $donorModal = $project.PopupPages | Where-Object { $_.Modal -and [uint64]$_.ID -ne 65535 } |
+                  Select-Object -First 1
+    if (@($spec.popups | Where-Object { -not $_.modal }).Count -and -not $donorPopup) {
+        throw 'donor project has no standard popup to clone'
+    }
+    if (@($spec.popups | Where-Object { $_.modal }).Count -and -not $donorModal) {
+        throw 'donor project has no modal popup to clone'
+    }
 
     $made = @()
     foreach ($pu in $spec.popups) {
         $popupId = Get-GdlNextPageId $project
-        $popup = Copy-GdlObject $donorPopup
+        $popup = if ($pu.modal) { Copy-GdlObject $donorModal } else { Copy-GdlObject $donorPopup }
         Set-GdlFieldIfPresent $popup 'idField' $popupId | Out-Null
         Set-GdlFieldIfPresent $popup 'userIdField' ([uint16]$pu.number) | Out-Null
         Set-GdlFieldIfPresent $popup 'nameField' $pu.name | Out-Null
-        Set-GdlFieldIfPresent $popup 'modalField' $false | Out-Null
+        Set-GdlFieldIfPresent $popup 'modalField' ([bool]$pu.modal) | Out-Null
+        if ($pu.modal) {
+            # A modal donor's back-pointers name the references Build made for
+            # IT. Carried over they would claim references this popup does not
+            # have; Build writes the new popup's own on the next Save and Build.
+            $backs = Get-GdlField $popup 'popupReferencesField'
+            if ($backs) {
+                Set-GdlFieldIfPresent $popup 'popupReferencesField' `
+                    ([Activator]::CreateInstance($backs.GetType())) | Out-Null
+            }
+            Set-GdlFieldIfPresent $popup 'hasReferencesField' $false | Out-Null
+        }
         # A cloned popup keeps the DONOR's size, and GUI Designer RELOCATES any
         # control that falls outside its page to 0,0 - at build time, silently,
         # with the build still reporting 0 errors. The first popup build lost
@@ -265,9 +306,15 @@ if (@($spec.popups).Count) {
         Set-GdlFieldIfPresent $popup 'backgroundImageField' $null | Out-Null
         Set-GdlColor $project $popup 'backgroundFillColorField' $pu.background
         # A member stores the group's NAME as well as its id; one without the
-        # other is one of the four silent-failure sites.
-        Set-GdlFieldIfPresent $popup 'groupIDField' ([int]$groupIds[$pu.group]) | Out-Null
-        Set-GdlFieldIfPresent $popup 'groupNameField' $pu.group | Out-Null
+        # other is one of the four silent-failure sites. A modal is group 0
+        # with no name, which is what every modal in the corpus carries.
+        if ($pu.modal) {
+            Set-GdlFieldIfPresent $popup 'groupIDField' 0 | Out-Null
+            Set-GdlFieldIfPresent $popup 'groupNameField' $null | Out-Null
+        } else {
+            Set-GdlFieldIfPresent $popup 'groupIDField' ([int]$groupIds[$pu.group]) | Out-Null
+            Set-GdlFieldIfPresent $popup 'groupNameField' $pu.group | Out-Null
+        }
 
         $pcontrols = Get-GdlField $popup 'controlsField'
         if ($pu.clear_controls -and $pcontrols) { $pcontrols.Clear() }
@@ -278,8 +325,10 @@ if (@($spec.popups).Count) {
             if (-not $pops) { throw 'no popupPagesField on the project' }
             $pops.Add($popup)
         }
-        $made += [pscustomobject]@{ Popup = $popup; Id = $popupId; Group = $pu.group; Name = $pu.name }
-        Write-Output "popup '$($pu.name)' -> id $popupId (group '$($pu.group)')"
+        $made += [pscustomobject]@{ Popup = $popup; Id = $popupId; Group = $pu.group
+                                    Name = $pu.name; Modal = [bool]$pu.modal }
+        if ($pu.modal) { Write-Output "popup '$($pu.name)' -> id $popupId (modal)" }
+        else { Write-Output "popup '$($pu.name)' -> id $popupId (group '$($pu.group)')" }
     }
 
     # Bind each reference to its GROUP: PopupID is the sentinel, not a page id.
@@ -300,8 +349,9 @@ if (@($spec.popups).Count) {
 
     # The other half: each popup keeps back-pointers to the references that
     # place it. hasReferencesField must agree or the binding reads Unassigned.
-    $backTemplate = Get-GdlField $donorPopup 'popupReferencesField'
+    $backTemplate = if ($donorPopup) { Get-GdlField $donorPopup 'popupReferencesField' } else { $null }
     foreach ($m in $made) {
+        if ($m.Modal) { continue }
         $refsFor = @($script:PendingRefs | Where-Object { $_.Group -eq $m.Group })
         if (-not $refsFor.Count) { continue }
         if (-not $backTemplate -or -not $backTemplate.Count) {
@@ -322,8 +372,11 @@ if (@($spec.popups).Count) {
 
     # Assert rather than trust: this is the only check that catches a binding
     # that opens, builds, and reads "Unassigned".
+    # A modal is skipped: its references do not exist until Build writes them,
+    # so tests/verify_built.py checks them on the built file instead.
     if (-not $WhatIf) {
         foreach ($m in $made) {
+            if ($m.Modal) { continue }
             $chk = Test-GdlPopupBinding $project $m.Id
             if ($chk.ok) { Write-Output "binding verified for '$($m.Name)': $($chk.references) reference(s)" }
             else { Note-Problem "popup '$($m.Name)' is not correctly bound: $($chk.problems -join '; ')" }

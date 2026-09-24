@@ -12,6 +12,10 @@ opening GUI Designer.**
 - Also proven: Arial recovery, font application, UTF-8 specs, multi-page panels,
   clean-room authoring, retarget from a seed (650/650), popup canvases that keep
   their own size, and Off/On button feedback.
+- **What the controls do**, from the same spec: `gdl.idmap` checks the page
+  flips and writes the programmer's ID map, verified against the built panel
+  (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
+  keep modal popups modal. `docs/idmap.md`.
 - For test results and branch or PR state, run `python -m pytest`, `git` and
   `gh` — a snapshot written into a doc is stale the next time anything merges.
   Setting up a machine is in `README.md` *Setup*.
@@ -64,28 +68,44 @@ opening GUI Designer.**
    worked edit.
 5. **A real-size panel.** Nothing generated has exceeded three pages; the client
    project has 27. A 20+ page spec with navigation, popups shared across pages
-   and per-page popup references is where the next class of bug lives.
-6. **Icons in the spec vocabulary.** Both routes are proven by probe - font
+   and per-page popup references is where the next class of bug lives. With `nav`
+   the page flow is part of the spec, and `verify_idmap.py` checks it against
+   the build.
+6. **Claude Design as a front end.** A design system published to Claude Design
+   whose components are exactly the spec's kinds (Off/On buttons, labels,
+   sliders, popup regions) and whose tokens are the themes already mined. Plus a
+   translator from a canvas to a spec: lay out each artboard in a headless
+   browser at the panel's resolution, read every component's box and props, and
+   map prototype links to `nav`. `docs/idmap.md` §6 has the mapping.
+7. **Icons in the spec vocabulary.** Both routes are proven by probe - font
    glyphs (~339 icons, no image resource) and appended image resources
    (`powershell/New-ImageProbe.ps1`) - and neither can be written in a spec.
-7. **Pick the seed automatically** - `gdl.spec donors --auto` choosing from
+8. **Pick the seed automatically** - `gdl.spec donors --auto` choosing from
    `seeds/` by theme and canvas, so a prose brief needs no file path.
-8. **Theme-portable borders.** No border resource is defined by all 64 projects
+9. **Theme-portable borders.** No border resource is defined by all 64 projects
    in the corpus. A spec that says `rounded` or `capsule` should resolve to
    whatever the donor's family calls it.
-9. **Multi-state buttons.** Off/On is 98.5% of two-state buttons; the rest are
+10. **Multi-state buttons.** Off/On is 98.5% of two-state buttons; the rest are
    `Disconnected` / `Connected`, `Not Muted` / `Muted`, `Muted` / `Level 1..3`.
-10. **Close `verify_built.py`'s remaining blind spots**: `TLPDefaultStateID`,
+11. **Close `verify_built.py`'s remaining blind spots**: `TLPDefaultStateID`,
     text alignment, per-state captions, and donor controls that ride along on a
     generated page unasked.
-11. **Run the seed ground-truth test in CI** with
+12. **Run the seed ground-truth test in CI** with
     `git lfs pull --include "seeds/Afterburn 1035.gdl"` (about 3 MB of LFS
     bandwidth per build).
 
 ## Backlog - real, not urgent
 
 - `renumber` is planned and checked but has never been through a build. Build
-  one and run `tests/verify_built.py` against it.
+  one and run `tests/verify_built.py` against it - which, until the behavior
+  work, never compared a built control's ID at all (it looked up `UserID`;
+  layout.json writes `UserId`).
+- **Behavior the format carries but the spec cannot yet say:** the Offline Page
+  and its enable flag, and a popup's auto-hide timeout (0 on every popup in the
+  corpus). Both are applier work.
+- **An ID map for an existing panel.** `gdl.idmap` reads a spec; a client
+  project that was never a spec has none, though its built `layout.json` holds
+  every ID, type, page and caption a map needs.
 - `docs/from-scratch.md` §6: control-ID uniqueness and `referenceCountField`
   (question 6) are untested; an out-of-corpus border radius/thickness *builds*
   but was never checked to *rasterize* correctly; preview fidelity on a fully

@@ -33,11 +33,18 @@
 
     -KeepOpen leaves GUI Designer up to look at. By default it is closed, since
     an instance holding the file open blocks the next run.
+
+    -IdMap <dir> also writes the panel's ID map - every addressable control's
+    ID, type, page, caption and function (python -m gdl.idmap write) - and
+    verifies it against the BUILT panel (tests/verify_idmap.py). Navigation is
+    checked before anything is built, so a nav to nowhere costs a second, not a
+    build.
 #>
 param(
     [Parameter(Mandatory)][string]$Spec,
     [Parameter(Mandatory)][string]$Donor,
     [Parameter(Mandatory)][string]$Output,
+    [string]$IdMap,
     [string]$Work,
     [string]$Python = 'python',
     [string]$InstallDir = 'C:\Program Files (x86)\Extron\GUI Designer',
@@ -115,6 +122,11 @@ try {
 
     Step 'spec check - ids, canvas, and Extron design rules'
     Run $Python @('-m', 'gdl.spec', 'check', $Spec) 'spec check'
+
+    if ($IdMap) {
+        Step 'ID map check - navigation targets and reachability'
+        Run $Python @('-m', 'gdl.idmap', 'check', $Spec) 'ID map check'
+    }
 
     Step 'donor check - every cloned type available, no page name collision'
     Run $Python @('-m', 'gdl.spec', 'donors', $Spec, $Donor) 'donor check'
@@ -200,8 +212,21 @@ try {
     # fit, bakes captions into artwork, and drops fills - all reporting 0 errors.
     Run $Python @((Join-Path $repo 'tests\verify_built.py'), $plan, $Output) 'verification'
 
+    if ($IdMap) {
+        $IdMap = [System.IO.Path]::GetFullPath($IdMap)
+        Step 'write the ID map'
+        Run $Python @('-m', 'gdl.idmap', 'write', $Spec, $IdMap) 'ID map'
+
+        Step 'verify the ID map against the build'
+        # Build renumbers pages and keeps the donor's alongside, so the names and
+        # IDs a programmer will work from are checked against what was built.
+        Run $Python @((Join-Path $repo 'tests\verify_idmap.py'), $IdMap, $Output) `
+            'ID map verification'
+    }
+
     Write-Output ''
     Write-Output "PANEL BUILT AND VERIFIED -> $Output"
+    if ($IdMap) { Write-Output "ID MAP WRITTEN AND VERIFIED -> $IdMap" }
 } finally {
     Pop-Location
 }
