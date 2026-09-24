@@ -4,7 +4,9 @@
     "Type, borders, button archetypes and sizes: surveyed off seeds/Afterburn 1035.gdl (its fonts, border resources and every button's per-state fill, stroke and text color).",
     "Point sizes draw at 1.375 px per point, GUI Designer's 99 DPI (gdl/compose.py PT).",
     "Slider and level: the seed's built sliders (Audio Settings) - a 10 px rail (SliderTrackWidth) in a 50 x 395 control, the empty rail the control's fill (#242634, TLPMinValueImageID), the filled rail #BABCCE (TLPMaxValueImageID), a 50 px #626ACF thumb (SliderIndicatorImageID) - matching the guide's track, slider-fill and secondary-accent rows.",
-    "Panel: the seed's filled container - raised fill, #6A6E89 stroke, Afterburn - 10 Radius 2 Thick - and the guide's 'shapes #6A6E89' row."
+    "Panel: the seed's filled container - raised fill, #6A6E89 stroke, Afterburn - 10 Radius 2 Thick - and the guide's 'shapes #6A6E89' row.",
+    "Themes: the guide's four background images and Extron's recommended accent scheme for each (Default + 1, Anthracite + 3, Blue Slate + 2, Grape + 4; guide pp.8-9), from the resource kit's Backgrounds/6400x4000/TLP 1025 & 1220 files - the variant the seed's own 6400x4000_bg1.png was made from (its recorded filename and byte size match). The image is the raised card that elevates the page's main area, transparent around it so the page color shows.",
+    "Layout: the seed's own pages (Start, Main Select Source, Main VC, Main SD), rendered from their built artwork: every page puts its task in the background image's squircle and the same few controls in the rails either side."
   ],
   "template": "Afterburn",
   "namespace": "ExtronAfterburn",
@@ -315,5 +317,54 @@
     "states_note": "In Afterburn an active state is the pressed fill and a white border, its caption in `accent` for a selection or `alert` for a warning. Afterburn never fills a button with an accent.",
     "on_off": "[\"Off\",{\"name\":\"On\",\"color\":\"accent\"}]",
     "color_rule": "`page` behind everything; `raised` for idle buttons and panels, with `shape` outlining a card; `pressed` and a `text` border for On; `text` and `text-secondary` for type; `accent` only for selection lines and an active caption, and `alert` only for a warning caption - Afterburn fills nothing with either; `accent-2` is the slider thumb and a level's fill."
+  },
+  "themes": [
+    {
+      "id": "default",
+      "name": "Default",
+      "scheme": "orange",
+      "image": "6400x4000_bg1.png",
+      "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg1-default.png",
+      "usage": "The Default background with accent scheme 1: Extron's recommended pairing, and the seed's own."
+    },
+    {
+      "id": "anthracite",
+      "name": "Anthracite",
+      "scheme": "gold",
+      "image": "6400x4000_bg2-anthracite.png",
+      "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg2-anthracite.png",
+      "usage": "The Anthracite background with accent scheme 3, as Extron recommends."
+    },
+    {
+      "id": "blue-slate",
+      "name": "Blue Slate",
+      "scheme": "light-blue",
+      "image": "6400x4000_bg3-blueslate.png",
+      "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg3-blueslate.png",
+      "usage": "The Blue Slate background with accent scheme 2, as Extron recommends."
+    },
+    {
+      "id": "grape",
+      "name": "Grape",
+      "scheme": "medium-blue",
+      "image": "6400x4000_bg4-grape.png",
+      "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png",
+      "usage": "The Grape background with accent scheme 4, as Extron recommends."
+    }
+  ],
+  "layout": {
+    "main": [
+      183,
+      24,
+      916,
+      752
+    ],
+    "main_note": "The central squircle: the raised card the background image draws, 183-1099 across and 24-776 down on a 1280x800 page (the image's opaque body, measured).",
+    "regions": [
+      "**The squircle holds the page's main task.** A centered title (`title` for a room name on the start page, `subheading` for a section), the sources or the selected device's controls in the middle, and one outlined action centered at its foot (Preview, Press to begin). The date sits bottom-left inside it and the time bottom-right, in `text-secondary` - or both together, bottom-center, on the start page.",
+      "**The left rail (x 0-183) holds grouped secondary controls:** a `body` heading per group (Display, Settings, Lights, VTC) at x 14, and under it a column of list buttons - ghost, left-aligned, about 160x58 - or toggles. Its foot holds the one outlined button that switches mode (Presentation, Video Conference), about 144x64 at 20,706.",
+      "**The right rail (x 1099-1280) holds volume and the system controls:** a `Volume` heading, the vertical slider (Afterburn draws it 50x395 at 1168,202; make it 54 wide at 1166, since 50 is under the 53 px touch minimum the toolkit checks) with mute under it, an outlined action at the top (Start Sharing, 144x64 at 1121,30), and help and power at the foot.",
+      "Nothing else goes outside the squircle. A full-page grid of controls is a working panel but not an Afterburn one."
+    ]
   }
 }

@@ -26,7 +26,7 @@ NAME = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$')
 
 # (component, card group, card height). Order is the catalogue's.
 COMPONENTS = (
-    ('Page', 'Layout', 200), ('Button', 'Controls', 150), ('Label', 'Controls', 110),
+    ('Page', 'Layout', 200), ('MainArea', 'Layout', 150), ('Button', 'Controls', 150), ('Label', 'Controls', 110),
     ('Slider', 'Controls', 120), ('Level', 'Controls', 120), ('Clock', 'Controls', 90),
     ('Panel', 'Layout', 130), ('Line', 'Layout', 70), ('PopupRegion', 'Layout', 130),
 )
@@ -48,12 +48,20 @@ def px(p, pt):
 
 
 # -- tokens.json ----------------------------------------------------------------
+def themes(p):
+    """The system's themes: a template's background-and-accent pairings where
+    it has them (Afterburn's four), else its accent schemes."""
+    if p.get('themes'):
+        return p['themes']
+    return [dict(s, scheme=s['id']) for s in p['schemes']]
+
+
 def tokens(p):
     colors = []
     for c in p['colors']:
         v = c['value']
         if isinstance(v, dict):
-            v = {k: v[k] for k in (s['id'] for s in p['schemes']) if k in v}
+            v = {t['id']: v[t['scheme']] for t in themes(p) if t['scheme'] in v}
         colors.append({'name': c['name'], 'value': v, 'usage': c['usage']})
     styles = [{'name': t['name'], 'fontSize': px(p, t['pt']), 'lineHeight': 1.2,
                'fontWeight': t['weight'],
@@ -65,7 +73,7 @@ def tokens(p):
                       'usage': f"Border `{key}` ({b['resource']}). {b['usage']}"})
     return {
         'name': p['title'], 'version': 1,
-        'color': {'themes': [{'id': s['id'], 'name': s['name']} for s in p['schemes']],
+        'color': {'themes': [{'id': t['id'], 'name': t['name']} for t in themes(p)],
                   'tokens': colors},
         'type': {'fonts': [],
                  'families': {'sans': p['font']['stack']},
@@ -91,6 +99,42 @@ def tokens(p):
 
 
 # -- the bundle -----------------------------------------------------------------
+def backdrops(p):
+    """{theme id: data URI} - each theme's background image as the page shows
+    it: stretched to the panel over the page color, as a JPEG.
+
+    Embedded in the bundle because a canvas copies a system's bundle but not
+    its uploads. Built from Extron's resource kit (spec.resolve_image), so a
+    machine without the kit, or without Pillow, gets a system whose pages are
+    the page color alone - and says so.
+    """
+    out = {}
+    wanted = [t for t in themes(p) if t.get('file')]
+    if not wanted:
+        return out
+    try:
+        import base64
+        import io
+        from PIL import Image
+    except ImportError:
+        print('  note: no Pillow - the themes carry no background images')
+        return out
+    from ..spec import color, resolve_image
+    page = next(c['value'] for c in p['colors'] if c['name'] == p['defaults']['page']['background'])
+    rgb = color(page)
+    for t in wanted:
+        f = resolve_image(t['file'])
+        if not f:
+            print(f"  note: {t['file']} not found - theme {t['id']!r} has no background image")
+            continue
+        im = Image.new('RGBA', tuple(p['size']), (rgb['R'], rgb['G'], rgb['B'], 255))
+        src = Image.open(f).convert('RGBA').resize(tuple(p['size']), Image.Resampling.LANCZOS)
+        buf = io.BytesIO()
+        Image.alpha_composite(im, src).convert('RGB').save(buf, 'JPEG', quality=85)
+        out[t['id']] = 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode()
+    return out
+
+
 def bundle(p):
     header = json.dumps({'format': 4, 'namespace': p['namespace'],
                          'components': [{'name': n} for n, _, _ in COMPONENTS]},
@@ -98,6 +142,9 @@ def bundle(p):
     profile = {k: p[k] for k in ('template', 'namespace', 'model', 'size', 'popup', 'pt',
                                  'touch', 'font', 'schemes', 'colors', 'type', 'borders',
                                  'buttons', 'defaults')}
+    profile['themes'] = themes(p)
+    profile['layout'] = p.get('layout') or {}
+    profile['backdrops'] = backdrops(p)
     js = _read('bundle.js')
     for mark, value in (('__HEADER__', header),
                         ('__PROFILE__', json.dumps(profile, separators=(',', ':')))):
@@ -125,6 +172,14 @@ def _x(p, comp, attrs='', body='', style=''):
             f'{body}</x-import>')
 
 
+def _main_words(p):
+    m = (p.get('layout') or {}).get('main')
+    if not m:
+        return 'the whole page.'
+    return (f"{m[2]}x{m[3]} at {m[0]},{m[1]} on the {p['size'][0]}x{p['size'][1]} page. "
+            + (p['layout'].get('main_note') or ''))
+
+
 def component_docs(p):
     """{name: README markdown} - guidelines Claude Design reads before mounting."""
     t = p['template']
@@ -140,13 +195,21 @@ Props:
 - `group`: a popup's group. A standard popup appears where a page has a PopupRegion for its group.
 - `start="true"`: the page the panel boots into. One page only; without it, the first artboard.
 - `reached-by="program"`: the control program shows this page by itself - an incoming call - so no button has to lead to it.
-- `scheme`: the accent scheme, the same on every artboard: {', '.join(f'`{s["id"]}`' for s in p['schemes'])}.
+- `theme`: {', '.join(f'`{th["id"]}`' for th in themes(p))} - {'the background image and accent scheme pairing, ' if p.get('themes') else ''}the same on every artboard. `scheme` swaps the accent scheme alone: {', '.join(f'`{s["id"]}`' for s in p['schemes'])}.
 - `does`: what the page is for, in a sentence, for the programmer.
 
 Place controls inside it with absolute positions or with flex and grid containers: containers that paint nothing are fine. Anything that paints and is not one of these components is not built.
 
 ```html
 {_x(p, 'Page', ' name="Home" start="true"', '...')}
+```
+""",
+        'MainArea': f"""# MainArea
+
+The {t} page's main region, as a layout container: {_main_words(p)} It paints nothing and is not a control - the page draws the region - so put the page's main task inside it, positioned relative to it or with flex and grid.
+
+```html
+{_x(p, 'MainArea', '', chr(10) + '  ' + _x(p, 'Label', ' name="Title" type="subheading" align="center"', 'Select a Source', 'position: absolute; left: 0px; top: 190px; width: 100%; height: 60px') + chr(10))}
 ```
 """,
         'Button': f"""# Button
@@ -214,7 +277,7 @@ A meter the program drives: signal level, a countdown. A rail like Slider's with
 """,
         'Clock': f"""# Clock
 
-The panel's own date or time, drawn by the panel with no program. `format`: `time` (default) or `date`; `type`, `size`, `color` (default `text-secondary`), `name`.
+The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`), `date` (`MMMM d`), `datetime`, or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `text-secondary`), `name`.
 
 ```html
 {_x(p, 'Clock', ' name="Time"', '', 'width: 200px; height: 40px')}
@@ -256,6 +319,10 @@ def previews(p):
                  'h(N.Label, { type: "title" }, "Huddle Room")), '
                  'h("div", { style: { position: "absolute", left: "40px", top: "200px", width: "360px", height: "200px" } }, '
                  'h(N.Button, { type: "button-large" }, "Laptop"))))'),
+        'MainArea': ('h("div", { style: { transform: "scale(' + str(scale) + ')", transformOrigin: "0 0", width: "'
+                     + str(s[0]) + 'px", margin: "16px" } }, h(N.Page, { name: "Home" }, '
+                     'h(N.MainArea, null, h("div", { style: { position: "absolute", left: 0, right: 0, top: "300px", height: "120px" } }, '
+                     'h(N.Label, { type: "title", align: "center" }, "Main area")))))'),
         'Button': ('row(Object.keys(N.profile.buttons).map(function (v) { return [box(180, 64, h(N.Button, { key: v, variant: v }, v)), '
                    'box(180, 64, h(N.Button, { key: v + "on", variant: v, show: "On" }, v + " On"))]; }))'),
         'Label': ('row(["title", "heading", "body", "body-strong"].map(function (t) { '
@@ -316,8 +383,10 @@ def index_dts(p):
     return f"""import type * as React from 'react';
 /** Colors are token names ({', '.join(c['name'] for c in p['colors'])}) or '#RRGGBB'. Sizes are points. */
 type Token = string;
-export interface PageProps {{ name: string; kind?: 'page' | 'popup' | 'modal'; group?: string; start?: boolean | string; reachedBy?: 'program'; scheme?: {' | '.join(repr(s['id']) for s in p['schemes'])}; background?: Token; width?: number; height?: number; does?: string; children?: React.ReactNode }}
+export interface PageProps {{ name: string; kind?: 'page' | 'popup' | 'modal'; group?: string; start?: boolean | string; reachedBy?: 'program'; theme?: {' | '.join(repr(t['id']) for t in themes(p))}; scheme?: {' | '.join(repr(s['id']) for s in p['schemes'])}; background?: Token; width?: number; height?: number; does?: string; children?: React.ReactNode }}
 export declare function Page(props: PageProps): React.ReactElement;
+export interface MainAreaProps {{ style?: React.CSSProperties; children?: React.ReactNode }}
+export declare function MainArea(props: MainAreaProps): React.ReactElement;
 export interface ButtonProps {{ name?: string; id?: number; variant?: {' | '.join(repr(k) for k in p['buttons'])}; type?: 'button' | 'button-large'; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; states?: {states}; press?: string; nav?: string; does?: string; show?: string; fill?: Token; stroke?: Token; color?: Token; border?: {' | '.join(repr(k) for k in p['borders'])}; icon?: string; children?: React.ReactNode }}
 export declare function Button(props: ButtonProps): React.ReactElement;
 export interface LabelProps {{ name?: string; id?: number; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; color?: Token; does?: string; children?: React.ReactNode }}
@@ -329,27 +398,43 @@ export declare function Line(props: LineProps): React.ReactElement;
 export interface TrackProps {{ name?: string; id?: number; orientation?: 'right' | 'left' | 'up' | 'down'; fill?: Token; border?: string; value?: number; does?: string }}
 export declare function Slider(props: TrackProps): React.ReactElement;
 export declare function Level(props: TrackProps): React.ReactElement;
-export interface ClockProps {{ name?: string; format?: 'time' | 'date'; type?: string; size?: number; color?: Token }}
+export interface ClockProps {{ name?: string; format?: 'time' | 'date' | 'datetime' | string; type?: string; size?: number; color?: Token }}
 export declare function Clock(props: ClockProps): React.ReactElement;
 export interface PopupRegionProps {{ name?: string; group: string }}
 export declare function PopupRegion(props: PopupRegionProps): React.ReactElement;
-declare global {{ interface Window {{ {ns}: {{ Page: typeof Page; Button: typeof Button; Label: typeof Label; Panel: typeof Panel; Line: typeof Line; Slider: typeof Slider; Level: typeof Level; Clock: typeof Clock; PopupRegion: typeof PopupRegion }} }} }}
+declare global {{ interface Window {{ {ns}: {{ Page: typeof Page; MainArea: typeof MainArea; Button: typeof Button; Label: typeof Label; Panel: typeof Panel; Line: typeof Line; Slider: typeof Slider; Level: typeof Level; Clock: typeof Clock; PopupRegion: typeof PopupRegion }} }} }}
 """
 
 
 def readme(p):
     ns, t = p['namespace'], p['template']
     w, ht = p['size']
-    states = "'" + p['examples']['on_off'] + "'"
-    example = _x(p, 'Page', ' name="Home" start="true"', '\n  ' + '\n  '.join((
-        _x(p, 'Label', ' name="RoomName" type="title"', 'Huddle Room',
-           'position: absolute; left: 40px; top: 0px; width: 520px; height: 112px'),
-        _x(p, 'Button', ' name="HelpBtn" nav="Help"', 'Help',
-           'position: absolute; left: 1040px; top: 24px; width: 200px; height: 64px'),
-        _x(p, 'Button', f' name="Laptop" type="button-large" states={states} '
-                        'does="Routes the laptop to the display."',
-           'Laptop', 'position: absolute; left: 40px; top: 196px; width: 384px; height: 272px'),
-    )) + '\n')
+    lay = p.get('layout') or {}
+    main = lay.get('main')
+    comps = ', '.join(f'`{n}`' for n, _, _ in COMPONENTS if n not in ('Page', 'MainArea'))
+    type_line = ', '.join(f"`{s['name']}` {s['pt']:g}{' bold' if s['weight'] >= 600 else ''}"
+                          for s in p['type'])
+    border_line = ', '.join(f"`{k}` ({b['usage'].rstrip('.').lower()})" for k, b in p['borders'].items())
+    theme_list = themes(p)
+    if p.get('themes'):
+        themes_md = ('## Themes\n\nEach theme is one of Extron\'s recommended pairings of a background '
+                     'image and an accent scheme; set it with `theme` on every Page:\n\n'
+                     + '\n'.join(f"- `{th['id']}`: {th['usage']}" for th in theme_list)
+                     + '\n\nThe image is drawn on every page, under the controls, and built into '
+                       'the panel as the page\'s background image. Extron allows mixing a background '
+                       'with another accent scheme: `scheme` on the Page does that.\n\n')
+    else:
+        themes_md = ''
+    if lay.get('regions'):
+        layout_md = (f"## Layout\n\n{t} pages are composed the same way; follow it, or the panel "
+                     f"works but does not look like {t}.\n\n"
+                     + '\n'.join(f'- {r}' for r in lay['regions'])
+                     + (f"\n\n`{ns}.MainArea` is that main region ({main[2]}x{main[3]} at "
+                        f"{main[0]},{main[1]}): put the main task inside it." if main else '')
+                     + '\n\n')
+    else:
+        layout_md = ''
+    example = _example(p)
     return f"""Every artboard on a canvas that uses this system is one page or popup of an Extron {p['model']} touch panel ({w}x{ht}) in Extron's {t} template. The canvas is built into a real GUI Designer project and its control map by Claude Code, so a canvas says two things: how the panel looks, drawn only with these components, and what every control does.
 
 ## Designing a panel
@@ -357,17 +442,17 @@ def readme(p):
 Start from what the panel has to do - the rooms, sources, calls and settings - and give every job a control.
 
 - **One artboard per page or popup.** Its root is one `{ns}.Page`, at {w}x{ht} for a page or a modal popup and {p['popup'][0]}x{p['popup'][1]} for a popup card. Give the artboard file a plain stem (`Home.dc.html`, `Help.dc.html`) and the Page a `name`. Mark the start page `start="true"`.
-- **Only these components are built.** Use `{ns}.Button`, `Label`, `Slider`, `Level`, `Clock`, `Panel`, `Line` and `PopupRegion` for everything that shows. Flex and grid containers that paint nothing are fine for layout. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
+- **Only these components are built.** Use {comps} for everything that shows, and `{ns}.MainArea` to place the main task. Flex and grid containers that paint nothing are fine for layout. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
 - **Say what every control does.** A button that shows another page or popup has `nav` - the target artboard's file stem - and becomes a working link in Play. Anything else it does goes in `does`, a plain sentence for the programmer: "Routes the laptop to the display." Labels the program rewrites, sliders and levels get a `does` too.
 - **Give feedback with `states`.** A button's `states` are what the program switches it between, in order: `"Off, On"`, or `No Signal / Ready / Live` with each its own look. Every state must look different. `press` is the state shown while it is held.
-- **Popups.** A standard popup (`kind="popup"`, with a `group`) appears where a page has a `PopupRegion` for that group. A modal popup (`kind="modal"`) covers the screen over the `scrim`; put its card inside as a `Panel` and its buttons on the card. Confirmations are the designer's choice, not a rule.
+- **Popups.** A standard popup (`kind="popup"`, with a `group`) appears where a page has a `PopupRegion` for that group. A modal popup (`kind="modal"`) shows the page beneath, dimmed; put its card inside as a `Panel` and its buttons on the card. Confirmations are the designer's choice, not a rule.
 - **A page the program opens by itself**, like an incoming call, has `reached-by="program"`. Every other page must be reachable by `nav` from the start page.
 
-## Visual foundations
+{layout_md}{themes_md}## Visual foundations
 
-- **Color.** Use the tokens by name, each for what its note says. {p['examples']['color_rule']} Extron caps a project at **six colors** (Design Standards p.49), captions included: pick six and keep to them. One accent scheme per panel, set on every Page.
-- **Type** is {p['font']['family']}. Sizes are points, drawn at {p['pt']} px per point as GUI Designer draws them: `title` 38, `heading` 23.5 bold, `subheading` 21, `button-large` 20 bold, `body` 16, `button` 14. Nothing under 14 pt.
-- **Shapes** come from the template's border resources only: `afterburn` (10 px corners with a 2 px stroke), `afterburn-flat` (10 px, no stroke), `afterburn-14` (tracks), `rect`, `capsule`, `ellipse`. The panel cannot draw any other corner, a gradient, a shadow or transparency effects.
+- **Color.** Use the tokens by name, each for what its note says. {p['examples']['color_rule']} Extron caps a project at **six colors** (Design Standards p.49), captions included: pick six and keep to them.
+- **Type** is {p['font']['family']}. Sizes are points, drawn at {p['pt']} px per point as GUI Designer draws them: {type_line}. Nothing under 14 pt.
+- **Shapes** come from the template's border resources only: {border_line}. The panel cannot draw any other corner, a gradient, a shadow or transparency effects.
 - **Size and spacing** follow the panel's physical size: every button and slider at least {p['touch']} px each way (9 mm on a {p['model']}), at least {p['spacing']} px between touchable controls (2 mm), no more than nine buttons in one group, and place things on GUI Designer's 10 px nudge. {t}'s usual button is {p['defaults']['button']['height']} px tall.
 
 ## Iconography
@@ -380,6 +465,26 @@ Not yet: a panel built from a canvas has no icons. `icon` on a Button draws its 
 {example}
 ```
 """
+
+
+def _example(p):
+    """A start page composed the template's way."""
+    states = "'" + p['examples']['on_off'] + "'"
+    main = (p.get('layout') or {}).get('main')
+    inner = [
+        _x(p, 'Label', ' name="RoomName" type="title" align="center"', 'Huddle Room',
+           'position: absolute; left: 0px; top: 90px; width: 100%; height: 100px'),
+        _x(p, 'Button', f' name="Laptop" type="button-large" states={states} '
+                        'does="Routes the laptop to the display."',
+           'Laptop', 'position: absolute; left: 318px; top: 330px; width: 280px; height: 120px'),
+        _x(p, 'Clock', ' name="Date" format="date"', '',
+           'position: absolute; left: 17px; top: 696px; width: 360px; height: 40px'),
+    ]
+    body = [_x(p, 'MainArea', '', '\n    ' + '\n    '.join(inner) + '\n  ')] if main else inner
+    if main:
+        body.append(_x(p, 'Button', ' name="HelpBtn" variant="ghost" nav="Help"', 'Help',
+                       'position: absolute; left: 1121px; top: 706px; width: 144px; height: 64px'))
+    return _x(p, 'Page', ' name="Home" start="true"', '\n  ' + '\n  '.join(body) + '\n')
 
 
 def index(p, at, existing=None):

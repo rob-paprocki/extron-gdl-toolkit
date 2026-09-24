@@ -35,7 +35,7 @@ import sys
 # the split is a no-op, so the import below fails with ModuleNotFoundError.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PIL import Image  # noqa: E402
+from PIL import Image, ImageChops  # noqa: E402
 
 from gdl.compose import load  # noqa: E402
 
@@ -339,6 +339,44 @@ def check_fonts(plan_items, table, kind):
     return problems, checked
 
 
+# Mean difference per channel, 0-255, above which a page's artwork is not the
+# planned image over the planned fill. Resampling a 6400x4000 image to the page
+# accounts for a few levels.
+IMAGE_TOLERANCE = 12
+
+
+def _check_background_image(spec, pg, assets):
+    """The page's artwork must be its planned image, stretched over its fill.
+
+    layout.json does not name a page's background image, so the artwork is
+    the only witness. With the image's file at hand, composite it the way the
+    page draws it and compare; without one, at least the page must not have
+    built as a flat fill.
+    """
+    img = spec['background_image']
+    tid = pg.get('TLPImageID')
+    where = f"page {spec['name']!r} background image {img['name']!r}"
+    if tid is None or tid < 0 or tid not in assets:
+        return [f'{where}: the page built with no artwork (TLPImageID {tid})']
+    art = Image.open(io.BytesIO(assets[tid])).convert('RGB')
+    if img.get('file') and os.path.exists(img['file']):
+        fill = spec['background']
+        want = Image.new('RGBA', art.size, _rgb(fill) + ((fill >> 24) & 0xFF,))
+        src = Image.open(img["file"]).convert("RGBA").resize(art.size, Image.Resampling.LANCZOS)
+        want = Image.alpha_composite(want, src).convert('RGB')
+        hist = ImageChops.difference(art, want).convert('L').histogram()
+        mean = sum(i * n for i, n in enumerate(hist)) / max(1, sum(hist))
+        if mean > IMAGE_TOLERANCE:
+            return [f'{where}: the page artwork differs from the image over its fill by '
+                    f'{mean:.0f} levels on average - it is not the planned image']
+        return []
+    shares = _shares(assets, tid)
+    if shares and max(shares.values()) >= 0.99:
+        return [f'{where}: the page artwork is a single flat color, so the image did not '
+                f'reach it']
+    return []
+
+
 def check_page_background(plan_pages, pages, assets):
     """The donor's background image is a separate reference from its artwork.
 
@@ -351,6 +389,9 @@ def check_page_background(plan_pages, pages, assets):
     for spec in plan_pages:
         pg = pages.get(spec['name'])
         if pg is None or spec.get('background') is None:
+            continue
+        if spec.get('background_image'):
+            problems += _check_background_image(spec, pg, assets)
             continue
         want = _rgb(spec['background'])
         tid = pg.get('TLPImageID')
@@ -634,18 +675,11 @@ def check_modal(plan, j):
     return out
 
 
-def check(plan_path, built_path):
-    with open(plan_path, encoding='utf-8') as fh:
-        plan = json.load(fh)
-    j, assets = load(built_path)
-    if plan.get('generated_by') == 'gdl.edit':
-        return check_edits(plan, j, assets)
-    pages = {p['Name']: p for p in j['Pages']}
-    popups = {p['Name']: p for p in j['PopupPages']}
-
+def check_placed(plan, pages, popups):
+    """Each authored control is in the built file, where it was put, and
+    captioned - or, for a clock, patterned - as planned."""
     problems = []
     checked = 0
-
     for spec, table, kind in ((plan['pages'], pages, 'page'),
                               (plan.get('popups') or [], popups, 'popup')):
         for item in spec:
@@ -679,6 +713,25 @@ def check(plan_path, built_path):
                 if want_text is not None and _caption(c) != want_text:
                     problems.append(f"{kind} {item['name']!r} {name!r}: caption "
                                     f'{_caption(c)!r}, planned {want_text!r}')
+                # A clock's caption is only a sample; what it shows on the
+                # panel is its pattern.
+                want_pattern = f.get('patternField')
+                if want_pattern is not None and c.get('Pattern') != want_pattern:
+                    problems.append(f"{kind} {item['name']!r} {name!r}: clock pattern "
+                                    f"{c.get('Pattern')!r}, planned {want_pattern!r}")
+    return problems, checked
+
+
+def check(plan_path, built_path):
+    with open(plan_path, encoding='utf-8') as fh:
+        plan = json.load(fh)
+    j, assets = load(built_path)
+    if plan.get('generated_by') == 'gdl.edit':
+        return check_edits(plan, j, assets)
+    pages = {p['Name']: p for p in j['Pages']}
+    popups = {p['Name']: p for p in j['PopupPages']}
+
+    problems, checked = check_placed(plan, pages, popups)
 
     # A popup reference bound to nothing reads "Unassigned" on the panel and is
     # invisible in the file, so check the binding survived rather than trusting

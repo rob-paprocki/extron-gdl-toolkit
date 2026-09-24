@@ -767,6 +767,49 @@ class TestModalPopups(unittest.TestCase):
         self.assertTrue(any('does not fit' in m for m in p.check()), p.check())
 
 
+class TestBackgroundImage(unittest.TestCase):
+    """A page's background image: the theme's, named once, drawn on every page."""
+
+    def _spec(self, images, **theme):
+        return _project([{'name': 'Home', 'controls': []}, {'name': 'Help', 'controls': []}],
+                        images=images, theme=dict({'text': '#FFFFFF'}, **theme))
+
+    def test_the_theme_puts_it_on_every_page_and_the_plan_carries_its_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, 'bg.png')
+            open(f, 'wb').write(b'x')
+            plan = self._spec({'bg.png': f}, background_image='bg.png').plan()
+            self.assertEqual([p['background_image'] for p in plan['pages']],
+                             [{'name': 'bg.png', 'file': f}] * 2)
+            self.assertEqual(plan['images'], [{'name': 'bg.png', 'file': f}])
+
+    def test_an_image_the_donor_has_needs_no_file(self):
+        plan = self._spec({}, background_image='6400x4000_bg1.png').plan()
+        self.assertEqual(plan['pages'][0]['background_image'],
+                         {'name': '6400x4000_bg1.png', 'file': None})
+
+    def test_an_image_file_that_is_not_there_is_a_problem(self):
+        p = self._spec({'x.png': 'Nowhere/x.png'}, background_image='x.png')
+        self.assertTrue(any("image 'x.png'" in m for m in p.check()), p.check())
+
+
+class TestClock(unittest.TestCase):
+    """A clock's format is its .NET pattern. A clone kept the donor's, so a
+    "date" clock built as 'September 28, 12:00 AM' with 0 errors."""
+
+    def _op(self, **kw):
+        c = dict({'kind': 'datetime', 'name': 'Clock', 'rect': [0, 0, 300, 40]}, **kw)
+        return _project([{'name': 'Home', 'controls': [c]}]).plan()['pages'][0]['controls'][0]
+
+    def test_a_format_writes_its_pattern_and_that_patterns_sample(self):
+        for fmt, pattern, sample in (('date', 'MMMM d', 'September 28'),
+                                     (None, 'h:mm tt', '12:00 AM'),
+                                     ('MMMM dd, yyyy - hh:mm tt', 'MMMM dd, yyyy - hh:mm tt',
+                                      'September 28, 1960 - 12:00 AM')):
+            f = self._op(**({'format': fmt} if fmt else {}))['fields']
+            self.assertEqual((f['patternField'], f['textField']), (pattern, sample))
+
+
 class TestPalette(unittest.TestCase):
     """p.49's six colors are counted off what the panel draws. Counting only
     the colors a spec names let examples/huddle-functions.json pass at six

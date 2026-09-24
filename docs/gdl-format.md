@@ -296,6 +296,20 @@ A generator should assert all four agree rather than trusting the writes.
   1035 / 1535 Series and omits ECP, which is a UI-availability statement rather
   than a format constraint. Whether a given panel honours it at runtime is
   firmware, not something this file can tell you.
+- **A clock's format is its `patternField`**, a .NET date pattern (`'MMMM d'`,
+  `'h:mm tt'`); `PBDateTime` has no format enum. `textField` holds that pattern
+  drawn for 28 September 1960 at midnight (`'September 28'`), and layout.json
+  reports the two as `Pattern` and `Text`. A cloned clock keeps its donor's
+  pattern: a "date" clock cloned from the Afterburn 1035 seed built as
+  `September 28, 12:00 AM`.
+- **A page's background image is a named `PBImageResource`**, referenced from
+  `backgroundImageField` by a `PBResourceReferenceImage` and drawn by
+  `backgroundImageLayoutField` over the page fill - the Afterburn seeds stretch
+  (layout 0) `6400x4000_bg1.png` over `#242634`. Build rasterizes the two into
+  the page's asset and layout.json does not name the image, so it is verified
+  off that asset. An image the project lacks is appended by cloning an existing
+  `PBImageResource` and setting its bitmap, name and size
+  (`Add-GdlImageResource`).
 - **`ApplicationBuildVersionInfo` in the built `layout.json` lags one build
   behind on a project carried across versions.** Open a 1.27-authored project in
   1.28 and Save and Build: the `ProjectGCP` is restamped immediately

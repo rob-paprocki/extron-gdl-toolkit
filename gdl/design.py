@@ -44,7 +44,7 @@ FIELDS = {
     'line': ('fill', 'thickness', 'from', 'to'),
     'slider': ('id', 'fill', 'border', 'orientation', 'track', 'thumb', 'does'),
     'level': ('id', 'fill', 'border', 'orientation', 'track', 'does'),
-    'datetime': ('color', 'size', 'bold'),
+    'datetime': ('color', 'size', 'bold', 'align', 'format'),
     'popup_ref': ('group',),
 }
 COLOR_KEYS = ('fill', 'stroke', 'color')
@@ -214,6 +214,8 @@ class Canvas:
             # and ignores its background, so a modal carries none.
             if pg.get('background') and not pg.get('modal'):
                 item['background'] = pg['background']
+            if pg.get('background_image') and pg['kind'] == 'page':
+                item['background_image'] = pg['background_image']
             if pg.get('reached_by'):
                 item['reached_by'] = pg['reached_by']
             if pg.get('does'):
@@ -259,6 +261,13 @@ class Canvas:
             'pages': pages,
             'popups': popups,
         }
+        # A background image goes with the file it comes from: the seed already
+        # carries its own theme's, and the applier appends the others.
+        files = {th['image']: th['file'] for th in designsys.themes(profile)
+                 if th.get('image') and th.get('file')}
+        used = {pg['background_image'] for pg in pages if pg.get('background_image')}
+        if used:
+            spec['images'] = {n: files[n] for n in sorted(used) if n in files}
         if start:
             spec['start_page'] = start
         elif pages:

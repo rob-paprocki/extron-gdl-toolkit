@@ -88,6 +88,16 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
    when omitted - is written into the project, because otherwise the built panel
    opens on the donor's start page.
 
+   **Name the page art and the clock format.** A page's `background_image` - or
+   the theme's, for every page - names an image drawn stretched over the page's
+   `background`. One the donor lacks needs `"images": {"<name>": "<path>"}`,
+   the path relative to the theme resource kits (`vendor/extron/Resources`, or
+   the install), and the applier appends it. A `datetime` control's `format` is
+   `time` (the default), `date`, `datetime` or any .NET date pattern
+   (`"MMMM d, yyyy"`). Both are written explicitly, because a clone keeps the
+   donor's: the donor's background under every page, its clock pattern on every
+   clock.
+
    **Popups are one of two kinds.** A *standard* popup sits in a `group` and
    shows through a `popup_ref` bound to that group, at the reference's size. A
    *modal* one (`"modal": true`) covers the whole canvas - draw the confirmation

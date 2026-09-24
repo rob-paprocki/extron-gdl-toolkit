@@ -195,8 +195,10 @@ class TestInChrome(unittest.TestCase):
         self.assertEqual(problems, [])
         self.assertEqual([p['name'] for p in spec['pages']], ['Huddle Home', 'Huddle Help'])
         home = {c['name']: c for c in spec['pages'][0]['controls']}
-        # A grid cell, measured after layout: three columns of 1200 with gaps of 24.
-        self.assertEqual(home['Wireless']['rect'], [448, 196, 384, 272])
+        # A grid cell inside the MainArea, measured after layout: three columns of
+        # 600 with gaps of 20, offset by the squircle's 183,24.
+        self.assertEqual(home['Wireless']['rect'], [548, 344, 187, 120])
+        self.assertEqual(spec['images'], {'6400x4000_bg4-grape.png': 'Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png'})
         self.assertEqual(home['RoomOff']['nav'], 'Confirm Room Off')
         self.assertEqual(Panel(spec).check(), [])
 

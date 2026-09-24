@@ -196,6 +196,14 @@ Write-Output "plan: $(@($spec.pages).Count) page(s), canvas $($spec.canvas -join
 $donorPage = @($project.Pages)[0]
 if (-not $donorPage) { throw 'donor project has no pages to clone from' }
 
+# Images the spec brings: appended where the donor lacks them. Captured before
+# any page is cloned, the reference a page's background image is cloned from.
+foreach ($im in @($spec.images)) {
+    if ($null -eq $im) { continue }
+    if (Add-GdlImageResource $project $im.name $im.file) { Write-Output "image '$($im.name)' ready" }
+}
+$imageRef = Find-GdlImageRef $project
+
 $pageIds = @{}
 foreach ($pg in $spec.pages) {
     $pageId = Get-GdlNextPageId $project
@@ -214,6 +222,17 @@ foreach ($pg in $spec.pages) {
     # page asset, so the donor's art comes back looking like a stray tint.
     Set-GdlFieldIfPresent $newPage '<TLPImageID>k__BackingField' -1 | Out-Null
     Set-GdlFieldIfPresent $newPage 'backgroundImageField' $null | Out-Null
+    # ...and then the image the SPEC names, if any, by a fresh reference. The
+    # layout fields (stretch, alignment, offsets) come from the donor page.
+    if ($pg.background_image) {
+        if (-not $imageRef) {
+            Note-Problem "page '$($pg.name)': no image reference in the project to clone for its background image"
+        } else {
+            $ref = Copy-GdlObject $imageRef
+            Set-GdlField $ref 'resourceNameField' $pg.background_image.name
+            Set-GdlFieldIfPresent $newPage 'backgroundImageField' $ref | Out-Null
+        }
+    }
 
     # Start from an empty page: the donor's controls carry its ids and popup
     # references, and inherited references are the documented way to end up

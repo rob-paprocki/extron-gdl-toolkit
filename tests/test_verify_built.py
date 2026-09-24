@@ -88,6 +88,24 @@ class TestModalPopups(unittest.TestCase):
         self.assertTrue(any('modal' in p for p in problems), problems)
 
 
+class TestClockPattern(unittest.TestCase):
+    def _check(self, pattern):
+        vb = _vb(self)
+        plan = {'pages': [{'name': 'Home', 'controls': [{'fields': {
+            'nameField': 'Date', 'textField': 'September 28', 'patternField': 'MMMM d'}}]}]}
+        pages = {'Home': {'ID': 51, 'Name': 'Home', 'Controls': [
+            {'ID': 1, 'Type': 8, 'Name': 'Date', 'Left': 0, 'Top': 0, 'Width': 1,
+             'Height': 1, 'Text': 'September 28', 'Pattern': pattern}]}}
+        return vb.check_placed(plan, pages, {})[0]
+
+    def test_a_clock_that_kept_the_donors_pattern_is_reported(self):
+        problems = self._check('MMMM d, h:mm tt')
+        self.assertTrue(any('clock pattern' in p for p in problems), problems)
+
+    def test_the_planned_pattern_passes(self):
+        self.assertEqual(self._check('MMMM d'), [])
+
+
 class TestEditIds(unittest.TestCase):
     """A renumber is verified by comparing the built control's ID - which the
     verifier looked up as 'UserID', a key layout.json never writes, so the
@@ -122,6 +140,41 @@ def _built(*states, **kw):
 
 def _bst(name, text, tid, color=WHITE):
     return {'Name': name, 'Text': text, 'TLPImageID': tid, 'TextColor': color}
+
+
+class TestBackgroundImage(unittest.TestCase):
+    """layout.json does not name a page's background image, so the page's
+    artwork is checked against the planned image over the planned fill."""
+
+    def setUp(self):
+        self.vb = _vb(self)
+        import tempfile
+        from PIL import Image
+        self.dir = tempfile.mkdtemp()
+        self.file = os.path.join(self.dir, 'card.png')
+        card = Image.new('RGBA', (40, 20), (0, 0, 0, 0))
+        card.paste((90, 80, 120, 255), (8, 4, 32, 16))
+        card.save(self.file)
+        want = Image.new('RGBA', (40, 20), (36, 38, 52, 255))
+        want.alpha_composite(card)
+        buf = __import__('io').BytesIO()
+        want.convert('RGB').save(buf, 'PNG')
+        self.good = buf.getvalue()
+
+    def _check(self, art, file=True):
+        plan = [{'name': 'Home', 'background': 0xFF242634,
+                 'background_image': {'name': 'card.png', 'file': self.file if file else None}}]
+        pages = {'Home': {'Name': 'Home', 'TLPImageID': 5}}
+        return self.vb.check_page_background(plan, pages, {5: art})
+
+    def test_the_planned_image_passes(self):
+        self.assertEqual(self._check(self.good), [])
+
+    def test_a_page_built_without_it_is_reported(self):
+        problems = self._check(_png((36, 38, 52)))
+        self.assertTrue(any('not the planned image' in p for p in problems), problems)
+        problems = self._check(_png((36, 38, 52)), file=False)
+        self.assertTrue(any('single flat color' in p for p in problems), problems)
 
 
 class TestEditStates(unittest.TestCase):

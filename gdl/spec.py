@@ -33,6 +33,7 @@ touches a real `.gdl`; see docs/from-scratch.md for what still needs a human.
 """
 import collections
 import json
+import os
 import re
 import sys
 
@@ -310,7 +311,35 @@ def _type_fields(kind, c):
         out['startPointField'] = LINE_POS.get(c.get('from', 'MiddleLeft'), 6)
         out['endPointField'] = LINE_POS.get(c.get('to', 'MiddleRight'), 2)
         out['thicknessField'] = c.get('thickness', 2)
+    if kind == 'datetime':
+        pattern = clock_pattern(c.get('format'))
+        out['patternField'] = pattern
+        out['textField'] = clock_sample(pattern)
     return out
+
+
+# A clock's format is the .NET date pattern in `patternField`; PBDateTime has
+# no format enum. `textField` holds that pattern rendered for 28 September 1960
+# at midnight - the sample every Extron seed carries, and what layout.json
+# reports as the clock's Text. A cloned clock kept the donor's pattern, so a
+# "date" clock built showing the date and the time.
+CLOCK_FORMATS = {'date': 'MMMM d', 'time': 'h:mm tt', 'datetime': 'MMMM d, h:mm tt'}
+_CLOCK_TOKEN = re.compile(r"MMMM|MMM|MM|M|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|mm|m|ss|s|tt|t|'[^']*'|.")
+
+
+def clock_pattern(fmt):
+    """A spec clock's `format` - date, time, datetime, or a .NET pattern."""
+    return CLOCK_FORMATS.get(fmt or 'time', fmt)
+
+
+def clock_sample(pattern):
+    """`pattern` rendered for Wednesday 28 September 1960, 00:00:00."""
+    words = {'MMMM': 'September', 'MMM': 'Sep', 'MM': '09', 'M': '9',
+             'dddd': 'Wednesday', 'ddd': 'Wed', 'dd': '28', 'd': '28',
+             'yyyy': '1960', 'yy': '60', 'HH': '00', 'H': '0', 'hh': '12', 'h': '12',
+             'mm': '00', 'm': '0', 'ss': '00', 's': '0', 'tt': 'AM', 't': 'A'}
+    return ''.join(words.get(t, t.strip("'") if t.startswith("'") else t)
+                   for t in _CLOCK_TOKEN.findall(pattern))
 
 
 # Extron.GUICPro.ControlLinePositionEnum, read out of the assemblies.
@@ -323,6 +352,28 @@ def _argb(c):
     if not c:
         return None
     return (c['A'] << 24) | (c['R'] << 16) | (c['G'] << 8) | c['B']
+
+
+# Where a spec's `images` paths resolve when relative: Extron's theme resource
+# kits, from vendor/ (vendor/README.md) or the install.
+RESOURCE_ROOTS = (
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                 'vendor', 'extron', 'Resources'),
+    r'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources',
+)
+
+
+def resolve_image(path):
+    """A spec `images` path -> an existing file, or None."""
+    if not path:
+        return None
+    if os.path.isabs(path):
+        return path if os.path.exists(path) else None
+    for root in RESOURCE_ROOTS:
+        p = os.path.join(root, *path.replace('\\', '/').split('/'))
+        if os.path.exists(p):
+            return p
+    return None
 
 
 HEX = re.compile(r'^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
@@ -401,6 +452,10 @@ class Panel:
         self.pages = []
         self.popups = []
         self._groups = {}
+        # Image resources the spec brings with it: name -> file (resolve_image).
+        # A page's `background_image` names one of these or one the donor
+        # already defines.
+        self.images = dict(spec.get('images') or {})
         self._build()
 
     @classmethod
@@ -531,6 +586,11 @@ class Panel:
                 'modal': bool(pg.get('modal')),
                 'background': color(pg.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
+                # Drawn over the background color, stretched to the page. One
+                # image on every page is the themes' own rule, so the theme can
+                # name it once.
+                'background_image': pg.get('background_image',
+                                           self.theme.get('background_image')),
                 'controls': controls,
                 'group_sizes': groups,
             })
@@ -606,7 +666,10 @@ class Panel:
                     'Name': c.get('name') or c.get('text') or kind,
                     'Left': rect[0], 'Top': rect[1], 'Width': rect[2], 'Height': rect[3],
                     'TLPImageID': -1,
-                    'Text': c.get('text') or '',
+                    # A clock has no text of its own; it shows its pattern's
+                    # sample, as GUI Designer does.
+                    'Text': c.get('text') or _type_fields(c.get('kind', 'panel'), c)
+                    .get('textField', ''),
                     'TextColor': color(c.get('color') or self.theme.get('text')
                                         or '#FFFFFF', self.theme),
                     'TextAlignment': ALIGN.get(c.get('align', 'center'), 3),
@@ -659,6 +722,7 @@ class Panel:
                 'name': pg['name'],
                 'modal': pg['modal'],
                 'background': _argb(pg['background']),
+                'background_image': self._image_op(pg.get('background_image')),
                 'clear_controls': True,
                 # Same helper popups use. Building these two separately is what
                 # dropped 'group' from every page op and left popup references
@@ -673,6 +737,9 @@ class Panel:
             'default_page': self.start_page,
             'popup_groups': sorted({p['group'] for p in self.popups if p['group']}),
             'popups': self._popup_ops(),
+            # Appended to the donor's resource library where it lacks them;
+            # the applier leaves one it already has alone.
+            'images': [{'name': n, 'file': resolve_image(f)} for n, f in self.images.items()],
             'canvas': list(self.size),
             'note': ('Apply with powershell/Apply-GdlPlan.ps1 under 32-bit '
                      'Windows PowerShell 5.1. Page ids are assigned by the '
@@ -681,10 +748,22 @@ class Panel:
             'pages': pages,
         }
 
+    def _image_op(self, name):
+        """A page's background image for the plan: its resource name, and its
+        file when the spec brings it - the verifier composites that file to
+        check the built page."""
+        if not name:
+            return None
+        return {'name': name, 'file': resolve_image(self.images.get(name))}
+
     # -- checks ------------------------------------------------------------
     def check(self):
         """Problems a human would otherwise find on the Windows box."""
         out = []
+        for name, f in self.images.items():
+            if not resolve_image(f):
+                out.append(f'image {name!r}: {f!r} is not a file here or under '
+                           f"{' or '.join(RESOURCE_ROOTS)}")
         for pg in self.pages:
             seen = {}
             # Two controls with identical type and rect are almost always a
@@ -1242,6 +1321,14 @@ class Panel:
                     f"flags {first['state_flags']} (PBState.StatusFlags), which forbid "
                     f'adding or removing states - the applier refuses to resize it, so '
                     f'no button in this spec would get the states it names')
+
+        # A background image the spec does not bring must be one the donor has.
+        images = proj._resource_names('PBImageResource')
+        for pg in self.pages:
+            want = pg.get('background_image')
+            if want and want not in self.images and want not in images:
+                out.append(f"page {pg['name']!r}: background image {want!r} is neither in "
+                           f"the spec's `images` nor defined in {path}")
 
         for it in list(self.pages) + list(self.popups):
             if it['name'] in names:

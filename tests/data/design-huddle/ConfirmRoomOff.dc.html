@@ -16,11 +16,11 @@ body{margin:0;background:#242634}
 </style>
 </helmet>
 <div style="width: 1280px; height: 800px; position: relative">
-<x-import component-from-global-scope="ExtronAfterburn.Page" name="Confirm Room Off" kind="modal" background="page" does="Asks before the room shuts down." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
-<x-import component-from-global-scope="ExtronAfterburn.Panel" name="Card" fill="raised" stroke="none" style="position: absolute; left: 380px; top: 250px; width: 520px; height: 300px"></x-import>
-<x-import component-from-global-scope="ExtronAfterburn.Label" name="Question" type="heading" align="center" style="position: absolute; left: 400px; top: 270px; width: 480px; height: 120px">Shut the room down?</x-import>
-<x-import component-from-global-scope="ExtronAfterburn.Button" name="ShutDown" type="button-large" color="alert" does="Powers the display and audio off, then closes this popup." style="position: absolute; left: 410px; top: 440px; width: 220px; height: 80px">Shut Down</x-import>
-<x-import component-from-global-scope="ExtronAfterburn.Button" name="Cancel" type="button-large" variant="inverse" nav="Home" style="position: absolute; left: 650px; top: 440px; width: 220px; height: 80px">Cancel</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Confirm Room Off" kind="modal" theme="grape" does="Asks before the room shuts down." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.Panel" name="Card" stroke="none" style="position: absolute; left: 380px; top: 250px; width: 520px; height: 300px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="Question" type="subheading" align="center" style="position: absolute; left: 400px; top: 280px; width: 480px; height: 100px">Shut the room down?</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="ShutDown" color="alert" does="Powers the display and audio off, then closes this popup." style="position: absolute; left: 450px; top: 440px; width: 180px; height: 64px">Shut Down</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Cancel" nav="Home" style="position: absolute; left: 650px; top: 440px; width: 180px; height: 64px">Cancel</x-import>
 </x-import>
 </div>
 </x-dc>

@@ -184,6 +184,10 @@ statement is in the live docs; this is the record that it changed.
   the seed's `#6A6E89` outline while the preview drew none. Found by putting a
   Claude Design canvas beside the panel built from it; no stroke is now written
   as transparent.
+- **A spec clock kept its donor's format** (until 2026-09-24). The format is
+  `PBDateTime.patternField`, which nothing wrote, so a "date" and a "time"
+  clock both built as the Afterburn seed's `September 28, 12:00 AM`. The
+  verifier caught the caption; the pattern is now written and checked.
 - **The first Afterburn design system misread the theme** (2026-09-24, caught
   by the user): a slider drawn as a filled slab where Afterburn's is a 10 px
   rail with a `#BABCCE` fill and a periwinkle thumb; `accent` used as a button

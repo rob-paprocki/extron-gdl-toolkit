@@ -114,10 +114,20 @@
   var ALIGN = { left: 'flex-start', center: 'center', right: 'flex-end' };
 
   // -- Page: the artboard's one root ----------------------------------------
+  function themeOf(id) {
+    for (var i = 0; i < P.themes.length; i++) if (P.themes[i].id === id) return P.themes[i];
+    return P.themes[0];
+  }
   function Page(props) {
     var kind = props.kind === 'popup' || props.kind === 'modal' ? props.kind : 'page';
-    var scheme = schemeId(props.scheme);
+    // A theme is the template's pairing of background image and accent scheme
+    // (Afterburn's four); `scheme` alone swaps the accent, as Extron allows.
+    var theme = themeOf(props.theme);
+    var scheme = schemeId(props.scheme || theme.scheme);
     var colors = schemeColors(scheme);
+    // The background image is a page's: a popup is a card over one, and a
+    // modal shows the page beneath.
+    var image = kind === 'page' && P.backdrops ? P.backdrops[theme.id] : null;
     var full = kind !== 'popup';
     var w = Number(props.width) || (full ? P.size[0] : P.popup[0]);
     var ht = Number(props.height) || (full ? P.size[1] : P.popup[1]);
@@ -130,19 +140,32 @@
       background: kind === 'modal'
         ? 'linear-gradient(' + paint(colors, 'scrim') + ', ' + paint(colors, 'scrim') + '), '
           + paint(colors, P.defaults.page.background)
-        : paint(colors, bg),
+        : (image ? 'url("' + image + '") 0 0 / 100% 100% no-repeat, ' : '') + paint(colors, bg),
       color: colors.text, font: font({}, 'body').css
     };
     Object.keys(colors).forEach(function (k) { style['--' + k] = colors[k]; });
     var data = gdl({
       kind: kind === 'page' ? 'page' : 'popup', modal: kind === 'modal' || null,
       name: props.name, group: props.group, start: truthy(props.start) || null,
-      reached_by: props.reachedBy, background: bg, scheme: scheme,
+      reached_by: props.reachedBy, background: bg, scheme: scheme, theme: theme.id,
+      background_image: kind === 'page' ? theme.image || null : null,
       template: P.template, size: [w, ht], does: props.does
     });
     return h(Ctx.Provider, { value: { scheme: scheme, colors: colors } },
-      h('div', { 'data-gdl': data, 'data-theme': scheme, className: 'xgdl-page', style: style },
+      h('div', { 'data-gdl': data, 'data-theme': theme.id, className: 'xgdl-page', style: style },
         props.children));
+  }
+
+  // -- MainArea: the template's own main region, for layout -----------------
+  // Afterburn's is the squircle its background image draws. It paints
+  // nothing and is not a control: its children are placed inside it, with
+  // absolute positions relative to it or with flex and grid.
+  function MainArea(props) {
+    var m = (P.layout && P.layout.main) || [0, 0, P.size[0], P.size[1]];
+    var style = Object.assign({ position: 'absolute', left: m[0] + 'px', top: m[1] + 'px',
+                                width: m[2] + 'px', height: m[3] + 'px', boxSizing: 'border-box' },
+                              props.style || {});
+    return h('div', { className: 'xgdl-main', style: style }, props.children);
   }
 
   // -- Button ---------------------------------------------------------------
@@ -294,18 +317,30 @@
   function Level(props) { return track('level', props); }
 
   // -- Clock ----------------------------------------------------------------
+  // format is date, time, datetime or a .NET date pattern. The sample is the
+  // pattern drawn for 28 September 1960 at midnight, as GUI Designer draws it.
+  var CLOCK_FORMATS = { date: 'MMMM d', time: 'h:mm tt', datetime: 'MMMM d, h:mm tt' };
+  var CLOCK_WORDS = { MMMM: 'September', MMM: 'Sep', MM: '09', M: '9', dddd: 'Wednesday',
+    ddd: 'Wed', dd: '28', d: '28', yyyy: '1960', yy: '60', HH: '00', H: '0', hh: '12',
+    h: '12', mm: '00', m: '0', ss: '00', s: '0', tt: 'AM', t: 'A' };
+  function clockSample(pattern) {
+    return (pattern.match(/MMMM|MMM|MM|M|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|mm|m|ss|s|tt|t|'[^']*'|./g) || [])
+      .map(function (t) { return CLOCK_WORDS[t] || (t[0] === "'" ? t.slice(1, -1) : t); }).join('');
+  }
   function Clock(props) {
     var L = useLook();
     var f = font(props, P.defaults.clock.type);
     var color = props.color || P.defaults.clock.color;
     var fmt = props.format || 'time';
-    var sample = fmt === 'date' ? 'Thursday, September 24' : '10:24 AM';
+    var sample = clockSample(CLOCK_FORMATS[fmt] || fmt);
+    var align = props.align || 'left';
     return h('div', {
       className: 'xgdl xgdl-clock',
       style: { boxSizing: 'border-box', width: '100%', height: '100%', display: 'flex',
-               alignItems: 'center', color: paint(L.colors, color), font: f.css },
+               alignItems: 'center', justifyContent: ALIGN[align] || 'flex-start',
+               color: paint(L.colors, color), font: f.css },
       'data-gdl': gdl({ kind: 'datetime', name: props.name, color: color, size: f.size,
-                        bold: f.bold, format: fmt })
+                        bold: f.bold, align: align === 'left' ? null : align, format: fmt })
     }, sample);
   }
 
@@ -322,7 +357,7 @@
     }, 'Popups in ' + (props.group || '(no group)'));
   }
 
-  var api = { Page: Page, Button: Button, Label: Label, Panel: Panel, Line: Line,
+  var api = { Page: Page, MainArea: MainArea, Button: Button, Label: Label, Panel: Panel, Line: Line,
               Slider: Slider, Level: Level, Clock: Clock, PopupRegion: PopupRegion,
               profile: P };
   window[P.namespace] = Object.assign(window[P.namespace] || {}, api);

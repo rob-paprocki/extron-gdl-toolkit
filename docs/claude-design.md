@@ -72,6 +72,8 @@ Claude Code publishes the result with the Artifact tool.
 | Part | From |
 |---|---|
 | **Colors** | Afterburn: the published guide (`docs/design-rules.md` §4), its four accent schemes as the system's themes. Mach: its PSD's `Colors` group and the selected/unselected alpha rule. Shockwave, Turbulence: `gdl.themes` over the seeds and `.glt` templates, cross-checked against their PSDs. |
+| **Themes** | Afterburn's four recommended pairings - Default with accent Scheme 1, Anthracite with 3, Blue Slate with 2, Grape with 4 - as a Page's `theme`. Each is the kit's background image stretched over `#242634`, as the seed draws it, plus its accent scheme. The spec carries the image, and the applier appends it to the project. |
+| **Layout** | Where the template puts things. Afterburn keeps most of a page in the squircle main area (`MainArea`, 916×752 at 183,24), with headed groups on the left rail and volume, help and power on the right. |
 | **Type** | The faces the template's seed can actually author (`Project.font_resource_names()`), at the sizes its own pages use - none under the 14 pt the toolkit checks. Sizes are points, drawn at GUI Designer's 1.375 px per point. Open Sans is Apache 2.0 and loads from Google Fonts. |
 | **Borders** | Only border resources the seed defines and the spec names (`BORDERS`), so a design cannot ask for a shape the panel cannot draw. |
 | **Button archetypes** | The looks the seed's own buttons use, per state. Afterburn has three: outlined (the most common), ghost and inverse. An active state is the pressed fill and a white border, its caption in the accent - Afterburn never fills a button with an accent. |
@@ -108,13 +110,14 @@ pixels. On the canvas they are `<x-import component-from-global-scope=
 
 | Component | Spec | Carries |
 |---|---|---|
-| Page | a page or popup | `name`, `kind` (`page`, `popup`, `modal`), `group`, `start`, `reached-by`, the accent `scheme` |
+| Page | a page or popup | `name`, `kind` (`page`, `popup`, `modal`), `group`, `start`, `reached-by`, the `theme` (background and accent) or an accent `scheme` alone |
+| MainArea | nothing of its own | a frame: its children are placed inside the template's main area |
 | Button | `button` | caption, `variant`, `states` (names, each with its own look and caption), `press`, `nav`, `does`, `id` |
 | Label | `label` | text, `type` or `size`, `color`, `align`, `does` |
 | Panel | `panel` | `fill`, `stroke`, `border` |
 | Line | `line` | orientation, `color`, `thickness` |
 | Slider, Level | `slider`, `level` | `orientation`, `fill`, `track` and `thumb` sizes, `does` |
-| Clock | `datetime` | `color`, `size` |
+| Clock | `datetime` | `format` (`time`, `date`, `datetime` or a .NET pattern), `color`, `size`, `align` |
 | PopupRegion | `popup_ref` | the popup `group` shown there |
 
 Colors are the template's token names, and the spec's theme is exactly the
