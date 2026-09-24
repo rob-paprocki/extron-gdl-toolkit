@@ -343,9 +343,9 @@ So, once per theme:
 Then pass `-Donor "seeds/<seed>.gdl"`, and nothing of anyone else's is in the
 output.
 
-`seeds/` holds fourteen: Afterburn at five sizes, Mach at
-three, Shockwave at two, Turbulence, both Zoom Rooms ZRTP variants, and the 835
-seed below. `seeds/README.md` lists each one's model, canvas and resources. They
+`seeds/` holds Afterburn, Mach, Shockwave, Turbulence and Zoom Rooms seeds at
+the TouchLink sizes, the 835 seed below, and every themable Extron Control Pro
+combination. `seeds/README.md` lists each one's model, canvas and resources. They
 are in Git LFS, so run `git lfs pull` on a fresh clone.
 
 **Prefer a seed at the target size; retarget is the fallback.** A retarget

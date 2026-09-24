@@ -129,6 +129,11 @@ statement is in the live docs; this is the record that it changed.
 - **…but "every declared face is embedded" is not true of every project.** Found
   by `tests/audit_corpus.py`: a fresh project declares Arial Black without
   embedding it. `docs/ROADMAP.md` *Mine* #2.
+- **"No ECP seed declares Arial Black"** stood in `seeds/README.md` for the
+  first days of the ECP seeds. Every ECP seed declares it, like every other
+  seed; the six ECP rows had been read from `ProjectGCP`'s font resources while
+  the other rows came from `layout.json`. The real fact behind the mismatch: no
+  seed at all has a font resource for Arial Black.
 - **Modal popup references are one per modal popup, not one per page plus one.**
   Corrected twice. The first correction ("one too many on 19 of 20 built
   projects") still failed the one project with `EnableOfflinePage` on; the rule
