@@ -92,6 +92,13 @@ def _painted(argb):
     return argb is not None and (argb >> 24) & 0xFF > 0
 
 
+def _opaque(argb):
+    """A planned fill the artwork's opaque pixels can confirm. _shares()
+    counts only pixels over alpha 250, so a translucent fill - Mach's `shade`,
+    Shockwave's `overlay` - built exactly right would read as missing."""
+    return argb is not None and (argb >> 24) & 0xFF == 0xFF
+
+
 # Below this share of a control's opaque pixels, the planned fill is present but
 # not the field - a caption-heavy button, say. Reported, not failed: the color
 # did survive, and calling that a failure would make the gate untrustworthy.
@@ -106,7 +113,13 @@ def check_fills(plan_items, table, assets, kind):
         if got is None:
             continue
         by_name = _index(got)
-        planned = [(item, op) for op in item['controls'] if _painted(op.get('fill'))]
+        planned = [(item, op) for op in item['controls'] if _opaque(op.get('fill'))]
+        for op in item['controls']:
+            if _painted(op.get('fill')) and not _opaque(op.get('fill')):
+                notes.append(f"{kind} {item['name']!r} "
+                             f"{(op.get('fields') or {}).get('nameField')!r}: translucent fill "
+                             f"{_hex(_rgb(op['fill']))} at alpha {(op['fill'] >> 24) & 0xFF} is "
+                             f'not checked off the artwork')
         for _, op in planned:
             name = (op.get('fields') or {}).get('nameField')
             c = by_name.get(name)
@@ -177,8 +190,9 @@ def check_states(plan_items, table, assets, kind):
             where = f"{kind} {item['name']!r} {name!r}"
             built = c.get('States') or []
             if not want:
-                # One image on every state - an icon that is not feedback.
-                for i, bs in enumerate(built):
+                # One image on every state - an icon that is not feedback. A
+                # control with no states draws from itself.
+                for i, bs in enumerate(built or [c]):
                     checked += 1
                     problems += _state_image(where, i, bs, c, op['image'], op.get('fill'),
                                              assets)
@@ -238,7 +252,7 @@ def check_states(plan_items, table, assets, kind):
                     # A deliberately transparent Off state is a real idiom -
                     # Extron's own 'Lighting Preset' buttons are transparent
                     # when off - so this is only wrong if a fill was planned.
-                    if _painted(ws.get('fill')):
+                    if _opaque(ws.get('fill')):
                         problems.append(
                             f"{kind} {item['name']!r} {name!r} state "
                             f"{bs.get('Name') or i}: artwork {tid} is missing or "
@@ -247,7 +261,7 @@ def check_states(plan_items, table, assets, kind):
                     continue
                 top, top_share = max(shares.items(), key=lambda kv: kv[1])
                 dominant[i] = (tid, top)
-                if not _painted(ws.get('fill')):
+                if not _opaque(ws.get('fill')):
                     continue
                 target = _rgb(ws['fill'])
                 if top == target:
@@ -524,8 +538,7 @@ def _check_background_image(spec, pg, assets):
     if img.get('file') and os.path.exists(img['file']):
         fill = spec['background']
         want = Image.new('RGBA', art.size, _rgb(fill) + ((fill >> 24) & 0xFF,))
-        src = Image.open(img["file"]).convert("RGBA").resize(art.size, Image.Resampling.LANCZOS)
-        want = Image.alpha_composite(want, src).convert('RGB')
+        want = Image.alpha_composite(want, fit_image(img['file'], *art.size)).convert('RGB')
         hist = ImageChops.difference(art, want).convert('L').histogram()
         mean = sum(i * n for i, n in enumerate(hist)) / max(1, sum(hist))
         if mean > IMAGE_TOLERANCE:

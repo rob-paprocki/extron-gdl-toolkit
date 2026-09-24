@@ -197,9 +197,20 @@ def kit_index(p, part='root'):
                 continue
             size, stem = m.groups()
             icon, look = kit_look(stem)
-            # The first spelling wins where the kit has two (help-orange-sel
-            # beside help-orange_sel would be one look).
-            files.setdefault(size, {}).setdefault(icon, {}).setdefault(look, f)
+            # Two files can read as one look: the Afterburn kit has
+            # 1224x344_record_red.png beside 1224x344_record_red_sel.png. The
+            # selected one is what a state asks for, so it wins, and the
+            # other is named rather than dropped silently.
+            looks = files.setdefault(size, {}).setdefault(icon, {})
+            prev = looks.get(look)
+            if prev and prev != f:
+                keep, drop = ((f, prev) if re.search(r'[-_]sel$', stem)
+                              and not re.search(r'[-_]sel\.png$', prev) else (prev, f))
+                print(f'  note: {drop} reads as {size} {icon!r} {look!r}, as {keep} '
+                      f'does - {keep} is used')
+                looks[look] = keep
+            else:
+                looks[look] = f
             rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
             paths.setdefault(f, p['kit'][part] + '/' + rel)
     return {'files': files, 'paths': paths}
@@ -239,7 +250,11 @@ def kit_art(p, index):
     """
     import base64
     import io
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  note: no Pillow - the system carries no kit art, so its icons do not draw")
+        return {}
     root = kit_root(p)
     if root in _ART:
         return _ART[root]

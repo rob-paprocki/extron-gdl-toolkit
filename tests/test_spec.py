@@ -792,6 +792,26 @@ class TestBackgroundImage(unittest.TestCase):
         p = self._spec({'x.png': 'Nowhere/x.png'}, background_image='x.png')
         self.assertTrue(any("image 'x.png'" in m for m in p.check()), p.check())
 
+    def test_the_preview_draws_it_fitted_over_the_fill(self):
+        """The build draws it, so the preview must: it once showed the flat
+        fill where the panel had the theme's art."""
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed')
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, 'bg.png')
+            # Twice as wide as tall: fitted to a 1.6:1 page it leaves a band
+            # of fill above and below, where a stretch would leave none.
+            Image.new('RGBA', (200, 100), (200, 20, 20, 255)).save(f)
+            spec = self._spec({'bg.png': f}, background_image='bg.png')
+            spec.theme['background'] = '#242634'
+            spec.pages[0]['background'] = {'A': 255, 'R': 0x24, 'G': 0x26, 'B': 0x34}
+            im = spec.render(0).convert('RGB')
+            w, h = im.size
+            self.assertEqual(im.getpixel((w // 2, h // 2)), (200, 20, 20))
+            self.assertEqual(im.getpixel((w // 2, 3)), (0x24, 0x26, 0x34))
+
 
 class TestButtonImages(unittest.TestCase):
     """A kit image per state: Afterburn's icons, list buttons and toggles."""
@@ -842,6 +862,19 @@ class TestButtonImages(unittest.TestCase):
         p = _project([{'name': 'Home', 'controls': [c]}], images={'on.png': self.on})
         op = p.plan()['pages'][0]['controls'][0]
         self.assertEqual(op['thumb_image'], {'name': 'on.png', 'file': self.on})
+
+    def test_an_on_image_the_donor_lacks_is_a_donor_problem(self):
+        """`on` is shorthand for Off and On states, so its image is checked as
+        a state's would be."""
+        seed = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            'seeds', 'Afterburn 1035.gdl')
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from _corpus import usable
+        if not usable(seed):
+            self.skipTest('seed not present (git lfs pull)')
+        p = self._spec(on={'image': 'no-such-icon.png'})
+        self.assertTrue(any("'no-such-icon.png'" in m for m in p.check_donor(seed)),
+                        p.check_donor(seed))
 
     def test_none_needs_no_border_resource(self):
         self.assertEqual(self._spec().needs_borders(), set())

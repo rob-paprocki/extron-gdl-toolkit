@@ -240,6 +240,10 @@ foreach ($pg in $spec.pages) {
     # layout fields (stretch, alignment, offsets) come from the donor page.
     if ($pg.background_image) {
         Set-GdlImage $newPage 'backgroundImageField' $imageRef $pg.background_image.name
+        # Fill and MiddleCenter, as the Afterburn seeds lay out theirs - set,
+        # not inherited, so the page draws the same whatever the donor is.
+        Set-GdlFieldIfPresent $newPage 'backgroundImageLayoutField' 0 | Out-Null
+        Set-GdlFieldIfPresent $newPage 'backgroundImageAlignmentField' 3 | Out-Null
     }
 
     # Start from an empty page: the donor's controls carry its ids and popup

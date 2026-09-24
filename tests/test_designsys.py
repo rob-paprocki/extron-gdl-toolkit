@@ -145,6 +145,15 @@ class TestKit(unittest.TestCase):
                 ('disc-ligh-blue_sel', ('disc', 'light-blue'))):
             self.assertEqual(designsys.kit_look(stem), want, stem)
 
+    def test_two_files_that_read_alike_keep_the_selected_one(self):
+        p = designsys.load('afterburn')
+        if not designsys.kit_root(p):
+            self.skipTest("Extron's Afterburn kit is not installed here")
+        # 1224x344_record_red.png and 1224x344_record_red_sel.png both read
+        # as record/red; a state asks for the selected one.
+        looks = designsys.kit_index(p)['files']['1224x344']['record']
+        self.assertEqual(looks['red'], '1224x344_record_red_sel.png')
+
     def test_a_toggle_offers_only_toggles(self):
         p = designsys.load('afterburn')
         if not designsys.kit_root(p):

@@ -289,12 +289,19 @@ def draw_fill(canvas, box, spec):
     if fill or stroke:
         _draw_box(canvas, box, spec, fill, stroke)
     if spec.get('image'):
-        art = Image.open(spec['image']).convert('RGBA')
-        k = min(box[2] / art.width, box[3] / art.height)
-        art = art.resize((max(1, round(art.width * k)), max(1, round(art.height * k))),
-                         Image.LANCZOS)
-        canvas.alpha_composite(art, (box[0] + (box[2] - art.width) // 2,
-                                     box[1] + (box[3] - art.height) // 2))
+        draw_fitted(canvas, box, spec['image'])
+
+
+def draw_fitted(canvas, box, path):
+    """`path` drawn into `box` as Build draws an authored image: Fill (fit,
+    keeping the aspect) and MiddleCenter, as every image in the Afterburn
+    seeds is laid out."""
+    art = Image.open(path).convert('RGBA')
+    k = min(box[2] / art.width, box[3] / art.height)
+    art = art.resize((max(1, round(art.width * k)), max(1, round(art.height * k))),
+                     Image.LANCZOS)
+    canvas.alpha_composite(art, (box[0] + (box[2] - art.width) // 2,
+                                 box[1] + (box[3] - art.height) // 2))
 
 
 def _draw_box(canvas, box, spec, fill, stroke):
@@ -429,6 +436,11 @@ def render_page(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True, groups
         fill = rgba(pg.get('BackgroundFillColor'))
         if pg.get('TLPImageID', -1) == -1 and fill and fill[3]:
             canvas.paste(fill, [0, 0, *size])
+        # A spec's page image: an authored page has no artwork yet, so draw
+        # what Build will bake - the image over the fill. Built pages never
+        # carry this key.
+        if pg.get('TLPImageID', -1) == -1 and pg.get('_background_image'):
+            draw_fitted(canvas, (0, 0, size[0], size[1]), pg['_background_image'])
     paste(canvas, assets, pg.get('TLPImageID'), ox, oy)
     for c in (pg.get('Controls') or []):
         render_control(canvas, c, assets, ox, oy, draw_txt, groups, fills, pg.get('ID'))

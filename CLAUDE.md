@@ -62,7 +62,7 @@ author, build and verify in one session.
 | `gdl.spec` check / render / plan / donors | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
 | `gdl.idmap` check / write | |
-| `gdl.designsys` build; `gdl.design` translate (needs headless Chrome) | |
+| `gdl.designsys` build (its icons and backgrounds need Pillow and Extron's kit, and say so without them); `gdl.design` translate (needs headless Chrome) | |
 | the `python -m pytest` suite | |
 | `tests/verify_built.py`, `tests/verify_idmap.py`, given the built file | |
 

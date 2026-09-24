@@ -151,6 +151,18 @@ class TestTranslate(unittest.TestCase):
         self.assertTrue(any("icon 'rocket' is not in Afterburn's 440x440 kit" in p
                             for p in problems), problems)
 
+    def test_a_slider_with_no_kit_thumb_is_noted(self):
+        """Without the kit the slider would keep its donor's thumb, in the
+        donor's scheme - so say so rather than translate clean."""
+        slider = ctl([1166, 210, 54, 380], kind='slider', name='Volume', fill='raised')
+        real = design.designsys.slider_thumb
+        design.designsys.slider_thumb = lambda p, s: None
+        try:
+            _, _, notes = translate({'Home.dc.html': out(HOME, slider)})
+        finally:
+            design.designsys.slider_thumb = real
+        self.assertTrue(any('kit thumb' in n for n in notes), notes)
+
     def test_a_state_image_brings_its_kit_file_and_no_border_stays(self):
         if not designsys.kit_root(designsys.load('afterburn')):
             self.skipTest("Extron's Afterburn kit is not installed here")

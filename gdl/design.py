@@ -253,6 +253,11 @@ class Canvas:
             for c in item['controls']:
                 if c['kind'] == 'slider' and thumb:
                     c['thumb_image'] = thumb[0]
+        wants_thumb = ((profile.get('defaults') or {}).get('slider') or {}).get('thumb_image')
+        if wants_thumb and not thumb and any(c['kind'] == 'slider' for item in pages + popups
+                                            for c in item['controls']):
+            notes.append(f"no {profile['template']} kit thumb for scheme {scheme!r} on this "
+                         f"machine - the sliders will build with the donor's thumb")
         used = sorted({v for item in pages + popups for v in _colors_in(item)})
         unknown = [u for u in used if u not in colors and not u.startswith('#')]
         for u in unknown:

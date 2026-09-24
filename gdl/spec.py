@@ -601,7 +601,8 @@ class Panel:
                 'modal': bool(pg.get('modal')),
                 'background': color(pg.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
-                # Drawn over the background color, stretched to the page. One
+                # Drawn over the background color, fitted to the page (Fill,
+                # as the Afterburn seeds lay theirs out - the applier sets it). One
                 # image on every page is the themes' own rule, so the theme can
                 # name it once.
                 'background_image': pg.get('background_image',
@@ -706,9 +707,14 @@ class Panel:
                                    'thickness': thickness},
                         'image': image,
                     }
+            image = (resolve_image(self.images.get(pg['background_image']))
+                     if pg.get('background_image') else None)
             pages.append({
                 'ID': pg['number'], 'Name': pg['name'], 'TLPImageID': -1,
                 'Modal': pg['modal'], 'BackgroundFillColor': pg['background'],
+                # Only when the spec brings the file: an image the donor
+                # carries is not on this machine to draw.
+                '_background_image': image,
                 'Controls': controls,
             })
         return {'Pages': pages, 'PopupPages': []}, fills
@@ -1368,8 +1374,10 @@ class Panel:
         for kind, items in (('page', self.pages), ('popup', self.popups)):
             for pg in items:
                 for c in pg['controls']:
+                    # Through _feedback, as plan() reads them: an `on` of
+                    # {"image": ...} names one as surely as `states` does.
                     named = [c.get('image'), c.get('thumb_image')] + [
-                        st.get('image') for st in c.get('states') or [] if isinstance(st, dict)]
+                        st.get('image') for st in self._feedback(c) or []]
                     for want in sorted({n for n in named if n}):
                         if want not in self.images and want not in images:
                             out.append(f"{kind} {pg['name']!r} "
