@@ -24,26 +24,100 @@ something anyone edits or exports back to a canvas.
 
 ## 1. Using it
 
-1. **In Claude Design**, start a design with the template's design system - for
-   Afterburn, *Extron Afterburn* - and describe the panel by what it does: the
-   sources, the call controls, what needs confirming, what the program shows by
-   itself. The system's README tells Claude Design how to draw it and what to
-   record.
-2. **In Claude Code**, give it the canvas link and ask for the panel. It reads
-   `project/canvas.json`, every `project/*.dc.html` and the installed system's
-   `project/ds/<folder>/` files into one folder, with the Design type's
-   `artifact-type/dc-runtime.js` saved beside the artboards as `support.js`,
-   then:
+There are two roles, which can be the same person. The **designer** works in
+Claude Design and never needs this repo or Windows. The **builder** works in
+Claude Code on the machine GUI Designer runs on.
+
+| Role | Needs |
+|---|---|
+| Designer | a claude.ai account with Claude Design, and the template's design system in it - for now *Extron Afterburn* |
+| Builder | this repo, set up as `README.md` *Setup* says, on a machine with GUI Designer 1.28.0.7 (`CLAUDE.md` *Environment*), with the seeds pulled from Git LFS and Chrome installed; and Claude Code signed in to a claude.ai account that can open the canvas |
+
+### Once: publish the design system
+
+A design system is built from this repo and published to a claude.ai account.
+Nothing else distributes it. In Claude Code, in the repo, ask it to *build the
+Afterburn design system and publish it*. It runs:
+
+```bash
+python -m gdl.designsys build afterburn <dir>
+```
+
+and publishes the `project/` tree that writes as a Design System artifact, with
+the Artifact tool. The icons and theme backgrounds are Extron's kit, read from
+the GUI Designer install or `vendor/`, and embedded downscaled. Without the kit,
+or without Pillow, the build says so: the system then has no icons, and its
+themes no background images.
+
+Because it carries Extron's artwork, the system is published private (§2
+*Icons*), to the account Claude Code is signed in to. The designer works in
+that account, or has the system shared with theirs.
+
+### Design: in Claude Design
+
+1. Start a design that uses *Extron Afterburn* as its design system.
+2. Describe the panel by what it has to **do**; the system already knows what
+   Afterburn looks like. Say:
+   - the room and the panel - the system draws the TLP Pro 1025/1035 family, at
+     1280×800;
+   - the sources, and what selecting one does;
+   - the call, camera, display and audio controls, and what each shows as it
+     changes: a display warming up, a microphone muted, a call connected;
+   - what has to be confirmed first, such as shutting the room down, and what
+     the program shows by itself, such as an incoming call;
+   - optionally, one of Afterburn's background themes: Default, Anthracite,
+     Blue Slate or Grape.
+
+   For example: *A huddle room panel for a TLP Pro 1035 on the Grape theme.
+   Three sources - laptop, wireless and the room PC - showing which is selected.
+   One display that can be off, warming up, on or cooling down. Volume with mute,
+   End Call, a help page, and turning the room off asks for confirmation.*
+
+   The system's README makes Claude Design draw only with its components, one
+   artboard per page or popup, and record what every control does.
+3. **Check it in Play.** A button that opens another page follows its link.
+   Holding any button shows what the panel shows while it is held.
+4. **Ask for feedback where it is missing.** A button the control system drives
+   needs at least two states, or the panel cannot show anything changing. Ask by
+   meaning - *"the source buttons should show which one is selected"* - and the
+   system picks the template's way of showing it: an accent icon, a selection
+   line, a toggle's thumb. A button with one state shows nothing when pressed.
+
+### Build: in Claude Code
+
+On the builder's machine, in this repo, give Claude Code the canvas link and ask
+for the panel and its ID map. It:
+
+1. **Reads the canvas** into one folder: the canvas artifact's `project/`
+   folder, saved without that prefix - `canvas.json`, every `*.dc.html` and the
+   installed system's `ds/<folder>/` files - with the Design type's
+   `artifact-type/dc-runtime.js` saved beside the artboards as `support.js`.
+2. **Translates it:**
 
    ```bash
    python -m gdl.design translate <that folder> out/spec.json
    ```
 
-   It prints the donor seed the design system names. From there it is the
-   normal pipeline: `powershell\New-GdlPanel.ps1 -Spec out/spec.json -Donor
-   <seed> -Output <panel.gdl> -IdMap out/idmap`.
-3. **For sign-off**, put each artboard beside the page GUI Designer built from
-   it - a client signs off on the panel, not on the canvas:
+   It prints the donor seed the design system names. A canvas with anything it
+   cannot build writes no spec, and names each problem: something painted
+   outside a component with its box (§4), most others with their artboard or
+   control, and a color or icon the template lacks by its name alone. The fix
+   goes on the canvas, back in Claude Design, where the designer can see it;
+   then Claude Code reads it again.
+3. **Builds and verifies it**, with nobody touching GUI Designer. Before the
+   first unattended build on a machine, and after any GUI Designer upgrade, set
+   the one preference `CLAUDE.md` *Driving GUI Designer* names, or the build
+   stops at a prompt nothing can see.
+
+   ```bash
+   powershell\New-GdlPanel.ps1 -Spec out/spec.json -Donor <seed> -Output <panel.gdl> -IdMap out/idmap
+   ```
+
+   GUI Designer opens, builds and closes by itself. The script exits non-zero
+   if anything was built other than as designed, or the ID map disagrees with
+   the built panel.
+4. **Puts each artboard beside the page GUI Designer built from it**, for
+   sign-off. A client signs off on the panel, not on the canvas:
 
    ```bash
    python -m gdl.design compare <that folder> <panel.gdl> out/signoff   # index.html
@@ -53,8 +127,15 @@ something anyone edits or exports back to a canvas.
    modal is shown over the start page, as the panel shows it. It prints the
    share of pixels that differ per page.
 
-A translation that finds anything it cannot build writes no spec (§4), so the
-fix happens on the canvas, where the designer can see it.
+### What comes out
+
+| File | For |
+|---|---|
+| `<panel.gdl>` | the panel, built: open it in GUI Designer, or load it to the touch panel |
+| `out/idmap/` (`idmap.md`, `.csv`, `.json`) | the control-system programmer: every addressable control's ID, page, caption, states and what it does (`docs/idmap.md`). No program is generated. |
+| `out/signoff/index.html` | the client: each page as designed beside it as built |
+
+To change the panel, change the canvas and build again.
 
 ## 2. One design system per template
 

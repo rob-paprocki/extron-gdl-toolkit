@@ -2,7 +2,7 @@
 
     python -m gdl.designsys build afterburn out/designsys/afterburn
 
-One Design System artifact per Extron template (docs/claude-design.md §1).
+One Design System artifact per Extron template (docs/claude-design.md §2).
 Each is written from a profile - `gdl/designsys/<template>.json`, the
 template's own colors, type, borders and button archetypes with where each
 came from - and one shared set of components in `bundle.js`. The output is the
@@ -315,6 +315,11 @@ def bundle(p, art=True):
     profile['backdrops'] = backdrops(p)
     if p.get('kit'):
         index = kit_index(p)
+        if not index['files']:
+            # Said aloud: without it the build looks normal, and the system
+            # it publishes names no icons and draws none.
+            print(f"  note: the {p['template']} kit is not installed here (GUI Designer's "
+                  "install or vendor/) - the system names no icons and draws none")
         profile['kit'] = dict(p['kit'], files=index['files'],
                               art=kit_art(p, index) if art and index['files'] else {},
                               thumb_art=thumb_art(p) if art else {})

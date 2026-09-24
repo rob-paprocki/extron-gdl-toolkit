@@ -165,6 +165,18 @@ class TestKit(unittest.TestCase):
         self.assertEqual(sorted(art), sorted(s['id'] for s in p['schemes']))
         self.assertTrue(all(v.startswith('data:image/webp;base64,') for v in art.values()))
 
+    def test_a_build_without_the_kit_says_so(self):
+        """Otherwise it looks like any other build, and publishes a system
+        with no icons."""
+        import contextlib
+        import io
+        p = designsys.load('afterburn')
+        p['kit'] = dict(p['kit'], root='No Such Kit', thumbs='No Such Kit')
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            designsys.bundle(p, art=False)
+        self.assertIn('kit is not installed here', out.getvalue())
+
     def test_a_toggle_offers_only_toggles(self):
         p = designsys.load('afterburn')
         if not designsys.kit_root(p):
