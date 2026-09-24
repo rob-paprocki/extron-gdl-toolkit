@@ -162,8 +162,22 @@ statement is in the live docs; this is the record that it changed.
 - **Group registration was never missing.** An early gap list said it was;
   `Register-GdlPopupGroup` was complete all along.
 - **`rename` wrote only state 0** until `7b3e630`, so a renamed button showed
-  its old caption once switched On. `docs/ROADMAP.md` *Mine* #4 covers
-  re-verifying anything edited before that commit.
+  its old caption once switched On. The verifier compared only the merged
+  caption, which is state 0's, so it never noticed. On 2026-09-24 the worked
+  edit (`examples/edits.json`) was rebuilt under a verifier that checks every
+  state an edit writes: all nine plain renames correct on both states.
+- **Then `rename` wrote one caption to every state, and `restyle` matched only
+  a control's own colors** (until 2026-09-24). A button whose states said
+  different things lost its feedback wording. 288 of the Liberty Bank
+  fixture's 442 buttons keep their fill only on their states, so `restyle`
+  matched none of them - and one it did match got the control's new color on
+  every state, On included. Nothing was reported, and the verifier never
+  checked an edit's colors at all. Both now edit state by state, and colors are
+  read off the built artwork.
+- **The six-color check counted only colors a spec names, and only on pages**
+  (until 2026-09-24). A caption with no `color` draws in the theme's text
+  color, and popups are on the panel too. `examples/huddle-functions.json`
+  passed at six while it drew seven; it dropped `muted` to meet p.49.
 - **A line can be diagonal.** An early draft of `docs/from-scratch.md` said
   otherwise; `PBLine`'s endpoints are an eight-value enum over an arbitrary
   bounding rect, so the angle is arbitrary too.

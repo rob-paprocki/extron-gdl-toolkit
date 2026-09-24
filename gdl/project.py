@@ -147,7 +147,32 @@ class Project:
                     return v.replace('\t', '').replace('\r\n', ' ').strip(), where
         return None, None
 
+    def state(self, st):
+        """One state's own appearance: what `gdl.edit` matches and rewrites.
+
+        A button draws from its states, not from itself: in the Liberty Bank
+        fixture 288 of 442 buttons have no fill of their own and a fill on
+        every state. So anything that changes how a button looks has to read
+        and write each state, not the control.
+        """
+        text, ftext = self.deref(st.get('textField')), self.deref(st.get('ftextField'))
+        caption, where = None, None
+        if text:
+            caption, where = text, 'state'
+        elif ftext:
+            caption, where = ftext.replace('\t', '').replace('\r\n', ' ').strip(), 'fstate'
+        return {
+            'name': self.field(st, 'nameField'),
+            'caption': caption,
+            'caption_in': where,
+            'fill': self.color(self.field(st, 'borderFillColorField')),
+            'stroke': self.color(self.field(st, 'borderColorField')),
+            'text_color': self.color(self.field(st, 'textColorField')),
+        }
+
     def control(self, obj):
+        states = self.states(obj)
+        caption, caption_in = self.caption_at(obj)
         return {
             'type': self.kind(obj).rsplit('.', 1)[-1],
             'name': self.field(obj, 'nameField'),
@@ -158,19 +183,25 @@ class Project:
             # What it says on the panel, which is usually NOT `text` - see
             # caption(). Anything selecting a control by its wording wants this,
             # and anything CHANGING it wants caption_in as well.
-            'caption': self.caption_at(obj)[0],
-            'caption_in': self.caption_at(obj)[1],
+            'caption': caption,
+            'caption_in': caption_in,
             'tlp_image': self.field(obj, '<TLPImageID>k__BackingField'),
             # the two the built payload throws away
             'fill': self.color(self.field(obj, 'borderFillColorField')),
             'stroke': self.color(self.field(obj, 'borderColorField')),
+            'text_color': self.color(self.field(obj, 'textColorField')),
             'border': self.border(obj),
             # How many appearances this control can show. A button with one
             # state cannot give feedback. The applier resizes a cloned donor's
             # states to what the spec names, so this is a fact about the donor,
             # not a limit on the spec.
-            'n_states': len(self.states(obj)),
-            'state_names': [self.field(s, 'nameField') for s in self.states(obj)],
+            'n_states': len(states),
+            'state_names': [self.field(s, 'nameField') for s in states],
+            'states': [self.state(s) for s in states],
+            # The state shown while the button is held, and the one it starts
+            # in. Default is 0 on every button in the corpus.
+            'press': self.field(obj, '<TLPPressFeedbackStateID>k__BackingField'),
+            'default_state': self.field(obj, '<TLPDefaultStateID>k__BackingField'),
             # PBStates.statusField: PBState.StatusFlags (PreventAddState = 1,
             # PreventDelete = 2, PreventReorder = 4, PreventRename = 8, ...).
             # 0 on every button in the corpus; the applier will not resize a

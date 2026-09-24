@@ -104,6 +104,93 @@ class TestEditIds(unittest.TestCase):
         self.assertTrue(any('UserId' in p and '2001' in p for p in problems), problems)
 
 
+def _png(rgb):
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new('RGBA', (8, 8), rgb + (255,)).save(buf, 'PNG')
+    return buf.getvalue()
+
+
+WHITE = {'A': 255, 'R': 255, 'G': 255, 'B': 255}
+
+
+def _built(*states, **kw):
+    c = dict({'ID': 3, 'Name': 'Display', 'States': list(states)}, **kw)
+    return {'Pages': [{'ID': 51, 'Name': 'Home', 'Controls': [c]}], 'PopupPages': []}
+
+
+def _bst(name, text, tid, color=WHITE):
+    return {'Name': name, 'Text': text, 'TLPImageID': tid, 'TextColor': color}
+
+
+class TestEditStates(unittest.TestCase):
+    """An edit writes each state by index, so each is verified by index -
+    captions and names off the model, fills off that state's own artwork."""
+
+    def setUp(self):
+        self.vb = _vb(self)
+        self.assets = {90: _png((0x37, 0x39, 0x4E)), 91: _png((0x3D, 0x8B, 0xFD)),
+                       92: _png((0x5A, 0x5C, 0x70))}
+
+    def _check(self, op, j):
+        op = dict({'page': 51, 'control': 3, 'why': 'test'}, **op)
+        return self.vb.check_edits({'controls': [op]}, j, self.assets)[0]
+
+    def test_a_state_caption_that_did_not_take_is_reported(self):
+        op = {'per_state': [{'index': 1, 'fields': {'textField': 'Screen On'}}]}
+        j = _built(_bst('Off', 'Display Off', 90), _bst('On', 'Display On', 91))
+        problems = self._check(op, j)
+        self.assertTrue(any("state 1 'On'" in p and 'Screen On' in p for p in problems),
+                        problems)
+
+    def test_only_the_written_state_is_checked(self):
+        op = {'per_state': [{'index': 1, 'fields': {'textField': 'Screen On'}}]}
+        j = _built(_bst('Off', 'Display Off', 90), _bst('On', 'Screen On', 91))
+        self.assertEqual(self._check(op, j), [])
+
+    def test_a_state_fill_is_read_off_that_states_artwork(self):
+        op = {'per_state': [{'index': 1, 'colors': {'borderFillColorField': '#FF3D8BFD'}}]}
+        self.assertEqual(self._check(op, _built(_bst('Off', '', 90), _bst('On', '', 91))), [])
+        problems = self._check(op, _built(_bst('Off', '', 90), _bst('On', '', 90)))
+        self.assertTrue(any('mostly #37394E' in p for p in problems), problems)
+
+    def test_a_state_text_color_is_read_off_the_model(self):
+        op = {'per_state': [{'index': 0, 'colors': {'textColorField': '#FFF0F0F0'}}]}
+        problems = self._check(op, _built(_bst('Off', 'x', 90)))
+        self.assertTrue(any('text color is #FFFFFF' in p for p in problems), problems)
+
+    def test_a_states_op_that_built_the_wrong_count_is_reported(self):
+        op = {'state_count': 3, 'per_state': [], 'expect_states': []}
+        problems = self._check(op, _built(_bst('Off', '', 90), _bst('On', '', 91)))
+        self.assertTrue(any('2 states built' in p and 'asked for 3' in p for p in problems),
+                        problems)
+
+    def test_a_states_op_is_checked_state_by_state(self):
+        op = {'state_count': 3,
+              'fields': {'<TLPPressFeedbackStateID>k__BackingField': 2},
+              'per_state': [{'index': i, 'fields': {'nameField': n}}
+                            for i, n in enumerate(('Off', 'Warming', 'On'))],
+              'expect_states': [
+                  {'name': 'Off', 'text': 'Display Off', 'fill': '#FF37394E'},
+                  {'name': 'Warming', 'text': 'Warming Up', 'fill': '#FF5A5C70'},
+                  {'name': 'On', 'text': 'Display On', 'fill': '#FF3D8BFD'}]}
+        good = _built(_bst('Off', 'Display Off', 90), _bst('Warming', 'Warming Up', 92),
+                      _bst('On', 'Display On', 91), TLPPressFeedbackStateID=2)
+        self.assertEqual(self._check(op, good), [])
+        bad = _built(_bst('Off', 'Display Off', 90), _bst('On_1', 'Display On', 91),
+                     _bst('On', 'Display On', 91), TLPPressFeedbackStateID=1)
+        problems = self._check(op, bad)
+        for needle in ("named 'On_1'", "caption is 'Display On'", 'press state is 1',
+                       "'Warming' and 'On' were meant to look different"):
+            self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    def test_a_plan_that_writes_every_state_alike_is_refused(self):
+        problems = self._check({'states': {'textField': 'x'}},
+                               _built(_bst('Off', 'x', 90)))
+        self.assertTrue(any('re-plan' in p for p in problems), problems)
+
+
 class TestTypeNames(unittest.TestCase):
     """TYPE_NAME once said Line 9, DateTime 12, Slider 14 and Level 15. Every
     message naming one of those types was wrong."""

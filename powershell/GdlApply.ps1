@@ -172,6 +172,8 @@ function Get-GdlStates {
 
 function Set-GdlStateCount {
     <#  Give a cloned control exactly $Count states. Returns $true on success.
+        (An existing button's states are rebuilt by name instead - see
+        Set-GdlStateOrder.)
 
         A donor button has however many states its author gave it - Off/On for
         nearly all, four for Extron's volume mute - and a clone keeps them. So a
@@ -196,12 +198,12 @@ function Set-GdlStateCount {
     if (-not $sts) { Note-Problem "no statesField on $($Control.GetType().Name)"; return $false }
     $items = Get-GdlField $sts 'mItems'
     if ($null -eq $items -or $items.Count -lt 1) {
-        Note-Problem "donor $($Control.GetType().Name) has no state to clone"
+        Note-Problem "$($Control.GetType().Name) '$(Get-GdlField $Control 'nameField')' has no state to clone"
         return $false
     }
     $flags = Get-GdlField $sts 'statusField'
     if ($flags -and $items.Count -ne $Count) {
-        Note-Problem "donor $($Control.GetType().Name) has state status flags $flags - its states cannot be added or removed"
+        Note-Problem "$($Control.GetType().Name) '$(Get-GdlField $Control 'nameField')' has state status flags $flags - its states cannot be added or removed"
         return $false
     }
     while ($items.Count -lt $Count) {
@@ -209,6 +211,60 @@ function Set-GdlStateCount {
     }
     while ($items.Count -gt $Count) {
         $items.RemoveAt($items.Count - 1)
+    }
+    for ($i = 0; $i -lt $items.Count; $i++) {
+        Set-GdlFieldIfPresent $items[$i] 'idField' $i | Out-Null
+        Set-GdlFieldIfPresent $items[$i] 'indexField' $i | Out-Null
+    }
+    return $true
+}
+
+function Set-GdlStateOrder {
+    <#  Rebuild a control's states from its own, in a new order. Returns $true
+        on success.
+
+        New state i is existing state $Order[i]: the first time a source is
+        named it moves, and any later time it is copied. Sources left out are
+        dropped. This is how `gdl.edit`'s `states` op keeps a state's identity
+        when states are inserted or reordered - by position, the press pointer
+        and each state's look stayed with the index, not with the state.
+
+        Straight at `mItems` like Set-GdlStateCount, and renumbered the same
+        way. A control whose states carry status flags (PreventReorder = 4
+        among them) is refused unless the order is unchanged. #>
+    param($Control, $Order)
+    $sts = Get-GdlField $Control 'statesField'
+    if (-not $sts) { Note-Problem "no statesField on $($Control.GetType().Name)"; return $false }
+    $items = Get-GdlField $sts 'mItems'
+    $name = Get-GdlField $Control 'nameField'
+    if ($null -eq $items -or $items.Count -lt 1) {
+        Note-Problem "$($Control.GetType().Name) '$name' has no state to take from"
+        return $false
+    }
+    $want = @($Order | ForEach-Object { [int]$_ })
+    $same = $want.Count -eq $items.Count
+    for ($i = 0; $same -and $i -lt $want.Count; $i++) { if ($want[$i] -ne $i) { $same = $false } }
+    if ($same) { return $true }
+    $flags = Get-GdlField $sts 'statusField'
+    if ($flags) {
+        Note-Problem "$($Control.GetType().Name) '$name' has state status flags $flags - its states cannot be added, removed or reordered"
+        return $false
+    }
+    foreach ($k in $want) {
+        if ($k -lt 0 -or $k -ge $items.Count) {
+            Note-Problem "$($Control.GetType().Name) '$name' has no state $k to take from"
+            return $false
+        }
+    }
+    $old = New-Object System.Collections.ArrayList
+    for ($i = 0; $i -lt $items.Count; $i++) { [void]$old.Add($items[$i]) }
+    $used = @{}
+    $items.Clear()
+    foreach ($k in $want) {
+        $st = $old[$k]
+        if ($used.ContainsKey($k)) { $st = Copy-GdlObject $st }
+        $used[$k] = $true
+        $items.Add($st)
     }
     for ($i = 0; $i -lt $items.Count; $i++) {
         Set-GdlFieldIfPresent $items[$i] 'idField' $i | Out-Null

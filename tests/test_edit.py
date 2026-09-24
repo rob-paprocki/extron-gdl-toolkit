@@ -14,7 +14,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from gdl.edit import Edits, _norm  # noqa: E402
-from gdl.spec import MODELS_FULL  # noqa: E402
+from gdl.spec import MODELS_FULL, PRESS_FIELD as PRESS  # noqa: E402
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIXTURE = os.path.join(
@@ -71,15 +71,20 @@ class TestRename(unittest.TestCase):
                                       'text': 'Laptop'}])
         self.assertEqual(problems, [])
         op = plan['controls'][0]
-        self.assertEqual(op['states'], {'textField': 'Laptop'})
+        # Both of its states say it, so both are written - each by index.
+        self.assertEqual([(ps['index'], ps['fields']) for ps in op['per_state']],
+                         [(0, {'textField': 'Laptop'}), (1, {'textField': 'Laptop'})])
         self.assertNotIn('fields', op)
 
     def test_rename_writes_ftext_for_a_formatted_caption(self):
         plan, _ = self._plan([{'op': 'rename', 'select': {'text': 'Cameras'},
                                'text': 'Camera Control'}])
         op = plan['controls'][0]
-        self.assertEqual(op['states_ftext'], 'Camera Control')
-        self.assertTrue(op['flattened'])
+        self.assertTrue(op['per_state'])
+        for ps in op['per_state']:
+            self.assertEqual(ps['ftext'], 'Camera Control')
+            self.assertTrue(ps['flattened'])
+            self.assertNotIn('fields', ps)
 
     def test_a_selector_matching_nothing_is_an_error(self):
         _, problems = self._plan([{'op': 'rename',
@@ -227,6 +232,249 @@ class TestSeverity(unittest.TestCase):
         self.assertTrue(warnings)
         self.assertEqual(errors, [])
         self.assertTrue(plan['controls'])
+
+
+# -- a button's states are not one thing --------------------------------------
+#
+# The fixture has no button whose states say different things, so those cases
+# use a synthetic page shaped exactly like Project.pages() output. Colors come
+# from the fixture, where they genuinely differ by state.
+
+def _st(name, caption=None, fill=None, where='state', text_color=None, stroke=None):
+    return {'name': name, 'caption': caption, 'caption_in': where if caption else None,
+            'fill': fill, 'stroke': stroke, 'text_color': text_color}
+
+
+def _button(name, states, **kw):
+    first = next((s for s in states if s['caption']), None)
+    c = {'type': 'PBButton', 'name': name, 'id': 11, 'rect': (0, 0, 200, 80),
+         'text': None, 'caption': first['caption'] if first else None,
+         'caption_in': first['caption_in'] if first else None, 'tlp_image': -1,
+         'fill': None, 'stroke': None, 'text_color': None, 'border': None,
+         'n_states': len(states), 'state_names': [s['name'] for s in states],
+         'states': states, 'press': 1, 'default_state': 0, 'state_flags': 0,
+         'obj_id': 7}
+    c.update(kw)
+    return c
+
+
+def _synthetic(edits, *controls):
+    ed = Edits.__new__(Edits)
+    ed.spec, ed.path, ed.project, ed.edits = {'edits': edits}, 'synthetic', None, edits
+    ed.pages = [{'kind': 'page', 'id': 51, 'name': 'Home', 'modal': None,
+                 'size': (1280, 800), 'controls': list(controls)}]
+    return ed
+
+
+GREY, NAVY, BLUE = ({'A': 255, 'R': 0x37, 'G': 0x39, 'B': 0x4E},
+                    {'A': 255, 'R': 0x24, 'G': 0x26, 'B': 0x34},
+                    {'A': 255, 'R': 0x3D, 'G': 0x8B, 'B': 0xFD})
+DISPLAY = _button('Display', [_st('Off', 'Display Off', GREY),
+                              _st('On', 'Display On', BLUE)])
+
+
+class TestRenameByState(unittest.TestCase):
+    def test_the_selector_finds_a_caption_in_any_state(self):
+        ed = _synthetic([], DISPLAY)
+        self.assertEqual(len(ed.select({'text': 'Display On'})), 1)
+        self.assertEqual(len(ed.select({'text_matches': 'On$'})), 1)
+
+    def test_map_renames_only_the_state_that_says_it(self):
+        plan, problems = _synthetic([{'op': 'rename', 'map': {'Display On': 'Screen On'}}],
+                                    DISPLAY).plan()
+        self.assertEqual(problems, [])
+        (op,) = plan['controls']
+        self.assertEqual(op['per_state'], [{'index': 1, 'was': 'Display On',
+                                            'fields': {'textField': 'Screen On'}}])
+
+    def test_one_caption_over_different_ones_is_refused(self):
+        """Writing 'Screen' to every state would erase the feedback wording,
+        silently - the old behavior."""
+        _, problems = _synthetic([{'op': 'rename', 'select': {'name': 'Display'},
+                                   'text': 'Screen'}], DISPLAY).plan()
+        self.assertTrue(any('different in each state' in p and "'Display Off'" in p
+                            for p in problems), problems)
+
+    def test_state_narrows_a_rename(self):
+        plan, problems = _synthetic([{'op': 'rename', 'select': {'name': 'Display'},
+                                      'text': 'Screen Off', 'state': 'Off'}],
+                                    DISPLAY).plan()
+        self.assertEqual(problems, [])
+        self.assertEqual([ps['index'] for ps in plan['controls'][0]['per_state']], [0])
+
+    def test_an_unknown_state_is_an_error(self):
+        _, problems = _synthetic([{'op': 'rename', 'select': {'name': 'Display'},
+                                   'text': 'x', 'state': 'Standby'}], DISPLAY).plan()
+        self.assertTrue(any("no state 'Standby'" in p for p in problems), problems)
+
+    def test_state_with_map_is_an_error(self):
+        _, problems = _synthetic([{'op': 'rename', 'map': {'Display On': 'x'},
+                                   'state': 'On'}], DISPLAY).plan()
+        self.assertTrue(any('`state` goes with `text`' in p for p in problems), problems)
+
+    def test_each_state_is_written_where_its_own_caption_lives(self):
+        mixed = _button('M', [_st('Off', 'Cams', where='fstate'), _st('On', 'Cams')])
+        plan, _ = _synthetic([{'op': 'rename', 'map': {'Cams': 'Cameras'}}], mixed).plan()
+        a, b = plan['controls'][0]['per_state']
+        self.assertEqual((a.get('ftext'), a.get('flattened')), ('Cameras', True))
+        self.assertEqual(b['fields'], {'textField': 'Cameras'})
+
+
+class TestRestyleByState(unittest.TestCase):
+    def test_a_fill_that_lives_only_on_a_state_is_restyled(self):
+        """Table Input 1 has no fill of its own: Off is transparent and On is
+        #242634. Matching the control's colors found nothing to restyle on 288
+        of the fixture's 442 buttons."""
+        plan, problems = _edits([{'op': 'restyle', 'select': {'text': 'Table Input 1'},
+                                  'map': {'#242634': '#101826'}}]).plan()
+        self.assertEqual(problems, [])
+        (op,) = plan['controls']
+        self.assertNotIn('colors', op)
+        self.assertEqual(op['per_state'], [{'index': 1, 'colors': {
+            'borderFillColorField': '#FF101826'}}])
+
+    def test_each_state_is_remapped_from_its_own_color(self):
+        """The old op wrote the control's new color to every state, so an On
+        state came out in the Off color."""
+        plan, _ = _synthetic([{'op': 'restyle', 'map': {'#37394E': '#111111',
+                                                        '#3D8BFD': '#2266EE'}}],
+                             DISPLAY).plan()
+        per = plan['controls'][0]['per_state']
+        self.assertEqual([(ps['index'], ps['colors']['borderFillColorField']) for ps in per],
+                         [(0, '#FF111111'), (1, '#FF2266EE')])
+
+    def test_text_color_is_remapped(self):
+        white = {'A': 255, 'R': 255, 'G': 255, 'B': 255}
+        b = _button('T', [_st('Off', 'x', GREY, text_color=white),
+                          _st('On', 'x', BLUE, text_color=white)])
+        plan, _ = _synthetic([{'op': 'restyle', 'map': {'#FFFFFF': '#F0F0F0'}}], b).plan()
+        per = plan['controls'][0]['per_state']
+        self.assertEqual([ps['colors'] for ps in per],
+                         [{'textColorField': '#FFF0F0F0'}] * 2)
+
+
+class TestStatesOp(unittest.TestCase):
+    FOUR = ['Off', {'name': 'Warming', 'fill': '#5A5C70', 'text': 'Warming Up'},
+            {'name': 'On', 'text': 'Display On'},
+            {'name': 'Cooling', 'fill': '#2E3040', 'text': 'Cooling Down'}]
+
+    def _op(self, states, *controls, **kw):
+        plan, problems = _synthetic([dict({'op': 'states', 'select': {'name': 'Display'},
+                                           'states': states}, **kw)],
+                                    *(controls or (DISPLAY,))).plan()
+        return (plan['controls'][0] if plan['controls'] else None), problems
+
+    def test_growing_names_writes_and_expects_every_state(self):
+        op, problems = self._op(self.FOUR)
+        self.assertEqual(problems, [])
+        self.assertEqual(op['state_count'], 4)
+        self.assertEqual([ps['fields']['nameField'] for ps in op['per_state']],
+                         ['Off', 'Warming', 'On', 'Cooling'])
+        # State 1 keeps On's look; state 3 starts as a copy of it.
+        exp = op['expect_states']
+        self.assertEqual(exp[2]['fill'], '#FF3D8BFD')
+        self.assertEqual(exp[2]['text'], 'Display On')
+        self.assertEqual(exp[3]['fill'], '#FF2E3040')
+        self.assertEqual(exp[0]['text'], 'Display Off')
+
+    def test_the_press_state_follows_its_state_or_is_named(self):
+        # Display pressed to On (1); with Warming inserted, On is 2.
+        op, _ = self._op(self.FOUR)
+        self.assertEqual(op['fields'][PRESS], 2)
+        op, _ = self._op(self.FOUR, press='Cooling')
+        self.assertEqual(op['fields'][PRESS], 3)
+        op, _ = self._op(['Only'])
+        self.assertEqual(op['fields'][PRESS], 0)
+
+    def test_a_state_keeps_its_identity_when_one_is_inserted_before_it(self):
+        """The review's repro. Matched by position, inserting Middle before
+        On left the press pointer on Middle, gave On the look of Extra, and
+        every check passed - the plan itself was wrong."""
+        extra = {'A': 255, 'R': 0x5A, 'G': 0x5C, 'B': 0x70}
+        preset = _button('Display', [_st('Off', 'P', GREY), _st('On', 'P', BLUE),
+                                     _st('Extra', 'P', extra)])
+        op, problems = self._op(['Off', 'Middle', 'On'], preset)
+        self.assertEqual(problems, [])
+        self.assertEqual(op['state_order'], [0, 2, 1])
+        self.assertEqual(op['fields'][PRESS], 2)
+        self.assertEqual(op['expect_states'][2]['fill'], '#FF3D8BFD')
+
+    def test_a_new_name_renames_the_state_in_its_place(self):
+        op, _ = self._op(['Off', {'name': 'Live', 'fill': '#2266EE'}])
+        self.assertEqual(op['state_order'], [0, 1])
+        self.assertEqual(op['fields'][PRESS], 1)
+
+    def test_states_can_be_reordered(self):
+        op, _ = self._op(['On', 'Off'])
+        self.assertEqual(op['state_order'], [1, 0])
+        self.assertEqual(op['fields'][PRESS], 0)
+        self.assertEqual(op['expect_states'][0]['text'], 'Display On')
+
+    def test_a_dropped_press_state_goes_to_on(self):
+        """A camera preset pressed to On_1; trimmed to Off/On it presses On."""
+        preset = _button('Display', [_st('Off', '1', GREY), _st('On', '1', BLUE),
+                                     _st('On_1', '1', NAVY)], press=2)
+        op, _ = self._op(['Off', 'On'], preset)
+        self.assertEqual(op['state_order'], [0, 1])
+        self.assertEqual(op['fields'][PRESS], 1)
+
+    def test_a_new_state_that_copies_the_last_unchanged_is_an_error(self):
+        _, problems = self._op(['Off', 'On', 'Standby'])
+        self.assertTrue(any("'On' and 'Standby' would look identical" in p
+                            for p in problems), problems)
+
+    def test_existing_states_are_not_compared(self):
+        """Two existing states can differ in things this cannot see - an icon,
+        a border - so only a copy is compared with what it was copied from."""
+        same = _button('Display', [_st('Off', 'x', GREY), _st('On', 'x', GREY)])
+        _, problems = self._op(['Off', 'On'], same)
+        self.assertEqual(problems, [])
+
+    def test_only_a_button_has_states(self):
+        label = dict(DISPLAY, type='PBLabel')
+        _, problems = self._op(['Off', 'On'], label)
+        self.assertTrue(any('only a button' in p for p in problems), problems)
+
+    def test_flagged_states_are_not_resized(self):
+        _, problems = self._op(self.FOUR, dict(DISPLAY, state_flags=1))
+        self.assertTrue(any('status flags' in p for p in problems), problems)
+
+    def test_bad_states_are_refused_before_any_control(self):
+        for states, needle in ((['Off', 'Off'], 'used twice'),
+                               ([{'name': 'Off', 'border': 'x'}], 'unknown key'),
+                               ([{'name': 'Off', 'fill': 'blue'}], 'not #RRGGBB'),
+                               ([{'name': 'Off', 'text': None}], 'is null'),
+                               ([{'fill': '#000000'}], 'has no name'),
+                               ([], 'at least one')):
+            _, problems = self._op(states)
+            self.assertTrue(any(needle in p for p in problems), (states, problems))
+        _, problems = self._op(['Off', 'On'], press='Standby')
+        self.assertTrue(any('press' in p for p in problems), problems)
+
+    def test_another_op_on_the_same_buttons_states_is_an_error(self):
+        """Each op is planned against the file on disk, so a rename before a
+        `states` op would make its expected captions wrong."""
+        _, errors, _ = _synthetic([
+            {'op': 'rename', 'map': {'Display On': 'Screen On'}},
+            {'op': 'states', 'select': {'name': 'Display'}, 'states': self.FOUR}],
+            DISPLAY).check()
+        self.assertTrue(any('rename and states both change' in e for e in errors), errors)
+        _, errors, _ = _synthetic([
+            {'op': 'rename', 'map': {'Display On': 'Screen On'}},
+            {'op': 'restyle', 'map': {'#3D8BFD': '#2266EE'}}], DISPLAY).check()
+        self.assertEqual(errors, [])
+
+    def test_on_the_fixture(self):
+        """Grow a real two-state button to three; the new state starts as On."""
+        plan, problems = _edits([{'op': 'states', 'select': {'text': 'Table Input 1'},
+                                  'states': ['Off', 'On', {'name': 'Fault',
+                                                           'fill': '#8B1E1E'}]}]).plan()
+        self.assertEqual(problems, [])
+        (op,) = plan['controls']
+        self.assertEqual(op['was'], ['Off', 'On'])
+        self.assertEqual(op['expect_states'][1]['fill'], '#FF242634')
+        self.assertEqual(op['expect_states'][2]['fill'], '#FF8B1E1E')
+        self.assertEqual(op['expect_states'][2]['text'], 'Table Input 1')
 
 
 if __name__ == '__main__':

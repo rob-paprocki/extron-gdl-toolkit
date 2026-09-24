@@ -5,14 +5,15 @@ the impressive demo; changing one that already exists is the job. A client says
 "rename those three buttons, and we're moving to the bigger panel" and the
 question is whether that can be done reliably rather than by hand.
 
-It can. Three of the four operations are verified end to end against GUI
+It can. Four of the five operations are verified end to end against GUI
 Designer 1.28.0.7 on the real Liberty Bank project; `renumber` is planned and
 checked, but has not been through a build.
 
 | Op | What it does | Verified |
 |---|---|---|
-| `rename` | captions, wherever they actually live | 12 controls, built, 12/12 correct |
-| `restyle` | remap colors across a selection | 5 sliders, built, 5/5 correct |
+| `rename` | captions, state by state, wherever they actually live | 12 controls built: 9 plain captions correct on both states; 3 formatted ones are in the artwork (below) |
+| `restyle` | remap colors on each control and each state, text color included | 5 sliders built, 5/5 off the artwork; a fill held only on a state and a text color, built and correct |
+| `states` | give a button the states it should have: add, remove, rename or reorder them, and set each one's look | grown 2 to 3, trimmed 3 to 2, and a state inserted before On; built, every state and press state correct |
 | `renumber` | reassign addressable `userId`s in bands | planned + checked |
 | `retarget` | move to another panel model, optionally rescaling | **654/654 on the fixture; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved** |
 
@@ -46,10 +47,8 @@ three places and a control that uses one leaves the others empty:
 
 A selector that compared the control's `textField` matched **nothing** on a real
 project. `Project.caption_at()` returns both the caption and where it lives, and
-`gdl.edit` writes the new one back to the same place.
-
-`rename` and `restyle` treat a button's states as one - see `docs/ROADMAP.md`
-*Editing a multi-state button*.
+`gdl.edit` writes the new one back to the same place - state by state, since
+each state keeps its own.
 
 Formatted text is the awkward one. It carries its layout inline —
 `"\t\tDevice\r\n\t\tComms"` — and it is **flattened into the artwork**, so
@@ -63,6 +62,55 @@ The hand-placed tabs indent line one only. `check` warns whenever a formatted
 caption is replaced by something longer, and `verify_built` reports these as
 *not verifiable here* rather than passing or failing them — the only real check
 is looking at the asset PNG.
+
+## A button is its states
+
+A button draws from its states, not from itself. In the fixture, **288 of 442
+buttons have no fill of their own** and a fill on each state. Table Input 1 is
+transparent when Off and `#242634` when On, and the two need not share a
+caption either. So every edit reads and writes each state, addressed by index,
+which is also the number the control program sets.
+
+- **`rename` with `map`** changes whatever says the old caption, and nothing
+  else. `{"Display On": "Screen On"}` leaves `Display Off` alone.
+- **`rename` with `text`** renames the whole control, so it is refused on a
+  button whose states say different things. One caption on every state would
+  erase the feedback wording. Add `"state": "On"` (or a list) to rename only
+  those states. A selector's `text` matches a caption in any state.
+- **`restyle`** remaps each state from its own colors: fill, stroke and text
+  color. An Off-to-new mapping never reaches an On state that was a different
+  color.
+- **`states`** sets a button's state list, in order:
+
+  ```json
+  { "op": "states", "select": { "text": "Table Input 1" },
+    "states": ["Off", "On", { "name": "Fault", "fill": "#8B1E1E", "text": "No Signal" }],
+    "press": "On" }
+  ```
+
+  States are matched **by name**. A name the button already has keeps that
+  state - its look, caption and press role - wherever it moves in the list.
+  Any other name renames the state at its position if nothing else claimed
+  it, and otherwise starts as a copy of the last state. Existing states nobody
+  names are dropped. Whatever a state sets is written over what it starts
+  from: `name`, `text`, `fill`, `stroke` and `color` (the text color).
+
+  The press state follows its state, unless `press` names another. Inserting
+  Recalling before On on a camera preset leaves it pressing On, now at index 2.
+  Matched by position instead, it pressed Recalling and every check passed,
+  because the plan itself was wrong. If the press state was dropped, it goes
+  to On: a preset pressing `On_1`, trimmed to Off/On, presses On.
+
+  `check` refuses a copy that would look exactly like the state it was copied
+  from: the program could set either, and the panel would show no difference. Every op is planned
+  against the file on disk, so `check` also refuses a `states` op on a button
+  that another op changes the states of. Put that caption or color in the
+  `states` op instead.
+
+`verify_built.py` checks each state an edit wrote: its name, caption and text
+color from the model, and its fill off that state's own artwork. After
+`states`, it also checks the count, the press state, every state's look, and
+that states meant to differ built as different images.
 
 ## Retargeting
 

@@ -272,7 +272,7 @@ class TestDonorAvailability(unittest.TestCase):
         within the same project." It is a build ERROR, and it cost a Windows
         round trip to find - the generated popups joined the donor's project,
         where those two names were already taken."""
-        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFF'},
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
                    'pages': [{'name': '1000 - Home', 'number': 1000,
                               'controls': [{'kind': 'label', 'rect': [0, 0, 8, 8]}]}]})
         alt = self._path('fixtures', 'gdl',
@@ -281,7 +281,7 @@ class TestDonorAvailability(unittest.TestCase):
         self.assertTrue(any('1000 - Home' in m and 'unique' in m for m in problems))
 
     def test_a_popup_name_the_donor_already_uses_is_reported(self):
-        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFF'},
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
                    'pages': [{'name': 'Fresh', 'number': 1000, 'controls': [
                        {'kind': 'popup_ref', 'rect': [0, 0, 100, 60], 'group': 'G'}]}],
                    'popups': [{'name': '160 - Confirmation', 'number': 2100,
@@ -295,7 +295,7 @@ class TestNameUniqueness(unittest.TestCase):
     """Names must be unique project-wide, across pages AND popups together."""
 
     def _panel(self, page, popup):
-        return Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFF'},
+        return Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
                       'pages': [{'name': page, 'number': 1000, 'controls': [
                           {'kind': 'popup_ref', 'rect': [0, 0, 100, 60], 'group': 'G'}]}],
                       'popups': [{'name': popup, 'number': 2100, 'group': 'G',
@@ -309,7 +309,7 @@ class TestNameUniqueness(unittest.TestCase):
         self.assertTrue(any('unique' in m for m in problems), problems)
 
     def test_two_popups_may_not_share_a_name(self):
-        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFF'},
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
                    'pages': [{'name': 'Home', 'number': 1000, 'controls': [
                        {'kind': 'popup_ref', 'rect': [0, 0, 100, 60], 'group': 'G'}]}],
                    'popups': [{'name': 'Dup', 'number': 2100, 'group': 'G',
@@ -409,7 +409,7 @@ class TestExtronRules(unittest.TestCase):
         panel this project is actually for."""
         big = {'kind': 'button', 'rect': [0, 0, 60, 60], 'text': 'ok'}
         self.assertTrue(any('touch target' in m for m in _spec([big]).check()))
-        named = Panel({'name': 'T', 'model': 'TLP1035T', 'theme': {'text': '#FFF'},
+        named = Panel({'name': 'T', 'model': 'TLP1035T', 'theme': {'text': '#FFFFFF'},
                        'pages': [{'name': 'P', 'number': 1000, 'controls': [big]}]})
         self.assertFalse(any('touch target' in m for m in named.check()))
 
@@ -765,6 +765,52 @@ class TestModalPopups(unittest.TestCase):
         p = self._p({'name': 'Confirm', 'modal': True,
                      'controls': [_label(rect=[1275, 0, 10, 10])]})
         self.assertTrue(any('does not fit' in m for m in p.check()), p.check())
+
+
+class TestPalette(unittest.TestCase):
+    """p.49's six colors are counted off what the panel draws. Counting only
+    the colors a spec names let examples/huddle-functions.json pass at six
+    while its white captions made seven."""
+
+    BG = {'background': '#000000'}
+    WHITE = (('A', 255), ('B', 255), ('G', 255), ('R', 255))
+
+    def _pal(self, controls, popups=()):
+        return _project([dict({'name': 'P', 'controls': controls}, **self.BG)],
+                        [dict(pu, **self.BG) for pu in popups]).palette()
+
+    def test_a_caption_with_no_color_counts_the_theme_text_color(self):
+        self.assertIn(self.WHITE, self._pal([_label(text='Hi')]))
+
+    def test_a_control_with_nothing_to_say_does_not(self):
+        self.assertNotIn(self.WHITE, self._pal([_label()]))
+
+    def test_a_named_color_replaces_the_default(self):
+        self.assertNotIn(self.WHITE, self._pal([_label(text='Hi', color='#FF0000')]))
+
+    def test_a_clock_always_draws_text(self):
+        self.assertIn(self.WHITE, self._pal([{'kind': 'datetime', 'rect': [0, 0, 10, 10]}]))
+
+    def test_a_state_caption_counts_unless_the_state_names_a_color(self):
+        btn = {'kind': 'button', 'rect': [0, 0, 80, 80], 'color': '#FF0000',
+               'states': ['Off', {'name': 'On', 'fill': '#00FF00'}]}
+        self.assertNotIn(self.WHITE, self._pal([btn]))
+        del btn['color']
+        btn['states'] = [{'name': 'Off', 'color': '#FF0000', 'text': 'x'},
+                         {'name': 'On', 'fill': '#00FF00', 'text': 'y'}]
+        self.assertIn(self.WHITE, self._pal([btn]))
+
+    def test_popups_count(self):
+        pal = self._pal([], popups=[{'name': 'Pop', 'controls': [
+            _label(text='x', color='#123456')]}])
+        self.assertIn((('A', 255), ('B', 0x56), ('G', 0x34), ('R', 0x12)), pal)
+
+    def test_seven_drawn_colors_are_reported(self):
+        controls = [_label(text='x', fill=f) for f in
+                    ('#111111', '#222222', '#333333', '#444444', '#555555')]
+        p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
+        self.assertEqual(len(p.palette()), 7)
+        self.assertTrue(any('7 distinct colors' in m for m in p.check()), p.check())
 
 
 if __name__ == '__main__':

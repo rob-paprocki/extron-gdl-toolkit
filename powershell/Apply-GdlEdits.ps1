@@ -54,41 +54,49 @@ function Get-GdlControlById {
     return $null
 }
 
-function Set-GdlStates {
-    <#  Apply a change to every state of a control.
+function Set-GdlStateOps {
+    <#  Apply `per_state`: each entry names one state by index.
+
+        By index because that is what the control program sets, and because
+        the states of one button need not match: a rename that wrote every
+        state erased 'Display On' along with 'Display Off', and a restyle that
+        wrote every state painted On the Off color.
 
         Via Get-GdlStates, which reads `mItems`. `$states.Count` on a PBStates
         reads 1 whatever the count - PBStates has no Count, and PowerShell
-        answers 1 for it - so this loop used to rename state 0 and stop, leaving
-        state 1 showing the old caption on every button the control system
-        switches. #>
-    param($Proj, $Control, $Fields, $Colors, $FText)
+        answers 1 for it. #>
+    param($Proj, $Control, $StateOps, $Why)
     $states = Get-GdlStates $Control
-    if (-not $states.Count) { return 0 }
     $n = 0
-    for ($i = 0; $i -lt $states.Count; $i++) {
+    foreach ($so in @($StateOps)) {
+        if ($null -eq $so) { continue }
+        $i = [int]$so.index
+        # A negative index would wrap to the end of the list in PowerShell.
+        if ($null -eq $states -or $i -lt 0 -or $i -ge $states.Count -or $null -eq $states[$i]) {
+            Note-Problem "'$Why': the control has no state $i"
+            continue
+        }
         $st = $states[$i]
-        if ($null -eq $st) { continue }
-        $n++
-        if ($Fields) {
-            foreach ($f in $Fields.PSObject.Properties) {
+        if ($so.fields) {
+            foreach ($f in $so.fields.PSObject.Properties) {
                 Set-GdlFieldIfPresent $st $f.Name $f.Value | Out-Null
             }
         }
-        if ($null -ne $FText) {
+        if ($null -ne $so.ftext) {
             # Formatted text keeps the original's leading layout markers - the
             # tabs and CRLFs are how it draws, not decoration - so splice the
             # new wording into the old scaffolding rather than replacing it.
             $old = [string](Get-GdlField $st 'ftextField')
             $lead = ''
             if ($old -match '^([\t\r\n ]*)') { $lead = $Matches[1] }
-            Set-GdlFieldIfPresent $st 'ftextField' ($lead + $FText) | Out-Null
+            Set-GdlFieldIfPresent $st 'ftextField' ($lead + $so.ftext) | Out-Null
         }
-        if ($Colors) {
-            foreach ($f in $Colors.PSObject.Properties) {
+        if ($so.colors) {
+            foreach ($f in $so.colors.PSObject.Properties) {
                 Set-GdlColor $Proj $st $f.Name (ConvertTo-Argb $f.Value)
             }
         }
+        $n++
     }
     return $n
 }
@@ -217,7 +225,19 @@ foreach ($op in $spec.controls) {
     }
     if ($WhatIf) { $applied++; continue }
 
+    # A plan from before per-state edits wrote every state alike. Refuse it
+    # rather than guess which state each write was meant for.
+    if ($op.states -or $op.states_colors -or $null -ne $op.states_ftext) {
+        Note-Problem "'$($op.why)': this plan writes every state alike (states, states_colors, states_ftext); re-plan it with gdl.edit, which writes each state by index"
+        continue
+    }
     try {
+        if ($null -ne $op.state_order) {
+            # The `states` op: rebuild the list from the button's own states,
+            # each new one taken from the existing state gdl.edit matched it
+            # to by name.
+            if (-not (Set-GdlStateOrder $c $op.state_order)) { continue }
+        }
         if ($op.fields) {
             foreach ($f in $op.fields.PSObject.Properties) {
                 Set-GdlFieldIfPresent $c $f.Name $f.Value | Out-Null
@@ -228,8 +248,8 @@ foreach ($op in $spec.controls) {
                 Set-GdlColor $proj $c $f.Name (ConvertTo-Argb $f.Value)
             }
         }
-        if ($op.states -or $op.states_colors -or $null -ne $op.states_ftext) {
-            Set-GdlStates $proj $c $op.states $op.states_colors $op.states_ftext | Out-Null
+        if ($op.per_state) {
+            Set-GdlStateOps $proj $c $op.per_state $op.why | Out-Null
         }
         $applied++
     } catch {

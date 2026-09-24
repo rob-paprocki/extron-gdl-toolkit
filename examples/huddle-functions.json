@@ -13,7 +13,6 @@
     "raised": "#2E3142",
     "danger": "#C0392B",
     "text": "#FFFFFF",
-    "muted": "#BABCCE",
     "accent": "#3D8BFD",
     "font": "Open Sans",
     "size": 18,
@@ -33,21 +32,20 @@
           "text": "Huddle Room", "align": "left", "size": 40 },
         { "kind": "label", "name": "CallState", "rect": [560, 0, 440, 112],
           "text": "No call in progress", "align": "right", "size": 20,
-          "color": "muted", "does": "Shows the codec's call status." },
+          "does": "Shows the codec's call status." },
         { "kind": "button", "name": "HelpBtn", "rect": [1040, 24, 200, 64],
           "text": "Help", "fill": "raised", "border": "afterburn",
           "nav": "Huddle Help" },
 
         { "kind": "label", "name": "PickSource", "rect": [40, 148, 700, 36],
-          "text": "Share something", "align": "left", "size": 16,
-          "color": "muted" },
+          "text": "Share something", "align": "left", "size": 16 },
 
         { "grid": {
             "rect": [40, 196, 1200, 272],
             "cols": 3, "gap": 24,
             "kind": "button", "fill": "raised", "border": "afterburn",
             "states": [
-              { "name": "No Signal", "fill": "surface", "color": "muted" },
+              { "name": "No Signal", "fill": "surface" },
               "Ready",
               { "name": "Live", "fill": "accent" }
             ],
@@ -66,7 +64,7 @@
         { "kind": "panel", "name": "VolumeWell", "rect": [40, 500, 760, 220],
           "fill": "surface", "border": "afterburn-flat" },
         { "kind": "label", "name": "VolumeLabel", "rect": [72, 500, 300, 60],
-          "text": "Volume", "align": "left", "size": 20, "color": "muted" },
+          "text": "Volume", "align": "left", "size": 20 },
         { "kind": "slider", "name": "VolumeSlider", "rect": [72, 564, 696, 60],
           "orientation": "right", "fill": "raised",
           "does": "Sets program volume, 0-100; follows the DSP's level." },
@@ -92,15 +90,15 @@
         { "kind": "panel", "name": "StatusStrip", "rect": [0, 736, 1280, 64],
           "fill": "surface", "border": "rect" },
         { "kind": "label", "name": "Status", "rect": [40, 736, 800, 64],
-          "text": "Ready", "align": "left", "size": 16, "color": "muted",
+          "text": "Ready", "align": "left", "size": 16,
           "does": "Shows room status messages." },
         { "kind": "button", "name": "Display", "rect": [860, 740, 180, 56],
           "text": "Display Off", "fill": "raised", "border": "afterburn", "size": 16,
           "states": [
             "Off",
-            { "name": "Warming", "fill": "surface", "color": "muted", "text": "Warming Up" },
+            { "name": "Warming", "fill": "surface", "text": "Warming Up" },
             { "name": "On", "fill": "accent", "text": "Display On" },
-            { "name": "Cooling", "fill": "surface", "color": "muted", "text": "Cooling Down" }
+            { "name": "Cooling", "fill": "surface", "text": "Cooling Down" }
           ],
           "press": "On",
           "does": "Toggles display power. Shows the display's power state: Off, Warming, On or Cooling." },

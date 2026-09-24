@@ -99,7 +99,8 @@ the same as "the panel looks right" (see the `flattenText` trap below).
    popup that cannot appear where it is shown, a page nothing reaches.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
-   ≤9 buttons per group, ≤6 colors, ≥14pt body text).
+   ≤9 buttons per group, ≤6 colors drawn - a caption's default color and the
+   popups' colors included - and ≥14pt body text).
 5. **Preview it**: `python -m gdl.spec render <spec.json> out/preview.png`, then
    **look at the image**. The compositor is scored against GUI Designer's own
    output, so this is a real preview, not a sketch. Iterate here — it is fast
@@ -159,10 +160,11 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 There is a vocabulary for this - write the change as JSON, resolve it against
 the real project, then apply:
 
-1. **Describe the change** - see `examples/edits.json`. Four ops:
-   `rename` (captions), `retarget` (another panel model, optionally rescaling),
-   `renumber` (addressable `userId`s), `restyle` (color remap). Selectors are
-   ANDed and support exact or regex match on name and caption.
+1. **Describe the change** - see `examples/edits.json`. Five ops:
+   `rename` (captions), `restyle` (color remap), `states` (add, remove or
+   rename a button's states), `retarget` (another panel model, optionally
+   rescaling), `renumber` (addressable `userId`s). Selectors are ANDed and
+   support exact or regex match on name and caption.
 2. **Check it**: `python -m gdl.edit check <edits.json> <panel.gdl>`. Every
    selector resolves against the real file, so "matched nothing" is an error
    here rather than a silent no-op at apply time. Errors block; warnings do not.
@@ -172,7 +174,7 @@ the real project, then apply:
 5. **Build, then verify**: `python tests/verify_built.py out/edits-plan.json
    <built.gdl>`.
 
-Two things about renaming that are not obvious:
+Three things about renaming and restyling that are not obvious:
 
 - A caption usually is **not** in the control's `textField`. It is on the first
   state, or it is *formatted* text (`ftextField`) with hand-placed tabs and line
@@ -180,6 +182,12 @@ Two things about renaming that are not obvious:
 - A **formatted** caption is baked into the artwork. Making one longer wraps it
   onto an unindented second line over the icon - `check` warns, and the only
   real verification is looking at the rasterized asset.
+- **A button is its states**, and they need not match: most keep their fill
+  only on their states, and Off and On may say different things. `rename` and
+  `restyle` write each state by index. A `rename` with one `text` is refused
+  on a button whose states say different things unless `state` names which to
+  rename; `map` renames only the states that say the old caption.
+  `docs/editing.md` *A button is its states*.
 
 Reading and rendering need nothing but Python and Pillow:
 
@@ -216,8 +224,8 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 - **Buttons render from their states.** Set text and color on every state, and
   reach them with `Get-GdlStates` — `$states.Count` reads 1 whatever the count,
   because `PBStates` has no `Count` and PowerShell answers 1 for it, so a loop
-  to `.Count` writes state 0 only. Resize with `Set-GdlStateCount`, never by
-  constructing a `PBState`.
+  to `.Count` writes state 0 only. Resize with `Set-GdlStateCount`, or reorder
+  with `Set-GdlStateOrder`, never by constructing a `PBState`.
 - **Wrap an `if` in `@()`, not the other way round.** `$x = if (...) { @($a) }`
   unrolls a one-element array into a bare object, and a `PSCustomObject`'s
   `.Count` is `$null` on 5.1 - which silently skipped resizing a one-state

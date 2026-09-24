@@ -23,7 +23,7 @@ together.
 | `gdl/` | Python: container, render model, font recovery, reference compositor |
 | `gdl/nrbf.py`, `gdl/project.py` | pure-Python reader for the authoring model, no GUI Designer needed |
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
-| `gdl/edit.py` | change vocabulary for an existing panel: rename, retarget, renumber, restyle |
+| `gdl/edit.py` | change vocabulary for an existing panel: rename, restyle, states, retarget, renumber |
 | `gdl/idmap.py` | the ID map a programmer works from: every addressable control, where it is, what it does |
 | `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
 | `powershell/GdlProject.ps1` | authoring bridge: load, clone, edit, save a real project graph |
@@ -117,9 +117,10 @@ against.
 ## Changing a panel that already exists
 
 Write the change as JSON, resolve it against the real project, then apply it.
-Four operations: `rename` captions, `retarget` to another panel model with
-optional rescaling, `renumber` addressable IDs, and `restyle` a color remap.
-Selectors are ANDed and match exactly or by regex.
+Five operations: `rename` captions and `restyle` colors, both state by state;
+`states` to add, remove or rename a button's states; `retarget` to another
+panel model with optional rescaling; and `renumber` addressable IDs. Selectors
+are ANDed and match exactly or by regex. `docs/editing.md` has the detail.
 
 ```bash
 python -m gdl.edit check examples/edits.json "fixtures/gdl/<file>.gdl"
