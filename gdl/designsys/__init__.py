@@ -69,8 +69,9 @@ def tokens(p):
     radii = []
     for key, b in p['borders'].items():
         value = '50%' if b['radius'] < 0 else ('9999px' if b['radius'] >= 9999 else f"{b['radius']}px")
+        named = f" ({b['resource']})" if b['resource'] else ''
         radii.append({'name': f'radius-{key}', 'value': value,
-                      'usage': f"Border `{key}` ({b['resource']}). {b['usage']}"})
+                      'usage': f"Border `{key}`{named}. {b['usage']}"})
     return {
         'name': p['title'], 'version': 1,
         'color': {'themes': [{'id': t['id'], 'name': t['name']} for t in themes(p)],
