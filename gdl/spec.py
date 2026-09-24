@@ -296,6 +296,11 @@ IMAGE_LAYOUT, IMAGE_ALIGN = 0, 3
 # buttons in the seeds and fixtures, the last state on Extron's own 4-state
 # volume mute.
 PRESS_FIELD = '<TLPPressFeedbackStateID>k__BackingField'
+# Whether the panel shows a button's press state, its state feedback and its
+# state captions at all. False on all 7943 buttons in the seeds and fixtures.
+PRESS_FEEDBACK = {'<HidePressFeedback>k__BackingField': False,
+                  '<HideVisualFeedback>k__BackingField': False,
+                  '<HideTextFeedback>k__BackingField': False}
 DEFAULT_FIELD = '<TLPDefaultStateID>k__BackingField'
 
 # Orientation, as gdl/compose.py decodes it when clipping a level's value fill.
@@ -326,6 +331,12 @@ def _type_fields(kind, c):
         out['startPointField'] = LINE_POS.get(c.get('from', 'MiddleLeft'), 6)
         out['endPointField'] = LINE_POS.get(c.get('to', 'MiddleRight'), 2)
         out['thicknessField'] = c.get('thickness', 2)
+    if kind == 'button':
+        # Written, not inherited: a clone keeps its donor's, and a donor button
+        # with either set would build a panel whose buttons never show their
+        # press state - every button in the seeds and fixtures has both off,
+        # but a client's project need not.
+        out.update(PRESS_FEEDBACK)
     if kind == 'datetime':
         pattern = clock_pattern(c.get('format'))
         out['patternField'] = pattern

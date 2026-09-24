@@ -277,7 +277,11 @@ A generator should assert all four agree rather than trusting the writes.
   inherits its donor's, which may name a state the clone no longer has, so the
   applier sets it. Each `PBState` also carries its own
   `<TLPPressFeedbackStateID>`, which is `-1` on 7320 of 7392 states and is not
-  the one that matters.
+  the one that matters. Whether the panel shows it at all is the button's
+  `<HidePressFeedback>` (and `<HideVisualFeedback>`, `<HideTextFeedback>` for
+  its state looks and captions), exported under those names: `False` on all
+  7943 buttons in the seeds and fixtures, but a clone keeps its donor's, so
+  the spec writes all three.
 - A clean build proves the file is **acceptable**, not that it is **correct**.
   Two separate traps (`flattenText`, and the relocation above) produce a file
   that opens, builds and is wrong. Finish with `tests/verify_built.py`, which

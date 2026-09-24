@@ -838,6 +838,13 @@ class TestButtonImages(unittest.TestCase):
         self.assertEqual([s['border'] for s in op['states']], ['', ''])
         self.assertEqual((op['image_layout'], op['image_align']), (0, 3))
 
+    def test_press_feedback_is_written_on(self):
+        """A clone keeps its donor's flags, and a donor with them set would
+        build buttons that never show their press state."""
+        f = self._spec().plan()['pages'][0]['controls'][0]['fields']
+        for key in ('HidePressFeedback', 'HideVisualFeedback', 'HideTextFeedback'):
+            self.assertIs(f[f'<{key}>k__BackingField'], False, key)
+
     def test_a_state_with_no_fill_is_written_transparent(self):
         """Skipped, it kept the donor state's fill: the Afterburn seed's On is
         #37394E, and a kit image button's Ready built on a raised slab."""

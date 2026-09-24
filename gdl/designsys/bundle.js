@@ -236,7 +236,11 @@
       delete s.look; delete s.icon;
       return s;
     });
-    var shown = find(states, props.show) || states[0] || {};
+    // Held, the panel shows the press state (TLPPressFeedbackStateID): `press`,
+    // else the second state - the spec's own default - so Play shows it too.
+    var held = React.useState(false);
+    var pressState = find(states, props.press) || states[1] || states[0] || {};
+    var shown = held[0] ? pressState : (find(states, props.show) || states[0] || {});
     var now = Object.assign({}, look, shown);
     var f = font(props, P.defaults.button.type);
     var b = P.borders[now.border];
@@ -268,6 +272,8 @@
       })
     };
     if (props.nav) attrs.href = navHref(props.nav); else attrs.type = 'button';
+    attrs.onPointerDown = function () { held[1](true); };
+    attrs.onPointerUp = attrs.onPointerLeave = attrs.onPointerCancel = function () { held[1](false); };
     var label = shown.text != null ? shown.text : text;
     if (missing.length && !label) label = '[' + missing[0] + ']';
     return h(props.nav ? 'a' : 'button', attrs, label);

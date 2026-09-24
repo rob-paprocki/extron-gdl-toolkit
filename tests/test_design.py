@@ -245,6 +245,46 @@ class TestInChrome(unittest.TestCase):
         self.assertEqual(home['Date']['align'], 'left')
         self.assertEqual(Panel(spec).check(), [])
 
+    def test_a_held_button_draws_its_press_state(self):
+        """The panel shows a button's press state while it is held, so the
+        canvas does: Help shows the kit's selected icon on its round fill."""
+        import re
+        import subprocess
+        probe = """<script>
+setTimeout(async function () {
+  var art = window.ExtronAfterburn.profile.kit.art, byUri = {};
+  Object.keys(art).forEach(function (f) { byUri[art[f]] = f; });
+  function look(el) { var m = (el.style.background || '').match(/url\\("([^"]+)"\\)/);
+                      return m ? byUri[m[1]] : 'none'; }
+  function tick() { return new Promise(function (r) { setTimeout(r, 60); }); }
+  var el = Array.prototype.find.call(document.querySelectorAll('.xgdl-button'), function (e) {
+    return JSON.parse(e.getAttribute('data-gdl')).name === 'HelpBtn'; });
+  var out = [look(el)];
+  el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await tick();
+  out.push(look(el));
+  el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); await tick();
+  out.push(look(el));
+  var pre = document.createElement('pre'); pre.id = 'out'; pre.textContent = out.join(' ');
+  document.body.appendChild(pre);
+}, 2500);
+</script>"""
+        if not designsys.kit_root(designsys.load('afterburn')):
+            self.skipTest("Extron's Afterburn kit is not installed here")
+        path = os.path.join(self.dir, 'Home.dc.html')
+        with open(path, encoding='utf-8') as fh:
+            src = fh.read()
+        with open(path, 'w', encoding='utf-8') as fh:
+            fh.write(src.replace('</body>', probe + '</body>'))
+        r = subprocess.run([design.find_chrome(), '--headless=new', '--disable-gpu',
+                            '--allow-file-access-from-files', '--virtual-time-budget=8000',
+                            '--dump-dom', 'file:///' + path.replace(os.sep, '/')],
+                           capture_output=True, text=True, encoding='utf-8', timeout=120)
+        m = re.search(r'<pre id="out">(.*?)</pre>', r.stdout, re.S)
+        self.assertIsNotNone(m, r.stderr[-500:])
+        self.assertEqual(m.group(1).split(), ['440x440_help_nsel.png',
+                                              '440x440_help-med-blue_sel.png',
+                                              '440x440_help_nsel.png'])
+
     def test_a_stray_painted_element_is_refused(self):
         path = os.path.join(self.dir, 'Help.dc.html')
         with open(path, encoding='utf-8') as fh:

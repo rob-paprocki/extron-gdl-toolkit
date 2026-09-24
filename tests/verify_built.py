@@ -888,6 +888,14 @@ def check_placed(plan, pages, popups):
                 if want_text is not None and _caption(c) != want_text:
                     problems.append(f"{kind} {item['name']!r} {name!r}: caption "
                                     f'{_caption(c)!r}, planned {want_text!r}')
+                # A hidden press or state feedback builds a button that
+                # never shows what the plan drew for it, and a clone brings
+                # its donor's flags.
+                for key in ('HidePressFeedback', 'HideVisualFeedback', 'HideTextFeedback'):
+                    want_flag = f.get(f'<{key}>k__BackingField')
+                    if want_flag is not None and c.get(key) != want_flag:
+                        problems.append(f"{kind} {item['name']!r} {name!r}: {key} is "
+                                        f"{c.get(key)}, planned {want_flag}")
                 # A clock's caption is only a sample; what it shows on the
                 # panel is its pattern.
                 want_pattern = f.get('patternField')

@@ -113,7 +113,7 @@ pixels. On the canvas they are `<x-import component-from-global-scope=
 |---|---|---|
 | Page | a page or popup | `name`, `kind` (`page`, `popup`, `modal`), `group`, `start`, `reached-by`, the `theme` (background and accent) or an accent `scheme` alone |
 | MainArea | nothing of its own | a frame: its children are placed inside the template's main area |
-| Button | `button` | caption, `variant`, `icon`, `states` (names, each with its own look, caption and kit image), `press`, `nav`, `does`, `id` |
+| Button | `button` | caption, `variant`, `icon`, `states` (names, each with its own look, caption and kit image), `press` - the state the panel shows while it is held, which the canvas draws while it is held too - `nav`, `does`, `id` |
 | Label | `label` | text, `type` or `size`, `color`, `align`, `does` |
 | Panel | `panel` | `fill`, `stroke`, `border` |
 | Line | `line` | orientation, `color`, `thickness` |

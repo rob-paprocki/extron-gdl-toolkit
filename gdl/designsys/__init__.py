@@ -426,7 +426,7 @@ Props:
 - `icon`: an icon from {t}'s resource kit, by name, for the image variants - `source`, `list`, `icon`, `toggle` (default `toggle-1`) - or on an `outlined` button, where it sits left of the caption. The kit draws each icon unselected and selected in every accent, with the selection line where the variant has one, so the button's states show themselves: state 0 unselected, the rest selected in the page's accent. The names, by variant:
 {_icons_md(p)}
 - `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own icon: a mute button is `speaker-volume_3` when live and `speaker-mute-1` when muted). Off and On start from the variant's look. Every state must look different. {p['examples']['states_note']}
-- `press`: the state shown while the button is held. Default: On, else the second state.
+- `press`: the state shown while the button is held. Default: On, else the second state. The canvas draws it while you hold the button in Play, as the panel does - every button has one, so give it a look that reads as pressed.
 - `nav`: the artboard this button shows, by its file name without `.dc.html` - `nav="Help"` shows `Help.dc.html`. The button becomes that link, so Play follows it.
 - `does`: anything else it does, in a sentence for the programmer: "Routes the laptop to the display; Live while it is routed."
 - `show`: the state to draw on the canvas (default the first). Design only.

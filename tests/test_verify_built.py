@@ -106,6 +106,20 @@ class TestClockPattern(unittest.TestCase):
         self.assertEqual(self._check('MMMM d'), [])
 
 
+class TestPressFeedback(unittest.TestCase):
+    def test_a_button_built_with_its_press_feedback_hidden_is_reported(self):
+        vb = _vb(self)
+        plan = {'pages': [{'name': 'Home', 'controls': [{'fields': {
+            'nameField': 'Help', '<HidePressFeedback>k__BackingField': False,
+            '<HideVisualFeedback>k__BackingField': False}}]}]}
+        for hidden, bad in ((False, False), (True, True)):
+            pages = {'Home': {'ID': 51, 'Name': 'Home', 'Controls': [
+                {'ID': 1, 'Type': 7, 'Name': 'Help', 'Left': 0, 'Top': 0, 'Width': 1,
+                 'Height': 1, 'HidePressFeedback': hidden, 'HideVisualFeedback': False}]}}
+            problems = vb.check_placed(plan, pages, {})[0]
+            self.assertEqual(any('HidePressFeedback' in p for p in problems), bad, problems)
+
+
 class TestEditIds(unittest.TestCase):
     """A renumber is verified by comparing the built control's ID - which the
     verifier looked up as 'UserID', a key layout.json never writes, so the
