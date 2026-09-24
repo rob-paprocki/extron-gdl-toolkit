@@ -236,7 +236,10 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   family the donor lacks is reported and the panel ships in the donor's face;
   `gdl.spec donors` warns first and `verify_built.py` catches it after.
 - **Set `flattenTextField = false` on cloned buttons**, or Build bakes the
-  donor's caption into every button's artwork (`docs/from-scratch.md` §5b).
+  donor's caption into every button's artwork (`docs/from-scratch.md` §5b). The
+  applier does. The one exception is a spec button with `"flatten": true`, used
+  only by `tests/type_probe.py`: Build bakes it from each state's `ftextField`,
+  which the applier then writes too (`docs/gdl-format.md` §2).
 - **Clear what a clone inherits:** `<TLPImageID>` on a cloned page,
   `buttonImageField` on a cloned button.
 - **Buttons render from their states.** Set text and color on every state, and

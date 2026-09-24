@@ -356,6 +356,16 @@ class TestBuildPlan(unittest.TestCase):
         self.assertEqual(accent[0]['fill'], 0xFF3D8BFD, 'the accent color must survive')
 
 
+class TestFlatten(unittest.TestCase):
+    def test_a_button_can_ask_for_its_caption_baked(self):
+        """Only the type probe does: a baked caption is Build's rasterization,
+        which is the one way to see how a platform draws a point."""
+        p = _spec([{'kind': 'button', 'rect': [0, 0, 100, 100], 'text': 'H', 'flatten': True},
+                   {'kind': 'button', 'rect': [0, 200, 100, 100], 'text': 'H'}])
+        ops = [o for o in p.plan()['pages'][0]['controls'] if o['donor_type'] == 'PBButton']
+        self.assertEqual([o.get('flatten', False) for o in ops], [True, False])
+
+
 class TestExtronRules(unittest.TestCase):
     """Extron's own numeric standards. See docs/design-rules.md for provenance."""
 

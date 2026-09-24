@@ -110,10 +110,14 @@ a device preset and a DPI from the canvas; the table's 220 DPI is a default.
 - **Touch target ≥ 9 mm, gap ≥ 2 mm** - Extron's documented minimums
   (`docs/design-rules.md` §2), converted with the panel's DPI
   (`gdl.spec.touch_minimums`). Buttons of one segmented control may touch.
-- **Type stays in points**, with a per-panel floor: the documented 14 pt, and
-  if Phase 0 shows GUI Designer draws points at a fixed pixel size on every
-  panel, a physical floor on top for dense panels - labelled as ours, never as
-  Extron's.
+- **Type stays in points**, with a per-panel floor. Phase 0 measured that GUI
+  Designer draws a point at the same pixel size on every panel (1.375 px;
+  `docs/gdl-format.md` §2), so the documented 14 pt is 2.2 mm of cap height on
+  a 1035 and 1.1 mm on a 535. The floor is therefore ours on top of Extron's:
+  **14 pt scaled by the panel's DPI over 149, never below 14** - the 14 pt
+  minimum as it reads on the TLP Pro 1025/1035, the family the first design
+  system targets. That is 16 pt on a 725, 18 pt on an 835 or 525, and 28 pt on
+  a 535. Extron's own templates do not do this; they keep points fixed.
 - **Tokens state the design panel only.** The Design System format lets only
   colors vary (per theme); everything per-panel lives in a model table the
   bundle carries, built from `MODELS_FULL`, and reaches components through the

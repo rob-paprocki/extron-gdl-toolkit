@@ -59,6 +59,18 @@ build is not reachable headlessly; drive the UI instead
 The practical consequence: **an authoring tool never makes artwork.** It sets
 semantic properties (border, fill, icon, corner radius) and Build makes pixels.
 
+**A point is the same number of pixels on every panel.** `layout.json` exports
+only a font's `PointSize`, and live captions leave no pixels in the file, so
+`tests/type_probe.py` bakes them instead: a button with `flattenTextField` true
+has Build draw its caption into its artwork, from each state's **`ftextField`**
+(not `textField` - a clone carries the donor's, `'               Preset 1'` on
+the Afterburn seeds). "HHHH" at 14, 18, 24, 30 and 36 pt measured a cap height
+of 13, 17, 23, 29 and 34 px on the TLP Pro 1035T (149 DPI), 835M (188.68),
+1535M (127.7), 300M (164.83) and 1230WTG (166) alike - GUI Designer's own
+1.375 px per point, whatever the panel's DPI. So 14 pt captions are 2.2 mm tall
+on a 1035, 1.8 mm on an 835 and 1.1 mm on a 535. The limit: this is Build's
+rasterizer; the firmware draws live captions itself, and was not measured.
+
 ## 3. Reading and writing `ProjectGCP`
 
 Use **32-bit Windows PowerShell 5.1** —

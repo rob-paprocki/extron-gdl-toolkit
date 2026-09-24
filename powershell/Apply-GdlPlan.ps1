@@ -79,7 +79,8 @@ function Add-GdlControls {
         # clone inherits the donor's. Build then dedupes every generated button
         # to one asset carrying the donor's word. Captions must be drawn live
         # from layout.json, which is what the panel firmware does anyway.
-        Set-GdlFieldIfPresent $c 'flattenTextField' $false | Out-Null
+        # Only the type probe (tests/type_probe.py) asks for $true.
+        Set-GdlFieldIfPresent $c 'flattenTextField' ([bool]$op.flatten) | Out-Null
         Set-GdlFieldIfPresent $c 'buttonImageField' $null | Out-Null
         Set-GdlFieldIfPresent $c 'backgroundImageField' $null | Out-Null
         Set-GdlBorder $Project $c $op.border
@@ -147,6 +148,10 @@ function Add-GdlControls {
                         Set-GdlFieldIfPresent $st 'buttonImageAlignmentField' $op.image_align | Out-Null
                     }
                     Set-GdlFieldIfPresent $st 'textField' $text | Out-Null
+                    # A flattened caption is baked from the state's ftextField,
+                    # not its textField - and a clone keeps the donor's
+                    # ('               Preset 1' on the Afterburn seed).
+                    if ($op.flatten) { Set-GdlFieldIfPresent $st 'ftextField' $text | Out-Null }
                     Set-GdlFieldIfPresent $st 'textAlignmentField' $op.alignment | Out-Null
                     # A state names itself - 'Off' / 'On' is what 94.7% of the
                     # buttons in Extron's own templates use, and the name is how

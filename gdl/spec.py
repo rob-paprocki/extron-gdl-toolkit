@@ -244,10 +244,11 @@ TIER_B_INCHES = 4.0
 def diagonal(model):
     """A model's screen diagonal in inches, from pixels and DPI; None for a soft
     client or a model with no DPI."""
-    if model in SOFT_CLIENTS or not dpi(model):
+    d = dpi(model)
+    if model in SOFT_CLIENTS or not d:
         return None
     w, h = MODELS_FULL[model][:2]
-    return math.hypot(w, h) / dpi(model)
+    return math.hypot(w, h) / d
 
 
 def tier(model):
@@ -1234,6 +1235,11 @@ class Panel:
             op['fields']['textField'] = first['text']
             op['fields'][DEFAULT_FIELD] = 0
             op['fields'][PRESS_FIELD] = self._press(c, states)
+        if kind == 'button' and c.get('flatten'):
+            # Build bakes the caption into the artwork - GUI Designer's own
+            # rasterizer for this platform. Only tests/type_probe.py wants it;
+            # everywhere else a baked caption is the flattenText trap.
+            op['flatten'] = True
         return op
 
     def _popup_ops(self):
