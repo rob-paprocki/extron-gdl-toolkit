@@ -195,7 +195,19 @@ statement is in the live docs; this is the record that it changed.
   a number that never left the file. Hence the rule in `CLAUDE.md`: verify
   against the built result, not the plan.
 - **Both appliers wrote only state 0 until 2026-09-10**, because they looped to
-  `PBStates.Count`, which reports 1 for an Off/On button.
+  `PBStates.Count`, which reports 1 for an Off/On button. The reason given then
+  - that it is a "logical count" - was wrong. `PBStates` has no `Count`;
+  PowerShell 5.1 answers 1 for any object without one, so it reads 1 for every
+  button whatever its state count (disassembled 2026-09-23).
+- **Press feedback was written up as "barely used"** from the -1 on 7320 of
+  7392 *per-state* `<TLPPressFeedbackStateID>` fields. The one that matters is
+  the button's own, which is a real state on every button in the corpus - On
+  for an Off/On button. Corrected 2026-09-23.
+- **A cloned button was thought unable to gain a state** without constructing a
+  `PBState`, so a spec could ask for no more states than its donor button had.
+  `mItems` is an ordinary `List<PBState>`; appending a clone of the last state
+  builds, proven on GUI Designer 1.28.0.7 on 2026-09-23 (`docs/gdl-format.md`
+  §7).
 - **Re-serializing a project was once thought byte-identical**, and the
   difference then put down to "lazily-built state". Measured on 2026-09-07, it
   is every `TLPImageID` reset to -1 (`docs/gdl-format.md` §3).

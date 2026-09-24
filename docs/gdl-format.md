@@ -233,28 +233,51 @@ A generator should assert all four agree rather than trusting the writes.
 - `statesField` is a `PBStates` **wrapper**, not the list. The `List<PBState>`
   hangs off its `mItems`. Reading `statesField` as a list yields nothing and
   looks like a control with no states.
-- **`PBStates.Count` is not the number of states.** It is a logical count and
-  reports **1** for an ordinary two-state Off/On button. The indexer is fine —
-  `$sts[0]` and `$sts[1]` both return a `PBState` — so `for ($i = 0; $i -lt
-  $states.Count; $i++)` visits state 0 and stops, and every "write to every
-  state" loop in both appliers did exactly that. Use `mItems`, via
-  `Get-GdlStates`. This one is invisible from the outside: `TLPDefaultStateID`
-  is 0, so a button whose state 1 was never written renders correctly, verifies
-  correctly, and only misbehaves once a control system switches it On.
+- **`$states.Count` is not the number of states.** `PBStates` has no `Count`
+  member at all (its only count-like members are `InternalStateCount` and
+  `ExternalStateCount`, both the list's real count). PowerShell 5.1 answers
+  **1** for `.Count` on any object that lacks one, so it reads 1 for a
+  one-, two- or four-state button alike. The indexer is fine — `$sts[0]` and
+  `$sts[1]` both return a `PBState` — so `for ($i = 0; $i -lt $states.Count;
+  $i++)` visits state 0 and stops, and every "write to every state" loop in
+  both appliers did exactly that. Use `mItems`, via `Get-GdlStates`. This one
+  is invisible from the outside: `TLPDefaultStateID` is 0, so a button whose
+  state 1 was never written renders correctly, verifies correctly, and only
+  misbehaves once a control system switches it On.
 - **A button renders from its state, and its states are what make it useful.**
   `nameField` on a `PBState` gives the state its name, and `('Off', 'On')`
   covers **3475 of 3668** buttons (94.7%) across Extron's six theme templates
   plus the Liberty Bank project. 60% of those give the two states different
   fills and 68% different artwork — Build assigns each state its own
-  `TLPImageID` and rasterizes them separately. A button whose states are
-  identical is inert: the control system sets it On and nothing changes.
-  The remaining idioms are multi-state and domain-specific: `('Muted',
-  'Level 1', 'Level 2', 'Level 3')`, `('Disconnected', 'Connected')`,
-  `('Unavailable', 'Ready', 'Connected')`.
-- **Momentary press feedback is a separate mechanism, and barely used.**
-  `<TLPPressFeedbackStateID>` points at a state to show while pressed; it is
-  `-1` on 7320 of the 7392 states in that corpus. Off/On driven by the control
-  system is the idiom, not press-and-release.
+  `TLPImageID` and rasterizes them separately, and dedupes identical ones to a
+  single ID. A button whose states are identical is inert: the control system
+  sets it On and nothing changes.
+- **More than two states is ordinary, and a clone can gain or lose them.**
+  Across the 20 seeds and six fixtures, 7943 buttons carry states: 185 have
+  one, 7621 two, 44 three and 93 four.
+  The multi-state idioms are `('Muted', 'Level 1', 'Level 2', 'Level 3')` (70),
+  `('Unavailable', 'Ready', 'Connected')` (25), `('Off', 'On', 'State2',
+  'State3')` (23) and Liberty Bank's `('Off', 'On', 'On_1')` camera buttons
+  (7). GUI Designer allows up to 256: `MaxAllowedStateCount` reads 256 on the
+  project, the TLP Pro 1035 platform and the button. Every state's `idField`
+  and `indexField` equal its position, on all 7943 buttons in the model.
+  `mItems` is an ordinary `List<PBState>`, so the applier resizes it directly —
+  a clone of the last state appended to grow, states removed from the end to
+  trim — and renumbers. Built on GUI Designer 1.28.0.7 from the Afterburn 1035
+  seed, a two-state donor grown to three and four states and trimmed to one
+  opened, built, and came back with every state named, captioned and drawn as
+  its own artwork. `PBStates.statusField` holds `PBState.StatusFlags`
+  (`PreventAddState` 1, `PreventDelete` 2, `PreventReorder` 4, `PreventRename`
+  8, `PreventTransitions` 0x10); it is 0 on every button in the corpus, and the
+  applier refuses a donor with any flag set.
+- **Every button shows a state while it is held.** The button's own
+  `<TLPPressFeedbackStateID>` — exported as `TLPPressFeedbackStateID` — names
+  it: On (1) on all 7518 Off/On buttons in the seeds and fixtures, the last
+  state on Extron's four-state volume mute (3), 0 on a one-state button. It is always a valid index in the built corpus. A clone
+  inherits its donor's, which may name a state the clone no longer has, so the
+  applier sets it. Each `PBState` also carries its own
+  `<TLPPressFeedbackStateID>`, which is `-1` on 7320 of 7392 states and is not
+  the one that matters.
 - A clean build proves the file is **acceptable**, not that it is **correct**.
   Two separate traps (`flattenText`, and the relocation above) produce a file
   that opens, builds and is wrong. Finish with `tests/verify_built.py`, which
@@ -290,21 +313,23 @@ A generator should assert all four agree rather than trusting the writes.
 `python tests/audit_corpus.py` re-tests the claims above against every project
 it can reach — the fixtures, the seeds and Extron's installed templates — and
 reports each as PASS, FAIL or INFO. Run it rather than trusting a written
-result; its last run, over 6 fixtures, 14 seeds and 44 templates:
+result; its last run, over 6 fixtures, 20 seeds and 50 templates:
 
 | Invariant | Result |
 |---|---|
-| Button states are countable (the `PBStates.Count` trap) | PASS |
-| Off/On is the dominant state pair | PASS - 13,589 of 13,792 two-state buttons, 98.5% |
-| A popup's built size equals its authored size | PASS on all 20 built projects |
+| Button states are countable (the `$states.Count` trap) | PASS |
+| Off/On is the dominant state pair | PASS - 17,551 of 17,770 two-state buttons, 98.8% |
+| A popup's built size equals its authored size | PASS on all 26 built projects |
 | `TLPDefaultStateID` is 0 | PASS |
+| A button presses to one of its own states | PASS - all 7943 built buttons |
+| No button forbids adding or removing states (`statusField` 0) | PASS |
 | Page and popup names unique per project | PASS |
 | `userId` fits in UInt16 | PASS - highest 61,091 |
-| A button's caption lives on its state | PASS - state 88.6%, formatted state 11.4% |
-| One full-canvas popup reference per shown modal popup, per page | PASS on all 20 |
+| A button's caption lives on its state | PASS - state 88.3%, formatted state 11.7% |
+| One full-canvas popup reference per shown modal popup, per page | PASS on all 26 |
 | Every declared face is recoverable | **FAIL** - declared-but-not-embedded faces; see `gdl/fonts/README.md` and `docs/ROADMAP.md` |
 | Every canvas is a model the table can target | **FAIL** - 1920x720 and 480x320, plus 1920x1200 and 986x740 (the Teams Rooms and Zoom Rooms control templates, whose platforms the table does not list); see `docs/ROADMAP.md` |
-| Border resources shared across themes | INFO - none common to all 64 projects; Afterburn 17-32, Mach 13-15, Shockwave 13-14, Turbulence 13, Zoom Rooms 16-17 |
+| Border resources shared across themes | INFO - none common to all 76 projects; Afterburn 17-32, Mach 13-15, Shockwave 13-14, Turbulence 13, Zoom Rooms 16-17 |
 | Controls Build leaves unrasterized | INFO - 2 to 187 per project; the baseline to compare a suspect build against |
 
 A FAIL is either an open item in `docs/ROADMAP.md` or a new finding.

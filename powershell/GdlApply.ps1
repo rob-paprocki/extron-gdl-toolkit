@@ -148,10 +148,11 @@ function Get-GdlStates {
     <#  A control's PBState objects, as a real array.
 
         DO NOT use `$states.Count`. `PBStates` is a wrapper, not the list, and
-        its `Count` is a LOGICAL count that does not match the number of
-        PBStates: it reports 1 for a two-state Off/On button. The indexer is
-        fine - `$sts[0]` and `$sts[1]` both return a PBState - so a loop bounded
-        by `.Count` silently visits only state 0 and stops.
+        it has no `Count` member at all - PowerShell 5.1 answers 1 for `.Count`
+        on any object without one, so it reads 1 for a one-, two- or four-state
+        button alike. The indexer is fine - `$sts[0]` and `$sts[1]` both return
+        a PBState - so a loop bounded by `.Count` silently visits only state 0
+        and stops.
 
         That is exactly what both appliers did, so every "write to every state"
         loop here has only ever written state 0. It went unnoticed because
@@ -167,6 +168,53 @@ function Get-GdlStates {
     $items = Get-GdlField $sts 'mItems'
     if ($null -eq $items) { return @() }
     return @($items | Where-Object { $null -ne $_ })
+}
+
+function Set-GdlStateCount {
+    <#  Give a cloned control exactly $Count states. Returns $true on success.
+
+        A donor button has however many states its author gave it - Off/On for
+        nearly all, four for Extron's volume mute - and a clone keeps them. So a
+        spec asking for four states on a two-state donor used to ship two, and a
+        spec asking for two on a four-state donor shipped four, two of them still
+        named 'Level 2' and 'Level 3'.
+
+        Growing clones the LAST state and appends it; trimming drops states from
+        the end. Both go straight at `mItems`, the real List<PBState> - the same
+        way the page list is grown - rather than through PBStates.Add, whose
+        setters fire into runtime services that do not exist outside the app
+        (docs/gdl-format.md section 4). Every state's idField and indexField are
+        then renumbered 0..Count-1, which is what they are on every state of all
+        7943 buttons in the corpus; nothing else refers to them.
+
+        PBStates.statusField holds PBState.StatusFlags (PreventAddState,
+        PreventDelete, ...). It is 0 on every button in the corpus; a donor with
+        any flag set is refused rather than second-guessed - but only when a
+        resize is actually needed. #>
+    param($Control, [int]$Count)
+    $sts = Get-GdlField $Control 'statesField'
+    if (-not $sts) { Note-Problem "no statesField on $($Control.GetType().Name)"; return $false }
+    $items = Get-GdlField $sts 'mItems'
+    if ($null -eq $items -or $items.Count -lt 1) {
+        Note-Problem "donor $($Control.GetType().Name) has no state to clone"
+        return $false
+    }
+    $flags = Get-GdlField $sts 'statusField'
+    if ($flags -and $items.Count -ne $Count) {
+        Note-Problem "donor $($Control.GetType().Name) has state status flags $flags - its states cannot be added or removed"
+        return $false
+    }
+    while ($items.Count -lt $Count) {
+        $items.Add((Copy-GdlObject $items[$items.Count - 1]))
+    }
+    while ($items.Count -gt $Count) {
+        $items.RemoveAt($items.Count - 1)
+    }
+    for ($i = 0; $i -lt $items.Count; $i++) {
+        Set-GdlFieldIfPresent $items[$i] 'idField' $i | Out-Null
+        Set-GdlFieldIfPresent $items[$i] 'indexField' $i | Out-Null
+    }
+    return $true
 }
 
 $script:BorderDonor = $null

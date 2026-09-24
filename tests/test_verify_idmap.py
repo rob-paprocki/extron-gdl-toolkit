@@ -37,6 +37,11 @@ def built_layout(m):
         controls = [{'Name': r['name'], 'UserId': r['id'], 'Type': TYPE_NUM.get(r['kind'], 13),
                      '__type': 'PB' + (CLASS_OF.get(r['kind']) or 'Shape')}
                     for r in ct['controls'] if r['kind'] != 'popup_ref']
+        for x, r in zip(controls, [r for r in ct['controls'] if r['kind'] != 'popup_ref']):
+            if r['states']:
+                x['States'] = [{'ID': i, 'Name': n} for i, n in enumerate(r['states'])]
+                x['TLPDefaultStateID'] = 0
+                x['TLPPressFeedbackStateID'] = r['states'].index(r['press'])
         for g in sorted(ct['refs']):
             controls.append({'Name': 'Ref ' + g, 'UserId': 0, 'Type': 6,
                              'PopupPageID': {'IsPopupGroupIdValid': True,
@@ -145,6 +150,50 @@ class TestVerifier(unittest.TestCase):
                                    'Controls': []})
         problems, _, _ = self.run_on(j)
         self.assertTrue(any('twice' in p for p in problems), problems)
+
+
+class TestStates(unittest.TestCase):
+    """The map numbers each button's states as the program sets them, so the
+    built button must have exactly those, in that order."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dir = tempfile.mkdtemp()
+        cls.m = load(EXAMPLE)
+        cls.m.write(cls.dir)
+        cls.good = built_layout(cls.m)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.dir, ignore_errors=True)
+
+    def display(self, j):
+        page = next(b for b in j['Pages'] if b['Name'] == 'Huddle Home')
+        return next(x for x in page['Controls'] if x['Name'] == 'Display')
+
+    def test_the_example_has_a_four_state_button(self):
+        self.assertEqual([s['Name'] for s in self.display(self.good)['States']],
+                         ['Off', 'Warming', 'On', 'Cooling'])
+        self.assertEqual(vi.check_layout(self.dir, self.good)[0], [])
+
+    def test_a_state_in_the_wrong_place_is_reported(self):
+        j = copy.deepcopy(self.good)
+        st = self.display(j)['States']
+        st[1]['Name'], st[3]['Name'] = st[3]['Name'], st[1]['Name']
+        problems = vi.check_layout(self.dir, j)[0]
+        self.assertTrue([p for p in problems if "'Display'" in p and 'Warming' in p], problems)
+
+    def test_a_missing_state_is_reported(self):
+        j = copy.deepcopy(self.good)
+        self.display(j)['States'].pop()
+        problems = vi.check_layout(self.dir, j)[0]
+        self.assertTrue([p for p in problems if "'Display'" in p and 'Cooling' in p], problems)
+
+    def test_the_press_state_is_checked(self):
+        j = copy.deepcopy(self.good)
+        self.display(j)['TLPPressFeedbackStateID'] = 1
+        problems = vi.check_layout(self.dir, j)[0]
+        self.assertTrue([p for p in problems if "'Display'" in p and 'press' in p], problems)
 
 
 class TestPopupFromPopup(unittest.TestCase):

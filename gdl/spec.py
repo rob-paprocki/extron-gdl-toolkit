@@ -269,6 +269,19 @@ KIND_TYPE = {'panel': 'PBShape', 'shape': 'PBShape', 'button': 'PBButton',
 # Interactive kinds are the ones held to the 9mm touch-target rule.
 TOUCHABLE = {'button', 'slider'}
 
+# Button feedback states. GUI Designer 1.28.0.7 reports MaxAllowedStateCount =
+# 256 on PBProject, on the TLP Pro 1035 platform and on PBButton, read through
+# the installed assemblies. The corpus never goes past four.
+MAX_STATES = 256
+STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text'}
+# The two per-button pointers into the state list, as backing fields.
+# TLPDefaultStateID is 0 on every button in the corpus. TLPPressFeedbackStateID
+# is the state shown while the button is held: On (1) on all 7518 Off/On
+# buttons in the seeds and fixtures, the last state on Extron's own 4-state
+# volume mute.
+PRESS_FIELD = '<TLPPressFeedbackStateID>k__BackingField'
+DEFAULT_FIELD = '<TLPDefaultStateID>k__BackingField'
+
 # Orientation, as gdl/compose.py decodes it when clipping a level's value fill.
 ORIENT = {'right': 0, 'left': 1, 'up': 2, 'down': 3}
 
@@ -567,6 +580,8 @@ class Panel:
         for idx, pg in enumerate(self.pages):
             controls = []
             for c in pg['controls']:
+                # A button with named states draws its first one, as Build does.
+                c = self._default_look(c)
                 kind = KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
                 rect = [int(v) for v in c['rect']]
                 fill = color(c.get('fill'), self.theme)
@@ -706,6 +721,7 @@ class Panel:
                 seen[c['id']] = where
         out += self._popup_rules()
         out += self._name_rules()
+        out += self._state_rules()
         if self.start_page is not None and \
                 self.start_page not in {pg['name'] for pg in self.pages}:
             out.append(f'start_page {self.start_page!r} is not a page in this spec - the '
@@ -770,53 +786,189 @@ class Panel:
                                    f'below the {spacing}px minimum (2mm, p.56)')
         return out
 
-    def _states_for(self, c, kind, fill, stroke, text_color, border):
-        """The Off/On appearance pair a button needs to be worth pressing.
+    def _feedback(self, c):
+        """The states a button asks for, in order, as spec dicts - or None.
 
-        A button that looks the same in both states is inert: the control system
-        sets it On and nothing on the panel changes. Every generated button used
-        to be exactly that, because the applier wrote one appearance to every
-        state of the cloned donor.
+        A button that looks the same in every state is inert: the control
+        system sets it On and nothing on the panel changes. Every generated
+        button used to be exactly that, because the applier wrote one
+        appearance to every state of the cloned donor.
 
-        `Off`/`On` is not a guess. A PBState carries a `nameField`, and across
-        Extron's own six theme templates plus the Liberty Bank project that name
-        pair covers 3475 of 3668 buttons (94.7%); 60% of those buttons give the
-        two states different fills and 68% different artwork. The remaining
-        idioms are domain-specific and multi-state - ('Muted', 'Level 1',
-        'Level 2', 'Level 3'), ('Disconnected', 'Connected') - and are left to
-        `gdl.edit` on a real project rather than invented here.
-
-        There is a separate `<TLPPressFeedbackStateID>` mechanism for momentary
-        press feedback. It is -1 on 7320 of the 7392 states in that corpus, so
-        it is not the idiom and this does not emit it.
+        `states` names them outright - a name, or a name with its own fill,
+        stroke, color, border and caption - for idioms like Extron's 4-state
+        volume mute ('Muted', 'Level 1', 'Level 2', 'Level 3') or 3-state call
+        button ('Unavailable', 'Ready', 'Connected'). `on`, on the button or the
+        theme, is shorthand for two states named Off and On. That pair is not a
+        guess: across Extron's six theme templates plus the Liberty Bank project
+        it covers 3475 of 3668 buttons (94.7%), 60% of them with different
+        fills and 68% with different artwork.
         """
-        if kind != 'button':
+        if c.get('kind') != 'button':
             return None
+        if 'states' in c:
+            st = c['states']
+            if not isinstance(st, list):
+                return None                 # _state_rules reports it
+            return [dict(s) if isinstance(s, dict) else {'name': s} for s in st]
         on = c.get('on', self.theme.get('on'))
         if not on:
             return None
         if on is True:                      # "give it feedback, you pick"
-            on = {'fill': 'accent'} if self.theme.get('accent') else None
-            if not on:
+            if not self.theme.get('accent'):
                 return None
+            on = {'fill': 'accent'}
         if not isinstance(on, dict):
             # A bare color is the common case: "on": "accent".
             on = {'fill': on}
-        return [
-            {'name': 'Off', 'fill': _argb(fill), 'stroke': _argb(stroke),
-             'text_color': _argb(text_color), 'border': border},
-            {'name': 'On',
-             # Anything the On state does not name keeps the Off appearance, so
-             # `"on": "accent"` changes the fill and nothing else.
-             'fill': _argb(color(on['fill'], self.theme)) if 'fill' in on else _argb(fill),
-             'stroke': (_argb(color(on['stroke'], self.theme))
-                        if 'stroke' in on else _argb(stroke)),
-             'text_color': (_argb(color(on.get('color') or on.get('text_color'),
-                                        self.theme))
-                            if ('color' in on or 'text_color' in on)
-                            else _argb(text_color)),
-             'border': BORDERS.get(on.get('border'), on.get('border')) or border},
-        ]
+        return [{'name': 'Off'}, dict(on, name='On')]
+
+    def _states_for(self, c, fill, stroke, text_color, border):
+        """The planned appearance of every state, or None for a button that
+        asked for no feedback.
+
+        A state inherits whatever it does not name from the button itself, so
+        `"on": "accent"` changes the fill and nothing else, and a bare state
+        name is the button's own look.
+        """
+        specs = self._feedback(c)
+        if not specs:
+            return None
+        out = []
+        for s in specs:
+            has_color = 'color' in s or 'text_color' in s
+            out.append({
+                'name': s.get('name'),
+                'fill': _argb(color(s['fill'], self.theme)) if 'fill' in s else _argb(fill),
+                'stroke': (_argb(color(s['stroke'], self.theme))
+                           if 'stroke' in s else _argb(stroke)),
+                'text_color': (_argb(color(s.get('color') or s.get('text_color'), self.theme))
+                               if has_color else _argb(text_color)),
+                'border': BORDERS.get(s.get('border'), s.get('border')) or border,
+                'text': s['text'] if 'text' in s else (c.get('text') or ''),
+            })
+        return out
+
+    def _press(self, c, states):
+        """The index of the state shown while the button is held.
+
+        Set on every button that plans its states rather than inherited: a
+        clone keeps the donor's pointer, which may name a state the clone no
+        longer has. Off/On buttons show On (1) - all 7518 in the seeds and
+        fixtures - so that is the default.
+        """
+        names = [s['name'] for s in states]
+        if c.get('press') in names:
+            return names.index(c['press'])
+        return 1 if len(states) > 1 else 0
+
+    def _default_look(self, c):
+        """The control as it first appears: its own look, overridden by
+        whatever its first named state sets. Build renders a button from
+        TLPDefaultStateID, which is 0 on every button in the corpus."""
+        st = c.get('states') if c.get('kind') == 'button' else None
+        if not isinstance(st, list) or not st or not isinstance(st[0], dict):
+            return c
+        s0 = st[0]
+        out = dict(c)
+        for k in ('fill', 'stroke', 'border', 'text'):
+            if k in s0:
+                out[k] = s0[k]
+        if 'color' in s0 or 'text_color' in s0:
+            out['color'] = s0.get('color') or s0.get('text_color')
+        return out
+
+    def _base_look(self, c):
+        """(fill, stroke, text color, border) for a spec control, as authored."""
+        fill = color(c.get('fill'), self.theme)
+        stroke = color(c.get('stroke'), self.theme)
+        text_color = color(c.get('color') or self.theme.get('text') or '#FFFFFF',
+                           self.theme)
+        border = c.get('border')
+        border = BORDERS.get(border, border)
+        if border is None and fill is not None:
+            border = BORDERS['rounded']
+        return fill, stroke, text_color, border
+
+    def _state_rules(self):
+        """A button's states must be ones a program can tell apart."""
+        out = []
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for pg in items:
+                for c in pg['controls']:
+                    out += self._states_of(c, f"{kind} {pg['name']!r} "
+                                              f"{c.get('name') or c.get('text') or '?'}")
+        return out
+
+    def _states_of(self, c, where):
+        out = []
+        asked = [k for k in ('states', 'press') if k in c]
+        if c.get('kind') != 'button':
+            if asked:
+                out.append(f"{where}: only a button has feedback states, so "
+                           f"{' and '.join(asked)} would do nothing on a {c.get('kind', 'panel')}")
+            return out
+        if 'states' in c and 'on' in c:
+            out.append(f'{where}: give `on` or `states`, not both - `on` is shorthand for '
+                       f'two states named Off and On')
+        if 'states' not in c and c.get('on', self.theme.get('on')) is True \
+                and not self.theme.get('accent'):
+            out.append(f'{where}: `on`: true picks the theme accent, and the theme has none - '
+                       f'the button would get no feedback. Add theme.accent, or give `on` '
+                       f'a color')
+        if 'states' in c:
+            st = c['states']
+            if not isinstance(st, list) or not st:
+                return out + [f'{where}: states must be a list of at least one state']
+            if len(st) > MAX_STATES:
+                out.append(f'{where}: {len(st)} states is more than the {MAX_STATES} GUI '
+                           f'Designer allows on a button')
+            names = []
+            for i, s in enumerate(st):
+                if isinstance(s, dict):
+                    extra = sorted(set(s) - STATE_KEYS)
+                    if extra:
+                        out.append(f"{where}: state {i} has unknown key(s) {', '.join(extra)} - "
+                                   f"a state takes {', '.join(sorted(STATE_KEYS))}")
+                    b = s.get('border')
+                    if b and b not in BORDERS and b not in BORDER_GEOMETRY:
+                        out.append(f'{where}: state {i}: unknown border resource {b!r}')
+                    # A null would reach the applier as "nothing to write", and
+                    # the state would keep whatever the cloned donor state had.
+                    nulls = sorted(k for k in STATE_KEYS - {'name'} if k in s and s[k] is None)
+                    if nulls:
+                        out.append(f"{where}: state {i}: {', '.join(nulls)} is null - leave "
+                                   f"the key out to keep the button's own, or give "
+                                   f"'#00000000' for transparent or '' for no caption")
+                    s = s.get('name')
+                if not isinstance(s, str) or not s.strip():
+                    out.append(f'{where}: state {i} has no name - a state is a name, or an '
+                               f'object with a name')
+                    continue
+                names.append(s)
+            dup = sorted({n for n in names if names.count(n) > 1})
+            if dup:
+                out.append(f"{where}: state name(s) {', '.join(map(repr, dup))} used twice - "
+                           f'the program and the ID map tell states apart by name')
+            if not out:
+                look = self._states_for(c, *self._base_look(c)) or []
+                for i, a in enumerate(look):
+                    for b in look[i + 1:]:
+                        if {k: v for k, v in a.items() if k != 'name'} == \
+                                {k: v for k, v in b.items() if k != 'name'}:
+                            out.append(f"{where}: states {a['name']!r} and {b['name']!r} look "
+                                       f'identical - the program could set either and the '
+                                       f'panel would show no difference. Give one its own '
+                                       f'fill, stroke, color, border or text')
+        if 'press' in c:
+            specs = self._feedback(c) or []
+            names = [s.get('name') for s in specs]
+            if not specs:
+                out.append(f"{where}: press {c['press']!r} names a state, but the button has "
+                           f'no states - give it `states` or `on`')
+            elif c['press'] not in names:
+                out.append(f"{where}: press {c['press']!r} is not one of its states "
+                           f"({', '.join(map(repr, names))})")
+        return out
 
     def _op_for(self, c, index):
         """One clone-control op, from a SPEC control (not a layout-model one).
@@ -828,15 +980,9 @@ class Panel:
         kind = c.get('kind', 'panel')
         cls = KIND_TYPE.get(kind, 'PBShape')
         rect = [int(v) for v in c['rect']]
-        fill = color(c.get('fill'), self.theme)
-        stroke = color(c.get('stroke'), self.theme)
-        text_color = color(c.get('color') or self.theme.get('text') or '#FFFFFF',
-                           self.theme)
-        border = c.get('border')
-        border = BORDERS.get(border, border)
-        if border is None and fill is not None:
-            border = BORDERS['rounded']
-        return {
+        fill, stroke, text_color, border = self._base_look(c)
+        states = self._states_for(c, fill, stroke, text_color, border)
+        op = {
             'op': 'clone-control',
             'donor_type': cls,
             'fields': {
@@ -861,9 +1007,10 @@ class Panel:
             'border': border,
             'text_color': _argb(text_color),
             # Per-state appearance, when the button asked for one. The applier
-            # falls back to the flat values above for every state when this is
-            # absent, which is what a control with no feedback wants.
-            'states': self._states_for(c, kind, fill, stroke, text_color, border),
+            # gives the clone exactly this many states and writes each; it
+            # falls back to the flat values above for every donor state when
+            # this is absent, which is what a control with no feedback wants.
+            'states': states,
             'alignment': ALIGN.get(c.get('align', 'center'), 3),
             'font': {'name': c.get('font') or self.theme.get('font') or 'Arial',
                      'size': c.get('size') or self.theme.get('size') or 14,
@@ -872,6 +1019,16 @@ class Panel:
             # elsewhere.
             'group': c.get('group'),
         }
+        if states:
+            # Build renders the button from state 0, so that is what the
+            # control-level fields - and verify_built's checks of them - carry.
+            first = states[0]
+            op.update(fill=first['fill'], stroke=first['stroke'],
+                      text_color=first['text_color'], border=first['border'])
+            op['fields']['textField'] = first['text']
+            op['fields'][DEFAULT_FIELD] = 0
+            op['fields'][PRESS_FIELD] = self._press(c, states)
+        return op
 
     def _popup_ops(self):
         return [{
@@ -1060,40 +1217,29 @@ class Panel:
                     f'layout would be sized for a panel this is not. Match the '
                     f'spec to the donor, or retarget the donor first '
                     f'(python -m gdl.edit).')
-        # Feedback states. The applier can only write states the donor's button
-        # already has - a new PBState would have to be constructed, which is the
-        # thing this pipeline exists to avoid - so a donor whose buttons carry a
-        # single state cannot express Off/On at all. It fails quietly: the
-        # button builds, looks right, and never changes when the control system
-        # sets it On.
-        if self.needs_states() > 1:
-            best = 0
-            for pg in proj.pages():
-                for c in pg['controls']:
-                    if c['type'] == 'PBButton':
-                        best = max(best, c.get('n_states') or 0)
-            if best and best < self.needs_states():
+        # Feedback states. The applier gives each cloned button exactly the
+        # states the spec names, cloning its last state to grow and dropping
+        # from the end to trim (Set-GdlStateCount). What stops it is
+        # PBStates.statusField - PBState.StatusFlags, PreventAddState and
+        # friends - on the button it clones, which is the FIRST PBButton in
+        # page-then-popup order (Get-GdlDonor). 0 on every button in the corpus,
+        # so this is a guard, not a thing seen.
+        if any(self._feedback(c) for pg in self.pages + self.popups
+               for c in pg['controls']):
+            first = next((c for pg in proj.pages() for c in pg['controls']
+                          if c['type'] == 'PBButton'), None)
+            if first and first.get('state_flags'):
                 out.append(
-                    f'this spec asks for {self.needs_states()} button states but the best '
-                    f'donor button in {path} has {best}. The extra states cannot be '
-                    f'created, so those buttons would build with no feedback - they '
-                    f'would look identical whether the control system set them On or '
-                    f'Off. Pick a donor whose buttons have Off/On states.')
+                    f"the donor button {first['name']!r} in {path} carries state status "
+                    f"flags {first['state_flags']} (PBState.StatusFlags), which forbid "
+                    f'adding or removing states - the applier refuses to resize it, so '
+                    f'no button in this spec would get the states it names')
 
         for it in list(self.pages) + list(self.popups):
             if it['name'] in names:
                 out.append(f"{it['name']!r} already exists in the donor project - page and "
                            f'popup names must be unique, and Build rejects duplicates')
         return out
-
-    def needs_states(self):
-        """The most button states any control in this spec asks for."""
-        n = 1
-        for pg in self.pages + self.popups:
-            for c in pg['controls']:
-                if c.get('kind') == 'button' and (c.get('on') or self.theme.get('on')):
-                    n = max(n, 2)
-        return n
 
     def needs(self):
         """Every control class this spec requires a donor for."""
@@ -1112,9 +1258,11 @@ class Panel:
         out = set()
         for pg in self.pages + self.popups:
             for c in pg['controls']:
-                b = c.get('border')
-                if b:
-                    out.add(BORDERS.get(b, b))
+                # A state can name its own border, and it needs a resource too.
+                for look in [c] + (self._feedback(c) or []):
+                    b = look.get('border')
+                    if b:
+                        out.add(BORDERS.get(b, b))
         return out
 
     def needs_fonts(self):
@@ -1135,10 +1283,13 @@ class Panel:
         for pg in self.pages:
             seen.add(tuple(sorted((pg['background'] or {}).items())))
             for c in pg['controls']:
-                for key in ('fill', 'stroke', 'color'):
-                    v = color(c.get(key), self.theme)
-                    if v:
-                        seen.add(tuple(sorted(v.items())))
+                # A state's colors are on the panel as much as the control's
+                # own - an On fill included.
+                for look in [c] + (self._feedback(c) or []):
+                    for key in ('fill', 'stroke', 'color', 'text_color'):
+                        v = color(look.get(key), self.theme)
+                        if v:
+                            seen.add(tuple(sorted(v.items())))
         return {s for s in seen if s}
 
 

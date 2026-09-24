@@ -53,6 +53,14 @@ Two more keys go elsewhere:
 Only the four addressable kinds can carry these keys. Panels, lines, images,
 clocks and popup references have no ID a program can take hold of.
 
+**States.** A program shows feedback on a button by setting its state, by
+index. A button that asks for feedback - `on`, which is Off and On, or named
+`states` (`SKILL.md` step 3) - is listed with every state in order, so
+*Display: 0 Off, 1 Warming, 2 On, 3 Cooling* means `SetState(2)` shows On. The
+map also names the state the button shows while it is held (`press`). A button
+that asked for no feedback keeps its donor's states, which the spec never
+named, so none are listed.
+
 **Mirrors.** Controls that pin the same `id` are one control to the program.
 Extron's own projects do this on purpose: Liberty Bank mirrors its shutdown
 confirm and cancel buttons (81, 82) across two popups. The map lists a mirror
@@ -69,7 +77,7 @@ block `plan`.
 | A `nav` target that is not a page or popup in the spec | The button would flip to nothing |
 | `nav` on anything but a button; `does` that is not a sentence; either key on a kind with no ID | It would go nowhere |
 | A standard popup shown where the page beneath has no reference to its group. For a popup shown from another popup, that means every page the first can be showing over. | A standard popup appears only through such a reference (`docs/gdl-format.md` §5) |
-| Controls sharing an ID but differing in kind or function | A program sees one control per ID |
+| Controls sharing an ID but differing in kind, function or states | A program sees one control per ID, and GUI Designer gives every copy the same states |
 | A page or popup no `nav` reaches from the start page, unless it is `reached_by: "program"` | Dead layout, or a missing link |
 
 The reachability check runs only when the spec uses `nav`. Three unlinked pages
@@ -92,9 +100,10 @@ first is a design decision for the spec. It is not a rule to enforce.
 - `idmap.json`, which is what the verifier reads.
 
 Each control row carries its ID, type, the page and control name of every place
-it appears, its caption, and its function (`nav` and `does`, in words). The page
-table shows how each page and popup is reached. Every file carries the spec's
-SHA-256.
+it appears, its caption, a button's states (`0 Off, 1 On`) and the one it
+shows while pressed, and its function
+(`nav` and `does`, in words). The page table shows how each page and popup is
+reached. Every file carries the spec's SHA-256.
 
 ## 5. Verification
 
@@ -104,6 +113,8 @@ built `layout.json`:
 - Every page and popup it names exists, as the kind it says.
 - Every control is where the map says, with that ID and that type. Every control
   of that name is checked, not just the first.
+- Every button the map lists states for built with exactly those states, in
+  that order, and shows the mapped state while pressed.
 - No other control on a mapped page shares a mapped ID. A donor page doing so is
   a note, because it answers to the same handler if it is ever shown.
 - No page or popup name appears twice.
@@ -112,10 +123,12 @@ built `layout.json`:
 It exits non-zero on any problem. `tests/test_verify_idmap.py` makes it fail on
 each of those.
 
-**End to end.** `examples/huddle-functions.json` was built on
+**End to end.** `examples/huddle-functions.json` - three-state source buttons
+and a four-state Display button among its Off/On ones - was built on
 `seeds/Afterburn 1035.gdl` with `New-GdlPanel.ps1 -IdMap` on GUI Designer
-1.28.0.7. The layout verified with 98 controls and 0 problems. The map's 27
-references verified with 0 problems.
+1.28.0.7. The layout verified with 108 controls and 0 problems, every state's
+name, caption, text color and press state included. The map's 28 references
+verified with 0 problems.
 
 ## 6. Designing in Claude Design
 
@@ -125,6 +138,7 @@ The same keys are the target for a Claude Design canvas:
 |---|---|
 | A prototype link `<a href="X.dc.html">` | `nav: "X"` |
 | A component's annotation or description | `does` |
+| A component's state variants, in order | `states` |
 | Repeated component instances | `grid` / `stack`, with per-item overrides |
 
 The translator itself is on `docs/ROADMAP.md`.

@@ -11,7 +11,7 @@ opening GUI Designer.**
   (`powershell/New-GdlPanel.ps1`), from a client project or from a clean seed.
 - Also proven: Arial recovery, font application, UTF-8 specs, multi-page panels,
   clean-room authoring, retarget from a seed (650/650), popup canvases that keep
-  their own size, and Off/On button feedback.
+  their own size, and button feedback with any number of named states.
 - **What the controls do**, from the same spec: `gdl.idmap` checks the page
   flips and writes the programmer's ID map, verified against the built panel
   (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
@@ -72,7 +72,7 @@ opening GUI Designer.**
    the page flow is part of the spec, and `verify_idmap.py` checks it against
    the build.
 6. **Claude Design as a front end.** A design system published to Claude Design
-   whose components are exactly the spec's kinds (Off/On buttons, labels,
+   whose components are exactly the spec's kinds (buttons and their states, labels,
    sliders, popup regions) and whose tokens are the themes already mined. Plus a
    translator from a canvas to a spec: lay out each artboard in a headless
    browser at the panel's resolution, read every component's box and props, and
@@ -82,15 +82,12 @@ opening GUI Designer.**
    (`powershell/New-ImageProbe.ps1`) - and neither can be written in a spec.
 8. **Pick the seed automatically** - `gdl.spec donors --auto` choosing from
    `seeds/` by theme and canvas, so a prose brief needs no file path.
-9. **Theme-portable borders.** No border resource is defined by all 64 projects
+9. **Theme-portable borders.** No border resource is defined by every project
    in the corpus. A spec that says `rounded` or `capsule` should resolve to
    whatever the donor's family calls it.
-10. **Multi-state buttons.** Off/On is 98.5% of two-state buttons; the rest are
-   `Disconnected` / `Connected`, `Not Muted` / `Muted`, `Muted` / `Level 1..3`.
-11. **Close `verify_built.py`'s remaining blind spots**: `TLPDefaultStateID`,
-    text alignment, per-state captions, and donor controls that ride along on a
-    generated page unasked.
-12. **Run the seed ground-truth test in CI** with
+10. **Close `verify_built.py`'s remaining blind spots**: text alignment, and
+    donor controls that ride along on a generated page unasked.
+11. **Run the seed ground-truth test in CI** with
     `git lfs pull --include "seeds/Afterburn 1035.gdl"` (about 3 MB of LFS
     bandwidth per build).
 
@@ -103,6 +100,15 @@ opening GUI Designer.**
 - **Behavior the format carries but the spec cannot yet say:** the Offline Page
   and its enable flag, and a popup's auto-hide timeout (0 on every popup in the
   corpus). Both are applier work.
+- **Editing a multi-state button.** `gdl.edit`'s `rename` writes one caption
+  to every state, and `restyle` matches only a control's own colors - so a
+  button whose colors live on its states, which is every multi-state button in
+  the Afterburn 1035 seed, is not matched, and one that is gets the same new
+  color on every state. Neither is reported, and no edit adds or removes a
+  state. Authoring from a spec does all three (`SKILL.md` step 3).
+- **`palette()` counts only colors a spec names.** A control with no `color`
+  renders in the theme's text color, or white, and the p.49 six-color check
+  never counts it - so a spec can pass at six while the panel shows seven.
 - **An ID map for an existing panel.** `gdl.idmap` reads a spec; a client
   project that was never a spec has none, though its built `layout.json` holds
   every ID, type, page and caption a map needs.

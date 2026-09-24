@@ -98,8 +98,21 @@ class IdMap:
         kind = c.get('kind', 'panel')
         where = f"{ct['kind']} {ct['name']!r} {c.get('name') or c.get('text') or '?'!r}"
         rec = {'container': ct['name'], 'container_kind': ct['kind'], 'where': where,
-               'name': c.get('name') or c.get('text') or kind, 'text': c.get('text') or '',
-               'kind': kind, 'id': c['id'], 'nav': None, 'does': None}
+               'name': c.get('name') or c.get('text') or kind,
+               # What it says when the panel boots: a button with named states
+               # shows its first.
+               'text': self.panel._default_look(c).get('text') or '',
+               'kind': kind, 'id': c['id'], 'nav': None, 'does': None,
+               'states': None, 'press': None}
+        # A program sets a button's feedback by state index, so the map lists
+        # every state in order. A button that asked for none keeps whatever
+        # states its donor had, which the spec never named - so none are listed.
+        feedback = self.panel._feedback(c)
+        if kind == 'button' and feedback:
+            names = [s.get('name') for s in feedback]
+            if all(isinstance(n, str) for n in names):
+                rec['states'] = names
+                rec['press'] = names[self.panel._press(c, feedback)]
         used = [k for k in KEYS if k in c]
         if kind not in CLASS_OF:
             if used:
@@ -208,9 +221,16 @@ class IdMap:
             if len(kinds) > 1:
                 out.append(f"ID {uid} is shared by a {' and a '.join(sorted(kinds))} - a mirror "
                            f"must be the same kind: {', '.join(r['where'] for r in recs)}")
-            elif len({(r['nav'], r['does']) for r in recs}) > 1 and kinds & set(CLASS_OF):
+                continue
+            if len({(r['nav'], r['does']) for r in recs}) > 1 and kinds & set(CLASS_OF):
                 out.append(f'ID {uid} is mirrored with different functions - a program sees one '
                            f"control per ID: {', '.join(r['where'] for r in recs)}")
+            # Checked separately: a copy that differs in both must be told both.
+            if len({tuple(r['states'] or ()) for r in recs}) > 1:
+                # GUI Designer's own help: "The same control states are added
+                # to all objects sharing an ID."
+                out.append(f'ID {uid} is mirrored with different states - a program sets one '
+                           f"state for every copy: {', '.join(r['where'] for r in recs)}")
         return out
 
     def _showability_rules(self):
@@ -294,14 +314,20 @@ class IdMap:
         controls = []
         for uid, recs in self.addressed().items():
             r = recs[0]
-            controls.append({
+            row = {
                 'id': uid, 'type': CLASS_OF[r['kind']],
                 'at': [{'container': x['container'], 'name': x['name'], 'caption': x['text']}
                        for x in recs],
                 'nav': {'kind': r['nav'][0], 'target': r['nav'][1]} if r['nav'] else None,
                 'does': r['does'],
                 'function': self.function(r),
-            })
+            }
+            if r['kind'] == 'button':
+                # Index = position = the number the program sets. `press` is
+                # the state shown while the button is held.
+                row['states'] = r['states']
+                row['press'] = r['press']
+            controls.append(row)
         return {
             'generated_by': 'gdl.idmap',
             'spec': os.path.basename(self.spec_path) if self.spec_path else None,
@@ -333,15 +359,22 @@ class IdMap:
         return out
 
     @staticmethod
-    def _csv(d):
+    def states(c):
+        """'0 Off, 1 On' - each state's index, which is what a program sets,
+        and its name."""
+        return ', '.join(f'{i} {n}' for i, n in enumerate(c.get('states') or []))
+
+    @classmethod
+    def _csv(cls, d):
         buf = io.StringIO()
         w = csv.writer(buf, lineterminator='\n')
-        w.writerow(['ID', 'Type', 'Page', 'Control', 'Caption', 'Function'])
+        w.writerow(['ID', 'Type', 'Page', 'Control', 'Caption', 'States', 'Press', 'Function'])
         for c in d['controls']:
             w.writerow([c['id'], c['type'],
                         '; '.join(a['container'] for a in c['at']),
                         '; '.join(a['name'] for a in c['at']),
-                        c['at'][0]['caption'], c['function']])
+                        c['at'][0]['caption'], cls.states(c), c.get('press') or '',
+                        c['function']])
         return buf.getvalue()
 
     def _markdown(self, d):
@@ -365,12 +398,19 @@ class IdMap:
             if pu['reached_by'] == 'program':
                 by.append('**the program**')
             out.append(f"| {_cell(pu['name'])} | {_cell(kind)} | {_cell(', '.join(by)) or '-'} |")
-        out += ['', '## Controls', '', '| ID | Type | Where | Caption | Function |',
-                '|---|---|---|---|---|']
+        out += ['', '## Controls', '',
+                'A button\'s **States** are numbered as the program sets them; a button with '
+                'none listed keeps the states of the button it was cloned from.', '',
+                '| ID | Type | Where | Caption | States | Function |',
+                '|---|---|---|---|---|---|']
         for c in d['controls']:
             where = '; '.join(f"{a['container']} / {a['name']}" for a in c['at'])
+            st = self.states(c)
+            if st and c.get('press'):
+                st += f" (press: {c['press']})"
             out.append(f"| {c['id']} | {c['type']} | {_cell(where)} | "
-                       f"{_cell(c['at'][0]['caption'])} | {_cell(c['function']) or '-'} |")
+                       f"{_cell(c['at'][0]['caption'])} | {_cell(st) or '-'} | "
+                       f"{_cell(c['function']) or '-'} |")
         return '\n'.join(out) + '\n'
 
 

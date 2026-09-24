@@ -162,6 +162,78 @@ class TestMirrors(unittest.TestCase):
         self.assertTrue(has(problems(m), '500'), problems(m))
 
 
+def stateful(name, states, x=0, **kw):
+    b = btn(name, x, states=states, **kw)
+    del b['on']
+    return b
+
+
+FOUR = ['Off', {'name': 'Warming', 'fill': '#242634'},
+        {'name': 'On', 'fill': 'accent'}, {'name': 'Cooling', 'fill': '#242634', 'text': 'Cool'}]
+
+
+class TestStates(unittest.TestCase):
+    """A program sets a button's feedback by state INDEX, so the map lists
+    every state in order - the index is the position."""
+
+    def test_named_states_are_listed_in_order(self):
+        m = idmap([page('Home', stateful('Display', FOUR, press='On'))])
+        row = m.data()['controls'][0]
+        self.assertEqual(row['states'], ['Off', 'Warming', 'On', 'Cooling'])
+        self.assertEqual(row['press'], 'On')
+
+    def test_on_is_off_and_on(self):
+        row = idmap([page('Home', btn('Go'))]).data()['controls'][0]
+        self.assertEqual(row['states'], ['Off', 'On'])
+        self.assertEqual(row['press'], 'On')
+
+    def test_a_button_without_feedback_lists_none(self):
+        """Its states are whatever the donor button had, which the spec never
+        named - so the map does not claim to know them."""
+        b = btn('Go')
+        del b['on']
+        row = idmap([page('Home', b)]).data()['controls'][0]
+        self.assertIsNone(row['states'])
+
+    def test_only_buttons_carry_states(self):
+        m = idmap([page('Home', {'kind': 'label', 'name': 'L', 'text': 'L',
+                                 'rect': [0, 0, 200, 40]})])
+        self.assertNotIn('states', m.data()['controls'][0])
+
+    def test_mirrors_with_different_states_are_a_problem(self):
+        """GUI Designer gives every control sharing an ID the same states."""
+        m = idmap([page('Home', stateful('D', FOUR, id=500), btn('Go', x=200, nav='S')),
+                   page('S', stateful('D', FOUR[:3], id=500), btn('Back', x=200, nav='Home'),
+                        number=1100)])
+        self.assertTrue(has(problems(m), '500', 'states'), problems(m))
+
+    def test_a_mirror_differing_in_both_function_and_states_reports_both(self):
+        m = idmap([page('Home', stateful('D', FOUR, id=500, does='Powers it.'),
+                        btn('Go', x=200, nav='S')),
+                   page('S', stateful('D', FOUR[:3], id=500, does='Something else.'),
+                        btn('Back', x=200, nav='Home'), number=1100)])
+        self.assertTrue(has(problems(m), '500', 'functions'), problems(m))
+        self.assertTrue(has(problems(m), '500', 'states'), problems(m))
+
+    def test_the_tables_show_the_states(self):
+        d = tempfile.mkdtemp()
+        try:
+            idmap([page('Home', stateful('Display', FOUR, press='On'))]).write(d)
+            with open(os.path.join(d, 'idmap.csv'), encoding='utf-8', newline='') as fh:
+                row = next(csv.DictReader(fh))
+            self.assertEqual(row['States'], '0 Off, 1 Warming, 2 On, 3 Cooling')
+            self.assertEqual(row['Press'], 'On')
+            with open(os.path.join(d, 'idmap.md'), encoding='utf-8') as fh:
+                self.assertIn('0 Off, 1 Warming, 2 On, 3 Cooling', fh.read())
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
+
+    def test_the_caption_is_the_first_states(self):
+        s = [{'name': 'Idle', 'text': 'Start'}, {'name': 'Busy', 'fill': 'accent'}]
+        row = idmap([page('Home', stateful('Go', s))]).data()['controls'][0]
+        self.assertEqual(row['at'][0]['caption'], 'Start')
+
+
 class TestNavigationGraph(unittest.TestCase):
     def test_an_unreachable_page_is_a_problem(self):
         m = idmap([page('Home', btn('Go', nav='Home')),
@@ -208,7 +280,7 @@ class TestOutput(unittest.TestCase):
             d = json.load(fh)
         ids = [c['id'] for c in d['controls']]
         self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual(len(ids), 23)
+        self.assertEqual(len(ids), 24)
         end = next(c for c in d['controls'] if c['at'][0]['name'] == 'EndCall')
         self.assertEqual(end['function'], 'Ends the call.')
         help_btn = next(c for c in d['controls'] if c['at'][0]['name'] == 'HelpBtn')
@@ -227,7 +299,7 @@ class TestOutput(unittest.TestCase):
         load(EXAMPLE).write(self.dir)
         with open(os.path.join(self.dir, 'idmap.csv'), encoding='utf-8', newline='') as fh:
             rows = list(csv.DictReader(fh))
-        self.assertEqual(len(rows), 23)
+        self.assertEqual(len(rows), 24)
         vol = next(r for r in rows if r['Control'] == 'VolumeSlider')
         self.assertEqual((vol['Type'], vol['Page']), ('Slider', 'Huddle Home'))
 
@@ -237,7 +309,7 @@ class TestOutput(unittest.TestCase):
         with open(os.path.join(self.dir, 'idmap.md'), encoding='utf-8') as fh:
             rows = [l for l in fh.read().splitlines() if l.startswith('| ')]
         for row in rows:
-            self.assertIn(len(re.split(r'(?<!\\)\|', row)[1:-1]), (3, 5), row)
+            self.assertIn(len(re.split(r'(?<!\\)\|', row)[1:-1]), (3, 6), row)
 
 
 if __name__ == '__main__':

@@ -129,7 +129,8 @@ python tests/verify_built.py out/plan.json out/generated.gdl
 It diffs the built `layout.json` against the plan that produced it and exits
 non-zero on any authored control that moved, lost its caption, or came back at
 the donor's font size instead of the spec's - and on a panel that boots into the
-wrong page, or a popup that built as the wrong kind.
+wrong page, a popup that built as the wrong kind, or a button whose states
+came back more, fewer, misnamed or drawn alike.
 
 It also checks **color, off the artwork rather than the model.** That
 distinction is the whole point: a built control's `BackgroundFillColor` reads

@@ -387,7 +387,7 @@ dl.kv dd.port {
       <button class="tog" id="tPorts" aria-pressed="false" title="Label every control with its UserId (the port the control processor addresses)">Port numbers</button>
       <button class="tog" id="tRects" aria-pressed="false">Hit areas</button>
       <button class="tog" id="tSlots" aria-pressed="false" title="Show where popup pages are allowed to land">Popup slots</button>
-      <button class="tog" id="tState" aria-pressed="false" title="Draw every multi-state button in its second (active) state">Active states</button>
+      <button class="tog" id="tState" aria-pressed="false" title="Step every button through its states: each click draws state 1, 2, ... in turn, then back to the default">States</button>
       <select id="popSel" aria-label="Overlay popup page"></select>
       <span class="spacer"></span>
       <span class="zoom" id="zoom"></span>
@@ -514,13 +514,15 @@ function fillClip(dir, w, h, f) {
   return `inset(0 ${w * g}px 0 0)`;
 }
 
-function ctlHTML(c, assets, useActive) {
+function ctlHTML(c, assets, si) {
   // A popup-page reference paints nothing and must not swallow clicks.
   if (c.anchor) return '';
 
+  // si is the state the toolbar is stepping through; 0 draws the default. A
+  // button with fewer states than si keeps its default.
   let img = c.i, tx = c.tx || '', col = c.c, fnt = c.f, al = c.a;
-  if (useActive && c.st && c.st.length > 1) {
-    const s = c.st[1];
+  if (si && c.st && c.st.length > si) {
+    const s = c.st[si];
     if (s.i !== null && s.i !== undefined) img = s.i;
     if (s.tx) tx = s.tx;
     if (s.c) col = s.c;
@@ -569,12 +571,12 @@ function ctlHTML(c, assets, useActive) {
   return `<div class="${cls}" style="left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px"${port}>${inner}</div>`;
 }
 
-function pageHTML(pg, assets, useActive) {
+function pageHTML(pg, assets, si) {
   let h = '';
   if (pg.bg !== null && pg.bg !== undefined && assets[pg.bg]) {
     h += `<img src="${assets[pg.bg]}" alt="" width="${pg.w}" height="${pg.h}" style="left:0;top:0">`;
   }
-  h += pg.c.map((c) => ctlHTML(c, assets, useActive)).join('');
+  h += pg.c.map((c) => ctlHTML(c, assets, si)).join('');
   return h;
 }
 
@@ -584,12 +586,12 @@ function draw() {
   const panel = $('panel');
   if (!pg) { panel.innerHTML = ''; return; }
 
-  const useActive = $('tState').getAttribute('aria-pressed') === 'true';
+  const si = state.si || 0;
   panel.style.width = pg.w + 'px';
   panel.style.height = pg.h + 'px';
   panel.style.background = pg.fill || '#000';
 
-  let html = pageHTML(pg, pr.assets, useActive);
+  let html = pageHTML(pg, pr.assets, si);
 
   // popup landing zones
   slotsFor(pg).forEach((s, i) => {
@@ -605,7 +607,7 @@ function draw() {
       // A modal popup carries its own dimming scrim inside its page image, so
       // adding a shade layer here would double-darken the page underneath.
       html += `<div class="popup-host" style="left:${slot.rect.x}px;top:${slot.rect.y}px;width:${q.w}px;height:${q.h}px">`
-        + pageHTML(q, pr.assets, useActive) + `</div>`;
+        + pageHTML(q, pr.assets, si) + `</div>`;
     }
   }
 
@@ -709,19 +711,35 @@ function loadProject(i) {
   const first = pr.pages.find((p) => p.id === pr.default) || pr.pages[0] || pr.popups[0];
   state.page = { ...first, kind: pr.pages.includes(first) ? 'page' : 'popup' };
   state.popup = '';
+  state.si = 0;
+  $('tState').setAttribute('aria-pressed', 'false');
+  $('tState').textContent = 'States';
   buildRail(); buildPopupSel(); draw(); inspect(null);
 }
 
 $('projSel').innerHTML = PROJECTS.map((p, i) => `<option value="${i}">${esc(p.label)}</option>`).join('');
 $('projSel').onchange = (e) => loadProject(+e.target.value);
 
-['tPorts', 'tRects', 'tSlots', 'tState'].forEach((id) => {
+['tPorts', 'tRects', 'tSlots'].forEach((id) => {
   $(id).onclick = () => {
     const b = $(id);
     b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
     draw();
   };
 });
+
+// Buttons carry up to four states in the corpus and up to 256 in GUI Designer,
+// so step through them rather than toggling to the second.
+$('tState').onclick = () => {
+  const pr = PROJECTS[state.p];
+  const most = Math.max(1, ...[...pr.pages, ...pr.popups]
+    .flatMap((p) => p.c).map((c) => (c.st ? c.st.length : 0)));
+  state.si = ((state.si || 0) + 1) % most;
+  const b = $('tState');
+  b.setAttribute('aria-pressed', state.si ? 'true' : 'false');
+  b.textContent = state.si ? `State ${state.si}` : 'States';
+  draw();
+};
 
 addEventListener('resize', fit);
 loadProject(0);

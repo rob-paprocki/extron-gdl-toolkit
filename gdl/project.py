@@ -166,12 +166,21 @@ class Project:
             'stroke': self.color(self.field(obj, 'borderColorField')),
             'border': self.border(obj),
             # How many appearances this control can show. A button with one
-            # state cannot give feedback, and a plan can only fill states the
-            # donor already has - see Spec.check_donor. `states` is the whole
-            # picture; this is the number a donor check needs.
+            # state cannot give feedback. The applier resizes a cloned donor's
+            # states to what the spec names, so this is a fact about the donor,
+            # not a limit on the spec.
             'n_states': len(self.states(obj)),
             'state_names': [self.field(s, 'nameField') for s in self.states(obj)],
+            # PBStates.statusField: PBState.StatusFlags (PreventAddState = 1,
+            # PreventDelete = 2, PreventReorder = 4, PreventRename = 8, ...).
+            # 0 on every button in the corpus; the applier will not resize a
+            # donor whose states carry any.
+            'state_flags': self._state_flags(obj),
         }
+
+    def _state_flags(self, obj):
+        sts = self.field(obj, 'statesField')
+        return self.field(sts, 'statusField') if sts else None
 
     def controls(self, types=CONTROL_TYPES):
         """Every control in the graph, with no page context.
