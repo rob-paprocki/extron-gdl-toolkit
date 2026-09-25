@@ -259,6 +259,42 @@ class TestInChrome(unittest.TestCase):
         self.assertEqual(home['Date']['align'], 'left')
         self.assertEqual(Panel(spec).check(), [])
 
+    def test_the_shockwave_canvas_translates_and_checks_clean(self):
+        """Shockwave's buttons are its kit's images, one per state."""
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        shutil.copytree(os.path.join(HERE, 'data', 'design-huddle-shockwave'), d, dirs_exist_ok=True)
+        shutil.copy(RUNTIME, os.path.join(d, 'support.js'))
+        p = designsys.load('shockwave')
+        comps = os.path.join(d, 'ds', 'extronshockwave', 'components')
+        os.makedirs(comps)
+        with open(os.path.join(comps, 'bundle.js'), 'w', encoding='utf-8') as fh:
+            fh.write(designsys.bundle(p, art=False))
+        with open(os.path.join(comps, 'bundle.css'), 'w', encoding='utf-8') as fh:
+            fh.write(designsys.BUNDLE_CSS)
+        spec, problems, _ = design.Canvas(d).translate()
+        if not designsys.kit_root(p):
+            self.skipTest("Extron's Shockwave kit is not installed here")
+        self.assertEqual(problems, [])
+        home = {c['name']: c for c in spec['pages'][0]['controls']}
+        # At rest a button is its color's ring, lit its color's fill.
+        self.assertEqual([s['image'] for s in home['RoomOff']['states']],
+                         ['960x440_red_outline_nsel.png', '960x440_red_sel.png'])
+        # A state can change color: Warming lights yellow.
+        self.assertEqual([s['image'] for s in home['Display']['states']],
+                         ['712x440_gray_nsel.png', '712x440_yellow_sel.png',
+                          '712x440_gray_sel.png', '712x440_yellow_outline_nsel.png'])
+        # The kit's icon sits at the left and the caption is centered past it,
+        # pushed right by leading spaces, as the seed's Accept Call is.
+        self.assertEqual(home['EndCall'].get('align', 'center'), 'center')  # the spec's default
+        self.assertEqual(home['EndCall']['text'], ' ' * 11 + 'End Call')
+        # The thumb is 52 across and 34 along the rail, as the kit draws it.
+        self.assertEqual((home['VolumeSlider']['thumb'], home['VolumeSlider']['thumb_height']), (52, 34))
+        close = {c['name']: c for c in spec['popups'][0]['controls']}['Close']
+        self.assertEqual([s['image'] for s in close['states']], ['black_close.png', 'white_close.png'])
+        self.assertEqual(spec['images']['white_close.png'], 'Shockwave/icons/440x440 White/white_close.png')
+        self.assertEqual(Panel(spec).check(), [])
+
     def test_a_held_button_draws_its_press_state(self):
         """The panel shows a button's press state while it is held, so the
         canvas does: Help shows the kit's selected icon on its round fill."""

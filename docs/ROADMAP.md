@@ -68,12 +68,12 @@ opening GUI Designer.**
    and per-page popup references is where the next class of bug lives. With `nav`
    the page flow is part of the spec, and `verify_idmap.py` checks it against
    the build.
-5. **Claude Design as the front end: every panel, then the other three
-   templates.** Afterburn is a design system, and a canvas drawn with it
+5. **Claude Design as the front end: every panel, then Turbulence.** Afterburn,
+   Mach and Shockwave are design systems, and a canvas drawn with each
    translates, builds and verifies end to end, with a side-by-side of each
    artboard and the built panel for sign-off - for the 1280×800 TLP Pro 1025/1035
    only. Next, one canvas building for every panel a room has, each sized for its
-   physical screen; then Mach, Shockwave and Turbulence on the same footing.
+   physical screen; then Turbulence on the same footing.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
 6. **Icon-font glyphs in the spec vocabulary.** Kit images are in it - a
    button's `image`, on itself or per state, which is how the Claude Design
@@ -94,6 +94,10 @@ opening GUI Designer.**
 
 ## Backlog - real, not urgent
 
+- **`gdl.compose` ignores a control's `transparencyField`**, so the Shockwave
+  seeds' video well (white at 85% transparency) renders opaque white. Ten
+  controls in each of the two archived Liberty Bank fixtures set it (75 and
+  80); score a fix against the render baseline (`docs/gdl-format.md` §7).
 - `renumber` is planned and checked but has never been through a build. Build
   one and run `tests/verify_built.py` against it - which, until the behavior
   work, never compared a built control's ID at all (it looked up `UserID`;

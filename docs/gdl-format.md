@@ -337,6 +337,28 @@ A generator should assert all four agree rather than trusting the writes.
   off that asset. An image the project lacks is appended by cloning an existing
   `PBImageResource` and setting its bitmap, name and size
   (`Add-GdlImageResource`).
+- **A donor's image of a kit file's name need not be that file.** The Shockwave
+  1035 seed carries `960x440_yellow_sel.png` and `960x440_red_sel.png` whose
+  pixels differ from the kit's files of those names in 67% of their pixels -
+  they draw the resting look - so a Help button whose On state named the kit's
+  `960x440_yellow_sel.png` built both states as one artwork. A name is reused
+  only when the pixels agree (compared as 32-bit ARGB, since the resource and
+  the file are encoded differently); otherwise the file goes in as
+  `<name>_1`, GUI Designer's own spelling of a second copy.
+- **A color can be a palette entry.** A `PBColor` with `paletteIndexField` >= 0
+  is `PBProject.paletteField`'s entry at that index (`PBPaletteEntry`: 0
+  Transparent, 1 Black, 9 White, ...) and its `valueField` is empty; Build
+  draws the entry. Every color in the Afterburn 1035 seed is custom (-1), while
+  the Mach 1035 seed has 126 palette colors and Shockwave 1035 107, mostly
+  state captions. A clone of one keeps the index, so writing only the value
+  changes nothing: Shockwave's lit captions are palette Black, and a clone
+  rewritten to white built black. `Set-GdlColor` writes -1 with the value, and
+  `gdl.project` reads an entry through the palette.
+- **A control's `transparencyField` fades everything it draws** - a percent.
+  28 of the Shockwave 1035 seed's 34 shapes are 0.0, five modal dims 85.0 and
+  its Offline Window 25.0. A clone keeps its donor's, so panels cloned from a
+  dim built at 15% opacity with the right fill in every field. The spec says translucency with
+  the fill's alpha, so the applier writes 0.
 - **A kit image button carries its image on each state, not on the control.**
   Every image button in the Afterburn 1035 and 1535 seeds has an empty
   control-level `buttonImageField` and one per state, drawn `Fill` and

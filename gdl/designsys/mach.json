@@ -362,7 +362,17 @@
     "pattern": "rounded tiles cut at the Mach 10 px radius",
     "radius": 10
   },
+  "iconography": {
+    "icon_prop": "Mach's kit draws each icon once, in white, so the icon never shows state: the button's fill does.",
+    "intro": "Mach shows state with a button's fill, not its icon: the kit draws each icon once, in white, and a button lights by moving to a brighter fill (`raised` to `pressed`, `shade` to `shade-on`) or, to stand out further, to solid `accent`. Every icon comes from Mach's own resource kit through a Button's `icon` - never draw one.",
+    "rules": [
+      "**Which button**: most buttons are `ghost`; rail and navigation controls are `solid`. With an `icon` and a caption, the icon sits at the left and the caption after it; with no caption, the icon alone, centered. Sources are `source` tiles with the icon centered. The footer's Room Mode, Help and Power are `footer`.",
+      "**Feedback**: every state must look different - a brighter fill, or `accent` with a `page` caption for a selected item (`highlight`).",
+      "**Alerts** are `variant=\"alert\"`, for a fault someone has to act on. Shutting the room down is not one: it is a `solid` button."
+    ]
+  },
   "examples": {
+    "source": {"attrs": "variant=\"source\" icon=\"laptop_1\"", "rect": [450, 320, 100, 100]}, "help": {"attrs": "variant=\"footer\"", "text": "Help", "rect": [1058, 745, 70, 55]},
     "states": "[{\"name\":\"No Signal\",\"fill\":\"shade\",\"color\":\"text-secondary\"},\"Ready\",{\"name\":\"Live\",\"fill\":\"accent\",\"color\":\"page\"}]",
     "states_note": "In Mach a selected or On state usually moves the same fill to a brighter alpha (raised/pressed, shade/shade-on); a state that has to stand out further, like this one, fills solid `accent` instead, with a `page`-colored caption for contrast - see the highlight variant.",
     "on_off": "[\"Off\",{\"name\":\"On\",\"fill\":\"pressed\"}]",

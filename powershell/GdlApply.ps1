@@ -141,6 +141,11 @@ function Set-GdlColor {
     $g = ($Argb -shr 8) -band 0xFF
     $b = $Argb -band 0xFF
     Set-GdlFieldIfPresent $c 'valueField' ([System.Drawing.Color]::FromArgb($a, $r, $g, $b)) | Out-Null
+    # A custom color, not a palette entry: a PBColor with paletteIndexField >= 0
+    # is drawn from the project's palette and its value is ignored. Shockwave's
+    # On captions are palette Black (1), so a clone rewritten to white still
+    # built black. -1 is what every custom color in Extron's seeds carries.
+    Set-GdlFieldIfPresent $c 'paletteIndexField' -1 | Out-Null
     Set-GdlFieldIfPresent $Control $Field $c | Out-Null
 }
 
@@ -273,36 +278,71 @@ function Set-GdlStateOrder {
     return $true
 }
 
+function Test-GdlSameBitmap {
+    <#  Do two bitmaps hold the same pixels? Compared as 32-bit ARGB, since a
+        resource's bitmap and the file it came from are encoded differently. #>
+    param($A, $B)
+    if ($A.Width -ne $B.Width -or $A.Height -ne $B.Height) { return $false }
+    $rect = New-Object System.Drawing.Rectangle 0, 0, $A.Width, $A.Height
+    $fmt = [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+    $text = foreach ($bmp in $A, $B) {
+        $d = $bmp.LockBits($rect, [System.Drawing.Imaging.ImageLockMode]::ReadOnly, $fmt)
+        try {
+            $buf = New-Object byte[] ($d.Stride * $d.Height)
+            [System.Runtime.InteropServices.Marshal]::Copy($d.Scan0, $buf, 0, $buf.Length)
+            [Convert]::ToBase64String($buf)
+        } finally { $bmp.UnlockBits($d) }
+    }
+    return $text[0] -eq $text[1]
+}
+
 function Add-GdlImageResource {
-    <#  Make sure the project's resource library has an image named $Name,
-        appending one from $File if it does not. Returns $true when it is there.
+    <#  Make sure the project's resource library has the image in $File under
+        $Name, appending it if not. Returns the name it is there under, or
+        $null.
+
+        A donor can carry a resource of the same name with different pixels:
+        Shockwave's seed has a '960x440_yellow_sel.png' that is not the kit's
+        file of that name, and a state pointed at it built as its Off image. So
+        a name is only reused when the pixels agree; otherwise the file goes in
+        as '<name>_1' (GUI Designer's own spelling of a second copy), '_2'...
 
         Clone-never-construct: an existing PBImageResource is copied and its
         bitmap replaced - the route New-ImageProbe.ps1 proved for icons. #>
     param($Project, [string]$Name, [string]$File)
     $resources = Get-GdlField $Project.ResourceSet 'resourcesField'
     $donor = $null
+    $byName = @{}
     foreach ($r in $resources) {
         if ($r.GetType().Name -ne 'PBImageResource') { continue }
-        if ((Get-GdlField $r 'nameField') -eq $Name) { return $true }
+        $byName[(Get-GdlField $r 'nameField')] = $r
         if (-not $donor) { $donor = $r }
     }
     if (-not $File -or -not (Test-Path $File)) {
+        if ($byName.ContainsKey($Name)) { return $Name }
         Note-Problem "image '$Name' is not in the project and its file '$File' was not found"
-        return $false
+        return $null
     }
-    if (-not $donor) { Note-Problem "no PBImageResource in the project to clone for '$Name'"; return $false }
+    if (-not $donor) { Note-Problem "no PBImageResource in the project to clone for '$Name'"; return $null }
     Add-Type -AssemblyName System.Drawing
     $bmp = New-Object System.Drawing.Bitmap($File)
+    $use = $Name
+    $i = 0
+    while ($byName.ContainsKey($use)) {
+        $have = Get-GdlField $byName[$use] 'dataField'
+        if ($have -and (Test-GdlSameBitmap $have $bmp)) { return $use }
+        $i++
+        $use = "${Name}_$i"
+    }
     $new = Copy-GdlObject $donor
-    Set-GdlField $new 'nameField' $Name
+    Set-GdlField $new 'nameField' $use
     Set-GdlField $new 'dataField' $bmp
     Set-GdlField $new 'widthField' $bmp.Width
     Set-GdlField $new 'heightField' $bmp.Height
     Set-GdlField $new 'sizeField' ([int](Get-Item $File).Length)
     Set-GdlFieldIfPresent $new 'filenameField' ([System.IO.Path]::GetFileName($File)) | Out-Null
     $resources.Add($new)
-    return $true
+    return $use
 }
 
 function Set-GdlImage {

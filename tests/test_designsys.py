@@ -144,6 +144,39 @@ class TestEveryProfile(unittest.TestCase):
             self.assertIn(p['font']['family'], Project.open(seed).font_resource_names())
         _each(self, check)
 
+    def test_the_readme_names_only_what_the_profile_has(self):
+        """Mach's README once told designers to use Afterburn's `icon`, `list`
+        and `toggle` variants, and to read its icon anatomy off tokens Mach
+        does not have."""
+        def check(p):
+            docs = designsys.component_docs(p)
+            previews = designsys.previews(p)
+            text = '\n'.join([designsys.readme(p)] + list(docs.values()) + list(previews.values()))
+            for v in re.findall(r'variant(?:="|: ")([^"]+)"', text):
+                self.assertIn(v, p['buttons'], f'the docs name variant {v!r}')
+            for t in re.findall(r'type(?:="|: ")([^"]+)"', text):
+                self.assertIn(t, {s['name'] for s in p['type']}, f'the docs name type {t!r}')
+            self.assertNotIn('(?)', text, 'the README reads a token the profile lacks')
+            names = designsys.icon_names(p)
+            for v, icon in re.findall(r'variant="([^"]+)" icon="([^"]+)"', text):
+                if names:
+                    self.assertIn(icon, names.get(v, []), f'{v} icon {icon!r}')
+            # The icon prop's own line names this template's image variants.
+            line = next(ln for ln in docs['Button'].splitlines() if ln.startswith('- `icon`'))
+            line = re.sub(r'\(default `[^`]+`\)', '', line)
+            for v in re.findall(r'`([a-z-]+)`', line):
+                if v not in ('icon',):
+                    self.assertIn(v, p['buttons'], f'the icon line names variant {v!r}')
+        _each(self, check)
+
+    def test_the_example_puts_a_header_source_on_the_page(self):
+        """Shockwave's sources are tabs in the header, not in its video well:
+        placed inside MainArea, its example tab landed 168,120 down and right."""
+        text = designsys.readme(designsys.load('shockwave'))
+        main = re.search(r'ExtronShockwave\.MainArea">(.*?)</x-import>\n  </x-import>', text, re.S)
+        self.assertNotIn('name="Laptop"', main.group(1))
+        self.assertIn('name="Laptop"', text)
+
     def test_every_profile_builds_a_system(self):
         def check(p):
             with tempfile.TemporaryDirectory() as d:
@@ -228,6 +261,18 @@ class TestKit(unittest.TestCase):
         self.assertNotIn('toggle-1', names['list'])
         self.assertIn('call_connected', names['icon'])
 
+    def test_a_default_icon_does_not_narrow_the_offer(self):
+        """Shockwave's `button` draws gray unless told otherwise; red, yellow
+        and the rest are still its to offer."""
+        p = designsys.load('shockwave')
+        if not designsys.kit_root(p):
+            self.skipTest("Extron's Shockwave kit is not installed here")
+        names = designsys.icon_names(p)
+        self.assertLessEqual({'gray', 'red', 'yellow', 'green', 'blue'}, set(names['button']))
+        self.assertIn('laptop_white', names['source'])
+        self.assertEqual(names['close'], ['close'])
+        self.assertNotIn('close', names['square'])
+
 
 class TestKitFiles(unittest.TestCase):
     def test_a_name_with_a_space_before_png_is_still_kit(self):
@@ -259,6 +304,85 @@ class TestKitFiles(unittest.TestCase):
         self.assertEqual(sorted(index['files']['440x440']), ['laptop', 'thumb'])
         # The first root wins a name both have.
         self.assertEqual(index['paths']['440x440_thumb.png'], 'Theme/Extracted/440x440_thumb.png')
+
+    def test_a_kit_can_draw_off_from_its_outlined_art(self):
+        """Shockwave's pills rest dark with a colored ring (red_outline_nsel)
+        and light when selected (red_sel); its plain red_nsel is a saturated
+        solid no seed button rests in. Icon pills name it mid-stem
+        (r_power_outline_red_nsel) and round ones before it
+        (red_round_outline_nsel)."""
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        names = ('1248x440_red_nsel.png', '1248x440_red_outline_nsel.png', '1248x440_red_sel.png',
+                 '1248x440_red_round_outline_nsel.png', '1248x440_red_round_sel.png',
+                 '1248x440_r_power_outline_red_nsel.png', '1248x440_r_power_red_sel.png',
+                 '1248x440_gray_nsel.png', '1248x440_gray_sel.png',
+                 '1248x440_outline_share-1b_blue_nsel.png', '1248x440_share-1b_blue_sel.png')
+        with tempfile.TemporaryDirectory() as a:
+            os.makedirs(os.path.join(a, 'Theme'))
+            for f in names:
+                with open(os.path.join(a, 'Theme', f), 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a,)
+            try:
+                files = designsys.kit_index({'kit': {'root': 'Theme', 'outline_off': True}})['files']
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+        pills = files['1248x440']
+        self.assertEqual(pills['red'], {'off': '1248x440_red_outline_nsel.png',
+                                        'sel': '1248x440_red_sel.png'})
+        self.assertEqual(pills['red_round']['off'], '1248x440_red_round_outline_nsel.png')
+        self.assertEqual(pills['r_power_red']['off'], '1248x440_r_power_outline_red_nsel.png')
+        self.assertEqual(pills['gray']['off'], '1248x440_gray_nsel.png')
+        # 504x440's share buttons put it first.
+        self.assertEqual(pills['share-1b_blue']['off'], '1248x440_outline_share-1b_blue_nsel.png')
+        self.assertNotIn('outline_share-1b_blue', pills)
+
+    def _index(self, kit, names):
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        with tempfile.TemporaryDirectory() as a:
+            for f in names:
+                path = os.path.join(a, 'Theme', *f.split('/'))
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a,)
+            try:
+                return designsys.kit_index({'kit': dict(kit, root='Theme')})
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+
+    def test_a_doubled_underscore_reads_as_one(self):
+        """Shockwave's 1248x440_blue__round_outline_nsel.png is blue_round's."""
+        files = self._index({'outline_off': True},
+                            ['1248x440_blue__round_outline_nsel.png', '1248x440_blue_round_sel.png'])['files']
+        self.assertEqual(files['1248x440'], {'blue_round': {
+            'off': '1248x440_blue__round_outline_nsel.png', 'sel': '1248x440_blue_round_sel.png'}})
+
+    def test_a_kit_can_name_a_file_its_pattern_misses(self):
+        """Shockwave's modal Close is icons/440x440 White/white_close.png - no
+        size prefix, so only a name in the profile reaches it."""
+        index = self._index({'named': {'440x440': {'close': 'white_close.png'}}},
+                            ['icons/440x440 White/white_close.png', '440x440_gray_nsel.png'])
+        self.assertEqual(index['files']['440x440']['close'], {'plain': 'white_close.png'})
+        self.assertEqual(index['paths']['white_close.png'], 'Theme/icons/440x440 White/white_close.png')
+
+    def test_a_named_icon_can_have_a_file_per_look(self):
+        """The seed's Close is a dark X at rest and a white one pressed."""
+        index = self._index({'named': {'440x440': {'close': {'off': 'black_close.png',
+                                                             'sel': 'white_close.png'}}}},
+                            ['icons/440x440 Black/black_close.png', 'icons/440x440 White/white_close.png'])
+        self.assertEqual(index['files']['440x440']['close'],
+                         {'off': 'black_close.png', 'sel': 'white_close.png'})
+        self.assertEqual(index['paths']['black_close.png'], 'Theme/icons/440x440 Black/black_close.png')
+
+    def test_a_named_file_the_kit_lacks_is_left_out(self):
+        index = self._index({'named': {'440x440': {'close': 'white_close.png'}}},
+                            ['440x440_gray_nsel.png'])
+        self.assertNotIn('close', index['files']['440x440'])
 
     def _shockwave_like(self):
         p = designsys.load('afterburn')

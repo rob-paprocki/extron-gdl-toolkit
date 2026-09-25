@@ -275,9 +275,12 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   the donor lacks. The applier appends it and draws it the way every image
   button in the Afterburn seeds is drawn — `Fill` (fit, keeping the aspect),
   `MiddleCenter` — so size the button to the image's shape. A button with no
-  `fill` is written transparent, so a state does not keep its donor's. A
-  slider's thumb is a kit image too: `thumb_image`, in the scheme's secondary
-  accent (Afterburn: `440x440_thumb-1-<color>_sel.png`).
+  `fill` is written transparent, so a state does not keep its donor's. A donor
+  image of the same name but other pixels is not reused: the file goes in as
+  `<name>_1`. A slider's thumb is a kit image too: `thumb_image`, in the
+  scheme's secondary accent (Afterburn: `440x440_thumb-1-<color>_sel.png`),
+  `thumb` across and `thumb_height` along the rail where it is not square
+  (Shockwave's is 52 by 34).
 - **Icon fonts** — for single-color icons, faster and needs no resource.
   Afterburn 136 glyphs at U+E900–E98C, Mach (Extron-Lift) 121 at U+E900–E978.
   Place them as text in that face.

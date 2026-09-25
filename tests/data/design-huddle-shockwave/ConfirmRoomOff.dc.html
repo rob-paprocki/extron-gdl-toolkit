@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm Room Off</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Confirm Room Off" kind="modal" theme="haze" does="Asks before the room shuts down." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronShockwave.Panel" name="Card" fill="raised" border="rounded" style="position: absolute; left: 288px; top: 205px; width: 703px; height: 389px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Question" type="heading" color="text-secondary" align="center" style="position: absolute; left: 340px; top: 270px; width: 600px; height: 90px">Shut the room down?</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Cancel" variant="wide" icon="red_round" nav="Home" style="position: absolute; left: 355px; top: 462px; width: 258px; height: 82px">Cancel</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="ShutDown" variant="wide" icon="green_round" does="Powers the display and audio off, then closes this popup." style="position: absolute; left: 667px; top: 462px; width: 258px; height: 82px">Shut Down</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

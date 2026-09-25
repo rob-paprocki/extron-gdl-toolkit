@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huddle Home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Huddle Home" theme="haze" start="true" does="The room's home page: share a source, set volume, end the call." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronShockwave.Panel" name="Header" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 91px"></x-import>
+<div style="position: absolute; left: 169px; top: 0px; width: 480px; height: 91px; display: flex; gap: 12px">
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Laptop" variant="source" icon="laptop_white" press="On" does="Routes the laptop to the display." style="width: 152px; height: 91px">Laptop</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Wireless" variant="source" icon="sharelink_white" press="On" does="Routes wireless sharing to the display." style="width: 152px; height: 91px">Wireless</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="RoomPC" variant="source" icon="pc_white" press="On" does="Routes the room PC to the display." style="width: 152px; height: 91px">Room PC</x-import>
+</div>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="DisplayLabel" align="center" style="position: absolute; left: 29px; top: 109px; width: 120px; height: 61px">Display</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Display" states='[{"name":"Off","look":"off","text":"Off"},{"name":"Warming","look":"on","icon":"yellow","color":"ink","text":"Warming"},{"name":"On","look":"on","color":"ink","text":"On"},{"name":"Cooling","look":"off","icon":"yellow","text":"Cooling"}]' press="On" does="Turns the display on or off; shows it warming up and cooling down." style="position: absolute; left: 29px; top: 170px; width: 120px; height: 80px">Off</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Panel" name="Well" fill="well" border="rounded" style="position: absolute; left: 168px; top: 120px; width: 926px; height: 574px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="RoomName" type="title" align="center" style="position: absolute; left: 331px; top: 250px; width: 600px; height: 70px">Huddle Room</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Status" type="body" align="center" style="position: absolute; left: 331px; top: 330px; width: 600px; height: 40px">Choose a source above to share it.</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="EndCall" variant="action" icon="r_end-call_red" type="body" does="Ends the call." style="position: absolute; left: 495px; top: 540px; width: 272px; height: 96px">End Call</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="VolumeLabel" align="center" style="position: absolute; left: 1127px; top: 109px; width: 120px; height: 61px">Volume</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Slider" name="VolumeSlider" does="Sets the room's volume; the program moves it when volume changes elsewhere." style="position: absolute; left: 1160px; top: 170px; width: 54px; height: 315px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Mute" variant="square" icon="red" states='[{"name":"Unmuted","look":"off"},{"name":"Muted","look":"on","color":"alert"}]' does="Mutes and unmutes the room's audio." style="position: absolute; left: 1147px; top: 500px; width: 80px; height: 80px">Mute</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Panel" name="Footer" border="capsule" style="position: absolute; left: 166px; top: 718px; width: 928px; height: 62px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Clock" name="DateTime" format="datetime" align="center" style="position: absolute; left: 402px; top: 725px; width: 475px; height: 49px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="HelpBtn" variant="pill" icon="yellow" nav="Help" style="position: absolute; left: 944px; top: 720px; width: 143px; height: 59px">Help</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="RoomOff" variant="pill" icon="red" states='[{"name":"Off","look":"off"},{"name":"On","look":"on","color":"alert"}]' nav="ConfirmRoomOff" style="position: absolute; left: 1115px; top: 720px; width: 143px; height: 59px">Off</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

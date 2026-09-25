@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huddle Help</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Huddle Help" kind="modal" theme="haze" does="How to share, for people new to the room, over the page they were on." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronShockwave.Panel" name="Card" fill="raised" border="rounded" style="position: absolute; left: 288px; top: 173px; width: 703px; height: 453px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="HelpTitle" type="title" color="text-secondary" align="center" style="position: absolute; left: 440px; top: 205px; width: 400px; height: 70px">Help</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Close" variant="close" nav="Home" aria-label="Close" style="position: absolute; left: 925px; top: 186px; width: 53px; height: 53px"></x-import>
+<div style="position: absolute; left: 340px; top: 320px; width: 600px; height: 220px; display: flex; flex-direction: column; gap: 16px">
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Step1" color="text-secondary" style="height: 56px">1. Connect your laptop, or start wireless sharing.</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Step2" color="text-secondary" style="height: 56px">2. Tap its name at the top of the page.</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Step3" color="text-secondary" style="height: 56px">3. End the call when you are done.</x-import>
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

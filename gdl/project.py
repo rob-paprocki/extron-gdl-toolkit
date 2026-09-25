@@ -45,6 +45,7 @@ class Project:
     def __init__(self, graph):
         self.g = graph
         self.o = graph.objects
+        self._palette = None  # palette_color()'s index -> color, read once
 
     @classmethod
     def open(cls, path):
@@ -81,12 +82,38 @@ class Project:
 
     # -- semantic accessors ------------------------------------------------
     def color(self, obj):
-        """PBColor -> {'A','R','G','B'} or None when fully transparent."""
+        """PBColor -> {'A','R','G','B'} or None when fully transparent.
+
+        A color can name an entry of the project's palette instead of carrying
+        a value: `paletteIndexField` >= 0, and `valueField` is then empty. Build
+        draws the entry - Shockwave's On captions are palette Black (1), and
+        Afterburn's seed has none, which is why reading only the value went
+        unnoticed.
+        """
+        i = self.field(obj, 'paletteIndexField')
+        if isinstance(i, int) and i >= 0:
+            return self.palette_color(i)
         inner = self.field(obj, 'valueField')
         if not isinstance(inner, dict):
             return None
         c = argb(inner.get('value', 0))
         return c if c['A'] else None
+
+    def palette_color(self, index):
+        """The project palette's entry `index` -> {'A','R','G','B'}, or None when
+        it is transparent or the palette has no such entry."""
+        if self._palette is None:
+            self._palette = {}
+            for proj in self.instances('PBProject'):
+                pal = self.deref(self.field(proj, 'paletteField'))
+                for e in self.items((pal or {}).get('itemsField')) if isinstance(pal, dict) else []:
+                    e = self.deref(e)
+                    self._palette[e.get('indexField')] = {
+                        'A': e.get('alphaField'), 'R': e.get('redField'),
+                        'G': e.get('greenField'), 'B': e.get('blueField')}
+                break
+        c = self._palette.get(index)
+        return c if c and c['A'] else None
 
     def border(self, obj):
         """The named border resource, decoded to shape geometry."""

@@ -42,7 +42,7 @@ FIELDS = {
     'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does'),
     'panel': ('fill', 'stroke', 'border'),
     'line': ('fill', 'thickness', 'from', 'to'),
-    'slider': ('id', 'fill', 'border', 'orientation', 'track', 'thumb', 'does'),
+    'slider': ('id', 'fill', 'border', 'orientation', 'track', 'thumb', 'thumb_height', 'does'),
     'level': ('id', 'fill', 'border', 'orientation', 'track', 'does'),
     'datetime': ('color', 'size', 'bold', 'align', 'format'),
     'popup_ref': ('group',),

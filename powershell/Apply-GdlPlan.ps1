@@ -83,11 +83,16 @@ function Add-GdlControls {
         Set-GdlFieldIfPresent $c 'flattenTextField' ([bool]$op.flatten) | Out-Null
         Set-GdlFieldIfPresent $c 'buttonImageField' $null | Out-Null
         Set-GdlFieldIfPresent $c 'backgroundImageField' $null | Out-Null
+        # A control's own transparency (percent) fades everything it draws, and
+        # a clone keeps its donor's: Shockwave's first PBShape is an 85% dim, so
+        # every panel cloned from it built at 15% opacity. The spec says
+        # translucency with the fill's alpha, so a clone starts opaque.
+        Set-GdlFieldIfPresent $c 'transparencyField' ([double]0) | Out-Null
         Set-GdlBorder $Project $c $op.border
             # A slider's thumb is a kit image, not a color, and a clone keeps
             # its donor's - Afterburn's scheme-1 periwinkle under every scheme.
             if ($op.thumb_image) {
-                Set-GdlImage $c 'sliderThumbImageField' $imageRef $op.thumb_image.name
+                Set-GdlImage $c 'sliderThumbImageField' $imageRef (Get-PlanImageName $op.thumb_image.name)
             }
             Set-GdlFont $Project $c $op.font
             Set-GdlFieldIfPresent $c 'textAlignmentField' $op.alignment | Out-Null
@@ -143,7 +148,7 @@ function Add-GdlControls {
                     # ...and then the kit image the plan names for this state:
                     # the icon, a list button's selection line, a toggle.
                     if ($img) {
-                        Set-GdlImage $st 'buttonImageField' $imageRef $img.name
+                        Set-GdlImage $st 'buttonImageField' $imageRef (Get-PlanImageName $img.name)
                         Set-GdlFieldIfPresent $st 'buttonImageLayoutField' $op.image_layout | Out-Null
                         Set-GdlFieldIfPresent $st 'buttonImageAlignmentField' $op.image_align | Out-Null
                     }
@@ -217,10 +222,18 @@ if (-not $donorPage) { throw 'donor project has no pages to clone from' }
 
 # Images the spec brings: appended where the donor lacks them. Captured before
 # any page is cloned, the reference a page's background image is cloned from.
+# A plan names each image as the kit does; the resource it lands under can
+# differ, where the donor already has that name for other pixels.
+$script:ImageAs = @{}
 foreach ($im in @($spec.images)) {
     if ($null -eq $im) { continue }
-    if (Add-GdlImageResource $project $im.name $im.file) { Write-Output "image '$($im.name)' ready" }
+    $as = Add-GdlImageResource $project $im.name $im.file
+    if (-not $as) { continue }
+    $script:ImageAs[$im.name] = $as
+    if ($as -eq $im.name) { Write-Output "image '$($im.name)' ready" }
+    else { Write-Output "image '$($im.name)' ready as '$as' - the donor's '$($im.name)' is other art" }
 }
+function Get-PlanImageName([string]$Name) { if ($script:ImageAs.ContainsKey($Name)) { $script:ImageAs[$Name] } else { $Name } }
 $imageRef = Find-GdlImageRef $project
 
 $pageIds = @{}
@@ -244,7 +257,7 @@ foreach ($pg in $spec.pages) {
     # ...and then the image the SPEC names, if any, by a fresh reference. The
     # layout fields (stretch, alignment, offsets) come from the donor page.
     if ($pg.background_image) {
-        Set-GdlImage $newPage 'backgroundImageField' $imageRef $pg.background_image.name
+        Set-GdlImage $newPage 'backgroundImageField' $imageRef (Get-PlanImageName $pg.background_image.name)
         # Fill and MiddleCenter, as the Afterburn seeds lay out theirs - set,
         # not inherited, so the page draws the same whatever the donor is.
         # Fill (0) as Afterburn's pages lay theirs out, Stretch (1) as Mach's.

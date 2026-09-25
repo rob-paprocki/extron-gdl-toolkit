@@ -201,6 +201,14 @@ class TestControlTypes(unittest.TestCase):
         # Verified by writing them onto a live Extron.GUICPro.PBSlider.
         self.assertEqual(f['sliderTrackWidth'], 14)
         self.assertEqual(f['sliderThumbWidth'], 40)
+        self.assertEqual(f['sliderThumbHeight'], 40)  # square unless told
+
+    def test_a_thumb_can_be_shorter_along_the_rail(self):
+        """Shockwave's thumb is 52 across and 34 along; built square, its
+        156x102 image came back stretched."""
+        f = self._ops({'kind': 'slider', 'rect': [0, 0, 54, 315], 'thumb': 52,
+                       'thumb_height': 34})['fields']
+        self.assertEqual((f['sliderThumbWidth'], f['sliderThumbHeight']), (52, 34))
 
     def test_line_endpoints_are_the_eight_position_enum(self):
         # A diagonal is TopLeft -> BottomRight; the angle comes from the rect.

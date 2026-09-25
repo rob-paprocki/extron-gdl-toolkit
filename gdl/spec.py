@@ -378,7 +378,9 @@ def _type_fields(kind, c):
             # slider builds fine at the donor's dimensions.
             out['sliderTrackWidth'] = c.get('track', 10)
             out['sliderThumbWidth'] = c.get('thumb', 50)
-            out['sliderThumbHeight'] = c.get('thumb', 50)
+            # Along the rail: square unless the template's thumb is not -
+            # Shockwave's is 52 across and 34 along.
+            out['sliderThumbHeight'] = c.get('thumb_height', c.get('thumb', 50))
     if kind == 'line':
         # Endpoints are an eight-position enum on the control's own rect, so a
         # diagonal is TopLeft -> BottomRight at whatever angle the rect gives.

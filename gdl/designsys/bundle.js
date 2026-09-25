@@ -245,7 +245,9 @@
     var now = Object.assign({}, look, shown);
     var f = font(props, P.defaults.button.type);
     var b = P.borders[now.border];
-    var align = props.align || (img && img.caption === 'indent' ? 'left' : V.align) || 'center';
+    // An indented caption reads from the left unless the variant says
+    // otherwise: Shockwave's centers it, pushed right past the icon.
+    var align = props.align || V.align || (img && img.caption === 'indent' ? 'left' : null) || 'center';
     var art = now.image && KIT && KIT.art ? KIT.art[now.image] : null;
     var style = {
       boxSizing: 'border-box', width: '100%', height: '100%',
@@ -400,7 +402,9 @@
       style: { position: 'relative', boxSizing: 'border-box', width: '100%', height: '100%' },
       'data-gdl': gdl({ kind: kind, name: props.name, id: props.id != null ? Number(props.id) : null,
                         fill: fill, border: props.border || d.border, orientation: o,
-                        track: t, thumb: s || null, does: props.does })
+                        track: t, thumb: s || null,
+                        thumb_height: s && Number(d.thumb_height) ? Number(d.thumb_height) : null,
+                        does: props.does })
     }, kids);
   }
   function Slider(props) { return track('slider', props); }

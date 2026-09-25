@@ -1,0 +1,193 @@
+{
+  "_source": [
+    "Surveyed off seeds/Shockwave 1035.gdl (every page's controls and per-state looks via gdl.project.Project), cross-checked against seeds/Shockwave 1535.gdl and seeds/Shockwave ECP 16-10.gdl, which share its palette byte for byte. The template's own defaults (`python -m gdl.themes \"Shockwave 1020 Series.glt\"`: fills #3B2F2A, #999999, #FFFFFF; borders 2D Rounded Rectangle, 2D Rectangle, 2D Capsule) corroborate it.",
+    "Shockwave draws its buttons as kit images, not fills: every seed button state names an image and none authors a fill, except the header's source tabs, whose glyphs sit on #3B2F2A and light to white at alpha 60 when On. A button's color is which image family it names - gray, red, yellow, green, blue - and each family rests dark with a ring in its color (`<color>_outline_nsel`) and lights up when selected (`<color>_sel`); kit.outline_off reads the kit so. The seed's pressed captions: black on gray, #75063C on red, #946E06 on yellow, #355424 on green.",
+    "Colors: page #3B2F2A is the header and footer bars and a source tab at rest; raised #999999 is every modal's card (Help, Confirmation, Camera Select, Incoming Call...); text-secondary #474747 is the text on it; ink #000000 is a lit button's caption; well is the video well, white at 15% over the photo - the seed authors it opaque white at transparencyField 85 (docs/gdl-format.md section 7), which the spec says as the fill's alpha. The clock takes raised's gray, as the seed's footer draws it. `alert` is the seed's pressed caption on red (Power, Mute), and yellow's and green's are left out: with them the palette is eight colors against Extron's six (docs/design-rules.md section 2), and ink reads on every lit image.",
+    "Layout, from Main SD: a #3B2F2A header 1280x91 holding the source tabs (152x91 each from x 169); the video well 926x574 at 168,120 (Shape1, 2D Rounded Rectangle, white at 85% transparency, where the chosen source's popup shows); the left rail at x 29 (Display On/Off/Mute 120x80, Screen/Lighting Control 120x110) and the right at x 1127-1163 (Volume slider 52x315, Mute 80x80, Audio Control 120x110), each under a white 18 pt label; and a #3B2F2A 2D Capsule footer 928x62 at 166,718 holding Room Mode, the date and time and Help, with Power outside it at 1115,720.",
+    "Modals: no seed popup carries a scrim, so `scrim` is page at alpha 166, the modal dim the toolkit draws for every template. Help's card is 703x453 at 288,173, its title 40 pt and its Close a dark X (icons/440x440 Black/black_close.png, named in kit.named) that turns white (white_close.png) inside a 3D Rounded Rectangle Selected ring when pressed.",
+    "Slider: every seed slider is image-drawn - track 52 wide, thumb 52x34, Slider/156x1026_sw_track_bg.png under 156x1026_sw_fill.png and 156x102_sw_thumb.png - with no fill or thumb color at all. The seed has no level; `level` is assumed.",
+    "Type is Open Sans regular throughout (no seed label or button authors bold) at 1.375 px per point (docs/gdl-format.md section 2). The seed's 12 pt button captions are lifted to the 14 pt floor gdl.spec checks. The Start page's Roboto light-preset captions are left out: the system carries one family.",
+    "Backgrounds: the seed stretches SW_bkgd_01.png (1366x768) over every work page (backgroundImageLayoutField 1); the kit's own 1280x800 copy of it is `haze`, and its Saturn photo, the Start page's, is `saturn`."
+  ],
+  "template": "Shockwave",
+  "namespace": "ExtronShockwave",
+  "title": "Extron Shockwave",
+  "tagline": "Extron's Shockwave touch-panel template, for TLP Pro panels.",
+  "seed": "seeds/Shockwave 1035.gdl",
+  "model": "TLP1035T",
+  "size": [1280, 800],
+  "popup": [921, 574],
+  "background_layout": "stretch",
+  "pt": 1.375,
+  "touch": 53,
+  "spacing": 12,
+  "font": {
+    "family": "Open Sans",
+    "stack": "\"Open Sans\", Arial, sans-serif",
+    "google": "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap"
+  },
+  "schemes": [
+    {"id": "default", "name": "Shockwave", "usage": "Shockwave's one palette. Its color choices are per button - which image family a button names - not a scheme."}
+  ],
+  "colors": [
+    {"name": "page", "value": "#3B2F2A", "usage": "The header and footer bars, and a source tab at rest. Behind them, the theme's photo."},
+    {"name": "pressed", "value": "#FFFFFF3C", "usage": "A source tab when On: white at alpha 60 over its glyph."},
+    {"name": "raised", "value": "#999999", "usage": "A modal's card. Also the clock's color on the footer."},
+    {"name": "text", "value": "#FFFFFF", "usage": "Captions on a button at rest, labels on the photo or a bar."},
+    {"name": "text-secondary", "value": "#474747", "usage": "Text on a modal's card: its title and message."},
+    {"name": "ink", "value": "#000000", "usage": "A lit button's caption - the kit's selected images are light."},
+    {"name": "well", "value": "#FFFFFF26", "usage": "The video well, where the chosen source's page shows: white at 15% over the photo."},
+    {"name": "alert", "value": "#75063C", "usage": "A red button's caption when lit: Power and Mute, as the seed draws them."},
+    {"name": "scrim", "value": "#3B2F2AA6", "usage": "Behind a modal's card: page at alpha 166."}
+  ],
+  "type": [
+    {"name": "title", "pt": 40, "weight": 400, "usage": "A modal's title (HELP) - the seed's largest label."},
+    {"name": "heading", "pt": 26, "weight": 400, "usage": "A modal's message: the power-down question, an incoming call."},
+    {"name": "body-strong", "pt": 18, "weight": 400, "usage": "A rail's label over its controls (Display, Volume), and a large button's caption."},
+    {"name": "body", "pt": 16, "weight": 400, "usage": "Status text and a call button's caption; the clock."},
+    {"name": "button", "pt": 14, "weight": 400, "usage": "A button's caption - the seed's 12 pt lifted to the 14 pt floor - and a source tab's name."}
+  ],
+  "borders": {
+    "rect": {"resource": "2D Rectangle", "radius": 0, "thickness": 3, "usage": "A square-cornered bar: the header."},
+    "rounded": {"resource": "2D Rounded Rectangle", "radius": 10, "thickness": 3, "usage": "A modal's card and the video well."},
+    "capsule": {"resource": "2D Capsule", "radius": 9999, "thickness": 3, "usage": "The footer bar."},
+    "rounded-3d-selected": {"resource": "3D Rounded Rectangle Selected", "radius": 10, "thickness": 1, "usage": "The ring a modal's Close gains when pressed."},
+    "none": {"resource": "", "radius": 0, "thickness": 0, "usage": "No border: the kit's image draws the button's whole shape."}
+  },
+  "buttons": {
+    "button": {
+      "usage": "The default: a rounded button from the kit, dark with a ring at rest and lit when On - the seed's rail buttons (Display On, Off, Mute), 120x80. `icon` names its color: gray (the default), red, yellow, green or blue.",
+      "kit": "712x440",
+      "icon": "gray",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
+    },
+    "tile": {
+      "usage": "A squarer button for a two-line caption - the seed's Screen Control and Audio Control, 120x110. `icon` names its color as `button`'s does.",
+      "kit": "504x440",
+      "icon": "gray",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
+    },
+    "square": {
+      "usage": "A square button - the seed's volume Mute, 80x80. `icon` names its color, or a kit icon drawn in it (mic-mute-1_yellow), which takes no caption.",
+      "kit": "440x440",
+      "icon": "gray",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
+    },
+    "pill": {
+      "usage": "A pill - the footer's Help (yellow) and Power (red), 143x59. `icon` names its color as `button`'s does.",
+      "kit": "960x440",
+      "icon": "gray",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
+    },
+    "wide": {
+      "usage": "A wide button with its caption centered - a modal's choices, 272x110. `icon` names its color; add `_round` for a pill (green_round, red_round, gray_round).",
+      "kit": "1248x440",
+      "icon": "gray_round",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
+    },
+    "action": {
+      "usage": "A wide pill with the kit's icon at its left and the caption after it - Accept Call, Ignore Call, Presentation, 272x110. `icon` is required: r_call_green, r_end-call_red, r_help_yellow, r_power_red, r_mic_yellow, r_share-1_blue, r_presentation_gray; without the r_ prefix the button is rounded rather than round.",
+      "kit": "1248x440",
+      "icon": "r_call_green",
+      "caption": "indent",
+      "indent": 11,
+      "align": "center",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
+    },
+    "source": {
+      "usage": "A source tab in the header: the kit's white glyph on the bar, lit white when chosen, with its name below - the seed's PC, Laptop, Blu-ray, 152x91. `icon` is a glyph: laptop_white, pc_white, sharelink_white, hdmi_white, doc-cam_white, blu-ray-2_white, apple-tv_white.",
+      "kit": "744x456",
+      "icon": "laptop_white",
+      "caption": "below",
+      "look": {"fill": "page", "border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "fill": "pressed"}]
+    },
+    "close": {
+      "usage": "A modal's Close: the kit's dark X, white inside a ring when pressed. About 40x40, at the card's top right.",
+      "icons": "close",
+      "kit": "440x440",
+      "icon": "close",
+      "caption": "none",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "border": "rounded-3d-selected"}]
+    }
+  },
+  "defaults": {
+    "page": {"background": "page"},
+    "button": {"variant": "button", "type": "button", "height": 80},
+    "label": {"type": "body-strong", "color": "text"},
+    "panel": {"fill": "page", "border": "rect"},
+    "line": {"color": "text", "thickness": 2},
+    "slider": {
+      "fill": "ink",
+      "border": "rounded",
+      "orientation": "up",
+      "track": 52,
+      "thumb": 52,
+      "thumb_height": 34,
+      "value": "text",
+      "thumb_color": "text",
+      "thumb_image": "156x102_sw_thumb.png",
+      "track_image": "156x1026_sw_track_bg.png",
+      "fill_image": "156x1026_sw_fill.png"
+    },
+    "level": {"fill": "ink", "border": "rounded", "orientation": "up", "track": 20, "value": "text"},
+    "clock": {"type": "body", "color": "raised"}
+  },
+  "cover": {
+    "blocks": ["page", "raised", "alert", "text-secondary"],
+    "pattern": "rounded tiles cut at Shockwave's 10 px radius",
+    "radius": 10
+  },
+  "iconography": {
+    "icon_prop": "Each image is the whole button, at rest and lit: state 0 draws it at rest, the others lit.",
+    "intro": "Shockwave draws every button from its kit: one image per state, which carries the button's shape, color and any icon. At rest a button is dark with a ring in its color; lit, it fills with that color and its caption turns `ink`. Name the image with a Button's `icon` - never draw a button's shape or an icon yourself.",
+    "rules": [
+      "**Color is the image family**: `gray` for most buttons, `yellow` for help, `red` for power and mute, `green` to confirm or answer a call, `blue` to share. Add `_round` on a `wide` button for a pill.",
+      "**Which button**: rail buttons are `button` (120x80); a two-line name is a `tile` (120x110); a square control is `square` (80x80); the footer's Help and Power are `pill`s (143x59); a modal's choices are `wide` (272x110), or `action` with the kit's icon at the left (r_call_green, r_end-call_red). Sources are `source` tabs in the header: a white glyph (laptop_white, pc_white) on the bar, lit white when chosen. A modal closes with `close`, the kit's X.",
+      "**Feedback**: state 0 draws the image at rest, the others lit. A state can name its own `icon` to change color - a yellow Ready, a green Live."
+    ]
+  },
+  "examples": {
+    "source": {"attrs": "variant=\"source\" icon=\"laptop_white\"", "rect": [169, 0, 152, 91], "in_main": false}, "help": {"attrs": "variant=\"pill\" icon=\"yellow\"", "text": "Help", "rect": [956, 720, 143, 59]},
+    "states": "[{\"name\":\"No Signal\",\"look\":\"off\"},{\"name\":\"Ready\",\"look\":\"off\",\"icon\":\"yellow\"},{\"name\":\"Live\",\"look\":\"on\",\"icon\":\"green\",\"color\":\"ink\"}]",
+    "states_note": "In Shockwave a state shows itself through the kit's image: a state can name its own `icon` (color) and `look` (off rests dark with a ring, on lights up), and a lit image takes an `ink` caption.",
+    "on_off": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"ink\"}]",
+    "color_rule": "A theme's photo behind everything; `page` for the header and footer bars and the source tabs; `well` for the video well, with `text` on it; `ink` for a lit button's caption; `raised` for a modal's card with `text-secondary` on it; a button's color from its kit family - gray for most, yellow for help, red for power and mute, green to confirm or call, blue to share; `alert` only as a lit red button's caption."
+  },
+  "themes": [
+    {"id": "haze", "name": "Haze", "scheme": "default", "image": "1280x800 bkgd.png", "file": "Shockwave/backgrounds/1280x800 bkgd.png", "usage": "A soft blur of warm grays - the seed's own, behind every work page."},
+    {"id": "saturn", "name": "Saturn", "scheme": "default", "image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png", "usage": "Saturn and its rings on black - the seed's Start page."}
+  ],
+  "layout": {
+    "main": [168, 120, 926, 574],
+    "main_note": "The video well: a `well` Panel with the `rounded` border, where the chosen source shows, or its name and status in white while nothing is connected.",
+    "regions": [
+      "**The header (1280x91 at 0,0) is a `page` Panel with the source tabs across it**: `source` buttons 152x91 from x 169, one pixel apart, their names below their glyphs.",
+      "**The left rail (x 29, 120 wide) holds the display**: a `Display` label in `body-strong`, then `button`s 120x80 four pixels apart, and `tile`s 120x110 below for anything with a two-line name (Screen Control, Lighting Control).",
+      "**The right rail (x 1127, 120 wide) holds volume**: a `Volume` label, a slider 52x315 centered under it, a `square` Mute 80x80 below (icon red), and an Audio Control `tile`.",
+      "**The footer is a `page` Panel with the `capsule` border, 928x62 at 166,718**: a `wide` Room Mode (gray_round) at its left, the date and time centered in `raised`, and a `pill` Help (yellow) at its right. Power, a red `pill` 143x59, sits outside it at 1115,720."
+    ]
+  },
+  "kit": {
+    "root": "Shockwave",
+    "thumbs": "Shockwave/Slider",
+    "outline_off": true,
+    "named": {"440x440": {"close": {"off": "black_close.png", "sel": "white_close.png"}}},
+    "note": "Extron's Shockwave resource kit. Each button is one image per state: `<color>_outline_nsel` at rest (dark, with a ring in its color) and `<color>_sel` when lit; a family with an icon is `<icon>_<color>`, and an r_ prefix makes it round. The source tabs' glyphs are `<icon>_white` on the bar's own color.",
+    "scale": {
+      "440x440": 96,
+      "504x440": 120,
+      "712x440": 150,
+      "960x440": 170,
+      "1248x440": 300,
+      "744x456": 160
+    }
+  }
+}
