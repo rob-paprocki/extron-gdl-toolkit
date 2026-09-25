@@ -39,5 +39,17 @@ the application; nothing in this repo reads them.
 Without it, `tests/_corpus.py` falls back to the install path, and the tests that
 need a template skip rather than fail.
 
+**Images that exist only inside Extron's files** go here too, extracted rather
+than copied: Turbulence has no `Resources` folder in 1.28 - its kit lives inside
+its TouchLink templates - and Mach's slider art lives only inside its seed.
+
+```bash
+python -m gdl.designsys extract turbulence   # -> vendor/extron/Resources/Turbulence/Extracted
+```
+
+A profile's `kit.extract` names the files to read (`seeds/...`, or a template
+name pattern) and where the images go. Like everything else here, they are
+Extron's, reproducible, and not in git.
+
 The rest of the install's `Resources/` (about 2.5 GB of icons and images for
 every theme) was not copied; nothing in this repo reads it.

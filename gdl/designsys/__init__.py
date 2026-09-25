@@ -144,7 +144,9 @@ KIT_COLORS = ('light-blue', 'med-blue', 'light-green', 'periwinkle', 'orange', '
               'red', 'gray')
 # Spelled so in Extron's Afterburn kit.
 KIT_TYPOS = {'ligh-blue': 'light-blue', 'ornage': 'orange'}
-_KIT_FILE = re.compile(r'^(\d+x\d+)_([^ ]+)\.png$', re.I)
+# A space before `.png` is Extron's too: 23 of Shockwave's are named
+# '440x440_help_yellow_sel .png', and a stricter pattern dropped them unseen.
+_KIT_FILE = re.compile(r'^(\d+x\d+)_([^ ]+) *\.png$', re.I)
 _KIT_COLOR = re.compile(r'[-_](' + '|'.join(KIT_COLORS + tuple(KIT_TYPOS)) + r')(?=$|[-_])')
 
 
@@ -217,6 +219,94 @@ def kit_index(p, part='root'):
     return {'files': files, 'paths': paths}
 
 
+def _kit_file(p, part, name):
+    """A file's kit path under one part of the kit, whatever its naming - a
+    slider's art need not follow the '<W>x<H>_' pattern (Mach's does not)."""
+    root = kit_root(p, part)
+    if not root:
+        return None
+    for d, _, names in os.walk(root):
+        if name in names:
+            rel = os.path.relpath(os.path.join(d, name), root).replace(os.sep, '/')
+            return p['kit'][part] + '/' + rel
+    return None
+
+
+def rail_art(p):
+    """{'track': data URI, 'fill': data URI} - a slider's rail drawn from the
+    kit's own images, where the template draws it so (Shockwave, Turbulence,
+    Mach) rather than as two colors (Afterburn). Empty without Pillow or art."""
+    d = (p.get('defaults') or {}).get('slider') or {}
+    want = {k: d.get(k + '_image') for k in ('track', 'fill') if d.get(k + '_image')}
+    if not want:
+        return {}
+    try:
+        from PIL import Image
+    except ImportError:
+        return {}
+    from ..spec import resolve_image
+    out = {}
+    for k, name in want.items():
+        f = resolve_image(_kit_file(p, 'thumbs', name))
+        if f:
+            with Image.open(f) as im:
+                w = max(8, round(im.width * 400 / max(im.height, 1))) if im.height > im.width else 400
+            out[k] = _webp(Image, f, w)
+    return out
+
+
+def extract_sources(p):
+    """The files a profile's `kit.extract.from` names, as found on this machine:
+    a `seeds/...` path from the repo, or a name pattern matched against
+    Extron's TouchLink templates beside each resource root."""
+    import glob
+    from ..spec import RESOURCE_ROOTS
+    repo = os.path.dirname(os.path.dirname(HERE))
+    out = []
+    for entry in ((p.get('kit') or {}).get('extract') or {}).get('from') or []:
+        if entry.startswith('seeds/'):
+            f = os.path.join(repo, *entry.split('/'))
+            if os.path.exists(f):
+                out.append(f)
+            continue
+        for root in RESOURCE_ROOTS:
+            hits = sorted(glob.glob(os.path.join(os.path.dirname(root), 'TouchLink Templates', entry)))
+            if hits:
+                out += hits
+                break
+    return out
+
+
+def extract_images(sources, out):
+    """Write every named image resource in `sources` (.gdl or .glt) to `out`.
+
+    Turbulence ships no Resources folder in 1.28 - its images live only inside
+    its six TouchLink templates - and Mach's slider art lives only inside its
+    seed. A resource's data is the PNG file itself (System.Drawing.Bitmap's
+    Data), so written to disk under a resource root it is a kit like any other,
+    and a spec's `images` resolves it. The project's own defaults ('Button',
+    'Slider Thumb', an .ico) are not kit art and are left behind. The first
+    source to name a file wins; returns the files written.
+    """
+    from ..project import Project
+    os.makedirs(out, exist_ok=True)
+    written = []
+    for src in sources:
+        p = Project.open(src)
+        for r in p.instances('PBImageResource'):
+            name = p.field(r, 'nameField')
+            data = p.deref((p.field(r, 'dataField') or {}).get('Data'))
+            if not (isinstance(name, str) and name.lower().endswith('.png') and data):
+                continue
+            path = os.path.join(out, name)
+            if os.path.exists(path):
+                continue
+            with open(path, 'wb') as fh:
+                fh.write(bytes(data))
+            written.append(name)
+    return written
+
+
 # kit root -> kit_art()'s result. A thousand WebP encodes take most of a
 # minute, and a build or a test run asks more than once.
 _ART = {}
@@ -232,6 +322,10 @@ def slider_thumb(p, scheme):
     family = ((p.get('defaults') or {}).get('slider') or {}).get('thumb_image')
     if not family:
         return None
+    if family.lower().endswith('.png'):
+        # One thumb whatever the accent - Mach, Shockwave and Turbulence.
+        f = _kit_file(p, 'thumbs', family)
+        return (family, f) if f else None
     index = kit_index(p, 'thumbs')
     for icons in index['files'].values():
         looks = icons.get(family) or {}
@@ -322,7 +416,8 @@ def bundle(p, art=True):
                   "install or vendor/) - the system names no icons and draws none")
         profile['kit'] = dict(p['kit'], files=index['files'],
                               art=kit_art(p, index) if art and index['files'] else {},
-                              thumb_art=thumb_art(p) if art else {})
+                              thumb_art=thumb_art(p) if art else {},
+                              rail_art=rail_art(p) if art else {})
     js = _read('bundle.js')
     for mark, value in (('__HEADER__', header),
                         ('__PROFILE__', json.dumps(profile, separators=(',', ':')))):
@@ -766,10 +861,28 @@ def build(template, out, at, existing=None):
 
 
 def main(argv):
+    if len(argv) == 3 and argv[1] == 'extract':
+        # Images that live only inside Extron's files, written where the kit
+        # code and a spec's `images` look: vendor/extron/Resources/<to>.
+        from ..spec import RESOURCE_ROOTS
+        p = load(argv[2])
+        ex = (p.get('kit') or {}).get('extract')
+        if not ex:
+            print(f'{argv[2]} names nothing to extract (kit.extract)')
+            return 2
+        sources = extract_sources(p)
+        if not sources:
+            print(f"none of {ex['from']} is on this machine")
+            return 1
+        out = os.path.join(RESOURCE_ROOTS[0], *ex['to'].split('/'))
+        written = extract_images(sources, out)
+        print(f'{len(written)} new image(s) from {len(sources)} file(s) -> {out}')
+        return 0
     if len(argv) < 4 or argv[1] != 'build' or argv[2] not in TEMPLATES:
         print(__doc__.strip().split('\n\n')[0])
         print(f"\n  python -m gdl.designsys build <{'|'.join(TEMPLATES)}> <out dir> "
-              '[--at ISO-8601] [--index existing design-system.json]')
+              '[--at ISO-8601] [--index existing design-system.json]'
+              '\n  python -m gdl.designsys extract <template>')
         return 2
     at = argv[argv.index('--at') + 1] if '--at' in argv else None
     if not at:

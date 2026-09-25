@@ -346,11 +346,24 @@
     var t = Number(props.track) || d.track;
     var s = kind === 'slider' ? Number(props.thumb) || d.thumb : 0;
     var pct = props.value != null ? Math.max(0, Math.min(100, Number(props.value))) : 60;
-    var end = s / 2;                                   // the rail stops where the thumb's centre can reach
-    var rail = { position: 'absolute', borderRadius: t / 2 + 'px', background: paint(L.colors, fill) };
+    // The rail stops where the thumb's centre can reach: half its length
+    // along the rail.
+    var end = (s ? Number(d.thumb_height) || s : 0) / 2;
+    // Where the template draws its rail from its own art (Shockwave,
+    // Turbulence, Mach), the canvas does too: the empty rail's image, and the
+    // filled one showing only as far as the value, anchored at its start.
+    var rails = kind === 'slider' && P.kit && P.kit.rail_art ? P.kit.rail_art : {};
+    var from = along ? (o === 'up' ? 'bottom' : 'top') : (o === 'right' ? 'left' : 'right');
+    var rail = { position: 'absolute', borderRadius: t / 2 + 'px',
+                 background: rails.track ? 'url("' + rails.track + '") center / 100% 100% no-repeat'
+                                         : paint(L.colors, fill) };
     var bar = { position: 'absolute', borderRadius: t / 2 + 'px', background: paint(L.colors, d.value) };
     var span = 'calc(100% - ' + 2 * end + 'px)';
     var reach = 'calc((100% - ' + 2 * end + 'px) * ' + pct / 100 + ')';
+    if (rails.fill) {
+      bar.background = 'url("' + rails.fill + '") ' + from + ' / '
+        + (along ? '100% ' + span : span + ' 100%') + ' no-repeat';
+    }
     if (along) {
       rail.left = bar.left = 'calc(50% - ' + t / 2 + 'px)'; rail.width = bar.width = t + 'px';
       rail.top = end + 'px'; rail.height = span;
@@ -367,13 +380,16 @@
       // panel draws it. Without it, a circle of that size in the color.
       var art = kind === 'slider' && P.kit && P.kit.thumb_art ? P.kit.thumb_art[L.scheme] : null;
       var dot = Math.round(s * (d.thumb_circle || 1));
+      // A thumb need not be square: Shockwave's is 52 wide by 34 along.
+      var sa = Number(d.thumb_height) || s;
+      var tw = along ? s : sa, th = along ? sa : s;
       var thumb = art
-        ? { position: 'absolute', width: s + 'px', height: s + 'px',
+        ? { position: 'absolute', width: tw + 'px', height: th + 'px',
             background: 'url("' + art + '") center / contain no-repeat' }
-        : { position: 'absolute', width: s + 'px', height: s + 'px',
+        : { position: 'absolute', width: tw + 'px', height: th + 'px',
             background: 'radial-gradient(circle, ' + paint(L.colors, d.thumb_color) + ' '
               + (dot / 2 - 0.5) + 'px, transparent ' + dot / 2 + 'px)' };
-      var at = 'calc((100% - ' + s + 'px) * ' + pct / 100 + ')';
+      var at = 'calc((100% - ' + sa + 'px) * ' + pct / 100 + ')';
       if (along) { thumb.left = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'up' ? 'bottom' : 'top'] = at; }
       else { thumb.top = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'right' ? 'left' : 'right'] = at; }
       kids.push(h('div', { key: 't', style: thumb }));
