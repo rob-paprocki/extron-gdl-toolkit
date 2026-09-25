@@ -897,7 +897,11 @@ class Panel:
             out.append(f'start_page {self.start_page!r} is not a page in this spec - the '
                        f'panel boots into it, so it must be one of the pages authored '
                        f'here (a popup cannot be a start page)')
-        n = len(self.palette())
+        # A color counts once whatever its transparency: Mach's own rule is
+        # "same hue, move the alpha", and its white at 20%, 47% and 100% is one
+        # color on the panel. Counting each alpha put Extron's own Mach look
+        # over six. The owner's reading of p.49, not Extron's wording.
+        n = len({tuple(kv for kv in c if kv[0] != 'A') for c in self.palette()})
         if n > MAX_COLORS_PER_PROJECT:
             out.append(f'project uses {n} distinct colors, above the '
                        f'{MAX_COLORS_PER_PROJECT}-color maximum '

@@ -118,7 +118,8 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
    ≤9 buttons per group, ≤6 colors drawn - a caption's default color and the
-   popups' colors included - and ≥14pt body text).
+   popups' colors included, each color counted once whatever its transparency -
+   and ≥14pt body text).
 5. **Preview it**: `python -m gdl.spec render <spec.json> out/preview.png`, then
    **look at the image**. The compositor is scored against GUI Designer's own
    output, so this is a real preview, not a sketch. Iterate here — it is fast

@@ -122,7 +122,11 @@ touch-target Quick Reference table, which is a different thing.
 **Density** (pp. 49, 58) — the two numeric caps in the document:
 
 - **No more than nine buttons in a control group.** (p. 58)
-- **No more than six colors in a project.** (p. 49)
+- **No more than six colors in a project.** (p. 49) How the toolkit counts
+  them is ours, not Extron's wording: a color counts once whatever its
+  transparency. Mach's own rule is "same hue, move the alpha" - its buttons are
+  white at 20% and 47%, black at 70% - and counting each transparency put
+  Extron's own Mach look over six.
 
 **Contrast** (p. 43)
 

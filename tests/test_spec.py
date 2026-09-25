@@ -1025,6 +1025,24 @@ class TestPalette(unittest.TestCase):
         self.assertEqual(op['stroke'], 0)
         self.assertNotIn((('A', 0), ('B', 0), ('G', 0), ('R', 0)), p.palette())
 
+    def test_transparencies_of_one_color_count_once(self):
+        """Mach's own rule is "same hue, move the alpha": white at 20%, 47% and
+        100% is one color, and the owner has the six counted that way."""
+        controls = [_label(text='x', fill=f) for f in
+                    ('#32FFFFFF', '#78FFFFFF', '#B4000000', '#A01F292E', '#EDB95E')]
+        p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
+        # Drawn: five fills, the black page and white captions - seven with
+        # their transparencies, four colors without.
+        self.assertEqual(len(p.palette()), 7)
+        self.assertFalse(any('distinct colors' in m for m in p.check()), p.check())
+        controls += [_label(text='x', fill=f) for f in ('#E23636', '#303030')]
+        p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
+        # white, black, #1F292E, #EDB95E, #E23636, #303030 - six; one more is seven.
+        self.assertFalse(any('distinct colors' in m for m in p.check()), p.check())
+        controls.append(_label(text='x', fill='#919191'))
+        p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
+        self.assertTrue(any('7 distinct colors' in m for m in p.check()), p.check())
+
     def test_seven_drawn_colors_are_reported(self):
         controls = [_label(text='x', fill=f) for f in
                     ('#111111', '#222222', '#333333', '#444444', '#555555')]
