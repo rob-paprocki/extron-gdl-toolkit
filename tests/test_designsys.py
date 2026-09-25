@@ -230,6 +230,17 @@ class TestBuild(unittest.TestCase):
                           encoding='utf-8') as fh:
                     self.assertTrue(fh.readline().startswith('<!-- @dsCard'), n)
 
+    def test_the_readme_says_help_is_a_modal(self):
+        """Extron's own templates draw Help, confirmations and a room's control
+        subsets as full-screen modals over the page; a page flip is for a mode
+        of the room. Left unsaid, Claude Design drew Help as a page."""
+        text = designsys.readme(designsys.load('afterburn'))
+        popups = next(line for line in text.splitlines() if line.startswith('- **Popups.**'))
+        self.assertIn('Help', popups)
+        self.assertIn('modal', popups)
+        # The owner's rule, unchanged: nothing forces a confirmation.
+        self.assertIn('not a rule', popups)
+
     def test_a_revision_keeps_the_pages_keys(self):
         with tempfile.TemporaryDirectory() as d:
             old = {'createdOnFiles': {'v': 1, 'at': 'then'}, 'sections': {'x': 'y'},

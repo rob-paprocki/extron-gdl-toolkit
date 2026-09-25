@@ -71,7 +71,7 @@ that account, or has the system shared with theirs.
    For example: *A huddle room panel for a TLP Pro 1035 on the Grape theme.
    Three sources - laptop, wireless and the room PC - showing which is selected.
    One display that can be off, warming up, on or cooling down. Volume with mute,
-   End Call, a help page, and turning the room off asks for confirmation.*
+   End Call, help, and turning the room off asks for confirmation.*
 
    The system's README makes Claude Design draw only with its components, one
    artboard per page or popup, and record what every control does.
@@ -250,15 +250,15 @@ that paints outside one. Chrome is the only new runtime need, and only here.
   that comes to under 8% against their own files and 50% or more against a
   wrong one; the gate is 25%.
 - **End to end**, on GUI Designer 1.28.0.7: the huddle brief drawn in Claude
-  Design with *Extron Afterburn* on its Grape theme (Home, Help and a Room Off
-  confirmation; three-state source buttons, a four-state Display toggle, a
-  two-state mute icon, help and power icons, and End Call with its kit icon)
-  translated to a spec
+  Design with *Extron Afterburn* on its Grape theme (Home, with Help and a Room
+  Off confirmation as modals; three-state source buttons, a four-state Display
+  toggle, a two-state mute icon, help and power icons, and End Call with its kit
+  icon) translated to a spec
   with 0 problems from `gdl.spec check` and `gdl.idmap check`, built on
   `seeds/Afterburn 1035.gdl` with `New-GdlPanel.ps1 -IdMap`, unattended, and
-  verified: layout 84 controls, 0 problems, the kit image on every state and
-  the slider's thumb included; ID map 26 references, 0 problems.
-  `gdl.design compare` then put 1.2% of Home's pixels, 0.6% of Help's and 1.9%
+  verified: layout 87 controls, 0 problems, the kit image on every state and
+  the slider's thumb included; ID map 27 references, 0 problems.
+  `gdl.design compare` then put 1.2% of Home's pixels, 2.2% of Help's and 1.9%
   of the Room Off confirmation's apart from the build.
 
 ## 7. What is left

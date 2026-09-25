@@ -222,8 +222,13 @@ class TestInChrome(unittest.TestCase):
     def test_the_huddle_canvas_translates_and_checks_clean(self):
         spec, problems, _ = design.Canvas(self.dir).translate()
         self.assertEqual(problems, [])
-        self.assertEqual([p['name'] for p in spec['pages']], ['Huddle Home', 'Huddle Help'])
+        self.assertEqual([p['name'] for p in spec['pages']], ['Huddle Home'])
+        # Help is a modal, as Extron's own templates draw it: a card over the
+        # dimmed page, not a page flip.
+        modals = {p['name'] for p in spec['popups'] if p.get('modal')}
+        self.assertEqual(modals, {'Huddle Help', 'Confirm Room Off'})
         home = {c['name']: c for c in spec['pages'][0]['controls']}
+        self.assertEqual(home['HelpBtn']['nav'], 'Huddle Help')
         # A flex cell inside the MainArea, measured after layout: three 110 px
         # sources spread across 440 at 238,330, offset by the squircle's 183,24.
         self.assertEqual(home['Wireless']['rect'], [586, 354, 110, 110])
