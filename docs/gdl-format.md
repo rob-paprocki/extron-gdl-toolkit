@@ -328,9 +328,11 @@ A generator should assert all four agree rather than trusting the writes.
 - **A page's background image is a named `PBImageResource`**, referenced from
   `backgroundImageField` by a `PBResourceReferenceImage` and drawn by
   `backgroundImageLayoutField` over the page fill - the Afterburn seeds fit
-  `6400x4000_bg1.png` over `#242634`. `ImageLayoutEnum` is `Fill` 0 (fit,
-  keeping the aspect, as CSS `contain`), `Stretch` 1, `Tile` 2, `Native` 3,
-  `Offset` 4. Build rasterizes the two into
+  `6400x4000_bg1.png` over `#242634`, while every Mach 1035 page stretches its
+  3:2 `mach-bg-02.png` over the 16:10 page (fitted, it builds with bands of fill
+  down both sides). `ImageLayoutEnum` is `Fill` 0 (fit, keeping the aspect, as
+  CSS `contain`), `Stretch` 1, `Tile` 2, `Native` 3, `Offset` 4; a spec page's
+  `background_layout` is `fill` or `stretch`. Build rasterizes the two into
   the page's asset and layout.json does not name the image, so it is verified
   off that asset. An image the project lacks is appended by cloning an existing
   `PBImageResource` and setting its bitmap, name and size

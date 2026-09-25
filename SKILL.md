@@ -93,7 +93,8 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
 
    **Name the page art and the clock format.** A page's `background_image` - or
    the theme's, for every page - names an image drawn fitted, keeping its
-   aspect, over the page's `background`. One the donor lacks needs `"images": {"<name>": "<path>"}`,
+   aspect, over the page's `background`; `"background_layout": "stretch"` stretches
+   it instead, as Mach's pages lay out their photo. One the donor lacks needs `"images": {"<name>": "<path>"}`,
    the path relative to the theme resource kits (`vendor/extron/Resources`, or
    the install), and the applier appends it. A button's icon is an `image` the
    same way, on the button or on each state (*Icons* below). A `datetime` control's `format` is

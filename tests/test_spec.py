@@ -858,6 +858,35 @@ class TestBackgroundImage(unittest.TestCase):
             self.assertEqual(im.getpixel((w // 2, h // 2)), (200, 20, 20))
             self.assertEqual(im.getpixel((w // 2, 3)), (0x24, 0x26, 0x34))
 
+    def test_a_template_can_stretch_it_instead(self):
+        """Mach's pages lay their 3:2 photo out Stretch (ImageLayoutEnum 1) over
+        a 16:10 page, where Afterburn's lay theirs out Fill (0). Fitted, the
+        photo built with bands of fill down both sides."""
+        plan = self._spec({}, background_image='mach-bg-02.png',
+                          background_layout='stretch').plan()
+        self.assertEqual([p['background_layout'] for p in plan['pages']], [1, 1])
+        plan = self._spec({}, background_image='6400x4000_bg1.png').plan()
+        self.assertEqual(plan['pages'][0]['background_layout'], 0)
+
+    def test_a_layout_it_cannot_draw_is_a_problem(self):
+        p = self._spec({}, background_image='x.png', background_layout='tile')
+        self.assertTrue(any('background_layout' in m for m in p.check()), p.check())
+
+    def test_the_preview_stretches_it_when_asked(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed')
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, 'bg.png')
+            Image.new('RGBA', (200, 100), (200, 20, 20, 255)).save(f)
+            spec = self._spec({'bg.png': f}, background_image='bg.png',
+                              background_layout='stretch')
+            spec.pages[0]['background'] = {'A': 255, 'R': 0x24, 'G': 0x26, 'B': 0x34}
+            im = spec.render(0).convert('RGB')
+            w, _ = im.size
+            self.assertEqual(im.getpixel((w // 2, 3)), (200, 20, 20))
+
 
 class TestButtonImages(unittest.TestCase):
     """A kit image per state: Afterburn's icons, list buttons and toggles."""

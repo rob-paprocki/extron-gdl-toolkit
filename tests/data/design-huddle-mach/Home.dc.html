@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huddle Home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronMach.Page" name="Huddle Home" theme="sunset" start="true" does="The room's home page: share a source, set volume, end the call." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronMach.Panel" name="Header" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 64px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Title" type="header" color="text" align="center" style="position: absolute; left: 306px; top: 0px; width: 668px; height: 64px">Huddle Room</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="DisplayLabel" type="body" align="center" style="position: absolute; left: 17px; top: 149px; width: 103px; height: 37px">Display</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Display" variant="solid" states='[{"name":"Off","text":"Off"},{"name":"Warming","fill":"raised","text":"Warming"},{"name":"On","fill":"accent","color":"page","text":"On"},{"name":"Cooling","fill":"shade-on","text":"Cooling"}]' press="On" does="Turns the display on or off; shows it warming up and cooling down." style="position: absolute; left: 17px; top: 186px; width: 103px; height: 60px">Off</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Status" type="body" align="center" style="position: absolute; left: 340px; top: 150px; width: 600px; height: 40px">No call in progress</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="ShareLabel" type="heading" align="center" style="position: absolute; left: 340px; top: 210px; width: 600px; height: 50px">Share something</x-import>
+<div style="position: absolute; left: 420px; top: 300px; width: 440px; height: 100px; display: flex; gap: 70px">
+<x-import component-from-global-scope="ExtronMach.Button" name="Laptop" variant="source" icon="laptop_1" states='[{"name":"Off"},{"name":"Selected","fill":"shade-on"},{"name":"Live","fill":"accent"}]' press="Selected" does="Routes the laptop to the display." style="width: 100px; height: 100px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Wireless" variant="source" icon="sharelink-2_1" states='[{"name":"Off"},{"name":"Selected","fill":"shade-on"},{"name":"Live","fill":"accent"}]' press="Selected" does="Routes wireless sharing to the display." style="width: 100px; height: 100px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="RoomPC" variant="source" icon="pc_1" states='[{"name":"Off"},{"name":"Selected","fill":"shade-on"},{"name":"Live","fill":"accent"}]' press="Selected" does="Routes the room PC to the display." style="width: 100px; height: 100px"></x-import>
+</div>
+<div style="position: absolute; left: 413px; top: 410px; width: 454px; height: 40px; display: flex; gap: 56px">
+<x-import component-from-global-scope="ExtronMach.Label" name="LaptopLabel" type="body" align="center" style="width: 114px; height: 40px">Laptop</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="WirelessLabel" type="body" align="center" style="width: 114px; height: 40px">Wireless</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="PCLabel" type="body" align="center" style="width: 114px; height: 40px">Room PC</x-import>
+</div>
+<x-import component-from-global-scope="ExtronMach.Button" name="EndCall" variant="solid" does="Ends the call." style="position: absolute; left: 540px; top: 560px; width: 200px; height: 60px">End Call</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="VolumeLabel" type="body" align="center" style="position: absolute; left: 1161px; top: 149px; width: 103px; height: 37px">Volume</x-import>
+<x-import component-from-global-scope="ExtronMach.Slider" name="VolumeSlider" does="Sets the room's volume; the program moves it when volume changes elsewhere." style="position: absolute; left: 1186px; top: 193px; width: 54px; height: 340px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Mute" variant="highlight" states='["Unmuted",{"name":"Muted","fill":"accent","color":"page"}]' does="Mutes and unmutes the room's audio." style="position: absolute; left: 1161px; top: 560px; width: 103px; height: 60px">Mute</x-import>
+<x-import component-from-global-scope="ExtronMach.Panel" name="Footer" style="position: absolute; left: 0px; top: 745px; width: 1280px; height: 55px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Clock" name="DateTime" format="datetime" align="center" style="position: absolute; left: 398px; top: 751px; width: 483px; height: 42px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="HelpBtn" variant="footer" nav="Help" style="position: absolute; left: 1058px; top: 745px; width: 70px; height: 55px">Help</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="RoomOff" variant="footer" icon="power" nav="ConfirmRoomOff" style="position: absolute; left: 1140px; top: 745px; width: 140px; height: 55px"></x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

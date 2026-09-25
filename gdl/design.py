@@ -217,6 +217,10 @@ class Canvas:
                 item['background'] = pg['background']
             if pg.get('background_image') and pg['kind'] == 'page':
                 item['background_image'] = pg['background_image']
+                # Laid out as the template's own pages lay theirs out: Mach's
+                # stretch their photo, Afterburn's fit theirs (the default).
+                if profile.get('background_layout'):
+                    item['background_layout'] = profile['background_layout']
             if pg.get('reached_by'):
                 item['reached_by'] = pg['reached_by']
             if pg.get('does'):

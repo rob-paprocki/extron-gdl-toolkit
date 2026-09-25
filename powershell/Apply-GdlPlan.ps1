@@ -247,7 +247,8 @@ foreach ($pg in $spec.pages) {
         Set-GdlImage $newPage 'backgroundImageField' $imageRef $pg.background_image.name
         # Fill and MiddleCenter, as the Afterburn seeds lay out theirs - set,
         # not inherited, so the page draws the same whatever the donor is.
-        Set-GdlFieldIfPresent $newPage 'backgroundImageLayoutField' 0 | Out-Null
+        # Fill (0) as Afterburn's pages lay theirs out, Stretch (1) as Mach's.
+        Set-GdlFieldIfPresent $newPage 'backgroundImageLayoutField' ([int]$pg.background_layout) | Out-Null
         Set-GdlFieldIfPresent $newPage 'backgroundImageAlignmentField' 3 | Out-Null
     }
 

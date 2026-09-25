@@ -237,6 +237,29 @@ class TestKitFiles(unittest.TestCase):
         self.assertIsNotNone(m)
         self.assertEqual(m.groups(), ('440x440', 'help_yellow_sel'))
 
+    def test_a_partial_kit_in_one_root_does_not_hide_the_rest(self):
+        """Extracting Mach's slider art into vendor/ made vendor/.../Mach exist,
+        and the kit then read only those 71 files and none of the install's."""
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            os.makedirs(os.path.join(a, 'Theme', 'Extracted'))
+            os.makedirs(os.path.join(b, 'Theme', 'Icons'))
+            for d, f in ((os.path.join(a, 'Theme', 'Extracted'), '440x440_thumb.png'),
+                         (os.path.join(b, 'Theme', 'Icons'), '440x440_laptop.png'),
+                         (os.path.join(b, 'Theme', 'Icons'), '440x440_thumb.png')):
+                with open(os.path.join(d, f), 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a, b)
+            try:
+                index = designsys.kit_index({'kit': {'root': 'Theme'}})
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+        self.assertEqual(sorted(index['files']['440x440']), ['laptop', 'thumb'])
+        # The first root wins a name both have.
+        self.assertEqual(index['paths']['440x440_thumb.png'], 'Theme/Extracted/440x440_thumb.png')
+
     def _shockwave_like(self):
         p = designsys.load('afterburn')
         p['kit'] = dict(p['kit'], thumbs='Shockwave/Slider')

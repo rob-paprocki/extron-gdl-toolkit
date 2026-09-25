@@ -340,6 +340,10 @@ STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text',
 # MiddleCenter. The kit draws each icon, its selection line and its label room
 # at the button's own aspect, so fitting it fills the button.
 IMAGE_LAYOUT, IMAGE_ALIGN = 0, 3
+# A page's background image, by ImageLayoutEnum: Fill (fit) as the Afterburn
+# seeds lay theirs out, Stretch as the Mach seeds lay their 3:2 photo over a
+# 16:10 page (every one of Mach 1035's pages).
+BACKGROUND_LAYOUTS = {'fill': 0, 'stretch': 1}
 # The two per-button pointers into the state list, as backing fields.
 # TLPDefaultStateID is 0 on every button in the corpus. TLPPressFeedbackStateID
 # is the state shown while the button is held: On (1) on all 7518 Off/On
@@ -673,6 +677,10 @@ class Panel:
                 # name it once.
                 'background_image': pg.get('background_image',
                                            self.theme.get('background_image')),
+                # Fill (fit) as Afterburn's pages lay theirs out, or stretch
+                # as Mach's do its 3:2 photo over a 16:10 page.
+                'background_layout': pg.get('background_layout',
+                                            self.theme.get('background_layout')),
                 'controls': controls,
                 'group_sizes': groups,
             })
@@ -781,6 +789,7 @@ class Panel:
                 # Only when the spec brings the file: an image the donor
                 # carries is not on this machine to draw.
                 '_background_image': image,
+                '_background_layout': BACKGROUND_LAYOUTS.get(pg.get('background_layout') or 'fill', 0),
                 'Controls': controls,
             })
         return {'Pages': pages, 'PopupPages': []}, fills
@@ -812,6 +821,7 @@ class Panel:
                 'modal': pg['modal'],
                 'background': _argb(pg['background']),
                 'background_image': self._image_op(pg.get('background_image')),
+                'background_layout': BACKGROUND_LAYOUTS.get(pg.get('background_layout') or 'fill', 0),
                 'clear_controls': True,
                 # Same helper popups use. Building these two separately is what
                 # dropped 'group' from every page op and left popup references
@@ -892,6 +902,11 @@ class Panel:
         out += self._popup_rules()
         out += self._name_rules()
         out += self._state_rules()
+        for pg in self.pages:
+            lay = pg.get('background_layout')
+            if lay is not None and lay not in BACKGROUND_LAYOUTS:
+                out.append(f"page {pg['name']!r}: background_layout {lay!r} is not one the "
+                           f"toolkit draws and checks - {' or '.join(BACKGROUND_LAYOUTS)}")
         if self.start_page is not None and \
                 self.start_page not in {pg['name'] for pg in self.pages}:
             out.append(f'start_page {self.start_page!r} is not a page in this spec - the '

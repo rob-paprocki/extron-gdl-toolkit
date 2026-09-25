@@ -180,8 +180,9 @@
     var fam = KIT && KIT.files && KIT.files[size] && KIT.files[size][icon];
     if (!fam) return null;
     var primary = PRIMARY_ONLY.some(function (c) { return fam[c]; });
+    // A kit with no accent schemes (Mach's one image per icon) has neither map.
     function on() {
-      return (primary ? fam[KIT.primary[scheme]] : fam[KIT.secondary[scheme]])
+      return (primary ? fam[(KIT.primary || {})[scheme]] : fam[(KIT.secondary || {})[scheme]])
         || fam.sel || fam.red || fam.plain || fam.off || null;
     }
     if (look === 'on') return on();

@@ -1,0 +1,458 @@
+{
+  "_source": [
+    "Fixed values (namespace, title, seed, model, size, pt, touch, spacing): the same TLP1035T profile as Afterburn's, since Mach 1035 is the same panel at the same 149 DPI; touch-target minimums are keyed to physical PPI, not to theme (docs/design-rules.md section 1-2).",
+    "Popup size: the most common popup size in seeds/Mach 1035.gdl that is not 1280x800 - 995x549, on 10 of its 26 popups (the other 16 are full 1280x800). Identical in seeds/Mach ECP 16-10.gdl; seeds/Mach 1535.gdl is a different, 1920x1080 panel and was not used for this.",
+    "Colors: seeds/Mach 1035.gdl's own button per-state fill, stroke and text color, and its PBShape fills (python theme_survey.py, and Project.fill_map()/pages() from gdl/project.py), cross-checked against `python -m gdl.themes` on 'Mach 1020 Series.glt' and against Mach Styles.psd's 'Colors' layer group and its selected/unselected same-hue alpha-only rule (docs/design-rules.md section 7; research/psd_layer_names.py run on 'C:\\Users\\Public\\Documents\\Extron\\GUI Designer Templates\\Resources\\Mach\\Style Sheet\\Mach Styles.psd'). `page` is approximated, not measured: Mach's own pages usually show a full-bleed photo (its 'Main BG Image'/'mach-bg-02' PSD layers) that no flat token can represent, so `page` stands in with the template's own dominant SOLID (fully opaque) fill instead - #303030, on 13 of the seed's own header/footer PBShape bars, matching 13 of gdl.themes' extract on the raw .glt exactly - the same method gdl/designsys/shockwave.json's own `page` uses. `scrim` is not measured per-theme at all: Build draws every modal popup as the page beneath under black at alpha 166 (0xA6) regardless of its authored background - the same value gdl/designsys/afterburn.json reports measuring identically on the Afterburn, Mach and Shockwave seeds - so it is fixed here to match, not derived from Mach's own palette, and gdl/spec.py's Panel.palette() excludes a modal's background from the six-color count for the same reason.",
+    "Type: seeds/Mach 1035.gdl's own label and button point sizes in the 'Open Sans' face - the only one Project.font_resource_names() returns. 'Open Sans Light' is declared throughout the seed but font_resource_names()'s family-stripping folds 'Open Sans Light Regular Bold Italic' into the same 'Open Sans' bucket rather than keeping it separate (it treats 'Light' as a style suffix like 'Bold' or 'Italic'), so a spec cannot ask for it as its own family (docs/design-rules.md section 7). Counts corroborated exactly by seeds/Mach ECP 16-10.gdl and, in shape, by seeds/Mach 1535.gdl. Every measured Font.Style.Bold is false, so every style here is weight 400, unlike Afterburn's - Mach's real hierarchy leans on the unauthorable Light face, not on bold, matching Shockwave's own finding.",
+    "Borders: gdl.spec.BORDERS keys whose resource seeds/Mach 1035.gdl defines (Project.border_resource_names()) - `mach`, its own, plus the four generic 2D primitives also defined there. Radius/thickness from gdl.spec.BORDER_GEOMETRY, except `ellipse`: BORDER_GEOMETRY's own entry for '2D Ellipse' is (0, 3), which is the resource's raw dataField and not a corner radius - GUI Designer draws this shape as an ellipse by object type - so radius is set to -1 (a circle) here, the same convention gdl/designsys/afterburn.json's own ellipse uses. Project.border_resources() shows only `mach` and `rounded` (2D Rounded Rectangle) actually drawn with in the seed; `rect`, `capsule` and `ellipse` are defined but otherwise-undrawn-with generic escape hatches, as in the Afterburn profile.",
+    "Buttons: seeds/Mach 1035.gdl's own per-state fills, borders and images, read with gdl.project.Project on every PBButton state. ghost and solid author '2D Rounded Rectangle' (`rounded`) on most buttons and no border on a minority (Help, Power Down, Camera 1/2); the `mach` resource the seed defines is drawn by none of them. Icons are small, mostly transparent kit images laid over the button's fill (1376x440_pc.png with a caption indented four spaces; 440x440_camera.png with the caption below; 700x448_power.png alone) - `with_icon` - never a whole-button image as Afterburn's are. The seed's confirm action (Confirmation's Power Down) is its own look: #A829258C, then solid alert when pressed, no border - `alert`. A few buttons draw an Extron-Lift glyph (Screen Up/Down, Back); a spec cannot place a glyph, so the kit's own images of the same icons stand in.",
+    "Schemes: one, `default`. Mach's named swatches (green, blue, red, yellow, white, gray - Mach Styles.psd's 'Colors' group) act as fixed status colors used together on a single seed panel - e.g. seeds/Mach 1035.gdl uses yellow for selection and red and green elsewhere, all in the one project - not as alternate branding schemes a project picks one of, unlike Afterburn's four.",
+    "Slider: measured on Main Volume Slider (30x290): an 8 px track, a 30x30 thumb, all three drawn from images the seed carries and the kit folder does not - 8x500_mach_track_bg@3x.png, 8x500_mach_track_fill@3x.png, 40_mach_thumb@3x.png - extracted to vendor/ with `python -m gdl.designsys extract mach`. A clone keeps its donor's, which is these, so the panel is right either way; the canvas draws them. Level: assumed, as before - the seed has none.",
+    "Themes: every one of Mach 1035's 8 pages draws mach-bg-02.png, the pastel mountain sunset, full-bleed (Project.pages()); the kit ships it and five others at 5472x3648 (Resources/Mach/Backgrounds). All six are offered, the seed's first. Extron publishes no pairing for Mach, and it has one accent scheme.",
+    "Layout: Mach 1035's Main Select Source and Start. A shade header bar 1280x64 at 0,0 with the page's title in white; a shade footer bar 1280x55 at 0,745 (Room Mode 140 wide, the date and time centered, Help 70, Power Down 140); a left rail at x 17, 103 wide (a heading, then stacked 103x60 buttons); a right rail at x 1161 (Volume, a vertical slider, Mute); the rest between the bars is the photo. Labels on the photo - rail headings, source captions - are black (#000000, the seed's own); labels on a bar are white."
+  ],
+  "template": "Mach",
+  "namespace": "ExtronMach",
+  "title": "Extron Mach",
+  "tagline": "Extron's Mach touch-panel template, for TLP Pro panels.",
+  "seed": "seeds/Mach 1035.gdl",
+  "model": "TLP1035T",
+  "size": [
+    1280,
+    800
+  ],
+  "popup": [
+    995,
+    549
+  ],
+  "background_layout": "stretch",
+  "pt": 1.375,
+  "touch": 53,
+  "spacing": 12,
+  "font": {
+    "family": "Open Sans",
+    "stack": "\"Open Sans\", Arial, sans-serif",
+    "google": "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap"
+  },
+  "schemes": [
+    {
+      "id": "default",
+      "name": "Mach",
+      "usage": "Mach's only scheme. Its swatches are fixed status colors, not alternate branding to pick between - see _source."
+    }
+  ],
+  "colors": [
+    {
+      "name": "page",
+      "value": "#303030",
+      "usage": "Behind the photo, and a popup's background. Mach's pages show a full-bleed photo (a theme); this is the solid the template draws where there is none - 13 of the seed's own header/footer bars' solid fallback, matching `python -m gdl.themes` on Mach 1020 Series.glt. One of the panel's six."
+    },
+    {
+      "name": "raised",
+      "value": "#FFFFFF32",
+      "usage": "Button fill when idle, and a panel, card or track's fill: a white wash over the page at alpha 50 (0x32). The seed's single most common button look (183 of Mach 1035's 327 authored button-state pairs); matches Mach Styles.psd's White swatch unselected alpha exactly. One of the panel's six."
+    },
+    {
+      "name": "pressed",
+      "value": "#FFFFFF78",
+      "usage": "Button fill when On or pressed: the same white wash at alpha 120 (0x78) - Mach's own rule of moving alpha rather than hue. Pairs with raised on the same 183 button-state pairs; matches the PSD's White swatch selected alpha exactly. One of the panel's six."
+    },
+    {
+      "name": "text",
+      "value": "#FFFFFF",
+      "usage": "Captions, labels, headings. The seed's own button and label text color. One of the panel's six."
+    },
+    {
+      "name": "ink",
+      "value": "#000000",
+      "usage": "Text that sits on the photo rather than on a bar or button: a rail's heading, a source's caption, a status line. Black - the seed's own labels on the photo are #000000 (Display, Volume, Settings, PC, Laptop). Text on a bar or button is `text`."
+    },
+    {
+      "name": "accent",
+      "value": "#EDB95E",
+      "usage": "A selected tab, list row or source choice. The PSD's yellow swatch (237, 185, 94, its Colors group); the seed's own buttons pair a dark idle fill with solid yellow on select (12 of 327; a further 5 pair a lighter idle fill with the same). One of the panel's six."
+    },
+    {
+      "name": "alert",
+      "value": "#E23636",
+      "usage": "A caption or fill that warns: a fault, an active mute. The PSD's red swatch (226, 54, 54); the seed's own buttons use it solid on alert-type states (9 of 327). One of the panel's six."
+    },
+    {
+      "name": "alert-dim",
+      "value": "#A829258C",
+      "usage": "The alert button at rest: a darker red at alpha 140 (0x8C), becoming solid `alert` when pressed - the seed's own confirm action (Confirmation's Power Down). Not one of the panel's core six unless swapped in."
+    },
+    {
+      "name": "text-secondary",
+      "value": "#919191",
+      "usage": "A de-emphasised label or a divider line. Five of the seed's own labels use this exact value. Not one of the panel's core six unless swapped in for text."
+    },
+    {
+      "name": "shade",
+      "value": "#000000B4",
+      "usage": "A darker button, panel or bar fill: black at alpha 180 (0xB4). The seed's second most common button look (69 of 327); also the template's own dominant fill overall (38 of `python -m gdl.themes` on Mach 1020 Series.glt) and Project.fill_map()'s one authored, non-image fill across all three surveyed Mach seeds. Not one of the panel's core six unless swapped in for raised."
+    },
+    {
+      "name": "shade-on",
+      "value": "#1F292EA0",
+      "usage": "The On or pressed counterpart to shade: Mach Styles.psd's 'gray dark' swatch (31, 41, 46) at alpha 160 (0xA0). Pairs with shade on the same 69 button-state pairs. Not one of the panel's core six unless swapped in for pressed."
+    },
+    {
+      "name": "scrim",
+      "value": "#000000A6",
+      "usage": "Behind a full-screen modal popup. Build draws every modal as the page beneath under black at alpha 166 (0xA6) regardless of the page's own background - the same value measured on the Afterburn, Mach and Shockwave seeds alike (gdl/designsys/afterburn.json). Not one of the panel's six - Build adds it, the design doesn't choose it."
+    }
+  ],
+  "type": [
+    {
+      "name": "title",
+      "pt": 32,
+      "weight": 400,
+      "usage": "A page's title - the seed's single largest authorable label (n=1, 'Open Sans' 32 pt). Mach's real display headings run larger still in Open Sans Light, up to 50 pt, but the seed has no font resource for that face, so 32 is the authorable ceiling."
+    },
+    {
+      "name": "header",
+      "pt": 26,
+      "weight": 400,
+      "usage": "The header bar's title (Select a source): 26 pt, as every Mach 1035 page's own header label."
+    },
+    {
+      "name": "heading",
+      "pt": 22,
+      "weight": 400,
+      "usage": "A popup's or a section's heading. 'Open Sans' 22 pt: 2 of Mach 1035's own labels, corroborated as Mach 1535's single most common label size (37 of its labels)."
+    },
+    {
+      "name": "body",
+      "pt": 16,
+      "weight": 400,
+      "usage": "Labels, status and paragraphs. The seed's most common label size (39 of Mach 1035's own labels, identical in Mach ECP 16-10); also its date/time control's own size in the authorable face."
+    },
+    {
+      "name": "button-large",
+      "pt": 20,
+      "weight": 400,
+      "usage": "The caption of a large button: a source, a main action. The largest common size among Mach 1035's own buttons in the authorable face (15 of 203 sized 'Open Sans' button captions)."
+    },
+    {
+      "name": "button",
+      "pt": 14,
+      "weight": 400,
+      "usage": "The caption of a small button. Mach's own buttons are most often 12 pt (113 of 203, identical in Mach ECP 16-10), under the 14 pt minimum the toolkit checks, so 14 is the floor here - Afterburn's own small-button type does the same lift from 13."
+    }
+  ],
+  "borders": {
+    "mach": {
+      "resource": "Mach - 10 Radius 2 Thick",
+      "radius": 10,
+      "thickness": 2,
+      "usage": "Mach's own rounded corner: buttons, panels, cards and slider/level tracks. The only border every button archetype uses; no donor button authors one, but CLAUDE.md's own guidance is to author a named border resource rather than pixels - see _source."
+    },
+    "rounded": {
+      "resource": "2D Rounded Rectangle",
+      "radius": 10,
+      "thickness": 3,
+      "usage": "A generic rounded rectangle. One of only two border resources actually drawn with in the seed (Project.border_resources()), on 2 shapes."
+    },
+    "rect": {
+      "resource": "2D Rectangle",
+      "radius": 0,
+      "thickness": 3,
+      "usage": "A square-cornered fill: a full-width bar."
+    },
+    "capsule": {
+      "resource": "2D Capsule",
+      "radius": 9999,
+      "thickness": 3,
+      "usage": "A pill."
+    },
+    "ellipse": {
+      "resource": "2D Ellipse",
+      "radius": -1,
+      "thickness": 3,
+      "usage": "A circle or ellipse. BORDER_GEOMETRY's own entry is (0, 3) - the resource's raw dataField, not a corner radius - so -1 draws it round, as gdl/designsys/afterburn.json's own ellipse does."
+    },
+    "none": {
+      "resource": "",
+      "radius": 0,
+      "thickness": 0,
+      "usage": "No border resource: the fill alone, square-cornered - the seed's footer, source and alert buttons."
+    }
+  },
+  "buttons": {
+    "ghost": {
+      "usage": "The default button: a white wash over the photo, brighter when On. The seed's single most common look (183 of Mach 1035's 327 authored button-state pairs). With an `icon`, the kit's icon strip sits at its left and the caption after it; with no caption, the icon alone, centered.",
+      "look": {
+        "fill": "raised",
+        "border": "rounded",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "pressed"
+        }
+      ],
+      "with_icon": {
+        "kit": "1376x440",
+        "bare": "440x440",
+        "caption": "indent",
+        "indent": 4
+      }
+    },
+    "solid": {
+      "usage": "A darker button: rail and navigation controls (Display On/Off/Mute, Lighting presets, Settings). The seed's second most common look (69 of 327). Takes an `icon` as ghost does.",
+      "look": {
+        "fill": "shade",
+        "border": "rounded",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "shade-on"
+        }
+      ],
+      "with_icon": {
+        "kit": "1376x440",
+        "bare": "440x440",
+        "caption": "indent",
+        "indent": 4
+      }
+    },
+    "highlight": {
+      "usage": "A selectable item: dim until chosen, solid accent when selected - a tab, a list row, a source choice. From the seed's own buttons: 12 of 327 pair a dark idle fill with solid yellow when selected (a further 5 pair a lighter idle fill with the same). White text on solid accent does not clear the 4.5:1 contrast minimum (docs/design-rules.md section 2), so On's caption is darkened here rather than left as measured.",
+      "look": {
+        "fill": "shade",
+        "border": "rounded",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "accent",
+          "color": "page"
+        }
+      ]
+    },
+    "source": {
+      "usage": "A source tile: a `solid` square with the kit's icon centered and, if it has one, its caption below - as the seed's Camera 1/2. The seed's own source row puts the name under the tile as an `ink` Label instead; either reads.",
+      "look": {
+        "fill": "shade",
+        "border": "none",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "shade-on"
+        }
+      ],
+      "with_icon": {
+        "kit": "440x440",
+        "bare": "440x440",
+        "caption": "below"
+      }
+    },
+    "footer": {
+      "usage": "A footer bar button: square-cornered `solid`, no border - Room Mode, Help, Power. With an `icon` and no caption, the kit's footer icon alone (help, power).",
+      "look": {
+        "fill": "shade",
+        "border": "none",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "shade-on"
+        }
+      ],
+      "with_icon": {
+        "kit": "700x448",
+        "bare": "700x448",
+        "caption": "indent",
+        "indent": 4
+      }
+    },
+    "alert": {
+      "usage": "A fault or warning someone has to act on - not an ordinary action such as shutting down, which is `solid` (the seed paints its Power Down confirmation red; that is Extron's choice, not a rule). A dim red at rest, solid `alert` when pressed, no border, as the seed draws it.",
+      "look": {
+        "fill": "alert-dim",
+        "border": "none",
+        "color": "text"
+      },
+      "states": [
+        {
+          "name": "Off"
+        },
+        {
+          "name": "On",
+          "fill": "alert"
+        }
+      ]
+    }
+  },
+  "defaults": {
+    "page": {
+      "background": "page"
+    },
+    "button": {
+      "variant": "ghost",
+      "type": "button",
+      "height": 60
+    },
+    "label": {
+      "type": "body",
+      "color": "ink"
+    },
+    "panel": {
+      "fill": "shade",
+      "border": "rect"
+    },
+    "line": {
+      "color": "text-secondary",
+      "thickness": 2
+    },
+    "slider": {
+      "fill": "text-secondary",
+      "border": "rounded",
+      "orientation": "up",
+      "track": 8,
+      "thumb": 30,
+      "value": "text",
+      "thumb_color": "text",
+      "thumb_image": "40_mach_thumb@3x.png",
+      "track_image": "8x500_mach_track_bg@3x.png",
+      "fill_image": "8x500_mach_track_fill@3x.png"
+    },
+    "level": {
+      "fill": "raised",
+      "border": "mach",
+      "orientation": "up",
+      "track": 8,
+      "value": "accent"
+    },
+    "clock": {
+      "type": "body",
+      "color": "text-secondary"
+    }
+  },
+  "cover": {
+    "blocks": [
+      "shade",
+      "accent",
+      "alert",
+      "raised"
+    ],
+    "pattern": "rounded tiles cut at the Mach 10 px radius",
+    "radius": 10
+  },
+  "examples": {
+    "states": "[{\"name\":\"No Signal\",\"fill\":\"shade\",\"color\":\"text-secondary\"},\"Ready\",{\"name\":\"Live\",\"fill\":\"accent\",\"color\":\"page\"}]",
+    "states_note": "In Mach a selected or On state usually moves the same fill to a brighter alpha (raised/pressed, shade/shade-on); a state that has to stand out further, like this one, fills solid `accent` instead, with a `page`-colored caption for contrast - see the highlight variant.",
+    "on_off": "[\"Off\",{\"name\":\"On\",\"fill\":\"pressed\"}]",
+    "color_rule": "A theme's photo behind everything; `shade` for the header and footer bars and the rail buttons, `raised`/`pressed` for the lighter ghost buttons; `text` on a bar or button, `ink` on the photo; `accent` only for a selected item, with a `page` caption; `alert` only for a confirmed, irreversible action."
+  },
+  "themes": [
+    {
+      "id": "sunset",
+      "name": "Sunset",
+      "scheme": "default",
+      "image": "mach-bg-02.png",
+      "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png",
+      "usage": "Pastel mountains at sunset - the seed's own, behind every one of its pages."
+    },
+    {
+      "id": "dome",
+      "name": "Dome",
+      "scheme": "default",
+      "image": "mach-bg-01.png",
+      "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png",
+      "usage": "A grey tiled dome against a slate sky. From Mach's kit."
+    },
+    {
+      "id": "lake",
+      "name": "Lake",
+      "scheme": "default",
+      "image": "mach-bg-03.png",
+      "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png",
+      "usage": "Blue hills over still water. From Mach's kit."
+    },
+    {
+      "id": "forest",
+      "name": "Forest",
+      "scheme": "default",
+      "image": "mach-bg-04.png",
+      "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png",
+      "usage": "A misty violet forest. From Mach's kit."
+    },
+    {
+      "id": "ridges",
+      "name": "Ridges",
+      "scheme": "default",
+      "image": "mach-bg-05.png",
+      "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png",
+      "usage": "Layered blue mountain ridges. From Mach's kit."
+    },
+    {
+      "id": "facade",
+      "name": "Facade",
+      "scheme": "default",
+      "image": "mach-bg-06.png",
+      "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png",
+      "usage": "A curved glass facade against a white sky. From Mach's kit."
+    }
+  ],
+  "layout": {
+    "main": [
+      140,
+      64,
+      1000,
+      681
+    ],
+    "main_note": "Between the header and footer bars (64-745 down) and between the rails (140-1140 across): the photo, where the page's main task sits.",
+    "regions": [
+      "**The header bar (1280x64 at 0,0) is a `shade` Panel with the page's title centered on it**, a `heading` Label in `text` (Select a source, Room Title).",
+      "**The footer bar (1280x55 at 0,745) is `shade` too**, holding a `footer` Room Mode button at its left (140 wide), the date and time centered in `text-secondary`, and `footer` Help (70) and Power (140) buttons at its right.",
+      "**The left rail (x 17, 103 wide) holds grouped controls:** a heading in `ink` on the photo (Display, Settings, Lighting Preset), then a column of `solid` buttons 103x60, stacked with no gap inside a group.",
+      "**The right rail (x 1161, 103 wide) holds volume:** a `Volume` heading in `ink`, a vertical slider about 30 wide centered under it, and a `solid` Mute button 103x60 below.",
+      "**Sources sit in the middle of the photo** as `source` tiles about 100x100, four to a row, each with its name in `ink` below it; a status line or a single action is centered under them."
+    ]
+  },
+  "kit": {
+    "root": "Mach",
+    "thumbs": "Mach/Extracted",
+    "extract": {
+      "from": [
+        "seeds/Mach 1035.gdl"
+      ],
+      "to": "Mach/Extracted"
+    },
+    "note": "Extron's Mach resource kit: white icons on transparent, one image each - Mach shows state by the button's fill, not by swapping its icon. Its slider art lives only in the seed and is extracted (vendor/README.md).",
+    "scale": {
+      "440x440": 96,
+      "1376x440": 300,
+      "700x448": 150,
+      "755x440": 165,
+      "880x440": 190,
+      "960x440": 210,
+      "1508x440": 330,
+      "546x440": 120
+    }
+  }
+}

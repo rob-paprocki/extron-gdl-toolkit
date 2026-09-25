@@ -440,7 +440,13 @@ def render_page(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True, groups
         # what Build will bake - the image over the fill. Built pages never
         # carry this key.
         if pg.get('TLPImageID', -1) == -1 and pg.get('_background_image'):
-            draw_fitted(canvas, (0, 0, size[0], size[1]), pg['_background_image'])
+            if pg.get('_background_layout') == 1:
+                # Stretch, as Mach's pages lay out their photo.
+                art = Image.open(pg['_background_image']).convert('RGBA').resize(
+                    (size[0], size[1]), Image.Resampling.LANCZOS)
+                canvas.alpha_composite(art)
+            else:
+                draw_fitted(canvas, (0, 0, size[0], size[1]), pg['_background_image'])
     paste(canvas, assets, pg.get('TLPImageID'), ox, oy)
     for c in (pg.get('Controls') or []):
         render_control(canvas, c, assets, ox, oy, draw_txt, groups, fills, pg.get('ID'))

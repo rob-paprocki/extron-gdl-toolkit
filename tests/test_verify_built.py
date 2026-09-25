@@ -199,6 +199,24 @@ class TestBackgroundImage(unittest.TestCase):
         pages = {'Home': {'Name': 'Home', 'TLPImageID': 5}}
         self.assertEqual(self.vb.check_page_background(plan, pages, {5: buf.getvalue()}), [])
 
+    def test_a_stretched_page_is_checked_stretched(self):
+        """Mach's pages stretch their photo; checked as if fitted, a correctly
+        built page reads as the wrong image."""
+        from PIL import Image
+        wide = os.path.join(self.dir, 'wide.png')
+        src = Image.new('RGBA', (80, 20), (90, 80, 120, 255))
+        src.paste((200, 20, 20, 255), (0, 0, 40, 20))
+        src.save(wide)
+        built = src.resize((40, 20)).convert('RGB')
+        buf = __import__('io').BytesIO()
+        built.save(buf, 'PNG')
+        pages = {'Home': {'Name': 'Home', 'TLPImageID': 5}}
+        for layout, bad in ((1, False), (0, True)):
+            plan = [{'name': 'Home', 'background': 0xFF242634, 'background_layout': layout,
+                     'background_image': {'name': 'wide.png', 'file': wide}}]
+            problems = self.vb.check_page_background(plan, pages, {5: buf.getvalue()})
+            self.assertEqual(bool(problems), bad, (layout, problems))
+
     def test_a_page_built_without_it_is_reported(self):
         # A page's artwork is page-sized, as the planned image is here.
         from PIL import Image
@@ -280,6 +298,26 @@ class TestStateImage(unittest.TestCase):
                                                  {7: buf.getvalue()}, 'page')
         self.assertEqual(problems, [])
         self.assertTrue(any('translucent' in n for n in notes), notes)
+
+    def test_states_in_translucent_fills_are_not_called_alike(self):
+        """Mach's buttons: black at 70% idle, a dark gray at 63% pressed. Their
+        artwork has no opaque pixel, so every state's plurality color is none -
+        which read as 'all built the same', then crashed naming it."""
+        import io
+        from PIL import Image
+        art = {}
+        for i, rgba in ((1, (0, 0, 0, 180)), (2, (31, 41, 46, 160))):
+            buf = io.BytesIO()
+            Image.new('RGBA', (8, 8), rgba).save(buf, 'PNG')
+            art[i] = buf.getvalue()
+        op = {'fields': {'nameField': 'Tile'}, 'states': [
+            {'name': 'Off', 'fill': 0xB4000000}, {'name': 'On', 'fill': 0xA01F292E}]}
+        table = {'Home': {'Name': 'Home', 'Controls': [
+            {'ID': 1, 'Name': 'Tile', 'States': [
+                {'Name': 'Off', 'TLPImageID': 1}, {'Name': 'On', 'TLPImageID': 2}]}]}}
+        problems, _, _ = self.vb.check_states([{'name': 'Home', 'controls': [op]}], table, art,
+                                              'page')
+        self.assertEqual(problems, [])
 
     def test_a_slider_thumb_is_checked_off_its_own_asset(self):
         """A clone keeps its donor's thumb image: the seed's periwinkle under

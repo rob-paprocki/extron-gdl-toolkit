@@ -56,6 +56,15 @@ BTN = dict(kind='button', name='HelpBtn', text='Help', fill='raised', stroke='te
 
 
 class TestTranslate(unittest.TestCase):
+    def test_a_page_background_is_laid_out_as_its_template_lays_it(self):
+        """Mach stretches its 3:2 photo over the page; Afterburn fits its own."""
+        for template, want in (('Mach', 'stretch'), ('Afterburn', None)):
+            pg = json.dumps({'kind': 'page', 'name': 'Home', 'template': template,
+                             'scheme': 'default' if template == 'Mach' else 'orange',
+                             'background': 'page', 'background_image': 'x.png', 'start': True})
+            spec, _, _ = translate({'Home.dc.html': out(pg)})
+            self.assertEqual(spec['pages'][0].get('background_layout'), want, template)
+
     def test_boards_become_pages_with_their_controls(self):
         spec, problems, _ = translate({
             'Home.dc.html': out(HOME, ctl([1040.2, 24, 199.6, 64], **dict(BTN, nav='Help'))),

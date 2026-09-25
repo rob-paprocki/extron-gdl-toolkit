@@ -153,7 +153,7 @@ Claude Code publishes the result with the Artifact tool.
 | Part | From |
 |---|---|
 | **Colors** | Afterburn: the published guide (`docs/design-rules.md` §4), its four accent schemes as the system's themes. Mach: its PSD's `Colors` group and the selected/unselected alpha rule. Shockwave, Turbulence: `gdl.themes` over the seeds and `.glt` templates, cross-checked against their PSDs. |
-| **Themes** | Afterburn's four recommended pairings - Default with accent Scheme 1, Anthracite with 3, Blue Slate with 2, Grape with 4 - as a Page's `theme`. Each is the kit's background image fitted over `#242634`, as the seed draws it, plus its accent scheme. The spec carries the image, and the applier appends it to the project. |
+| **Themes** | Afterburn's four recommended pairings - Default with accent Scheme 1, Anthracite with 3, Blue Slate with 2, Grape with 4 - as a Page's `theme`. Each is the kit's background image fitted over `#242634`, as the seed draws it, plus its accent scheme. Mach's are its kit's six photos, the seed's sunset first, stretched as its seed stretches them (`background_layout`). The spec carries the image, and the applier appends it to the project. |
 | **Layout** | Where the template puts things. Afterburn keeps most of a page in the squircle main area (`MainArea`, 916×752 at 183,24), with headed groups on the left rail and volume, help and power on the right. |
 | **Type** | The faces the template's seed can actually author (`Project.font_resource_names()`), at the sizes its own pages use - none under the 14 pt the toolkit checks. Sizes are points, drawn at GUI Designer's 1.375 px per point. Open Sans is Apache 2.0 and loads from Google Fonts. |
 | **Borders** | Only border resources the seed defines and the spec names (`BORDERS`), so a design cannot ask for a shape the panel cannot draw. |
@@ -260,6 +260,14 @@ that paints outside one. Chrome is the only new runtime need, and only here.
   the slider's thumb included; ID map 27 references, 0 problems.
   `gdl.design compare` then put 1.2% of Home's pixels, 2.2% of Help's and 1.9%
   of the Room Off confirmation's apart from the build.
+- **The same brief in *Extron Mach*** (`tests/data/design-huddle-mach/`: the
+  seed's sunset photo, shade bars and rails, source tiles with kit icons and
+  black captions on the photo, Help and Room Off as Mach's full-width modal
+  windows), built on `seeds/Mach 1035.gdl`: layout 91 controls, ID map 30
+  references, 0 problems each. Compare put Help 2.7% and Room Off 2.0% apart,
+  Home 19.5% - the renderer draws Mach's translucent bars and buttons opaque,
+  as GUI Designer's snapshots composite them, where the canvas shows the photo
+  through them (`docs/render-fidelity.md` §2).
 
 ## 7. What is left
 

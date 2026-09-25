@@ -318,8 +318,13 @@ def check_states(plan_items, table, assets, kind):
                         f'cannot show feedback')
                 # By plurality color only where there are no kit images: two
                 # speaker icons are both mostly their #414459 ground, and each
-                # state's image is checked against its own artwork above.
-                elif fills_differ and not any(images) and len(colors) == 1:
+                # state's image is checked against its own artwork above. And
+                # only where there is a color to compare: translucent states
+                # (Mach's black at 70%, gray at 63%) have no opaque pixel, so
+                # none of them has one; the artwork ids above still hold them
+                # apart.
+                elif fills_differ and not any(images) and len(colors) == 1 \
+                        and None not in colors:
                     problems.append(
                         f"{kind} {item['name']!r} {name!r}: the states were planned in "
                         f'different colors but all built {_hex(colors.pop())} - no '
@@ -540,7 +545,11 @@ def _check_background_image(spec, pg, assets):
     if img.get('file') and os.path.exists(img['file']):
         fill = spec['background']
         want = Image.new('RGBA', art.size, _rgb(fill) + ((fill >> 24) & 0xFF,))
-        want = Image.alpha_composite(want, fit_image(img['file'], *art.size)).convert('RGB')
+        # Laid out as the page lays it out: fitted (Fill), or stretched as
+        # Mach's pages stretch their photo.
+        drawn = (Image.open(img['file']).convert('RGBA').resize(art.size, Image.Resampling.LANCZOS)
+                 if spec.get('background_layout') == 1 else fit_image(img['file'], *art.size))
+        want = Image.alpha_composite(want, drawn).convert('RGB')
         hist = ImageChops.difference(art, want).convert('L').histogram()
         mean = sum(i * n for i, n in enumerate(hist)) / max(1, sum(hist))
         if mean > IMAGE_TOLERANCE:

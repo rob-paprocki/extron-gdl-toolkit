@@ -19,7 +19,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATES = ('afterburn',)
+TEMPLATES = ('afterburn', 'mach')
 
 # Token and style names the Design System page accepts; anything else drops.
 NAME = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$')
@@ -170,17 +170,22 @@ def kit_look(stem):
     return stem, look or 'plain'
 
 
-def kit_root(p, part='root'):
-    """A part of the template's kit on this machine, or None: `root` its
-    buttons, `thumbs` its slider thumbs."""
-    from ..spec import RESOURCE_ROOTS
+def kit_roots(p, part='root'):
+    """Every copy of a part of the template's kit on this machine, in resource-
+    root order: `root` its buttons, `thumbs` its slider thumbs. More than one
+    when vendor/ holds a slice - extracted art, or part of a kit - beside the
+    install's whole one."""
+    from .. import spec
     if not (p.get('kit') or {}).get(part):
-        return None
-    for root in RESOURCE_ROOTS:
-        d = os.path.join(root, *p['kit'][part].split('/'))
-        if os.path.isdir(d):
-            return d
-    return None
+        return []
+    return [d for d in (os.path.join(root, *p['kit'][part].split('/'))
+                        for root in spec.RESOURCE_ROOTS) if os.path.isdir(d)]
+
+
+def kit_root(p, part='root'):
+    """The first copy of a part of the template's kit, or None."""
+    roots = kit_roots(p, part)
+    return roots[0] if roots else None
 
 
 def kit_index(p, part='root'):
@@ -190,45 +195,43 @@ def kit_index(p, part='root'):
     them. Empty where the kit is not installed.
     """
     files, paths = {}, {}
-    root = kit_root(p, part)
-    if not root:
-        return {'files': files, 'paths': paths}
-    for d, _, names in sorted(os.walk(root)):
-        for f in sorted(names):
-            m = _KIT_FILE.match(f)
-            if not m:
-                continue
-            size, stem = m.groups()
-            icon, look = kit_look(stem)
-            # Two files can read as one look: the Afterburn kit has
-            # 1224x344_record_red.png beside 1224x344_record_red_sel.png. The
-            # selected one is what a state asks for, so it wins, and the
-            # other is named rather than dropped silently.
-            looks = files.setdefault(size, {}).setdefault(icon, {})
-            prev = looks.get(look)
-            if prev and prev != f:
-                keep, drop = ((f, prev) if re.search(r'[-_]sel$', stem)
-                              and not re.search(r'[-_]sel\.png$', prev) else (prev, f))
-                print(f'  note: {drop} reads as {size} {icon!r} {look!r}, as {keep} '
-                      f'does - {keep} is used')
-                looks[look] = keep
-            else:
-                looks[look] = f
-            rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
-            paths.setdefault(f, p['kit'][part] + '/' + rel)
+    # Every root that has the kit, the first winning a name two have: a slice
+    # in vendor/ must add to the install's kit, not hide it.
+    for root in kit_roots(p, part):
+        for d, _, names in sorted(os.walk(root)):
+            for f in sorted(names):
+                m = _KIT_FILE.match(f)
+                if not m or f in paths:
+                    continue
+                size, stem = m.groups()
+                icon, look = kit_look(stem)
+                # Two files can read as one look: the Afterburn kit has
+                # 1224x344_record_red.png beside 1224x344_record_red_sel.png.
+                # The selected one is what a state asks for, so it wins, and
+                # the other is named rather than dropped silently.
+                looks = files.setdefault(size, {}).setdefault(icon, {})
+                prev = looks.get(look)
+                if prev and prev != f:
+                    keep, drop = ((f, prev) if re.search(r'[-_]sel$', stem)
+                                  and not re.search(r'[-_]sel\.png$', prev) else (prev, f))
+                    print(f'  note: {drop} reads as {size} {icon!r} {look!r}, as {keep} '
+                          f'does - {keep} is used')
+                    looks[look] = keep
+                else:
+                    looks[look] = f
+                rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
+                paths[f] = p['kit'][part] + '/' + rel
     return {'files': files, 'paths': paths}
 
 
 def _kit_file(p, part, name):
     """A file's kit path under one part of the kit, whatever its naming - a
     slider's art need not follow the '<W>x<H>_' pattern (Mach's does not)."""
-    root = kit_root(p, part)
-    if not root:
-        return None
-    for d, _, names in os.walk(root):
-        if name in names:
-            rel = os.path.relpath(os.path.join(d, name), root).replace(os.sep, '/')
-            return p['kit'][part] + '/' + rel
+    for root in kit_roots(p, part):
+        for d, _, names in os.walk(root):
+            if name in names:
+                rel = os.path.relpath(os.path.join(d, name), root).replace(os.sep, '/')
+                return p['kit'][part] + '/' + rel
     return None
 
 
@@ -348,10 +351,11 @@ def kit_art(p, index):
     except ImportError:
         print("  note: no Pillow - the system carries no kit art, so its icons do not draw")
         return {}
-    root = kit_root(p)
-    if root in _ART:
-        return _ART[root]
-    out = _ART[root] = {}
+    from ..spec import resolve_image
+    key = (p.get('template'), tuple(kit_roots(p)))
+    if key in _ART:
+        return _ART[key]
+    out = _ART[key] = {}
     scale = p['kit'].get('scale') or {}
     for size, icons in index['files'].items():
         w = scale.get(size, 160)
@@ -359,9 +363,8 @@ def kit_art(p, index):
             for f in looks.values():
                 if f in out:
                     continue
-                rel = index['paths'][f][len(p['kit']['root']) + 1:]
-                path = os.path.join(root, *rel.split('/'))
-                out[f] = _webp(Image, path, w)
+                # Through the resource roots, since a file may come from any.
+                out[f] = _webp(Image, resolve_image(index['paths'][f]), w)
     return out
 
 
