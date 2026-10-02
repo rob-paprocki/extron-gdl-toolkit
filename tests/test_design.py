@@ -319,6 +319,40 @@ class TestInChrome(unittest.TestCase):
         self.assertEqual(spec['images']['white_close.png'], 'Shockwave/icons/440x440 White/white_close.png')
         self.assertEqual(Panel(spec).check(), [])
 
+    def test_the_turbulence_canvas_translates_and_checks_clean(self):
+        """Turbulence's art lives only in its seed and templates, and Extron
+        named a fifth of its pairs apart - each state must still get its own."""
+        p, (spec, problems, _) = self._translate('turbulence', 'design-huddle-turbulence')
+        if not designsys.kit_root(p):
+            self.skipTest("Turbulence's art is not extracted here (python -m gdl.designsys extract turbulence)")
+        self.assertEqual(problems, [])
+        home = {c['name']: c for c in spec['pages'][0]['controls']}
+
+        def images(c):
+            return [s['image'] for s in c['states']]
+
+        # Pairs the file names do not make: a ring that rests white and lights
+        # green, a source tile that rests solid.
+        self.assertEqual(images(home['Mute']), ['440x440_volume_mute_white_nsel.png',
+                                                '440x440_volume_mute_sel.png'])
+        self.assertEqual(images(home['Laptop']), ['504x504_input_laptop_solid_text_nsel.png',
+                                                  '504x504_input_laptop_text_sel.png'])
+        # The seed's captions: two breaks under a source's glyph, one under a call's.
+        self.assertEqual(home['Laptop']['text'], '\r\n\r\nLaptop')
+        self.assertEqual(home['EndCall']['text'], '\r\nEnd Call')
+        # The confirmation's Power Down rests green, as the seed's does.
+        confirm = {c['name']: c for c in spec['popups'][1]['controls']}
+        self.assertEqual(images(confirm['ShutDown']), ['440x440_vc_power-dn_green_nsel.png',
+                                                       '440x440_vc_power-dn_sel.png'])
+        # The rail is art: it reaches the spec with its files, from vendor/.
+        slider = home['VolumeSlider']
+        self.assertEqual((slider['track_image'], slider['fill_image'], slider['thumb_image']),
+                         ('52x535_turb_slider_bg.png', '52x535_turb_slider_fill.png',
+                          '102x102_thumb_turb_sq.png'))
+        self.assertEqual(spec['images']['52x535_turb_slider_bg.png'],
+                         'Turbulence/52x535_turb_slider_bg.png')
+        self.assertEqual(Panel(spec).check(), [])
+
     def test_a_held_button_draws_its_press_state(self):
         """The panel shows a button's press state while it is held, so the
         canvas does: Help shows the kit's selected icon on its round fill."""

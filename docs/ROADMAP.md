@@ -60,12 +60,12 @@ opening GUI Designer.**
    and per-page popup references is where the next class of bug lives. With `nav`
    the page flow is part of the spec, and `verify_idmap.py` checks it against
    the build.
-5. **Claude Design as the front end: every panel, then Turbulence.** Afterburn,
-   Mach and Shockwave are design systems, and a canvas drawn with each
-   translates, builds and verifies end to end, with a side-by-side of each
-   artboard and the built panel for sign-off - for the 1280×800 TLP Pro 1025/1035
-   only. Next, one canvas building for every panel a room has, each sized for its
-   physical screen; then Turbulence on the same footing.
+5. **Claude Design as the front end: every panel.** Afterburn, Mach, Shockwave
+   and Turbulence are design systems, and a canvas drawn with each translates,
+   builds and verifies end to end, with a side-by-side of each artboard and the
+   built panel for sign-off - for the 1280×800 TLP Pro 1025/1035 only. Next, one
+   canvas building for every panel a room has, each sized for its physical
+   screen.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
    Each template gets seeds at the three smaller sizes the phases build for -
    1024x600, 800x480 and 320x240 - made with `New-GdlSeed.ps1` as its phase

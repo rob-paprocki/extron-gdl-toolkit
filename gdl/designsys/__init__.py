@@ -19,7 +19,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATES = ('afterburn', 'mach', 'shockwave')
+TEMPLATES = ('afterburn', 'mach', 'shockwave', 'turbulence')
 
 # Token and style names the Design System page accepts; anything else drops.
 NAME = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$')
@@ -324,11 +324,15 @@ def extract_sources(p):
 def extract_images(sources, out):
     """Write every named image resource in `sources` (.gdl or .glt) to `out`.
 
-    Turbulence ships no Resources folder in 1.28 - its images live only inside
-    its six TouchLink templates - and Mach's slider art lives only inside its
-    seed. A resource's data is the PNG file itself (System.Drawing.Bitmap's
-    Data), so written to disk under a resource root it is a kit like any other,
-    and a spec's `images` resolves it. The project's own defaults ('Button',
+    Turbulence has no kit beside the others in 1.28's Resources, and the
+    library under Sample Projects\\Resources\\Turbulence is a separate one: it
+    lacks a fifth of what the seed draws (its source tabs, slider, header and
+    footer) and draws the On and Off rings differently. Its seed and six
+    TouchLink templates carry the art the panels use. Mach's slider art lives
+    only inside its seed. A resource's data is the PNG file itself
+    (System.Drawing.Bitmap's Data), so written to disk under a resource root
+    it is a kit like any other, and a spec's `images` resolves it. The
+    project's own defaults ('Button',
     'Slider Thumb', an .ico) are not kit art and are left behind. The first
     source to name a file wins; returns the files written.
     """
@@ -520,18 +524,20 @@ def icon_names(p):
     # A list names several - Turbulence's rings are round_NN, on, off. An
     # `icon` alone is only what the variant draws unless told otherwise:
     # Shockwave's `button` is gray by default and offers every color.
-    claimed = {}
+    claimed, taken = {}, {}
     for k, v in p['buttons'].items():
         if v.get('kit') and v.get('icons'):
             want = v['icons'] if isinstance(v['icons'], str) else tuple(v['icons'])
             claimed[k] = sorted(n for n in files.get(v['kit'], {}) if n.startswith(want))
-    taken = {n for names in claimed.values() for n in names}
+            # A claim holds at its own size: Turbulence's 900x648 scene
+            # pictures share names with its 504x504 source tabs.
+            taken.setdefault(v['kit'], set()).update(claimed[k])
     for k, v in p['buttons'].items():
         size = v.get('kit') or (v.get('with_icon') or {}).get('kit')
         if k in claimed:
             out[k] = claimed[k]
         elif size and files.get(size):
-            out[k] = sorted(set(files[size]) - taken)
+            out[k] = sorted(set(files[size]) - taken.get(size, set()))
     return out
 
 

@@ -378,9 +378,9 @@ def check_rails(plan_items, table, assets, kind):
     backgroundImageField - which on a slider IS the track - so Shockwave's
     slider built an opaque black block where its seed's own draw the rail,
     and no other check looked. Build draws the two as the empty and full
-    assets, TLPMinValueImageID and TLPMaxValueImageID, at the track's width
-    (rail_image): on the seeds' own sliders they are their track and fill
-    files within 8% (Mach) and 17% (Shockwave), the black block 100% and 67%.
+    assets, TLPMinValueImageID and TLPMaxValueImageID (rail_image): on the
+    seeds' own sliders they are their track and fill files within 0%
+    (Turbulence, Mach) and 8% (Shockwave), the black block 100% and 66%.
     """
     problems, checked = [], 0
     for item in plan_items:
@@ -409,9 +409,10 @@ def check_rails(plan_items, table, assets, kind):
                     continue
                 w, h = Image.open(io.BytesIO(assets[tid])).size
                 vertical = c.get('Orientation') in (2, 3)   # up, down
+                thumb = c.get('SliderIndicatorHeight' if vertical else 'SliderIndicatorWidth')
 
-                def draw(file, w, h, tw=c.get('SliderTrackWidth')):
-                    return rail_image(file, w, h, tw, vertical)
+                def draw(file, w, h, tw=c.get('SliderTrackWidth'), thumb=thumb):
+                    return rail_image(file, w, h, tw, thumb, vertical)
 
                 off = image_mismatch(img['file'], assets[tid], w, h, draw=draw)
                 if off > IMAGE_OFF:
@@ -479,18 +480,23 @@ def stretch_image(file, w, h):
     return Image.open(file).convert('RGBA').resize((w, h), Image.Resampling.LANCZOS)
 
 
-def rail_image(file, w, h, track, vertical):
-    """`file` as Build draws a slider's rail into a w x h control: stretched to
-    the track's width along the slider, centered across it. Measured on the
-    seeds' own built sliders against their kit files: Mach's 8 px rails in 30
-    px sliders read 6-8% off so and 66% stretched to the control; Shockwave's
-    track is its control's width, and its rails read 7% and 15% - fitted, as a
-    button's image is drawn, a narrow bar lands a few pixels off along its
-    whole length and the full rail read 27%."""
-    track = max(1, min(track or (w if vertical else h), w if vertical else h))
+def rail_image(file, w, h, track, thumb, vertical):
+    """`file` as Build draws a slider's rail into a w x h control: stretched
+    into a box the track's width across and the slider's length less the thumb
+    along, centered - inset half the thumb at each end, where the thumb's
+    center stops. Measured on the seeds' own built sliders against their kit
+    files: every Turbulence and Mach rail 0% off so, Shockwave's 8% at most.
+    Drawn the whole length instead, Turbulence's 10 px stripes all land
+    elsewhere and its own rails read 48-54%; fitted as a button's image is,
+    a narrow bar is a few pixels off along its whole length. Only vertical
+    sliders were measured; a horizontal one is assumed to mirror them."""
+    across, along = (w, h) if vertical else (h, w)
+    track = max(1, min(track or across, across))
+    length = max(1, along - (thumb or 0))
     out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    im = stretch_image(file, *((track, h) if vertical else (w, track)))
-    out.alpha_composite(im, ((w - track) // 2, 0) if vertical else (0, (h - track) // 2))
+    im = stretch_image(file, *((track, length) if vertical else (length, track)))
+    at = ((across - track) // 2, (along - length) // 2)
+    out.alpha_composite(im, at if vertical else at[::-1])
     return out
 
 

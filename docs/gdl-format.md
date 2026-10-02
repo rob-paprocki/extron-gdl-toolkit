@@ -329,8 +329,10 @@ A generator should assert all four agree rather than trusting the writes.
   Shockwave, Mach and Turbulence seeds' sliders draw the rail from the kit: the
   track shown empty in `backgroundImageField`, the fill shown full in
   `sliderFillImageField`. Build writes the two as `TLPMinValueImageID` and
-  `TLPMaxValueImageID`, each stretched along the slider at `sliderTrackWidth`
-  across it, centered - Mach's 8 px rail in a 30 px slider. Those sliders author
+  `TLPMaxValueImageID`, each stretched into `sliderTrackWidth` across and the
+  slider's length less the thumb along, centered - inset half the thumb at
+  each end, where its center stops: Mach's 8 px rail in a 30 px slider,
+  Turbulence's 44 px striped one 26 px short of each end. Those sliders author
   no border and a Transparent fill; one with a border resource and a fill builds
   that bordered fill in place of the art, so a Shockwave slider planned with
   the rounded border and black fill built an opaque black block with the right

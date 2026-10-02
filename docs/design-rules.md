@@ -313,7 +313,7 @@ make a custom element that matches the theme", so it is worth knowing it exists.
 | Afterburn | Backgrounds, Buttons, Font, Icons, Sliders & Toggles — 3,376 files, 44 MB | **SVG**: 983 button and 659 icon vectors beside their PNGs |
 | Mach | Backgrounds, Buttons, Font, Icons, Presets, Recording Controls, Transport Icons, Volume and Slider — 596 files, 581 MB | **`Style Sheet\Mach Styles.psd`** (222 MB), plus `Mach Styles 1_2_0.psd` |
 | Shockwave | backgrounds, buttons, cables, Font, icons, presets, Slider, transport icons, volume — 1,124 files, 63 MB | **`Shockwave Styles.psd`** (12 MB) |
-| Turbulence | no `Resources\Turbulence\` in 1.28 | `Sample Projects\Resources\Turbulence\Turbulence Styles.psd` (1.55 GB), dated 2019 |
+| Turbulence | no `Resources\Turbulence\` in 1.28; `Sample Projects\Resources\Turbulence\` holds a separate library (1,407 PNGs) that lacks a fifth of what the seed draws, so the design system's art is extracted from the seed and templates | `Sample Projects\Resources\Turbulence\Turbulence Styles.psd` (1.55 GB), dated 2019 |
 
 So the two approaches differ by theme: **Afterburn is vector** (open the SVG,
 restyle, export a PNG at the size you need), while **Mach and Shockwave are

@@ -40,11 +40,14 @@ Without it, `tests/_corpus.py` falls back to the install path, and the tests tha
 need a template skip rather than fail.
 
 **Images that exist only inside Extron's files** go here too, extracted rather
-than copied: Turbulence has no `Resources` folder in 1.28 - its kit lives inside
-its TouchLink templates - and Mach's slider art lives only inside its seed.
+than copied: Turbulence has no kit beside the others in 1.28's `Resources` -
+the library under `Sample Projects\Resources\Turbulence` is a separate one that
+lacks a fifth of what the seed draws - so its art comes out of its seed and
+TouchLink templates, and Mach's slider art lives only inside its seed.
 
 ```bash
-python -m gdl.designsys extract turbulence   # -> vendor/extron/Resources/Turbulence/Extracted
+python -m gdl.designsys extract turbulence   # -> vendor/extron/Resources/Turbulence (267 images)
+python -m gdl.designsys extract mach         # -> vendor/extron/Resources/Mach/Extracted
 ```
 
 A profile's `kit.extract` names the files to read (`seeds/...`, or a template

@@ -414,6 +414,29 @@ class TestKitFiles(unittest.TestCase):
                 gdl.spec.RESOURCE_ROOTS = old
         self.assertEqual(offered, {'ring': ['on', 'round_01'], 'button': ['home']})
 
+    def test_a_claim_holds_only_at_its_own_size(self):
+        """Turbulence's source tabs (504x504) claim input_laptop; its scene
+        pictures (900x648) have an input_laptop of their own, which the claim
+        hid - and the wide bar lost its blank to the dock's, at 712x440."""
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        names = ['504x504_input_laptop_nsel.png', '900x648_input_laptop_nsel.png']
+        p = {'kit': {'root': 'Theme'},
+             'buttons': {'source': {'kit': '504x504', 'icons': 'input_'},
+                         'scene': {'kit': '900x648'}}}
+        with tempfile.TemporaryDirectory() as a:
+            os.makedirs(os.path.join(a, 'Theme'))
+            for f in names:
+                with open(os.path.join(a, 'Theme', f), 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a,)
+            try:
+                offered = designsys.icon_names(p)
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+        self.assertEqual(offered, {'source': ['input_laptop'], 'scene': ['input_laptop']})
+
     def test_a_named_file_the_kit_lacks_is_left_out(self):
         index = self._index({'named': {'440x440': {'close': 'white_close.png'}}},
                             ['440x440_gray_nsel.png'])

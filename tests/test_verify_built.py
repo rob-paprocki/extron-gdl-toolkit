@@ -340,8 +340,11 @@ class TestStateImage(unittest.TestCase):
         from PIL import Image, ImageDraw
         files = {}
         for name, bar in (('track.png', (56, 56, 56, 255)), ('fill.png', (255, 255, 255, 255))):
+            # Turbulence's: bars 10 px on, 5 off - a rail drawn the wrong
+            # length puts every stripe somewhere else.
             im = Image.new('RGBA', (52, 535), (0, 0, 0, 0))
-            ImageDraw.Draw(im).rounded_rectangle((14, 0, 38, 534), 12, fill=bar)
+            for y in range(0, 535, 15):
+                ImageDraw.Draw(im).rectangle((14, y, 38, y + 9), fill=bar)
             files[name] = os.path.join(self.dir, name)
             im.save(files[name])
 
@@ -350,19 +353,21 @@ class TestStateImage(unittest.TestCase):
             im.save(buf, 'PNG')
             return buf.getvalue()
 
-        # Build draws a rail at the track's width, centered - see rail_image:
-        # a Mach rail is 8 px in a 30 px slider.
-        right = {1: art(self.vb.rail_image(files['track.png'], 60, 391, 24, True)),
-                 2: art(self.vb.rail_image(files['fill.png'], 60, 391, 24, True))}
+        # Build draws a rail the track's width across and the slider's length
+        # less the thumb along, centered - see rail_image.
+        right = {1: art(self.vb.rail_image(files['track.png'], 60, 391, 24, 52, True)),
+                 2: art(self.vb.rail_image(files['fill.png'], 60, 391, 24, 52, True))}
         wide = {1: art(self.vb.stretch_image(files['track.png'], 60, 391)), 2: right[2]}
+        long = {1: art(self.vb.rail_image(files['track.png'], 60, 391, 24, 0, True)), 2: right[2]}
         black = {1: art(Image.new('RGBA', (60, 391), (0, 0, 0, 255))), 2: right[2]}
         op = {'fields': {'nameField': 'Volume'},
               'track_image': {'name': 'track.png', 'file': files['track.png']},
               'fill_image': {'name': 'fill.png', 'file': files['fill.png']}}
         table = {'Home': {'Name': 'Home', 'Controls': [
             {'ID': 1, 'Name': 'Volume', 'Width': 60, 'Height': 391, 'SliderTrackWidth': 24,
-             'Orientation': 2, 'TLPMinValueImageID': 1, 'TLPMaxValueImageID': 2}]}}
-        for assets, bad in ((right, False), (wide, True), (black, True)):
+             'SliderIndicatorWidth': 52, 'SliderIndicatorHeight': 52, 'Orientation': 2,
+             'TLPMinValueImageID': 1, 'TLPMaxValueImageID': 2}]}}
+        for assets, bad in ((right, False), (wide, True), (long, True), (black, True)):
             problems, n = self.vb.check_rails([{'name': 'Home', 'controls': [op]}], table,
                                               assets, 'page')
             self.assertEqual((n, bool(problems)), (2, bad), problems)
