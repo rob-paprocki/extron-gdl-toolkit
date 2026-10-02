@@ -2,6 +2,10 @@
     Click a GUI Designer menu item through UI Automation. No focus required.
 
         powershell\Invoke-GdlMenu.ps1 -Item 'Save and Build...'
+        powershell\Invoke-GdlMenu.ps1 -Item 'Save * As...'
+
+    -Item matches the start of the item's name, wildcards allowed: the Save As
+    item carries the project's name ("Save Afterburn All-inclusive 725 As...").
 
     This is what makes the pipeline runnable while you are using the machine.
     SendKeys types into whatever holds the foreground, so driving it from a
@@ -19,8 +23,9 @@
       exact exception. So a timeout is logged, not treated as failure. Watch the
       .gdl with Wait-GdlBuild.ps1; do not believe this script's exit code about
       whether the build finished, only about whether the item was clicked.
-    * The wizard is the opposite case and cannot be driven this way at all - its
-      controls expose no UIA providers. Only the main window's menus do. See
+    * A modal opened this way may not answer UI Automation afterwards. The
+      Project Create Wizard does; the Save Project As common dialog does not,
+      so New-GdlSeed.ps1 drives that one with window messages. See
       docs/from-scratch.md section 5c.
 #>
 param(

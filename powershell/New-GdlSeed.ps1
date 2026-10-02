@@ -4,7 +4,7 @@
         powershell\New-GdlSeed.ps1 -List
         powershell\New-GdlSeed.ps1 -PanelType 'TLP Pro 725T' -ListThemes
         powershell\New-GdlSeed.ps1 -PanelType 'TLP Pro 725T' -Model TLP725T `
-            -Theme 'Afterburn All-inclusive 1020' -Output 'seeds\Afterburn 725.gdl'
+            -Theme 'Afterburn' -Output 'seeds\Afterburn 725.gdl'
 
     -List prints what Panel Type offers; -ListThemes what Theme offers once a
     panel is chosen. Names are the wizard's own, exactly.
@@ -68,7 +68,7 @@ if (-not $List) {
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type @"
-using System; using System.Runtime.InteropServices;
+using System; using System.Text; using System.Collections.Generic; using System.Runtime.InteropServices;
 [StructLayout(LayoutKind.Sequential)] public struct SeedPt { public int X; public int Y; }
 public class SeedWin {
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
@@ -78,6 +78,21 @@ public class SeedWin {
   [DllImport("user32.dll")] public static extern void mouse_event(uint f, uint dx, uint dy, uint d, IntPtr e);
   [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(SeedPt p);
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  public delegate bool EnumProc(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc f, IntPtr l);
+  [DllImport("user32.dll")] public static extern bool EnumChildWindows(IntPtr p, EnumProc f, IntPtr l);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassName(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll")] public static extern IntPtr GetParent(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, string l);
+  [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+  public static string Cls(IntPtr h) { var s = new StringBuilder(256); GetClassName(h, s, 256); return s.ToString(); }
+  public static string Txt(IntPtr h) { var s = new StringBuilder(512); GetWindowText(h, s, 512); return s.ToString(); }
+  public static List<IntPtr> Tops(uint pid) { var r = new List<IntPtr>();
+    EnumWindows((h, l) => { uint p; GetWindowThreadProcessId(h, out p); if (p == pid) r.Add(h); return true; }, IntPtr.Zero); return r; }
+  public static List<IntPtr> Kids(IntPtr p) { var r = new List<IntPtr>();
+    EnumChildWindows(p, (h, l) => { r.Add(h); return true; }, IntPtr.Zero); return r; }
 }
 "@
 $AE = [System.Windows.Automation.AutomationElement]
@@ -89,7 +104,15 @@ function Get-GdPids { @(Get-Process -Name 'GUI Designer' -ErrorAction SilentlyCo
 
 function Get-GdWindows {
     $pids = Get-GdPids
-    @($AE::RootElement.FindAll($TS::Children, $All) | Where-Object { $pids -contains $_.Current.ProcessId })
+    # A window can close mid-walk - the File menu's dropdown as Save As opens -
+    # and UI Automation throws ElementNotAvailable for it. Walk again.
+    for ($i = 0; $i -lt 5; $i++) {
+        try {
+            return @($AE::RootElement.FindAll($TS::Children, $All) |
+                Where-Object { $pids -contains $_.Current.ProcessId })
+        } catch { Start-Sleep -Milliseconds 300 }
+    }
+    return @()
 }
 
 function New-Cond($name, $type) {
@@ -100,11 +123,18 @@ function New-Cond($name, $type) {
 }
 
 function Get-Wizard {
+    $found = @()
     foreach ($w in Get-GdWindows) {
-        if ($w.Current.Name -eq 'Project Create Wizard') { return $w }
-        $d = $w.FindFirst($TS::Descendants, (New-Cond 'Project Create Wizard'))
-        if ($d) { return $d }
+        if ($w.Current.Name -eq 'Project Create Wizard') { $found += $w }
+        $found += @($w.FindAll($TS::Descendants, (New-Cond 'Project Create Wizard')))
     }
+    # Two wizards means one was opened over the other (see the launch below):
+    # the one underneath reads as a wizard with no combos, and queries can hang.
+    if ($found.Count -gt 1) {
+        Write-Output "$($found.Count) Project Create Wizards are open - one was opened over another; not clicking into either"
+        Stop-Gd; exit 5
+    }
+    if ($found.Count) { return $found[0] }
     return $null
 }
 
@@ -189,7 +219,12 @@ function Get-Items($combo) {
             $AE = [System.Windows.Automation.AutomationElement]
             $TS = [System.Windows.Automation.TreeScope]
             $pids = @(Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue | ForEach-Object Id)
-            $n = New-Object System.Windows.Automation.PropertyCondition($AE::NameProperty, $name)
+            # The combo's type as well as its name: its label is a Text element
+            # of the same name, earlier in the tree, and has nothing to expand.
+            $n = New-Object System.Windows.Automation.AndCondition(
+                (New-Object System.Windows.Automation.PropertyCondition($AE::NameProperty, $name)),
+                (New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty,
+                    [System.Windows.Automation.ControlType]::ComboBox)))
             foreach ($w in $AE::RootElement.FindAll($TS::Children, [System.Windows.Automation.Condition]::TrueCondition)) {
                 if ($pids -notcontains $w.Current.ProcessId) { continue }
                 $c = $w.FindFirst($TS::Descendants, $n)
@@ -259,7 +294,9 @@ function Click-Named($name) {
 function Wait-For([scriptblock]$test, [int]$seconds, [string]$what) {
     $deadline = (Get-Date).AddSeconds($seconds)
     while ((Get-Date) -lt $deadline) {
-        $r = & $test
+        # An element can vanish between finding it and reading it; that is a
+        # poll that found nothing yet, not a failure.
+        try { $r = & $test } catch { $r = $null }
         if ($r) { return $r }
         Start-Sleep -Milliseconds 700
     }
@@ -277,11 +314,17 @@ Stop-Gd
 Start-Sleep -Seconds 2
 Start-Process -FilePath $gd
 [void](Wait-For { Get-GdWindows | Where-Object { $_.Current.Name -like 'GUI Designer*' -or $_.Current.Name -eq 'Project Create Wizard' } } 180 'GUI Designer')
-Start-Sleep -Seconds 3
+# GUI Designer opens the wizard itself once it has loaded, seconds after its
+# main window appears (1.4 s and about 12 s, warm). File > New Project in that
+# gap opens a second wizard over the first, and UI Automation then finds one
+# with no combos or hangs. So wait for its own, and use the menu only if none
+# comes.
+$deadline = (Get-Date).AddSeconds(180)
+while (-not (Get-Wizard) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 700 }
 if (-not (Get-Wizard)) {
     # Invoke blocks on the modal and times out; the wizard opens regardless.
     & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
-        -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'New Project' | Out-Null
+        -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'New Project' | ForEach-Object { "  menu: $_" }
 }
 [void](Wait-For { Get-Wizard } 60 'the Project Create Wizard')
 Write-Output 'wizard open'
@@ -325,21 +368,61 @@ $proc = Wait-For {
 Write-Output "  $($proc.MainWindowTitle)"
 
 # -- save it --------------------------------------------------------------------
-& "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
-    -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'Save As' | Out-Null
+# The title names the project before the window has a menu bar: Create is
+# still building the project from the template. Wait for the File menu, and
+# say what else GUI Designer has open meanwhile - a dialog would explain a wait.
+$t0 = Get-Date
+$seen = @{}
+$main = $null
+while (((Get-Date) - $t0).TotalSeconds -lt 180) {
+    try {
+        foreach ($w in Get-GdWindows) {
+            $n = $w.Current.Name
+            if ($n -like 'GUI Designer - `[*') { $main = $w; continue }
+            if (-not $seen[$n]) { $seen[$n] = $true; Write-Output "  also open: '$n'" }
+        }
+        if ($main -and $main.FindFirst($TS::Descendants, (New-Cond 'File' $CT::MenuItem))) { break }
+    } catch { }   # a window closed mid-walk; look again
+    Start-Sleep -Seconds 2
+}
+Write-Output ("  menu bar after {0:N0} s" -f ((Get-Date) - $t0).TotalSeconds)
+# The item carries the project's name - "Save Afterburn All-inclusive 1220
+# As..." (archive/gdlwork/uia-build.log) - so match around it.
+for ($try = 1; $try -le 3; $try++) {
+    & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
+        -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'Save * As...' | ForEach-Object { "  menu: $_" }
+    if ($LASTEXITCODE -eq 0) { break }
+    Start-Sleep -Seconds 5
+}
+if ($LASTEXITCODE -ne 0) {
+    $fail = Join-Path ([System.IO.Path]::GetTempPath()) 'New-GdlSeed-save.png'
+    if ($env:CLAUDE_JOB_DIR) { $fail = Join-Path $env:CLAUDE_JOB_DIR 'tmp\New-GdlSeed-save.png' }
+    if (Save-Shot $fail) { Write-Output "the screen when Save As could not be reached: $fail" }
+    Stop-Gd; exit 5
+}
+# "Save Project As (<project name>)" is the Windows common dialog, and UI
+# Automation cannot drive it: opened by a UIA Invoke, it answers slowly or not
+# at all - a 111 s walk of it returned neither its File name box nor its Save
+# button. Plain window messages work at once, with no mouse and no focus:
+# WM_SETTEXT into the box, then WM_COMMAND IDOK to the dialog.
+$gdPid = [uint32](Get-GdPids | Select-Object -First 1)
 $dialog = Wait-For {
-    foreach ($w in Get-GdWindows) {
-        $d = if ($w.Current.Name -eq 'Save As') { $w } else { $w.FindFirst($TS::Descendants, (New-Cond 'Save As' $CT::Window)) }
-        if ($d) { return $d }
+    foreach ($h in [SeedWin]::Tops($gdPid)) {
+        if ([SeedWin]::Cls($h) -eq '#32770' -and [SeedWin]::IsWindowVisible($h) -and
+            [SeedWin]::Txt($h) -like 'Save Project As*') { return $h }
     }
-} 60 'the Save As dialog'
-# A common dialog, not the wizard: SetValue is how its file name is typed.
-$name = $dialog.FindFirst($TS::Descendants, (New-Cond 'File name:' $CT::Edit))
-if (-not $name) { Write-Output 'the Save As dialog has no File name box'; Stop-Gd; exit 5 }
-$name.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($Output)
-$save = $dialog.FindFirst($TS::Descendants, (New-Cond 'Save' $CT::Button))
-if (-not $save) { Write-Output 'the Save As dialog has no Save button'; Stop-Gd; exit 5 }
-try { $save.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() } catch { }
+} 60 'the Save Project As dialog'
+Write-Output "  dialog: $([SeedWin]::Txt($dialog))"
+# The File name box is the visible Edit in a ComboBox under FloatNotifySink;
+# the address bar's Edit is the dialog's only other one, and hidden.
+$box = [SeedWin]::Kids($dialog) | Where-Object {
+    [SeedWin]::Cls($_) -eq 'Edit' -and [SeedWin]::IsWindowVisible($_) -and
+    [SeedWin]::Cls([SeedWin]::GetParent($_)) -eq 'ComboBox' -and
+    [SeedWin]::Cls([SeedWin]::GetParent([SeedWin]::GetParent($_))) -eq 'FloatNotifySink' } |
+    Select-Object -First 1
+if (-not $box) { Write-Output 'the Save Project As dialog has no File name box'; Stop-Gd; exit 5 }
+[void][SeedWin]::SendMessage($box, 0x000C, [IntPtr]::Zero, $Output)        # WM_SETTEXT
+[void][SeedWin]::PostMessage($dialog, 0x0111, [IntPtr]1, [IntPtr]::Zero)   # WM_COMMAND IDOK: Save
 [void](Wait-For { if (Test-Path $Output) { $s1 = (Get-Item $Output).Length; Start-Sleep -Seconds 2
                   if ((Get-Item $Output).Length -eq $s1 -and $s1 -gt 0) { $true } } } 120 $Output)
 Stop-Gd
