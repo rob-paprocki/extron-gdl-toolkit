@@ -25,19 +25,11 @@ opening GUI Designer.**
 
 ## Yours
 
-1. **Decide what `fixtures/` should be.** It is a real client's project
-   (Liberty Bank, job J26450039), on GitHub, private. Seeds mean it no longer
-   has to be the donor in the examples and CI - but the render baseline is
-   scored against its snapshot exports, so it cannot simply be deleted. Keep
-   it; keep it but move examples and CI onto seeds; or replace it with a
-   synthetic fixture and re-baseline (about a day).
-2. **Make seeds at the sizes you deliver on.** `seeds/README.md` lists the gaps:
-   the Teams Rooms family, Zoom Rooms at 725 and 986x740, and 1024x600, 1366x768,
-   800x480, 1280x720 and 320x240. About a minute each in GUI Designer; a
-   native-size seed beats a retarget, which matches Extron's own hand layout
-   for only 22% of controls.
-3. **Say whether `vendor/` should be pushed** (about 470 MB of Extron's
-   reinstallable content; one `git add -f vendor/extron` plus an LFS rule).
+1. **Keep the Windows session connected while seeds are made.**
+   `powershell/New-GdlSeed.ps1` clicks through GUI Designer's Project Create
+   Wizard, which draws nothing in a locked or disconnected session, so the
+   script refuses rather than click blind. Sign in at the console, or keep a
+   Remote Desktop window open and restored, for the run - about a minute a seed.
 
 ## Mine, in order
 
@@ -75,6 +67,12 @@ opening GUI Designer.**
    only. Next, one canvas building for every panel a room has, each sized for its
    physical screen; then Turbulence on the same footing.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
+   Each template gets seeds at the three smaller sizes the phases build for -
+   1024x600, 800x480 and 320x240 - made with `New-GdlSeed.ps1` as its phase
+   starts, Afterburn's first. A native-size seed beats a retarget, which matches
+   Extron's own hand layout for only 22% of controls. The other gaps in
+   `seeds/README.md` (Teams Rooms, Zoom Rooms, 1366x768, 1280x720) wait for a
+   job that needs one.
 6. **Icon-font glyphs in the spec vocabulary.** Kit images are in it - a
    button's `image`, on itself or per state, which is how the Claude Design
    systems draw icons - but the other proven route, font glyphs (~339 icons, no
@@ -91,6 +89,17 @@ opening GUI Designer.**
 10. **Run the seed ground-truth test in CI** with
     `git lfs pull --include "seeds/Afterburn 1035.gdl"` (about 3 MB of LFS
     bandwidth per build).
+11. **Retire the Liberty Bank fixtures.** `fixtures/` is a real client's project
+    (Liberty Bank, job J26450039), the builds in `archive/gdlwork/` made with it
+    as the donor carry the same material (`archive/README.md` *Sensitivity*),
+    and the owner wants them gone. The render baseline is scored against the fixtures'
+    snapshot exports, so they go last: first a synthetic fixture with the same
+    reach (many pages, every control type the renderer scores) and GUI
+    Designer's snapshot exports of it, a new `tests/baseline.json` from
+    `tests/score.py`, and the examples and CI moved onto seeds; then delete
+    them. Deleting them leaves them in git history on GitHub - removing them
+    from history means rewriting every branch and force-pushing, which is the
+    owner's call when it comes.
 
 ## Backlog - real, not urgent
 

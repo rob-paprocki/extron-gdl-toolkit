@@ -738,6 +738,8 @@ git commit -m "feat: make a seed for any panel through the Project Create Wizard
 
 Each task below lists what it produces and the tests that prove it; the full step-by-step plan is written against Phase 0's answers.
 
+**The owner's review of Task 3's preview canvas, carried in.** Two Home pages for the TLP725T (1024x600), one on a 1280x800 board and one on a 1024x600 board, drew Afterburn's 1035 layout unchanged: "the background squircle is completely wrong" and "scaling did not apply correctly at all to the squircle or the elements". Task 7's per-series table and Task 8's MainArea and backdrop answer both - the 725's squircle, background and controls come from the 1020 Series template, sized by millimetre - and Task 8's tests include a TLP725T Home whose MainArea and backdrop match that template's own. The third comment, that Help is a modal popup and not a page flip, is fixed (`f7e2b5b`).
+
 ### Task 6: Series templates, indexed
 - **Create** `gdl/templates.py`: read `TemplateInfoTable.config` (NRBF, `gdl/nrbf.py`) from the install or `vendor/`; `series(theme) -> [{file, series, res, dpi}]`; `template_for(theme, model) -> path | None` by (resolution, DPI) then resolution. **Tests:** Afterburn 1230 → 1920×720/166; TLP725T → `Afterburn 1020 Series.glt`; TLP525T → `Afterburn 520 Series.glt`; no install → `[]` with a clear skip.
 
