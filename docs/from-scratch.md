@@ -419,9 +419,10 @@ committing. Only a real click on the list item works.
 `Create` and `Cancel` expose no patterns, so they need a click by position.
 
 **`powershell/New-GdlSeed.ps1` does all of this**, refuses a name the wizard
-does not offer, and runs `tests/verify_seed.py` on what it saves - removing the
-file if the verifier refuses it or cannot run, so a seed nobody verified never
-stays where the next run finds it. It closes any GUI Designer already running,
+does not offer, builds what it saves - Save As writes no `layout.json`, and every
+hand-made seed is built - and runs `tests/verify_seed.py` on it, removing the
+file if it does not build or the verifier refuses it or cannot run, so a seed
+nobody verified never stays where the next run finds it. It closes any GUI Designer already running,
 unsaved work and all, and says so first. Three more things it had to learn, for
 anything else that drives the wizard:
 

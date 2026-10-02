@@ -29,7 +29,8 @@ opening GUI Designer.**
    `powershell/New-GdlSeed.ps1` clicks through GUI Designer's Project Create
    Wizard, which draws nothing in a locked or disconnected session, so the
    script refuses rather than click blind. Sign in at the console, or keep a
-   Remote Desktop window open and restored, for the run - about a minute a seed.
+   Remote Desktop window open and restored, for the run - about two minutes a
+   seed, with its build. Next needed when a theme's phase starts (item 5).
 
 ## Mine, in order
 
@@ -69,7 +70,7 @@ opening GUI Designer.**
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
    Each template gets seeds at the three smaller sizes the phases build for -
    1024x600, 800x480 and 320x240 - made with `New-GdlSeed.ps1` as its phase
-   starts, Afterburn's first. A native-size seed beats a retarget, which matches
+   starts; Afterburn's are made (725, 525, 320). A native-size seed beats a retarget, which matches
    Extron's own hand layout for only 22% of controls. The other gaps in
    `seeds/README.md` (Teams Rooms, Zoom Rooms, 1366x768, 1280x720) wait for a
    job that needs one.

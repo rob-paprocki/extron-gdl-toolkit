@@ -14,9 +14,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gdl.project import Project  # noqa: E402
 from gdl.spec import MODELS, part_number, sizes  # noqa: E402
 
-# A themed project has 2-13 pages and 170-880 controls; a Blank one 1 page and 3.
+# A themed project has 2-13 pages and 86-880 controls once built - the fewest
+# the 320M's, twelve single-purpose pages on a 320x240 screen - and a Blank one
+# 1 page and 3. A floor of 100, set before any small panel had a seed, refused
+# the 320M's.
 MIN_PAGES = 2
-MIN_CONTROLS = 100
+MIN_CONTROLS = 20
 
 
 def check_seed(path, model, min_pages=MIN_PAGES, min_controls=MIN_CONTROLS):

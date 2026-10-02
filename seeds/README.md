@@ -1,6 +1,6 @@
 # seeds/
 
-Twenty themed projects made in GUI Designer with **File > New Project**, used
+Themed projects made in GUI Designer with **File > New Project**, used
 as donors for clean-room authoring: a panel generated from one of these carries
 nothing of any client's. They are Git LFS objects - run `git lfs pull` on a
 fresh clone, or `git lfs pull --include "seeds/Afterburn 1035.gdl"` for one.
@@ -22,8 +22,8 @@ a plausible-looking wizard that builds the wrong project:
   or counting pages afterwards: a blank ECP project has 1 page and 3 controls.
 
 `powershell/New-GdlSeed.ps1` does it with no hands on the mouse, avoiding both,
-and keeps a seed only if `tests/verify_seed.py` passes it; it needs a connected
-desktop. `docs/from-scratch.md` §5c has the recipe and §7 the automation detail.
+builds the result, and keeps a seed only if `tests/verify_seed.py` passes it;
+it needs a connected desktop. `docs/from-scratch.md` §5c has the recipe and §7 the automation detail.
 
 | File | Project name | Model(s) by part number | Part | Canvas | Pages | Popups | Controls | Borders | Declared fonts |
 |---|---|---|---|---|---:|---:|---:|---:|---|
@@ -32,6 +32,9 @@ desktop. `docs/from-scratch.md` §5c has the recipe and §7 the automation detai
 | `Afterburn 1535.gdl` | Afterburn All-inclusive 1720 | TLP1535M | 60-2000-02 | 1920x1080 | 7 | 29 | 652 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 300M Landscape.gdl` | Afterburn All-Inclusive str300 | TLP300M | 60-1667-02 | 480x320 | 13 | 6 | 180 | 17 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 300M Portrait.gdl` | Afterburn All-inclusive str300 | TLP300M | 60-1667-02 | 320x480 | 13 | 6 | 192 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 320.gdl` | Afterburn All-inclusive 320 | TLP320M | 60-1451-02 | 320x240 | 12 | 2 | 86 | 30 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 525.gdl` | Afterburn All-inclusive 525 | TLP525T | 60-1559-02 | 800x480 | 3 | 21 | 243 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 725.gdl` | Afterburn All-inclusive 725 | TLP725T | 60-1562-02 | 1024x600 | 7 | 26 | 582 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 835 (Project1).gdl` | Afterburn All-inclusive 1220 | TLP835M | 60-1996-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn ECP 16-9.gdl` | Afterburn All-inclusive 1720 | VTLPEcp | 60-sVTLPEcp | 1920x1080 | 7 | 29 | 649 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn ECP 16-10.gdl` | Afterburn All-inclusive Extron Control Pro | VTLPEcp | 60-sVTLPEcp | 1280x800 | 7 | 29 | 648 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
@@ -88,9 +91,11 @@ part and fonts from each seed's own built `layout.json`.
 ## Gaps
 
 No seed yet for: the Teams Rooms family (Extron Control for Teams Rooms, 16x9
-and 16x10), Zoom Rooms at 725 or 986x740, and several sizes with templates but no
-seed - 1024x600 (1020), 1366x768 (1520), 800x480 (520/720), 1280x720 (535) and
-320x240 (320). Each is one `New-GdlSeed.ps1` run away.
+and 16x10), Zoom Rooms at 725 or 986x740, and sizes with templates but no seed -
+1366x768 (1520) and 1280x720 (535) in every theme that has them, and 1024x600
+(1020), 800x480 (520/720) and 320x240 (320) in all but Afterburn. Each is one
+`New-GdlSeed.ps1` run away; a theme's are made as its phase starts
+(`docs/ROADMAP.md` item 5).
 
 ECP is complete: all three themes at both presets that can be themed. Its other
 five presets (iPhone, Android Phone, iPad, Android Tablet, Custom) are Blank-only

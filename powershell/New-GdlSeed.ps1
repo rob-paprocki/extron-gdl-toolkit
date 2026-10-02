@@ -15,8 +15,9 @@
     (docs/from-scratch.md section 5c). The Theme radio is clicked too, because
     the wizard fills Theme on its own and builds Blank while reading
     "Theme: X". Its radios expose no state, so a screenshot of the wizard is
-    saved before Create - and the saved file must pass tests/verify_seed.py as a
-    themed project for -Model, or it is deleted.
+    saved before Create - and the saved file is built, as every hand-made seed
+    is, and must pass tests/verify_seed.py as a themed project for -Model, or it
+    is deleted.
 
     A click by position goes to whatever window is on top, so each click raises
     the wizard first and refuses to click unless GUI Designer owns the window
@@ -27,8 +28,9 @@
 
     Exit codes: 0 made and verified; 2 bad arguments; 3 a name the wizard does
     not offer (it prints what it does); 4 a click that did not take; 5 GUI
-    Designer or a dialog did not appear; 6 the verifier could not run; the
-    verifier's code if it refused. On 6 and a refusal the saved file is removed.
+    Designer or a dialog did not appear; 6 the verifier could not run; 7 it
+    did not build; the verifier's code if it refused. On 6, 7 and a refusal the
+    saved file is removed.
 #>
 param(
     [string]$PanelType,
@@ -434,8 +436,31 @@ if (-not $box) { Write-Output 'the Save Project As dialog has no File name box';
 [void][SeedWin]::PostMessage($dialog, 0x0111, [IntPtr]1, [IntPtr]::Zero)   # WM_COMMAND IDOK: Save
 [void](Wait-For { if (Test-Path $Output) { $s1 = (Get-Item $Output).Length; Start-Sleep -Seconds 2
                   if ((Get-Item $Output).Length -eq $s1 -and $s1 -gt 0) { $true } } } 120 $Output)
-Stop-Gd
 Write-Output "saved $Output"
+
+# -- build it -------------------------------------------------------------------
+# Save As writes the project alone, and the readers that take a built
+# layout.json - the renderer, the declared-font table - need its payload, so a
+# seed is built, as every hand-made one is. By the menu through UI Automation,
+# which needs no focus, and waited on as New-GdlPanel.ps1 waits (from-scratch.md
+# section 7): the baseline is taken first, since the invoke blocks on the build.
+$buildFrom = (Get-Item $Output).LastWriteTime
+& "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
+    -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'Save and Build' | ForEach-Object { "  menu: $_" }
+$built = $LASTEXITCODE -eq 0
+if ($built) {
+    & "$env:WINDIR\SysWOW64\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
+        -File (Join-Path $PSScriptRoot 'Wait-GdlBuild.ps1') -ProjectFile $Output -TimeoutSeconds 600 `
+        -Since $buildFrom.ToString('o') | ForEach-Object { "  build: $_" }
+    $built = $LASTEXITCODE -eq 0
+}
+Stop-Gd
+if (-not $built) {
+    Remove-Item $Output -Force
+    Write-Output "removed $Output - it did not build"
+    exit 7
+}
+Write-Output "built $Output"
 
 # -- refuse a wrong seed --------------------------------------------------------
 # A seed nobody verified must not stay where the next run refuses to overwrite

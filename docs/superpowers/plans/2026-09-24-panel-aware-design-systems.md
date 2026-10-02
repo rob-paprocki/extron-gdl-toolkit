@@ -695,7 +695,7 @@ Then, as functions, each lifted from the scratch scripts that drove the ECP seed
 9. **File > Save As...** via `Invoke-GdlMenu.ps1`; in the standard Save dialog set the `Edit` named `File name:` with `ValuePattern.SetValue` (a Win32 common dialog, not the wizard - SetValue is safe there) to the absolute `$Output`, and `Invoke` the `Save` button; wait for the file; close GUI Designer with **File > Exit**.
 10. `& $Python tests\verify_seed.py $Output $Model`; if it fails, delete `$Output` and exit with its code - a wrong seed must not stay where the next run finds it.
 
-- [ ] **Step 4: Dry-run the listing**
+- [x] **Step 4: Dry-run the listing**
 
 Run (PowerShell): `powershell\New-GdlSeed.ps1 -List`
 Expected: 56 lines - `Select Your Panel` and the 55 models. Note the exact names for the TLP Pro 725T, 525T and 320M, then run the wizard once by hand to read the Theme and Application names offered for each (or add a `-ListThemes` pass that selects the panel and lists `Theme:`'s items - do this if the names are not obvious).
@@ -705,7 +705,7 @@ Then pin Review Focus 5 - a name the wizard does not offer:
 Run: `powershell\New-GdlSeed.ps1 -PanelType 'TLP Pro 9999' -Model TLP725T -Theme 'Afterburn' -Output "$env:CLAUDE_JOB_DIR\tmp\nope.gdl"; $LASTEXITCODE`
 Expected: the 56 offered names printed, exit code `3`, no `nope.gdl`, no click on any list item, and GUI Designer closed (or the wizard cancelled) so the next run starts clean.
 
-- [ ] **Step 5: Make the three seeds**
+- [x] **Step 5: Make the three seeds**
 
 ```powershell
 powershell\New-GdlSeed.ps1 -PanelType '<725T name from Step 4>' -Model TLP725T -Theme '<Afterburn theme name>' -Output "$PWD\seeds\Afterburn 725.gdl"
@@ -715,11 +715,11 @@ powershell\New-GdlSeed.ps1 -PanelType '<320M name>' -Model TLP320M -Theme '<Afte
 
 Expected: each ends `ok: ... as TLP...`. Open `$env:CLAUDE_JOB_DIR\tmp\seed-wizard.png` after each and confirm the Theme radio was selected.
 
-- [ ] **Step 6: Confirm LFS tracks them, and describe them**
+- [x] **Step 6: Confirm LFS tracks them, and describe them**
 
 Run: `git check-attr filter -- "seeds/Afterburn 725.gdl"` - Expected: `filter: lfs`. Add a row per seed to `seeds/README.md`'s table in the existing format (project name, model(s), part, canvas, pages, popups, controls, borders, declared fonts - read with `gdl.project`, as the existing rows were), remove 1024 × 600, 800 × 480 and 320 × 240 from *Gaps* for Afterburn, and say seeds are now made with `New-GdlSeed.ps1`. In `docs/from-scratch.md` §5c *Automating the wizard*, name the script as the way to do it; delete §7's bullet "The Project Create Wizard cannot be driven at all — see §5c." Add `New-GdlSeed.ps1` to CLAUDE.md's *Environment* "Needs GUI Designer installed" column, and to `README.md` *What is here* if that lists scripts.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add powershell/New-GdlSeed.ps1 tests/verify_seed.py tests/test_verify_seed.py "seeds/Afterburn 725.gdl" "seeds/Afterburn 525.gdl" "seeds/Afterburn 320.gdl" seeds/README.md docs/from-scratch.md CLAUDE.md README.md
@@ -730,7 +730,7 @@ git commit -m "feat: make a seed for any panel through the Project Create Wizard
 
 - [x] **Step 1:** `python -m pytest -q` - all pass; note the count of skips and that none is a new test skipping for a missing seed.
 - [x] **Step 2:** Run an adversarial review over `git diff origin/main...HEAD` (Workflow: finders per dimension - correctness, silent failure, docs drift - then skeptics per finding). Fix what survives, with tests.
-- [ ] **Step 3:** Push `feat/panel-aware` and open a draft PR "Phase 0: settle the unknowns for panel-aware design systems", its body the type-probe numbers, the preview decision and the three new seeds. Update the spec's §5 with anything Phase 0 changed.
+- [x] **Step 3:** Push `feat/panel-aware` and open a draft PR "Phase 0: settle the unknowns for panel-aware design systems", its body the type-probe numbers, the preview decision and the three new seeds. Update the spec's §5 with anything Phase 0 changed.
 
 ---
 

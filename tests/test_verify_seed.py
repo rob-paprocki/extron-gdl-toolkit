@@ -23,6 +23,14 @@ class TestVerifySeed(unittest.TestCase):
     def test_a_real_seed_passes(self):
         self.assertEqual(verify_seed.check_seed(_seed('Afterburn 1035.gdl'), 'TLP1035T'), [])
 
+    def test_a_small_panels_themed_seed_passes(self):
+        """The 320M's themed project is twelve single-purpose pages of 86
+        controls - a floor of 100, set on the bigger panels, called it Blank."""
+        seed = _seed('Afterburn 320.gdl')
+        self.assertEqual(verify_seed.check_seed(seed, 'TLP320M'), [])
+        self.assertTrue(any('Blank' in p for p in
+                            verify_seed.check_seed(seed, 'TLP320M', min_controls=100)))
+
     def test_the_wrong_model_is_refused(self):
         probs = verify_seed.check_seed(_seed('Afterburn 1035.gdl'), 'TLP725T')
         self.assertTrue(any('part number' in p for p in probs), probs)
