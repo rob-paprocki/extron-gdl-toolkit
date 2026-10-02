@@ -33,6 +33,7 @@ touches a real `.gdl`; see docs/from-scratch.md for what still needs a human.
 """
 import collections
 import json
+import math
 import os
 import re
 import sys
@@ -193,6 +194,18 @@ MODELS_FULL = {
 MODELS_FULL['TLP300M'] = (320, 480, MODELS_FULL['TLP300M'][2],
                           MODELS_FULL['TLP300M'][3])
 
+# TLP Pro 1230WTG: CreatePlatform returns the base PBTouchPanelPlatformPro, so
+# GetDefaultResolutionDpi falls through to 800x480 at 0 DPI (the note above the
+# table). Extron's own TemplateInfoTable.config - the template installer's
+# table, NRBF, readable with gdl/nrbf.py - gives its "Afterburn 1230 Series"
+# 1920x720 at 166.0 DPI, the canvas a built 1230W project reports too
+# (docs/design-rules.md section 1).
+MODELS_FULL['TLP1230WTG'] = (1920, 720, 166.0, MODELS_FULL['TLP1230WTG'][3])
+
+# A model whose panel runs either way up. The 300M's templates come portrait and
+# landscape (Afterburn 300 Portrait and Landscape Series, both 164.83 DPI).
+ORIENTATIONS = {'TLP300M': ((320, 480), (480, 320))}
+
 # name -> (width, height). The common case; the rest of MODELS_FULL is there
 # when you need the DPI or the part number.
 MODELS = {k: (v[0], v[1]) for k, v in MODELS_FULL.items()}
@@ -210,6 +223,42 @@ def part_number(model):
     return e[3] if e else None
 
 
+def sizes(model):
+    """Every canvas a model runs at: its one resolution, or both orientations."""
+    return ORIENTATIONS.get(model) or ((MODELS_FULL[model][0], MODELS_FULL[model][1]),)
+
+
+# Soft clients and interfaces run on a screen their model does not define, so
+# the table's DPI for them is GUI Designer's default, not a physical fact.
+SOFT_CLIENTS = ('TLI101', 'TLI201', 'VTLPAndroid', 'VTLPEcp', 'VTLPWeb', 'VTLPiOS')
+
+# Structural tiers by physical diagonal - this toolkit's reading of Extron's own
+# per-series templates, not an Extron rule. Every theme's >= 7in series (720,
+# 1020, 1220, 1520, 1720) share one full structure; its ~5in series (520, 535)
+# fold it into a hub page and popups; its ~3.5in ones (300, 320) into
+# single-purpose pages. docs/design-rules.md section 1.
+TIER_A_INCHES = 6.5
+TIER_B_INCHES = 4.0
+
+
+def diagonal(model):
+    """A model's screen diagonal in inches, from pixels and DPI; None for a soft
+    client or a model with no DPI."""
+    d = dpi(model)
+    if model in SOFT_CLIENTS or not d:
+        return None
+    w, h = MODELS_FULL[model][:2]
+    return math.hypot(w, h) / d
+
+
+def tier(model):
+    """'A' (the full layout), 'B' (a hub page) or 'C' (single-purpose pages)."""
+    d = diagonal(model)
+    if d is None:
+        return None
+    return 'A' if d >= TIER_A_INCHES else ('B' if d >= TIER_B_INCHES else 'C')
+
+
 def _panels():
     """resolution -> (models sharing it, the DENSEST model's DPI).
 
@@ -219,18 +268,22 @@ def _panels():
     resolution. Name the model in the spec when you know it - it is a much
     tighter answer, and the spread within one resolution is nearly 2x.
 
-    The VTLP* virtual targets are excluded from that maximum. They are a phone,
-    a tablet and a browser, so their 220 "DPI" is the host device's rather than
-    a fixed panel's, and letting it set the minimum for 1280x800 would hold
-    every real panel to a number no Extron hardware implies. They stay in the
-    model list, and asking for one by name still gives its own figure.
+    The soft clients are excluded from that maximum. The VTLP* targets are a
+    phone, a tablet and a browser, and the TLI interfaces drive a screen their
+    model does not define, so their 220 "DPI" is GUI Designer's default rather
+    than a fixed panel's; letting it set the minimum for 1280x800 or 1920x1080
+    would hold every real panel to a number no Extron hardware implies. They
+    stay in the model list, and asking for one by name still gives its own
+    figure.
     """
     out = {}
-    for model, (w, h, d, _) in MODELS_FULL.items():
-        out.setdefault((w, h), []).append((model, d))
+    for model, (_, _, d, _) in MODELS_FULL.items():
+        for size in sizes(model):
+            out.setdefault(size, []).append((model, d))
     res = {}
     for size, ms in out.items():
-        physical = [d for m, d in ms if not m.startswith('VTLP') and d]
+        physical = [d for m, d in ms
+                    if not m.startswith('VTLP') and m not in SOFT_CLIENTS and d]
         res[size] = (', '.join(sorted(m for m, _ in ms)),
                      max(physical) if physical else None)
     return res
@@ -290,6 +343,10 @@ STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text',
 # MiddleCenter. The kit draws each icon, its selection line and its label room
 # at the button's own aspect, so fitting it fills the button.
 IMAGE_LAYOUT, IMAGE_ALIGN = 0, 3
+# A page's background image, by ImageLayoutEnum: Fill (fit) as the Afterburn
+# seeds lay theirs out, Stretch as the Mach seeds lay their 3:2 photo over a
+# 16:10 page (every one of Mach 1035's pages).
+BACKGROUND_LAYOUTS = {'fill': 0, 'stretch': 1}
 # The two per-button pointers into the state list, as backing fields.
 # TLPDefaultStateID is 0 on every button in the corpus. TLPPressFeedbackStateID
 # is the state shown while the button is held: On (1) on all 7518 Off/On
@@ -323,8 +380,17 @@ def _type_fields(kind, c):
             # is invisible: Set-GdlFieldIfPresent warns and continues, so the
             # slider builds fine at the donor's dimensions.
             out['sliderTrackWidth'] = c.get('track', 10)
-            out['sliderThumbWidth'] = c.get('thumb', 50)
-            out['sliderThumbHeight'] = c.get('thumb', 50)
+            # `thumb` is across the rail and `thumb_height` along it - square
+            # unless the template's thumb is not: Shockwave's is 52 across and
+            # 34 along. Build keeps width and height literal (the Zoom Rooms
+            # seed's horizontal slider has a thumb 7 wide and 25 tall), so a
+            # slider lying down swaps them, as the canvas draws it.
+            across = c.get('thumb', 50)
+            along = c.get('thumb_height', across)
+            if c.get('orientation') in ('right', 'left'):
+                across, along = along, across
+            out['sliderThumbWidth'] = across
+            out['sliderThumbHeight'] = along
     if kind == 'line':
         # Endpoints are an eight-position enum on the control's own rect, so a
         # diagonal is TopLeft -> BottomRight at whatever angle the rect gives.
@@ -623,6 +689,10 @@ class Panel:
                 # name it once.
                 'background_image': pg.get('background_image',
                                            self.theme.get('background_image')),
+                # Fill (fit) as Afterburn's pages lay theirs out, or stretch
+                # as Mach's do its 3:2 photo over a 16:10 page.
+                'background_layout': pg.get('background_layout',
+                                            self.theme.get('background_layout')),
                 'controls': controls,
                 'group_sizes': groups,
             })
@@ -731,6 +801,7 @@ class Panel:
                 # Only when the spec brings the file: an image the donor
                 # carries is not on this machine to draw.
                 '_background_image': image,
+                '_background_layout': BACKGROUND_LAYOUTS.get(pg.get('background_layout') or 'fill', 0),
                 'Controls': controls,
             })
         return {'Pages': pages, 'PopupPages': []}, fills
@@ -762,6 +833,7 @@ class Panel:
                 'modal': pg['modal'],
                 'background': _argb(pg['background']),
                 'background_image': self._image_op(pg.get('background_image')),
+                'background_layout': BACKGROUND_LAYOUTS.get(pg.get('background_layout') or 'fill', 0),
                 'clear_controls': True,
                 # Same helper popups use. Building these two separately is what
                 # dropped 'group' from every page op and left popup references
@@ -842,12 +914,22 @@ class Panel:
         out += self._popup_rules()
         out += self._name_rules()
         out += self._state_rules()
+        out += self._slider_rules()
+        for pg in self.pages:
+            lay = pg.get('background_layout')
+            if lay is not None and lay not in BACKGROUND_LAYOUTS:
+                out.append(f"page {pg['name']!r}: background_layout {lay!r} is not one the "
+                           f"toolkit draws and checks - {' or '.join(BACKGROUND_LAYOUTS)}")
         if self.start_page is not None and \
                 self.start_page not in {pg['name'] for pg in self.pages}:
             out.append(f'start_page {self.start_page!r} is not a page in this spec - the '
                        f'panel boots into it, so it must be one of the pages authored '
                        f'here (a popup cannot be a start page)')
-        n = len(self.palette())
+        # A color counts once whatever its transparency: Mach's own rule is
+        # "same hue, move the alpha", and its white at 20%, 47% and 100% is one
+        # color on the panel. Counting each alpha put Extron's own Mach look
+        # over six. The owner's reading of p.49, not Extron's wording.
+        n = len({tuple(kv for kv in c if kv[0] != 'A') for c in self.palette()})
         if n > MAX_COLORS_PER_PROJECT:
             out.append(f'project uses {n} distinct colors, above the '
                        f'{MAX_COLORS_PER_PROJECT}-color maximum '
@@ -863,6 +945,10 @@ class Panel:
         """
         out = []
         target, spacing = touch_minimums(self.model or self.size)
+        if target is None:
+            out.append(f"page {pg['number']}: no touch minimum for "
+                       f"{self.model or '%dx%d' % tuple(self.size)} - name the panel's "
+                       f"model so 9mm can be converted (GUI Design Standards p.55)")
         for c in pg['controls']:
             x, y, w, h = (int(v) for v in c['rect'])
             where = f"page {pg['number']} {c.get('name') or c.get('text') or '?'}"
@@ -1024,7 +1110,40 @@ class Panel:
             border = BORDERS['rounded']
         if fill is None and c.get('kind') == 'button':
             fill = dict(TRANSPARENT)
+        if c.get('kind') == 'slider' and c.get('track_image'):
+            # Build draws a slider's bordered fill IN PLACE of its rail art: a
+            # Shockwave slider with the profile's rounded border and black fill
+            # built a black block, its art on the model and nowhere else. The
+            # seed's own image-railed sliders author no border and Transparent.
+            fill, stroke, border = dict(TRANSPARENT), dict(TRANSPARENT), ''
         return fill, stroke, text_color, border
+
+    def _slider_rules(self):
+        """A slider or level lies one of four ways, and a rail is two images.
+
+        The canvas draws anything but up or down across the page while
+        _type_fields falls back to up, so an orientation outside ORIENT was
+        approved lying down and built standing up. And the applier writes only
+        the rail images it is given, so a rail named by one kept its donor's
+        other - every theme seed's slider has fill art.
+        """
+        out = []
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for pg in items:
+                for c in pg['controls']:
+                    if c.get('kind') not in ('slider', 'level'):
+                        continue
+                    where = f"{kind} {pg['name']!r} {c.get('name') or c.get('text') or '?'}"
+                    o = c.get('orientation', 'up')
+                    if o not in ORIENT:
+                        out.append(f"{where}: orientation {o!r} is not one of "
+                                   f"{', '.join(ORIENT)} - the canvas draws it across "
+                                   f'and the build stands it up')
+                    if c.get('kind') == 'slider' and \
+                            bool(c.get('track_image')) != bool(c.get('fill_image')):
+                        out.append(f'{where}: a rail takes both track_image and fill_image '
+                                   f"- with one, the clone keeps its donor's other")
+        return out
 
     def _state_rules(self):
         """A button's states must be ones a program can tell apart."""
@@ -1170,6 +1289,11 @@ class Panel:
             # A slider's thumb, where the template draws it from its kit
             # (Afterburn: sliderThumbImageField, in the secondary accent).
             'thumb_image': self._image_op(c.get('thumb_image')) if kind == 'slider' else None,
+            # And its rail, where that is art too (Shockwave, Turbulence): the
+            # track drawn when empty (backgroundImageField) and the fill when
+            # full (sliderFillImageField). A clone's never survived the applier.
+            'track_image': self._image_op(c.get('track_image')) if kind == 'slider' else None,
+            'fill_image': self._image_op(c.get('fill_image')) if kind == 'slider' else None,
         }
         if states:
             # Build renders the button from state 0, so that is what the
@@ -1181,6 +1305,11 @@ class Panel:
             op['fields']['textField'] = first['text']
             op['fields'][DEFAULT_FIELD] = 0
             op['fields'][PRESS_FIELD] = self._press(c, states)
+        if kind == 'button' and c.get('flatten'):
+            # Build bakes the caption into the artwork - GUI Designer's own
+            # rasterizer for this platform. Only tests/type_probe.py wants it;
+            # everywhere else a baked caption is the flattenText trap.
+            op['flatten'] = True
         return op
 
     def _popup_ops(self):
@@ -1400,7 +1529,8 @@ class Panel:
                 for c in pg['controls']:
                     # Through _feedback, as plan() reads them: an `on` of
                     # {"image": ...} names one as surely as `states` does.
-                    named = [c.get('image'), c.get('thumb_image')] + [
+                    named = [c.get('image'), c.get('thumb_image'), c.get('track_image'),
+                             c.get('fill_image')] + [
                         st.get('image') for st in self._feedback(c) or []]
                     for want in sorted({n for n in named if n}):
                         if want not in self.images and want not in images:
@@ -1472,10 +1602,15 @@ class Panel:
             if not pg.get('modal'):
                 add(pg['background'])
             for c in pg['controls']:
+                # A slider drawn from rail art is written with no fill or
+                # stroke (_base_look), so the profile's default reaches nothing.
+                railed = c.get('kind') == 'slider' and c.get('track_image')
                 # A state's colors are on the panel as much as the control's
                 # own - an On fill included.
                 for look in [c] + (self._feedback(c) or []):
                     for key in ('fill', 'stroke', 'color', 'text_color'):
+                        if railed and key in ('fill', 'stroke'):
+                            continue
                         add(color(look.get(key), self.theme))
                 if self._default_text_shown(c):
                     # Resolved only when something draws in it, as the

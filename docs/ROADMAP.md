@@ -25,29 +25,21 @@ opening GUI Designer.**
 
 ## Yours
 
-1. **Decide what `fixtures/` should be.** It is a real client's project
-   (Liberty Bank, job J26450039), on GitHub, private. Seeds mean it no longer
-   has to be the donor in the examples and CI - but the render baseline is
-   scored against its snapshot exports, so it cannot simply be deleted. Keep
-   it; keep it but move examples and CI onto seeds; or replace it with a
-   synthetic fixture and re-baseline (about a day).
-2. **Make seeds at the sizes you deliver on.** `seeds/README.md` lists the gaps:
-   the Teams Rooms family, Zoom Rooms at 725 and 986x740, and 1024x600, 1366x768,
-   800x480, 1280x720 and 320x240. About a minute each in GUI Designer; a
-   native-size seed beats a retarget, which matches Extron's own hand layout
-   for only 22% of controls.
-3. **Say whether `vendor/` should be pushed** (about 470 MB of Extron's
-   reinstallable content; one `git add -f vendor/extron` plus an LFS rule).
+1. **Keep the Windows session connected while seeds are made.**
+   `powershell/New-GdlSeed.ps1` clicks through GUI Designer's Project Create
+   Wizard, which draws nothing in a locked or disconnected session, so the
+   script refuses rather than click blind. Sign in at the console, or keep a
+   Remote Desktop window open and restored, for the run - about two minutes a
+   seed, with its build. Next needed when a theme's phase starts (item 5).
 
 ## Mine, in order
 
-1. **Fix the model table.** `MODELS_FULL['TLP1230WTG']` is 800x480 at 0 DPI -
-   the generic platform class's default - but Extron's own 1230W project builds
-   at 1920x720, its only supported resolution, so `retarget` to that model sets
-   the wrong screen size. And every entry holds one orientation where the
-   platforms support both (300M 320x480 and 480x320; 1035M 1280x800 and
-   800x1280), so a portrait 1035 or a landscape 300M cannot be targeted.
-   `layout.json`'s `Platform.SupportedResolutions` is the ground truth.
+1. **Both orientations as targets.** Every `MODELS_FULL` entry holds one
+   orientation where the platforms support both (300M 320x480 and 480x320;
+   1035M 1280x800 and 800x1280), so `retarget` cannot make a portrait 1035 or a
+   landscape 300M. The touch check already knows the 300M both ways
+   (`gdl.spec.ORIENTATIONS`). `layout.json`'s `Platform.SupportedResolutions` is
+   the ground truth.
 2. **Fonts that are declared but not embedded, or not authorable.** Most seeds
    declare Arial Black without embedding it; Turbulence does the same for Arial
    and Shockwave for `extron_shockwave.ttf` (`gdl/fonts/README.md` has which).
@@ -69,11 +61,19 @@ opening GUI Designer.**
    and per-page popup references is where the next class of bug lives. With `nav`
    the page flow is part of the spec, and `verify_idmap.py` checks it against
    the build.
-5. **Claude Design as the front end: the other three templates.** Afterburn is
-   a design system, and a canvas drawn with it translates, builds and verifies
-   end to end, with a side-by-side of each artboard and the built panel for
-   sign-off. Mach, Shockwave and Turbulence need their profiles, each checked
-   against its seed's built artwork. `docs/claude-design.md` §7.
+5. **Claude Design as the front end: every panel.** Afterburn, Mach, Shockwave
+   and Turbulence are design systems, and a canvas drawn with each translates,
+   builds and verifies end to end, with a side-by-side of each artboard and the
+   built panel for sign-off - for the 1280×800 TLP Pro 1025/1035 only. Next, one
+   canvas building for every panel a room has, each sized for its physical
+   screen.
+   Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
+   Each template gets seeds at the three smaller sizes the phases build for -
+   1024x600, 800x480 and 320x240 - made with `New-GdlSeed.ps1` as its phase
+   starts; Afterburn's are made (725, 525, 320). A native-size seed beats a retarget, which matches
+   Extron's own hand layout for only 22% of controls. The other gaps in
+   `seeds/README.md` (Teams Rooms, Zoom Rooms, 1366x768, 1280x720) wait for a
+   job that needs one.
 6. **Icon-font glyphs in the spec vocabulary.** Kit images are in it - a
    button's `image`, on itself or per state, which is how the Claude Design
    systems draw icons - but the other proven route, font glyphs (~339 icons, no
@@ -90,9 +90,24 @@ opening GUI Designer.**
 10. **Run the seed ground-truth test in CI** with
     `git lfs pull --include "seeds/Afterburn 1035.gdl"` (about 3 MB of LFS
     bandwidth per build).
+11. **Retire the Liberty Bank fixtures.** `fixtures/` is a real client's project
+    (Liberty Bank, job J26450039), the builds in `archive/gdlwork/` made with it
+    as the donor carry the same material (`archive/README.md` *Sensitivity*),
+    and the owner wants them gone. The render baseline is scored against the fixtures'
+    snapshot exports, so they go last: first a synthetic fixture with the same
+    reach (many pages, every control type the renderer scores) and GUI
+    Designer's snapshot exports of it, a new `tests/baseline.json` from
+    `tests/score.py`, and the examples and CI moved onto seeds; then delete
+    them. Deleting them leaves them in git history on GitHub - removing them
+    from history means rewriting every branch and force-pushing, which is the
+    owner's call when it comes.
 
 ## Backlog - real, not urgent
 
+- **`gdl.compose` ignores a control's `transparencyField`**, so the Shockwave
+  seeds' video well (white at 85% transparency) renders opaque white. Ten
+  controls in each of the two archived Liberty Bank fixtures set it (75 and
+  80); score a fix against the render baseline (`docs/gdl-format.md` §7).
 - `renumber` is planned and checked but has never been through a build. Build
   one and run `tests/verify_built.py` against it - which, until the behavior
   work, never compared a built control's ID at all (it looked up `UserID`;
@@ -117,6 +132,12 @@ opening GUI Designer.**
   after.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
   sizes.
+- **A horizontal slider in a template whose thumb is not square** (Shockwave's,
+  52 across and 34 along). The spec turns the thumb's box as the canvas does,
+  but the kit's thumb art is drawn for a vertical slider and goes into the
+  turned box as it is, and `verify_built`'s horizontal rail model mirrors the
+  vertical one unmeasured. No seed or canvas has one yet; build one and measure
+  both before relying on it.
 - **ECP's phone and tablet canvases have no donor, and cannot have one.** The
   six themable combinations (Afterburn / Mach / Shockwave × 16-9 and 16-10) are
   all seeded. The other five presets — iPhone, Android Phone, iPad, Android

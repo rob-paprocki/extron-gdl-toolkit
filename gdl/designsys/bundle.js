@@ -180,8 +180,9 @@
     var fam = KIT && KIT.files && KIT.files[size] && KIT.files[size][icon];
     if (!fam) return null;
     var primary = PRIMARY_ONLY.some(function (c) { return fam[c]; });
+    // A kit with no accent schemes (Mach's one image per icon) has neither map.
     function on() {
-      return (primary ? fam[KIT.primary[scheme]] : fam[KIT.secondary[scheme]])
+      return (primary ? fam[(KIT.primary || {})[scheme]] : fam[(KIT.secondary || {})[scheme]])
         || fam.sel || fam.red || fam.plain || fam.off || null;
     }
     if (look === 'on') return on();
@@ -191,21 +192,23 @@
   // How the variant draws its image, if it has one: the kit size, and where
   // the caption goes - `below` the icon, `indent`ed past it, or `none`.
   function imageOf(V, props, caption) {
-    if (V.kit) return { kit: V.kit, caption: V.caption, indent: V.indent, icon: props.icon || V.icon };
+    if (V.kit) return { kit: V.kit, caption: V.caption, indent: V.indent, breaks: V.breaks,
+                        icon: props.icon || V.icon };
     if (props.icon && V.with_icon) {
       var W = V.with_icon;
-      return caption ? { kit: W.kit, caption: W.caption, indent: W.indent, icon: props.icon }
+      return caption ? { kit: W.kit, caption: W.caption, indent: W.indent, breaks: W.breaks, icon: props.icon }
                      : { kit: W.bare, caption: 'none', icon: props.icon };
     }
     return null;
   }
   // The caption as the panel draws it: the kit leaves the label room below or
   // beside the icon, and the template's own buttons reach it with line breaks
-  // or leading spaces in the caption itself.
+  // or leading spaces in the caption itself - two breaks unless the variant
+  // says (Mach's 150 px source tiles take three, as its seed's Camera 1 does).
   function placed(img, text) {
     if (!img || text == null) return text;
     if (img.caption === 'none') return '';
-    if (img.caption === 'below') return text ? '\r\n\r\n' + text : text;
+    if (img.caption === 'below') return text ? new Array((img.breaks || 2) + 1).join('\r\n') + text : text;
     if (img.caption === 'indent') return text ? new Array((img.indent || 0) + 1).join(' ') + text : text;
     return text;
   }
@@ -244,7 +247,9 @@
     var now = Object.assign({}, look, shown);
     var f = font(props, P.defaults.button.type);
     var b = P.borders[now.border];
-    var align = props.align || (img && img.caption === 'indent' ? 'left' : V.align) || 'center';
+    // An indented caption reads from the left unless the variant says
+    // otherwise: Shockwave's centers it, pushed right past the icon.
+    var align = props.align || V.align || (img && img.caption === 'indent' ? 'left' : null) || 'center';
     var art = now.image && KIT && KIT.art ? KIT.art[now.image] : null;
     var style = {
       boxSizing: 'border-box', width: '100%', height: '100%',
@@ -346,11 +351,24 @@
     var t = Number(props.track) || d.track;
     var s = kind === 'slider' ? Number(props.thumb) || d.thumb : 0;
     var pct = props.value != null ? Math.max(0, Math.min(100, Number(props.value))) : 60;
-    var end = s / 2;                                   // the rail stops where the thumb's centre can reach
-    var rail = { position: 'absolute', borderRadius: t / 2 + 'px', background: paint(L.colors, fill) };
+    // The rail stops where the thumb's centre can reach: half its length
+    // along the rail.
+    var end = (s ? Number(d.thumb_height) || s : 0) / 2;
+    // Where the template draws its rail from its own art (Shockwave,
+    // Turbulence, Mach), the canvas does too: the empty rail's image, and the
+    // filled one showing only as far as the value, anchored at its start.
+    var rails = kind === 'slider' && P.kit && P.kit.rail_art ? P.kit.rail_art : {};
+    var from = along ? (o === 'up' ? 'bottom' : 'top') : (o === 'right' ? 'left' : 'right');
+    var rail = { position: 'absolute', borderRadius: t / 2 + 'px',
+                 background: rails.track ? 'url("' + rails.track + '") center / 100% 100% no-repeat'
+                                         : paint(L.colors, fill) };
     var bar = { position: 'absolute', borderRadius: t / 2 + 'px', background: paint(L.colors, d.value) };
     var span = 'calc(100% - ' + 2 * end + 'px)';
     var reach = 'calc((100% - ' + 2 * end + 'px) * ' + pct / 100 + ')';
+    if (rails.fill) {
+      bar.background = 'url("' + rails.fill + '") ' + from + ' / '
+        + (along ? '100% ' + span : span + ' 100%') + ' no-repeat';
+    }
     if (along) {
       rail.left = bar.left = 'calc(50% - ' + t / 2 + 'px)'; rail.width = bar.width = t + 'px';
       rail.top = end + 'px'; rail.height = span;
@@ -367,13 +385,16 @@
       // panel draws it. Without it, a circle of that size in the color.
       var art = kind === 'slider' && P.kit && P.kit.thumb_art ? P.kit.thumb_art[L.scheme] : null;
       var dot = Math.round(s * (d.thumb_circle || 1));
+      // A thumb need not be square: Shockwave's is 52 wide by 34 along.
+      var sa = Number(d.thumb_height) || s;
+      var tw = along ? s : sa, th = along ? sa : s;
       var thumb = art
-        ? { position: 'absolute', width: s + 'px', height: s + 'px',
+        ? { position: 'absolute', width: tw + 'px', height: th + 'px',
             background: 'url("' + art + '") center / contain no-repeat' }
-        : { position: 'absolute', width: s + 'px', height: s + 'px',
+        : { position: 'absolute', width: tw + 'px', height: th + 'px',
             background: 'radial-gradient(circle, ' + paint(L.colors, d.thumb_color) + ' '
               + (dot / 2 - 0.5) + 'px, transparent ' + dot / 2 + 'px)' };
-      var at = 'calc((100% - ' + s + 'px) * ' + pct / 100 + ')';
+      var at = 'calc((100% - ' + sa + 'px) * ' + pct / 100 + ')';
       if (along) { thumb.left = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'up' ? 'bottom' : 'top'] = at; }
       else { thumb.top = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'right' ? 'left' : 'right'] = at; }
       kids.push(h('div', { key: 't', style: thumb }));
@@ -383,7 +404,9 @@
       style: { position: 'relative', boxSizing: 'border-box', width: '100%', height: '100%' },
       'data-gdl': gdl({ kind: kind, name: props.name, id: props.id != null ? Number(props.id) : null,
                         fill: fill, border: props.border || d.border, orientation: o,
-                        track: t, thumb: s || null, does: props.does })
+                        track: t, thumb: s || null,
+                        thumb_height: s && Number(d.thumb_height) ? Number(d.thumb_height) : null,
+                        does: props.does })
     }, kids);
   }
   function Slider(props) { return track('slider', props); }
@@ -422,12 +445,15 @@
   // -- PopupRegion: where a group's popups appear ---------------------------
   function PopupRegion(props) {
     var L = useLook();
+    // Muted where the template has a secondary text color; Turbulence draws
+    // all its text white and has none, which painted the region magenta.
+    var muted = L.colors['text-secondary'] ? 'text-secondary' : 'text';
     return h('div', {
       className: 'xgdl xgdl-popupregion',
       style: { boxSizing: 'border-box', width: '100%', height: '100%', display: 'flex',
                alignItems: 'center', justifyContent: 'center',
-               border: '2px dashed ' + paint(L.colors, 'text-secondary'),
-               color: paint(L.colors, 'text-secondary'), font: font({}, 'body').css },
+               border: '2px dashed ' + paint(L.colors, muted),
+               color: paint(L.colors, muted), font: font({}, 'body').css },
       'data-gdl': gdl({ kind: 'popup_ref', name: props.name, group: props.group })
     }, 'Popups in ' + (props.group || '(no group)'));
   }

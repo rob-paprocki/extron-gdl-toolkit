@@ -30,24 +30,28 @@ Claude Code on the machine GUI Designer runs on.
 
 | Role | Needs |
 |---|---|
-| Designer | a claude.ai account with Claude Design, and the template's design system in it - for now *Extron Afterburn* |
+| Designer | a claude.ai account with Claude Design, and the template's design system in it - *Extron Afterburn*, *Mach*, *Shockwave* or *Turbulence* |
 | Builder | this repo, set up as `README.md` *Setup* says, on a machine with GUI Designer 1.28.0.7 (`CLAUDE.md` *Environment*), with the seeds pulled from Git LFS and Chrome installed; and Claude Code signed in to a claude.ai account that can open the canvas |
 
 ### Once: publish the design system
 
 A design system is built from this repo and published to a claude.ai account.
 Nothing else distributes it. In Claude Code, in the repo, ask it to *build the
-Afterburn design system and publish it*. It runs:
+Afterburn design system and publish it* - or Mach's, Shockwave's or
+Turbulence's. It runs:
 
 ```bash
-python -m gdl.designsys build afterburn <dir>
+python -m gdl.designsys build <afterburn|mach|shockwave|turbulence> <dir>
 ```
 
 and publishes the `project/` tree that writes as a Design System artifact, with
 the Artifact tool. The icons and theme backgrounds are Extron's kit, read from
-the GUI Designer install or `vendor/`, and embedded downscaled. Without the kit,
-or without Pillow, the build says so: the system then has no icons, and its
-themes no background images.
+the GUI Designer install or `vendor/`, and embedded downscaled. Turbulence's art,
+and Mach's slider, are in neither until they are extracted from Extron's own
+files, once per machine: `python -m gdl.designsys extract <template>`
+(`vendor/README.md`). Without the kit, or without Pillow, the build says so,
+naming that step where it applies: the system then has no icons, and its themes
+no background images.
 
 Because it carries Extron's artwork, the system is published private (§2
 *Icons*), to the account Claude Code is signed in to. The designer works in
@@ -55,9 +59,10 @@ that account, or has the system shared with theirs.
 
 ### Design: in Claude Design
 
-1. Start a design that uses *Extron Afterburn* as its design system.
+1. Start a design that uses the template's design system - *Extron Afterburn*
+   in this example.
 2. Describe the panel by what it has to **do**; the system already knows what
-   Afterburn looks like. Say:
+   the template looks like. Say:
    - the room and the panel - the system draws the TLP Pro 1025/1035 family, at
      1280×800;
    - the sources, and what selecting one does;
@@ -65,13 +70,14 @@ that account, or has the system shared with theirs.
      changes: a display warming up, a microphone muted, a call connected;
    - what has to be confirmed first, such as shutting the room down, and what
      the program shows by itself, such as an incoming call;
-   - optionally, one of Afterburn's background themes: Default, Anthracite,
-     Blue Slate or Grape.
+   - optionally, one of the template's background themes - Afterburn's are
+     Default, Anthracite, Blue Slate and Grape; §2 *Themes* has every
+     template's.
 
    For example: *A huddle room panel for a TLP Pro 1035 on the Grape theme.
    Three sources - laptop, wireless and the room PC - showing which is selected.
    One display that can be off, warming up, on or cooling down. Volume with mute,
-   End Call, a help page, and turning the room off asks for confirmation.*
+   End Call, help, and turning the room off asks for confirmation.*
 
    The system's README makes Claude Design draw only with its components, one
    artboard per page or popup, and record what every control does.
@@ -152,17 +158,17 @@ Claude Code publishes the result with the Artifact tool.
 
 | Part | From |
 |---|---|
-| **Colors** | Afterburn: the published guide (`docs/design-rules.md` §4), its four accent schemes as the system's themes. Mach: its PSD's `Colors` group and the selected/unselected alpha rule. Shockwave, Turbulence: `gdl.themes` over the seeds and `.glt` templates, cross-checked against their PSDs. |
-| **Themes** | Afterburn's four recommended pairings - Default with accent Scheme 1, Anthracite with 3, Blue Slate with 2, Grape with 4 - as a Page's `theme`. Each is the kit's background image fitted over `#242634`, as the seed draws it, plus its accent scheme. The spec carries the image, and the applier appends it to the project. |
-| **Layout** | Where the template puts things. Afterburn keeps most of a page in the squircle main area (`MainArea`, 916×752 at 183,24), with headed groups on the left rail and volume, help and power on the right. |
+| **Colors** | Afterburn: the published guide (`docs/design-rules.md` §4), its four accent schemes as the system's themes. Mach: its PSD's `Colors` group and the selected/unselected alpha rule. Shockwave: its seed's own fills and captions, corroborated by `gdl.themes` over its `.glt` - its PSD names swatches but carries no values. Turbulence: its seed's own, state by state - most of them stored by name, so read through the KnownColor table (`docs/gdl-format.md` §7) - with its header and footer read off their art, which is one color. |
+| **Themes** | Afterburn's four recommended pairings - Default with accent Scheme 1, Anthracite with 3, Blue Slate with 2, Grape with 4 - as a Page's `theme`. Each is the kit's background image fitted over `#242634`, as the seed draws it, plus its accent scheme. Mach's are its kit's six photos, the seed's sunset first, stretched as its seed stretches them (`background_layout`). Shockwave's are its seed's soft blur and its Start page's Saturn, stretched likewise; Turbulence's its seed's corridor and the bokeh, office, swoop and water photos from its templates. The spec carries the image, and the applier appends it to the project. |
+| **Layout** | Where the template puts things. Afterburn keeps most of a page in the squircle main area (`MainArea`, 916×752 at 183,24), with headed groups on the left rail and volume, help and power on the right. Mach puts shade bars top and bottom and rails either side of its photo. Shockwave puts its sources as tabs across a header, the chosen one's page in a black video well (926×574 at 168,120), rails either side and a capsule footer. Turbulence puts its sources as tabs across a translucent header, the chosen one's popup in the region between the bars and the side rails (995×549 at 140,137), and a translucent footer. |
 | **Type** | The faces the template's seed can actually author (`Project.font_resource_names()`), at the sizes its own pages use - none under the 14 pt the toolkit checks. Sizes are points, drawn at GUI Designer's 1.375 px per point. Open Sans is Apache 2.0 and loads from Google Fonts. |
 | **Borders** | Only border resources the seed defines and the spec names (`BORDERS`), so a design cannot ask for a shape the panel cannot draw. |
-| **Button archetypes** | The looks the seed's own buttons use, per state. Afterburn's captioned ones are outlined (the most common), ghost and inverse, and an alert - a red fill with a white caption, for a condition someone has to act on, not an ordinary action such as shutting down. Its image ones - source, list, icon and toggle, and outlined with an icon - are each drawn from the kit as the seed draws them: the image, the fill it takes when selected, and where the caption goes. Afterburn shows state with its icons, never fills a button with an accent, and never colors a caption red. |
-| **Icons** | The template's resource kit, indexed by name and look (`gdl.designsys.kit_index`) and embedded in the bundle downscaled, as WebP - about 1.8 MB for Afterburn's thousand. Extron's artwork, so only in the owner's private design system, with their agreement (`docs/history.md`). A state asks for an icon unselected or selected; selected is the scheme's primary accent for an icon drawn in the primary accents, its secondary for one drawn in the secondary ones (toggles, volume levels). |
-| **Sliders and levels** | As the seed's built ones draw: a thin rounded rail (Afterburn's is 10 px, filled `#BABCCE`) with a round thumb in the secondary accent. The thumb is a kit image, not a color: its circle is 65% of its 50 px box, so the canvas draws the kit's own, and the translator gives each slider the scheme's (`gdl.designsys.slider_thumb`), since a clone keeps its donor's. |
+| **Button archetypes** | The looks the seed's own buttons use, per state. Afterburn's captioned ones are outlined (the most common), ghost and inverse, and an alert - a red fill with a white caption, for a condition someone has to act on, not an ordinary action such as shutting down. Its image ones - source, list, icon and toggle, and outlined with an icon - are each drawn from the kit as the seed draws them: the image, the fill it takes when selected, and where the caption goes. Afterburn shows state with its icons, never fills a button with an accent, and never colors a caption red. Mach shows it with a brighter fill. Shockwave draws every button as a kit image: a button names its color family, rests dark in a ring of that color and lights up when On (`kit.outline_off` reads the kit so), and an `action` button carries the kit's icon at its left with the caption centered past it, as the seed pads it with spaces. Turbulence's are kit images too: a gray tile, a white ring, a navy source tab or nothing at rest, white with a green glow or dark teal when lit. Most of its kit carries its words in the art, so only its blank images take a caption, which turns `accent` when lit. A variant's `size` is the size its seed draws it at - Turbulence's tile is 87×90 - and the Button README states it and the preview draws it there, so a caption keeps its proportion to the art; drawn smaller, a caption at the template's size spills past its tile. |
+| **Icons** | The template's resource kit, indexed by name and look (`gdl.designsys.kit_index`) and embedded in the bundle downscaled, as WebP - about 1.8 MB for Afterburn's thousand. Extron's artwork, so only in the owner's private design system, with their agreement (`docs/history.md`). A state asks for an icon unselected or selected; selected is the scheme's primary accent for an icon drawn in the primary accents, its secondary for one drawn in the secondary ones (toggles, volume levels). A variant's `icon` is what it draws unless told otherwise; `icons` narrows what it offers to the families starting so (Afterburn's toggle), or with any of a list (Turbulence's rings). A file the kit's `<W>x<H>_` naming misses is named in the profile (`kit.named`: Shockwave's modal Close, one file per look; Turbulence's pairs whose two files are named apart, like `outline_01` at rest and `round_01` lit, where the pair replaces the half icons the pattern made of them). A kit that exists only inside Extron's files - Turbulence's, in its templates - is extracted to `vendor/` first (`python -m gdl.designsys extract <template>`, `vendor/README.md`). |
+| **Sliders and levels** | As the seed's built ones draw: a thin rounded rail (Afterburn's is 10 px, filled `#BABCCE`) with a round thumb in the secondary accent. The thumb is a kit image, not a color: its circle is 65% of its 50 px box, so the canvas draws the kit's own, and the translator gives each slider the scheme's (`gdl.designsys.slider_thumb`), since a clone keeps its donor's. A template whose thumb is one file whatever the accent names that file, and one whose rail is art rather than two colors names its rail images too (`track_image`, `fill_image`); the canvas then draws those, the translator gives them to each slider in the spec (`gdl.designsys.slider_rail`), and a thumb that is not round keeps its own proportions (`thumb_height`). |
 | **Modals** | As Build draws them: the page beneath under black at alpha 166, whatever background the popup has. So a modal carries no background of its own. |
 | **Spacing and sizes** | The panel's touch minimum and spacing for its model (`touch_minimums`), and GUI Designer's 10 px nudge. |
-| **README** | The panel's rules and its function vocabulary: what Claude Design reads first. |
+| **README** | The panel's rules and its function vocabulary: what Claude Design reads first. Its iconography, its example page and the components' own READMEs and previews are drawn from the profile (`iconography`, `examples.source` and `examples.help`, its variants, type styles and tokens), so each names only what its template has. |
 | **Donor** | The seed the panel is built on. The canvas's design system therefore also chooses the donor. |
 
 A profile is checked against the seed's **built artwork**, not only its model
@@ -198,7 +204,7 @@ pixels. On the canvas they are `<x-import component-from-global-scope=
 | Label | `label` | text, `type` or `size`, `color`, `align`, `does` |
 | Panel | `panel` | `fill`, `stroke`, `border` |
 | Line | `line` | orientation, `color`, `thickness` |
-| Slider, Level | `slider`, `level` | `orientation`, `fill`, `track` and `thumb` sizes, `does`; a slider also gets its scheme's `thumb_image` |
+| Slider, Level | `slider`, `level` | `orientation`, `fill`, `track` and `thumb` sizes (and `thumb_height`, where the template's thumb is not square), `does`; a slider also gets its scheme's `thumb_image` |
 | Clock | `datetime` | `format` (`time`, `date`, `datetime` or a .NET pattern), `color`, `size`, `align` |
 | PopupRegion | `popup_ref` | the popup `group` shown there |
 
@@ -223,7 +229,8 @@ tokens used, resolved for the canvas's accent scheme.
   the state's look to the kit file for the page's scheme and carries the file
   name; the translator gives the spec each file's kit path, and a name the kit
   lacks is refused. The caption is placed as the template places it - line
-  breaks under a source's icon, leading spaces past a list button's.
+  breaks under a source's icon (as many as the seed's own tile of that size
+  takes, a variant's `breaks`), leading spaces past a list button's.
 - **One template and one accent scheme per panel**, and page names unique.
 
 ## 5. The translator
@@ -250,19 +257,54 @@ that paints outside one. Chrome is the only new runtime need, and only here.
   that comes to under 8% against their own files and 50% or more against a
   wrong one; the gate is 25%.
 - **End to end**, on GUI Designer 1.28.0.7: the huddle brief drawn in Claude
-  Design with *Extron Afterburn* on its Grape theme (Home, Help and a Room Off
-  confirmation; three-state source buttons, a four-state Display toggle, a
-  two-state mute icon, help and power icons, and End Call with its kit icon)
-  translated to a spec
+  Design with *Extron Afterburn* on its Grape theme (Home, with Help and a Room
+  Off confirmation as modals; three-state source buttons, a four-state Display
+  toggle, a two-state mute icon, help and power icons, and End Call with its kit
+  icon) translated to a spec
   with 0 problems from `gdl.spec check` and `gdl.idmap check`, built on
   `seeds/Afterburn 1035.gdl` with `New-GdlPanel.ps1 -IdMap`, unattended, and
-  verified: layout 84 controls, 0 problems, the kit image on every state and
-  the slider's thumb included; ID map 26 references, 0 problems.
-  `gdl.design compare` then put 1.2% of Home's pixels, 0.6% of Help's and 1.9%
+  verified: layout 87 controls, 0 problems, the kit image on every state and
+  the slider's thumb included; ID map 27 references, 0 problems.
+  `gdl.design compare` then put 1.2% of Home's pixels, 2.2% of Help's and 1.9%
   of the Room Off confirmation's apart from the build.
+- **The same brief in *Extron Mach*** (`tests/data/design-huddle-mach/`: the
+  seed's sunset photo, shade bars and rails, 150 px source tiles with their
+  kit icons and names on them, Help and Room Off as Mach's full-width modal
+  windows), built on `seeds/Mach 1035.gdl`: layout 99 controls, the slider's
+  rail art and every translucent fill at its own alpha included, and ID map 27
+  references, 0 problems each. Compare put Help 2.7% and Room Off 2.2% apart,
+  Home 22.6% - the renderer draws Mach's translucent bars and buttons opaque,
+  as GUI Designer's snapshots composite them, where the canvas shows the photo
+  through them (`docs/render-fidelity.md` §2).
+- **The same brief in *Extron Shockwave*** (`tests/data/design-huddle-shockwave/`:
+  the seed's haze, source tabs centered across the header, the video well, kit-image
+  buttons resting in their rings and lit, Help and Room Off as modal cards),
+  built on `seeds/Shockwave 1035.gdl`: layout 89 controls and ID map 26
+  references, 0 problems each. Compare put Home 54.9%, Help 49.9% and Room Off
+  56.4% apart. The built artwork is translucent where the canvas is - the
+  well white at alpha 38, a resting button black at alpha 64 inside its ring -
+  and the renderer, like GUI Designer's snapshots, draws any pixel with alpha
+  above 0 at full strength; the modals also draw over the start page in the
+  build and over nothing on the canvas. What its first builds got wrong, each
+  now fixed or checked, is in `docs/history.md`.
+- **The same brief in *Extron Turbulence*** (`tests/data/design-huddle-turbulence/`:
+  the seed's corridor photo under translucent bars and rails, source tabs
+  centered across the header - Laptop, Room PC and Doc Cam, the kit having no
+  wireless glyph - display On and Off rings, the striped volume rail, End
+  Call and Power Down tiles, Help and Room Off as modal cards with the seed's
+  green Power Down and red Cancel), built on `seeds/Turbulence 1035.gdl`, its
+  art extracted from the seed and the six Turbulence templates first:
+  layout 91 controls and ID map 27 references, 0 problems each. Compare put
+  Home 15.6%, Help 3.0% and Room Off 2.5% apart, and nearly all of Home's is
+  the two side rails: Build wrote their black at alpha 38 as authored, and the
+  compositor draws any pixel above alpha 0 at full strength, as GUI Designer's
+  own snapshots do (`docs/render-fidelity.md` §2), so they render solid black
+  where the canvas shows the photo through them. The theme itself leans on
+  the panel blending - the seed's own header and footer art is alpha 128
+  throughout.
 
 ## 7. What is left
 
-- Mach, Shockwave and Turbulence as design systems.
+- Every panel a room has from one canvas: `docs/ROADMAP.md` item 5.
 - A Page's `does` reaches the spec as `_does` and goes no further: the ID map
   has nowhere to say what a page is for yet.

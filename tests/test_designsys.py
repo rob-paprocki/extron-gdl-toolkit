@@ -24,55 +24,172 @@ from gdl.spec import BORDERS, KIND_TYPE, MIN_BODY_POINT_SIZE  # noqa: E402
 REPO = os.path.dirname(HERE)
 COLOR = re.compile(r'^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$|^\{[A-Za-z0-9][A-Za-z0-9_.-]*\}$')
 
+# Every profile on disk, registered or not: a draft that cannot build must fail
+# here rather than first at a build.
+PROFILES = sorted(f[:-5] for f in os.listdir(os.path.join(REPO, 'gdl', 'designsys'))
+                  if f.endswith('.json'))
+
+
+def _each(case, test):
+    for t in PROFILES:
+        with case.subTest(template=t):
+            test(designsys.load(t))
+
 
 class TestTokens(unittest.TestCase):
-    def setUp(self):
-        self.p = designsys.load('afterburn')
-        self.t = designsys.tokens(self.p)
-
     def test_every_family_but_type_is_a_list(self):
-        for fam, v in self.t.items():
-            if fam in ('name', 'version', 'type'):
-                continue
-            self.assertIsInstance(v['tokens'], list, fam)
+        def check(p):
+            for fam, v in designsys.tokens(p).items():
+                if fam in ('name', 'version', 'type'):
+                    continue
+                self.assertIsInstance(v['tokens'], list, fam)
+        _each(self, check)
 
     def test_names_are_legal_and_used_once(self):
-        seen = []
-        for fam, v in self.t.items():
-            if fam in ('name', 'version', 'type'):
-                continue
-            for tok in v['tokens']:
-                self.assertRegex(tok['name'], designsys.NAME)
-                self.assertTrue(tok.get('usage'), f"{tok['name']} has no usage note")
-                seen.append(tok['name'])
-        self.assertEqual(len(seen), len(set(seen)), 'a duplicate name drops')
+        def check(p):
+            seen = []
+            for fam, v in designsys.tokens(p).items():
+                if fam in ('name', 'version', 'type'):
+                    continue
+                for tok in v['tokens']:
+                    self.assertRegex(tok['name'], designsys.NAME)
+                    self.assertTrue(tok.get('usage'), f"{tok['name']} has no usage note")
+                    seen.append(tok['name'])
+            self.assertEqual(len(seen), len(set(seen)), 'a duplicate name drops')
+        _each(self, check)
 
     def test_colors_parse_in_every_scheme(self):
-        names = {c['name'] for c in self.t['color']['tokens']}
-        ids = [th['id'] for th in self.t['color']['themes']]
-        for c in self.t['color']['tokens']:
-            values = c['value'].values() if isinstance(c['value'], dict) else [c['value']]
-            for v in values:
-                self.assertRegex(v, COLOR, c['name'])
-                if v.startswith('{'):
-                    self.assertIn(v[1:-1], names, f"{c['name']} aliases a missing token")
-            if isinstance(c['value'], dict):
-                self.assertEqual(set(c['value']), set(ids), f"{c['name']} misses a scheme")
+        def check(p):
+            t = designsys.tokens(p)
+            names = {c['name'] for c in t['color']['tokens']}
+            ids = [th['id'] for th in t['color']['themes']]
+            for c in t['color']['tokens']:
+                values = c['value'].values() if isinstance(c['value'], dict) else [c['value']]
+                for v in values:
+                    self.assertRegex(v, COLOR, c['name'])
+                    if v.startswith('{'):
+                        self.assertIn(v[1:-1], names, f"{c['name']} aliases a missing token")
+                if isinstance(c['value'], dict):
+                    self.assertEqual(set(c['value']), set(ids), f"{c['name']} misses a scheme")
+        _each(self, check)
 
     def test_type_styles_are_legal(self):
-        for g in self.t['type']['groups']:
-            self.assertIn(g['family'], self.t['type']['families'])
-            for s in g['styles']:
-                self.assertRegex(s['name'], designsys.NAME)
-                self.assertRegex(s['fontSize'], r'^\d+(\.\d+)?px$')
+        def check(p):
+            t = designsys.tokens(p)
+            for g in t['type']['groups']:
+                self.assertIn(g['family'], t['type']['families'])
+                for s in g['styles']:
+                    self.assertRegex(s['name'], designsys.NAME)
+                    self.assertRegex(s['fontSize'], r'^\d+(\.\d+)?px$')
+        _each(self, check)
+
+
+class TestEveryProfile(unittest.TestCase):
+    """What the components carry has to be something the spec can build - for
+    every template, not only the one that happens to be finished."""
+
+    def test_every_border_is_one_the_spec_knows(self):
+        def check(p):
+            for key, b in p['borders'].items():
+                self.assertIn(key, BORDERS)
+                self.assertEqual(BORDERS[key], b['resource'], key)
+        _each(self, check)
+
+    def test_everything_a_look_names_exists(self):
+        def check(p):
+            colors = {c['name'] for c in p['colors']}
+            for name, v in p['buttons'].items():
+                for look in [v['look']] + v['states']:
+                    for k in ('fill', 'stroke', 'color'):
+                        if k in look and look[k] != 'none':
+                            self.assertIn(look[k], colors, f'{name}.{k}')
+                    if 'border' in look:
+                        self.assertIn(look['border'], p['borders'], name)
+            types = {t['name'] for t in p['type']}
+            for kind, d in p['defaults'].items():
+                for k, v in d.items():
+                    if k in ('fill', 'stroke', 'color', 'value', 'thumb_color', 'background'):
+                        self.assertIn(v, colors, f'defaults.{kind}.{k}')
+                    if k == 'border':
+                        self.assertIn(v, p['borders'], f'defaults.{kind}')
+                    if k == 'type':
+                        self.assertIn(v, types, f'defaults.{kind}')
+                    if k in ('thumb', 'track'):
+                        self.assertIsInstance(v, (int, float), f'defaults.{kind}.{k} is a size')
+        _each(self, check)
+
+    def test_no_type_style_is_under_the_checked_minimum(self):
+        """gdl.spec check refuses text under 14 pt, so offering it would design
+        panels that cannot be built. Afterburn's own small buttons are 13."""
+        def check(p):
+            for t in p['type']:
+                self.assertGreaterEqual(t['pt'], MIN_BODY_POINT_SIZE, t['name'])
+        _each(self, check)
+
+    def test_button_variants_give_feedback(self):
+        def check(p):
+            for name, v in p['buttons'].items():
+                looks = [json.dumps({k: s[k] for k in s if k != 'name'}, sort_keys=True)
+                         for s in v['states']]
+                self.assertEqual(len(looks), len(set(looks)), f'{name} states look alike')
+        _each(self, check)
+
+    def test_the_seed_can_author_the_font(self):
+        from gdl.project import Project
+
+        def check(p):
+            seed = os.path.join(REPO, p['seed'])
+            if not usable(seed):
+                self.skipTest('seed not present (git lfs pull)')
+            self.assertIn(p['font']['family'], Project.open(seed).font_resource_names())
+        _each(self, check)
+
+    def test_the_readme_names_only_what_the_profile_has(self):
+        """Mach's README once told designers to use Afterburn's `icon`, `list`
+        and `toggle` variants, and to read its icon anatomy off tokens Mach
+        does not have."""
+        def check(p):
+            docs = designsys.component_docs(p)
+            previews = designsys.previews(p)
+            text = '\n'.join([designsys.readme(p)] + list(docs.values()) + list(previews.values()))
+            for v in re.findall(r'variant(?:="|: ")([^"]+)"', text):
+                self.assertIn(v, p['buttons'], f'the docs name variant {v!r}')
+            for t in re.findall(r'type(?:="|: ")([^"]+)"', text):
+                self.assertIn(t, {s['name'] for s in p['type']}, f'the docs name type {t!r}')
+            self.assertNotIn('(?)', text, 'the README reads a token the profile lacks')
+            names = designsys.icon_names(p)
+            for v, icon in re.findall(r'variant="([^"]+)" icon="([^"]+)"', text):
+                if names:
+                    self.assertIn(icon, names.get(v, []), f'{v} icon {icon!r}')
+            # The icon prop's own line names this template's image variants.
+            line = next(ln for ln in docs['Button'].splitlines() if ln.startswith('- `icon`'))
+            line = re.sub(r'\(default `[^`]+`\)', '', line)
+            for v in re.findall(r'`([a-z-]+)`', line):
+                if v not in ('icon',):
+                    self.assertIn(v, p['buttons'], f'the icon line names variant {v!r}')
+        _each(self, check)
+
+    def test_the_example_puts_a_header_source_on_the_page(self):
+        """Shockwave's sources are tabs in the header, not in its video well:
+        placed inside MainArea, its example tab landed 168,120 down and right."""
+        text = designsys.readme(designsys.load('shockwave'))
+        main = re.search(r'ExtronShockwave\.MainArea">(.*?)</x-import>\n  </x-import>', text, re.S)
+        self.assertNotIn('name="Laptop"', main.group(1))
+        self.assertIn('name="Laptop"', text)
+
+    def test_every_profile_builds_a_system(self):
+        def check(p):
+            with tempfile.TemporaryDirectory() as d:
+                written = designsys.build(p['template'].lower(), d, '2026-09-25T00:00:00Z')
+            self.assertIn('project/README.md', written)
+        _each(self, check)
 
 
 class TestProfile(unittest.TestCase):
-    """What the components carry has to be something the spec can build."""
+    """Afterburn's own facts."""
 
     def setUp(self):
         self.p = designsys.load('afterburn')
-        self.colors = {c['name'] for c in self.p['colors']}
 
     def test_afterburn_matches_the_published_guide(self):
         # docs/design-rules.md section 4.
@@ -82,48 +199,6 @@ class TestProfile(unittest.TestCase):
         self.assertEqual(v['text-secondary'], '#BABCCE')
         self.assertEqual(v['accent']['orange'], '#D69B61')
         self.assertEqual(v['accent-2']['orange'], '#626ACF')
-
-    def test_every_border_is_one_the_spec_knows(self):
-        for key, b in self.p['borders'].items():
-            self.assertIn(key, BORDERS)
-            self.assertEqual(BORDERS[key], b['resource'], key)
-
-    def test_everything_a_look_names_exists(self):
-        for name, v in self.p['buttons'].items():
-            for look in [v['look']] + v['states']:
-                for k in ('fill', 'stroke', 'color'):
-                    if k in look:
-                        self.assertIn(look[k], self.colors, f'{name}.{k}')
-                if 'border' in look:
-                    self.assertIn(look['border'], self.p['borders'], name)
-        types = {t['name'] for t in self.p['type']}
-        for kind, d in self.p['defaults'].items():
-            for k, v in d.items():
-                if k in ('fill', 'stroke', 'color', 'value', 'thumb_color', 'background'):
-                    self.assertIn(v, self.colors, f'defaults.{kind}.{k}')
-                if k == 'border':
-                    self.assertIn(v, self.p['borders'], f'defaults.{kind}')
-                if k == 'type':
-                    self.assertIn(v, types, f'defaults.{kind}')
-
-    def test_no_type_style_is_under_the_checked_minimum(self):
-        """gdl.spec check refuses text under 14 pt, so offering it would design
-        panels that cannot be built. Afterburn's own small buttons are 13."""
-        for t in self.p['type']:
-            self.assertGreaterEqual(t['pt'], MIN_BODY_POINT_SIZE, t['name'])
-
-    def test_button_variants_give_feedback(self):
-        for name, v in self.p['buttons'].items():
-            looks = [json.dumps({k: s[k] for k in s if k != 'name'}, sort_keys=True)
-                     for s in v['states']]
-            self.assertEqual(len(looks), len(set(looks)), f'{name} states look alike')
-
-    def test_the_seed_can_author_the_font(self):
-        seed = os.path.join(REPO, self.p['seed'])
-        if not usable(seed):
-            self.skipTest('seed not present (git lfs pull)')
-        from gdl.project import Project
-        self.assertIn(self.p['font']['family'], Project.open(seed).font_resource_names())
 
 
 class TestKit(unittest.TestCase):
@@ -177,6 +252,33 @@ class TestKit(unittest.TestCase):
             designsys.bundle(p, art=False)
         self.assertIn('kit is not installed here', out.getvalue())
 
+    def test_an_extracted_kit_names_its_extract_step(self):
+        """Turbulence's art and Mach's slider are in neither the install nor a
+        fresh vendor/ until `extract` has run, so saying only where kits live
+        sends a builder looking in the wrong place."""
+        import contextlib
+        import io
+        p = designsys.load('turbulence')
+        p['kit'] = dict(p['kit'], root='No Such Kit', thumbs='No Such Kit')
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            designsys.bundle(p, art=False)
+        self.assertIn('python -m gdl.designsys extract turbulence', out.getvalue())
+
+    def test_slider_art_the_machine_lacks_is_said(self):
+        """With the buttons installed but not the slider's part of the kit, the
+        system published with no rail or thumb art and said nothing - its
+        sliders drawn plain on every canvas."""
+        import contextlib
+        import io
+        p = designsys.load('mach')
+        p['kit'] = dict(p['kit'], thumbs='No Such Kit')
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            designsys.bundle(p, art=False)
+        self.assertIn('slider art', out.getvalue())
+        self.assertIn('8x500_mach_track_bg@3x.png', out.getvalue())
+
     def test_a_toggle_offers_only_toggles(self):
         p = designsys.load('afterburn')
         if not designsys.kit_root(p):
@@ -185,6 +287,253 @@ class TestKit(unittest.TestCase):
         self.assertEqual(names['toggle'], ['toggle-1', 'toggle-2'])
         self.assertNotIn('toggle-1', names['list'])
         self.assertIn('call_connected', names['icon'])
+
+    def test_a_default_icon_does_not_narrow_the_offer(self):
+        """Shockwave's `button` draws gray unless told otherwise; red, yellow
+        and the rest are still its to offer."""
+        p = designsys.load('shockwave')
+        if not designsys.kit_root(p):
+            self.skipTest("Extron's Shockwave kit is not installed here")
+        names = designsys.icon_names(p)
+        self.assertLessEqual({'gray', 'red', 'yellow', 'green', 'blue'}, set(names['button']))
+        self.assertIn('laptop_white', names['source'])
+        self.assertEqual(names['close'], ['close'])
+        self.assertNotIn('close', names['square'])
+
+
+class TestKitFiles(unittest.TestCase):
+    def test_a_name_with_a_space_before_png_is_still_kit(self):
+        """23 of Shockwave's kit files are named '... _sel .png'; the pattern
+        that dropped them silently dropped real art."""
+        m = designsys._KIT_FILE.match('440x440_help_yellow_sel .png')
+        self.assertIsNotNone(m)
+        self.assertEqual(m.groups(), ('440x440', 'help_yellow_sel'))
+
+    def test_a_partial_kit_in_one_root_does_not_hide_the_rest(self):
+        """Extracting Mach's slider art into vendor/ made vendor/.../Mach exist,
+        and the kit then read only those 71 files and none of the install's."""
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            os.makedirs(os.path.join(a, 'Theme', 'Extracted'))
+            os.makedirs(os.path.join(b, 'Theme', 'Icons'))
+            for d, f in ((os.path.join(a, 'Theme', 'Extracted'), '440x440_thumb.png'),
+                         (os.path.join(b, 'Theme', 'Icons'), '440x440_laptop.png'),
+                         (os.path.join(b, 'Theme', 'Icons'), '440x440_thumb.png')):
+                with open(os.path.join(d, f), 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a, b)
+            try:
+                index = designsys.kit_index({'kit': {'root': 'Theme'}})
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+        self.assertEqual(sorted(index['files']['440x440']), ['laptop', 'thumb'])
+        # The first root wins a name both have.
+        self.assertEqual(index['paths']['440x440_thumb.png'], 'Theme/Extracted/440x440_thumb.png')
+
+    def test_a_kit_can_draw_off_from_its_outlined_art(self):
+        """Shockwave's pills rest dark with a colored ring (red_outline_nsel)
+        and light when selected (red_sel); its plain red_nsel is a saturated
+        solid no seed button rests in. Icon pills name it mid-stem
+        (r_power_outline_red_nsel) and round ones before it
+        (red_round_outline_nsel)."""
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        names = ('1248x440_red_nsel.png', '1248x440_red_outline_nsel.png', '1248x440_red_sel.png',
+                 '1248x440_red_round_outline_nsel.png', '1248x440_red_round_sel.png',
+                 '1248x440_r_power_outline_red_nsel.png', '1248x440_r_power_red_sel.png',
+                 '1248x440_gray_nsel.png', '1248x440_gray_sel.png',
+                 '1248x440_outline_share-1b_blue_nsel.png', '1248x440_share-1b_blue_sel.png')
+        with tempfile.TemporaryDirectory() as a:
+            os.makedirs(os.path.join(a, 'Theme'))
+            for f in names:
+                with open(os.path.join(a, 'Theme', f), 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a,)
+            try:
+                files = designsys.kit_index({'kit': {'root': 'Theme', 'outline_off': True}})['files']
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+        pills = files['1248x440']
+        self.assertEqual(pills['red'], {'off': '1248x440_red_outline_nsel.png',
+                                        'sel': '1248x440_red_sel.png'})
+        self.assertEqual(pills['red_round']['off'], '1248x440_red_round_outline_nsel.png')
+        self.assertEqual(pills['r_power_red']['off'], '1248x440_r_power_outline_red_nsel.png')
+        self.assertEqual(pills['gray']['off'], '1248x440_gray_nsel.png')
+        # 504x440's share buttons put it first.
+        self.assertEqual(pills['share-1b_blue']['off'], '1248x440_outline_share-1b_blue_nsel.png')
+        self.assertNotIn('outline_share-1b_blue', pills)
+
+    def _index(self, kit, names):
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        with tempfile.TemporaryDirectory() as a:
+            for f in names:
+                path = os.path.join(a, 'Theme', *f.split('/'))
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a,)
+            try:
+                return designsys.kit_index({'kit': dict(kit, root='Theme')})
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+
+    def test_a_doubled_underscore_reads_as_one(self):
+        """Shockwave's 1248x440_blue__round_outline_nsel.png is blue_round's."""
+        files = self._index({'outline_off': True},
+                            ['1248x440_blue__round_outline_nsel.png', '1248x440_blue_round_sel.png'])['files']
+        self.assertEqual(files['1248x440'], {'blue_round': {
+            'off': '1248x440_blue__round_outline_nsel.png', 'sel': '1248x440_blue_round_sel.png'}})
+
+    def test_a_kit_can_name_a_file_its_pattern_misses(self):
+        """Shockwave's modal Close is icons/440x440 White/white_close.png - no
+        size prefix, so only a name in the profile reaches it."""
+        index = self._index({'named': {'440x440': {'close': 'white_close.png'}}},
+                            ['icons/440x440 White/white_close.png', '440x440_gray_nsel.png'])
+        self.assertEqual(index['files']['440x440']['close'], {'plain': 'white_close.png'})
+        self.assertEqual(index['paths']['white_close.png'], 'Theme/icons/440x440 White/white_close.png')
+
+    def test_a_named_icon_can_have_a_file_per_look(self):
+        """The seed's Close is a dark X at rest and a white one pressed."""
+        index = self._index({'named': {'440x440': {'close': {'off': 'black_close.png',
+                                                             'sel': 'white_close.png'}}}},
+                            ['icons/440x440 Black/black_close.png', 'icons/440x440 White/white_close.png'])
+        self.assertEqual(index['files']['440x440']['close'],
+                         {'off': 'black_close.png', 'sel': 'white_close.png'})
+        self.assertEqual(index['paths']['black_close.png'], 'Theme/icons/440x440 Black/black_close.png')
+
+    def test_a_named_pair_leaves_no_half_behind(self):
+        """Turbulence's rings rest as 440x440_outline_01_nsel and light as
+        440x440_round_01_sel - names the pattern files as two icons, one with
+        only a rest look and one with only a lit one. Named as one pair, the
+        stray half must go too: offered, it draws its one file in both states."""
+        index = self._index({'named': {'440x440': {'round_01': {
+            'off': '440x440_outline_01_nsel.png', 'sel': '440x440_round_01_sel.png'}}}},
+            ['440x440_outline_01_nsel.png', '440x440_round_01_sel.png',
+             '440x440_home_nsel.png', '440x440_home_sel.png'])
+        self.assertEqual(index['files']['440x440'], {
+            'round_01': {'off': '440x440_outline_01_nsel.png', 'sel': '440x440_round_01_sel.png'},
+            'home': {'off': '440x440_home_nsel.png', 'sel': '440x440_home_sel.png'}})
+
+    def test_a_variant_can_claim_several_families(self):
+        """Turbulence's rings are round_NN, display_*, on, off and volume_* -
+        one prefix cannot claim them from the tiles that share their size."""
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        names = ['440x440_round_01_nsel.png', '440x440_on_nsel.png', '440x440_home_nsel.png']
+        p = {'kit': {'root': 'Theme'},
+             'buttons': {'ring': {'kit': '440x440', 'icons': ['round_', 'on']},
+                         'button': {'kit': '440x440'}}}
+        with tempfile.TemporaryDirectory() as a:
+            for f in names:
+                os.makedirs(os.path.join(a, 'Theme'), exist_ok=True)
+                with open(os.path.join(a, 'Theme', f), 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a,)
+            try:
+                offered = designsys.icon_names(p)
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+        self.assertEqual(offered, {'ring': ['on', 'round_01'], 'button': ['home']})
+
+    def test_a_claim_holds_only_at_its_own_size(self):
+        """Turbulence's source tabs (504x504) claim input_laptop; its scene
+        pictures (900x648) have an input_laptop of their own, which the claim
+        hid - and the wide bar lost its blank to the dock's, at 712x440."""
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        names = ['504x504_input_laptop_nsel.png', '900x648_input_laptop_nsel.png']
+        p = {'kit': {'root': 'Theme'},
+             'buttons': {'source': {'kit': '504x504', 'icons': 'input_'},
+                         'scene': {'kit': '900x648'}}}
+        with tempfile.TemporaryDirectory() as a:
+            os.makedirs(os.path.join(a, 'Theme'))
+            for f in names:
+                with open(os.path.join(a, 'Theme', f), 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a,)
+            try:
+                offered = designsys.icon_names(p)
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+        self.assertEqual(offered, {'source': ['input_laptop'], 'scene': ['input_laptop']})
+
+    def test_a_named_file_the_kit_lacks_is_left_out(self):
+        index = self._index({'named': {'440x440': {'close': 'white_close.png'}}},
+                            ['440x440_gray_nsel.png'])
+        self.assertNotIn('close', index['files']['440x440'])
+
+    def _shockwave_like(self):
+        p = designsys.load('afterburn')
+        p['kit'] = dict(p['kit'], thumbs='Shockwave/Slider')
+        p['defaults'] = dict(p['defaults'], slider=dict(
+            p['defaults']['slider'], thumb_image='156x102_sw_thumb.png',
+            track_image='156x1026_sw_track_bg.png', fill_image='156x1026_sw_fill.png'))
+        if not designsys.kit_root(p, 'thumbs'):
+            self.skipTest("Extron's Shockwave kit is not installed here")
+        return p
+
+    def test_a_thumb_can_be_one_file_for_every_scheme(self):
+        """Shockwave, Mach and Turbulence draw one thumb whatever the accent;
+        only Afterburn's comes in the scheme's secondary color."""
+        p = self._shockwave_like()
+        for s in p['schemes']:
+            self.assertEqual(designsys.slider_thumb(p, s['id']),
+                             ('156x102_sw_thumb.png', 'Shockwave/Slider/156x102_sw_thumb.png'))
+
+    def test_a_rail_can_be_drawn_from_images(self):
+        p = self._shockwave_like()
+        art = designsys.rail_art(p)
+        self.assertEqual(sorted(art), ['fill', 'track'])
+        self.assertTrue(all(v.startswith('data:image/webp;base64,') for v in art.values()))
+
+
+class TestExtract(unittest.TestCase):
+    """Turbulence ships no Resources folder: its images live only inside its
+    templates, and Mach's slider art only inside its seed. Extracted to disk,
+    they are a kit like any other."""
+
+    def test_a_projects_images_come_out_as_png_files(self):
+        seed = os.path.join(REPO, 'seeds', 'Turbulence 1035.gdl')
+        if not usable(seed):
+            self.skipTest('seed not present (git lfs pull)')
+        with tempfile.TemporaryDirectory() as d:
+            written = designsys.extract_images([seed], d)
+            names = set(os.listdir(d))
+            self.assertIn('440x440_close_nsel.png', names)
+            self.assertEqual(len(written), len(names))
+            # Only named image files: the project's own defaults
+            # ('Button', 'Slider Thumb') are not kit art.
+            self.assertTrue(all(n.endswith('.png') for n in names))
+            with open(os.path.join(d, '440x440_close_nsel.png'), 'rb') as fh:
+                self.assertEqual(fh.read(8), b'\x89PNG\r\n\x1a\n')
+
+    def test_a_profile_names_where_its_images_come_from(self):
+        """A seed by its repo path; Extron's templates by a name pattern,
+        wherever this machine keeps them."""
+        p = {'kit': {'extract': {'from': ['seeds/Turbulence 1035.gdl',
+                                          'Turbulence * Series.glt'],
+                                 'to': 'Turbulence/Extracted'}}}
+        found = designsys.extract_sources(p)
+        self.assertIn(os.path.join(REPO, 'seeds', 'Turbulence 1035.gdl'), found)
+        glts = [f for f in found if f.endswith('.glt')]
+        if not glts:
+            self.skipTest("Extron's TouchLink templates are not installed here")
+        self.assertTrue(all(os.path.basename(f).startswith('Turbulence ') for f in glts))
+
+    def test_extracting_again_writes_nothing_new(self):
+        seed = os.path.join(REPO, 'seeds', 'Turbulence 1035.gdl')
+        if not usable(seed):
+            self.skipTest('seed not present (git lfs pull)')
+        with tempfile.TemporaryDirectory() as d:
+            designsys.extract_images([seed], d)
+            self.assertEqual(designsys.extract_images([seed], d), [])
 
 
 class TestBundle(unittest.TestCase):
@@ -230,6 +579,17 @@ class TestBuild(unittest.TestCase):
                           encoding='utf-8') as fh:
                     self.assertTrue(fh.readline().startswith('<!-- @dsCard'), n)
 
+    def test_the_readme_says_help_is_a_modal(self):
+        """Extron's own templates draw Help, confirmations and a room's control
+        subsets as full-screen modals over the page; a page flip is for a mode
+        of the room. Left unsaid, Claude Design drew Help as a page."""
+        text = designsys.readme(designsys.load('afterburn'))
+        popups = next(line for line in text.splitlines() if line.startswith('- **Popups.**'))
+        self.assertIn('Help', popups)
+        self.assertIn('modal', popups)
+        # The owner's rule, unchanged: nothing forces a confirmation.
+        self.assertIn('not a rule', popups)
+
     def test_a_revision_keeps_the_pages_keys(self):
         with tempfile.TemporaryDirectory() as d:
             old = {'createdOnFiles': {'v': 1, 'at': 'then'}, 'sections': {'x': 'y'},
@@ -240,6 +600,41 @@ class TestBuild(unittest.TestCase):
             self.assertEqual(idx['createdOnFiles']['at'], 'then')
             self.assertEqual(idx['sections'], {'x': 'y'})
             self.assertEqual(idx['lastChange']['at'], 'now')
+
+
+class TestPreviews(unittest.TestCase):
+    """What the published system shows a designer, for every template."""
+
+    def test_no_template_names_a_color_it_lacks(self):
+        """A color name the template does not have paints #FF00FF, on purpose,
+        so it is seen. Turbulence's Panel preview filled with `pressed` and its
+        PopupRegion drew in `text-secondary` - neither is Turbulence's."""
+        js = designsys._read('bundle.js')
+        literal = set(re.findall(r"paint\([^,()]+,\s*'([a-z][a-z-]*)'\)", js))
+        for t in designsys.TEMPLATES:
+            p = designsys.load(t)
+            have = {c['name'] for c in p['colors']}
+            used = set(literal)
+            for src in designsys.previews(p).values():
+                used |= set(re.findall(r'\b(?:fill|stroke|color): "([a-z][a-z-]*)"', src))
+            self.assertEqual(used - have - {'none'}, set(), t)
+
+    def test_a_panel_preview_shows_its_fills_over_the_templates_page(self):
+        """Turbulence's panel is `page`, so drawn on the page's own color it was
+        not there at all."""
+        src = designsys.previews(designsys.load('turbulence'))['Panel']
+        self.assertIn('N.Page', src)
+        self.assertEqual(re.findall(r'fill: "([a-z-]+)"', src), ['page', 'shade', 'raised'])
+
+    def test_an_image_variant_previews_at_its_seeds_size(self):
+        """Turbulence's square tile is 87 by 90 in its seed and its ring 100;
+        the preview drew both 64 tall with captions at full size, so 'Button'
+        spilled past its tile - and a designer copying it would too."""
+        p = designsys.load('turbulence')
+        sizes = {x[0]: (x[2], x[3]) for x in designsys._preview_images(p)}
+        self.assertEqual((sizes['button'], sizes['ring'], sizes['source']),
+                         ((87, 90), (100, 100), (127, 133)))
+        self.assertIn('The seed draws it 87x90.', designsys.component_docs(p)['Button'])
 
 
 if __name__ == '__main__':

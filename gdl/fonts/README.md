@@ -68,10 +68,14 @@ The embedded face is the one GUI Designer rasterized the ground-truth snapshots
 with; the system copy is whatever build the OS happens to ship. Windows 11's
 `arial.ttf` is 1,016,724 bytes against the fixture's 778,580.
 
-## Missing faces fail loudly, not quietly
+## A missing face is said aloud
 
-`face()` raises `LookupError` on the first face it cannot resolve. It does not
-degrade to a wrong score. The exception is a host that has Arial installed
-(Windows, macOS), where a missing embedded face does silently resolve to the
-system Arial — there, and only there, the harness will report a confident
-meaningless number.
+`face()` takes a face from the files recovered here first, then from the host's
+fonts, and raises `LookupError` only when neither has it. A face missing here
+draws in a stand-in: the recovered Arial, after a partial recovery, or the
+host's copy - and on a host with Arial installed (Windows, macOS) the host's
+Arial stands in for every face, so a checkout that skipped recovery renders on
+it and scores worse - the render baseline reads 2.81% instead of 2.19%.
+`gdl.compose.FALLBACKS` records every face drawn in anything but its own
+recovered file, and `tests/score.py record` refuses to write a score over one,
+naming the recovery loop above.

@@ -56,6 +56,15 @@ BTN = dict(kind='button', name='HelpBtn', text='Help', fill='raised', stroke='te
 
 
 class TestTranslate(unittest.TestCase):
+    def test_a_page_background_is_laid_out_as_its_template_lays_it(self):
+        """Mach stretches its 3:2 photo over the page; Afterburn fits its own."""
+        for template, want in (('Mach', 'stretch'), ('Afterburn', None)):
+            pg = json.dumps({'kind': 'page', 'name': 'Home', 'template': template,
+                             'scheme': 'default' if template == 'Mach' else 'orange',
+                             'background': 'page', 'background_image': 'x.png', 'start': True})
+            spec, _, _ = translate({'Home.dc.html': out(pg)})
+            self.assertEqual(spec['pages'][0].get('background_layout'), want, template)
+
     def test_boards_become_pages_with_their_controls(self):
         spec, problems, _ = translate({
             'Home.dc.html': out(HOME, ctl([1040.2, 24, 199.6, 64], **dict(BTN, nav='Help'))),
@@ -222,8 +231,13 @@ class TestInChrome(unittest.TestCase):
     def test_the_huddle_canvas_translates_and_checks_clean(self):
         spec, problems, _ = design.Canvas(self.dir).translate()
         self.assertEqual(problems, [])
-        self.assertEqual([p['name'] for p in spec['pages']], ['Huddle Home', 'Huddle Help'])
+        self.assertEqual([p['name'] for p in spec['pages']], ['Huddle Home'])
+        # Help is a modal, as Extron's own templates draw it: a card over the
+        # dimmed page, not a page flip.
+        modals = {p['name'] for p in spec['popups'] if p.get('modal')}
+        self.assertEqual(modals, {'Huddle Help', 'Confirm Room Off'})
         home = {c['name']: c for c in spec['pages'][0]['controls']}
+        self.assertEqual(home['HelpBtn']['nav'], 'Huddle Help')
         # A flex cell inside the MainArea, measured after layout: three 110 px
         # sources spread across 440 at 238,330, offset by the squircle's 183,24.
         self.assertEqual(home['Wireless']['rect'], [586, 354, 110, 110])
@@ -243,6 +257,100 @@ class TestInChrome(unittest.TestCase):
             self.assertIn(slider['thumb_image'], spec['images'])
         # A left clock says so: the spec's own default is center.
         self.assertEqual(home['Date']['align'], 'left')
+        self.assertEqual(Panel(spec).check(), [])
+
+    def _translate(self, template, data):
+        """A checked-in canvas laid out with `template`'s current bundle."""
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        shutil.copytree(os.path.join(HERE, 'data', data), d, dirs_exist_ok=True)
+        shutil.copy(RUNTIME, os.path.join(d, 'support.js'))
+        p = designsys.load(template)
+        comps = os.path.join(d, 'ds', p['namespace'].lower(), 'components')
+        os.makedirs(comps)
+        with open(os.path.join(comps, 'bundle.js'), 'w', encoding='utf-8') as fh:
+            fh.write(designsys.bundle(p, art=False))
+        with open(os.path.join(comps, 'bundle.css'), 'w', encoding='utf-8') as fh:
+            fh.write(designsys.BUNDLE_CSS)
+        return p, design.Canvas(d).translate()
+
+    def test_mach_source_tiles_carry_their_names(self):
+        """The kit's 440x440 source art sits high in the tile to leave the
+        caption room below it, so the name goes on the tile: a Label under a
+        captionless tile leaves the icon off-center (owner's review)."""
+        p, (spec, problems, _) = self._translate('mach', 'design-huddle-mach')
+        self.assertEqual(problems, [])
+        home = {c['name']: c for c in spec['pages'][0]['controls']}
+        # Three line breaks down, as the seed's 150x150 Camera 1 reaches its caption.
+        self.assertEqual([home[n].get('text') for n in ('Laptop', 'Wireless', 'RoomPC')],
+                         ['\r\n\r\n\r\nLaptop', '\r\n\r\n\r\nWireless', '\r\n\r\n\r\nRoom PC'])
+        self.assertFalse({'LaptopLabel', 'WirelessLabel', 'PCLabel'} & set(home))
+        self.assertEqual(Panel(spec).check(), [])
+
+    def test_the_shockwave_canvas_translates_and_checks_clean(self):
+        """Shockwave's buttons are its kit's images, one per state."""
+        p, (spec, problems, _) = self._translate('shockwave', 'design-huddle-shockwave')
+        if not designsys.kit_root(p):
+            self.skipTest("Extron's Shockwave kit is not installed here")
+        self.assertEqual(problems, [])
+        home = {c['name']: c for c in spec['pages'][0]['controls']}
+        # The source tabs are centered on the page (owner's review).
+        left, right = home['Laptop']['rect'], home['RoomPC']['rect']
+        self.assertEqual(left[0] + (right[0] + right[2]), 1280)
+        # At rest a button is its color's ring, lit its color's fill.
+        self.assertEqual([s['image'] for s in home['RoomOff']['states']],
+                         ['960x440_red_outline_nsel.png', '960x440_red_sel.png'])
+        # A state can change color: Warming lights yellow.
+        self.assertEqual([s['image'] for s in home['Display']['states']],
+                         ['712x440_gray_nsel.png', '712x440_yellow_sel.png',
+                          '712x440_gray_sel.png', '712x440_yellow_outline_nsel.png'])
+        # The kit's icon sits at the left and the caption is centered past it,
+        # pushed right by leading spaces, as the seed's Accept Call is.
+        self.assertEqual(home['EndCall'].get('align', 'center'), 'center')  # the spec's default
+        self.assertEqual(home['EndCall']['text'], ' ' * 11 + 'End Call')
+        # The thumb is 52 across and 34 along the rail, as the kit draws it.
+        self.assertEqual((home['VolumeSlider']['thumb'], home['VolumeSlider']['thumb_height']), (52, 34))
+        # The rail is the kit's art too, and reaches the build with its files.
+        rail = (home['VolumeSlider'].get('track_image'), home['VolumeSlider'].get('fill_image'))
+        self.assertEqual(rail, ('156x1026_sw_track_bg.png', '156x1026_sw_fill.png'))
+        self.assertEqual(spec['images']['156x1026_sw_fill.png'], 'Shockwave/Slider/156x1026_sw_fill.png')
+        close = {c['name']: c for c in spec['popups'][0]['controls']}['Close']
+        self.assertEqual([s['image'] for s in close['states']], ['black_close.png', 'white_close.png'])
+        self.assertEqual(spec['images']['white_close.png'], 'Shockwave/icons/440x440 White/white_close.png')
+        self.assertEqual(Panel(spec).check(), [])
+
+    def test_the_turbulence_canvas_translates_and_checks_clean(self):
+        """Turbulence's art lives only in its seed and templates, and Extron
+        named a fifth of its pairs apart - each state must still get its own."""
+        p, (spec, problems, _) = self._translate('turbulence', 'design-huddle-turbulence')
+        if not designsys.kit_root(p):
+            self.skipTest("Turbulence's art is not extracted here (python -m gdl.designsys extract turbulence)")
+        self.assertEqual(problems, [])
+        home = {c['name']: c for c in spec['pages'][0]['controls']}
+
+        def images(c):
+            return [s['image'] for s in c['states']]
+
+        # Pairs the file names do not make: a ring that rests white and lights
+        # green, a source tile that rests solid.
+        self.assertEqual(images(home['Mute']), ['440x440_volume_mute_white_nsel.png',
+                                                '440x440_volume_mute_sel.png'])
+        self.assertEqual(images(home['Laptop']), ['504x504_input_laptop_solid_text_nsel.png',
+                                                  '504x504_input_laptop_text_sel.png'])
+        # The seed's captions: two breaks under a source's glyph, one under a call's.
+        self.assertEqual(home['Laptop']['text'], '\r\n\r\nLaptop')
+        self.assertEqual(home['EndCall']['text'], '\r\nEnd Call')
+        # The confirmation's Power Down rests green, as the seed's does.
+        confirm = {c['name']: c for c in spec['popups'][1]['controls']}
+        self.assertEqual(images(confirm['ShutDown']), ['440x440_vc_power-dn_green_nsel.png',
+                                                       '440x440_vc_power-dn_sel.png'])
+        # The rail is art: it reaches the spec with its files, from vendor/.
+        slider = home['VolumeSlider']
+        self.assertEqual((slider['track_image'], slider['fill_image'], slider['thumb_image']),
+                         ('52x535_turb_slider_bg.png', '52x535_turb_slider_fill.png',
+                          '102x102_thumb_turb_sq.png'))
+        self.assertEqual(spec['images']['52x535_turb_slider_bg.png'],
+                         'Turbulence/52x535_turb_slider_bg.png')
         self.assertEqual(Panel(spec).check(), [])
 
     def test_a_held_button_draws_its_press_state(self):

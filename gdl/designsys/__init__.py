@@ -19,7 +19,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATES = ('afterburn',)
+TEMPLATES = ('afterburn', 'mach', 'shockwave', 'turbulence')
 
 # Token and style names the Design System page accepts; anything else drops.
 NAME = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$')
@@ -144,16 +144,21 @@ KIT_COLORS = ('light-blue', 'med-blue', 'light-green', 'periwinkle', 'orange', '
               'red', 'gray')
 # Spelled so in Extron's Afterburn kit.
 KIT_TYPOS = {'ligh-blue': 'light-blue', 'ornage': 'orange'}
-_KIT_FILE = re.compile(r'^(\d+x\d+)_([^ ]+)\.png$', re.I)
+# A space before `.png` is Extron's too: 23 of Shockwave's are named
+# '440x440_help_yellow_sel .png', and a stricter pattern dropped them unseen.
+_KIT_FILE = re.compile(r'^(\d+x\d+)_([^ ]+) *\.png$', re.I)
 _KIT_COLOR = re.compile(r'[-_](' + '|'.join(KIT_COLORS + tuple(KIT_TYPOS)) + r')(?=$|[-_])')
 
 
-def kit_look(stem):
+def kit_look(stem, colors=True):
     """A kit file's stem (no size, no .png) -> (icon, look).
 
     'laptop_nsel' -> ('laptop', 'off'); 'laptop-orange_sel' -> ('laptop',
     'orange'); 'speaker-volume-periwinkle_3' -> ('speaker-volume_3',
     'periwinkle'); 'power' -> ('power', 'plain'); 'stop_sel' -> ('stop', 'sel').
+    With `colors` off, a color stays in the icon's name ('r_power_red_sel' ->
+    ('r_power_red', 'sel')): in Shockwave's kit it is the button's own color,
+    drawn both off and selected, not an accent scheme's.
     """
     look = None
     for suffix, what in (('_nsel', 'off'), ('-nsel', 'off'), ('_sel', 'sel'), ('-sel', 'sel')):
@@ -162,23 +167,28 @@ def kit_look(stem):
             break
     # A color wins over the suffix: the kit spells a few selected images
     # `-<color>_nsel` (756x756_dual-display-1-gold_nsel.png).
-    m = _KIT_COLOR.search(stem)
+    m = _KIT_COLOR.search(stem) if colors else None
     if m:
         stem, look = stem[:m.start()] + stem[m.end():], KIT_TYPOS.get(m.group(1), m.group(1))
     return stem, look or 'plain'
 
 
-def kit_root(p, part='root'):
-    """A part of the template's kit on this machine, or None: `root` its
-    buttons, `thumbs` its slider thumbs."""
-    from ..spec import RESOURCE_ROOTS
+def kit_roots(p, part='root'):
+    """Every copy of a part of the template's kit on this machine, in resource-
+    root order: `root` its buttons, `thumbs` its slider thumbs. More than one
+    when vendor/ holds a slice - extracted art, or part of a kit - beside the
+    install's whole one."""
+    from .. import spec
     if not (p.get('kit') or {}).get(part):
-        return None
-    for root in RESOURCE_ROOTS:
-        d = os.path.join(root, *p['kit'][part].split('/'))
-        if os.path.isdir(d):
-            return d
-    return None
+        return []
+    return [d for d in (os.path.join(root, *p['kit'][part].split('/'))
+                        for root in spec.RESOURCE_ROOTS) if os.path.isdir(d)]
+
+
+def kit_root(p, part='root'):
+    """The first copy of a part of the template's kit, or None."""
+    roots = kit_roots(p, part)
+    return roots[0] if roots else None
 
 
 def kit_index(p, part='root'):
@@ -188,33 +198,161 @@ def kit_index(p, part='root'):
     them. Empty where the kit is not installed.
     """
     files, paths = {}, {}
-    root = kit_root(p, part)
-    if not root:
-        return {'files': files, 'paths': paths}
-    for d, _, names in sorted(os.walk(root)):
-        for f in sorted(names):
-            m = _KIT_FILE.match(f)
-            if not m:
-                continue
-            size, stem = m.groups()
-            icon, look = kit_look(stem)
-            # Two files can read as one look: the Afterburn kit has
-            # 1224x344_record_red.png beside 1224x344_record_red_sel.png. The
-            # selected one is what a state asks for, so it wins, and the
-            # other is named rather than dropped silently.
-            looks = files.setdefault(size, {}).setdefault(icon, {})
-            prev = looks.get(look)
-            if prev and prev != f:
-                keep, drop = ((f, prev) if re.search(r'[-_]sel$', stem)
-                              and not re.search(r'[-_]sel\.png$', prev) else (prev, f))
-                print(f'  note: {drop} reads as {size} {icon!r} {look!r}, as {keep} '
-                      f'does - {keep} is used')
-                looks[look] = keep
-            else:
-                looks[look] = f
-            rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
-            paths.setdefault(f, p['kit'][part] + '/' + rel)
+    outline = (p.get('kit') or {}).get('outline_off')
+    # Every root that has the kit, the first winning a name two have: a slice
+    # in vendor/ must add to the install's kit, not hide it.
+    for root in kit_roots(p, part):
+        for d, _, names in sorted(os.walk(root)):
+            for f in sorted(names):
+                m = _KIT_FILE.match(f)
+                if not m or f in paths:
+                    continue
+                size, stem = m.groups()
+                # Shockwave spells one family blue__round beside blue_round.
+                icon, look = kit_look(re.sub('_{2,}', '_', stem), colors=not outline)
+                # Two files can read as one look: the Afterburn kit has
+                # 1224x344_record_red.png beside 1224x344_record_red_sel.png.
+                # The selected one is what a state asks for, so it wins, and
+                # the other is named rather than dropped silently.
+                looks = files.setdefault(size, {}).setdefault(icon, {})
+                prev = looks.get(look)
+                if prev and prev != f:
+                    keep, drop = ((f, prev) if re.search(r'[-_]sel$', stem)
+                                  and not re.search(r'[-_]sel\.png$', prev) else (prev, f))
+                    print(f'  note: {drop} reads as {size} {icon!r} {look!r}, as {keep} '
+                          f'does - {keep} is used')
+                    looks[look] = keep
+                else:
+                    looks[look] = f
+                rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
+                paths[f] = p['kit'][part] + '/' + rel
+    if outline:
+        # Shockwave's buttons rest dark with a colored ring and light up when
+        # selected, so a family's Off is its `_outline` twin: red's is
+        # red_outline_nsel, r_power_red's r_power_outline_red_nsel. Its plain
+        # red_nsel is a saturated solid no seed button rests in. Gray has no
+        # twin and keeps its own. 504x440's share buttons spell it first
+        # (outline_share-1b_blue_nsel).
+        twin = re.compile(r'^outline_|_outline(?=$|_)')
+        for looks in files.values():
+            for name in [n for n in looks if twin.search(n)]:
+                base = twin.sub('', name)
+                if base in looks and 'off' in looks[name]:
+                    looks[base]['off'] = looks[name].pop('off')
+                    if not looks[name]:
+                        del looks[name]
+    # Files the size prefix misses, named by the profile - one file, or one
+    # per look: Shockwave's modal Close is icons/440x440 Black/black_close.png
+    # at rest and icons/440x440 White/white_close.png pressed.
+    for size, named in (((p.get('kit') or {}).get('named') or {}).items() if part == 'root' else ()):
+        for icon, want in named.items():
+            looks = {}
+            for look, name in (want.items() if isinstance(want, dict) else (('plain', want),)):
+                path = _kit_file(p, part, name)
+                if path:
+                    looks[look] = name
+                    paths[name] = path
+            if looks:
+                family = files.setdefault(size, {})
+                # A pair the pattern cannot make - Turbulence's outline_01 at
+                # rest, round_01 lit - was already filed as two half icons,
+                # each drawing its one file in both states. Named as one,
+                # neither half is offered.
+                mine = set(looks.values())
+                for other in [k for k, v in family.items() if k != icon and set(v.values()) <= mine]:
+                    del family[other]
+                family[icon] = looks
     return {'files': files, 'paths': paths}
+
+
+def _kit_file(p, part, name):
+    """A file's kit path under one part of the kit, whatever its naming - a
+    slider's art need not follow the '<W>x<H>_' pattern (Mach's does not)."""
+    for root in kit_roots(p, part):
+        for d, _, names in os.walk(root):
+            if name in names:
+                rel = os.path.relpath(os.path.join(d, name), root).replace(os.sep, '/')
+                return p['kit'][part] + '/' + rel
+    return None
+
+
+def rail_art(p):
+    """{'track': data URI, 'fill': data URI} - a slider's rail drawn from the
+    kit's own images, where the template draws it so (Shockwave, Turbulence,
+    Mach) rather than as two colors (Afterburn). Empty without Pillow or art."""
+    d = (p.get('defaults') or {}).get('slider') or {}
+    want = {k: d.get(k + '_image') for k in ('track', 'fill') if d.get(k + '_image')}
+    if not want:
+        return {}
+    try:
+        from PIL import Image
+    except ImportError:
+        return {}
+    from ..spec import resolve_image
+    out = {}
+    for k, name in want.items():
+        f = resolve_image(_kit_file(p, 'thumbs', name))
+        if f:
+            with Image.open(f) as im:
+                w = max(8, round(im.width * 400 / max(im.height, 1))) if im.height > im.width else 400
+            out[k] = _webp(Image, f, w)
+    return out
+
+
+def extract_sources(p):
+    """The files a profile's `kit.extract.from` names, as found on this machine:
+    a `seeds/...` path from the repo, or a name pattern matched against
+    Extron's TouchLink templates beside each resource root."""
+    import glob
+    from ..spec import RESOURCE_ROOTS
+    repo = os.path.dirname(os.path.dirname(HERE))
+    out = []
+    for entry in ((p.get('kit') or {}).get('extract') or {}).get('from') or []:
+        if entry.startswith('seeds/'):
+            f = os.path.join(repo, *entry.split('/'))
+            if os.path.exists(f):
+                out.append(f)
+            continue
+        for root in RESOURCE_ROOTS:
+            hits = sorted(glob.glob(os.path.join(os.path.dirname(root), 'TouchLink Templates', entry)))
+            if hits:
+                out += hits
+                break
+    return out
+
+
+def extract_images(sources, out):
+    """Write every named image resource in `sources` (.gdl or .glt) to `out`.
+
+    Turbulence has no kit beside the others in 1.28's Resources, and the
+    library under Sample Projects\\Resources\\Turbulence is a separate one: it
+    lacks a fifth of what the seed draws (its source tabs, slider, header and
+    footer) and draws the On and Off rings differently. Its seed and six
+    TouchLink templates carry the art the panels use. Mach's slider art lives
+    only inside its seed. A resource's data is the PNG file itself
+    (System.Drawing.Bitmap's Data), so written to disk under a resource root
+    it is a kit like any other, and a spec's `images` resolves it. The
+    project's own defaults ('Button',
+    'Slider Thumb', an .ico) are not kit art and are left behind. The first
+    source to name a file wins; returns the files written.
+    """
+    from ..project import Project
+    os.makedirs(out, exist_ok=True)
+    written = []
+    for src in sources:
+        p = Project.open(src)
+        for r in p.instances('PBImageResource'):
+            name = p.field(r, 'nameField')
+            data = p.deref((p.field(r, 'dataField') or {}).get('Data'))
+            if not (isinstance(name, str) and name.lower().endswith('.png') and data):
+                continue
+            path = os.path.join(out, name)
+            if os.path.exists(path):
+                continue
+            with open(path, 'wb') as fh:
+                fh.write(bytes(data))
+            written.append(name)
+    return written
 
 
 # kit root -> kit_art()'s result. A thousand WebP encodes take most of a
@@ -232,6 +370,10 @@ def slider_thumb(p, scheme):
     family = ((p.get('defaults') or {}).get('slider') or {}).get('thumb_image')
     if not family:
         return None
+    if family.lower().endswith('.png'):
+        # One thumb whatever the accent - Mach, Shockwave and Turbulence.
+        f = _kit_file(p, 'thumbs', family)
+        return (family, f) if f else None
     index = kit_index(p, 'thumbs')
     for icons in index['files'].values():
         looks = icons.get(family) or {}
@@ -239,6 +381,19 @@ def slider_thumb(p, scheme):
         if f:
             return f, index['paths'][f]
     return None
+
+
+def slider_rail(p):
+    """{'track_image': (file, kit path), 'fill_image': ...} - a slider's rail,
+    where the template draws it from art rather than two colors, for the
+    build as rail_art() gives it to the canvas. Only the files found here."""
+    d = (p.get('defaults') or {}).get('slider') or {}
+    out = {}
+    for k in ('track_image', 'fill_image'):
+        f = _kit_file(p, 'thumbs', d[k]) if d.get(k) else None
+        if f:
+            out[k] = (d[k], f)
+    return out
 
 
 def kit_art(p, index):
@@ -254,10 +409,11 @@ def kit_art(p, index):
     except ImportError:
         print("  note: no Pillow - the system carries no kit art, so its icons do not draw")
         return {}
-    root = kit_root(p)
-    if root in _ART:
-        return _ART[root]
-    out = _ART[root] = {}
+    from ..spec import resolve_image
+    key = (p.get('template'), tuple(kit_roots(p)))
+    if key in _ART:
+        return _ART[key]
+    out = _ART[key] = {}
     scale = p['kit'].get('scale') or {}
     for size, icons in index['files'].items():
         w = scale.get(size, 160)
@@ -265,9 +421,8 @@ def kit_art(p, index):
             for f in looks.values():
                 if f in out:
                     continue
-                rel = index['paths'][f][len(p['kit']['root']) + 1:]
-                path = os.path.join(root, *rel.split('/'))
-                out[f] = _webp(Image, path, w)
+                # Through the resource roots, since a file may come from any.
+                out[f] = _webp(Image, resolve_image(index['paths'][f]), w)
     return out
 
 
@@ -315,14 +470,29 @@ def bundle(p, art=True):
     profile['backdrops'] = backdrops(p)
     if p.get('kit'):
         index = kit_index(p)
+        # Art that comes out of Extron's own files is in neither the install
+        # nor a fresh vendor/ until extracted - Turbulence's, Mach's slider.
+        extract = (f" - run `python -m gdl.designsys extract {p['template'].lower()}` "
+                   f'first' if p['kit'].get('extract') else '')
         if not index['files']:
             # Said aloud: without it the build looks normal, and the system
             # it publishes names no icons and draws none.
             print(f"  note: the {p['template']} kit is not installed here (GUI Designer's "
-                  "install or vendor/) - the system names no icons and draws none")
+                  f"install or vendor/){extract} - the system names no icons and draws none")
+        # And so is a kit whose buttons are here but not its slider's part:
+        # the system publishes with its sliders drawn plain.
+        d = (p.get('defaults') or {}).get('slider') or {}
+        found = slider_rail(p)
+        lacking = [d[k] for k in ('track_image', 'fill_image') if d.get(k) and k not in found]
+        if d.get('thumb_image') and not any(slider_thumb(p, s['id']) for s in p['schemes']):
+            lacking.append(d['thumb_image'])
+        if lacking and index['files']:
+            print(f"  note: the {p['template']} slider art ({', '.join(lacking)}) is not on "
+                  f'this machine{extract} - the system draws its sliders plain')
         profile['kit'] = dict(p['kit'], files=index['files'],
                               art=kit_art(p, index) if art and index['files'] else {},
-                              thumb_art=thumb_art(p) if art else {})
+                              thumb_art=thumb_art(p) if art else {},
+                              rail_art=rail_art(p) if art else {})
     js = _read('bundle.js')
     for mark, value in (('__HEADER__', header),
                         ('__PROFILE__', json.dumps(profile, separators=(',', ':')))):
@@ -363,20 +533,25 @@ def icon_names(p):
     from the kit on this machine. Empty where the kit is not installed."""
     files = kit_index(p)['files']
     out = {}
-    # A variant with an icon of its own (a toggle's `toggle-1`) takes that
-    # family, and only it; the others sharing its kit size leave it out.
-    claimed = {}
+    # A variant naming `icons` (a toggle's `toggle`) takes the families that
+    # start so, and only them; the others sharing its kit size leave them out.
+    # A list names several - Turbulence's rings are round_NN, on, off. An
+    # `icon` alone is only what the variant draws unless told otherwise:
+    # Shockwave's `button` is gray by default and offers every color.
+    claimed, taken = {}, {}
     for k, v in p['buttons'].items():
-        if v.get('kit') and v.get('icon'):
-            family = v['icon'].rsplit('-', 1)[0]
-            claimed[k] = sorted(n for n in files.get(v['kit'], {}) if n.startswith(family))
-    taken = {n for names in claimed.values() for n in names}
+        if v.get('kit') and v.get('icons'):
+            want = v['icons'] if isinstance(v['icons'], str) else tuple(v['icons'])
+            claimed[k] = sorted(n for n in files.get(v['kit'], {}) if n.startswith(want))
+            # A claim holds at its own size: Turbulence's 900x648 scene
+            # pictures share names with its 504x504 source tabs.
+            taken.setdefault(v['kit'], set()).update(claimed[k])
     for k, v in p['buttons'].items():
         size = v.get('kit') or (v.get('with_icon') or {}).get('kit')
         if k in claimed:
             out[k] = claimed[k]
         elif size and files.get(size):
-            out[k] = sorted(set(files[size]) - taken)
+            out[k] = sorted(set(files[size]) - taken.get(size, set()))
     return out
 
 
@@ -388,10 +563,73 @@ def _icons_md(p):
     return '\n'.join(f"- `{k}`: {', '.join(f'`{n}`' for n in v)}" for k, v in names.items())
 
 
+def _ratio(size):
+    """'1224x344' -> '3.6:1'."""
+    w, h = (int(n) for n in size.split('x'))
+    r = w / h
+    return '1:1' if abs(r - 1) < 0.1 else f'{r:.1f}:1'
+
+
+def _image_buttons(p):
+    """[(variant, kit size, caption placement, default icon or None)] for every
+    variant that draws a kit image: its own, or with an icon beside a caption."""
+    out = []
+    for k, v in p['buttons'].items():
+        if v.get('kit'):
+            out.append((k, v['kit'], v.get('caption'), v.get('icon')))
+        elif v.get('with_icon'):
+            out.append((k, v['with_icon']['kit'], v['with_icon'].get('caption'), None))
+    return out
+
+
+def _icon_prop(p):
+    """The Button README's `icon` line: this template's image variants, and
+    how its kit shows state (the profile's own words where it has them)."""
+    own = [f"`{k}`" + (f" (default `{v['icon']}`)" if v.get('icon') else '')
+           for k, v in p['buttons'].items() if v.get('kit')]
+    beside = [f"`{k}`" for k, v in p['buttons'].items() if v.get('with_icon')]
+    where = ' - '.join(filter(None, [
+        f"for the image variants - {', '.join(own)}" if own else '',
+        (f"{'or ' if own else ''}on {', '.join(beside)}, placed with the caption as the "
+         f"variant says" if beside else '')]))
+    how = (p.get('iconography') or {}).get('icon_prop') or (
+        "State 0 draws the kit's image at rest, the others its selected look.")
+    return f"an image from {p['template']}'s resource kit, by name, {where}. {how}"
+
+
+def _example_button(p, key, name, extra=''):
+    ex = p['examples'][key]
+    r = ex['rect']
+    return _x(p, 'Button', f' name="{name}" {ex["attrs"]}{extra}', ex.get('text', name if key == 'source' else ''),
+              f'width: {r[2]}px; height: {r[3]}px')
+
+
 def component_docs(p):
     """{name: README markdown} - guidelines Claude Design reads before mounting."""
     t = p['template']
-    variants = '\n'.join(f"- `{k}`: {v['usage']}" for k, v in p['buttons'].items())
+    # The seed's own size, where the profile records it: a designer drawing a
+    # tile smaller than the template does gets a caption that spills.
+    variants = '\n'.join(f"- `{k}`: {v['usage']}"
+                         + (' The seed draws it {}x{}.'.format(*v['size']) if v.get('size') else '')
+                         for k, v in p['buttons'].items())
+    types = [s['name'] for s in p['type']]
+    by_type = {s['name']: s for s in p['type']}
+    button_types = ' or '.join(
+        f"`{n}` ({by_type[n]['pt']:g} pt{' bold' if by_type[n]['weight'] >= 600 else ''}"
+        f"{', default' if n == p['defaults']['button']['type'] else ''})"
+        for n in types if n.startswith('button'))
+    sub = 'subheading' if 'subheading' in types else 'heading' if 'heading' in types else types[0]
+    tokens = [c['name'] for c in p['colors']]
+    label_colors = ', '.join(f'`{n}`' for n in ('text', 'text-secondary', 'accent', 'ink') if n in tokens)
+    shapes = ', '.join(f"`{k}` {_ratio(size)}" for k, size, _, _ in _image_buttons(p))
+    sl = p['defaults']['slider']
+    if str(sl.get('thumb_image', '')).lower().endswith('.png'):
+        thumb_words = (f"and the template's own thumb image, `thumb` px across (default {sl['thumb']})"
+                       + (f" and {sl['thumb_height']} along the rail" if sl.get('thumb_height') else ''))
+    else:
+        thumb_words = (f"and a round thumb in `{sl['thumb_color']}` whose box is `thumb` px (default "
+                       f"{sl['thumb']}) - the circle itself about two-thirds of that, with a shadow round "
+                       f"it, as the panel draws it")
     return {
         'Page': f"""# Page
 
@@ -417,7 +655,7 @@ Place controls inside it with absolute positions or with flex and grid container
 The {t} page's main region, as a layout container: {_main_words(p)} It paints nothing and is not a control - the page draws the region - so put the page's main task inside it, positioned relative to it or with flex and grid.
 
 ```html
-{_x(p, 'MainArea', '', chr(10) + '  ' + _x(p, 'Label', ' name="Title" type="subheading" align="center"', 'Select a Source', 'position: absolute; left: 0px; top: 190px; width: 100%; height: 60px') + chr(10))}
+{_x(p, 'MainArea', '', chr(10) + '  ' + _x(p, 'Label', f' name="Title" type="{sub}" align="center"', 'Select a Source', 'position: absolute; left: 0px; top: 190px; width: 100%; height: 60px') + chr(10))}
 ```
 """,
         'Button': f"""# Button
@@ -425,12 +663,12 @@ The {t} page's main region, as a layout container: {_main_words(p)} It paints no
 The panel's button: a caption, the states the program switches it between, and what pressing it does. Size it with the x-import's own style; it fills that box, at least {p['touch']}px each way.
 
 Props:
-- The caption is the element's text. `type`: `button` (14 pt, default) or `button-large` (20 pt bold); `size` in points overrides it.
+- The caption is the element's text. `type`: {button_types}; `size` in points overrides it.
 - `variant`:
 {variants}
-- `icon`: an icon from {t}'s resource kit, by name, for the image variants - `source`, `list`, `icon`, `toggle` (default `toggle-1`) - or on an `outlined` button, where it sits left of the caption. The kit draws each icon unselected and selected in every accent, with the selection line where the variant has one, so the button's states show themselves: state 0 unselected, the rest selected in the page's accent. The names, by variant:
+- `icon`: {_icon_prop(p)} The names, by variant:
 {_icons_md(p)}
-- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own icon: a mute button is `speaker-volume_3` when live and `speaker-mute-1` when muted). Off and On start from the variant's look. Every state must look different. {p['examples']['states_note']}
+- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own image, from the variant's list). Off and On start from the variant's look. Every state must look different. {p['examples']['states_note']}
 - `press`: the state shown while the button is held. Default: On, else the second state. The canvas draws it while you hold the button in Play, as the panel does, so give it a look that reads as pressed. It cannot be the state the button rests in, and a button with a single state has nothing to show - give it a second.
 - `nav`: the artboard this button shows, by its file name without `.dc.html` - `nav="Help"` shows `Help.dc.html`. The button becomes that link, so Play follows it.
 - `does`: anything else it does, in a sentence for the programmer: "Routes the laptop to the display; Live while it is routed."
@@ -438,20 +676,19 @@ Props:
 - `name`: the control's name; `id` pins its number.
 - `fill`, `stroke`, `color`, `border` override the variant for every state.
 
-Size an image button to its kit image's shape, or the image is letterboxed: `source` square (110x110 as the seed has them), `icon` square (64x64), `list` and `toggle` about 3.6:1 (192x54), an `outlined` button with an icon 2.4:1 (154x64).
+Size an image button to its kit image's shape, or the image is letterboxed: {shapes}.
 
 ```html
-{_x(p, 'Button', ' name="Laptop" type="button-large" states="Off, On" does="Routes the laptop to the display."', 'Laptop', 'width: 280px; height: 120px')}
-{_x(p, 'Button', ' name="HelpBtn" nav="Help"', 'Help', 'width: 200px; height: 64px')}
-{_x(p, 'Button', ' name="Wireless" variant="source" icon="sharelink-1" states="Off, On" does="Routes wireless presentation to the display."', 'Wireless', 'width: 110px; height: 110px')}
-{_x(p, 'Button', ' name="Power" variant="icon" icon="power" nav="ConfirmOff"', '', 'width: 64px; height: 64px')}
+{_x(p, 'Button', ' name="Display" states="Off, On" does="Turns the display on and off."', 'Display', f"width: 200px; height: {p['defaults']['button']['height']}px")}
+{_example_button(p, 'source', 'Laptop', ' states="Off, On" does="Routes the laptop to the display."')}
+{_example_button(p, 'help', 'HelpBtn', ' nav="Help"')}
 ```
 """,
         'Label': f"""# Label
 
 Text on the panel: a title, a status line, a caption beside a control. It fills its box and centers the text vertically.
 
-Props: the text is the element's text; `type` (`title`, `heading`, `subheading`, `body`, `body-strong`), `size` in points, `bold`, `align` (`left`, `center`, `right`), `color` (a token: `text`, `text-secondary`, `accent`), `name`, `does` - when the program changes the text, say so: "Shows the codec's call status."
+Props: the text is the element's text; `type` ({', '.join(f'`{n}`' for n in types if not n.startswith('button'))}), `size` in points, `bold`, `align` (`left`, `center`, `right`), `color` (a token: {label_colors}), `name`, `does` - when the program changes the text, say so: "Shows the codec's call status."
 
 ```html
 {_x(p, 'Label', ' name="RoomName" type="title"', 'Huddle Room', 'width: 520px; height: 112px')}
@@ -475,10 +712,10 @@ A divider. `orientation` (`horizontal`, default, or `vertical`), `color` (defaul
 """,
         'Slider': f"""# Slider
 
-A control the user drags: volume, a light level. Drawn as {t} builds it: a rounded rail `track` px wide (default {p['defaults']['slider']['track']}) down the middle of the control's box, the rail's filled part in `{p['defaults']['slider']['value']}`, and a round thumb in `{p['defaults']['slider']['thumb_color']}` whose box is `thumb` px (default {p['defaults']['slider']['thumb']}) - the circle itself about two-thirds of that, with a shadow round it, as the panel draws it. The box is the touch area: make it at least as wide as the thumb. `orientation`: the direction the value grows, `{p['defaults']['slider']['orientation']}` by default as {t}'s own volume sliders are (`up`, `down`, `left`, `right`). `fill`: the rail's empty part, default `{p['defaults']['slider']['fill']}` - on a `raised` panel use `page`. `name`, and `does` - what it sets and whether it follows feedback. `value` (0-100) only draws the canvas. The filled part and the thumb come from the template's own slider, so they are not props.
+A control the user drags: volume, a light level. Drawn as {t} builds it: a rounded rail `track` px wide (default {p['defaults']['slider']['track']}) down the middle of the control's box, the rail's filled part in `{p['defaults']['slider']['value']}`, {thumb_words}. The box is the touch area: make it at least as wide as the thumb. `orientation`: the direction the value grows, `{p['defaults']['slider']['orientation']}` by default as {t}'s own volume sliders are (`up`, `down`, `left`, `right`). `fill`: the rail's empty part, default `{p['defaults']['slider']['fill']}` - on a `raised` panel use `page`. `name`, and `does` - what it sets and whether it follows feedback. `value` (0-100) only draws the canvas. The filled part and the thumb come from the template's own slider, so they are not props.
 
 ```html
-{_x(p, 'Slider', ' name="Volume" does="Sets program volume; follows the DSP level."', '', 'width: 50px; height: 395px')}
+{_x(p, 'Slider', ' name="Volume" does="Sets program volume; follows the DSP level."', '', f"width: {max(50, sl['thumb'], p['touch'])}px; height: 395px")}
 ```
 """,
         'Level': f"""# Level
@@ -517,22 +754,80 @@ def _preview(p, comp, height, body):
             f'<body style="margin:0;background:var(--page)">\n<div id="root"></div>\n<script>\n'
             f'  var N = window.{ns}, h = React.createElement;\n'
             f'  function box(w, ht, el) {{ return h("div", {{ style: {{ width: w + "px", height: ht + "px" }} }}, el); }}\n'
+            # Drawn at its own size and scaled down whole, so a caption keeps
+            # its proportion to the art it sits on.
+            '  function fit(w, ht, max, el) { var k = Math.min(1, max / ht); return h("div", { style: { width: w * k + "px", height: ht * k + "px" } }, '
+            'h("div", { style: { width: w + "px", height: ht + "px", transform: "scale(" + k + ")", transformOrigin: "0 0" } }, el)); }\n'
             '  function row(kids) { return h("div", { style: { display: "flex", gap: "24px", padding: "16px", alignItems: "center", flexWrap: "wrap" } }, kids); }\n'
             f'  ReactDOM.createRoot(document.getElementById("root")).render({body});\n'
             '</script>\n</body>\n</html>\n')
+
+
+# The tallest a button is drawn in the Button preview; a taller one is scaled
+# down whole (`fit`), its caption with it.
+PREVIEW_MAX = 110
+
+
+def _preview_images(p):
+    """[variant, icon, w, h, caption] for each image variant's preview: its own
+    default icon or the first its kit has, at the size its seed draws it
+    (`size`), or else at its kit image's shape. Turbulence's 87x90 tile drawn
+    64 tall kept its caption at full size, which spilled past the tile."""
+    names = icon_names(p)
+    out = []
+    for k, size, caption, icon in _image_buttons(p):
+        icon = icon or next(iter(names.get(k) or []), None)
+        text = '' if caption == 'none' else 'Laptop' if caption == 'below' else k.capitalize()
+        seed = p['buttons'][k].get('size')
+        if seed:
+            w, ht = seed
+        else:
+            w, h = (int(n) for n in size.split('x'))
+            ht = 110 if caption == 'below' else 64
+            w = min(260, round(ht * w / h))
+        out.append([k, icon, w, ht, text])
+    return out
+
+
+def _panel_fills(p):
+    """The default panel fill and up to two of the template's other surface
+    colors, for the Panel preview - only names the template has: Turbulence
+    has no `pressed`, which painted the preview magenta."""
+    names = {c['name'] for c in p['colors']}
+    default = p['defaults']['panel']['fill']
+    alt = [n for n in ('pressed', 'shade', 'raised', 'rail', 'well') if n in names and n != default]
+    return [default] + alt[:2]
+
+
+def _button_preview_height(p, width=1100):
+    """The Button card's height: its boxes in rows as the preview's flex row
+    wraps them, on a card about `width` wide."""
+    boxes = [(180, 64)] * 2 * sum(1 for v in p['buttons'].values() if not v.get('kit'))
+    for _, _, w, ht, _ in _preview_images(p):
+        k = min(1, PREVIEW_MAX / ht)
+        boxes += [(round(w * k), round(ht * k))] * 2
+    rows, x, tall = [], 16, 0
+    for w, ht in boxes:
+        if x > 16 and x + w > width - 16:
+            rows.append(tall)
+            x, tall = 16, 0
+        x, tall = x + w + 24, max(tall, ht)
+    rows.append(tall)
+    return sum(rows) + 24 * (len(rows) - 1) + 32
 
 
 def previews(p):
     heights = {n: ht for n, _, ht in COMPONENTS}
     s = p['size']
     scale = 0.12
+    fills = _panel_fills(p)
     b = {
         'Page': ('h("div", { style: { transform: "scale(' + str(scale) + ')", transformOrigin: "0 0", width: "'
                  + str(s[0]) + 'px", margin: "16px" } }, h(N.Page, { name: "Home" }, '
                  'h("div", { style: { position: "absolute", left: "40px", top: "40px", width: "1200px", height: "112px" } }, '
                  'h(N.Label, { type: "title" }, "Huddle Room")), '
                  'h("div", { style: { position: "absolute", left: "40px", top: "200px", width: "360px", height: "200px" } }, '
-                 'h(N.Button, { type: "button-large" }, "Laptop"))))'),
+                 'h(N.Button, null, "Laptop"))))'),
         'MainArea': ('h("div", { style: { transform: "scale(' + str(scale) + ')", transformOrigin: "0 0", width: "'
                      + str(s[0]) + 'px", margin: "16px" } }, h(N.Page, { name: "Home" }, '
                      'h(N.MainArea, null, h("div", { style: { position: "absolute", left: 0, right: 0, top: "300px", height: "120px" } }, '
@@ -540,19 +835,27 @@ def previews(p):
         'Button': ('row(Object.keys(N.profile.buttons).filter(function (v) { return !N.profile.buttons[v].kit; })'
                    '.map(function (v) { return [box(180, 64, h(N.Button, { key: v, variant: v }, v)), '
                    'box(180, 64, h(N.Button, { key: v + "on", variant: v, show: "On" }, v + " On"))]; })'
-                   '.concat(N.profile.kit ? [["source", "laptop", 110, 110, "Laptop"], ["list", "display", 192, 54, "Display"], '
-                   '["icon", "help", 64, 64, ""], ["toggle", null, 192, 54, "Power"], ["outlined", "swap", 154, 64, "Swap"]]'
-                   '.map(function (x) { return ["Off", "On"].map(function (st) { return box(x[2], x[3], '
+                   '.concat(N.profile.kit ? ' + json.dumps(_preview_images(p)) + ''
+                   '.map(function (x) { return ["Off", "On"].map(function (st) { return fit(x[2], x[3], ' + str(PREVIEW_MAX) + ', '
                    'h(N.Button, { key: x[0] + st, variant: x[0], icon: x[1] || undefined, show: st }, x[4])); }); }) : []))'),
         'Label': ('row(["title", "heading", "body", "body-strong"].map(function (t) { '
                   'return box(260, 60, h(N.Label, { key: t, type: t }, t)); }))'),
-        'Panel': 'row([box(260, 90, h(N.Panel, { key: 1 })), box(260, 90, h(N.Panel, { key: 2, fill: "pressed", border: "rect" }))])',
+        # A panel in the page's own color - Turbulence's and Shockwave's are -
+        # is shown over the template's page, its photo and all, rather than
+        # vanishing into the card's ground. The rest keep the plain ground: a
+        # photo squeezed into a strip is no help to them.
+        'Panel': ((('h(N.Page, { name: "Panels", width: ' + str(32 + 284 * len(fills) - 24)
+                    + ', height: 122 }, ') if fills[0] == p['defaults']['page']['background'] else '(')
+                  + 'row([' + ', '.join(
+                      f'box(260, 90, h(N.Panel, {{ key: {i}, fill: "{f}" }}))'
+                      for i, f in enumerate(fills)) + ']))'),
         'Line': 'row([box(560, 2, h(N.Line))])',
         'Slider': 'row([box(420, 60, h(N.Slider, { value: 60 }))])',
         'Level': 'row([box(420, 40, h(N.Level, { value: 40 })), box(40, 88, h(N.Level, { orientation: "up", value: 70 }))])',
         'Clock': 'row([box(200, 40, h(N.Clock)), box(360, 40, h(N.Clock, { format: "date" }))])',
         'PopupRegion': 'row([box(440, 90, h(N.PopupRegion, { group: "Sources" }))])',
     }
+    heights['Button'] = max(heights['Button'], _button_preview_height(p))
     return {n: _preview(p, n, heights[n], b[n]) for n, _, _ in COMPONENTS}
 
 
@@ -607,7 +910,7 @@ export interface PageProps {{ name: string; kind?: 'page' | 'popup' | 'modal'; g
 export declare function Page(props: PageProps): React.ReactElement;
 export interface MainAreaProps {{ style?: React.CSSProperties; children?: React.ReactNode }}
 export declare function MainArea(props: MainAreaProps): React.ReactElement;
-export interface ButtonProps {{ name?: string; id?: number; variant?: {' | '.join(repr(k) for k in p['buttons'])}; type?: 'button' | 'button-large'; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; states?: {states}; press?: string; nav?: string; does?: string; show?: string; fill?: Token; stroke?: Token; color?: Token; border?: {' | '.join(repr(k) for k in p['borders'])}; icon?: string; children?: React.ReactNode }}
+export interface ButtonProps {{ name?: string; id?: number; variant?: {' | '.join(repr(k) for k in p['buttons'])}; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; states?: {states}; press?: string; nav?: string; does?: string; show?: string; fill?: Token; stroke?: Token; color?: Token; border?: {' | '.join(repr(k) for k in p['borders'])}; icon?: string; children?: React.ReactNode }}
 export declare function Button(props: ButtonProps): React.ReactElement;
 export interface LabelProps {{ name?: string; id?: number; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; color?: Token; does?: string; children?: React.ReactNode }}
 export declare function Label(props: LabelProps): React.ReactElement;
@@ -665,7 +968,7 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 - **Only these components are built.** Use {comps} for everything that shows, and `{ns}.MainArea` to place the main task. Flex and grid containers that paint nothing are fine for layout. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
 - **Say what every control does.** A button that shows another page or popup has `nav` - the target artboard's file stem - and becomes a working link in Play. Anything else it does goes in `does`, a plain sentence for the programmer: "Routes the laptop to the display." Labels the program rewrites, sliders and levels get a `does` too.
 - **Give feedback with `states`.** A button's `states` are what the program switches it between, in order: `"Off, On"`, or `No Signal / Ready / Live` with each its own look. Every state must look different. `press` is the state shown while it is held.
-- **Popups.** A standard popup (`kind="popup"`, with a `group`) appears where a page has a `PopupRegion` for that group. A modal popup (`kind="modal"`) shows the page beneath, dimmed; put its card inside as a `Panel` and its buttons on the card. Confirmations are the designer's choice, not a rule.
+- **Popups.** A standard popup (`kind="popup"`, with a `group`) appears where a page has a `PopupRegion` for that group. A modal popup (`kind="modal"`) shows the page beneath, dimmed; put its card inside as a `Panel` and its buttons on the card, with a Close that returns to the page. Help, a confirmation, and a set of controls opened from a page - lighting, audio, camera select, presets - are modals, as {p['template']}'s own templates draw them; a page flip is for a mode of the room, such as a call or one source's controls. Whether an action asks for confirmation at all is the designer's choice, not a rule.
 - **A page the program opens by itself**, like an incoming call, has `reached-by="program"`. Every other page must be reachable by `nav` from the start page.
 
 {layout_md}{themes_md}## Visual foundations
@@ -677,12 +980,9 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 
 ## Iconography
 
-{t} shows state with icons, not with colored text. Every icon comes from {t}'s own resource kit through a Button's `icon` - never draw one, and never color a caption red.
+{p['iconography']['intro']}
 
-- **Anatomy** (the guide's p.4): a `text-secondary` ({_hex_of(p, 'text-secondary')}) stroke and primary elements, `text-subtle` ({_hex_of(p, 'text-subtle')}) secondary elements, an `icon-ground` ({_hex_of(p, 'icon-ground')}) background inside the icon, and - selected - the supporting element in the accent. The kit already draws all of this, for every accent scheme.
-- **Which button**: a stand-alone control (help, power, close, mute) is `variant="icon"`, 64x64. Sources and cameras are `source`, a row of squares with the label under the icon. Options down the left rail are `list`, a selection line at the left when chosen. On and off is `toggle`. An important action with a label is `outlined` with an `icon` (End Call, Swap).
-- **Feedback**: state 0 draws the icon unselected, the others selected - in the accent, with the variant's selection line and fill. A single-image icon (`power`, `call_connected`) still shows it is pressed.
-- **Alerts** are `variant="alert"`: a red fill with a white caption, for a condition someone has to act on - a fault, a warning - and one per screen at most. An ordinary action, even a final one like shutting the room down, is an outlined button unless the designer asks for red.
+{chr(10).join('- ' + r for r in p['iconography']['rules'])}
 
 ## Example
 
@@ -692,34 +992,32 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 """
 
 
-def _hex_of(p, name):
-    return next((c['value'] for c in p['colors'] if c['name'] == name), '?')
-
-
 def _example(p):
-    """A start page composed the template's way."""
-    states = "'" + p['examples']['on_off'] + "'"
-    main = (p.get('layout') or {}).get('main')
+    """A start page composed the template's way: the profile's own source
+    button inside the main region, and its own Help outside it."""
+    def at(r):
+        return f'position: absolute; left: {r[0]}px; top: {r[1]}px; width: {r[2]}px; height: {r[3]}px'
+    ex = p['examples']
+    src, hlp = ex['source'], ex['help']
+    laptop = _x(p, 'Button', f' name="Laptop" {src["attrs"]} states="Off, On" '
+                             'does="Routes the laptop to the display."', 'Laptop', at(src['rect']))
     inner = [
         _x(p, 'Label', ' name="RoomName" type="title" align="center"', 'Huddle Room',
            'position: absolute; left: 0px; top: 90px; width: 100%; height: 100px'),
-        (_x(p, 'Button', ' name="Laptop" variant="source" icon="laptop" states="Off, On" '
-                         'does="Routes the laptop to the display."',
-            'Laptop', 'position: absolute; left: 403px; top: 320px; width: 110px; height: 110px')
-         if p.get('kit') else
-         _x(p, 'Button', f' name="Laptop" type="button-large" states={states} '
-                         'does="Routes the laptop to the display."',
-            'Laptop', 'position: absolute; left: 318px; top: 330px; width: 280px; height: 120px')),
         _x(p, 'Clock', ' name="Date" format="date"', '',
            'position: absolute; left: 17px; top: 696px; width: 360px; height: 40px'),
     ]
+    # A source sits in the main region unless the template puts its sources
+    # elsewhere: Shockwave's are tabs across the header, placed on the page.
+    outside = src.get('in_main') is False
+    if not outside:
+        inner.insert(1, laptop)
+    main = (p.get('layout') or {}).get('main')
     body = [_x(p, 'MainArea', '', '\n    ' + '\n    '.join(inner) + '\n  ')] if main else inner
-    if main:
-        body.append(_x(p, 'Button', ' name="HelpBtn" variant="icon" icon="help" nav="Help"', '',
-                       'position: absolute; left: 1157px; top: 706px; width: 64px; height: 64px')
-                    if p.get('kit') else
-                    _x(p, 'Button', ' name="HelpBtn" variant="ghost" nav="Help"', 'Help',
-                       'position: absolute; left: 1121px; top: 706px; width: 144px; height: 64px'))
+    if outside:
+        body.insert(0, laptop)
+    body.append(_x(p, 'Button', f' name="HelpBtn" {hlp["attrs"]} nav="Help"', hlp.get('text', ''),
+                   at(hlp['rect'])))
     return _x(p, 'Page', ' name="Home" start="true"', '\n  ' + '\n  '.join(body) + '\n')
 
 
@@ -766,10 +1064,28 @@ def build(template, out, at, existing=None):
 
 
 def main(argv):
+    if len(argv) == 3 and argv[1] == 'extract':
+        # Images that live only inside Extron's files, written where the kit
+        # code and a spec's `images` look: vendor/extron/Resources/<to>.
+        from ..spec import RESOURCE_ROOTS
+        p = load(argv[2])
+        ex = (p.get('kit') or {}).get('extract')
+        if not ex:
+            print(f'{argv[2]} names nothing to extract (kit.extract)')
+            return 2
+        sources = extract_sources(p)
+        if not sources:
+            print(f"none of {ex['from']} is on this machine")
+            return 1
+        out = os.path.join(RESOURCE_ROOTS[0], *ex['to'].split('/'))
+        written = extract_images(sources, out)
+        print(f'{len(written)} new image(s) from {len(sources)} file(s) -> {out}')
+        return 0
     if len(argv) < 4 or argv[1] != 'build' or argv[2] not in TEMPLATES:
         print(__doc__.strip().split('\n\n')[0])
         print(f"\n  python -m gdl.designsys build <{'|'.join(TEMPLATES)}> <out dir> "
-              '[--at ISO-8601] [--index existing design-system.json]')
+              '[--at ISO-8601] [--index existing design-system.json]'
+              '\n  python -m gdl.designsys extract <template>')
         return 2
     at = argv[argv.index('--at') + 1] if '--at' in argv else None
     if not at:

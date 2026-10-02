@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm Room Off</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Confirm Room Off" kind="modal" theme="corridor" does="Asks before the room shuts down." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronTurbulence.Panel" name="Card" fill="page" border="rounded" style="position: absolute; left: 240px; top: 176px; width: 800px; height: 448px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Question" type="heading" align="center" style="position: absolute; left: 340px; top: 236px; width: 600px; height: 100px">Shut the room down?</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="ShutDown" variant="button" icon="vc_power-dn" states='[{"name":"Off","look":"green"},{"name":"On","look":"on"}]' does="Powers the display and audio off, then closes this popup." style="position: absolute; left: 457px; top: 384px; width: 146px; height: 153px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Cancel" variant="button" icon="cancel" nav="Home" style="position: absolute; left: 677px; top: 384px; width: 146px; height: 153px"></x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

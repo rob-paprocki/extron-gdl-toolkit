@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huddle Home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Huddle Home" theme="corridor" start="true" does="The room's home page: share a source, set volume, end the call." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronTurbulence.Panel" name="Header" fill="shade" border="rect" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 133px"></x-import>
+<div style="position: absolute; left: 436px; top: 0px; width: 409px; height: 133px; display: flex; gap: 14px">
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Laptop" variant="source" icon="input_laptop" press="On" does="Routes the laptop to the display." style="width: 127px; height: 133px">Laptop</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="RoomPC" variant="source" icon="input_pc" press="On" does="Routes the room PC to the display." style="width: 127px; height: 133px">Room PC</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="DocCam" variant="source" icon="input_doc-cam" press="On" does="Routes the document camera to the display." style="width: 127px; height: 133px">Doc Cam</x-import>
+</div>
+<x-import component-from-global-scope="ExtronTurbulence.Panel" name="LeftRail" fill="rail" border="rect" style="position: absolute; left: 0px; top: 133px; width: 140px; height: 667px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="DisplayLabel" align="center" style="position: absolute; left: 0px; top: 140px; width: 140px; height: 46px">Display</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="DisplayOn" variant="ring" icon="on" press="On" does="Turns the display on; lit while it is on or warming up." style="position: absolute; left: 20px; top: 196px; width: 100px; height: 100px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="DisplayOff" variant="ring" icon="off" press="On" does="Turns the display off; lit while it is off or cooling down." style="position: absolute; left: 20px; top: 308px; width: 100px; height: 100px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Panel" name="RightRail" fill="rail" border="rect" style="position: absolute; left: 1140px; top: 133px; width: 140px; height: 667px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="VolumeLabel" align="center" style="position: absolute; left: 1140px; top: 140px; width: 140px; height: 46px">Volume</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Slider" name="VolumeSlider" does="Sets the room's volume; the program moves it when volume changes elsewhere." style="position: absolute; left: 1183px; top: 196px; width: 54px; height: 360px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Mute" variant="ring" icon="volume_mute" states='[{"name":"Unmuted","look":"off"},{"name":"Muted","look":"on"}]' does="Mutes and unmutes the room's audio." style="position: absolute; left: 1160px; top: 572px; width: 100px; height: 100px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="RoomName" type="title" align="center" style="position: absolute; left: 338px; top: 250px; width: 604px; height: 70px">Huddle Room</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Status" type="body" align="center" style="position: absolute; left: 338px; top: 330px; width: 604px; height: 40px">Choose a source above to share it.</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="EndCall" variant="call" icon="end-call" does="Ends the call." style="position: absolute; left: 570px; top: 540px; width: 140px; height: 89px">End Call</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Panel" name="Footer" fill="shade" border="rect" style="position: absolute; left: 140px; top: 688px; width: 1000px; height: 112px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="HelpBtn" variant="source" icon="input_help" nav="Help" style="position: absolute; left: 152px; top: 690px; width: 103px; height: 108px">Help</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Clock" name="DateTime" format="datetime" align="center" style="position: absolute; left: 399px; top: 712px; width: 482px; height: 64px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="RoomOff" variant="button" icon="vc_power-dn" nav="ConfirmRoomOff" style="position: absolute; left: 1025px; top: 690px; width: 103px; height: 108px"></x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

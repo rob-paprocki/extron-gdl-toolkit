@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huddle Help</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Huddle Help" kind="modal" theme="corridor" does="How to share, for people new to the room, over the page they were on." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronTurbulence.Panel" name="Card" fill="page" border="rounded" style="position: absolute; left: 260px; top: 150px; width: 760px; height: 500px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="HelpTitle" type="title" align="center" style="position: absolute; left: 384px; top: 186px; width: 512px; height: 80px">Help</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Close" variant="close" nav="Home" aria-label="Close" style="position: absolute; left: 955px; top: 155px; width: 60px; height: 60px"></x-import>
+<div style="position: absolute; left: 340px; top: 300px; width: 600px; height: 220px; display: flex; flex-direction: column; gap: 16px">
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Step1" style="height: 56px">1. Connect your laptop, or turn on the room PC or the document camera.</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Step2" style="height: 56px">2. Tap its name at the top of the page.</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Step3" style="height: 56px">3. End the call when you are done.</x-import>
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -77,12 +77,68 @@ def _shares(assets, tid):
     return {tuple(k): v / total for k, v in counts.items()}
 
 
+def _fill_shares(assets, tid, argb):
+    """_shares() for an opaque fill. For a translucent one, {color: share of
+    the visible pixels}, every pixel at the fill's own alpha (within 3) and
+    color (within the rounding premultiplying leaves, 255 // (2 * alpha) + 1
+    a channel) counted as the planned (r, g, b) itself, the rest by their own
+    (r, g, b, a). Build writes a translucent fill's alpha exactly: Turbulence's
+    rail, black at 38, came back (0, 0, 0, 38) throughout, and its shade,
+    #020D1A at 128, as (1, 13, 25, 128). Read off the opaque pixels alone it
+    has none, and nothing would be checked."""
+    if _opaque(argb):
+        return _shares(assets, tid)
+    blob = assets.get(tid)
+    if blob is None:
+        return {}
+    want, alpha = _rgb(argb), (argb >> 24) & 0xFF
+    tol = 255 // (2 * alpha) + 1
+    raw = Image.open(io.BytesIO(blob)).convert('RGBA').tobytes()
+    counts = collections.Counter()
+    for i in range(0, len(raw), 4):
+        r, g, b, a = raw[i:i + 4]
+        if not a:
+            continue
+        if (abs(a - alpha) <= 3 and abs(r - want[0]) <= tol and abs(g - want[1]) <= tol
+                and abs(b - want[2]) <= tol):
+            counts[want] += 1
+        else:
+            counts[(r, g, b, a)] += 1
+    total = sum(counts.values())
+    return {k: v / total for k, v in counts.items()} if total else {}
+
+
+def _bare(assets, tid):
+    """Why artwork `tid` gave a fill nothing to read: absent, fully
+    transparent, or drawn but nowhere opaque - an opaque fill built
+    see-through, which the panel does draw."""
+    blob = assets.get(tid)
+    if blob is None:
+        return f'artwork {tid} is missing'
+    _, hi = Image.open(io.BytesIO(blob)).convert('RGBA').getchannel('A').getextrema()
+    if not hi:
+        return f'artwork {tid} is fully transparent'
+    return f'artwork {tid} has no opaque pixel - it built see-through, at alpha {hi} at most'
+
+
 def _rgb(argb):
     return ((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF)
 
 
 def _hex(t):
     return '#%02X%02X%02X' % t
+
+
+def _hexa(t):
+    """A color from _fill_shares(): (r, g, b), or (r, g, b, a) off the fill."""
+    if len(t) < 4:
+        return _hex(t)
+    return _hex(t[:3]) + (' opaque' if t[3] == 0xFF else f' at alpha {t[3]}')
+
+
+def _fill_hex(argb):
+    a = (argb >> 24) & 0xFF
+    return _hex(_rgb(argb)) + ('' if a == 0xFF else f' at alpha {a}')
 
 
 def _painted(argb):
@@ -95,7 +151,7 @@ def _painted(argb):
 def _opaque(argb):
     """A planned fill the artwork's opaque pixels can confirm. _shares()
     counts only pixels over alpha 250, so a translucent fill - Mach's `shade`,
-    Shockwave's `overlay` - built exactly right would read as missing."""
+    Shockwave's `overlay` - is read at its own alpha by _fill_shares()."""
     return argb is not None and (argb >> 24) & 0xFF == 0xFF
 
 
@@ -113,29 +169,23 @@ def check_fills(plan_items, table, assets, kind):
         if got is None:
             continue
         by_name = _index(got)
-        planned = [(item, op) for op in item['controls'] if _opaque(op.get('fill'))]
-        for op in item['controls']:
-            if _painted(op.get('fill')) and not _opaque(op.get('fill')):
-                notes.append(f"{kind} {item['name']!r} "
-                             f"{(op.get('fields') or {}).get('nameField')!r}: translucent fill "
-                             f"{_hex(_rgb(op['fill']))} at alpha {(op['fill'] >> 24) & 0xFF} is "
-                             f'not checked off the artwork')
+        planned = [(item, op) for op in item['controls'] if _painted(op.get('fill'))]
         for _, op in planned:
             name = (op.get('fields') or {}).get('nameField')
             c = by_name.get(name)
             if c is None:
                 continue
             tid = c.get('TLPImageID')
-            want = _rgb(op['fill'])
+            want, label = _rgb(op['fill']), _fill_hex(op['fill'])
             if tid is None or tid < 0:
                 problems.append(f"{kind} {item['name']!r} {name!r}: planned fill "
-                                f'{_hex(want)} but Build produced no artwork '
+                                f'{label} but Build produced no artwork '
                                 f'(TLPImageID {tid}), so it will draw nothing')
                 continue
-            shares = _shares(assets, tid)
+            shares = _fill_shares(assets, tid, op['fill'])
             if not shares:
-                problems.append(f"{kind} {item['name']!r} {name!r}: artwork "
-                                f'{tid} is missing or fully transparent')
+                problems.append(f"{kind} {item['name']!r} {name!r}: planned fill {label}, but "
+                                f'{_bare(assets, tid)}')
                 continue
             checked += 1
             top, top_share = max(shares.items(), key=lambda kv: kv[1])
@@ -143,13 +193,13 @@ def check_fills(plan_items, table, assets, kind):
                 continue
             mine = shares.get(want, 0.0)
             if mine >= WEAK_FILL:
-                notes.append(f"{kind} {item['name']!r} {name!r}: fill {_hex(want)} is "
-                             f'{mine:.0%} of the artwork, behind {_hex(top)} at '
+                notes.append(f"{kind} {item['name']!r} {name!r}: fill {label} is "
+                             f'{mine:.0%} of the artwork, behind {_hexa(top)} at '
                              f'{top_share:.0%}')
             else:
                 problems.append(f"{kind} {item['name']!r} {name!r}: planned fill "
-                                f'{_hex(want)} is {mine:.0%} of the built artwork; '
-                                f'it is mostly {_hex(top)} ({top_share:.0%})')
+                                f'{label} is {mine:.0%} of the built artwork; '
+                                f'it is mostly {_hexa(top)} ({top_share:.0%})')
     return problems, notes, checked
 
 
@@ -248,36 +298,37 @@ def check_states(plan_items, table, assets, kind):
                 problems += _state_image(where, i, bs, c, ws.get('image'), ws.get('fill'),
                                          assets)
                 shares = _shares(assets, tid)
-                if not shares:
-                    # A deliberately transparent Off state is a real idiom -
-                    # Extron's own 'Lighting Preset' buttons are transparent
-                    # when off - so this is only wrong if a fill was planned.
-                    if _opaque(ws.get('fill')):
-                        problems.append(
-                            f"{kind} {item['name']!r} {name!r} state "
-                            f"{bs.get('Name') or i}: artwork {tid} is missing or "
-                            f'fully transparent, but a fill was planned')
-                    dominant[i] = (tid, None)
+                dominant[i] = (tid, max(shares.items(), key=lambda kv: kv[1])[0]
+                               if shares else None)
+                # A deliberately transparent Off state is a real idiom -
+                # Extron's own 'Lighting Preset' buttons are transparent when
+                # off - so empty artwork is only wrong if a fill was planned.
+                fill = ws.get('fill')
+                if not _painted(fill):
                     continue
-                top, top_share = max(shares.items(), key=lambda kv: kv[1])
-                dominant[i] = (tid, top)
-                if not _opaque(ws.get('fill')):
+                fills = _fill_shares(assets, tid, fill)
+                if not fills:
+                    problems.append(
+                        f"{kind} {item['name']!r} {name!r} state "
+                        f"{bs.get('Name') or i}: planned fill {_fill_hex(fill)}, but "
+                        f'{_bare(assets, tid)}')
                     continue
-                target = _rgb(ws['fill'])
+                top, top_share = max(fills.items(), key=lambda kv: kv[1])
+                target = _rgb(fill)
                 if top == target:
                     continue
-                mine = shares.get(target, 0.0)
+                mine = fills.get(target, 0.0)
                 if mine >= WEAK_FILL:
                     notes.append(
                         f"{kind} {item['name']!r} {name!r} state "
-                        f"{bs.get('Name') or i}: fill {_hex(target)} is {mine:.0%} of "
-                        f'the artwork, behind {_hex(top)} at {top_share:.0%}')
+                        f"{bs.get('Name') or i}: fill {_fill_hex(fill)} is {mine:.0%} of "
+                        f'the artwork, behind {_hexa(top)} at {top_share:.0%}')
                 else:
                     problems.append(
                         f"{kind} {item['name']!r} {name!r} state "
-                        f"{bs.get('Name') or i}: planned fill {_hex(target)} is "
+                        f"{bs.get('Name') or i}: planned fill {_fill_hex(fill)} is "
                         f'{mine:.0%} of the built artwork; it is mostly '
-                        f'{_hex(top)} ({top_share:.0%})')
+                        f'{_hexa(top)} ({top_share:.0%})')
 
             # Pairwise, for any number of states: Build rasterizes each state
             # and dedupes identical images to one TLPImageID, so two states the
@@ -318,8 +369,13 @@ def check_states(plan_items, table, assets, kind):
                         f'cannot show feedback')
                 # By plurality color only where there are no kit images: two
                 # speaker icons are both mostly their #414459 ground, and each
-                # state's image is checked against its own artwork above.
-                elif fills_differ and not any(images) and len(colors) == 1:
+                # state's image is checked against its own artwork above. And
+                # only where there is a color to compare: translucent states
+                # (Mach's black at 70%, gray at 63%) have no opaque pixel, so
+                # none of them has one; the artwork ids above still hold them
+                # apart.
+                elif fills_differ and not any(images) and len(colors) == 1 \
+                        and None not in colors:
                     problems.append(
                         f"{kind} {item['name']!r} {name!r}: the states were planned in "
                         f'different colors but all built {_hex(colors.pop())} - no '
@@ -356,12 +412,65 @@ def check_thumbs(plan_items, table, assets, kind):
                                 f'(SliderIndicatorImageID {tid})')
                 continue
             if not img.get('file') or not os.path.exists(img['file']):
+                problems += _gone(where, img)
                 continue
             w, h = Image.open(io.BytesIO(assets[tid])).size
             off = image_mismatch(img['file'], assets[tid], w, h)
             if off > IMAGE_OFF:
                 problems.append(f"{where}: {off:.0%} of it differs from the planned "
                                 f"{img['name']!r} - it is not that image")
+    return problems, checked
+
+
+def check_rails(plan_items, table, assets, kind):
+    """A slider's rail must be the kit art the plan gave it, where the
+    template draws it from art: its track when empty, its fill when full.
+
+    A clone keeps its donor's, and the applier cleared every clone's
+    backgroundImageField - which on a slider IS the track - so Shockwave's
+    slider built an opaque black block where its seed's own draw the rail,
+    and no other check looked. Build draws the two as the empty and full
+    assets, TLPMinValueImageID and TLPMaxValueImageID (rail_image): on the
+    seeds' own sliders they are their track and fill files within 0%
+    (Turbulence, Mach) and 8% (Shockwave), the black block 100% and 66%.
+    """
+    problems, checked = [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if c is None:
+                continue
+            for key, part, asset in (('track_image', 'track', 'TLPMinValueImageID'),
+                                     ('fill_image', 'fill', 'TLPMaxValueImageID')):
+                img = op.get(key)
+                if not img:
+                    continue
+                checked += 1
+                where = f"{kind} {item['name']!r} {name!r} {part}"
+                tid = c.get(asset)
+                if tid is None or tid < 0 or tid not in assets:
+                    problems.append(f'{where}: planned {img["name"]!r}, but Build drew no '
+                                    f'{part} ({asset} {tid})')
+                    continue
+                if not img.get('file') or not os.path.exists(img['file']):
+                    problems += _gone(where, img)
+                    continue
+                w, h = Image.open(io.BytesIO(assets[tid])).size
+                vertical = c.get('Orientation') in (2, 3)   # up, down
+                thumb = c.get('SliderIndicatorHeight' if vertical else 'SliderIndicatorWidth')
+
+                def draw(file, w, h, tw=c.get('SliderTrackWidth'), thumb=thumb):
+                    return rail_image(file, w, h, tw, thumb, vertical)
+
+                off = image_mismatch(img['file'], assets[tid], w, h, draw=draw)
+                if off > IMAGE_OFF:
+                    problems.append(f"{where}: {off:.0%} of it differs from the planned "
+                                    f"{img['name']!r} - it is not that image")
     return problems, checked
 
 
@@ -419,6 +528,31 @@ def check_fonts(plan_items, table, kind):
 IMAGE_TOLERANCE = 12
 
 
+def stretch_image(file, w, h):
+    """`file` stretched to w x h."""
+    return Image.open(file).convert('RGBA').resize((w, h), Image.Resampling.LANCZOS)
+
+
+def rail_image(file, w, h, track, thumb, vertical):
+    """`file` as Build draws a slider's rail into a w x h control: stretched
+    into a box the track's width across and the slider's length less the thumb
+    along, centered - inset half the thumb at each end, where the thumb's
+    center stops. Measured on the seeds' own built sliders against their kit
+    files: every Turbulence and Mach rail 0% off so, Shockwave's 8% at most.
+    Drawn the whole length instead, Turbulence's 10 px stripes all land
+    elsewhere and its own rails read 48-54%; fitted as a button's image is,
+    a narrow bar is a few pixels off along its whole length. Only vertical
+    sliders were measured; a horizontal one is assumed to mirror them."""
+    across, along = (w, h) if vertical else (h, w)
+    track = max(1, min(track or across, across))
+    length = max(1, along - (thumb or 0))
+    out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    im = stretch_image(file, *((track, length) if vertical else (length, track)))
+    at = ((across - track) // 2, (along - length) // 2)
+    out.alpha_composite(im, at if vertical else at[::-1])
+    return out
+
+
 def fit_image(file, w, h):
     """`file` drawn into a w x h box as Build draws a button's image:
     ImageLayoutEnum Fill (fit, keeping the aspect), MiddleCenter."""
@@ -452,13 +586,14 @@ def _max_channel(im):
     return ImageChops.lighter(ImageChops.lighter(r, g), b)
 
 
-def image_mismatch(file, art_bytes, w, h, fill=None):
+def image_mismatch(file, art_bytes, w, h, fill=None, draw=None):
     """Share of the inked pixels that differ between the built artwork and
-    `file` fitted into w x h over `fill` (an ARGB int, or None)."""
+    `file` drawn into w x h - fitted, unless `draw` says otherwise - over
+    `fill` (an ARGB int, or None)."""
     base = (((fill >> 16) & 255, (fill >> 8) & 255, fill & 255, (fill >> 24) & 255)
             if fill is not None else (0, 0, 0, 0))
     want = Image.new('RGBA', (w, h), base)
-    want.alpha_composite(fit_image(file, w, h))
+    want.alpha_composite((draw or fit_image)(file, w, h))
     got = Image.open(io.BytesIO(art_bytes)).convert('RGBA')
     if got.size != (w, h):
         got = got.resize((w, h))
@@ -501,6 +636,22 @@ def image_mismatch(file, art_bytes, w, h, fill=None):
     return off.histogram()[255] / n if n else 0.0
 
 
+def _gone(where, img):
+    """A problem when the plan names a file this machine lacks.
+
+    A plan carries its kit files' absolute paths, resolved where it was made.
+    Verified anywhere else, or after vendor/ moved, every image comparison was
+    skipped and the control still counted as verified - Mach's black-block
+    rail passed so. A plan with no file at all is the seed's own image, with
+    nothing to compare, and stays as it was."""
+    f = img.get('file')
+    if f and not os.path.exists(f):
+        return [f"{where}: the planned {img['name']!r} is not at {f} on this machine, so "
+                f'the built art cannot be compared with it - verify where the plan was '
+                f'made, or re-plan here']
+    return []
+
+
 def _state_image(where, i, bs, c, image, fill, assets):
     """A state's artwork must be the kit image the plan gave it.
 
@@ -515,7 +666,7 @@ def _state_image(where, i, bs, c, image, fill, assets):
         return [f"{label}: planned image {image['name']!r}, but the state built with no "
                 f'artwork (TLPImageID {tid})']
     if not image.get('file') or not os.path.exists(image['file']):
-        return []
+        return _gone(label, image)
     off = image_mismatch(image['file'], assets[tid], c['Width'], c['Height'], fill)
     if off > IMAGE_OFF:
         return [f"{label}: {off:.0%} of the artwork differs from the planned image "
@@ -540,7 +691,11 @@ def _check_background_image(spec, pg, assets):
     if img.get('file') and os.path.exists(img['file']):
         fill = spec['background']
         want = Image.new('RGBA', art.size, _rgb(fill) + ((fill >> 24) & 0xFF,))
-        want = Image.alpha_composite(want, fit_image(img['file'], *art.size)).convert('RGB')
+        # Laid out as the page lays it out: fitted (Fill), or stretched as
+        # Mach's pages stretch their photo.
+        drawn = (Image.open(img['file']).convert('RGBA').resize(art.size, Image.Resampling.LANCZOS)
+                 if spec.get('background_layout') == 1 else fit_image(img['file'], *art.size))
+        want = Image.alpha_composite(want, drawn).convert('RGB')
         hist = ImageChops.difference(art, want).convert('L').histogram()
         mean = sum(i * n for i, n in enumerate(hist)) / max(1, sum(hist))
         if mean > IMAGE_TOLERANCE:
@@ -608,23 +763,25 @@ def _edit_fill(where, tid, want, assets):
     """(problem or None, note or None): is `want` the plurality color of the
     artwork `tid`? The same test check_fills applies to an authored control."""
     rgb, alpha = _hex_rgb(want)
-    if alpha != 0xFF:
-        return None, None               # a translucent fill has no opaque pixels
+    if not alpha:
+        return None, None               # a transparent fill: nothing to find
+    argb = int(want.lstrip('#'), 16)
+    label = _fill_hex(argb)
     if tid is None or tid < 0:
-        return (f'{where}: fill {_hex(rgb)} was asked for, but Build produced no '
+        return (f'{where}: fill {label} was asked for, but Build produced no '
                 f'artwork (TLPImageID {tid})'), None
-    shares = _shares(assets, tid)
+    shares = _fill_shares(assets, tid, argb)
     if not shares:
-        return f'{where}: artwork {tid} is missing or fully transparent', None
+        return f'{where}: fill {label} was asked for, but {_bare(assets, tid)}', None
     top, top_share = max(shares.items(), key=lambda kv: kv[1])
     if top == rgb:
         return None, None
     mine = shares.get(rgb, 0.0)
     if mine >= WEAK_FILL:
-        return None, (f'{where}: fill {_hex(rgb)} is {mine:.0%} of the artwork, '
-                      f'behind {_hex(top)} at {top_share:.0%}')
-    return (f'{where}: fill {_hex(rgb)} is {mine:.0%} of the built artwork; it is '
-            f'mostly {_hex(top)} ({top_share:.0%})'), None
+        return None, (f'{where}: fill {label} is {mine:.0%} of the artwork, '
+                      f'behind {_hexa(top)} at {top_share:.0%}')
+    return (f'{where}: fill {label} is {mine:.0%} of the built artwork; it is '
+            f'mostly {_hexa(top)} ({top_share:.0%})'), None
 
 
 def _edit_text_color(where, got, want):
@@ -947,6 +1104,9 @@ def check(plan_path, built_path):
         problems += probs
         checked += n
         probs, n = check_thumbs(spec, table, assets, kind)
+        problems += probs
+        checked += n
+        probs, n = check_rails(spec, table, assets, kind)
         problems += probs
         checked += n
         for note in notes:

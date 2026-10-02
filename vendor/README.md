@@ -11,8 +11,9 @@ and scripts that read it need nothing outside this directory.
 **Only this README and `MANIFEST.md` are in git.** The files themselves (about
 470 MB) are Extron's installed, reinstallable content rather than work product,
 and pushing them through Git LFS would nearly triple the repo's LFS footprint
-for no information gain. `MANIFEST.md` records every file with its size and
-SHA-256, so what belongs here is exact even though the bytes are not pushed.
+for no information gain. `MANIFEST.md` records every copied file with its size
+and SHA-256, so what belongs here is exact even though the bytes are not pushed;
+the extracted images below are not in it, since their command reproduces them.
 
 To repopulate on a fresh clone, on a machine with GUI Designer installed:
 
@@ -39,5 +40,22 @@ the application; nothing in this repo reads them.
 Without it, `tests/_corpus.py` falls back to the install path, and the tests that
 need a template skip rather than fail.
 
+**Images that exist only inside Extron's files** go here too, extracted rather
+than copied: Turbulence's art, out of its seed and TouchLink templates (1.28
+has no kit for it beside the others - `docs/design-rules.md` §7), and Mach's
+slider art, which lives only inside its seed.
+
+```bash
+python -m gdl.designsys extract turbulence   # -> vendor/extron/Resources/Turbulence (267 images)
+python -m gdl.designsys extract mach         # -> vendor/extron/Resources/Mach/Extracted
+```
+
+A profile's `kit.extract` names the files to read (`seeds/...`, or a template
+name pattern) and where the images go. Like everything else here, they are
+Extron's, reproducible, and not in git.
+
 The rest of the install's `Resources/` (about 2.5 GB of icons and images for
-every theme) was not copied; nothing in this repo reads it.
+every theme) was not copied. The design systems read Afterburn's, Mach's and
+Shockwave's kits from it where GUI Designer is installed (`RESOURCE_ROOTS` in
+`gdl/spec.py`), so a machine without the install builds them with no icons -
+and says so.

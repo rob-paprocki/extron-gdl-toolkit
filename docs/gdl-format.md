@@ -59,6 +59,18 @@ build is not reachable headlessly; drive the UI instead
 The practical consequence: **an authoring tool never makes artwork.** It sets
 semantic properties (border, fill, icon, corner radius) and Build makes pixels.
 
+**A point is the same number of pixels on every panel.** `layout.json` exports
+only a font's `PointSize`, and live captions leave no pixels in the file, so
+`tests/type_probe.py` bakes them instead: a button with `flattenTextField` true
+has Build draw its caption into its artwork, from each state's **`ftextField`**
+(not `textField` - a clone carries the donor's, `'               Preset 1'` on
+the Afterburn seeds). "HHHH" at 14, 18, 24, 30 and 36 pt measured a cap height
+of 13, 17, 23, 29 and 34 px on the TLP Pro 1035T (149 DPI), 835M (188.68),
+1535M (127.7), 300M (164.83) and 1230WTG (166) alike - GUI Designer's own
+1.375 px per point, whatever the panel's DPI. So 14 pt captions are 2.2 mm tall
+on a 1035, 1.8 mm on an 835 and 1.1 mm on a 535. The limit: this is Build's
+rasterizer; the firmware draws live captions itself, and was not measured.
+
 ## 3. Reading and writing `ProjectGCP`
 
 Use **32-bit Windows PowerShell 5.1** —
@@ -313,16 +325,72 @@ A generator should assert all four agree rather than trusting the writes.
   `sliderFillColorField`, `#BABCCE`. Build draws the thumb as its own asset,
   `SliderIndicatorImageID`, so a clone under another scheme keeps the
   periwinkle thumb until the image is set.
+- **A slider's rail can be images too, and a border hides them.** The
+  Shockwave, Mach and Turbulence seeds' sliders draw the rail from the kit: the
+  track shown empty in `backgroundImageField`, the fill shown full in
+  `sliderFillImageField`. Build writes the two as `TLPMinValueImageID` and
+  `TLPMaxValueImageID`, each stretched into `sliderTrackWidth` across and the
+  slider's length less the thumb along, centered - inset half the thumb at
+  each end, where its center stops: Mach's 8 px rail in a 30 px slider,
+  Turbulence's 44 px striped one 26 px short of each end. Those sliders author
+  no border and a Transparent fill; one with a border resource and a fill builds
+  that bordered fill in place of the art, so a Shockwave slider planned with
+  the rounded border and black fill builds an opaque black block with the right
+  images on the model. The applier clears every clone's `backgroundImageField`,
+  which on a slider is its track, so the plan writes the rail and the verifier
+  reads it back off the two assets.
 - **A page's background image is a named `PBImageResource`**, referenced from
   `backgroundImageField` by a `PBResourceReferenceImage` and drawn by
   `backgroundImageLayoutField` over the page fill - the Afterburn seeds fit
-  `6400x4000_bg1.png` over `#242634`. `ImageLayoutEnum` is `Fill` 0 (fit,
-  keeping the aspect, as CSS `contain`), `Stretch` 1, `Tile` 2, `Native` 3,
-  `Offset` 4. Build rasterizes the two into
+  `6400x4000_bg1.png` over `#242634`, while every Mach 1035 page stretches its
+  3:2 `mach-bg-02.png` over the 16:10 page (fitted, it builds with bands of fill
+  down both sides). `ImageLayoutEnum` is `Fill` 0 (fit, keeping the aspect, as
+  CSS `contain`), `Stretch` 1, `Tile` 2, `Native` 3, `Offset` 4; a spec page's
+  `background_layout` is `fill` or `stretch`. Build rasterizes the two into
   the page's asset and layout.json does not name the image, so it is verified
   off that asset. An image the project lacks is appended by cloning an existing
   `PBImageResource` and setting its bitmap, name and size
   (`Add-GdlImageResource`).
+- **A donor's image of a kit file's name need not be that file.** The Shockwave
+  1035 seed carries `960x440_yellow_sel.png` and `960x440_red_sel.png` whose
+  pixels differ from the kit's files of those names in 67% of their pixels -
+  they draw the resting look - so a Help button whose On state named the kit's
+  `960x440_yellow_sel.png` built both states as one artwork. A name is reused
+  only when the pixels agree (compared as 32-bit ARGB, since the resource and
+  the file are encoded differently); otherwise the file goes in as
+  `<name>_1`, GUI Designer's own spelling of a second copy.
+- **A color can be a palette entry.** A `PBColor` with `paletteIndexField` >= 0
+  is `PBProject.paletteField`'s entry at that index (`PBPaletteEntry`: 0
+  Transparent, 1 Black, 9 White, ...) and its `valueField` is empty; Build
+  draws the entry. Every color in the Afterburn 1035 seed is custom (-1), while
+  the Mach 1035 seed has 126 palette colors and Shockwave 1035 107, mostly
+  state captions. A clone of one keeps the index, so writing only the value
+  changes nothing: Shockwave's lit captions are palette Black, and a clone
+  rewritten to white built black. `Set-GdlColor` writes -1 with the value, and
+  `gdl.project` reads an entry through the palette.
+- **A color can be stored by name.** A `System.Drawing.Color` with `state` 1 is
+  the `KnownColor` in `knownColor` - 27 Transparent, 35 Black, 105 LimeGreen,
+  164 White - and its `value` is 0. Every seed stores colors so: Shockwave
+  1035 211 White and 206 Black, Afterburn 300M 90 Black and 55 White, every
+  Turbulence label White. `gdl.project` reads them through .NET Framework's own
+  table of the web colors (`KNOWN_COLORS`) - Framework's, since it differs from
+  CSS once (DarkSeaGreen `#8FBC8B`); reading only the value read each as no color.
+  `Set-GdlColor` writes `Color.FromArgb`, which replaces the whole struct, so a
+  named color never survives a write.
+- **A control's `transparencyField` fades everything it draws** - a percent.
+  28 of the Shockwave 1035 seed's 34 shapes are 0.0, five modal dims 85.0 and
+  its Offline Window 25.0. A clone keeps its donor's, so a panel cloned from a
+  dim builds at 15% opacity with the right fill in every field. The spec says
+  translucency with the fill's alpha, so the applier writes 0.
+- **A translucent fill reaches the artwork at its own alpha.** Build writes the
+  alpha exactly and the color within premultiplying's rounding: Turbulence's
+  rail, black at 38, built (0, 0, 0, 38) throughout, and its shade, #020D1A at
+  128, built (1, 13, 25, 128). GUI Designer's snapshots, and the compositor,
+  draw such a pixel at full strength (`docs/render-fidelity.md` §2), but the
+  theme is drawn for a panel that blends it - the Turbulence seed's own header
+  and footer art is alpha 128 throughout. `tests/verify_built.py` reads a
+  translucent fill off the pixels at its alpha, as it reads an opaque one off
+  the opaque pixels.
 - **A kit image button carries its image on each state, not on the control.**
   Every image button in the Afterburn 1035 and 1535 seeds has an empty
   control-level `buttonImageField` and one per state, drawn `Fill` and

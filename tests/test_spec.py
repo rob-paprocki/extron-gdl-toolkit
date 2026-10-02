@@ -201,6 +201,14 @@ class TestControlTypes(unittest.TestCase):
         # Verified by writing them onto a live Extron.GUICPro.PBSlider.
         self.assertEqual(f['sliderTrackWidth'], 14)
         self.assertEqual(f['sliderThumbWidth'], 40)
+        self.assertEqual(f['sliderThumbHeight'], 40)  # square unless told
+
+    def test_a_thumb_can_be_shorter_along_the_rail(self):
+        """Shockwave's thumb is 52 across and 34 along; built square, its
+        156x102 image came back stretched."""
+        f = self._ops({'kind': 'slider', 'rect': [0, 0, 54, 315], 'thumb': 52,
+                       'thumb_height': 34})['fields']
+        self.assertEqual((f['sliderThumbWidth'], f['sliderThumbHeight']), (52, 34))
 
     def test_line_endpoints_are_the_eight_position_enum(self):
         # A diagonal is TopLeft -> BottomRight; the angle comes from the rect.
@@ -356,6 +364,16 @@ class TestBuildPlan(unittest.TestCase):
         self.assertEqual(accent[0]['fill'], 0xFF3D8BFD, 'the accent color must survive')
 
 
+class TestFlatten(unittest.TestCase):
+    def test_a_button_can_ask_for_its_caption_baked(self):
+        """Only the type probe does: a baked caption is Build's rasterization,
+        which is the one way to see how a platform draws a point."""
+        p = _spec([{'kind': 'button', 'rect': [0, 0, 100, 100], 'text': 'H', 'flatten': True},
+                   {'kind': 'button', 'rect': [0, 200, 100, 100], 'text': 'H'}])
+        ops = [o for o in p.plan()['pages'][0]['controls'] if o['donor_type'] == 'PBButton']
+        self.assertEqual([o.get('flatten', False) for o in ops], [True, False])
+
+
 class TestExtronRules(unittest.TestCase):
     """Extron's own numeric standards. See docs/design-rules.md for provenance."""
 
@@ -384,6 +402,14 @@ class TestExtronRules(unittest.TestCase):
         from gdl.spec import touch_minimums
         self.assertEqual(touch_minimums((1280, 800)), (67, 15))   # TLP Pro 835
 
+    def test_a_soft_client_does_not_set_a_resolutions_minimum(self):
+        """TLI101 and TLI201 carry GUI Designer's default 220 DPI at 1920x1080,
+        as the VTLP targets do: a size-only spec there was held to 78 px, where
+        every physical 1920x1080 panel - TLP Pro 1535, 1720, 1725 at 127.7 DPI -
+        needs 45."""
+        from gdl.spec import touch_minimums
+        self.assertEqual(touch_minimums((1920, 1080)), touch_minimums('TLP1535M'))
+
     def test_a_model_carries_its_extron_part_number(self):
         """GUI Designer identifies a panel by part number - a platform object
         without one opens as "Unknown"."""
@@ -395,6 +421,42 @@ class TestExtronRules(unittest.TestCase):
         have no 1280x720 row. The assemblies do: TLP Pro 535M/T at 293.72 DPI."""
         from gdl.spec import touch_minimums
         self.assertEqual(touch_minimums('TLP535M'), (104, 23))
+
+    def test_the_1230w_is_its_real_wide_canvas(self):
+        """CreatePlatform hands the 1230WTG back as the base platform class, so
+        the probe read 800x480 at 0 DPI - which made its touch check a silent
+        no-op. Extron's template table says 1920x720 at 166 DPI."""
+        from gdl.spec import MODELS, dpi, touch_minimums
+        self.assertEqual(MODELS['TLP1230WTG'], (1920, 720))
+        self.assertEqual(dpi('TLP1230WTG'), 166.0)
+        self.assertEqual(touch_minimums('TLP1230WTG'), (59, 13))
+
+    def test_a_landscape_300m_has_a_minimum(self):
+        """The 300M runs both ways up; a size-only spec at 480x320 had no row
+        to find, so no touch check at all."""
+        from gdl.spec import touch_minimums
+        self.assertEqual(touch_minimums((480, 320)), touch_minimums('TLP300M'))
+        self.assertEqual(touch_minimums((320, 480)), touch_minimums('TLP300M'))
+
+    def test_every_panel_has_a_diagonal_and_a_tier(self):
+        """Tiers are this toolkit's reading of Extron's templates, not an Extron
+        rule: >= 6.5in full layout, 4-6.5in a hub page, under 4in single-purpose
+        pages. Soft clients run on a screen their model does not define."""
+        from gdl.spec import diagonal, tier
+        self.assertAlmostEqual(diagonal('TLP1035T'), 10.13, places=2)
+        for model, want in (('TLP1035T', 'A'), ('TLP835M', 'A'), ('TLP725T', 'A'),
+                            ('TLP720T', 'A'), ('TLP1230WTG', 'A'), ('TLP525T', 'B'),
+                            ('TLP520M', 'B'), ('TLP535M', 'B'), ('TLP320M', 'C'),
+                            ('TLP300M', 'C'), ('VTLPEcp', None), ('TLI201', None)):
+            self.assertEqual(tier(model), want, model)
+
+    def test_a_panel_with_no_known_minimum_says_so(self):
+        """A custom canvas has no DPI to convert 9mm with. Passing quietly would
+        read as 'meets the touch minimum'."""
+        p = Panel({'name': 'T', 'size': [1000, 700], 'theme': {'text': '#FFFFFF'},
+                   'pages': [{'name': 'P', 'number': 1000, 'controls': [
+                       {'kind': 'button', 'rect': [0, 0, 20, 20], 'text': 'x'}]}]})
+        self.assertTrue(any('no touch minimum' in m for m in p.check()), p.check())
 
     def test_undersized_button_is_caught(self):
         p = _spec([{'kind': 'button', 'rect': [0, 0, 40, 40], 'text': 'tiny'}])
@@ -812,6 +874,35 @@ class TestBackgroundImage(unittest.TestCase):
             self.assertEqual(im.getpixel((w // 2, h // 2)), (200, 20, 20))
             self.assertEqual(im.getpixel((w // 2, 3)), (0x24, 0x26, 0x34))
 
+    def test_a_template_can_stretch_it_instead(self):
+        """Mach's pages lay their 3:2 photo out Stretch (ImageLayoutEnum 1) over
+        a 16:10 page, where Afterburn's lay theirs out Fill (0). Fitted, the
+        photo built with bands of fill down both sides."""
+        plan = self._spec({}, background_image='mach-bg-02.png',
+                          background_layout='stretch').plan()
+        self.assertEqual([p['background_layout'] for p in plan['pages']], [1, 1])
+        plan = self._spec({}, background_image='6400x4000_bg1.png').plan()
+        self.assertEqual(plan['pages'][0]['background_layout'], 0)
+
+    def test_a_layout_it_cannot_draw_is_a_problem(self):
+        p = self._spec({}, background_image='x.png', background_layout='tile')
+        self.assertTrue(any('background_layout' in m for m in p.check()), p.check())
+
+    def test_the_preview_stretches_it_when_asked(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed')
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, 'bg.png')
+            Image.new('RGBA', (200, 100), (200, 20, 20, 255)).save(f)
+            spec = self._spec({'bg.png': f}, background_image='bg.png',
+                              background_layout='stretch')
+            spec.pages[0]['background'] = {'A': 255, 'R': 0x24, 'G': 0x26, 'B': 0x34}
+            im = spec.render(0).convert('RGB')
+            w, _ = im.size
+            self.assertEqual(im.getpixel((w // 2, 3)), (200, 20, 20))
+
 
 class TestButtonImages(unittest.TestCase):
     """A kit image per state: Afterburn's icons, list buttons and toggles."""
@@ -896,6 +987,74 @@ class TestButtonImages(unittest.TestCase):
         op = p.plan()['pages'][0]['controls'][0]
         self.assertEqual(op['thumb_image'], {'name': 'on.png', 'file': self.on})
 
+    def test_a_slider_carries_its_rail_images(self):
+        """A rail drawn from art reaches the plan, as the thumb does: a clone's
+        donor rail never survived the applier, so the build drew a black block."""
+        c = {'kind': 'slider', 'name': 'Volume', 'rect': [0, 0, 54, 380],
+             'track_image': 'off.png', 'fill_image': 'on.png'}
+        p = _project([{'name': 'Home', 'controls': [c]}],
+                     images={'off.png': self.off, 'on.png': self.on})
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual((op['track_image'], op['fill_image']),
+                         ({'name': 'off.png', 'file': self.off}, {'name': 'on.png', 'file': self.on}))
+
+    def test_a_slider_drawn_from_art_authors_no_border_or_fill(self):
+        """Build draws a slider's bordered fill IN PLACE of its rail art: a
+        Shockwave slider planned with the profile's rounded border and black
+        fill built a black block with the art on the model and nowhere else.
+        The seed's own image-railed sliders author no border and Transparent."""
+        c = {'kind': 'slider', 'name': 'Volume', 'rect': [0, 0, 54, 380], 'fill': '#000000',
+             'border': 'rounded', 'track_image': 'off.png', 'fill_image': 'on.png'}
+        p = _project([{'name': 'Home', 'controls': [c]}],
+                     images={'off.png': self.off, 'on.png': self.on})
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual((op['border'], op['fill'], op['stroke']), ('', 0, 0))
+
+    def test_a_rail_takes_both_images(self):
+        """The applier writes only the images it is given, so a rail named by
+        one kept its donor's other - every theme seed's slider has fill art."""
+        for given in ({'track_image': 'off.png'}, {'fill_image': 'on.png'}):
+            c = dict({'kind': 'slider', 'name': 'Volume', 'rect': [0, 0, 54, 380]}, **given)
+            p = _project([{'name': 'Home', 'controls': [c]}],
+                         images={'off.png': self.off, 'on.png': self.on})
+            self.assertTrue(any('both track_image and fill_image' in x for x in p.check()),
+                            given)
+
+    def test_a_railed_sliders_fill_is_not_counted(self):
+        """It is drawn from its art, its fill written Transparent, so a color
+        the profile's default names reaches nothing on the panel."""
+        c = {'kind': 'slider', 'name': 'Volume', 'rect': [0, 0, 54, 380], 'fill': '#777777',
+             'stroke': '#555555', 'track_image': 'off.png', 'fill_image': 'on.png'}
+        p = _project([{'name': 'Home', 'controls': [c]}],
+                     images={'off.png': self.off, 'on.png': self.on})
+        drawn = {(d['R'], d['G'], d['B']) for d in (dict(k) for k in p.palette())}
+        self.assertNotIn((0x77, 0x77, 0x77), drawn)
+        self.assertNotIn((0x55, 0x55, 0x55), drawn)
+
+    def test_an_orientation_the_panel_does_not_draw_is_refused(self):
+        """The canvas drew anything but up or down across, and the build fell
+        back to up: <Slider orientation="vertical"> - the Line component's word -
+        was approved lying down and built standing up."""
+        for kind in ('slider', 'level'):
+            c = {'kind': kind, 'name': 'Volume', 'rect': [0, 0, 54, 380],
+                 'orientation': 'vertical'}
+            p = _project([{'name': 'Home', 'controls': [c]}])
+            self.assertTrue(any("orientation 'vertical'" in x for x in p.check()), kind)
+            c['orientation'] = 'down'
+            self.assertFalse(any('orientation' in x for x in
+                                 _project([{'name': 'Home', 'controls': [c]}]).check()), kind)
+
+    def test_a_horizontal_slider_turns_its_thumb(self):
+        """A profile's `thumb` is across the rail and `thumb_height` along it.
+        Build keeps width and height literal - the Zoom Rooms seed's horizontal
+        slider has a thumb 7 wide and 25 tall - so lying down, the two swap, as
+        the canvas draws them: Shockwave's 52 by 34 thumb is 34 wide."""
+        from gdl.spec import _type_fields
+        up = _type_fields('slider', {'orientation': 'up', 'thumb': 52, 'thumb_height': 34})
+        right = _type_fields('slider', {'orientation': 'right', 'thumb': 52, 'thumb_height': 34})
+        self.assertEqual((up['sliderThumbWidth'], up['sliderThumbHeight']), (52, 34))
+        self.assertEqual((right['sliderThumbWidth'], right['sliderThumbHeight']), (34, 52))
+
     def test_an_on_image_the_donor_lacks_is_a_donor_problem(self):
         """`on` is shorthand for Off and On states, so its image is checked as
         a state's would be."""
@@ -978,6 +1137,24 @@ class TestPalette(unittest.TestCase):
         op = p.plan()['pages'][0]['controls'][0]
         self.assertEqual(op['stroke'], 0)
         self.assertNotIn((('A', 0), ('B', 0), ('G', 0), ('R', 0)), p.palette())
+
+    def test_transparencies_of_one_color_count_once(self):
+        """Mach's own rule is "same hue, move the alpha": white at 20%, 47% and
+        100% is one color, and the owner has the six counted that way."""
+        controls = [_label(text='x', fill=f) for f in
+                    ('#32FFFFFF', '#78FFFFFF', '#B4000000', '#A01F292E', '#EDB95E')]
+        p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
+        # Drawn: five fills, the black page and white captions - seven with
+        # their transparencies, four colors without.
+        self.assertEqual(len(p.palette()), 7)
+        self.assertFalse(any('distinct colors' in m for m in p.check()), p.check())
+        controls += [_label(text='x', fill=f) for f in ('#E23636', '#303030')]
+        p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
+        # white, black, #1F292E, #EDB95E, #E23636, #303030 - six; one more is seven.
+        self.assertFalse(any('distinct colors' in m for m in p.check()), p.check())
+        controls.append(_label(text='x', fill='#919191'))
+        p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
+        self.assertTrue(any('7 distinct colors' in m for m in p.check()), p.check())
 
     def test_seven_drawn_colors_are_reported(self):
         controls = [_label(text='x', fill=f) for f in

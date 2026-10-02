@@ -344,6 +344,7 @@
     },
     "toggle": {
       "usage": "A toggle: its label at the left and the switch at the right, for turning one thing on or off (a display's power, a mute). The thumb moves and takes the secondary accent when On. The seed's are 178x50.",
+      "icons": "toggle",
       "kit": "1224x344",
       "icon": "toggle-1",
       "caption": "indent",
@@ -462,7 +463,18 @@
     ],
     "pattern": "rounded tiles cut at the Afterburn 10 px radius"
   },
+  "iconography": {
+    "icon_prop": "The kit draws each icon unselected and selected in every accent, with the selection line where the variant has one, so the button's states show themselves: state 0 unselected, the rest selected in the page's accent.",
+    "intro": "Afterburn shows state with icons, not with colored text. Every icon comes from Afterburn's own resource kit through a Button's `icon` - never draw one, and never color a caption red.",
+    "rules": [
+      "**Anatomy** (the guide's p.4): a `text-secondary` (#BABCCE) stroke and primary elements, `text-subtle` (#767789) secondary elements, an `icon-ground` (#414459) background inside the icon, and - selected - the supporting element in the accent. The kit already draws all of this, for every accent scheme.",
+      "**Which button**: a stand-alone control (help, power, close, mute) is `variant=\"icon\"`, 64x64. Sources and cameras are `source`, a row of squares with the label under the icon. Options down the left rail are `list`, a selection line at the left when chosen. On and off is `toggle`. An important action with a label is `outlined` with an `icon` (End Call, Swap).",
+      "**Feedback**: state 0 draws the icon unselected, the others selected - in the accent, with the variant's selection line and fill. A single-image icon (`power`, `call_connected`) still shows it is pressed.",
+      "**Alerts** are `variant=\"alert\"`: a red fill with a white caption, for a condition someone has to act on - a fault, a warning - and one per screen at most. An ordinary action, even a final one like shutting the room down, is an outlined button unless the designer asks for red."
+    ]
+  },
   "examples": {
+    "source": {"attrs": "variant=\"source\" icon=\"laptop\"", "rect": [403, 320, 110, 110]}, "help": {"attrs": "variant=\"icon\" icon=\"help\"", "rect": [1157, 706, 64, 64]},
     "states": "[{\"name\":\"No Signal\",\"look\":\"off\",\"color\":\"text-secondary\"},{\"name\":\"Ready\",\"look\":\"off\"},{\"name\":\"Live\",\"look\":\"on\",\"fill\":\"pressed\"}]",
     "states_note": "In Afterburn a state shows itself with its icon: the kit's selected image draws the icon in the accent, with the selection line for a list button, and the button takes the pressed fill. A text-only button that is selected shows its caption in `accent`. Never color a caption red.",
     "on_off": "[\"Off\",{\"name\":\"On\",\"color\":\"accent\"}]",

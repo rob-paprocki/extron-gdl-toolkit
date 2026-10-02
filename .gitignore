@@ -12,8 +12,9 @@
 # tracked .gdl fixtures and is recoverable from them exactly. It prevents a
 # second, more conveniently redistributable copy, nothing more.
 #
-# Without the untracked faces the harness does not degrade, it stops: face()
-# raises LookupError on the first one it cannot resolve.
+# Without the untracked faces the harness degrades: each draws in a stand-in -
+# the host's copy, or the recovered Arial - and tests/score.py record refuses
+# to score over one (gdl/fonts/README.md).
 gdl/fonts/*
 !gdl/fonts/README.md
 !gdl/fonts/LICENSE-OpenSans.txt

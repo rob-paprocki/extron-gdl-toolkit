@@ -27,19 +27,27 @@ Control Pro (ECP) is new**. A count check would have missed the swap.
 | Resolution | Models |
 |---|---|
 | 320 × 240 | TLP Pro 320C, TLP Pro 320M |
-| 320 × 480 | TLP Pro 300M |
-| 800 × 480 | **TLC** Pro 521M, **TLC** Pro 526M, TLP Pro 525C/M/T |
-| 1024 × 600 | **TLC** Pro 726M, TLP Pro 725C/M/T, TLP Pro 1022M/T, ZRTP Pro 725M/T |
+| 320 × 480, and 480 × 320 | TLP Pro 300M - either way up (`gdl.spec.ORIENTATIONS`) |
+| 800 × 480 | **TLC** Pro 521M, **TLC** Pro 526M, TLP Pro 520M, TLP Pro 525C/M/T, TLP Pro 720C/M/T |
+| 1024 × 600 | **TLC** Pro 726M, TLP Pro 725C/M/T, TLP Pro 1020M/T, TLP Pro 1022M/T, ZRTP Pro 725M/T |
 | 1280 × 720 | TLP Pro 535M, TLP Pro 535T |
 | 1280 × 800 | **TLC** Pro 1026M, TLP Pro 835C/M/T, TLP Pro 1025M/T, TLP Pro 1035M/T, TLP Pro 1220MG/TG, TLP Pro 1225MG/TG, ZRTP Pro 1025M/T |
 | 1366 × 768 | TLP Pro 1520MG/TG, TLP Pro 1525MG/TG |
-| 1920 × 1080 | TLI Pro 201, TLP Pro 1535M/T, TLP Pro 1720MG/TG, TLP Pro 1725MG/TG |
-| 1920 × 720 | TLP Pro 1230WTG — read from a built project, not from the probe |
+| 1920 × 1080 | TLI Pro 101, TLI Pro 201, TLP Pro 1535M/T, TLP Pro 1720MG/TG, TLP Pro 1725MG/TG |
+| 1920 × 720 | TLP Pro 1230WTG — 166 DPI, from Extron's TemplateInfoTable.config; the probe reads the base platform class |
 
-Resolution not determined by the probe: TLP Pro 520M, 720C/M/T, 1020M/T and TLI
-Pro 101 (the class-name match failed and was not guessed at). The four "Extron
-Control Pro" and "Extron Control for Android / iOS / Web" entries are soft
-clients with no fixed panel class.
+**Tiers** - this toolkit's reading of Extron's per-series templates, not an
+Extron rule. By physical diagonal (`gdl.spec.tier`): **A**, 6.5" and up, the
+full layout, resized; **B**, 4 to 6.5", a hub page with popups; **C**, under 4",
+single-purpose pages. The 520 and 720 are both 800 × 480, at 4.96" and 7.00":
+pixels alone cannot place a panel. Soft clients (ECP, the VTLP targets, TLI Pro)
+have no tier - their screen is the host's.
+
+The four "Extron Control Pro" and "Extron Control for Android / iOS / Web"
+entries are soft clients with no fixed panel class, and the TLI Pro interfaces
+drive a screen their model does not define: their 220 DPI is GUI Designer's
+default, so none of them sets a resolution's touch minimum (`gdl/spec.py`
+`SOFT_CLIENTS`).
 
 **Extron Control Pro (ECP)** is the one 1.28 added: `PlatformProTypeEnum.VTLPEcp`,
 class `PBVTLPEcpPlatform`, part number `60-sVTLPEcp`, 220 DPI. It sits beside the
@@ -115,7 +123,11 @@ touch-target Quick Reference table, which is a different thing.
 **Density** (pp. 49, 58) — the two numeric caps in the document:
 
 - **No more than nine buttons in a control group.** (p. 58)
-- **No more than six colors in a project.** (p. 49)
+- **No more than six colors in a project.** (p. 49) How the toolkit counts
+  them is ours, not Extron's wording: a color counts once whatever its
+  transparency. Mach's own rule is "same hue, move the alpha" - its buttons are
+  white at 20% and 47%, black at 70% - and counting each transparency would put
+  Extron's own Mach look over six.
 
 **Contrast** (p. 43)
 
@@ -263,8 +275,8 @@ icon was rasterized into the button's artwork. Extron's own image buttons carry
 the image on each state and fit it, keeping its aspect (`docs/gdl-format.md`
 §7), which is what a spec's `image` does.
 
-Extron's kits ship: Afterburn 3,376 files, Turbulence 1,408, Shockwave 1,124,
-Mach 596.
+Extron's kits ship: Afterburn 3,376 files, Shockwave 1,124 and Mach 596 under
+`Resources\`, and Turbulence's 1,408 apart, under `Sample Projects\` (§7).
 
 **Icon fonts.** For single-color icons the theme guide says to use the theme
 font instead, which needs no resource at all:
@@ -293,16 +305,17 @@ an official per-panel-model answer.
 ### …and the source art for the themes, under `Resources\`
 
 Alongside `TouchLink Templates\` is `Resources\<theme>\`, about **687 MB across
-5,096 files**, which is where Extron's own theme artwork comes from. Nothing in
-this repo reads it, and it is not in `vendor/` — but it is the answer to "how do I
-make a custom element that matches the theme", so it is worth knowing it exists.
+5,096 files**, which is where Extron's own theme artwork comes from. The design
+systems read their kits from it where it is installed (`RESOURCE_ROOTS` in
+`gdl/spec.py`), and only Afterburn's icons are copied into `vendor/` — but it is
+also the answer to "how do I make a custom element that matches the theme".
 
 | Theme | What ships | Editable source |
 |---|---|---|
 | Afterburn | Backgrounds, Buttons, Font, Icons, Sliders & Toggles — 3,376 files, 44 MB | **SVG**: 983 button and 659 icon vectors beside their PNGs |
 | Mach | Backgrounds, Buttons, Font, Icons, Presets, Recording Controls, Transport Icons, Volume and Slider — 596 files, 581 MB | **`Style Sheet\Mach Styles.psd`** (222 MB), plus `Mach Styles 1_2_0.psd` |
 | Shockwave | backgrounds, buttons, cables, Font, icons, presets, Slider, transport icons, volume — 1,124 files, 63 MB | **`Shockwave Styles.psd`** (12 MB) |
-| Turbulence | no `Resources\Turbulence\` in 1.28 | `Sample Projects\Resources\Turbulence\Turbulence Styles.psd` (1.55 GB), dated 2019 |
+| Turbulence | no `Resources\Turbulence\` in 1.28; `Sample Projects\Resources\Turbulence\` holds a separate library (1,407 PNGs) that lacks a fifth of what the seed draws, so the design system's art is extracted from the seed and templates | `Sample Projects\Resources\Turbulence\Turbulence Styles.psd` (1.55 GB), dated 2019 |
 
 So the two approaches differ by theme: **Afterburn is vector** (open the SVG,
 restyle, export a PNG at the size you need), while **Mach and Shockwave are

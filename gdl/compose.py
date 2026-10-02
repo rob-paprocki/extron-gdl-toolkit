@@ -63,6 +63,13 @@ SYSFONTS = (
 WINFONTS = SYSFONTS[0]          # kept: referenced by name elsewhere
 _cache = {}
 _sysindex = None
+# Every face drawn in anything but its own recovered file, for a caller to say
+# so: on a checkout that never ran `python -m gdl.fonts`, every face falls back
+# to the host's Arial and the render baseline scores 2.81% for 2.19% - silently,
+# since a fallback is not an error - and after a partial recovery each missing
+# face draws in the recovered Arial instead. tests/score.py refuses to record
+# over one.
+FALLBACKS = set()
 
 
 def _system_fonts():
@@ -88,16 +95,20 @@ def face(name, bold, italic, px):
     if key in _cache:
         return _cache[key]
     primary = FILES.get((name, bold, italic)) or FILES.get((name, 0, 0))
-    candidates = [c for c in [primary] + ALIASES.get(primary or '', []) + ['arial.ttf'] if c]
+    own = [c for c in [primary] + ALIASES.get(primary or '', []) if c]
+    candidates = own + [c for c in ['arial.ttf'] if c not in own]
     for fn in candidates:
         p = os.path.join(FONTDIR, fn)
         if os.path.exists(p):
+            if fn not in own:
+                FALLBACKS.add(f'{name} as {fn}')
             f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
     index = _system_fonts()
     for fn in candidates:
         p = index.get(fn.lower())
         if p:
+            FALLBACKS.add(f"{name} as the host's {fn}")
             f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
     raise LookupError(
@@ -440,7 +451,13 @@ def render_page(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True, groups
         # what Build will bake - the image over the fill. Built pages never
         # carry this key.
         if pg.get('TLPImageID', -1) == -1 and pg.get('_background_image'):
-            draw_fitted(canvas, (0, 0, size[0], size[1]), pg['_background_image'])
+            if pg.get('_background_layout') == 1:
+                # Stretch, as Mach's pages lay out their photo.
+                art = Image.open(pg['_background_image']).convert('RGBA').resize(
+                    (size[0], size[1]), Image.Resampling.LANCZOS)
+                canvas.alpha_composite(art)
+            else:
+                draw_fitted(canvas, (0, 0, size[0], size[1]), pg['_background_image'])
     paste(canvas, assets, pg.get('TLPImageID'), ox, oy)
     for c in (pg.get('Controls') or []):
         render_control(canvas, c, assets, ox, oy, draw_txt, groups, fills, pg.get('ID'))

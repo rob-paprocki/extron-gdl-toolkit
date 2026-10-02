@@ -16,16 +16,15 @@ body{margin:0;background:#242634}
 </style>
 </helmet>
 <div style="width: 1280px; height: 800px; position: relative">
-<x-import component-from-global-scope="ExtronAfterburn.Page" name="Huddle Help" theme="grape" does="How to share, for people new to the room." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
-<x-import component-from-global-scope="ExtronAfterburn.MainArea">
-<x-import component-from-global-scope="ExtronAfterburn.Label" name="HelpTitle" type="subheading" align="center" style="position: absolute; left: 0px; top: 200px; width: 916px; height: 60px">How to share</x-import>
-<div style="position: absolute; left: 158px; top: 290px; width: 600px; height: 220px; display: flex; flex-direction: column; gap: 16px">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Huddle Help" kind="modal" theme="grape" does="How to share, for people new to the room, over the page they were on." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.Panel" name="Card" stroke="none" style="position: absolute; left: 200px; top: 140px; width: 880px; height: 520px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="HelpTitle" type="subheading" align="center" style="position: absolute; left: 240px; top: 170px; width: 800px; height: 60px">How to share</x-import>
+<div style="position: absolute; left: 340px; top: 260px; width: 600px; height: 220px; display: flex; flex-direction: column; gap: 16px">
 <x-import component-from-global-scope="ExtronAfterburn.Label" name="Step1" type="body" style="height: 60px">1. Connect your laptop, or start wireless sharing.</x-import>
 <x-import component-from-global-scope="ExtronAfterburn.Label" name="Step2" type="body" style="height: 60px">2. Tap its name on the home page.</x-import>
 <x-import component-from-global-scope="ExtronAfterburn.Label" name="Step3" type="body" style="height: 60px">3. End the call when you are done.</x-import>
 </div>
-<x-import component-from-global-scope="ExtronAfterburn.Button" name="Back" nav="Home" style="position: absolute; left: 386px; top: 677px; width: 144px; height: 64px">Back</x-import>
-</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Close" nav="Home" style="position: absolute; left: 550px; top: 560px; width: 180px; height: 64px">Close</x-import>
 </x-import>
 </div>
 </x-dc>

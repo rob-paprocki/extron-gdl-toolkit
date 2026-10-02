@@ -41,10 +41,56 @@ def argb(value):
     return {'A': v >> 24, 'R': (v >> 16) & 0xFF, 'G': (v >> 8) & 0xFF, 'B': v & 0xFF}
 
 
+# A System.Drawing.Color stored by name - `state` 1, its `value` 0 - is the
+# KnownColor `knownColor`: 27 Transparent, 35 Black, 105 LimeGreen, 164 White.
+# Every seed stores colors so (Shockwave's 211 White and 206 Black, every
+# Turbulence label's White), and reading only the value read each as none.
+# The web colors, 27-167, with .NET Framework's own values (Color.FromKnownColor
+# in 32-bit PowerShell 5.1, the host GUI Designer runs on) - where it differs
+# from CSS, as DarkSeaGreen does (#8FBC8B, not #8FBC8F), Framework's. The rest
+# are Windows system colors, whatever the build host's theme says - none is
+# seen in the corpus, and they read as none.
+KNOWN_COLORS = {
+    27: 0x00FFFFFF, 28: 0xFFF0F8FF, 29: 0xFFFAEBD7, 30: 0xFF00FFFF, 31: 0xFF7FFFD4,
+    32: 0xFFF0FFFF, 33: 0xFFF5F5DC, 34: 0xFFFFE4C4, 35: 0xFF000000, 36: 0xFFFFEBCD,
+    37: 0xFF0000FF, 38: 0xFF8A2BE2, 39: 0xFFA52A2A, 40: 0xFFDEB887, 41: 0xFF5F9EA0,
+    42: 0xFF7FFF00, 43: 0xFFD2691E, 44: 0xFFFF7F50, 45: 0xFF6495ED, 46: 0xFFFFF8DC,
+    47: 0xFFDC143C, 48: 0xFF00FFFF, 49: 0xFF00008B, 50: 0xFF008B8B, 51: 0xFFB8860B,
+    52: 0xFFA9A9A9, 53: 0xFF006400, 54: 0xFFBDB76B, 55: 0xFF8B008B, 56: 0xFF556B2F,
+    57: 0xFFFF8C00, 58: 0xFF9932CC, 59: 0xFF8B0000, 60: 0xFFE9967A, 61: 0xFF8FBC8B,
+    62: 0xFF483D8B, 63: 0xFF2F4F4F, 64: 0xFF00CED1, 65: 0xFF9400D3, 66: 0xFFFF1493,
+    67: 0xFF00BFFF, 68: 0xFF696969, 69: 0xFF1E90FF, 70: 0xFFB22222, 71: 0xFFFFFAF0,
+    72: 0xFF228B22, 73: 0xFFFF00FF, 74: 0xFFDCDCDC, 75: 0xFFF8F8FF, 76: 0xFFFFD700,
+    77: 0xFFDAA520, 78: 0xFF808080, 79: 0xFF008000, 80: 0xFFADFF2F, 81: 0xFFF0FFF0,
+    82: 0xFFFF69B4, 83: 0xFFCD5C5C, 84: 0xFF4B0082, 85: 0xFFFFFFF0, 86: 0xFFF0E68C,
+    87: 0xFFE6E6FA, 88: 0xFFFFF0F5, 89: 0xFF7CFC00, 90: 0xFFFFFACD, 91: 0xFFADD8E6,
+    92: 0xFFF08080, 93: 0xFFE0FFFF, 94: 0xFFFAFAD2, 95: 0xFFD3D3D3, 96: 0xFF90EE90,
+    97: 0xFFFFB6C1, 98: 0xFFFFA07A, 99: 0xFF20B2AA, 100: 0xFF87CEFA, 101: 0xFF778899,
+    102: 0xFFB0C4DE, 103: 0xFFFFFFE0, 104: 0xFF00FF00, 105: 0xFF32CD32,
+    106: 0xFFFAF0E6, 107: 0xFFFF00FF, 108: 0xFF800000, 109: 0xFF66CDAA,
+    110: 0xFF0000CD, 111: 0xFFBA55D3, 112: 0xFF9370DB, 113: 0xFF3CB371,
+    114: 0xFF7B68EE, 115: 0xFF00FA9A, 116: 0xFF48D1CC, 117: 0xFFC71585,
+    118: 0xFF191970, 119: 0xFFF5FFFA, 120: 0xFFFFE4E1, 121: 0xFFFFE4B5,
+    122: 0xFFFFDEAD, 123: 0xFF000080, 124: 0xFFFDF5E6, 125: 0xFF808000,
+    126: 0xFF6B8E23, 127: 0xFFFFA500, 128: 0xFFFF4500, 129: 0xFFDA70D6,
+    130: 0xFFEEE8AA, 131: 0xFF98FB98, 132: 0xFFAFEEEE, 133: 0xFFDB7093,
+    134: 0xFFFFEFD5, 135: 0xFFFFDAB9, 136: 0xFFCD853F, 137: 0xFFFFC0CB,
+    138: 0xFFDDA0DD, 139: 0xFFB0E0E6, 140: 0xFF800080, 141: 0xFFFF0000,
+    142: 0xFFBC8F8F, 143: 0xFF4169E1, 144: 0xFF8B4513, 145: 0xFFFA8072,
+    146: 0xFFF4A460, 147: 0xFF2E8B57, 148: 0xFFFFF5EE, 149: 0xFFA0522D,
+    150: 0xFFC0C0C0, 151: 0xFF87CEEB, 152: 0xFF6A5ACD, 153: 0xFF708090,
+    154: 0xFFFFFAFA, 155: 0xFF00FF7F, 156: 0xFF4682B4, 157: 0xFFD2B48C,
+    158: 0xFF008080, 159: 0xFFD8BFD8, 160: 0xFFFF6347, 161: 0xFF40E0D0,
+    162: 0xFFEE82EE, 163: 0xFFF5DEB3, 164: 0xFFFFFFFF, 165: 0xFFF5F5F5,
+    166: 0xFFFFFF00, 167: 0xFF9ACD32,
+}
+
+
 class Project:
     def __init__(self, graph):
         self.g = graph
         self.o = graph.objects
+        self._palette = None  # palette_color()'s index -> color, read once
 
     @classmethod
     def open(cls, path):
@@ -81,12 +127,42 @@ class Project:
 
     # -- semantic accessors ------------------------------------------------
     def color(self, obj):
-        """PBColor -> {'A','R','G','B'} or None when fully transparent."""
+        """PBColor -> {'A','R','G','B'} or None when fully transparent.
+
+        A color can name an entry of the project's palette instead of carrying
+        a value: `paletteIndexField` >= 0, and `valueField` is then empty. Build
+        draws the entry - Shockwave's On captions are palette Black (1), and
+        Afterburn's seed has none, which is why reading only the value went
+        unnoticed.
+        """
+        i = self.field(obj, 'paletteIndexField')
+        if isinstance(i, int) and i >= 0:
+            return self.palette_color(i)
         inner = self.field(obj, 'valueField')
         if not isinstance(inner, dict):
             return None
+        if inner.get('state') == 1:  # stored by name: see KNOWN_COLORS
+            v = KNOWN_COLORS.get(inner.get('knownColor'))
+            c = argb(v) if v is not None else None
+            return c if c and c['A'] else None
         c = argb(inner.get('value', 0))
         return c if c['A'] else None
+
+    def palette_color(self, index):
+        """The project palette's entry `index` -> {'A','R','G','B'}, or None when
+        it is transparent or the palette has no such entry."""
+        if self._palette is None:
+            self._palette = {}
+            for proj in self.instances('PBProject'):
+                pal = self.deref(self.field(proj, 'paletteField'))
+                for e in self.items((pal or {}).get('itemsField')) if isinstance(pal, dict) else []:
+                    e = self.deref(e)
+                    self._palette[e.get('indexField')] = {
+                        'A': e.get('alphaField'), 'R': e.get('redField'),
+                        'G': e.get('greenField'), 'B': e.get('blueField')}
+                break
+        c = self._palette.get(index)
+        return c if c and c['A'] else None
 
     def border(self, obj):
         """The named border resource, decoded to shape geometry."""

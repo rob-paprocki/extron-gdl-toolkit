@@ -81,6 +81,63 @@ class TestEveryDeclaredFaceIsRecovered(unittest.TestCase):
                              f'{os.path.basename(path)} mapped two names to one face')
 
 
+class TestASystemFaceIsSaidAloud(unittest.TestCase):
+    """Without the recovered faces the compositor falls back to the host's
+    Arial for every one, and the render scores 2.81% instead of the baseline's
+    2.19% - a checkout that skipped `python -m gdl.fonts` scored every page
+    worse and nothing said so. compose records each fallback, and
+    tests/score.py refuses to record over one."""
+
+    def test_a_fallback_is_recorded(self):
+        import tempfile
+        from gdl import compose
+        saved = compose.FONTDIR, dict(compose._cache), set(compose.FALLBACKS)
+        try:
+            compose.FONTDIR = tempfile.mkdtemp()
+            compose._cache.clear()
+            compose.FALLBACKS.clear()
+            try:
+                compose.face('Arial', 0, 0, 14)
+            except LookupError:
+                self.skipTest('no system Arial on this host either')
+            self.assertEqual(compose.FALLBACKS, {"Arial as the host's arial.ttf"})
+        finally:
+            compose.FONTDIR = saved[0]
+            compose._cache.clear()
+            compose._cache.update(saved[1])
+            compose.FALLBACKS.clear()
+            compose.FALLBACKS.update(saved[2])
+
+    def test_a_face_drawn_in_the_recovered_arial_is_recorded(self):
+        """A partial recovery - `gdl.fonts` run over one fixture, which carries
+        Arial but not every face - drew each missing face in that Arial, and
+        nothing recorded it. Arial itself, drawn in Arial, is no fallback."""
+        import shutil
+        import tempfile
+        from gdl import compose
+        src = next((p for p in (os.path.join(compose.FONTDIR, 'arial.ttf'),
+                                'C:/Windows/Fonts/arial.ttf', '/Library/Fonts/Arial.ttf')
+                    if os.path.exists(p)), None)
+        if not src:
+            self.skipTest('no Arial to recover from on this host')
+        saved = compose.FONTDIR, dict(compose._cache), set(compose.FALLBACKS)
+        try:
+            compose.FONTDIR = tempfile.mkdtemp()
+            shutil.copy(src, os.path.join(compose.FONTDIR, 'arial.ttf'))
+            compose._cache.clear()
+            compose.FALLBACKS.clear()
+            compose.face('Arial', 0, 0, 14)
+            self.assertEqual(compose.FALLBACKS, set())
+            compose.face('Open Sans', 0, 0, 14)
+            self.assertEqual(compose.FALLBACKS, {'Open Sans as arial.ttf'})
+        finally:
+            compose.FONTDIR = saved[0]
+            compose._cache.clear()
+            compose._cache.update(saved[1])
+            compose.FALLBACKS.clear()
+            compose.FALLBACKS.update(saved[2])
+
+
 class TestScanIsUnchanged(unittest.TestCase):
     def test_scan_still_finds_every_recovered_face(self):
         """`extract` anchors on `scan`, so an anchor for each face must exist."""

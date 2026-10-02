@@ -93,7 +93,8 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
 
    **Name the page art and the clock format.** A page's `background_image` - or
    the theme's, for every page - names an image drawn fitted, keeping its
-   aspect, over the page's `background`. One the donor lacks needs `"images": {"<name>": "<path>"}`,
+   aspect, over the page's `background`; `"background_layout": "stretch"` stretches
+   it instead, as Mach's pages lay out their photo. One the donor lacks needs `"images": {"<name>": "<path>"}`,
    the path relative to the theme resource kits (`vendor/extron/Resources`, or
    the install), and the applier appends it. A button's icon is an `image` the
    same way, on the button or on each state (*Icons* below). A `datetime` control's `format` is
@@ -118,7 +119,8 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    unknown resources, and Extron's numeric standards (touch target, spacing,
    ≤9 buttons per group, ≤6 colors drawn - a caption's default color and the
-   popups' colors included - and ≥14pt body text).
+   popups' colors included, each color counted once whatever its transparency -
+   and ≥14pt body text).
 5. **Preview it**: `python -m gdl.spec render <spec.json> out/preview.png`, then
    **look at the image**. The compositor is scored against GUI Designer's own
    output, so this is a real preview, not a sketch. Iterate here — it is fast
@@ -131,8 +133,8 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
    **Pick the donor deliberately — it ships in the result.** The fixtures are a
    real client's project, so a panel cloned from one carries their page names,
    popups, artwork and retail fonts. For anything going to a client, use a
-   *seed* from `seeds/` — themed projects made with **File > New Project...**,
-   across several theme families and sizes (`seeds/README.md` lists them; `git
+   *seed* from `seeds/` — themed projects made through the Project Create
+   Wizard (`powershell/New-GdlSeed.ps1`), across several theme families and sizes (`seeds/README.md` lists them; `git
    lfs pull` fetches them). Prefer one at the target size:
    `retarget` builds a correct panel at another size, but only 22% of controls
    match what Extron's own designers drew there. Extron's `.glt` templates cannot be
@@ -236,7 +238,10 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   family the donor lacks is reported and the panel ships in the donor's face;
   `gdl.spec donors` warns first and `verify_built.py` catches it after.
 - **Set `flattenTextField = false` on cloned buttons**, or Build bakes the
-  donor's caption into every button's artwork (`docs/from-scratch.md` §5b).
+  donor's caption into every button's artwork (`docs/from-scratch.md` §5b). The
+  applier does. The one exception is a spec button with `"flatten": true`, used
+  only by `tests/type_probe.py`: Build bakes it from each state's `ftextField`,
+  which the applier then writes too (`docs/gdl-format.md` §2).
 - **Clear what a clone inherits:** `<TLPImageID>` on a cloned page,
   `buttonImageField` on a cloned button.
 - **Buttons render from their states.** Set text and color on every state, and
@@ -262,17 +267,25 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 
 ## Icons: two routes, both work
 
-- **Images** — the normal route, and what real panels use. Extron's kits ship
-  1,316 (Afterburn), 596 (Mach), 1,124 (Shockwave), 1,408 (Turbulence) assets.
+- **Images** — the normal route, and what real panels use. Extron's kits are
+  under the install's `Resources\` (`docs/design-rules.md` §7 has what each
+  holds), and Turbulence's art is extracted from its seed and templates
+  (`vendor/README.md`); a spec names only what those resolve to.
   A spec button names one by its file name as `image`, on the button or per
   state (`{"name": "On", "image": "756x756_laptop-orange_sel.png"}`), with
   `"border": "none"` since the kit image draws the button; `images` brings any
   the donor lacks. The applier appends it and draws it the way every image
   button in the Afterburn seeds is drawn — `Fill` (fit, keeping the aspect),
   `MiddleCenter` — so size the button to the image's shape. A button with no
-  `fill` is written transparent, so a state does not keep its donor's. A
-  slider's thumb is a kit image too: `thumb_image`, in the scheme's secondary
-  accent (Afterburn: `440x440_thumb-1-<color>_sel.png`).
+  `fill` is written transparent, so a state does not keep its donor's. A donor
+  image of the same name but other pixels is not reused: the file goes in as
+  `<name>_1`. A slider's thumb is a kit image too: `thumb_image`, in the
+  scheme's secondary accent (Afterburn: `440x440_thumb-1-<color>_sel.png`),
+  `thumb` across and `thumb_height` along the rail where it is not square
+  (Shockwave's is 52 by 34). Where the rail is art too, `track_image` and
+  `fill_image` name it - both, since the applier writes only what it is given
+  and a clone keeps its donor's other; such a slider is planned with no border
+  or fill, since Build draws a bordered fill in place of the art.
 - **Icon fonts** — for single-color icons, faster and needs no resource.
   Afterburn 136 glyphs at U+E900–E98C, Mach (Extron-Lift) 121 at U+E900–E978.
   Place them as text in that face.

@@ -418,6 +418,30 @@ committing. Only a real click on the list item works.
 
 `Create` and `Cancel` expose no patterns, so they need a click by position.
 
+**`powershell/New-GdlSeed.ps1` does all of this**, refuses a name the wizard
+does not offer, builds what it saves - Save As writes no `layout.json`, and every
+hand-made seed is built - and runs `tests/verify_seed.py` on it, removing the
+file if it does not build or the verifier refuses it or cannot run, so a seed
+nobody verified never stays where the next run finds it. It closes any GUI Designer already running,
+unsaved work and all, and says so first. Three more things it had to learn, for
+anything else that drives the wizard:
+
+- **Wait for GUI Designer's own wizard.** It opens one by itself once it has
+  loaded: the main window appears in about a second, the wizard about ten
+  seconds later. File > New Project in that gap opens a second wizard over the
+  first, and UI Automation then reports a wizard with no combos, or hangs.
+- **Search for a combo by type as well as name.** The text "Panel Type:" beside
+  the combo is an element of the same name, earlier in the tree, and
+  `Expand()` on it does nothing.
+- **Save the new project with window messages, not UI Automation.** The File
+  menu names the item after the project - "Save Afterburn All-inclusive 725
+  As..." - and the dialog it opens, "Save Project As (<project>)", is the
+  Windows common dialog. Opened by a UIA `Invoke`, it does not answer UIA in
+  time: a walk of it takes minutes and finds neither its File name box nor its
+  Save button. `WM_SETTEXT` into the File name box (the visible `Edit` in a
+  `ComboBox` under `FloatNotifySink`) and `WM_COMMAND IDOK` to the dialog save
+  it in seconds, with no mouse and no focus.
+
 Two things that mislead on the way in. `InvokePattern.Invoke()` on the menu item
 that opens the wizard throws `Operation timed out (0x80131505)` because the call
 blocks on the modal — the dialog *does* open, so query it from a separate call
@@ -561,7 +585,9 @@ the default is not inside the repo.
 - **`Project > Verify` (Ctrl+B) is not a build**, and `PBProject.BuildProject()`
   cannot be called headlessly — `docs/gdl-format.md` §2 has both. The build is
   **File > Save and Build (Ctrl+Shift+B)**.
-- **The Project Create Wizard cannot be driven at all** — see §5c.
+- **A seed is made by `New-GdlSeed.ps1`**, which drives the Project Create
+  Wizard (§5c). Unlike a build it needs a desktop: in a locked or
+  disconnected session the wizard's dropdowns never open, so it refuses.
 
 ### Reading the screen back
 
