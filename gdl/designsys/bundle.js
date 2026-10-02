@@ -445,12 +445,15 @@
   // -- PopupRegion: where a group's popups appear ---------------------------
   function PopupRegion(props) {
     var L = useLook();
+    // Muted where the template has a secondary text color; Turbulence draws
+    // all its text white and has none, which painted the region magenta.
+    var muted = L.colors['text-secondary'] ? 'text-secondary' : 'text';
     return h('div', {
       className: 'xgdl xgdl-popupregion',
       style: { boxSizing: 'border-box', width: '100%', height: '100%', display: 'flex',
                alignItems: 'center', justifyContent: 'center',
-               border: '2px dashed ' + paint(L.colors, 'text-secondary'),
-               color: paint(L.colors, 'text-secondary'), font: font({}, 'body').css },
+               border: '2px dashed ' + paint(L.colors, muted),
+               color: paint(L.colors, muted), font: font({}, 'body').css },
       'data-gdl': gdl({ kind: 'popup_ref', name: props.name, group: props.group })
     }, 'Popups in ' + (props.group || '(no group)'));
   }

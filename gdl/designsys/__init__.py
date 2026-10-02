@@ -607,7 +607,11 @@ def _example_button(p, key, name, extra=''):
 def component_docs(p):
     """{name: README markdown} - guidelines Claude Design reads before mounting."""
     t = p['template']
-    variants = '\n'.join(f"- `{k}`: {v['usage']}" for k, v in p['buttons'].items())
+    # The seed's own size, where the profile records it: a designer drawing a
+    # tile smaller than the template does gets a caption that spills.
+    variants = '\n'.join(f"- `{k}`: {v['usage']}"
+                         + (' The seed draws it {}x{}.'.format(*v['size']) if v.get('size') else '')
+                         for k, v in p['buttons'].items())
     types = [s['name'] for s in p['type']]
     by_type = {s['name']: s for s in p['type']}
     button_types = ' or '.join(
@@ -750,29 +754,73 @@ def _preview(p, comp, height, body):
             f'<body style="margin:0;background:var(--page)">\n<div id="root"></div>\n<script>\n'
             f'  var N = window.{ns}, h = React.createElement;\n'
             f'  function box(w, ht, el) {{ return h("div", {{ style: {{ width: w + "px", height: ht + "px" }} }}, el); }}\n'
+            # Drawn at its own size and scaled down whole, so a caption keeps
+            # its proportion to the art it sits on.
+            '  function fit(w, ht, max, el) { var k = Math.min(1, max / ht); return h("div", { style: { width: w * k + "px", height: ht * k + "px" } }, '
+            'h("div", { style: { width: w + "px", height: ht + "px", transform: "scale(" + k + ")", transformOrigin: "0 0" } }, el)); }\n'
             '  function row(kids) { return h("div", { style: { display: "flex", gap: "24px", padding: "16px", alignItems: "center", flexWrap: "wrap" } }, kids); }\n'
             f'  ReactDOM.createRoot(document.getElementById("root")).render({body});\n'
             '</script>\n</body>\n</html>\n')
 
 
+# The tallest a button is drawn in the Button preview; a taller one is scaled
+# down whole (`fit`), its caption with it.
+PREVIEW_MAX = 110
+
+
 def _preview_images(p):
     """[variant, icon, w, h, caption] for each image variant's preview: its own
-    default icon or the first its kit has, at its kit image's shape."""
+    default icon or the first its kit has, at the size its seed draws it
+    (`size`), or else at its kit image's shape. Turbulence's 87x90 tile drawn
+    64 tall kept its caption at full size, which spilled past the tile."""
     names = icon_names(p)
     out = []
     for k, size, caption, icon in _image_buttons(p):
         icon = icon or next(iter(names.get(k) or []), None)
-        w, h = (int(n) for n in size.split('x'))
-        ht = 110 if caption == 'below' else 64
         text = '' if caption == 'none' else 'Laptop' if caption == 'below' else k.capitalize()
-        out.append([k, icon, min(260, round(ht * w / h)), ht, text])
+        seed = p['buttons'][k].get('size')
+        if seed:
+            w, ht = seed
+        else:
+            w, h = (int(n) for n in size.split('x'))
+            ht = 110 if caption == 'below' else 64
+            w = min(260, round(ht * w / h))
+        out.append([k, icon, w, ht, text])
     return out
+
+
+def _panel_fills(p):
+    """The default panel fill and up to two of the template's other surface
+    colors, for the Panel preview - only names the template has: Turbulence
+    has no `pressed`, which painted the preview magenta."""
+    names = {c['name'] for c in p['colors']}
+    default = p['defaults']['panel']['fill']
+    alt = [n for n in ('pressed', 'shade', 'raised', 'rail', 'well') if n in names and n != default]
+    return [default] + alt[:2]
+
+
+def _button_preview_height(p, width=1100):
+    """The Button card's height: its boxes in rows as the preview's flex row
+    wraps them, on a card about `width` wide."""
+    boxes = [(180, 64)] * 2 * sum(1 for v in p['buttons'].values() if not v.get('kit'))
+    for _, _, w, ht, _ in _preview_images(p):
+        k = min(1, PREVIEW_MAX / ht)
+        boxes += [(round(w * k), round(ht * k))] * 2
+    rows, x, tall = [], 16, 0
+    for w, ht in boxes:
+        if x > 16 and x + w > width - 16:
+            rows.append(tall)
+            x, tall = 16, 0
+        x, tall = x + w + 24, max(tall, ht)
+    rows.append(tall)
+    return sum(rows) + 24 * (len(rows) - 1) + 32
 
 
 def previews(p):
     heights = {n: ht for n, _, ht in COMPONENTS}
     s = p['size']
     scale = 0.12
+    fills = _panel_fills(p)
     b = {
         'Page': ('h("div", { style: { transform: "scale(' + str(scale) + ')", transformOrigin: "0 0", width: "'
                  + str(s[0]) + 'px", margin: "16px" } }, h(N.Page, { name: "Home" }, '
@@ -788,17 +836,26 @@ def previews(p):
                    '.map(function (v) { return [box(180, 64, h(N.Button, { key: v, variant: v }, v)), '
                    'box(180, 64, h(N.Button, { key: v + "on", variant: v, show: "On" }, v + " On"))]; })'
                    '.concat(N.profile.kit ? ' + json.dumps(_preview_images(p)) + ''
-                   '.map(function (x) { return ["Off", "On"].map(function (st) { return box(x[2], x[3], '
+                   '.map(function (x) { return ["Off", "On"].map(function (st) { return fit(x[2], x[3], ' + str(PREVIEW_MAX) + ', '
                    'h(N.Button, { key: x[0] + st, variant: x[0], icon: x[1] || undefined, show: st }, x[4])); }); }) : []))'),
         'Label': ('row(["title", "heading", "body", "body-strong"].map(function (t) { '
                   'return box(260, 60, h(N.Label, { key: t, type: t }, t)); }))'),
-        'Panel': 'row([box(260, 90, h(N.Panel, { key: 1 })), box(260, 90, h(N.Panel, { key: 2, fill: "pressed", border: "rect" }))])',
+        # A panel in the page's own color - Turbulence's and Shockwave's are -
+        # is shown over the template's page, its photo and all, rather than
+        # vanishing into the card's ground. The rest keep the plain ground: a
+        # photo squeezed into a strip is no help to them.
+        'Panel': ((('h(N.Page, { name: "Panels", width: ' + str(32 + 284 * len(fills) - 24)
+                    + ', height: 122 }, ') if fills[0] == p['defaults']['page']['background'] else '(')
+                  + 'row([' + ', '.join(
+                      f'box(260, 90, h(N.Panel, {{ key: {i}, fill: "{f}" }}))'
+                      for i, f in enumerate(fills)) + ']))'),
         'Line': 'row([box(560, 2, h(N.Line))])',
         'Slider': 'row([box(420, 60, h(N.Slider, { value: 60 }))])',
         'Level': 'row([box(420, 40, h(N.Level, { value: 40 })), box(40, 88, h(N.Level, { orientation: "up", value: 70 }))])',
         'Clock': 'row([box(200, 40, h(N.Clock)), box(360, 40, h(N.Clock, { format: "date" }))])',
         'PopupRegion': 'row([box(440, 90, h(N.PopupRegion, { group: "Sources" }))])',
     }
+    heights['Button'] = max(heights['Button'], _button_preview_height(p))
     return {n: _preview(p, n, heights[n], b[n]) for n, _, _ in COMPONENTS}
 
 

@@ -602,5 +602,40 @@ class TestBuild(unittest.TestCase):
             self.assertEqual(idx['lastChange']['at'], 'now')
 
 
+class TestPreviews(unittest.TestCase):
+    """What the published system shows a designer, for every template."""
+
+    def test_no_template_names_a_color_it_lacks(self):
+        """A color name the template does not have paints #FF00FF, on purpose,
+        so it is seen. Turbulence's Panel preview filled with `pressed` and its
+        PopupRegion drew in `text-secondary` - neither is Turbulence's."""
+        js = designsys._read('bundle.js')
+        literal = set(re.findall(r"paint\([^,()]+,\s*'([a-z][a-z-]*)'\)", js))
+        for t in designsys.TEMPLATES:
+            p = designsys.load(t)
+            have = {c['name'] for c in p['colors']}
+            used = set(literal)
+            for src in designsys.previews(p).values():
+                used |= set(re.findall(r'\b(?:fill|stroke|color): "([a-z][a-z-]*)"', src))
+            self.assertEqual(used - have - {'none'}, set(), t)
+
+    def test_a_panel_preview_shows_its_fills_over_the_templates_page(self):
+        """Turbulence's panel is `page`, so drawn on the page's own color it was
+        not there at all."""
+        src = designsys.previews(designsys.load('turbulence'))['Panel']
+        self.assertIn('N.Page', src)
+        self.assertEqual(re.findall(r'fill: "([a-z-]+)"', src), ['page', 'shade', 'raised'])
+
+    def test_an_image_variant_previews_at_its_seeds_size(self):
+        """Turbulence's square tile is 87 by 90 in its seed and its ring 100;
+        the preview drew both 64 tall with captions at full size, so 'Button'
+        spilled past its tile - and a designer copying it would too."""
+        p = designsys.load('turbulence')
+        sizes = {x[0]: (x[2], x[3]) for x in designsys._preview_images(p)}
+        self.assertEqual((sizes['button'], sizes['ring'], sizes['source']),
+                         ((87, 90), (100, 100), (127, 133)))
+        self.assertIn('The seed draws it 87x90.', designsys.component_docs(p)['Button'])
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

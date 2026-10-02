@@ -8,7 +8,8 @@
     "Type: every drawn caption and label is Open Sans Light, regular weight (the seed sets Bold only on uncaptioned states and an icon font); the system carries Open Sans at 400, a little heavier. Labels 16 pt (36), 36 (17), 20 (16); captions 16 (146 states) and 20 (88, the keyboard). The draft's 35 pt and 10 pt bold came off states with no caption and are gone.",
     "Borders: 13 defined, 4 drawn - 2D Rounded Rectangle on all 28 shapes, 2D Rectangle on the 6 search rows' states, the 3D Gradient pair on the 12 preset states. No button has a control-level border.",
     "Slider: all 10 seed sliders are image-drawn - 52 wide, sliderTrackWidth 44, thumb 52x52 from 102x102_thumb_turb_sq.png, rail 52x535_turb_slider_bg.png under 52x535_turb_slider_fill.png - with no fill or border. The seed has no level; `level` is assumed.",
-    "Layout, from Main SD: a 1280x133 header holding six 127x133 source tabs from x 141, 140 px rails either side, a 997x110 footer at 140,688, and the 995x549 popup region at 140,137 where a source's popup shows. Every page stretches its photo (backgroundImageLayoutField 1): bkgd_pc behind the device pages, bkgd_home behind Select a Source, bkgd_home_plain behind Room Mode, bkgd_start behind Start. bkgd_home and bkgd_start paint bars into the photo and only suit those layouts, so they are not themes; the templates add bkgd_lighting, bkgd_swoop_plain and bkgd_water-1_plain."
+    "Layout, from Main SD: a 1280x133 header holding six 127x133 source tabs from x 141, 140 px rails either side, a 997x110 footer at 140,688, and the 995x549 popup region at 140,137 where a source's popup shows. Every page stretches its photo (backgroundImageLayoutField 1): bkgd_pc behind the device pages, bkgd_home behind Select a Source, bkgd_home_plain behind Room Mode, bkgd_start behind Start. bkgd_home and bkgd_start paint bars into the photo and only suit those layouts, so they are not themes; the templates add bkgd_lighting, bkgd_swoop_plain and bkgd_water-1_plain.",
+    "Sizes: each button variant's `size` is the size the seed draws it at - the most common rect among its buttons, read by the art their first state shows: the square tile 87x90 (39 of 43), the ring 100x100 (18), the dock's tile 140x108 (23), a call tile 140x89, a source tab 127x133, a wide bar 383x100, a scene picture 266x209, an answer 240x129, a preset 218x149, the Start disc 271x282, Close 60x60."
   ],
   "template": "Turbulence",
   "namespace": "ExtronTurbulence",
@@ -56,6 +57,7 @@
     "button": {
       "usage": "The default: the kit's square tile, gray at rest and white with a green glow when On, its caption drawn over it - the seed's keyboard keys (87x90) and Camera Near and Far (95x100). Any other `icon` of its size carries its glyph or word and takes no caption: transport_* and dialpad_* keys, square_00 to square_09, home, back, cancel, more, the vc_* call keys (vc_call green, vc_contacts, vc_delete and vc_flash blue, vc_power-dn red) and the tv_* channel logos.",
       "kit": "440x440",
+      "size": [87, 90],
       "icon": "square_blank",
       "look": {"border": "none", "color": "text"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "accent"}]
@@ -63,6 +65,7 @@
     "ring": {
       "usage": "A ring: a white outline over the photo at rest, a white disc with a green glow when On - the seed's rail controls, 100x100. Display on, off and mute, screen up and down, volume mute, and lighting presets 1 to 6 (round_01 to round_06) carry their word or glyph; round_blank takes a caption, as the seed's screen Stop does.",
       "kit": "440x440",
+      "size": [100, 100],
       "icon": "round_blank",
       "icons": ["round_", "display_", "on", "off", "volume_"],
       "look": {"border": "none", "color": "text"},
@@ -71,6 +74,7 @@
     "dock": {
       "usage": "A launcher on a rail, its caption drawn on the photo: invisible at rest, a dark-teal tile with a lime edge when On - the seed's Screen Control, Lighting Control, Audio Control and Room Mode, 140x108. Two words go on two lines. `display`, `display1_blank` and `display2_blank` add a monitor glyph above the caption.",
       "kit": "712x440",
+      "size": [140, 108],
       "icon": "blank",
       "icons": ["blank", "display"],
       "look": {"border": "none", "color": "text"},
@@ -79,6 +83,7 @@
     "call": {
       "usage": "A call control: a colored tile with the kit's glyph above and the caption one line below it, white when On - the seed's Initiate Call (dialer, green), End Call (end-call, red) and Privacy (privacy, gold), 140x89. `share-content` has its words in the art and takes no caption.",
       "kit": "712x440",
+      "size": [140, 89],
       "icon": "end-call",
       "icons": ["dialer", "end-call", "privacy", "share-content"],
       "caption": "below",
@@ -89,6 +94,7 @@
     "source": {
       "usage": "A source tab in the header: a navy tile with the kit's white glyph, dark teal with a lime glyph when chosen, and the source's name under the glyph - the seed's PC, Laptop, Blu-ray, AUX, Tuner and Doc Cam, 127x133, and Help (input_help, invisible at rest) 103x108 in the footer. `icon` is input_pc, input_laptop, input_bluray, input_ipod, input_tuner, input_doc-cam, input_vc-cam or input_help.",
       "kit": "504x504",
+      "size": [127, 133],
       "icon": "input_laptop",
       "icons": ["input_", "blank", "help_blank", "elipses"],
       "caption": "below",
@@ -99,6 +105,7 @@
     "scene": {
       "usage": "A large picture of a device, its name in a Label under it - the seed's Select a Source page, 266x209. No caption.",
       "kit": "900x648",
+      "size": [266, 209],
       "icon": "input_laptop",
       "caption": "none",
       "look": {"border": "none", "color": "text"},
@@ -107,6 +114,7 @@
     "wide": {
       "usage": "A wide gray bar with its caption drawn on it, white when On - the seed's Presentation Mode and Video Conference Mode, 383x100.",
       "kit": "720x180",
+      "size": [383, 100],
       "icon": "blank",
       "look": {"border": "none", "color": "text"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "accent"}]
@@ -114,6 +122,7 @@
     "answer": {
       "usage": "An incoming call's choice, its words in the art: vc_accept-call (green) and vc_ignore-call (red), 240x129. No caption.",
       "kit": "880x440",
+      "size": [240, 129],
       "icon": "vc_accept-call",
       "caption": "none",
       "look": {"border": "none", "color": "text"},
@@ -122,6 +131,7 @@
     "preset": {
       "usage": "A window-layout preset with its diagram in the art (preset_01 to preset_12), 218x149. No caption.",
       "kit": "783x440",
+      "size": [218, 149],
       "icon": "preset_01",
       "caption": "none",
       "look": {"border": "none", "color": "text"},
@@ -130,6 +140,7 @@
     "start": {
       "usage": "The Start page's disc, its word in the art, 271x282. No caption.",
       "kit": "880x880",
+      "size": [271, 282],
       "icon": "start",
       "caption": "none",
       "look": {"border": "none", "color": "text"},
@@ -138,6 +149,7 @@
     "close": {
       "usage": "A modal's Close: a gray sphere with a red X, white with a green X when pressed. 60x60, 5 px inside the card's top right.",
       "kit": "440x440",
+      "size": [60, 60],
       "icon": "close",
       "icons": "close",
       "caption": "none",
