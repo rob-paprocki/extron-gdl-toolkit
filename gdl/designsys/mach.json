@@ -245,7 +245,7 @@
       ]
     },
     "source": {
-      "usage": "A source tile: a `solid` square with the kit's icon centered and, if it has one, its caption below - as the seed's Camera 1/2. The seed's own source row puts the name under the tile as an `ink` Label instead; either reads.",
+      "usage": "A source tile: a `solid` square about 150x150 with the kit's icon and the source's name as its caption, under the icon on the tile - as the seed's Camera 1/2. Give it the name: the kit draws the icon high in the square to leave the caption room, so a tile with no caption, or with its name in a Label outside it, reads off-center.",
       "look": {
         "fill": "shade",
         "border": "none",
@@ -263,7 +263,8 @@
       "with_icon": {
         "kit": "440x440",
         "bare": "440x440",
-        "caption": "below"
+        "caption": "below",
+        "breaks": 3
       }
     },
     "footer": {
@@ -372,7 +373,7 @@
     ]
   },
   "examples": {
-    "source": {"attrs": "variant=\"source\" icon=\"laptop_1\"", "rect": [450, 320, 100, 100]}, "help": {"attrs": "variant=\"footer\"", "text": "Help", "rect": [1058, 745, 70, 55]},
+    "source": {"attrs": "variant=\"source\" icon=\"laptop_1\"", "text": "Laptop", "rect": [450, 300, 150, 150]}, "help": {"attrs": "variant=\"footer\"", "text": "Help", "rect": [1058, 745, 70, 55]},
     "states": "[{\"name\":\"No Signal\",\"fill\":\"shade\",\"color\":\"text-secondary\"},\"Ready\",{\"name\":\"Live\",\"fill\":\"accent\",\"color\":\"page\"}]",
     "states_note": "In Mach a selected or On state usually moves the same fill to a brighter alpha (raised/pressed, shade/shade-on); a state that has to stand out further, like this one, fills solid `accent` instead, with a `page`-colored caption for contrast - see the highlight variant.",
     "on_off": "[\"Off\",{\"name\":\"On\",\"fill\":\"pressed\"}]",
@@ -441,7 +442,7 @@
       "**The footer bar (1280x55 at 0,745) is `shade` too**, holding a `footer` Room Mode button at its left (140 wide), the date and time centered in `text-secondary`, and `footer` Help (70) and Power (140) buttons at its right.",
       "**The left rail (x 17, 103 wide) holds grouped controls:** a heading in `ink` on the photo (Display, Settings, Lighting Preset), then a column of `solid` buttons 103x60, stacked with no gap inside a group.",
       "**The right rail (x 1161, 103 wide) holds volume:** a `Volume` heading in `ink`, a vertical slider about 30 wide centered under it, and a `solid` Mute button 103x60 below.",
-      "**Sources sit in the middle of the photo** as `source` tiles about 100x100, four to a row, each with its name in `ink` below it; a status line or a single action is centered under them."
+      "**Sources sit in the middle of the photo** as `source` tiles about 150x150, the row centered on the page, each with its name as its caption on the tile; a status line or a single action is centered under them."
     ]
   },
   "kit": {

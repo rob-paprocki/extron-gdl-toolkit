@@ -223,7 +223,8 @@ tokens used, resolved for the canvas's accent scheme.
   the state's look to the kit file for the page's scheme and carries the file
   name; the translator gives the spec each file's kit path, and a name the kit
   lacks is refused. The caption is placed as the template places it - line
-  breaks under a source's icon, leading spaces past a list button's.
+  breaks under a source's icon (as many as the seed's own tile of that size
+  takes, a variant's `breaks`), leading spaces past a list button's.
 - **One template and one accent scheme per panel**, and page names unique.
 
 ## 5. The translator
@@ -261,15 +262,15 @@ that paints outside one. Chrome is the only new runtime need, and only here.
   `gdl.design compare` then put 1.2% of Home's pixels, 2.2% of Help's and 1.9%
   of the Room Off confirmation's apart from the build.
 - **The same brief in *Extron Mach*** (`tests/data/design-huddle-mach/`: the
-  seed's sunset photo, shade bars and rails, source tiles with kit icons and
-  black captions on the photo, Help and Room Off as Mach's full-width modal
-  windows), built on `seeds/Mach 1035.gdl`: layout 91 controls, ID map 30
-  references, 0 problems each. Compare put Help 2.7% and Room Off 2.0% apart,
-  Home 19.5% - the renderer draws Mach's translucent bars and buttons opaque,
+  seed's sunset photo, shade bars and rails, 150 px source tiles with their
+  kit icons and names on them, Help and Room Off as Mach's full-width modal
+  windows), built on `seeds/Mach 1035.gdl`: layout 85 controls, ID map 27
+  references, 0 problems each. Compare put Help 2.7% and Room Off 2.2% apart,
+  Home 22.6% - the renderer draws Mach's translucent bars and buttons opaque,
   as GUI Designer's snapshots composite them, where the canvas shows the photo
   through them (`docs/render-fidelity.md` §2).
 - **The same brief in *Extron Shockwave*** (`tests/data/design-huddle-shockwave/`:
-  the seed's haze, source tabs across the header, the video well, kit-image
+  the seed's haze, source tabs centered across the header, the video well, kit-image
   buttons resting in their rings and lit, Help and Room Off as modal cards),
   built on `seeds/Shockwave 1035.gdl`: layout 87 controls, ID map 26
   references, 0 problems each. Compare put Home 55.6%, Help 50.2% and Room Off

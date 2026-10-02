@@ -192,21 +192,23 @@
   // How the variant draws its image, if it has one: the kit size, and where
   // the caption goes - `below` the icon, `indent`ed past it, or `none`.
   function imageOf(V, props, caption) {
-    if (V.kit) return { kit: V.kit, caption: V.caption, indent: V.indent, icon: props.icon || V.icon };
+    if (V.kit) return { kit: V.kit, caption: V.caption, indent: V.indent, breaks: V.breaks,
+                        icon: props.icon || V.icon };
     if (props.icon && V.with_icon) {
       var W = V.with_icon;
-      return caption ? { kit: W.kit, caption: W.caption, indent: W.indent, icon: props.icon }
+      return caption ? { kit: W.kit, caption: W.caption, indent: W.indent, breaks: W.breaks, icon: props.icon }
                      : { kit: W.bare, caption: 'none', icon: props.icon };
     }
     return null;
   }
   // The caption as the panel draws it: the kit leaves the label room below or
   // beside the icon, and the template's own buttons reach it with line breaks
-  // or leading spaces in the caption itself.
+  // or leading spaces in the caption itself - two breaks unless the variant
+  // says (Mach's 150 px source tiles take three, as its seed's Camera 1 does).
   function placed(img, text) {
     if (!img || text == null) return text;
     if (img.caption === 'none') return '';
-    if (img.caption === 'below') return text ? '\r\n\r\n' + text : text;
+    if (img.caption === 'below') return text ? new Array((img.breaks || 2) + 1).join('\r\n') + text : text;
     if (img.caption === 'indent') return text ? new Array((img.indent || 0) + 1).join(' ') + text : text;
     return text;
   }

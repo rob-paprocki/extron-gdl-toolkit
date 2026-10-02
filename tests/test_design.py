@@ -259,24 +259,44 @@ class TestInChrome(unittest.TestCase):
         self.assertEqual(home['Date']['align'], 'left')
         self.assertEqual(Panel(spec).check(), [])
 
-    def test_the_shockwave_canvas_translates_and_checks_clean(self):
-        """Shockwave's buttons are its kit's images, one per state."""
+    def _translate(self, template, data):
+        """A checked-in canvas laid out with `template`'s current bundle."""
         d = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, d, True)
-        shutil.copytree(os.path.join(HERE, 'data', 'design-huddle-shockwave'), d, dirs_exist_ok=True)
+        shutil.copytree(os.path.join(HERE, 'data', data), d, dirs_exist_ok=True)
         shutil.copy(RUNTIME, os.path.join(d, 'support.js'))
-        p = designsys.load('shockwave')
-        comps = os.path.join(d, 'ds', 'extronshockwave', 'components')
+        p = designsys.load(template)
+        comps = os.path.join(d, 'ds', p['namespace'].lower(), 'components')
         os.makedirs(comps)
         with open(os.path.join(comps, 'bundle.js'), 'w', encoding='utf-8') as fh:
             fh.write(designsys.bundle(p, art=False))
         with open(os.path.join(comps, 'bundle.css'), 'w', encoding='utf-8') as fh:
             fh.write(designsys.BUNDLE_CSS)
-        spec, problems, _ = design.Canvas(d).translate()
+        return p, design.Canvas(d).translate()
+
+    def test_mach_source_tiles_carry_their_names(self):
+        """The kit's 440x440 source art sits high in the tile to leave the
+        caption room below it, so the name goes on the tile: a Label under a
+        captionless tile leaves the icon off-center (owner's review)."""
+        p, (spec, problems, _) = self._translate('mach', 'design-huddle-mach')
+        self.assertEqual(problems, [])
+        home = {c['name']: c for c in spec['pages'][0]['controls']}
+        # Three line breaks down, as the seed's 150x150 Camera 1 reaches its caption.
+        self.assertEqual([home[n].get('text') for n in ('Laptop', 'Wireless', 'RoomPC')],
+                         ['\r\n\r\n\r\nLaptop', '\r\n\r\n\r\nWireless', '\r\n\r\n\r\nRoom PC'])
+        self.assertFalse({'LaptopLabel', 'WirelessLabel', 'PCLabel'} & set(home))
+        self.assertEqual(Panel(spec).check(), [])
+
+    def test_the_shockwave_canvas_translates_and_checks_clean(self):
+        """Shockwave's buttons are its kit's images, one per state."""
+        p, (spec, problems, _) = self._translate('shockwave', 'design-huddle-shockwave')
         if not designsys.kit_root(p):
             self.skipTest("Extron's Shockwave kit is not installed here")
         self.assertEqual(problems, [])
         home = {c['name']: c for c in spec['pages'][0]['controls']}
+        # The source tabs are centered on the page (owner's review).
+        left, right = home['Laptop']['rect'], home['RoomPC']['rect']
+        self.assertEqual(left[0] + (right[0] + right[2]), 1280)
         # At rest a button is its color's ring, lit its color's fill.
         self.assertEqual([s['image'] for s in home['RoomOff']['states']],
                          ['960x440_red_outline_nsel.png', '960x440_red_sel.png'])

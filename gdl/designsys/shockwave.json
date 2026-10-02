@@ -155,7 +155,7 @@
     ]
   },
   "examples": {
-    "source": {"attrs": "variant=\"source\" icon=\"laptop_white\"", "rect": [169, 0, 152, 91], "in_main": false}, "help": {"attrs": "variant=\"pill\" icon=\"yellow\"", "text": "Help", "rect": [956, 720, 143, 59]},
+    "source": {"attrs": "variant=\"source\" icon=\"laptop_white\"", "rect": [564, 0, 152, 91], "in_main": false}, "help": {"attrs": "variant=\"pill\" icon=\"yellow\"", "text": "Help", "rect": [956, 720, 143, 59]},
     "states": "[{\"name\":\"No Signal\",\"look\":\"off\"},{\"name\":\"Ready\",\"look\":\"off\",\"icon\":\"yellow\"},{\"name\":\"Live\",\"look\":\"on\",\"icon\":\"green\",\"color\":\"ink\"}]",
     "states_note": "In Shockwave a state shows itself through the kit's image: a state can name its own `icon` (color) and `look` (off rests dark with a ring, on lights up), and a lit image takes an `ink` caption.",
     "on_off": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"ink\"}]",
@@ -169,7 +169,7 @@
     "main": [168, 120, 926, 574],
     "main_note": "The video well: a `well` Panel with the `rounded` border, where the chosen source shows, or its name and status in white while nothing is connected.",
     "regions": [
-      "**The header (1280x91 at 0,0) is a `page` Panel with the source tabs across it**: `source` buttons 152x91 from x 169, one pixel apart, their names below their glyphs.",
+      "**The header (1280x91 at 0,0) is a `page` Panel with the source tabs across it**: `source` buttons 152x91, their names below their glyphs, the row centered on the page (the seed starts its six at x 169, over the well's left edge; fewer than that reads lopsided there).",
       "**The left rail (x 29, 120 wide) holds the display**: a `Display` label in `body-strong`, then `button`s 120x80 four pixels apart, and `tile`s 120x110 below for anything with a two-line name (Screen Control, Lighting Control).",
       "**The right rail (x 1127, 120 wide) holds volume**: a `Volume` label, a slider 52x315 centered under it, a `square` Mute 80x80 below (icon red), and an Audio Control `tile`.",
       "**The footer is a `page` Panel with the `capsule` border, 928x62 at 166,718**: a `wide` Room Mode (gray_round) at its left, the date and time centered in `raised`, and a `pill` Help (yellow) at its right. Power, a red `pill` 143x59, sits outside it at 1115,720."
