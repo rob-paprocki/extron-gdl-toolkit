@@ -29,8 +29,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PIL import Image  # noqa: E402
 
-from gdl.compose import (diff_stats, fill_index, group_members, load,  # noqa: E402
-                         render_page)
+from gdl.compose import (FALLBACKS, diff_stats, fill_index, group_members,  # noqa: E402
+                         load, render_page)
 
 ID_RE = re.compile(r'_Id(\d+)\.png$')
 
@@ -139,6 +139,13 @@ def main():
 
     if args.cmd == 'record':
         scores = record(args.gdl, args.snapshots)
+        if FALLBACKS:
+            # Not comparable with tests/baseline.json, which was scored on the
+            # faces the project embeds: the host's Arial costs every page.
+            print(f"scored on the host's {', '.join(sorted(FALLBACKS))} for want of the "
+                  f'recovered faces - nothing written. Recover them first:\n'
+                  f'  for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done')
+            return 2
         with open(args.out, 'w', encoding='utf-8') as fh:
             json.dump(scores, fh, indent=1, sort_keys=True)
         s = summarise(scores)

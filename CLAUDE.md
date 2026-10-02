@@ -242,9 +242,9 @@ were updated. So:
 ## Things deliberately not in git
 
 - **Most of `gdl/fonts/`** — retail and unlicensed faces, recovered from the
-  tracked fixtures during setup. `face()` raises `LookupError` on the first face
-  it cannot resolve, so skipping that stops the harness rather than degrading
-  it. `gdl/fonts/README.md` has the per-file licensing, and which projects
+  tracked fixtures during setup. Skip that and the renderer falls back to the
+  host's Arial and scores worse, and `tests/score.py` refuses to record over a
+  fallback. `gdl/fonts/README.md` has the per-file licensing, and which projects
   declare faces they do not embed. The bytes are still inside the tracked `.gdl`
   fixtures, so if the concern is distribution, `fixtures/` is the thing to look
   at.

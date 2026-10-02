@@ -63,6 +63,11 @@ SYSFONTS = (
 WINFONTS = SYSFONTS[0]          # kept: referenced by name elsewhere
 _cache = {}
 _sysindex = None
+# Every face drawn from SYSFONTS rather than FONTDIR, for a caller to say so:
+# on a checkout that never ran `python -m gdl.fonts`, every face falls back to
+# the host's Arial and the render baseline scores 2.81% for 2.19% - silently,
+# since a fallback is not an error. tests/score.py refuses to record over one.
+FALLBACKS = set()
 
 
 def _system_fonts():
@@ -98,6 +103,7 @@ def face(name, bold, italic, px):
     for fn in candidates:
         p = index.get(fn.lower())
         if p:
+            FALLBACKS.add(fn)
             f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
     raise LookupError(

@@ -81,6 +81,34 @@ class TestEveryDeclaredFaceIsRecovered(unittest.TestCase):
                              f'{os.path.basename(path)} mapped two names to one face')
 
 
+class TestASystemFaceIsSaidAloud(unittest.TestCase):
+    """Without the recovered faces the compositor falls back to the host's
+    Arial for every one, and the render scores 2.81% instead of the baseline's
+    2.19% - a checkout that skipped `python -m gdl.fonts` scored every page
+    worse and nothing said so. compose records each fallback, and
+    tests/score.py refuses to record over one."""
+
+    def test_a_fallback_is_recorded(self):
+        import tempfile
+        from gdl import compose
+        saved = compose.FONTDIR, dict(compose._cache), set(compose.FALLBACKS)
+        try:
+            compose.FONTDIR = tempfile.mkdtemp()
+            compose._cache.clear()
+            compose.FALLBACKS.clear()
+            try:
+                compose.face('Arial', 0, 0, 14)
+            except LookupError:
+                self.skipTest('no system Arial on this host either')
+            self.assertIn('arial.ttf', compose.FALLBACKS)
+        finally:
+            compose.FONTDIR = saved[0]
+            compose._cache.clear()
+            compose._cache.update(saved[1])
+            compose.FALLBACKS.clear()
+            compose.FALLBACKS.update(saved[2])
+
+
 class TestScanIsUnchanged(unittest.TestCase):
     def test_scan_still_finds_every_recovered_face(self):
         """`extract` anchors on `scan`, so an anchor for each face must exist."""
