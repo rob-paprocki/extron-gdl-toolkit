@@ -295,8 +295,13 @@ that paints outside one. Chrome is the only new runtime need, and only here.
   green Power Down and red Cancel), built on `seeds/Turbulence 1035.gdl`, its
   art extracted from the seed and the six Turbulence templates first:
   layout 87 controls and ID map 27 references, 0 problems each. Compare put
-  Home 15.6%, Help 3.0% and Room Off 2.5% apart - the rails' black at alpha
-  38 drawn solid by the renderer is most of Home's.
+  Home 15.6%, Help 3.0% and Room Off 2.5% apart, and nearly all of Home's is
+  the two side rails: Build wrote their black at alpha 38 as authored, and the
+  compositor draws any pixel above alpha 0 at full strength, as GUI Designer's
+  own snapshots do (`docs/render-fidelity.md` §2), so they render solid black
+  where the canvas shows the photo through them. The theme itself leans on
+  the panel blending - the seed's own header and footer art is alpha 128
+  throughout.
 
 ## 7. What is left
 
