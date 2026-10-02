@@ -250,6 +250,8 @@ class Canvas:
         # A slider's thumb is a kit image in the scheme's secondary accent. The
         # canvas draws it in that color; a clone would keep the donor's.
         thumb = designsys.slider_thumb(profile, scheme)
+        # And its rail, where that is art: a clone's never survives the applier.
+        rail = designsys.slider_rail(profile)
         for item in pages + popups:
             item['controls'] = [c for c in (self._control(item['name'], raw, stems)
                                             for raw in item.pop('_raw')) if c]
@@ -257,6 +259,8 @@ class Canvas:
             for c in item['controls']:
                 if c['kind'] == 'slider' and thumb:
                     c['thumb_image'] = thumb[0]
+                if c['kind'] == 'slider':
+                    c.update({k: f for k, (f, _) in rail.items()})
         wants_thumb = ((profile.get('defaults') or {}).get('slider') or {}).get('thumb_image')
         if wants_thumb and not thumb and any(c['kind'] == 'slider' for item in pages + popups
                                             for c in item['controls']):
@@ -286,12 +290,13 @@ class Canvas:
         used = {pg['background_image'] for pg in pages if pg.get('background_image')}
         buttons = {s['image'] for item in pages + popups for c in item['controls']
                    for s in c.get('states') or [] if isinstance(s, dict) and s.get('image')}
-        buttons |= {c['thumb_image'] for item in pages + popups for c in item['controls']
-                    if c.get('thumb_image')}
+        buttons |= {c[k] for item in pages + popups for c in item['controls']
+                    for k in ('thumb_image', 'track_image', 'fill_image') if c.get(k)}
         if buttons:
             files.update(designsys.kit_index(profile)['paths'])
             if thumb:
                 files[thumb[0]] = thumb[1]
+            files.update({f: path for f, path in rail.values()})
             for n in sorted(buttons - set(files)):
                 problems.append(f'image {n!r} is not in the {profile["template"]} kit on this '
                                 f'machine (vendor/extron/Resources or the install)')

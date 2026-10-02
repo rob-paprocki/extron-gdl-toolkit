@@ -379,6 +379,41 @@ class TestKitFiles(unittest.TestCase):
                          {'off': 'black_close.png', 'sel': 'white_close.png'})
         self.assertEqual(index['paths']['black_close.png'], 'Theme/icons/440x440 Black/black_close.png')
 
+    def test_a_named_pair_leaves_no_half_behind(self):
+        """Turbulence's rings rest as 440x440_outline_01_nsel and light as
+        440x440_round_01_sel - names the pattern files as two icons, one with
+        only a rest look and one with only a lit one. Named as one pair, the
+        stray half must go too: offered, it draws its one file in both states."""
+        index = self._index({'named': {'440x440': {'round_01': {
+            'off': '440x440_outline_01_nsel.png', 'sel': '440x440_round_01_sel.png'}}}},
+            ['440x440_outline_01_nsel.png', '440x440_round_01_sel.png',
+             '440x440_home_nsel.png', '440x440_home_sel.png'])
+        self.assertEqual(index['files']['440x440'], {
+            'round_01': {'off': '440x440_outline_01_nsel.png', 'sel': '440x440_round_01_sel.png'},
+            'home': {'off': '440x440_home_nsel.png', 'sel': '440x440_home_sel.png'}})
+
+    def test_a_variant_can_claim_several_families(self):
+        """Turbulence's rings are round_NN, display_*, on, off and volume_* -
+        one prefix cannot claim them from the tiles that share their size."""
+        import gdl.spec
+        png = b'\x89PNG\r\n\x1a\n'
+        names = ['440x440_round_01_nsel.png', '440x440_on_nsel.png', '440x440_home_nsel.png']
+        p = {'kit': {'root': 'Theme'},
+             'buttons': {'ring': {'kit': '440x440', 'icons': ['round_', 'on']},
+                         'button': {'kit': '440x440'}}}
+        with tempfile.TemporaryDirectory() as a:
+            for f in names:
+                os.makedirs(os.path.join(a, 'Theme'), exist_ok=True)
+                with open(os.path.join(a, 'Theme', f), 'wb') as fh:
+                    fh.write(png)
+            old = gdl.spec.RESOURCE_ROOTS
+            gdl.spec.RESOURCE_ROOTS = (a,)
+            try:
+                offered = designsys.icon_names(p)
+            finally:
+                gdl.spec.RESOURCE_ROOTS = old
+        self.assertEqual(offered, {'ring': ['on', 'round_01'], 'button': ['home']})
+
     def test_a_named_file_the_kit_lacks_is_left_out(self):
         index = self._index({'named': {'440x440': {'close': 'white_close.png'}}},
                             ['440x440_gray_nsel.png'])

@@ -253,7 +253,15 @@ def kit_index(p, part='root'):
                     looks[look] = name
                     paths[name] = path
             if looks:
-                files.setdefault(size, {})[icon] = looks
+                family = files.setdefault(size, {})
+                # A pair the pattern cannot make - Turbulence's outline_01 at
+                # rest, round_01 lit - was already filed as two half icons,
+                # each drawing its one file in both states. Named as one,
+                # neither half is offered.
+                mine = set(looks.values())
+                for other in [k for k, v in family.items() if k != icon and set(v.values()) <= mine]:
+                    del family[other]
+                family[icon] = looks
     return {'files': files, 'paths': paths}
 
 
@@ -369,6 +377,19 @@ def slider_thumb(p, scheme):
         if f:
             return f, index['paths'][f]
     return None
+
+
+def slider_rail(p):
+    """{'track_image': (file, kit path), 'fill_image': ...} - a slider's rail,
+    where the template draws it from art rather than two colors, for the
+    build as rail_art() gives it to the canvas. Only the files found here."""
+    d = (p.get('defaults') or {}).get('slider') or {}
+    out = {}
+    for k in ('track_image', 'fill_image'):
+        f = _kit_file(p, 'thumbs', d[k]) if d.get(k) else None
+        if f:
+            out[k] = (d[k], f)
+    return out
 
 
 def kit_art(p, index):
@@ -496,12 +517,14 @@ def icon_names(p):
     out = {}
     # A variant naming `icons` (a toggle's `toggle`) takes the families that
     # start so, and only them; the others sharing its kit size leave them out.
-    # An `icon` alone is only what the variant draws unless told otherwise:
+    # A list names several - Turbulence's rings are round_NN, on, off. An
+    # `icon` alone is only what the variant draws unless told otherwise:
     # Shockwave's `button` is gray by default and offers every color.
     claimed = {}
     for k, v in p['buttons'].items():
         if v.get('kit') and v.get('icons'):
-            claimed[k] = sorted(n for n in files.get(v['kit'], {}) if n.startswith(v['icons']))
+            want = v['icons'] if isinstance(v['icons'], str) else tuple(v['icons'])
+            claimed[k] = sorted(n for n in files.get(v['kit'], {}) if n.startswith(want))
     taken = {n for names in claimed.values() for n in names}
     for k, v in p['buttons'].items():
         size = v.get('kit') or (v.get('with_icon') or {}).get('kit')

@@ -1099,6 +1099,12 @@ class Panel:
             border = BORDERS['rounded']
         if fill is None and c.get('kind') == 'button':
             fill = dict(TRANSPARENT)
+        if c.get('kind') == 'slider' and c.get('track_image'):
+            # Build draws a slider's bordered fill IN PLACE of its rail art: a
+            # Shockwave slider with the profile's rounded border and black fill
+            # built a black block, its art on the model and nowhere else. The
+            # seed's own image-railed sliders author no border and Transparent.
+            fill, stroke, border = dict(TRANSPARENT), dict(TRANSPARENT), ''
         return fill, stroke, text_color, border
 
     def _state_rules(self):
@@ -1245,6 +1251,11 @@ class Panel:
             # A slider's thumb, where the template draws it from its kit
             # (Afterburn: sliderThumbImageField, in the secondary accent).
             'thumb_image': self._image_op(c.get('thumb_image')) if kind == 'slider' else None,
+            # And its rail, where that is art too (Shockwave, Turbulence): the
+            # track drawn when empty (backgroundImageField) and the fill when
+            # full (sliderFillImageField). A clone's never survived the applier.
+            'track_image': self._image_op(c.get('track_image')) if kind == 'slider' else None,
+            'fill_image': self._image_op(c.get('fill_image')) if kind == 'slider' else None,
         }
         if states:
             # Build renders the button from state 0, so that is what the
@@ -1480,7 +1491,8 @@ class Panel:
                 for c in pg['controls']:
                     # Through _feedback, as plan() reads them: an `on` of
                     # {"image": ...} names one as surely as `states` does.
-                    named = [c.get('image'), c.get('thumb_image')] + [
+                    named = [c.get('image'), c.get('thumb_image'), c.get('track_image'),
+                             c.get('fill_image')] + [
                         st.get('image') for st in self._feedback(c) or []]
                     for want in sorted({n for n in named if n}):
                         if want not in self.images and want not in images:

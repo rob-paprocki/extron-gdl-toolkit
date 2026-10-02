@@ -158,8 +158,8 @@ Claude Code publishes the result with the Artifact tool.
 | **Type** | The faces the template's seed can actually author (`Project.font_resource_names()`), at the sizes its own pages use - none under the 14 pt the toolkit checks. Sizes are points, drawn at GUI Designer's 1.375 px per point. Open Sans is Apache 2.0 and loads from Google Fonts. |
 | **Borders** | Only border resources the seed defines and the spec names (`BORDERS`), so a design cannot ask for a shape the panel cannot draw. |
 | **Button archetypes** | The looks the seed's own buttons use, per state. Afterburn's captioned ones are outlined (the most common), ghost and inverse, and an alert - a red fill with a white caption, for a condition someone has to act on, not an ordinary action such as shutting down. Its image ones - source, list, icon and toggle, and outlined with an icon - are each drawn from the kit as the seed draws them: the image, the fill it takes when selected, and where the caption goes. Afterburn shows state with its icons, never fills a button with an accent, and never colors a caption red. Mach shows it with a brighter fill. Shockwave draws every button as a kit image: a button names its color family, rests dark in a ring of that color and lights up when On (`kit.outline_off` reads the kit so), and an `action` button carries the kit's icon at its left with the caption centered past it, as the seed pads it with spaces. |
-| **Icons** | The template's resource kit, indexed by name and look (`gdl.designsys.kit_index`) and embedded in the bundle downscaled, as WebP - about 1.8 MB for Afterburn's thousand. Extron's artwork, so only in the owner's private design system, with their agreement (`docs/history.md`). A state asks for an icon unselected or selected; selected is the scheme's primary accent for an icon drawn in the primary accents, its secondary for one drawn in the secondary ones (toggles, volume levels). A variant's `icon` is what it draws unless told otherwise; `icons` narrows what it offers to the families starting so (Afterburn's toggle). A file the kit's `<W>x<H>_` naming misses is named in the profile (`kit.named`: Shockwave's modal Close, one file per look). A kit that exists only inside Extron's files - Turbulence's, in its templates - is extracted to `vendor/` first (`python -m gdl.designsys extract <template>`, `vendor/README.md`). |
-| **Sliders and levels** | As the seed's built ones draw: a thin rounded rail (Afterburn's is 10 px, filled `#BABCCE`) with a round thumb in the secondary accent. The thumb is a kit image, not a color: its circle is 65% of its 50 px box, so the canvas draws the kit's own, and the translator gives each slider the scheme's (`gdl.designsys.slider_thumb`), since a clone keeps its donor's. A template whose thumb is one file whatever the accent names that file, and one whose rail is art rather than two colors names its rail images too (`track_image`, `fill_image`); the canvas then draws those, and a thumb that is not round keeps its own proportions (`thumb_height`). |
+| **Icons** | The template's resource kit, indexed by name and look (`gdl.designsys.kit_index`) and embedded in the bundle downscaled, as WebP - about 1.8 MB for Afterburn's thousand. Extron's artwork, so only in the owner's private design system, with their agreement (`docs/history.md`). A state asks for an icon unselected or selected; selected is the scheme's primary accent for an icon drawn in the primary accents, its secondary for one drawn in the secondary ones (toggles, volume levels). A variant's `icon` is what it draws unless told otherwise; `icons` narrows what it offers to the families starting so (Afterburn's toggle), or with any of a list (Turbulence's rings). A file the kit's `<W>x<H>_` naming misses is named in the profile (`kit.named`: Shockwave's modal Close, one file per look; Turbulence's pairs whose two files are named apart, like `outline_01` at rest and `round_01` lit, where the pair replaces the half icons the pattern made of them). A kit that exists only inside Extron's files - Turbulence's, in its templates - is extracted to `vendor/` first (`python -m gdl.designsys extract <template>`, `vendor/README.md`). |
+| **Sliders and levels** | As the seed's built ones draw: a thin rounded rail (Afterburn's is 10 px, filled `#BABCCE`) with a round thumb in the secondary accent. The thumb is a kit image, not a color: its circle is 65% of its 50 px box, so the canvas draws the kit's own, and the translator gives each slider the scheme's (`gdl.designsys.slider_thumb`), since a clone keeps its donor's. A template whose thumb is one file whatever the accent names that file, and one whose rail is art rather than two colors names its rail images too (`track_image`, `fill_image`); the canvas then draws those, the translator gives them to each slider in the spec (`gdl.designsys.slider_rail`), and a thumb that is not round keeps its own proportions (`thumb_height`). |
 | **Modals** | As Build draws them: the page beneath under black at alpha 166, whatever background the popup has. So a modal carries no background of its own. |
 | **Spacing and sizes** | The panel's touch minimum and spacing for its model (`touch_minimums`), and GUI Designer's 10 px nudge. |
 | **README** | The panel's rules and its function vocabulary: what Claude Design reads first. Its iconography, its example page and the components' own READMEs and previews are drawn from the profile (`iconography`, `examples.source` and `examples.help`, its variants, type styles and tokens), so each names only what its template has. |
@@ -264,17 +264,18 @@ that paints outside one. Chrome is the only new runtime need, and only here.
 - **The same brief in *Extron Mach*** (`tests/data/design-huddle-mach/`: the
   seed's sunset photo, shade bars and rails, 150 px source tiles with their
   kit icons and names on them, Help and Room Off as Mach's full-width modal
-  windows), built on `seeds/Mach 1035.gdl`: layout 85 controls, ID map 27
-  references, 0 problems each. Compare put Help 2.7% and Room Off 2.2% apart,
+  windows), built on `seeds/Mach 1035.gdl`: layout 86 controls, the slider's
+  rail art included, and ID map 27 references, 0 problems each. Compare put
+  Help 2.7% and Room Off 2.2% apart,
   Home 22.6% - the renderer draws Mach's translucent bars and buttons opaque,
   as GUI Designer's snapshots composite them, where the canvas shows the photo
   through them (`docs/render-fidelity.md` §2).
 - **The same brief in *Extron Shockwave*** (`tests/data/design-huddle-shockwave/`:
   the seed's haze, source tabs centered across the header, the video well, kit-image
   buttons resting in their rings and lit, Help and Room Off as modal cards),
-  built on `seeds/Shockwave 1035.gdl`: layout 87 controls, ID map 26
-  references, 0 problems each. Compare put Home 55.6%, Help 50.2% and Room Off
-  56.7% apart. The built artwork is translucent where the canvas is - the
+  built on `seeds/Shockwave 1035.gdl`: layout 88 controls and ID map 26
+  references, 0 problems each. Compare put Home 54.9%, Help 49.9% and Room Off
+  56.4% apart. The built artwork is translucent where the canvas is - the
   well white at alpha 38, a resting button black at alpha 64 inside its ring -
   and the renderer, like GUI Designer's snapshots, draws any pixel with alpha
   above 0 at full strength; the modals also draw over the start page in the
@@ -282,7 +283,10 @@ that paints outside one. Chrome is the only new runtime need, and only here.
   verification four ways, each now fixed in the applier or the reader: a
   palette color's value is ignored, a donor image of a kit file's name can be
   other art, a cloned shape keeps its donor's transparency, and a thumb need
-  not be square (`docs/gdl-format.md` §7).
+  not be square (`docs/gdl-format.md` §7). A fifth passed it, and Mach's build
+  too, until the verifier read the slider's rail: the clone's track was
+  cleared, and the profile's bordered fill drawn in place of the art - on
+  Shockwave an opaque black block.
 
 ## 7. What is left
 

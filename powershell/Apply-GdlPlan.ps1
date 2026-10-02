@@ -94,6 +94,16 @@ function Add-GdlControls {
             if ($op.thumb_image) {
                 Set-GdlImage $c 'sliderThumbImageField' $imageRef (Get-PlanImageName $op.thumb_image.name)
             }
+            # And its rail, where the template draws it from art. The track a
+            # slider shows empty IS its backgroundImageField, cleared above with
+            # every clone's - Shockwave's then built an opaque black block - and
+            # the fill it shows full is sliderFillImageField.
+            if ($op.track_image) {
+                Set-GdlImage $c 'backgroundImageField' $imageRef (Get-PlanImageName $op.track_image.name)
+            }
+            if ($op.fill_image) {
+                Set-GdlImage $c 'sliderFillImageField' $imageRef (Get-PlanImageName $op.fill_image.name)
+            }
             Set-GdlFont $Project $c $op.font
             Set-GdlFieldIfPresent $c 'textAlignmentField' $op.alignment | Out-Null
 

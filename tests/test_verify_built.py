@@ -331,6 +331,43 @@ class TestStateImage(unittest.TestCase):
                                                {7: self.art[built]}, 'page')
             self.assertEqual((n, bool(problems)), (1, bad), problems)
 
+    def test_a_slider_rail_is_checked_off_its_own_assets(self):
+        """A slider's rail is art in the image-drawn templates - its track when
+        empty, its fill when full - and Build draws them as the empty and full
+        assets. The applier cleared a clone's track, and Shockwave's slider
+        built an opaque black block where its seed's own draw the rail."""
+        import io
+        from PIL import Image, ImageDraw
+        files = {}
+        for name, bar in (('track.png', (56, 56, 56, 255)), ('fill.png', (255, 255, 255, 255))):
+            im = Image.new('RGBA', (52, 535), (0, 0, 0, 0))
+            ImageDraw.Draw(im).rounded_rectangle((14, 0, 38, 534), 12, fill=bar)
+            files[name] = os.path.join(self.dir, name)
+            im.save(files[name])
+
+        def art(im):
+            buf = io.BytesIO()
+            im.save(buf, 'PNG')
+            return buf.getvalue()
+
+        # Build draws a rail at the track's width, centered - see rail_image:
+        # a Mach rail is 8 px in a 30 px slider.
+        right = {1: art(self.vb.rail_image(files['track.png'], 60, 391, 24, True)),
+                 2: art(self.vb.rail_image(files['fill.png'], 60, 391, 24, True))}
+        wide = {1: art(self.vb.stretch_image(files['track.png'], 60, 391)), 2: right[2]}
+        black = {1: art(Image.new('RGBA', (60, 391), (0, 0, 0, 255))), 2: right[2]}
+        op = {'fields': {'nameField': 'Volume'},
+              'track_image': {'name': 'track.png', 'file': files['track.png']},
+              'fill_image': {'name': 'fill.png', 'file': files['fill.png']}}
+        table = {'Home': {'Name': 'Home', 'Controls': [
+            {'ID': 1, 'Name': 'Volume', 'Width': 60, 'Height': 391, 'SliderTrackWidth': 24,
+             'Orientation': 2, 'TLPMinValueImageID': 1, 'TLPMaxValueImageID': 2}]}}
+        for assets, bad in ((right, False), (wide, True), (black, True)):
+            problems, n = self.vb.check_rails([{'name': 'Home', 'controls': [op]}], table,
+                                              assets, 'page')
+            self.assertEqual((n, bool(problems)), (2, bad), problems)
+        self.assertIn('track', problems[0])
+
     def test_two_icons_on_one_ground_are_not_called_alike(self):
         """Afterburn's mute: both speaker icons are mostly their #414459
         ground, so their artwork has one plurality color and still differs."""

@@ -370,6 +370,56 @@ def check_thumbs(plan_items, table, assets, kind):
     return problems, checked
 
 
+def check_rails(plan_items, table, assets, kind):
+    """A slider's rail must be the kit art the plan gave it, where the
+    template draws it from art: its track when empty, its fill when full.
+
+    A clone keeps its donor's, and the applier cleared every clone's
+    backgroundImageField - which on a slider IS the track - so Shockwave's
+    slider built an opaque black block where its seed's own draw the rail,
+    and no other check looked. Build draws the two as the empty and full
+    assets, TLPMinValueImageID and TLPMaxValueImageID, at the track's width
+    (rail_image): on the seeds' own sliders they are their track and fill
+    files within 8% (Mach) and 17% (Shockwave), the black block 100% and 67%.
+    """
+    problems, checked = [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if c is None:
+                continue
+            for key, part, asset in (('track_image', 'track', 'TLPMinValueImageID'),
+                                     ('fill_image', 'fill', 'TLPMaxValueImageID')):
+                img = op.get(key)
+                if not img:
+                    continue
+                checked += 1
+                where = f"{kind} {item['name']!r} {name!r} {part}"
+                tid = c.get(asset)
+                if tid is None or tid < 0 or tid not in assets:
+                    problems.append(f'{where}: planned {img["name"]!r}, but Build drew no '
+                                    f'{part} ({asset} {tid})')
+                    continue
+                if not img.get('file') or not os.path.exists(img['file']):
+                    continue
+                w, h = Image.open(io.BytesIO(assets[tid])).size
+                vertical = c.get('Orientation') in (2, 3)   # up, down
+
+                def draw(file, w, h, tw=c.get('SliderTrackWidth')):
+                    return rail_image(file, w, h, tw, vertical)
+
+                off = image_mismatch(img['file'], assets[tid], w, h, draw=draw)
+                if off > IMAGE_OFF:
+                    problems.append(f"{where}: {off:.0%} of it differs from the planned "
+                                    f"{img['name']!r} - it is not that image")
+    return problems, checked
+
+
 def check_fonts(plan_items, table, kind):
     """Typography must reach the panel, not just the preview.
 
@@ -424,6 +474,26 @@ def check_fonts(plan_items, table, kind):
 IMAGE_TOLERANCE = 12
 
 
+def stretch_image(file, w, h):
+    """`file` stretched to w x h."""
+    return Image.open(file).convert('RGBA').resize((w, h), Image.Resampling.LANCZOS)
+
+
+def rail_image(file, w, h, track, vertical):
+    """`file` as Build draws a slider's rail into a w x h control: stretched to
+    the track's width along the slider, centered across it. Measured on the
+    seeds' own built sliders against their kit files: Mach's 8 px rails in 30
+    px sliders read 6-8% off so and 66% stretched to the control; Shockwave's
+    track is its control's width, and its rails read 7% and 15% - fitted, as a
+    button's image is drawn, a narrow bar lands a few pixels off along its
+    whole length and the full rail read 27%."""
+    track = max(1, min(track or (w if vertical else h), w if vertical else h))
+    out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    im = stretch_image(file, *((track, h) if vertical else (w, track)))
+    out.alpha_composite(im, ((w - track) // 2, 0) if vertical else (0, (h - track) // 2))
+    return out
+
+
 def fit_image(file, w, h):
     """`file` drawn into a w x h box as Build draws a button's image:
     ImageLayoutEnum Fill (fit, keeping the aspect), MiddleCenter."""
@@ -457,13 +527,14 @@ def _max_channel(im):
     return ImageChops.lighter(ImageChops.lighter(r, g), b)
 
 
-def image_mismatch(file, art_bytes, w, h, fill=None):
+def image_mismatch(file, art_bytes, w, h, fill=None, draw=None):
     """Share of the inked pixels that differ between the built artwork and
-    `file` fitted into w x h over `fill` (an ARGB int, or None)."""
+    `file` drawn into w x h - fitted, unless `draw` says otherwise - over
+    `fill` (an ARGB int, or None)."""
     base = (((fill >> 16) & 255, (fill >> 8) & 255, fill & 255, (fill >> 24) & 255)
             if fill is not None else (0, 0, 0, 0))
     want = Image.new('RGBA', (w, h), base)
-    want.alpha_composite(fit_image(file, w, h))
+    want.alpha_composite((draw or fit_image)(file, w, h))
     got = Image.open(io.BytesIO(art_bytes)).convert('RGBA')
     if got.size != (w, h):
         got = got.resize((w, h))
@@ -956,6 +1027,9 @@ def check(plan_path, built_path):
         problems += probs
         checked += n
         probs, n = check_thumbs(spec, table, assets, kind)
+        problems += probs
+        checked += n
+        probs, n = check_rails(spec, table, assets, kind)
         problems += probs
         checked += n
         for note in notes:

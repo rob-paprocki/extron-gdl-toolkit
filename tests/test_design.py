@@ -310,6 +310,10 @@ class TestInChrome(unittest.TestCase):
         self.assertEqual(home['EndCall']['text'], ' ' * 11 + 'End Call')
         # The thumb is 52 across and 34 along the rail, as the kit draws it.
         self.assertEqual((home['VolumeSlider']['thumb'], home['VolumeSlider']['thumb_height']), (52, 34))
+        # The rail is the kit's art too, and reaches the build with its files.
+        rail = (home['VolumeSlider'].get('track_image'), home['VolumeSlider'].get('fill_image'))
+        self.assertEqual(rail, ('156x1026_sw_track_bg.png', '156x1026_sw_fill.png'))
+        self.assertEqual(spec['images']['156x1026_sw_fill.png'], 'Shockwave/Slider/156x1026_sw_fill.png')
         close = {c['name']: c for c in spec['popups'][0]['controls']}['Close']
         self.assertEqual([s['image'] for s in close['states']], ['black_close.png', 'white_close.png'])
         self.assertEqual(spec['images']['white_close.png'], 'Shockwave/icons/440x440 White/white_close.png')

@@ -979,6 +979,29 @@ class TestButtonImages(unittest.TestCase):
         op = p.plan()['pages'][0]['controls'][0]
         self.assertEqual(op['thumb_image'], {'name': 'on.png', 'file': self.on})
 
+    def test_a_slider_carries_its_rail_images(self):
+        """A rail drawn from art reaches the plan, as the thumb does: a clone's
+        donor rail never survived the applier, so the build drew a black block."""
+        c = {'kind': 'slider', 'name': 'Volume', 'rect': [0, 0, 54, 380],
+             'track_image': 'off.png', 'fill_image': 'on.png'}
+        p = _project([{'name': 'Home', 'controls': [c]}],
+                     images={'off.png': self.off, 'on.png': self.on})
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual((op['track_image'], op['fill_image']),
+                         ({'name': 'off.png', 'file': self.off}, {'name': 'on.png', 'file': self.on}))
+
+    def test_a_slider_drawn_from_art_authors_no_border_or_fill(self):
+        """Build draws a slider's bordered fill IN PLACE of its rail art: a
+        Shockwave slider planned with the profile's rounded border and black
+        fill built a black block with the art on the model and nowhere else.
+        The seed's own image-railed sliders author no border and Transparent."""
+        c = {'kind': 'slider', 'name': 'Volume', 'rect': [0, 0, 54, 380], 'fill': '#000000',
+             'border': 'rounded', 'track_image': 'off.png', 'fill_image': 'on.png'}
+        p = _project([{'name': 'Home', 'controls': [c]}],
+                     images={'off.png': self.off, 'on.png': self.on})
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual((op['border'], op['fill'], op['stroke']), ('', 0, 0))
+
     def test_an_on_image_the_donor_lacks_is_a_donor_problem(self):
         """`on` is shorthand for Off and On states, so its image is checked as
         a state's would be."""

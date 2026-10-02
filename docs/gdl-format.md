@@ -325,6 +325,18 @@ A generator should assert all four agree rather than trusting the writes.
   `sliderFillColorField`, `#BABCCE`. Build draws the thumb as its own asset,
   `SliderIndicatorImageID`, so a clone under another scheme keeps the
   periwinkle thumb until the image is set.
+- **A slider's rail can be images too, and a border hides them.** The
+  Shockwave, Mach and Turbulence seeds' sliders draw the rail from the kit: the
+  track shown empty in `backgroundImageField`, the fill shown full in
+  `sliderFillImageField`. Build writes the two as `TLPMinValueImageID` and
+  `TLPMaxValueImageID`, each stretched along the slider at `sliderTrackWidth`
+  across it, centered - Mach's 8 px rail in a 30 px slider. Those sliders author
+  no border and a Transparent fill; one with a border resource and a fill builds
+  that bordered fill in place of the art, so a Shockwave slider planned with
+  the rounded border and black fill built an opaque black block with the right
+  images on the model. The applier clears every clone's `backgroundImageField`,
+  which on a slider is its track, so the plan writes the rail and the verifier
+  reads it back off the two assets.
 - **A page's background image is a named `PBImageResource`**, referenced from
   `backgroundImageField` by a `PBResourceReferenceImage` and drawn by
   `backgroundImageLayoutField` over the page fill - the Afterburn seeds fit
@@ -354,6 +366,14 @@ A generator should assert all four agree rather than trusting the writes.
   changes nothing: Shockwave's lit captions are palette Black, and a clone
   rewritten to white built black. `Set-GdlColor` writes -1 with the value, and
   `gdl.project` reads an entry through the palette.
+- **A color can be stored by name.** A `System.Drawing.Color` with `state` 1 is
+  the `KnownColor` in `knownColor` - 27 Transparent, 35 Black, 105 LimeGreen,
+  164 White - and its `value` is 0. Every seed stores colors so: Shockwave
+  1035 211 White and 206 Black, Afterburn 300M 90 Black and 55 White, every
+  Turbulence label White. `gdl.project` reads them through .NET's own table of
+  the web colors (`KNOWN_COLORS`); reading only the value read each as no color.
+  `Set-GdlColor` writes `Color.FromArgb`, which replaces the whole struct, so a
+  named color never survives a write.
 - **A control's `transparencyField` fades everything it draws** - a percent.
   28 of the Shockwave 1035 seed's 34 shapes are 0.0, five modal dims 85.0 and
   its Offline Window 25.0. A clone keeps its donor's, so panels cloned from a
