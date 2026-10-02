@@ -30,24 +30,28 @@ Claude Code on the machine GUI Designer runs on.
 
 | Role | Needs |
 |---|---|
-| Designer | a claude.ai account with Claude Design, and the template's design system in it - for now *Extron Afterburn* |
+| Designer | a claude.ai account with Claude Design, and the template's design system in it - *Extron Afterburn*, *Mach*, *Shockwave* or *Turbulence* |
 | Builder | this repo, set up as `README.md` *Setup* says, on a machine with GUI Designer 1.28.0.7 (`CLAUDE.md` *Environment*), with the seeds pulled from Git LFS and Chrome installed; and Claude Code signed in to a claude.ai account that can open the canvas |
 
 ### Once: publish the design system
 
 A design system is built from this repo and published to a claude.ai account.
 Nothing else distributes it. In Claude Code, in the repo, ask it to *build the
-Afterburn design system and publish it*. It runs:
+Afterburn design system and publish it* - or Mach's, Shockwave's or
+Turbulence's. It runs:
 
 ```bash
-python -m gdl.designsys build afterburn <dir>
+python -m gdl.designsys build <afterburn|mach|shockwave|turbulence> <dir>
 ```
 
 and publishes the `project/` tree that writes as a Design System artifact, with
 the Artifact tool. The icons and theme backgrounds are Extron's kit, read from
-the GUI Designer install or `vendor/`, and embedded downscaled. Without the kit,
-or without Pillow, the build says so: the system then has no icons, and its
-themes no background images.
+the GUI Designer install or `vendor/`, and embedded downscaled. Turbulence's art,
+and Mach's slider, are in neither until they are extracted from Extron's own
+files, once per machine: `python -m gdl.designsys extract <template>`
+(`vendor/README.md`). Without the kit, or without Pillow, the build says so,
+naming that step where it applies: the system then has no icons, and its themes
+no background images.
 
 Because it carries Extron's artwork, the system is published private (§2
 *Icons*), to the account Claude Code is signed in to. The designer works in
@@ -55,9 +59,10 @@ that account, or has the system shared with theirs.
 
 ### Design: in Claude Design
 
-1. Start a design that uses *Extron Afterburn* as its design system.
+1. Start a design that uses the template's design system - *Extron Afterburn*
+   in this example.
 2. Describe the panel by what it has to **do**; the system already knows what
-   Afterburn looks like. Say:
+   the template looks like. Say:
    - the room and the panel - the system draws the TLP Pro 1025/1035 family, at
      1280×800;
    - the sources, and what selecting one does;
@@ -65,8 +70,9 @@ that account, or has the system shared with theirs.
      changes: a display warming up, a microphone muted, a call connected;
    - what has to be confirmed first, such as shutting the room down, and what
      the program shows by itself, such as an incoming call;
-   - optionally, one of Afterburn's background themes: Default, Anthracite,
-     Blue Slate or Grape.
+   - optionally, one of the template's background themes - Afterburn's are
+     Default, Anthracite, Blue Slate and Grape; §2 *Themes* has every
+     template's.
 
    For example: *A huddle room panel for a TLP Pro 1035 on the Grape theme.
    Three sources - laptop, wireless and the room PC - showing which is selected.
@@ -264,29 +270,23 @@ that paints outside one. Chrome is the only new runtime need, and only here.
 - **The same brief in *Extron Mach*** (`tests/data/design-huddle-mach/`: the
   seed's sunset photo, shade bars and rails, 150 px source tiles with their
   kit icons and names on them, Help and Room Off as Mach's full-width modal
-  windows), built on `seeds/Mach 1035.gdl`: layout 86 controls, the slider's
-  rail art included, and ID map 27 references, 0 problems each. Compare put
-  Help 2.7% and Room Off 2.2% apart,
+  windows), built on `seeds/Mach 1035.gdl`: layout 99 controls, the slider's
+  rail art and every translucent fill at its own alpha included, and ID map 27
+  references, 0 problems each. Compare put Help 2.7% and Room Off 2.2% apart,
   Home 22.6% - the renderer draws Mach's translucent bars and buttons opaque,
   as GUI Designer's snapshots composite them, where the canvas shows the photo
   through them (`docs/render-fidelity.md` §2).
 - **The same brief in *Extron Shockwave*** (`tests/data/design-huddle-shockwave/`:
   the seed's haze, source tabs centered across the header, the video well, kit-image
   buttons resting in their rings and lit, Help and Room Off as modal cards),
-  built on `seeds/Shockwave 1035.gdl`: layout 88 controls and ID map 26
+  built on `seeds/Shockwave 1035.gdl`: layout 89 controls and ID map 26
   references, 0 problems each. Compare put Home 54.9%, Help 49.9% and Room Off
   56.4% apart. The built artwork is translucent where the canvas is - the
   well white at alpha 38, a resting button black at alpha 64 inside its ring -
   and the renderer, like GUI Designer's snapshots, draws any pixel with alpha
   above 0 at full strength; the modals also draw over the start page in the
-  build and over nothing on the canvas. The first build of it failed
-  verification four ways, each now fixed in the applier or the reader: a
-  palette color's value is ignored, a donor image of a kit file's name can be
-  other art, a cloned shape keeps its donor's transparency, and a thumb need
-  not be square (`docs/gdl-format.md` §7). A fifth passed it, and Mach's build
-  too, until the verifier read the slider's rail: the clone's track was
-  cleared, and the profile's bordered fill drawn in place of the art - on
-  Shockwave an opaque black block.
+  build and over nothing on the canvas. What its first builds got wrong, each
+  now fixed or checked, is in `docs/history.md`.
 - **The same brief in *Extron Turbulence*** (`tests/data/design-huddle-turbulence/`:
   the seed's corridor photo under translucent bars and rails, source tabs
   centered across the header - Laptop, Room PC and Doc Cam, the kit having no
@@ -294,7 +294,7 @@ that paints outside one. Chrome is the only new runtime need, and only here.
   Call and Power Down tiles, Help and Room Off as modal cards with the seed's
   green Power Down and red Cancel), built on `seeds/Turbulence 1035.gdl`, its
   art extracted from the seed and the six Turbulence templates first:
-  layout 87 controls and ID map 27 references, 0 problems each. Compare put
+  layout 91 controls and ID map 27 references, 0 problems each. Compare put
   Home 15.6%, Help 3.0% and Room Off 2.5% apart, and nearly all of Home's is
   the two side rails: Build wrote their black at alpha 38 as authored, and the
   compositor draws any pixel above alpha 0 at full strength, as GUI Designer's

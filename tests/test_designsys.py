@@ -252,6 +252,33 @@ class TestKit(unittest.TestCase):
             designsys.bundle(p, art=False)
         self.assertIn('kit is not installed here', out.getvalue())
 
+    def test_an_extracted_kit_names_its_extract_step(self):
+        """Turbulence's art and Mach's slider are in neither the install nor a
+        fresh vendor/ until `extract` has run, so saying only where kits live
+        sends a builder looking in the wrong place."""
+        import contextlib
+        import io
+        p = designsys.load('turbulence')
+        p['kit'] = dict(p['kit'], root='No Such Kit', thumbs='No Such Kit')
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            designsys.bundle(p, art=False)
+        self.assertIn('python -m gdl.designsys extract turbulence', out.getvalue())
+
+    def test_slider_art_the_machine_lacks_is_said(self):
+        """With the buttons installed but not the slider's part of the kit, the
+        system published with no rail or thumb art and said nothing - its
+        sliders drawn plain on every canvas."""
+        import contextlib
+        import io
+        p = designsys.load('mach')
+        p['kit'] = dict(p['kit'], thumbs='No Such Kit')
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            designsys.bundle(p, art=False)
+        self.assertIn('slider art', out.getvalue())
+        self.assertIn('8x500_mach_track_bg@3x.png', out.getvalue())
+
     def test_a_toggle_offers_only_toggles(self):
         p = designsys.load('afterburn')
         if not designsys.kit_root(p):

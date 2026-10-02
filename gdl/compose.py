@@ -63,10 +63,12 @@ SYSFONTS = (
 WINFONTS = SYSFONTS[0]          # kept: referenced by name elsewhere
 _cache = {}
 _sysindex = None
-# Every face drawn from SYSFONTS rather than FONTDIR, for a caller to say so:
-# on a checkout that never ran `python -m gdl.fonts`, every face falls back to
-# the host's Arial and the render baseline scores 2.81% for 2.19% - silently,
-# since a fallback is not an error. tests/score.py refuses to record over one.
+# Every face drawn in anything but its own recovered file, for a caller to say
+# so: on a checkout that never ran `python -m gdl.fonts`, every face falls back
+# to the host's Arial and the render baseline scores 2.81% for 2.19% - silently,
+# since a fallback is not an error - and after a partial recovery each missing
+# face draws in the recovered Arial instead. tests/score.py refuses to record
+# over one.
 FALLBACKS = set()
 
 
@@ -93,17 +95,20 @@ def face(name, bold, italic, px):
     if key in _cache:
         return _cache[key]
     primary = FILES.get((name, bold, italic)) or FILES.get((name, 0, 0))
-    candidates = [c for c in [primary] + ALIASES.get(primary or '', []) + ['arial.ttf'] if c]
+    own = [c for c in [primary] + ALIASES.get(primary or '', []) if c]
+    candidates = own + [c for c in ['arial.ttf'] if c not in own]
     for fn in candidates:
         p = os.path.join(FONTDIR, fn)
         if os.path.exists(p):
+            if fn not in own:
+                FALLBACKS.add(f'{name} as {fn}')
             f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
     index = _system_fonts()
     for fn in candidates:
         p = index.get(fn.lower())
         if p:
-            FALLBACKS.add(fn)
+            FALLBACKS.add(f"{name} as the host's {fn}")
             f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
     raise LookupError(

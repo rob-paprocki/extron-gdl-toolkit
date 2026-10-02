@@ -64,7 +64,7 @@ author, build and verify in one session.
 | `gdl.idmap` check / write | |
 | `gdl.designsys` build (its icons and backgrounds need Pillow and Extron's kit, and say so without them); `gdl.design` translate (needs headless Chrome) | |
 | the `python -m pytest` suite | |
-| `tests/verify_built.py`, `tests/verify_idmap.py`, given the built file | |
+| `tests/verify_built.py`, `tests/verify_idmap.py`, `tests/verify_seed.py`, `tests/type_probe.py`, given the built file or seed | |
 
 Setup is in `README.md` *Setup*. `fixtures/` is real client material — see
 *Working on the fixtures* below — and anything pushed goes to GitHub.
@@ -137,9 +137,11 @@ It also checks **color, off the artwork rather than the model.** That
 distinction is the whole point: a built control's `BackgroundFillColor` reads
 back as transparent white whatever you authored, because Build rasterizes fill,
 border and caption into a PNG and leaves a `TLPImageID` behind. So the check
-takes the plurality opaque color of each control's own asset, and reads the page
-asset too — a donor background image re-rasterized under the fill is invisible
-in every field and obvious in the artwork.
+takes the plurality color of each control's own asset - its opaque pixels for
+an opaque fill, and for a translucent one the pixels at that fill's alpha,
+which Build writes exactly - and reads the page asset too — a donor background
+image re-rasterized under the fill is invisible in every field and obvious in
+the artwork.
 
 The ID map a programmer works from has a second gate:
 

@@ -269,6 +269,27 @@ class TestStateImage(unittest.TestCase):
             problems = self._check(planned, built)
             self.assertTrue(any('not that image' in p for p in problems), problems)
 
+    def test_a_planned_file_this_machine_lacks_is_a_problem(self):
+        """A plan carries its kit files' absolute paths. Verified elsewhere, or
+        after vendor/ moved, every image comparison was skipped and the control
+        still counted as verified - Mach's black-block rail passed so."""
+        gone = {'name': 'two.png', 'file': os.path.join(self.dir, 'moved', 'two.png')}
+        bs = {'Name': 'On', 'TLPImageID': 7}
+        problems = self.vb._state_image('page Home Mute', 1, bs, {'Width': 64, 'Height': 64},
+                                        gone, None, {7: self.art['two.png']})
+        self.assertTrue(any('not at' in p and 'on this machine' in p for p in problems),
+                        problems)
+        table = {'Home': {'Name': 'Home', 'Controls': [
+            {'ID': 1, 'Name': 'Volume', 'Width': 60, 'Height': 391, 'Orientation': 2,
+             'SliderIndicatorImageID': 7, 'TLPMinValueImageID': 7, 'TLPMaxValueImageID': 7}]}}
+        op = {'fields': {'nameField': 'Volume'}, 'thumb_image': gone,
+              'track_image': gone, 'fill_image': gone}
+        for fn in (self.vb.check_thumbs, self.vb.check_rails):
+            problems, _ = fn([{'name': 'Home', 'controls': [op]}], table,
+                             {7: self.art['two.png']}, 'page')
+            self.assertTrue(problems and all('on this machine' in p for p in problems),
+                            (fn.__name__, problems))
+
     def test_a_state_with_no_artwork_is_reported(self):
         problems = self._check('one.png', None)
         self.assertTrue(any('no artwork' in p for p in problems), problems)
@@ -284,20 +305,66 @@ class TestStateImage(unittest.TestCase):
         self.assertEqual(n, 1)
         self.assertTrue(any('no artwork' in p for p in problems), problems)
 
-    def test_a_translucent_fill_is_noted_not_failed(self):
-        """_shares() reads opaque pixels only, so a translucent fill built
-        exactly right would read as missing."""
-        op = {'fields': {'nameField': 'Card'}, 'fill': 0x80242634}
+    def test_a_translucent_fill_is_checked_at_its_own_alpha(self):
+        """Build writes a translucent fill's alpha exactly and its color to
+        within premultiplying's rounding - Turbulence's shade, #020D1A at 128,
+        built as (1, 13, 25, 128), and its rail, black at 38, as (0, 0, 0, 38).
+        Read off the opaque pixels alone, it has none, and nothing was checked."""
+        import io
+        from PIL import Image
+
+        def art(rgba):
+            buf = io.BytesIO()
+            Image.new('RGBA', (8, 8), rgba).save(buf, 'PNG')
+            return buf.getvalue()
+
         table = {'Home': {'Name': 'Home', 'Controls': [
             {'ID': 1, 'Name': 'Card', 'TLPImageID': 7}]}}
+        for fill, built, bad in ((0x80020D1A, (1, 13, 25, 128), False),
+                                 (0x26000000, (0, 0, 0, 38), False),
+                                 (0x80020D1A, (1, 13, 25, 255), True),       # alpha lost
+                                 (0x80020D1A, (255, 255, 255, 128), True),   # the donor's
+                                 (0x26000000, (0, 0, 0, 128), True)):        # another alpha
+            op = {'fields': {'nameField': 'Card'}, 'fill': fill}
+            problems, notes, n = self.vb.check_fills([{'name': 'Home', 'controls': [op]}],
+                                                     table, {7: art(built)}, 'page')
+            self.assertEqual(n, 1, (hex(fill), built))
+            self.assertEqual(bool(problems), bad, (hex(fill), built, problems))
+            self.assertFalse(any('not checked' in x for x in notes), notes)
+
+    def test_an_opaque_fill_built_translucent_says_so(self):
+        """Not 'missing or fully transparent' - the panel draws it, see-through."""
         import io
         from PIL import Image
         buf = io.BytesIO()
-        Image.new('RGBA', (8, 8), (36, 38, 52, 128)).save(buf, 'PNG')
-        problems, notes, _ = self.vb.check_fills([{'name': 'Home', 'controls': [op]}], table,
-                                                 {7: buf.getvalue()}, 'page')
-        self.assertEqual(problems, [])
-        self.assertTrue(any('translucent' in n for n in notes), notes)
+        Image.new('RGBA', (8, 8), (1, 13, 25, 128)).save(buf, 'PNG')
+        op = {'fields': {'nameField': 'Card'}, 'fill': 0xFF020D1A}
+        table = {'Home': {'Name': 'Home', 'Controls': [
+            {'ID': 1, 'Name': 'Card', 'TLPImageID': 7}]}}
+        problems, _, _ = self.vb.check_fills([{'name': 'Home', 'controls': [op]}], table,
+                                             {7: buf.getvalue()}, 'page')
+        self.assertTrue(any('no opaque pixel' in p for p in problems), problems)
+
+    def test_a_translucent_state_fill_is_checked_at_its_own_alpha(self):
+        """Mach's tiles: black at 70% idle. A state that came back opaque, or
+        at another alpha, is not the state planned."""
+        import io
+        from PIL import Image
+        art = {}
+        for i, rgba in ((1, (0, 0, 0, 180)), (2, (31, 41, 46, 160)), (3, (31, 41, 46, 255))):
+            buf = io.BytesIO()
+            Image.new('RGBA', (8, 8), rgba).save(buf, 'PNG')
+            art[i] = buf.getvalue()
+        op = {'fields': {'nameField': 'Tile'}, 'states': [
+            {'name': 'Off', 'fill': 0xB4000000}, {'name': 'On', 'fill': 0xA01F292E}]}
+        for on, bad in ((2, False), (3, True)):
+            table = {'Home': {'Name': 'Home', 'Controls': [
+                {'ID': 1, 'Name': 'Tile', 'States': [
+                    {'Name': 'Off', 'TLPImageID': 1}, {'Name': 'On', 'TLPImageID': on}]}]}}
+            problems, _, _ = self.vb.check_states([{'name': 'Home', 'controls': [op]}], table,
+                                                  art, 'page')
+            self.assertEqual(any("state On: planned fill #1F292E at alpha 160" in p
+                                 for p in problems), bad, problems)
 
     def test_states_in_translucent_fills_are_not_called_alike(self):
         """Mach's buttons: black at 70% idle, a dark gray at 63% pressed. Their
@@ -431,6 +498,18 @@ class TestEditStates(unittest.TestCase):
         self.assertEqual(self._check(op, _built(_bst('Off', '', 90), _bst('On', '', 91))), [])
         problems = self._check(op, _built(_bst('Off', '', 90), _bst('On', '', 90)))
         self.assertTrue(any('mostly #37394E' in p for p in problems), problems)
+
+    def test_a_translucent_state_fill_is_read_at_its_own_alpha(self):
+        import io
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new('RGBA', (8, 8), (36, 38, 52, 128)).save(buf, 'PNG')
+        self.assets[93] = buf.getvalue()
+        op = {'per_state': [{'index': 1, 'colors': {'borderFillColorField': '#80242634'}}]}
+        self.assertEqual(self._check(op, _built(_bst('Off', '', 90), _bst('On', '', 93))), [])
+        problems = self._check(op, _built(_bst('Off', '', 90), _bst('On', '', 90)))
+        self.assertTrue(any('#242634 at alpha 128' in p and 'mostly #37394E' in p
+                            for p in problems), problems)
 
     def test_a_state_text_color_is_read_off_the_model(self):
         op = {'per_state': [{'index': 0, 'colors': {'textColorField': '#FFF0F0F0'}}]}

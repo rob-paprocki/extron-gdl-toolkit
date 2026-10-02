@@ -470,11 +470,25 @@ def bundle(p, art=True):
     profile['backdrops'] = backdrops(p)
     if p.get('kit'):
         index = kit_index(p)
+        # Art that comes out of Extron's own files is in neither the install
+        # nor a fresh vendor/ until extracted - Turbulence's, Mach's slider.
+        extract = (f" - run `python -m gdl.designsys extract {p['template'].lower()}` "
+                   f'first' if p['kit'].get('extract') else '')
         if not index['files']:
             # Said aloud: without it the build looks normal, and the system
             # it publishes names no icons and draws none.
             print(f"  note: the {p['template']} kit is not installed here (GUI Designer's "
-                  "install or vendor/) - the system names no icons and draws none")
+                  f"install or vendor/){extract} - the system names no icons and draws none")
+        # And so is a kit whose buttons are here but not its slider's part:
+        # the system publishes with its sliders drawn plain.
+        d = (p.get('defaults') or {}).get('slider') or {}
+        found = slider_rail(p)
+        lacking = [d[k] for k in ('track_image', 'fill_image') if d.get(k) and k not in found]
+        if d.get('thumb_image') and not any(slider_thumb(p, s['id']) for s in p['schemes']):
+            lacking.append(d['thumb_image'])
+        if lacking and index['files']:
+            print(f"  note: the {p['template']} slider art ({', '.join(lacking)}) is not on "
+                  f'this machine{extract} - the system draws its sliders plain')
         profile['kit'] = dict(p['kit'], files=index['files'],
                               art=kit_art(p, index) if art and index['files'] else {},
                               thumb_art=thumb_art(p) if art else {},

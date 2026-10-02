@@ -45,9 +45,11 @@ def argb(value):
 # KnownColor `knownColor`: 27 Transparent, 35 Black, 105 LimeGreen, 164 White.
 # Every seed stores colors so (Shockwave's 211 White and 206 Black, every
 # Turbulence label's White), and reading only the value read each as none.
-# The web colors, 27-167, with .NET's own values (Color.FromKnownColor). The
-# rest are Windows system colors, whatever the build host's theme says - none
-# is seen in the corpus, and they read as none.
+# The web colors, 27-167, with .NET Framework's own values (Color.FromKnownColor
+# in 32-bit PowerShell 5.1, the host GUI Designer runs on) - where it differs
+# from CSS, as DarkSeaGreen does (#8FBC8B, not #8FBC8F), Framework's. The rest
+# are Windows system colors, whatever the build host's theme says - none is
+# seen in the corpus, and they read as none.
 KNOWN_COLORS = {
     27: 0x00FFFFFF, 28: 0xFFF0F8FF, 29: 0xFFFAEBD7, 30: 0xFF00FFFF, 31: 0xFF7FFFD4,
     32: 0xFFF0FFFF, 33: 0xFFF5F5DC, 34: 0xFFFFE4C4, 35: 0xFF000000, 36: 0xFFFFEBCD,
@@ -55,7 +57,7 @@ KNOWN_COLORS = {
     42: 0xFF7FFF00, 43: 0xFFD2691E, 44: 0xFFFF7F50, 45: 0xFF6495ED, 46: 0xFFFFF8DC,
     47: 0xFFDC143C, 48: 0xFF00FFFF, 49: 0xFF00008B, 50: 0xFF008B8B, 51: 0xFFB8860B,
     52: 0xFFA9A9A9, 53: 0xFF006400, 54: 0xFFBDB76B, 55: 0xFF8B008B, 56: 0xFF556B2F,
-    57: 0xFFFF8C00, 58: 0xFF9932CC, 59: 0xFF8B0000, 60: 0xFFE9967A, 61: 0xFF8FBC8F,
+    57: 0xFFFF8C00, 58: 0xFF9932CC, 59: 0xFF8B0000, 60: 0xFFE9967A, 61: 0xFF8FBC8B,
     62: 0xFF483D8B, 63: 0xFF2F4F4F, 64: 0xFF00CED1, 65: 0xFF9400D3, 66: 0xFFFF1493,
     67: 0xFF00BFFF, 68: 0xFF696969, 69: 0xFF1E90FF, 70: 0xFFB22222, 71: 0xFFFFFAF0,
     72: 0xFF228B22, 73: 0xFFFF00FF, 74: 0xFFDCDCDC, 75: 0xFFF8F8FF, 76: 0xFFFFD700,

@@ -131,6 +131,12 @@ opening GUI Designer.**
   after.
 - `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
   sizes.
+- **A horizontal slider in a template whose thumb is not square** (Shockwave's,
+  52 across and 34 along). The spec turns the thumb's box as the canvas does,
+  but the kit's thumb art is drawn for a vertical slider and goes into the
+  turned box as it is, and `verify_built`'s horizontal rail model mirrors the
+  vertical one unmeasured. No seed or canvas has one yet; build one and measure
+  both before relying on it.
 - **ECP's phone and tablet canvases have no donor, and cannot have one.** The
   six themable combinations (Afterburn / Mach / Shockwave × 16-9 and 16-10) are
   all seeded. The other five presets — iPhone, Android Phone, iPad, Android

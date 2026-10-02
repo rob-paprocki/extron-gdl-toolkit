@@ -49,7 +49,7 @@ Branch: `feat/panel-aware` (exists; spec committed as `2d0d485`). One PR for the
 **Interfaces:**
 - Produces: `gdl.spec.ORIENTATIONS: dict[str, tuple[tuple[int,int], ...]]`, `gdl.spec.sizes(model: str) -> tuple[tuple[int,int], ...]`, `gdl.spec.SOFT_CLIENTS: tuple[str, ...]`, `gdl.spec.diagonal(model: str) -> float | None` (inches), `gdl.spec.tier(model: str) -> 'A' | 'B' | 'C' | None`, `gdl.spec.TIER_A_INCHES = 6.5`, `gdl.spec.TIER_B_INCHES = 4.0`. Phase 1 builds the design system's model table from these.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `class TestExtronRules` in `tests/test_spec.py`:
 
@@ -91,12 +91,12 @@ Add to `class TestExtronRules` in `tests/test_spec.py`:
         self.assertTrue(any('no touch minimum' in m for m in p.check()), p.check())
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `python -m pytest tests/test_spec.py -q -k "1230w or landscape_300m or diagonal_and_a_tier or no_known_minimum"`
 Expected: 4 failed - `MODELS['TLP1230WTG']` is `(800, 480)`; `touch_minimums((480, 320))` is `(None, None)`; `ImportError: cannot import name 'diagonal'`; no "no touch minimum" message.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `gdl/spec.py`, add `import math` to the imports (alphabetical, after `import json`).
 
@@ -178,14 +178,14 @@ In `_house_rules()`, directly after `target, spacing = touch_minimums(self.model
                        f"model so 9mm can be converted (GUI Design Standards p.55)")
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass, then the whole suite**
+- [x] **Step 4: Run the tests to verify they pass, then the whole suite**
 
 Run: `python -m pytest tests/test_spec.py -q -k "1230w or landscape_300m or diagonal_and_a_tier or no_known_minimum"`
 Expected: 4 passed.
 Run: `python -m pytest -q`
 Expected: all pass. If an existing test built a Panel at a size with no model row and now fails on "no touch minimum", give that test's spec a `model` - do not weaken the new message.
 
-- [ ] **Step 5: Docs**
+- [x] **Step 5: Docs**
 
 In `docs/design-rules.md` §1, change the row `| 1920 × 720 | TLP Pro 1230WTG — read from a built project, not from the probe |` to `| 1920 × 720 | TLP Pro 1230WTG — 166 DPI, from Extron's TemplateInfoTable.config; the probe reads the base platform class |`, and add after the resolution table:
 
@@ -198,7 +198,7 @@ pixels alone cannot place a panel. Soft clients (ECP, the VTLP targets, TLI Pro)
 have no tier - their screen is the host's.
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add gdl/spec.py tests/test_spec.py docs/design-rules.md
@@ -220,7 +220,7 @@ git commit -m "fix: the 1230W's real canvas, both 300M orientations, and a panel
 
 Why this shape: `layout.json` exports only `PointSize` (checked on the 1035, 835, 1535, 300M, 1230W and ECP seeds), and a cloned button has `flattenText` off, so the panel draws text live and no built file shows its pixel size. A button with `flattenText` on has Build bake its caption into the artwork - GUI Designer's own rasterization for that project's platform - which is the best evidence available without the physical panels.
 
-- [ ] **Step 1: Write the failing measuring tests**
+- [x] **Step 1: Write the failing measuring tests**
 
 Create `tests/test_type_probe.py`:
 
@@ -285,12 +285,12 @@ if __name__ == '__main__':
     unittest.main()
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `python -m pytest tests/test_type_probe.py -q`
 Expected: collection error - `ModuleNotFoundError: No module named 'type_probe'`.
 
-- [ ] **Step 3: Implement `tests/type_probe.py`**
+- [x] **Step 3: Implement `tests/type_probe.py`**
 
 ```python
 """How big does a panel draw a point? Bake captions and measure them.
@@ -388,12 +388,12 @@ if __name__ == '__main__':
     raise SystemExit(main(sys.argv))
 ```
 
-- [ ] **Step 4: Run the measuring tests**
+- [x] **Step 4: Run the measuring tests**
 
 Run: `python -m pytest tests/test_type_probe.py -q -k CapHeight`
 Expected: 3 passed. (`TestProbeSpec` still fails until Step 6: `flatten` is not yet spec vocabulary, and `Panel(spec).check()` may name it.)
 
-- [ ] **Step 5: Write the failing spec test for `flatten`**
+- [x] **Step 5: Write the failing spec test for `flatten`**
 
 Add to `tests/test_spec.py` (next to the other button-op tests, e.g. after `class TestButtonImages`):
 
@@ -410,7 +410,7 @@ class TestFlatten(unittest.TestCase):
 
 Run: `python -m pytest tests/test_spec.py -q -k flatten` - Expected: FAIL (`[False, False]`). If `p.plan()`'s shape differs (ops under another key), read `Panel.plan` and adjust only the lookup, not the assertion.
 
-- [ ] **Step 6: Implement `flatten` in the spec and applier**
+- [x] **Step 6: Implement `flatten` in the spec and applier**
 
 In `gdl/spec.py` `_op_for()`, where the button's op dict is assembled (next to `thumb_image` for sliders), add:
 
@@ -439,7 +439,7 @@ keeping the comment above it and adding one line to it: `# Only the type probe (
 Run: `python -m pytest tests/test_spec.py tests/test_type_probe.py -q`
 Expected: all pass.
 
-- [ ] **Step 7: Build the probes**
+- [x] **Step 7: Build the probes**
 
 ```bash
 python tests/type_probe.py specs "$CLAUDE_JOB_DIR/tmp/typeprobe"
@@ -457,7 +457,7 @@ powershell\New-GdlPanel.ps1 -Spec "$env:CLAUDE_JOB_DIR\tmp\typeprobe\TLP1230WTG.
 
 Expected: each exits 0. `verify_built.py` may flag the baked caption as a caption mismatch - that is the probe working; read it, do not suppress it. If the before-first-build preference modal appears, follow CLAUDE.md *Driving GUI Designer*.
 
-- [ ] **Step 8: Measure**
+- [x] **Step 8: Measure**
 
 ```bash
 python tests/type_probe.py measure "$CLAUDE_JOB_DIR"/tmp/typeprobe/*.gdl
@@ -465,11 +465,11 @@ python tests/type_probe.py measure "$CLAUDE_JOB_DIR"/tmp/typeprobe/*.gdl
 
 Expected: a line per model with `pt=px(ratio)`. **If every button reads `NO INK`**, `flattenText` is per state: set `flattenTextField` on each state in the applier's state loop too, rebuild, re-measure. **Read the result:** ratios equal across all five models (within 1 px) → GUI Designer draws a point at a fixed pixel size whatever the DPI, so physical text shrinks on dense panels and Phase 1 needs a per-model floor; ratios proportional to DPI → points are physical and 14 pt is enough everywhere.
 
-- [ ] **Step 9: Record it**
+- [x] **Step 9: Record it**
 
 In `docs/gdl-format.md`, add a subsection under the section that covers what Build does (next to the `flattenText` notes): the five models, their DPI, the measured cap height per point size, the ratio, and the one-sentence conclusion, with how it was measured (`tests/type_probe.py`) and its limit (Build's rasterizer, not the panel firmware). In the spec's §4.1 "Type stays in points" bullet, replace "if Phase 0 shows ... on top for dense panels" with the decision the numbers support. Add `flatten` to the spec vocabulary wherever `docs/gdl-format.md` or `SKILL.md` lists button fields, marked "type probe only".
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add gdl/spec.py powershell/Apply-GdlPlan.ps1 tests/type_probe.py tests/test_type_probe.py tests/test_spec.py docs/gdl-format.md docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md SKILL.md
@@ -486,19 +486,19 @@ git commit -m "test: measure how GUI Designer draws a point on five panel models
 - Consumes: the published *Extron Afterburn* design system (`https://claude.ai/artifact/1nZsxvdm7HsXpfoSXBVjvx`); `tests/data/design-huddle/` (canvas.json, Home.dc.html); `Page`'s existing `width`/`height` props (`gdl/designsys/bundle.js` Page).
 - Produces: a written decision - **live** (Phase 1 builds `preview` into Page) or **sign-off only** (Phase 1 shows derived layouts only in `gdl.design compare`).
 
-- [ ] **Step 1: Make the scratch canvas**
+- [x] **Step 1: Make the scratch canvas**
 
 Copy `tests/data/design-huddle/` to `$CLAUDE_JOB_DIR/tmp/preview-check/project/`. Copy `Home.dc.html` twice, to `Home725.dc.html` and `Home725b.dc.html`. In both copies, add `width="1024" height="600"` to the root `Page` element's attributes. In `canvas.json`, add two boards that mirror Home's entry: `Home725` at Home's own size (1280 × 800) and `Home725b` at 1024 × 600 (w/h fields as Home's entry spells them).
 
-- [ ] **Step 2: Publish it as a new, private Design artifact**
+- [x] **Step 2: Publish it as a new, private Design artifact**
 
 `Artifact` `action: "quickstart"`, `intent: "design"` → the Design type's `type_url`. Publish with that `type_url`, `title: "Preview check"`, `auto_open: "after_first_write"`, then publish the scratch `project/` files to the returned `url` (`root` = the scratch folder, `file_path` = `project/canvas.json`, `files` = every file under `project/`). Pin it to the design system the way the huddle canvas is (its `canvas.json` already names the system version).
 
-- [ ] **Step 3: Look at it**
+- [x] **Step 3: Look at it**
 
 Load the Chrome tools in one call (`ToolSearch` `select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page`), open the artifact in a new tab, and screenshot: the canvas overview; `Home725` (a 1024 × 600 Page on a 1280 × 800 board); `Home725b` (both 1024 × 600); and each in Play. If the browser tools cannot reach claude.ai, stop and ask the owner to open the link and describe the three boards - `needs input`.
 
-- [ ] **Step 4: Decide and record**
+- [x] **Step 4: Decide and record**
 
 - `Home725` shows a correctly laid-out 1024 × 600 page (whatever margin) → **live**: Page's `preview` sets the Page's own width and height from the panel, board size untouched.
 - Only `Home725b` looks right → **live, per board**: the preview needs the board resized too; record that the designer (or Claude Code) sets the board size when previewing, and that the translator ignores board size.
@@ -506,7 +506,7 @@ Load the Chrome tools in one call (`ToolSearch` `select:mcp__claude-in-chrome__t
 
 Write the decision and the evidence (which board did what) into the spec's §4.2 *Preview* paragraph, replacing "Phase 0 checks Claude Design shows that; if it cannot, ...". Delete the scratch artifact only if the owner agrees.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md
@@ -526,7 +526,7 @@ git commit -m "docs: how Claude Design previews a page at another panel's size"
 - Consumes: `gdl.project.Project` (`instances()`, `field()`, `pages()`, `controls()`); `gdl.spec.MODELS`, `gdl.spec.part_number`, `gdl.spec.sizes`; `powershell\Invoke-GdlMenu.ps1`; the launch code in `powershell\New-GdlPanel.ps1`.
 - Produces: `powershell\New-GdlSeed.ps1 -PanelType <wizard name> -Model <MODELS key> -Theme <wizard name> [-Application <name>] -Output <seed.gdl> [-List]`; `tests/verify_seed.py <seed.gdl> <model>` (exit 0/1) with `check_seed(path, model) -> list[str]` problems. Phase 1's translator prints the `New-GdlSeed.ps1` command for a panel with no seed.
 
-- [ ] **Step 1: Write the failing verifier tests**
+- [x] **Step 1: Write the failing verifier tests**
 
 Create `tests/test_verify_seed.py`:
 
@@ -574,7 +574,7 @@ if __name__ == '__main__':
 
 Run: `python -m pytest tests/test_verify_seed.py -q` - Expected: collection error, `No module named 'verify_seed'`.
 
-- [ ] **Step 2: Implement `tests/verify_seed.py`**
+- [x] **Step 2: Implement `tests/verify_seed.py`**
 
 ```python
 """Is this file a seed for this model? Run on every seed New-GdlSeed.ps1 makes.
@@ -645,7 +645,7 @@ If `Project.open` is spelled differently (read `gdl/project.py`), use the real c
 
 Run: `python -m pytest tests/test_verify_seed.py -q` - Expected: 3 passed (or 3 skipped where the seed is an LFS pointer - then `git lfs pull --include "seeds/Afterburn 1035.gdl"` and re-run; skips are not a pass).
 
-- [ ] **Step 3: Write `powershell/New-GdlSeed.ps1`**
+- [x] **Step 3: Write `powershell/New-GdlSeed.ps1`**
 
 Structure (follow `New-GdlPanel.ps1` for launching GUI Designer and `Invoke-GdlMenu.ps1` for UIA; every UIA idiom below is the one that made the six ECP seeds, `docs/from-scratch.md` §5c):
 
@@ -728,8 +728,8 @@ git commit -m "feat: make a seed for any panel through the Project Create Wizard
 
 ### Task 5: Phase 0 review and PR
 
-- [ ] **Step 1:** `python -m pytest -q` - all pass; note the count of skips and that none is a new test skipping for a missing seed.
-- [ ] **Step 2:** Run an adversarial review over `git diff origin/main...HEAD` (Workflow: finders per dimension - correctness, silent failure, docs drift - then skeptics per finding). Fix what survives, with tests.
+- [x] **Step 1:** `python -m pytest -q` - all pass; note the count of skips and that none is a new test skipping for a missing seed.
+- [x] **Step 2:** Run an adversarial review over `git diff origin/main...HEAD` (Workflow: finders per dimension - correctness, silent failure, docs drift - then skeptics per finding). Fix what survives, with tests.
 - [ ] **Step 3:** Push `feat/panel-aware` and open a draft PR "Phase 0: settle the unknowns for panel-aware design systems", its body the type-probe numbers, the preview decision and the three new seeds. Update the spec's §5 with anything Phase 0 changed.
 
 ---
@@ -771,8 +771,10 @@ Each task below lists what it produces and the tests that prove it; the full ste
 
 ## Phases 2-4 - outlines, re-planned when reached
 
-**Phase 2 - Mach.** Register in `TEMPLATES`; slider track 15 px from `15x182_empty.png` / `182x15_empty.png` (profile and `docs/design-rules.md` §7 together); themes from `Backgrounds/5472x3648/`; the per-panel table from Mach's series templates; every `tests/test_designsys.py` class parameterised over all templates; commit the counting script or re-derive the `_source` counts; built and verified on two panels (1035 and one of 725/525).
+Each of the three is already a design system at 1280×800, built and verified on its 1035 seed; the spec's §5 says what each has. What is left of each phase:
 
-**Phase 3 - Shockwave.** Add `examples`; `defaults.slider`/`level` in the shared shape (`thumb` a size, `thumb_color`, `orientation`, `track`); decide on a parser for its status-color kit (`1248x440_blue_nsel.png`) or none; backgrounds for its four resolutions; per-panel table; two panels.
+**Phase 2 - Mach.** The per-panel table from Mach's series templates; commit the counting script or re-derive the `_source` counts; built and verified on two panels (1035 and one of 725/525). Its slider track stays the seed's 8 px `8x500_mach_track_bg@3x.png` - what the built seed draws.
 
-**Phase 4 - Turbulence.** Extract its images from the `.glt` files (`PBImageResource`); seeds via `New-GdlSeed.ps1`; re-derive the 2D Rectangle border claim (12 references on an object type the reader does not walk); per-panel table; two panels.
+**Phase 3 - Shockwave.** Backgrounds for its four resolutions; per-panel table; two panels.
+
+**Phase 4 - Turbulence.** Seeds at its other sizes via `New-GdlSeed.ps1`; per-panel table; two panels.

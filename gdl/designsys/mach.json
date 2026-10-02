@@ -38,14 +38,14 @@
     {
       "id": "default",
       "name": "Mach",
-      "usage": "Mach's only scheme. Its swatches are fixed status colors, not alternate branding to pick between - see _source."
+      "usage": "Mach's only scheme. Its swatches are fixed status colors, not alternate branding to pick between."
     }
   ],
   "colors": [
     {
       "name": "page",
       "value": "#303030",
-      "usage": "Behind the photo, and a popup's background. Mach's pages show a full-bleed photo (a theme); this is the solid the template draws where there is none - 13 of the seed's own header/footer bars' solid fallback, matching `python -m gdl.themes` on Mach 1020 Series.glt. One of the panel's six."
+      "usage": "Behind the photo, and a popup's background. Mach's pages show a full-bleed photo (a theme); this is the solid the template draws where there is none, as the seed's own header and footer bars fall back to. One of the panel's six."
     },
     {
       "name": "raised",
@@ -90,7 +90,7 @@
     {
       "name": "shade",
       "value": "#000000B4",
-      "usage": "A darker button, panel or bar fill: black at alpha 180 (0xB4). The seed's second most common button look (69 of 327); also the template's own dominant fill overall (38 of `python -m gdl.themes` on Mach 1020 Series.glt) and Project.fill_map()'s one authored, non-image fill across all three surveyed Mach seeds. Not one of the panel's core six unless swapped in for raised."
+      "usage": "A darker button, panel or bar fill: black at alpha 180 (0xB4). The seed's second most common button look, and the template's own dominant authored fill. Not one of the panel's core six unless swapped in for raised."
     },
     {
       "name": "shade-on",
@@ -146,13 +146,13 @@
       "resource": "Mach - 10 Radius 2 Thick",
       "radius": 10,
       "thickness": 2,
-      "usage": "Mach's own rounded corner: buttons, panels, cards and slider/level tracks. The only border every button archetype uses; no donor button authors one, but CLAUDE.md's own guidance is to author a named border resource rather than pixels - see _source."
+      "usage": "Mach's own rounded corner: buttons, panels, cards and slider/level tracks. The only border every button archetype uses; the panel draws it from this named border, never from pixels."
     },
     "rounded": {
       "resource": "2D Rounded Rectangle",
       "radius": 10,
       "thickness": 3,
-      "usage": "A generic rounded rectangle. One of only two border resources actually drawn with in the seed (Project.border_resources()), on 2 shapes."
+      "usage": "A generic rounded rectangle. One of only two border resources the seed actually draws with, on 2 shapes."
     },
     "rect": {
       "resource": "2D Rectangle",
@@ -170,7 +170,7 @@
       "resource": "2D Ellipse",
       "radius": -1,
       "thickness": 3,
-      "usage": "A circle or ellipse. BORDER_GEOMETRY's own entry is (0, 3) - the resource's raw dataField, not a corner radius - so -1 draws it round, as gdl/designsys/afterburn.json's own ellipse does."
+      "usage": "A circle or ellipse, drawn round at any size."
     },
     "none": {
       "resource": "",

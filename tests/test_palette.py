@@ -57,6 +57,14 @@ class TestNamedColors(unittest.TestCase):
         p, lime = self._color(state=1, knownColor=105)
         self.assertEqual(p.color(lime), {'A': 255, 'R': 0x32, 'G': 0xCD, 'B': 0x32})
 
+    def test_the_table_is_net_frameworks_not_css(self):
+        """GUI Designer runs on .NET Framework, whose DarkSeaGreen is #8FBC8B;
+        CSS and modern .NET say #8FBC8F. It is the one entry of the 141 where
+        Framework differs (Color.FromKnownColor, 27-167, in 32-bit PowerShell
+        5.1)."""
+        p, c = self._color(state=1, knownColor=61)
+        self.assertEqual(p.color(c), {'A': 255, 'R': 0x8F, 'G': 0xBC, 'B': 0x8B})
+
     def test_transparent_and_empty_read_as_none(self):
         for value in ({'state': 1, 'knownColor': 27}, {'state': 0}):
             p, c = self._color(**value)

@@ -21,7 +21,9 @@ a plausible-looking wizard that builds the wrong project:
   radio exposes no toggle state to read back, so the only check is a screenshot,
   or counting pages afterwards: a blank ECP project has 1 page and 3 controls.
 
-`docs/from-scratch.md` §5c has the recipe and §7 the automation detail.
+`powershell/New-GdlSeed.ps1` does it with no hands on the mouse, avoiding both,
+and keeps a seed only if `tests/verify_seed.py` passes it; it needs a connected
+desktop. `docs/from-scratch.md` §5c has the recipe and §7 the automation detail.
 
 | File | Project name | Model(s) by part number | Part | Canvas | Pages | Popups | Controls | Borders | Declared fonts |
 |---|---|---|---|---|---:|---:|---:|---:|---|
@@ -88,7 +90,7 @@ part and fonts from each seed's own built `layout.json`.
 No seed yet for: the Teams Rooms family (Extron Control for Teams Rooms, 16x9
 and 16x10), Zoom Rooms at 725 or 986x740, and several sizes with templates but no
 seed - 1024x600 (1020), 1366x768 (1520), 800x480 (520/720), 1280x720 (535) and
-320x240 (320). Each is one File > New Project away.
+320x240 (320). Each is one `New-GdlSeed.ps1` run away.
 
 ECP is complete: all three themes at both presets that can be themed. Its other
 five presets (iPhone, Android Phone, iPad, Android Tablet, Custom) are Blank-only

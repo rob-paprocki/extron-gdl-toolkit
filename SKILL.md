@@ -133,8 +133,8 @@ and every step from 4 on applies to it. `docs/claude-design.md`.
    **Pick the donor deliberately — it ships in the result.** The fixtures are a
    real client's project, so a panel cloned from one carries their page names,
    popups, artwork and retail fonts. For anything going to a client, use a
-   *seed* from `seeds/` — themed projects made with **File > New Project...**,
-   across several theme families and sizes (`seeds/README.md` lists them; `git
+   *seed* from `seeds/` — themed projects made through the Project Create
+   Wizard (`powershell/New-GdlSeed.ps1`), across several theme families and sizes (`seeds/README.md` lists them; `git
    lfs pull` fetches them). Prefer one at the target size:
    `retarget` builds a correct panel at another size, but only 22% of controls
    match what Extron's own designers drew there. Extron's `.glt` templates cannot be
@@ -267,8 +267,10 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 
 ## Icons: two routes, both work
 
-- **Images** — the normal route, and what real panels use. Extron's kits ship
-  1,316 (Afterburn), 596 (Mach), 1,124 (Shockwave), 1,408 (Turbulence) assets.
+- **Images** — the normal route, and what real panels use. Extron's kits are
+  under the install's `Resources\` (`docs/design-rules.md` §7 has what each
+  holds), and Turbulence's art is extracted from its seed and templates
+  (`vendor/README.md`); a spec names only what those resolve to.
   A spec button names one by its file name as `image`, on the button or per
   state (`{"name": "On", "image": "756x756_laptop-orange_sel.png"}`), with
   `"border": "none"` since the kit image draws the button; `images` brings any
@@ -281,8 +283,9 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   scheme's secondary accent (Afterburn: `440x440_thumb-1-<color>_sel.png`),
   `thumb` across and `thumb_height` along the rail where it is not square
   (Shockwave's is 52 by 34). Where the rail is art too, `track_image` and
-  `fill_image` name it; such a slider is planned with no border or fill, since
-  Build draws a bordered fill in place of the art.
+  `fill_image` name it - both, since the applier writes only what it is given
+  and a clone keeps its donor's other; such a slider is planned with no border
+  or fill, since Build draws a bordered fill in place of the art.
 - **Icon fonts** — for single-color icons, faster and needs no resource.
   Afterburn 136 glyphs at U+E900–E98C, Mach (Extron-Lift) 121 at U+E900–E978.
   Place them as text in that face.

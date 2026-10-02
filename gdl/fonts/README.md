@@ -71,9 +71,11 @@ with; the system copy is whatever build the OS happens to ship. Windows 11's
 ## A missing face is said aloud
 
 `face()` takes a face from the files recovered here first, then from the host's
-fonts, and raises `LookupError` only when neither has it. On a host with Arial
-installed (Windows, macOS) the host's Arial stands in for every missing face, so
-a checkout that skipped recovery renders on it and scores worse - the render
-baseline reads 2.81% instead of 2.19%. `gdl.compose.FALLBACKS` records every
-face that fell back, and `tests/score.py record` refuses to write a score over
-one, naming the recovery loop above.
+fonts, and raises `LookupError` only when neither has it. A face missing here
+draws in a stand-in: the recovered Arial, after a partial recovery, or the
+host's copy - and on a host with Arial installed (Windows, macOS) the host's
+Arial stands in for every face, so a checkout that skipped recovery renders on
+it and scores worse - the render baseline reads 2.81% instead of 2.19%.
+`gdl.compose.FALLBACKS` records every face drawn in anything but its own
+recovered file, and `tests/score.py record` refuses to write a score over one,
+naming the recovery loop above.

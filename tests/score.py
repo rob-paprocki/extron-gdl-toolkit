@@ -142,8 +142,8 @@ def main():
         if FALLBACKS:
             # Not comparable with tests/baseline.json, which was scored on the
             # faces the project embeds: the host's Arial costs every page.
-            print(f"scored on the host's {', '.join(sorted(FALLBACKS))} for want of the "
-                  f'recovered faces - nothing written. Recover them first:\n'
+            print(f"scored on stand-ins - {'; '.join(sorted(FALLBACKS))} - for want of "
+                  f'the recovered faces, nothing written. Recover them first:\n'
                   f'  for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done')
             return 2
         with open(args.out, 'w', encoding='utf-8') as fh:

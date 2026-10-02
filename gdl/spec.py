@@ -268,11 +268,13 @@ def _panels():
     resolution. Name the model in the spec when you know it - it is a much
     tighter answer, and the spread within one resolution is nearly 2x.
 
-    The VTLP* virtual targets are excluded from that maximum. They are a phone,
-    a tablet and a browser, so their 220 "DPI" is the host device's rather than
-    a fixed panel's, and letting it set the minimum for 1280x800 would hold
-    every real panel to a number no Extron hardware implies. They stay in the
-    model list, and asking for one by name still gives its own figure.
+    The soft clients are excluded from that maximum. The VTLP* targets are a
+    phone, a tablet and a browser, and the TLI interfaces drive a screen their
+    model does not define, so their 220 "DPI" is GUI Designer's default rather
+    than a fixed panel's; letting it set the minimum for 1280x800 or 1920x1080
+    would hold every real panel to a number no Extron hardware implies. They
+    stay in the model list, and asking for one by name still gives its own
+    figure.
     """
     out = {}
     for model, (_, _, d, _) in MODELS_FULL.items():
@@ -280,7 +282,8 @@ def _panels():
             out.setdefault(size, []).append((model, d))
     res = {}
     for size, ms in out.items():
-        physical = [d for m, d in ms if not m.startswith('VTLP') and d]
+        physical = [d for m, d in ms
+                    if not m.startswith('VTLP') and m not in SOFT_CLIENTS and d]
         res[size] = (', '.join(sorted(m for m, _ in ms)),
                      max(physical) if physical else None)
     return res
@@ -377,10 +380,17 @@ def _type_fields(kind, c):
             # is invisible: Set-GdlFieldIfPresent warns and continues, so the
             # slider builds fine at the donor's dimensions.
             out['sliderTrackWidth'] = c.get('track', 10)
-            out['sliderThumbWidth'] = c.get('thumb', 50)
-            # Along the rail: square unless the template's thumb is not -
-            # Shockwave's is 52 across and 34 along.
-            out['sliderThumbHeight'] = c.get('thumb_height', c.get('thumb', 50))
+            # `thumb` is across the rail and `thumb_height` along it - square
+            # unless the template's thumb is not: Shockwave's is 52 across and
+            # 34 along. Build keeps width and height literal (the Zoom Rooms
+            # seed's horizontal slider has a thumb 7 wide and 25 tall), so a
+            # slider lying down swaps them, as the canvas draws it.
+            across = c.get('thumb', 50)
+            along = c.get('thumb_height', across)
+            if c.get('orientation') in ('right', 'left'):
+                across, along = along, across
+            out['sliderThumbWidth'] = across
+            out['sliderThumbHeight'] = along
     if kind == 'line':
         # Endpoints are an eight-position enum on the control's own rect, so a
         # diagonal is TopLeft -> BottomRight at whatever angle the rect gives.
@@ -904,6 +914,7 @@ class Panel:
         out += self._popup_rules()
         out += self._name_rules()
         out += self._state_rules()
+        out += self._slider_rules()
         for pg in self.pages:
             lay = pg.get('background_layout')
             if lay is not None and lay not in BACKGROUND_LAYOUTS:
@@ -1106,6 +1117,33 @@ class Panel:
             # seed's own image-railed sliders author no border and Transparent.
             fill, stroke, border = dict(TRANSPARENT), dict(TRANSPARENT), ''
         return fill, stroke, text_color, border
+
+    def _slider_rules(self):
+        """A slider or level lies one of four ways, and a rail is two images.
+
+        The canvas draws anything but up or down across the page while
+        _type_fields falls back to up, so an orientation outside ORIENT was
+        approved lying down and built standing up. And the applier writes only
+        the rail images it is given, so a rail named by one kept its donor's
+        other - every theme seed's slider has fill art.
+        """
+        out = []
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for pg in items:
+                for c in pg['controls']:
+                    if c.get('kind') not in ('slider', 'level'):
+                        continue
+                    where = f"{kind} {pg['name']!r} {c.get('name') or c.get('text') or '?'}"
+                    o = c.get('orientation', 'up')
+                    if o not in ORIENT:
+                        out.append(f"{where}: orientation {o!r} is not one of "
+                                   f"{', '.join(ORIENT)} - the canvas draws it across "
+                                   f'and the build stands it up')
+                    if c.get('kind') == 'slider' and \
+                            bool(c.get('track_image')) != bool(c.get('fill_image')):
+                        out.append(f'{where}: a rail takes both track_image and fill_image '
+                                   f"- with one, the clone keeps its donor's other")
+        return out
 
     def _state_rules(self):
         """A button's states must be ones a program can tell apart."""
@@ -1564,10 +1602,15 @@ class Panel:
             if not pg.get('modal'):
                 add(pg['background'])
             for c in pg['controls']:
+                # A slider drawn from rail art is written with no fill or
+                # stroke (_base_look), so the profile's default reaches nothing.
+                railed = c.get('kind') == 'slider' and c.get('track_image')
                 # A state's colors are on the panel as much as the control's
                 # own - an On fill included.
                 for look in [c] + (self._feedback(c) or []):
                     for key in ('fill', 'stroke', 'color', 'text_color'):
+                        if railed and key in ('fill', 'stroke'):
+                            continue
                         add(color(look.get(key), self.theme))
                 if self._default_text_shown(c):
                     # Resolved only when something draws in it, as the

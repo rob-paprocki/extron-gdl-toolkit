@@ -220,30 +220,28 @@ backgrounds per series; millimetre components; Page `panels` and `preview`;
 the ID map across panels; per-panel sign-off; the checks. Proof: the huddle
 canvas built and verified on the 1035, 725, 525 and 320.
 
-**Phase 2 - Mach.** It builds today. Register it; correct its slider track (15
-px, not 8, from `15x182_empty.png`/`182x15_empty.png`) in the profile and
-`docs/design-rules.md` §7 together; themes from its kit backgrounds; its
-per-series layouts; every design-system test run against every template.
-Proven on two panels.
+Mach, Shockwave and Turbulence are already design systems at 1280×800, each
+built and verified on its 1035 seed (`docs/claude-design.md` §6). What their
+phases add is the panel-aware part.
 
-**Phase 3 - Shockwave.** Its profile does not build: add `examples`, and give
-`defaults.slider`/`level` the shape the others use (`thumb` a size,
-`thumb_color` the color, `orientation`, `track`). Its kit is keyed by status
-color (`1248x440_blue_nsel.png`), not icon, so no icon variants without a
-parser for that. Backgrounds for four resolutions. Proven on two panels.
+**Phase 2 - Mach.** Registered, with every design-system test run against every
+template; themes from its kit's photos; its slider the seed's own art - an 8 px
+track, `8x500_mach_track_bg@3x.png`, which is what the built seed draws, not the
+kit's `15x182_empty.png`. Left: its per-series layouts, and proof on two panels.
 
-**Phase 4 - Turbulence.** Its images come out of the `.glt` files, since no
-`Resources/Turbulence` exists; its seeds come from `New-GdlSeed.ps1`; its
-profile's claim that 2D Rectangle is drawn by nothing is wrong (12 references)
-and gets re-derived. Proven on two panels.
+**Phase 3 - Shockwave.** Its profile builds, with `examples` and the slider and
+level in the shape the others use. Left: backgrounds for its four resolutions,
+its per-series layouts, and proof on two panels.
+
+**Phase 4 - Turbulence.** Its art is extracted from its seed and six templates
+(1.28 has no Turbulence kit beside the others - `docs/design-rules.md` §7), and
+its borders are surveyed off the seed (2D Rectangle is drawn, on the six search
+rows' states). Left: seeds at its other sizes from `New-GdlSeed.ps1`, its
+per-series layouts, and proof on two panels.
 
 ## 6. Also found
 
-- `docs/from-scratch.md` line 564 says the Project Create Wizard "cannot be
-  driven at all", against its own §5c and `seeds/README.md`.
-- `mach.json` and `turbulence.json` cite counts from a `theme_survey.py` that
-  is not in the repo; a plain `gdl.project` scan gets close but not identical
-  (189 against 183). The counting script gets committed, or the counts
-  re-derived by one that is.
-- The design-system tests load only Afterburn, so a broken profile (Shockwave's
-  today) passes CI.
+- `mach.json`'s `_source` cites counts from a `theme_survey.py` that is not in
+  the repo; a plain `gdl.project` scan gets close but not identical (189
+  against 183). The counting script gets committed, or the counts re-derived
+  by one that is - in Phase 2. (Its published text no longer quotes them.)

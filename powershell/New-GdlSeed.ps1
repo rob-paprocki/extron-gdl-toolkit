@@ -22,9 +22,13 @@
     the wizard first and refuses to click unless GUI Designer owns the window
     under the point. Needs an interactive desktop, like New-GdlPanel.ps1.
 
+    It closes any GUI Designer already running, unsaved work and all - the
+    wizard has to open in an instance this script owns - and says so first.
+
     Exit codes: 0 made and verified; 2 bad arguments; 3 a name the wizard does
     not offer (it prints what it does); 4 a click that did not take; 5 GUI
-    Designer or a dialog did not appear; the verifier's code if it refused.
+    Designer or a dialog did not appear; 6 the verifier could not run; the
+    verifier's code if it refused. On 6 and a refusal the saved file is removed.
 #>
 param(
     [string]$PanelType,
@@ -310,6 +314,11 @@ if (-not (Test-Desktop)) {
                   'Desktop session. The wizard needs real clicks: unlock it, or restore the window, and rerun.')
     exit 5
 }
+$running = @(Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue)
+if ($running.Count) {
+    Write-Output ("closing $($running.Count) running GUI Designer - unsaved work in it is lost; " +
+                  'the wizard needs one this script owns')
+}
 Stop-Gd
 Start-Sleep -Seconds 2
 Start-Process -FilePath $gd
@@ -429,11 +438,19 @@ Stop-Gd
 Write-Output "saved $Output"
 
 # -- refuse a wrong seed --------------------------------------------------------
-& $Python (Join-Path $repo 'tests\verify_seed.py') $Output $Model
-$code = $LASTEXITCODE
+# A seed nobody verified must not stay where the next run refuses to overwrite
+# it, so a verifier that cannot run at all - no Python on this host's PATH, a
+# wrong -Python - removes it as a refusal does. Under 'Stop' that call throws.
+try {
+    & $Python (Join-Path $repo 'tests\verify_seed.py') $Output $Model
+    $code = $LASTEXITCODE
+} catch {
+    Write-Output "could not run '$Python' to verify the seed: $($_.Exception.Message)"
+    $code = 6
+}
 if ($code -ne 0) {
     Remove-Item $Output -Force
-    Write-Output "removed $Output - not a themed $Model seed"
+    Write-Output "removed $Output - not verified as a themed $Model seed"
     exit $code
 }
 exit 0

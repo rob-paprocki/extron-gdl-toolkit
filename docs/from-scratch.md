@@ -419,8 +419,11 @@ committing. Only a real click on the list item works.
 `Create` and `Cancel` expose no patterns, so they need a click by position.
 
 **`powershell/New-GdlSeed.ps1` does all of this**, refuses a name the wizard
-does not offer, and runs `tests/verify_seed.py` on what it saves. Three more
-things it had to learn, for anything else that drives the wizard:
+does not offer, and runs `tests/verify_seed.py` on what it saves - removing the
+file if the verifier refuses it or cannot run, so a seed nobody verified never
+stays where the next run finds it. It closes any GUI Designer already running,
+unsaved work and all, and says so first. Three more things it had to learn, for
+anything else that drives the wizard:
 
 - **Wait for GUI Designer's own wizard.** It opens one by itself once it has
   loaded: the main window appears in about a second, the wizard about ten
@@ -433,8 +436,8 @@ things it had to learn, for anything else that drives the wizard:
   menu names the item after the project - "Save Afterburn All-inclusive 725
   As..." - and the dialog it opens, "Save Project As (<project>)", is the
   Windows common dialog. Opened by a UIA `Invoke`, it does not answer UIA in
-  time: a 111 s walk of it returned neither its File name box nor its Save
-  button. `WM_SETTEXT` into the File name box (the visible `Edit` in a
+  time: a walk of it takes minutes and finds neither its File name box nor its
+  Save button. `WM_SETTEXT` into the File name box (the visible `Edit` in a
   `ComboBox` under `FloatNotifySink`) and `WM_COMMAND IDOK` to the dialog save
   it in seconds, with no mouse and no focus.
 

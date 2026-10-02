@@ -293,6 +293,28 @@ statement is in the live docs; this is the record that it changed.
   lacked. `docs/design-rules.md` §1 is now the one list.
 - **`docs/from-scratch.md` gave the `_alt 2_0_0` fixture 32 border resources** in
   one section and 34 in another. It has 34.
+- **The TLP Pro 1230WTG was an 800x480 panel at 0 DPI**, because
+  `CreatePlatform` hands it back as the base platform class and the probe read
+  that class's default - which made its touch check a silent no-op. Its canvas
+  is 1920x720 at 166 DPI. The **300M** was one way up; it runs both.
+- **The renderer failed loudly on a face it could not resolve.** On a host with
+  Arial it never did: every missing face drew in the host's Arial and the
+  render baseline read 2.81% for 2.19%, silently. A stand-in is now recorded,
+  and `tests/score.py record` refuses over one.
+- **Turbulence shipped no artwork in 1.28.** There is no `Resources\Turbulence\`
+  beside the others, but `Sample Projects\Resources\Turbulence\` holds a
+  separate 1,407-PNG library - one lacking a fifth of what the seed draws, so
+  the design system's art is still extracted from the seed and templates.
+- **The first Shockwave and Mach builds were wrong, and some verified.** The
+  Shockwave huddle build failed verification four ways: a palette color's value
+  was ignored, a donor image of a kit file's name was other art, a cloned shape
+  kept its donor's transparency, and a thumb need not be square - each then
+  fixed in the applier or the reader (`docs/gdl-format.md` §7). A fifth passed
+  verification, and Mach's build with it, until the verifier read the slider's
+  rail: the clone's track was cleared and the profile's bordered fill drawn in
+  place of the art - on Shockwave an opaque black block. Translucent fills were
+  noted rather than checked until Turbulence, whose rails and bars are all
+  translucent, showed Build writes their alpha exactly.
 
 ## Dated facts moved out of the live docs
 

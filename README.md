@@ -31,11 +31,15 @@ together.
 | `powershell/GdlProject.ps1` | authoring bridge: load, clone, edit, save a real project graph |
 | `powershell/Apply-GdlPlan.ps1` | applies a build plan to a real project. `-WhatIf` dry-runs it |
 | `powershell/Apply-GdlEdits.ps1` | applies an edit plan to a real project |
+| `powershell/New-GdlPanel.ps1` | a spec to a built, verified panel, with nobody touching GUI Designer |
+| `powershell/New-GdlSeed.ps1` | a seed for any panel and theme, made through GUI Designer's Project Create Wizard |
 | `viewer/` | builds a single-file HTML browser for every page and popup |
 | `tests/score.py` | scores the render against ground truth and fails on any regression |
 | `tests/compare_snapshots.py` | the same comparison, printed per page |
 | `tests/verify_built.py` | diffs a built `layout.json` against the plan that produced it |
 | `tests/verify_idmap.py` | checks an ID map's page names and control IDs against the built panel |
+| `tests/verify_seed.py` | checks a seed is a themed project for its model, not a blank or the wrong panel |
+| `tests/type_probe.py` | measures how many pixels a point is on a panel, off captions Build bakes |
 | `examples/` | worked spec, edit set and authoring script, all of which run |
 | `SKILL.md` | the repeatable procedure. Start here to build or modify a panel |
 | `docs/gdl-format.md` | the format writeup. Read this first |
@@ -212,10 +216,11 @@ what the residual is. Known gaps, and everything left to do, are in
 
 ## Fonts
 
-The renderer resolves faces from `gdl/fonts/` before the system font path, and
-fails loudly on a face it cannot resolve. `gdl/fonts/README.md` has which faces
-are tracked and why, how the rest are recovered from the fixtures, and which
-projects declare faces they do not embed.
+The renderer resolves faces from `gdl/fonts/` before the system font path. A
+face it cannot find there draws in a stand-in - the host's copy, or Arial - and
+`tests/score.py record` refuses to score over one; a face found nowhere raises.
+`gdl/fonts/README.md` has which faces are tracked and why, how the rest are
+recovered from the fixtures, and which projects declare faces they do not embed.
 
 ## Provenance
 

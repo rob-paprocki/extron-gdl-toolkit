@@ -335,7 +335,7 @@ A generator should assert all four agree rather than trusting the writes.
   Turbulence's 44 px striped one 26 px short of each end. Those sliders author
   no border and a Transparent fill; one with a border resource and a fill builds
   that bordered fill in place of the art, so a Shockwave slider planned with
-  the rounded border and black fill built an opaque black block with the right
+  the rounded border and black fill builds an opaque black block with the right
   images on the model. The applier clears every clone's `backgroundImageField`,
   which on a slider is its track, so the plan writes the rail and the verifier
   reads it back off the two assets.
@@ -372,15 +372,25 @@ A generator should assert all four agree rather than trusting the writes.
   the `KnownColor` in `knownColor` - 27 Transparent, 35 Black, 105 LimeGreen,
   164 White - and its `value` is 0. Every seed stores colors so: Shockwave
   1035 211 White and 206 Black, Afterburn 300M 90 Black and 55 White, every
-  Turbulence label White. `gdl.project` reads them through .NET's own table of
-  the web colors (`KNOWN_COLORS`); reading only the value read each as no color.
+  Turbulence label White. `gdl.project` reads them through .NET Framework's own
+  table of the web colors (`KNOWN_COLORS`) - Framework's, since it differs from
+  CSS once (DarkSeaGreen `#8FBC8B`); reading only the value read each as no color.
   `Set-GdlColor` writes `Color.FromArgb`, which replaces the whole struct, so a
   named color never survives a write.
 - **A control's `transparencyField` fades everything it draws** - a percent.
   28 of the Shockwave 1035 seed's 34 shapes are 0.0, five modal dims 85.0 and
-  its Offline Window 25.0. A clone keeps its donor's, so panels cloned from a
-  dim built at 15% opacity with the right fill in every field. The spec says translucency with
-  the fill's alpha, so the applier writes 0.
+  its Offline Window 25.0. A clone keeps its donor's, so a panel cloned from a
+  dim builds at 15% opacity with the right fill in every field. The spec says
+  translucency with the fill's alpha, so the applier writes 0.
+- **A translucent fill reaches the artwork at its own alpha.** Build writes the
+  alpha exactly and the color within premultiplying's rounding: Turbulence's
+  rail, black at 38, built (0, 0, 0, 38) throughout, and its shade, #020D1A at
+  128, built (1, 13, 25, 128). GUI Designer's snapshots, and the compositor,
+  draw such a pixel at full strength (`docs/render-fidelity.md` §2), but the
+  theme is drawn for a panel that blends it - the Turbulence seed's own header
+  and footer art is alpha 128 throughout. `tests/verify_built.py` reads a
+  translucent fill off the pixels at its alpha, as it reads an opaque one off
+  the opaque pixels.
 - **A kit image button carries its image on each state, not on the control.**
   Every image button in the Afterburn 1035 and 1535 seeds has an empty
   control-level `buttonImageField` and one per state, drawn `Fill` and

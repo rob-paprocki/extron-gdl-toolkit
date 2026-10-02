@@ -200,8 +200,9 @@ for whichever model that resolution's row was measured on.
 
 So name the model. `touch_minimums('TLP1035T')` is the right answer;
 `touch_minimums((1280, 800))` is a safe one, using the densest *physical* panel
-at that size. (The VTLP virtual targets are excluded from that maximum: their
-220 "DPI" is the host phone or browser's, not a panel's.)
+at that size. (The soft clients - the VTLP virtual targets and the TLI
+interfaces - are excluded from that maximum: their 220 "DPI" is GUI Designer's
+default for a screen their model does not define, not a panel's.)
 
 Also worth knowing: 1280x720 had *no* documented minimum, because Extron's
 published table has no row for it. The assemblies do — TLP Pro 535M/T at
