@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm Room Off</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronMach.Page" name="Confirm Room Off" kind="modal" theme="sunset" does="Asks before the room shuts down." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronMach.Panel" name="Window" fill="page" style="position: absolute; left: 0px; top: 64px; width: 1280px; height: 681px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Question" type="title" color="text" align="center" style="position: absolute; left: 340px; top: 300px; width: 600px; height: 80px">Shut the room down?</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="ShutDown" variant="solid" does="Powers the display and audio off, then closes this popup." style="position: absolute; left: 372px; top: 432px; width: 258px; height: 60px">Shut Down</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Cancel" variant="ghost" nav="Home" style="position: absolute; left: 650px; top: 432px; width: 258px; height: 60px">Cancel</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

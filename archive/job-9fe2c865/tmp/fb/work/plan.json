@@ -1,0 +1,575 @@
+{
+ "generated_by": "gdl.spec",
+ "popup_groups": [],
+ "popups": [],
+ "canvas": [
+  1280,
+  800
+ ],
+ "note": "Apply with powershell/Apply-GdlPlan.ps1 under 32-bit Windows PowerShell 5.1. Page ids are assigned by the applier via Get-GdlNextPageId, not here - the donor project decides what is free.",
+ "pages": [
+  {
+   "op": "clone-page",
+   "number": 1000,
+   "name": "Room Home",
+   "modal": false,
+   "background": 4280559156,
+   "clear_controls": true,
+   "controls": [
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 0,
+      "userIdField": 1001,
+      "nameField": "TopBar",
+      "textField": "",
+      "leftField": 0,
+      "topField": 0,
+      "widthField": 1280,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281809230,
+     "stroke": null,
+     "border": "2D Rectangle",
+     "text_color": 4294967295,
+     "states": null,
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 1,
+      "userIdField": 1002,
+      "nameField": "RoomName",
+      "textField": "Conference Room",
+      "leftField": 40,
+      "topField": 0,
+      "widthField": 700,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4294967295,
+     "states": null,
+     "alignment": 4,
+     "font": {
+      "name": "Open Sans",
+      "size": 36,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 2,
+      "userIdField": 1003,
+      "nameField": "RoomState",
+      "textField": "Available",
+      "leftField": 580,
+      "topField": 0,
+      "widthField": 660,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "states": null,
+     "alignment": 5,
+     "font": {
+      "name": "Open Sans",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 3,
+      "userIdField": 1004,
+      "nameField": "SourcesLabel",
+      "textField": "SOURCES",
+      "leftField": 40,
+      "topField": 124,
+      "widthField": 400,
+      "heightField": 32,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "states": null,
+     "alignment": 4,
+     "font": {
+      "name": "Open Sans",
+      "size": 15,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 4,
+      "userIdField": 1005,
+      "nameField": "Laptop",
+      "textField": "Laptop",
+      "leftField": 40,
+      "topField": 168,
+      "widthField": 387,
+      "heightField": 264,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281809230,
+     "stroke": 4290428110,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "states": [
+      {
+       "name": "Off",
+       "fill": 4281809230,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "Afterburn - 10 Radius 2 Thick"
+      },
+      {
+       "name": "On",
+       "fill": 4282223613,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "Afterburn - 10 Radius 2 Thick"
+      }
+     ],
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 5,
+      "userIdField": 1006,
+      "nameField": "Wireless",
+      "textField": "Wireless",
+      "leftField": 447,
+      "topField": 168,
+      "widthField": 387,
+      "heightField": 264,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281809230,
+     "stroke": 4290428110,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "states": [
+      {
+       "name": "Off",
+       "fill": 4281809230,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "Afterburn - 10 Radius 2 Thick"
+      },
+      {
+       "name": "On",
+       "fill": 4282223613,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "Afterburn - 10 Radius 2 Thick"
+      }
+     ],
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 6,
+      "userIdField": 1007,
+      "nameField": "Room PC",
+      "textField": "Room PC",
+      "leftField": 853,
+      "topField": 168,
+      "widthField": 387,
+      "heightField": 264,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281809230,
+     "stroke": 4290428110,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "states": [
+      {
+       "name": "Off",
+       "fill": 4281809230,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "Afterburn - 10 Radius 2 Thick"
+      },
+      {
+       "name": "On",
+       "fill": 4282223613,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "Afterburn - 10 Radius 2 Thick"
+      }
+     ],
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 7,
+      "userIdField": 1008,
+      "nameField": "VolumeWell",
+      "textField": "",
+      "leftField": 40,
+      "topField": 472,
+      "widthField": 664,
+      "heightField": 136,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281809230,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 0 Thick",
+     "text_color": 4294967295,
+     "states": null,
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 8,
+      "userIdField": 1009,
+      "nameField": "VolumeLabel",
+      "textField": "Volume",
+      "leftField": 72,
+      "topField": 472,
+      "widthField": 200,
+      "heightField": 136,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "states": null,
+     "alignment": 4,
+     "font": {
+      "name": "Open Sans",
+      "size": 18,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 9,
+      "userIdField": 1010,
+      "nameField": "Mute",
+      "textField": "Mute",
+      "leftField": 300,
+      "topField": 504,
+      "widthField": 121,
+      "heightField": 72,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": 4290428110,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "states": [
+      {
+       "name": "Off",
+       "fill": 4280559156,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "2D Capsule"
+      },
+      {
+       "name": "On",
+       "fill": 4282223613,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "2D Capsule"
+      }
+     ],
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 10,
+      "userIdField": 1011,
+      "nameField": "\u2013",
+      "textField": "\u2013",
+      "leftField": 437,
+      "topField": 504,
+      "widthField": 121,
+      "heightField": 72,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": 4290428110,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "states": [
+      {
+       "name": "Off",
+       "fill": 4280559156,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "2D Capsule"
+      },
+      {
+       "name": "On",
+       "fill": 4282223613,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "2D Capsule"
+      }
+     ],
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 11,
+      "userIdField": 1012,
+      "nameField": "+",
+      "textField": "+",
+      "leftField": 575,
+      "topField": 504,
+      "widthField": 121,
+      "heightField": 72,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4280559156,
+     "stroke": 4290428110,
+     "border": "2D Capsule",
+     "text_color": 4294967295,
+     "states": [
+      {
+       "name": "Off",
+       "fill": 4280559156,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "2D Capsule"
+      },
+      {
+       "name": "On",
+       "fill": 4282223613,
+       "stroke": 4290428110,
+       "text_color": 4294967295,
+       "border": "2D Capsule"
+      }
+     ],
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBButton",
+     "fields": {
+      "idField": 12,
+      "userIdField": 1013,
+      "nameField": "Present",
+      "textField": "Start Presenting",
+      "leftField": 744,
+      "topField": 472,
+      "widthField": 496,
+      "heightField": 136,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4282223613,
+     "stroke": null,
+     "border": "Afterburn - 10 Radius 2 Thick",
+     "text_color": 4294967295,
+     "states": [
+      {
+       "name": "Off",
+       "fill": 4282223613,
+       "stroke": null,
+       "text_color": 4294967295,
+       "border": "Afterburn - 10 Radius 2 Thick"
+      },
+      {
+       "name": "On",
+       "fill": 4280559156,
+       "stroke": null,
+       "text_color": 4290428110,
+       "border": "Afterburn - 10 Radius 2 Thick"
+      }
+     ],
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 24,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBShape",
+     "fields": {
+      "idField": 13,
+      "userIdField": 1014,
+      "nameField": "StatusStrip",
+      "textField": "",
+      "leftField": 0,
+      "topField": 704,
+      "widthField": 1280,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": 4281809230,
+     "stroke": null,
+     "border": "2D Rectangle",
+     "text_color": 4294967295,
+     "states": null,
+     "alignment": 3,
+     "font": {
+      "name": "Open Sans",
+      "size": 16,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 14,
+      "userIdField": 1015,
+      "nameField": "Status",
+      "textField": "Ready",
+      "leftField": 40,
+      "topField": 704,
+      "widthField": 560,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "states": null,
+     "alignment": 4,
+     "font": {
+      "name": "Open Sans",
+      "size": 15,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    },
+    {
+     "op": "clone-control",
+     "donor_type": "PBLabel",
+     "fields": {
+      "idField": 15,
+      "userIdField": 1016,
+      "nameField": "Hint",
+      "textField": "Tap a source to begin",
+      "leftField": 640,
+      "topField": 704,
+      "widthField": 600,
+      "heightField": 96,
+      "<TLPImageID>k__BackingField": -1
+     },
+     "fill": null,
+     "stroke": null,
+     "border": null,
+     "text_color": 4290428110,
+     "states": null,
+     "alignment": 5,
+     "font": {
+      "name": "Open Sans",
+      "size": 15,
+      "bold": false,
+      "italic": false
+     },
+     "group": null
+    }
+   ]
+  }
+ ]
+}

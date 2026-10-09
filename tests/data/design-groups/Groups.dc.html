@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Group Test</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Group Test" theme="grape" start="true" panels="TLP1035T TLP725T TLP525T TLP320M" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.MainArea">
+<x-import component-from-global-scope="ExtronAfterburn.Group" title="Sources" cell="54x54" gap="16" cap="4" style="position: absolute; left: 326px; top: 40px; width: 264px; height: 240px">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="S1">1</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="S2">2</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="S3">3</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="S4">4</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="S5">5</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="S6">6</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="S7">7</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="S8">8</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Group" title="Inputs" cell="110x110" gap="40" style="position: absolute; left: 100px; top: 360px; width: 500px; height: 140px">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="InA">A</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="InB">B</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="InC">C</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Group" title="Modes" cell="120x64" joined="true" style="position: absolute; left: 100px; top: 600px; width: 360px; height: 64px">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="M1">One</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="M2">Two</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="M3">Three</x-import>
+</x-import>
+</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+name: ci
+
+# What CI can and cannot cover here:
+#
+#   CAN  - the layout maths, ID allocation and Extron's numeric design rules.
+#          gdl/spec.py is stdlib-only at module level and tests/test_spec.py
+#          needs no Pillow, so this runs on a bare runner.
+#   CAN  - reading the authoring model out of the fixtures and the seeds
+#          (gdl/project.py, gdl/nrbf.py, gdl/container.py are all stdlib).
+#   CAN  - the render fidelity harness, where the client fixtures are - the
+#          archive; the public copy holds them back, and the steps that read
+#          them run only where they exist (if: hashFiles). gdl/fonts/ is
+#          deliberately not in git, but every face the fixtures declare comes
+#          back out of them with stdlib alone, so the runner reproduces
+#          tests/baseline.json exactly. Where they are not, the faces come out
+#          of seeds/Afterburn 1035.gdl.
+#          Recover the faces FIRST: without them face() raises where no Arial
+#          is installed, and where one is, score.py record refuses to score
+#          over the stand-in (exit 2) - docs/history.md has the wrong number
+#          it reported before it refused.
+#   CAN  - the Claude Design translator's rules, run on the probe's output
+#          (tests/test_design.py), and the design systems' grammar and what the
+#          spec can build from them (tests/test_designsys.py). Both are stdlib,
+#          so they run in `test`. The type probe's measuring half imports
+#          Pillow, so it runs in `fidelity`, and so do test_states and
+#          test_spec a second time: their artwork and preview tests need
+#          Pillow and skip in `test`. test_palette, test_templates and
+#          test_verify_seed run in `test` too; what they assert of the one
+#          seed CI pulls runs, and what reads another seed or Extron's
+#          template table skips (below).
+#   CAN  - what the scripts that need GUI Designer promise their callers, as
+#          text (tests/test_seed_script.py, test_panel_scripts.py), and the
+#          corpus audit's verdicts on the facts it reduces a project to
+#          (tests/test_audit_corpus.py); the audit itself reads the seeds and
+#          Extron's templates.
+#   CANNOT - anything that authors a .gdl. That needs 32-bit Windows PowerShell
+#          and an installed GUI Designer.
+#   CANNOT - anything that reads files a plain checkout lacks. Those tests skip
+#          here, and only a provisioned machine running `python -m pytest`
+#          exercises them:
+#            - the seeds: Git LFS, which actions/checkout does not pull - but
+#              both jobs pull seeds/Afterburn 1035.gdl, about 3 MB: the worked
+#              examples' donor, and a source of the faces.
+#            - Extron's templates and kit: vendor/ is not in git, and no GUI
+#              Designer is installed.
+#            - test_design's Chrome tests: Chrome is on the runner, but they
+#              also need the Design type's runtime ($GDL_DC_RUNTIME), which is
+#              not in the repo.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: the seed the examples build on and the faces come from (Git LFS, about 3 MB)
+        run: git lfs pull --include "seeds/Afterburn 1035.gdl"
+
+      - name: spec tests (layout, IDs, Extron design rules)
+        run: python tests/test_spec.py
+
+      - name: edit tests (selectors, rename, retarget, renumber, restyle)
+        # These run against the real fixture rather than a synthetic project:
+        # every bug this vocabulary has had came from the difference between
+        # what a panel file looks like in the abstract and what one contains.
+        run: python tests/test_edit.py
+
+      - name: the worked edit spec still resolves against the fixture
+        if: hashFiles('fixtures/gdl/*.gdl') != ''
+        run: |
+          python -m gdl.edit check examples/edits.json \
+            fixtures/gdl/client-boardroom-2.0.0.gdl
+
+      - name: the worked example still checks clean
+        run: python -m gdl.spec check examples/panel.json
+
+      - name: the worked example is still satisfiable by its donor
+        # Catches both donor failures without a Windows box: a control type the
+        # donor cannot supply (clone-never-construct), and a page or popup name
+        # the donor already uses - which is a hard build error, and cost a round
+        # trip to the VM to discover.
+        run: |
+          python -m gdl.spec donors examples/panel.json "seeds/Afterburn 1035.gdl"
+
+      - name: the worked example still emits a plan
+        run: python -m gdl.spec plan examples/panel.json /tmp/plan.json
+
+      - name: the prose-brief example still checks, resolves and plans
+        # Small, and the one that found the missing font application and the
+        # cp1252 spec read. Its en-dash caption is the encoding canary.
+        run: |
+          python -m gdl.spec check examples/huddle.json
+          python -m gdl.spec donors examples/huddle.json "seeds/Afterburn 1035.gdl"
+          python -m gdl.spec plan examples/huddle.json /tmp/huddle-plan.json
+          python - <<'PY'
+          import json
+          plan = json.load(open('/tmp/huddle-plan.json', encoding='utf-8'))
+          texts = [(op.get('fields') or {}).get('textField')
+                   for op in plan['pages'][0]['controls']]
+          assert '–' in texts, f'en-dash lost on the way to the plan: {texts}'
+          sizes = {(op.get('font') or {}).get('size') for op in plan['pages'][0]['controls']}
+          assert 40 in sizes and 26 in sizes, f'font sizes missing from the plan: {sizes}'
+          print(f'  en-dash intact, {len(sizes)} distinct font sizes planned')
+          PY
+
+      - name: the plan still carries a size for every popup
+        # Without it the applier leaves a cloned popup at the donor's size and
+        # Build moves every control that overflows to 0,0, silently.
+        run: |
+          python - <<'PY'
+          import json
+          plan = json.load(open('/tmp/plan.json'))
+          for p in plan['popups']:
+              assert p.get('size'), f"popup {p['name']!r} has no size"
+          print(f"  {len(plan['popups'])} popup(s), all sized")
+          PY
+
+      - name: every fixture and template still parses
+        if: hashFiles('fixtures/gdl/*.gdl') != ''
+        run: |
+          python - <<'PY'
+          import glob
+          from gdl.project import Project
+          files = sorted(glob.glob('fixtures/gdl/*.gdl'))
+          assert files, 'no fixtures found'
+          for f in files:
+              p = Project.open(f)
+              pages = list(p.pages())
+              ctl = sum(len(x['controls']) for x in pages)
+              assert pages and ctl, f'{f} parsed to nothing'
+              print(f'  ok {len(pages):>3} pages {ctl:>5} controls  {f.split("/")[-1][:48]}')
+          PY
+
+      - name: theme extraction still agrees with the published Afterburn guide
+        if: hashFiles('fixtures/gdl/*.gdl') != ''
+        run: |
+          python - <<'PY'
+          from gdl.themes import extract, AFTERBURN
+          t = extract('fixtures/gdl/client-boardroom-2.0.0.gdl')
+          observed = {k.upper() for k, _ in t['fills'] + t['strokes']}
+          doc = {v.upper() for v in AFTERBURN.values()
+                 if isinstance(v, str) and v.startswith('#')}
+          doc = {('#FF' + c[1:]) if len(c) == 7 else c for c in doc}
+          # The client's own two, stored by .NET name and drawn so in GUI
+          # Designer's snapshots: Gainsboro behind the keyboard popups' entry
+          # field (6500/6600, 220,220,220) and DarkGray round the wireless-mic
+          # page's outlines (3520, 169,169,169). They read as none until named
+          # colors were read, which is all that kept this check passing.
+          client = {'#FFDCDCDC', '#FFA9A9A9'}
+          assert client <= observed, f'named colors read as none again: {sorted(client - observed)}'
+          extra = observed - doc - client
+          assert not extra, f'colors not in the Afterburn guide: {sorted(extra)}'
+          print(f"  {len(observed)} colors observed, all in the guide or the client's own two")
+          PY
+
+      - name: the clean-room example checks on a canvas that is not 1280x800
+        # TLP1020T, 1024x600 at 118 DPI. No donor: it needs a seed project a
+        # human makes once, and the fixtures are client material. check and
+        # render need neither.
+        run: python -m gdl.spec check examples/clean-room.json
+
+      - name: donor fitness gates (types, names, borders, fonts, canvas)
+        # Each of these once cost a Windows round trip or, for fonts, shipped a
+        # panel in the wrong typeface with a clean build.
+        run: python tests/test_donor_gates.py
+
+      - name: more than one page per spec
+        # Every example and test used exactly one page until 2026-09-08, while
+        # the client fixture has 27 - so cross-page id allocation was untested.
+        run: python tests/test_multipage.py
+
+      - name: containers with no built payload round-trip
+        # .glt templates and unbuilt .gdl files hold only a ProjectGCP.
+        # payload_name used to raise a bare StopIteration on them.
+        run: python tests/test_container.py
+
+      - name: buttons get Off/On feedback, and an inert one is caught
+        # Every generated button was inert until 2026-09-10: the spec had no
+        # vocabulary for a second appearance, and PBStates.Count reports 1 for a
+        # two-state button, so both appliers wrote state 0 and stopped. Nothing
+        # looked wrong - TLPDefaultStateID is 0, so the panel renders state 0
+        # and only misbehaves once a control system switches it.
+        run: python tests/test_states.py
+
+      - name: a retarget scales every page's canvas, popups included
+        # `retarget --scale` scaled the controls and emitted no page size, and
+        # the applier set every page AND popup to the new screen size. Those
+        # agree only when every popup is authored full-canvas, which is true of
+        # the one project it was tested against and false in Extron's own
+        # templates. The overflow check that was supposed to catch it skipped
+        # popups - the only pages where a canvas may differ from the screen.
+        run: python tests/test_retarget_canvas.py
+
+      - name: every declared face comes back out of every fixture
+        # The gate that was missing. Arial and Arial Black were declared,
+        # embedded, and silently dropped by an over-strict size match for as
+        # long as the extractor existed, and the inference drawn from that -
+        # "they must be system faces" - reached this file, the README and the
+        # render path.
+        run: python tests/test_fonts.py
+
+      - name: the ID map - navigation checks and output
+        # Every addressable control's ID, page, caption and function, and the
+        # page flips checked. docs/idmap.md is the home.
+        run: python tests/test_idmap.py
+
+      - name: the ID map verifier fails on what Build can break
+        run: python tests/test_verify_idmap.py
+
+      - name: the functions example checks and writes its ID map
+        run: |
+          python -m gdl.idmap check examples/huddle-functions.json
+          python -m gdl.idmap write examples/huddle-functions.json /tmp/idmap
+          test -f /tmp/idmap/idmap.md && test -f /tmp/idmap/idmap.csv
+
+      - name: palette entries and named colors read as their values
+        # The palette class reads a seed from Git LFS and skips on a plain
+        # checkout; the named-color class builds its project in memory and runs.
+        run: python tests/test_palette.py
+
+      - name: Extron's template table
+        # The table is GUI Designer's own TemplateInfoTable.config, in neither
+        # git nor the runner, so only the no-table case runs. It still imports
+        # gdl.templates on every push.
+        run: python tests/test_templates.py
+
+      - name: a seed is checked for its model
+        # Every case reads a seed from Git LFS: those on Afterburn 1035, which
+        # both jobs pull, run; those on another seed skip.
+        run: python tests/test_verify_seed.py
+
+      - name: the design systems read as the Design System page reads them
+        # The page silently drops a token it cannot parse, so each profile's
+        # tokens are checked against its grammar here. What needs a seed,
+        # Extron's kit or its templates skips.
+        run: python tests/test_designsys.py
+
+      - name: the Claude Design translator, on the probe's output
+        # The Chrome tests skip: Chrome is on the runner, but they also need the
+        # Design type's runtime ($GDL_DC_RUNTIME), which is not in the repo.
+        # What needs the seeds or Extron's art skips too.
+        run: python tests/test_design.py
+
+      - name: the seed script's contract with its caller
+        # Text pins: running powershell/New-GdlSeed.ps1 needs GUI Designer.
+        run: python tests/test_seed_script.py
+
+      - name: the panel scripts' contract with their caller
+        # Text pins: running powershell/New-GdlPanel.ps1 needs GUI Designer.
+        run: python tests/test_panel_scripts.py
+
+      - name: the corpus audit's verdicts, on facts
+        # The audit itself reads every seed and Extron's templates and takes
+        # minutes, so its checks are pinned on the facts it keeps per project.
+        run: python tests/test_audit_corpus.py
+
+      - name: a test that needs the client files skips and says so
+        run: python tests/test_corpus.py
+
+      - name: the public copy's builder and its pre-push hook
+        # Throwaway repositories; git and git-lfs are on the runner.
+        run: python tests/test_public_sync.py
+
+      - name: every tests/test_*.py is run by a job in this file
+        # A test file added and not named here would run nowhere, and nothing
+        # else would fail.
+        run: |
+          missing=0
+          for f in tests/test_*.py; do
+            if ! grep -Eq "^[[:space:]]*(run: )?python $f[[:space:]]*$" .github/workflows/ci.yml; then
+              echo "::error::$f is not run by any job in .github/workflows/ci.yml"
+              missing=1
+            fi
+          done
+          exit $missing
+
+  fidelity:
+    # The render harness, against GUI Designer's own snapshot exports. Runs here
+    # only because every face is recoverable from the tracked fixtures; see the
+    # note at the top of this file before assuming it can be simplified.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: the seed the examples build on and the faces come from (Git LFS, about 3 MB)
+        run: git lfs pull --include "seeds/Afterburn 1035.gdl"
+
+      - name: install Pillow
+        run: pip install -r requirements.txt
+
+      - name: the layout verifier checks start page, modal popups and IDs
+        # Here rather than in `test`: verify_built imports the compositor, so
+        # these skip without Pillow.
+        run: python tests/test_verify_built.py
+
+      - name: the type probe measures baked captions
+        # Here rather than in `test`: tests/test_type_probe.py imports Pillow at
+        # the top, so without it the file fails to import rather than skipping.
+        run: python tests/test_type_probe.py
+
+      - name: recover the embedded faces
+        # All six fixtures where they are - no single one embeds every face, and
+        # the baseline was scored on theirs - and the seed, which carries the same
+        # Monotype Arial, only where they are not.
+        run: |
+          if ls fixtures/gdl/*.gdl >/dev/null 2>&1; then
+            for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
+          else
+            python -m gdl.fonts "seeds/Afterburn 1035.gdl" gdl/fonts/
+          fi
+          ls -1 gdl/fonts/
+
+      - name: a face drawn in a stand-in is said aloud
+        # Here as well as in `test`, where its compositor tests skip without
+        # Pillow. After the recovery, so the recovered Arial is there to draw in.
+        run: python tests/test_fonts.py
+
+      - name: an inert button is caught off its artwork
+        # Here as well as in `test`, where the verifier's artwork tests skip
+        # without Pillow: they are the only check that a button whose states
+        # built alike fails.
+        run: python tests/test_states.py
+
+      - name: the preview draws a page's background image
+        # Here as well as in `test`, where the preview tests skip without Pillow.
+        # After the recovery: the preview draws its captions in the faces.
+        run: python tests/test_spec.py
+
+      - name: the render harness refuses another project's snapshots
+        # After the recovery: it renders a page to score it.
+        run: python tests/test_score.py
+
+      - name: score the render against ground truth
+        if: hashFiles('fixtures/gdl/*.gdl') != ''
+        run: |
+          python tests/score.py record \
+            fixtures/gdl/client-boardroom-2.0.0.gdl \
+            fixtures/snapshots/Individual -o /tmp/after.json
+
+      - name: no page may regress against the shipped baseline
+        if: hashFiles('fixtures/gdl/*.gdl') != ''
+        run: python tests/score.py diff tests/baseline.json /tmp/after.json

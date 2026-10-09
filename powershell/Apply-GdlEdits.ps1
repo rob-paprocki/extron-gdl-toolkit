@@ -1,0 +1,288 @@
+<#
+    Apply an edit plan from `python -m gdl.edit plan` to an existing ProjectGCP.
+
+    MUST be run under 32-bit Windows PowerShell 5.1:
+      C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe
+
+      C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass `
+        -File powershell\Apply-GdlEdits.ps1 C:\work\ProjectGCP edits-plan.json C:\work\out_ProjectGCP
+
+    The sibling of Apply-GdlPlan.ps1 and deliberately the same shape: every
+    decision - which controls match, what the new ids are, whether the layout
+    still fits - was made in `gdl/edit.py`, against the real project, on a Mac.
+    This walks the ops and sets fields.
+
+    The one thing it does that the other applier does not is CONSTRUCT: a
+    retarget needs a `PBTouchPanelPlatformPro` instance, and platform classes
+    are among the few Extron types that construct headlessly, because they hold
+    no project state. Everything else still clones.
+
+    Ops are addressed by id, not by index. `page` is the page's `idField` and
+    `control` is the control's `idField` - the same numbers `gdl/project.py`
+    reports and `layout.json` exports as `Page.ID` / `Control.ID`, so a plan
+    stays valid even if collection order changes.
+
+    Finish with `python tests/verify_built.py` on the BUILT file. A clean build
+    does not mean a correct one; see docs/gdl-format.md section 7.
+#>
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory)][string]$Project,
+    [Parameter(Mandatory)][string]$Plan,
+    [string]$Output,
+    [switch]$WhatIf,
+    [string]$InstallDir = 'C:\Program Files (x86)\Extron\GUI Designer'
+)
+
+$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'GdlProject.ps1')
+. (Join-Path $PSScriptRoot 'GdlApply.ps1')
+
+function Get-GdlPageById {
+    param($Proj, $Id)
+    foreach ($pg in @($Proj.Pages) + @($Proj.PopupPages)) {
+        if ([uint64](Get-GdlField $pg 'idField') -eq [uint64]$Id) { return , $pg }
+    }
+    return $null
+}
+
+function Get-GdlControlById {
+    param($Page, $Id)
+    foreach ($c in $Page.Controls) {
+        if ([uint64](Get-GdlField $c 'idField') -eq [uint64]$Id) { return , $c }
+    }
+    return $null
+}
+
+function Set-GdlStateOps {
+    <#  Apply `per_state`: each entry names one state by index.
+
+        By index because that is what the control program sets, and because
+        the states of one button need not match: a rename that wrote every
+        state erased 'Display On' along with 'Display Off', and a restyle that
+        wrote every state painted On the Off color.
+
+        Via Get-GdlStates, which reads `mItems`. `$states.Count` on a PBStates
+        reads 1 whatever the count - PBStates has no Count, and PowerShell
+        answers 1 for it. #>
+    param($Proj, $Control, $StateOps, $Why)
+    $states = Get-GdlStates $Control
+    $n = 0
+    foreach ($so in @($StateOps)) {
+        if ($null -eq $so) { continue }
+        $i = [int]$so.index
+        # A negative index would wrap to the end of the list in PowerShell.
+        if ($null -eq $states -or $i -lt 0 -or $i -ge $states.Count -or $null -eq $states[$i]) {
+            Note-Problem "'$Why': the control has no state $i"
+            continue
+        }
+        $st = $states[$i]
+        if ($so.fields) {
+            foreach ($f in $so.fields.PSObject.Properties) {
+                Set-GdlFieldIfPresent $st $f.Name $f.Value | Out-Null
+            }
+        }
+        if ($null -ne $so.ftext) {
+            # Formatted text keeps the original's leading layout markers - the
+            # tabs and CRLFs are how it draws, not decoration - so splice the
+            # new wording into the old scaffolding rather than replacing it.
+            $old = [string](Get-GdlField $st 'ftextField')
+            $lead = ''
+            if ($old -match '^([\t\r\n ]*)') { $lead = $Matches[1] }
+            Set-GdlFieldIfPresent $st 'ftextField' ($lead + $so.ftext) | Out-Null
+        }
+        if ($so.colors) {
+            foreach ($f in $so.colors.PSObject.Properties) {
+                Set-GdlColor $Proj $st $f.Name (ConvertTo-Argb $f.Value)
+            }
+        }
+        $n++
+    }
+    return $n
+}
+
+function ConvertTo-Argb {
+    <#  '#AARRGGBB' -> the packed int Set-GdlColor wants.
+
+        The plan carries colors as hex strings because that is what a human
+        writes in an edit spec and what gdl/edit.py matches on. #>
+    param([string]$Hex)
+    if (-not $Hex) { return $null }
+    return [Convert]::ToInt64($Hex.TrimStart('#'), 16)
+}
+
+# -- main ---------------------------------------------------------------------
+
+Initialize-Gdl -InstallDir $InstallDir
+$proj = Open-GdlProject $Project
+$spec = Get-Content -Raw -Path $Plan | ConvertFrom-Json
+
+Write-Output "project: $($proj.Name)"
+Write-Output "plan: $(@($spec.controls).Count) control op(s), $(@($spec.project).Count) project op(s)"
+
+# -- project-level ops (retarget) ---------------------------------------------
+foreach ($op in $spec.project) {
+    if (-not $op.model) { continue }
+    Write-Output "retarget -> $($op.model) $($op.size -join 'x')"
+
+    # Use Extron's own factory, NOT [Activator]::CreateInstance.
+    #
+    # A default-constructed platform class gets its resolution right and leaves
+    # `partNumberField` null, and GUI Designer then titles the project
+    # "Unknown: file.gdl" - it identifies the panel by part number, not by
+    # class. Everything else about the file was correct, which is what made it
+    # worth chasing rather than shrugging at.
+    #
+    #   PBTouchPanelPlatformPro.CreatePlatform(PBProject, PlatformProTypeEnum)
+    #
+    # returns a fully initialized instance, part number and all. It needs the
+    # project, which is presumably why the wizard is the only thing that
+    # normally calls it.
+    $enumField = $proj.GetType().GetField('platformTypeField', 'Instance,Public,NonPublic')
+    if (-not $enumField) { Note-Fatal 'no platformTypeField on the project'; continue }
+    try {
+        $etype = [Enum]::Parse($enumField.FieldType, $op.model)
+    } catch {
+        Note-Fatal ("PlatformProTypeEnum has no member '$($op.model)'. GUI Designer " +
+                    '1.28 dropped CCI700; a model that is in gdl/spec.py but not in ' +
+                    'the installed assemblies lands here.')
+        continue
+    }
+
+    $current = Get-GdlField $proj 'platformField'
+    $base = $current.GetType().BaseType
+    $flags = [Reflection.BindingFlags]'Static,Public,NonPublic,FlattenHierarchy'
+    $create = $base.GetMethods($flags) |
+              Where-Object { $_.Name -eq 'CreatePlatform' } | Select-Object -First 1
+    if (-not $create) { Note-Fatal 'PBTouchPanelPlatformPro has no CreatePlatform'; continue }
+
+    $inst = $null
+    try { $inst = $create.Invoke($null, [object[]]@($proj, $etype)) }
+    catch {
+        $inner = $_.Exception.InnerException
+        Note-Fatal "CreatePlatform($($op.model)) threw $(if($inner){$inner.GetType().Name}else{'?'})"
+        continue
+    }
+    if (-not $inst) {
+        Note-Fatal "CreatePlatform returned null for '$($op.model)' - the enum has no touch-panel platform behind it (the MLC 84 button panels and TLP 1022W are like this)"
+        continue
+    }
+    Write-Output "   platform $($inst.GetType().Name) part $(Get-GdlField $inst 'partNumberField')"
+
+    if (-not $WhatIf) {
+        Set-GdlFieldIfPresent $proj 'platformField' $inst | Out-Null
+        Set-GdlField $proj 'platformTypeField' $etype
+        Set-GdlFieldIfPresent $proj 'screenSizeField' `
+            (New-Object System.Drawing.Size([int]$op.size[0], [int]$op.size[1])) | Out-Null
+
+        # Pages ARE the canvas - a page left at the old size would put every
+        # control outside it, and Build moves those to 0,0 without a word.
+        #
+        # POPUPS TOO, but NOT at the screen size. This used to set every page
+        # and popup to $op.size, on the belief that a popup's authored
+        # widthField/heightField is always the full canvas (1280x800 here) with
+        # layout.json's smaller 915x800 being the DISPLAYED size taken from the
+        # reference that shows it. That belief came from the client
+        # fixture, where every popup happens to be authored full-canvas, and it
+        # is wrong. In Extron's own Afterburn template 10 of the 29 popups are
+        # authored at 880x525, and the BUILT payload reports 880x525 for them -
+        # all 29 popup sizes in layout.json match the authored canvas exactly.
+        # The authored size IS the popup size. Forcing it to the screen size
+        # turns a modal card into a full-screen page in the shipped file.
+        #
+        # gdl.edit now emits a size per page, each scaled by the same per-axis
+        # factors as its controls, so canvas and contents move together. Fall
+        # back to the old blanket behaviour only for a plan that predates it -
+        # leaving a popup at the old canvas is the one outcome that silently
+        # destroys the layout.
+        $sized = @{}
+        foreach ($pgop in @($spec.pages)) {
+            if ($null -ne $pgop) { $sized[[string]$pgop.page] = $pgop.size }
+        }
+        foreach ($pg in @($proj.Pages) + @($proj.PopupPages)) {
+            $want = $sized[[string](Get-GdlField $pg 'idField')]
+            if (-not $want) { $want = $op.size }
+            Set-GdlFieldIfPresent $pg 'widthField' ([int]$want[0]) | Out-Null
+            Set-GdlFieldIfPresent $pg 'heightField' ([int]$want[1]) | Out-Null
+        }
+    }
+}
+
+# -- control ops ---------------------------------------------------------------
+$applied = 0
+$pageCache = @{}
+foreach ($op in $spec.controls) {
+    $pg = $pageCache[[string]$op.page]
+    if (-not $pg) {
+        $pg = Get-GdlPageById $proj $op.page
+        if (-not $pg) { Note-Problem "no page with id $($op.page)"; continue }
+        $pageCache[[string]$op.page] = $pg
+    }
+    $c = Get-GdlControlById $pg $op.control
+    if (-not $c) {
+        Note-Problem "no control with id $($op.control) on page '$($pg.Name)'"
+        continue
+    }
+    if ($WhatIf) { $applied++; continue }
+
+    # A plan from before per-state edits wrote every state alike. Refuse it
+    # rather than guess which state each write was meant for.
+    if ($op.states -or $op.states_colors -or $null -ne $op.states_ftext) {
+        Note-Problem "'$($op.why)': this plan writes every state alike (states, states_colors, states_ftext); re-plan it with gdl.edit, which writes each state by index"
+        continue
+    }
+    try {
+        if ($null -ne $op.state_order) {
+            # The `states` op: rebuild the list from the button's own states,
+            # each new one taken from the existing state gdl.edit matched it
+            # to by name.
+            if (-not (Set-GdlStateOrder $c $op.state_order)) { continue }
+        }
+        if ($op.fields) {
+            foreach ($f in $op.fields.PSObject.Properties) {
+                Set-GdlFieldIfPresent $c $f.Name $f.Value | Out-Null
+            }
+        }
+        if ($op.colors) {
+            foreach ($f in $op.colors.PSObject.Properties) {
+                Set-GdlColor $proj $c $f.Name (ConvertTo-Argb $f.Value)
+            }
+        }
+        if ($op.per_state) {
+            Set-GdlStateOps $proj $c $op.per_state $op.why | Out-Null
+        }
+        $applied++
+    } catch {
+        Note-Problem "op on control $($op.control) ('$($op.why)') failed: $($_.Exception.Message)"
+    }
+}
+
+Write-Output "$applied of $(@($spec.controls).Count) control op(s) applied"
+
+if ($script:Problems.Count) {
+    Write-Output ''
+    Write-Output "$($script:Problems.Count) problem(s):"
+    $script:Problems | ForEach-Object { Write-Output "   $_" }
+}
+
+if ($script:Fatal.Count) {
+    Write-Output ''
+    Write-Output "NOT WRITING $($script:Fatal.Count) fatal problem(s) - the project ops were"
+    Write-Output 'skipped but the control ops were not, so the result would be internally'
+    Write-Output 'inconsistent (controls scaled for one panel, canvas sized for another).'
+    Write-Error "refusing to write: $($script:Fatal -join '; ')" -ErrorAction Continue
+    # `exit`, not `throw`. A terminating error here unwinds through the
+    # AppDomain.AssemblyResolve handler installed by Initialize-Gdl while .NET
+    # is resolving types to format the exception, and that recursion ends in a
+    # StackOverflowException that kills the process with no usable message.
+    exit 1
+}
+if ($WhatIf) {
+    Write-Output '-WhatIf: nothing was written'
+    return
+}
+if (-not $Output) { $Output = $Project + '.edited' }
+Save-GdlProject $proj $Output | Out-Null
+Write-Output "wrote $Output ($((Get-Item $Output).Length) bytes)"
+Write-Output 'Now repack, open in GUI Designer, Save and Build (Ctrl+Shift+B), then:'
+Write-Output "  python tests/verify_built.py $Plan <built.gdl>"

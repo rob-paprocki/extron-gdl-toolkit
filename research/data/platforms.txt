@@ -1,0 +1,68 @@
+platform instance : Extron.GUICPro.PBTLP1035MPlatform
+platform assembly : GUI Designer
+enum type         : Extron.GUICPro.Layout.Contracts.Enumerations.PlatformProTypeEnum
+enum assembly     : Extron.GUICPro.Layout.Contracts
+enum members      : 60
+
+base class        : Extron.GUICPro.PBTouchPanelPlatformPro
+concrete subclasses: 55
+
+CLASS                                    SCREEN           PROPERTIES
+PBCCI700Platform                         {Width=320, Height=240} 
+PBTLC1026MPlatform                       {Width=1280, Height=800} 
+PBTLC521MPlatform                        {Width=800, Height=480} 
+PBTLC526MPlatform                        {Width=800, Height=480} 
+PBTLC726MPlatform                        {Width=1024, Height=600} 
+PBTLI100Platform                         {Width=1920, Height=1080} 
+PBTLI201Platform                         {Width=1920, Height=1080} 
+PBTLP1020MVPlatform                      {Width=1024, Height=600} 
+PBTLP1020TVPlatform                      {Width=1024, Height=600} 
+PBTLP1022MPlatform                       {Width=1024, Height=600} 
+PBTLP1022TPlatform                       {Width=1024, Height=600} 
+PBTLP1025MPlatform                       {Width=1280, Height=800} 
+PBTLP1025TPlatform                       {Width=1280, Height=800} 
+PBTLP1035MPlatform                       {Width=1280, Height=800} 
+PBTLP1035TPlatform                       {Width=1280, Height=800} 
+PBTLP1220MGPlatform                      {Width=1280, Height=800} 
+PBTLP1220TGPlatform                      {Width=1280, Height=800} 
+PBTLP1225MGPlatform                      {Width=1280, Height=800} 
+PBTLP1225TGPlatform                      {Width=1280, Height=800} 
+PBTLP1520MGPlatform                      {Width=1366, Height=768} 
+PBTLP1520TGPlatform                      {Width=1366, Height=768} 
+PBTLP1525MGPlatform                      {Width=1366, Height=768} 
+PBTLP1525TGPlatform                      {Width=1366, Height=768} 
+PBTLP1535MPlatform                       {Width=1920, Height=1080} 
+PBTLP1535TPlatform                       {Width=1920, Height=1080} 
+PBTLP1720MGPlatform                      {Width=1920, Height=1080} 
+PBTLP1720TGPlatform                      {Width=1920, Height=1080} 
+PBTLP1725MGPlatform                      {Width=1920, Height=1080} 
+PBTLP1725TGPlatform                      {Width=1920, Height=1080} 
+PBTLP300MPlatform                        {Width=320, Height=480} 
+PBTLP320CPlatform                        {Width=320, Height=240} 
+PBTLP320MPlatform                        {Width=320, Height=240} 
+PBTLP520MVPlatform                       {Width=800, Height=480} 
+PBTLP525CPlatform                        {Width=800, Height=480} 
+PBTLP525MPlatform                        {Width=800, Height=480} 
+PBTLP525TPlatform                        {Width=800, Height=480} 
+PBTLP535MPlatform                        {Width=1280, Height=720} 
+PBTLP535TPlatform                        {Width=1280, Height=720} 
+PBTLP720CVPlatform                       {Width=800, Height=480} 
+PBTLP720MVPlatform                       {Width=800, Height=480} 
+PBTLP720TVPlatform                       {Width=800, Height=480} 
+PBTLP725CPlatform                        {Width=1024, Height=600} 
+PBTLP725MPlatform                        {Width=1024, Height=600} 
+PBTLP725TPlatform                        {Width=1024, Height=600} 
+PBTLP835CPlatform                        {Width=1280, Height=800} 
+PBTLP835MPlatform                        {Width=1280, Height=800} 
+PBTLP835TPlatform                        {Width=1280, Height=800} 
+PBVTLPAndroidPlatform                    {Width=1280, Height=800} 
+PBVTLPBasePlatform                       {Width=800, Height=480} 
+PBVTLPiOSPlatform                        {Width=1920, Height=1080} 
+PBVTLPWebPlatform                        {Width=1920, Height=1080} 
+PBZRTP1025MPlatform                      {Width=1280, Height=800} 
+PBZRTP1025TPlatform                      {Width=1280, Height=800} 
+PBZRTP725MPlatform                       {Width=1024, Height=600} 
+PBZRTP725TPlatform                       {Width=1024, Height=600} 
+
+--- enum members ---
+Unknown, TLP720T, TLP720M, TLP720C, TLP1020T, TLP1020M, TLP520M, VTLPWeb, VTLPiOS, TLI101, TLP320M, TLP1520TG, MLC84D, MLC84EU, MLC84MK, TLP320C, TLP1220TG, TLP1220MG, TLP1520MG, CCI700, TLC521M, TLP1720TG, TLP1720MG, TLP1022T, TLP1022M, TLP1022W, VTLPAndroid, TLP725T, TLP725M, TLP725C, TLP1025M, TLP1025T, TLP525C, TLP525M, TLP525T, TLP1225MG, TLP1225TG, TLP1525MG, TLP1525TG, TLP1725MG, TLP1725TG, TLC526M, TLC726M, TLC1026M, TLP300M, TLP1230WTG, TLI201, ZRTP725M, ZRTP725T, ZRTP1025M, ZRTP1025T, TLP535M, TLP535T, TLP835T, TLP835M, TLP835C, TLP1035M, TLP1035T, TLP1535M, TLP1535T

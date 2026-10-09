@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huddle Home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0;background:#242634}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Huddle Home" theme="grape" start="true" does="The room's home page: share a source, set volume, end the call." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.MainArea">
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="RoomName" type="title" align="center" style="position: absolute; left: 0px; top: 70px; width: 916px; height: 90px">Huddle Room</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="CallState" type="body" color="text-secondary" align="center" does="Shows the codec's call status." style="position: absolute; left: 0px; top: 160px; width: 916px; height: 40px">No call in progress</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="PickSource" type="subheading" align="center" style="position: absolute; left: 0px; top: 250px; width: 916px; height: 50px">Share something</x-import>
+<div style="position: absolute; left: 238px; top: 330px; width: 440px; height: 110px; display: flex; justify-content: space-between">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Laptop" variant="source" icon="laptop" states='[{"name":"No Signal","look":"off","color":"text-secondary"},{"name":"Ready","look":"off"},{"name":"Live","look":"on","fill":"pressed"}]' press="Live" does="Routes the laptop input to the display. No Signal until a laptop is connected, Ready once one is, Live while it is on the display." style="width: 110px; height: 110px">Laptop</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Wireless" variant="source" icon="sharelink-1" states='[{"name":"No Signal","look":"off","color":"text-secondary"},{"name":"Ready","look":"off"},{"name":"Live","look":"on","fill":"pressed"}]' press="Live" does="Routes wireless presentation to the display. No Signal until someone is sharing, Ready once they are, Live while it is on the display." style="width: 110px; height: 110px">Wireless</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="RoomPC" variant="source" icon="pc" states='[{"name":"No Signal","look":"off","color":"text-secondary"},{"name":"Ready","look":"off"},{"name":"Live","look":"on","fill":"pressed"}]' press="Live" does="Routes the room PC to the display. No Signal while the PC is asleep, Ready when it is awake, Live while it is on the display." style="width: 110px; height: 110px">Room PC</x-import>
+</div>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="EndCall" icon="call_connected" does="Ends the call." style="position: absolute; left: 381px; top: 677px; width: 154px; height: 64px">End Call</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Clock" name="Date" format="date" style="position: absolute; left: 17px; top: 696px; width: 330px; height: 40px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Clock" name="Time" align="right" style="position: absolute; left: 579px; top: 696px; width: 320px; height: 40px"></x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="DisplayHeading" type="body" style="position: absolute; left: 14px; top: 166px; width: 160px; height: 40px">Display</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Display" variant="toggle" states='[{"name":"Off","look":"off"},{"name":"Warming","look":"on","color":"text-secondary","text":"Warming"},{"name":"On","look":"on"},{"name":"Cooling","look":"off","color":"text-secondary","text":"Cooling"}]' press="On" does="Toggles display power. Shows the display's power state: Off, Warming, On or Cooling." style="position: absolute; left: 4px; top: 210px; width: 176px; height: 54px">Power</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="VolumeHeading" type="body" align="center" style="position: absolute; left: 1113px; top: 166px; width: 160px; height: 40px">Volume</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Slider" name="VolumeSlider" does="Sets program volume, 0-100; follows the DSP's level." style="position: absolute; left: 1166px; top: 210px; width: 54px; height: 380px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Mute" variant="icon" states='[{"name":"Unmuted","icon":"speaker-volume_3","look":"on"},{"name":"Muted","icon":"speaker-mute-1","look":"on"}]' does="Toggles program mute; Muted while muted." style="position: absolute; left: 1161px; top: 604px; width: 64px; height: 64px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="HelpBtn" variant="icon" icon="help" nav="Help" style="position: absolute; left: 1117px; top: 706px; width: 64px; height: 64px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="RoomOff" variant="icon" icon="power" nav="ConfirmRoomOff" style="position: absolute; left: 1197px; top: 706px; width: 64px; height: 64px"></x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

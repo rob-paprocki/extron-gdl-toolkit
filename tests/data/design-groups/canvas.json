@@ -1,0 +1,33 @@
+{
+  "attachments": {},
+  "boards": {
+    "Groups.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Group Test",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "Tiny.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Tiny Test",
+      "w": 1280,
+      "x": 1360,
+      "y": 0
+    }
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {},
+  "order": [
+    "Groups.dc.html",
+    "Tiny.dc.html"
+  ],
+  "pages": [],
+  "title": "Groups",
+  "v": 3
+}

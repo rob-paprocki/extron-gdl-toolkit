@@ -1,0 +1,36 @@
+#!/bin/sh
+# Refuse a push unless every commit it would send passes tools/public_sync.py check --history -
+# except a push to the archive itself, origin. Checking every other remote, rather than only one
+# named public, catches another name or another spelling of the public repository's URL too.
+# Then run Git LFS's own pre-push, which this hook replaces. Install from the repository root:
+#   cp tools/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"
+# `git lfs install --force` or `git lfs update --force` puts LFS's own hook back over this one.
+remote="$1"
+url="$2"
+input=$(cat)
+# One spelling per repository: case, backslashes, a trailing slash or .git, the scheme and any
+# user@ do not make it another one.
+norm() {
+  printf '%s' "$1" | tr 'A-Z\\' 'a-z/' |
+    sed -e 's#/*$##' -e 's#\.git$##' -e 's#^[a-z+]*://##' -e 's#^[^@/]*@##' -e 's#^\([^/:]*\):#\1/#'
+}
+origin=$(git config --get remote.origin.url)
+public=$(git config --get remote.public.url)
+tool="${PUBLIC_SYNC:-tools/public_sync.py}"
+exempt=no
+if [ -n "$origin" ] && [ "$(norm "$origin")" != "$(norm "$public")" ] &&
+   { [ "$remote" = origin ] || [ "$(norm "$url")" = "$(norm "$origin")" ]; }; then
+  exempt=yes
+fi
+if [ "$exempt" = no ]; then
+  printf '%s\n' "$input" | while read -r lref lsha rref rsha; do
+    [ -z "$lsha" ] && continue
+    [ "$lsha" = 0000000000000000000000000000000000000000 ] && continue
+    if ! python "$tool" check --history "$lsha"; then
+      echo "pre-push: $lref fails the publish check - nothing was pushed" >&2
+      exit 1
+    fi
+  done || exit 1
+fi
+command -v git-lfs >/dev/null 2>&1 || { echo "pre-push: git-lfs is not on PATH" >&2; exit 2; }
+printf '%s\n' "$input" | git lfs pre-push "$@"

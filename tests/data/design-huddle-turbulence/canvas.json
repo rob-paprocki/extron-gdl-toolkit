@@ -1,0 +1,18 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "ConfirmRoomOff.dc.html": {"h": 800, "is_interactive": true, "title": "Confirm Room Off", "w": 1280, "x": 2720, "y": 0},
+    "Help.dc.html": {"h": 800, "is_interactive": true, "title": "Huddle Help", "w": 1280, "x": 1360, "y": 0},
+    "Home.dc.html": {"h": 800, "is_interactive": true, "title": "Huddle Home", "w": 1280, "x": 0, "y": 0}
+  },
+  "createdOnFiles": {"at": "2026-10-02T04:30:00Z", "v": 1},
+  "designSystems": [
+    {"artifact": "https://claude.ai/artifact/3RFtbd87nDJjyVBaXy3gHS", "copiedAt": "2026-10-02T05:00:00Z", "namespace": "extronturbulence", "title": "Extron Turbulence", "version": null}
+  ],
+  "launch": {"view": "canvas"},
+  "notes": {},
+  "order": ["Home.dc.html", "Help.dc.html", "ConfirmRoomOff.dc.html"],
+  "pages": [],
+  "title": "Huddle Room - Turbulence"
+}

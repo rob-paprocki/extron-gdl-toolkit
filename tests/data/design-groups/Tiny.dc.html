@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tiny Test</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Tiny Test" theme="grape" panels="TLP1035T TLP725T TLP525T TLP320M" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.MainArea">
+<x-import component-from-global-scope="ExtronAfterburn.Group" title="Tiny" cell="30x30" gap="4" style="position: absolute; left: 400px; top: 300px; width: 64px; height: 30px">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="T1">1</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="T2">2</x-import>
+</x-import>
+</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

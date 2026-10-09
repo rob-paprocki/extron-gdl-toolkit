@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git lfs ls-files)",
+      "Bash(git lfs ls-files *)",
+      "Bash(where *)",
+      "Bash(where.exe *)",
+      "Bash(tasklist)",
+      "Bash(tasklist *)",
+      "mcp__windows-mcp__Snapshot",
+      "mcp__windows-mcp__WaitFor",
+      "Bash(git config user.email)",
+      "mcp__windows-mcp__Wait",
+      "Bash(git config user.name)",
+      "Bash(git lfs version)"
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huddle Help</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0;background:#242634}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Huddle Help" kind="modal" theme="grape" panels="TLP1035T TLP725T TLP525T TLP320M" does="How to share, for people new to the room, over the page they were on." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.Panel" name="Card" stroke="none" style="position: absolute; left: 200px; top: 140px; width: 880px; height: 520px"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="HelpTitle" type="subheading" align="center" style="position: absolute; left: 240px; top: 170px; width: 800px; height: 60px">How to share</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="Step1" type="body" style="position: absolute; left: 340px; top: 260px; width: 600px; height: 50px">1. Plug in your laptop.</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="Step2" type="body" style="position: absolute; left: 340px; top: 330px; width: 600px; height: 50px">2. Tap it on the home page.</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="Step3" type="body" style="position: absolute; left: 340px; top: 400px; width: 600px; height: 50px">3. End the call when done.</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Close" nav="Home" style="position: absolute; left: 550px; top: 560px; width: 180px; height: 64px">Close</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

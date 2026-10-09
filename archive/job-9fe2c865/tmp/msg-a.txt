@@ -1,0 +1,29 @@
+chore: carry everything off the Windows box's C: drive into the repo
+
+Nothing about this project should live only on one machine. Moved in,
+each file byte-identical to its source (checked with cmp at copy time):
+
+- seeds/ - the fourteen themed seed projects made with File > New
+  Project on 2026-09-09, including the TLP Pro 835M seed every
+  clean-room build used. That one had been moved to the Recycle Bin;
+  it was copied out, not restored. Git LFS.
+- archive/ - C:\gdlwork (2026-09-08/09 build scratch), the scratch dir
+  of the 2026-09-09/10 session (the retarget ground truth, and the
+  failed then fixed feedback-state builds that pinned PBStates.Count),
+  the Desktop proof builds, and the Claude Code transcripts and memory
+  for both sessions. Binaries and transcripts in Git LFS. The
+  transcripts were scanned for GitHub, Anthropic, Slack and AWS tokens
+  and private keys first; none found.
+- research/2026-09-10/ - the scripts behind the week's numbers,
+  re-pointed at seeds/ and archive/ instead of C: and the job dir.
+- workflows/gdl-bug-hunt.js - the planned multi-agent bug hunt, which
+  died twice about 90 seconds in when the box hit its commit limit.
+- vendor/ - README and SHA-256 manifest only. Extron's 44 .glt
+  templates and the Afterburn icon kit (about 470 MB, reinstallable)
+  are copied locally so nothing needs C:, but are not pushed.
+
+fixtures/ stays in plain git: moving it to LFS would rewrite every
+commit that touched it.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Mbbt2yzkmqSoyJktwnbHHe
