@@ -130,6 +130,7 @@ def facts(path):
     f['popup_mismatch'], f['default_state'], f['unrasterized'] = [], collections.Counter(), 0
     f['press_bad'], f['press_total'] = 0, 0
     f['fonts_missing'], f['fonts_error'] = None, None
+    f['fonts_not_carried'], f['fonts_not_declared'] = None, None
     if lay:
         authored = {g['name']: tuple(g['size']) for g in pages if g['kind'] == 'popup'}
         for bp in lay.get('PopupPages') or []:
@@ -156,9 +157,22 @@ def facts(path):
             try:
                 with open_gdl(path) as z:
                     gcp = z.read('ProjectGCP')
-                got = gfonts.extract(gcp, declared)
-                f['fonts_missing'] = [r['EmbeddedFileName'] for r in declared
-                                      if r['EmbeddedFileName'] not in got]
+                each = gfonts.extract_each(gcp, declared)
+                # Each declaration against what the project carries (its font
+                # resources' own data), one by one, and recovered or not one by
+                # one too: a file name declared twice, once carried, hid the
+                # other behind it when this went by name.
+                faces = gfonts.carried(p)
+                pairs = gfonts.match(declared, faces)
+                f['fonts_not_carried'] = [f"{r['EmbeddedFileName']} ({r['Size']:,} B)"
+                                          for r, face in zip(declared, pairs) if face is None]
+                f['fonts_missing'] = [r['EmbeddedFileName']
+                                      for r, face, data in zip(declared, pairs, each)
+                                      if face is not None and data is None]
+                taken = {id(face) for face in pairs if face is not None}
+                f['fonts_not_declared'] = [f"{face['family']} {face['style']} "
+                                           f"({len(face['bytes']):,} B)"
+                                           for face in faces if id(face) not in taken]
             except Exception as e:                       # noqa: BLE001
                 f['fonts_error'] = f'{type(e).__name__}: {e}'
     return f
@@ -236,7 +250,9 @@ def inv_caption(F):
 
 
 def inv_fonts(F):
-    """Every declared face is recoverable (tests/test_fonts.py gates fixtures/)."""
+    """Every face a project declares and carries comes back out of it
+    (tests/test_fonts.py gates fixtures/). One it declares and does not carry
+    is the project's, not a fault: inv_fonts_not_carried lists those."""
     bad = [f"{f['name']}: extract raised {f['fonts_error']}" for f in F if f['fonts_error']]
     bad += [f"{f['name']}: not recovered {f['fonts_missing'][:4]}"
             for f in F if f['fonts_missing']]
@@ -245,6 +261,30 @@ def inv_fonts(F):
     if not bad:
         return 'PASS', [f'{checked} project(s) checked']
     return 'FAIL', [f'{len(bad)} of {checked} project(s)'] + _cap(bad, 12)
+
+
+def _said(F, key):
+    checked = [f for f in F if f.get(key) is not None]
+    some = [f"{f['name']}: {', '.join(f[key])}" for f in checked if f[key]]
+    if not some:
+        return 'PASS', [f'{len(checked)} project(s) checked']
+    return 'INFO', [f'{len(some)} of {len(checked)} project(s)'] + _cap(some, 12)
+
+
+def inv_fonts_not_carried(F):
+    """Faces a project's layout.json declares and its own font resources do not
+    carry - Arial Black in a seed with no resource for it, which a build adds
+    only sometimes, for reasons not known (gdl/fonts/README.md). Said, never
+    failed: a spec
+    cannot ask such a seed for the face, and gdl.spec donors says so."""
+    return _said(F, 'fonts_not_carried')
+
+
+def inv_fonts_not_declared(F):
+    """Faces a project carries that no declaration names - Turbulence's Windows
+    Arial, under a resource with no file name, beside a declaration of the
+    Monotype one. Said, never failed: nothing a spec asks for is drawn in it."""
+    return _said(F, 'fonts_not_declared')
 
 
 def inv_canvas(F):
@@ -275,8 +315,9 @@ def inv_modal_refs(F):
 
 
 def inv_borders(F):
-    """A spec may only name border resources its donor defines - so how portable
-    is a spec across themes?"""
+    """A plan may only name border resources its donor defines, and a spec's
+    others are built as the donor's nearest shape - so how far does a spec's
+    border travel across themes as itself?"""
     sets = {f['name']: set(f['borders']) for f in F if f['borders']}
     if len(sets) < 2:
         return 'INFO', ['fewer than two projects define borders']
@@ -326,7 +367,9 @@ INVARIANTS = [
     ('page and popup names unique per project', inv_unique_names),
     ('userId fits in UInt16', inv_userid),
     ('a button caption lives on its state', inv_caption),
-    ('every declared face is recoverable', inv_fonts),
+    ('every face a project declares and carries is recovered', inv_fonts),
+    ('faces declared and not carried', inv_fonts_not_carried),
+    ('faces carried and not declared', inv_fonts_not_declared),
     ('canvas matches a known model', inv_canvas),
     ('one full-canvas ref per shown modal popup per page', inv_modal_refs),
     ('border resources shared across themes', inv_borders),

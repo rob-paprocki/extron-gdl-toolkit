@@ -4,13 +4,14 @@ GUI Designer's template installer keeps `TemplateInfoTable.config` beside the
 templates: an NRBF `TemplateManager+TemplateInfoDictionary` whose `mTemplates`
 maps each `.glt`'s path to a `TemplateInfo` - theme, resolution and DPI. On
 1.28.0.7 it holds 50 rows, 13 of them Afterburn. Its `mSeries` is stored as
-a number - GUI Designer's `TLPSeries` (`Series1020` is 1), whose names are in
-the assembly and not the file - so a row's series is its file stem
-(`Afterburn 1020 Series`); every `.glt` carries the same facts in a
-`PBTemplate`, and all 13 Afterburn files agree with the table.
+a number - GUI Designer's `TLPSeries` (`Series1020` is 1; docs/gdl-format.md
+section 7 has the rest), whose names are in the assembly and not the file - so
+a row is named by its file stem (`Afterburn 1020 Series`); every `.glt` carries
+the same facts in a `PBTemplate`, and all 13 Afterburn files agree with the
+table.
 
-    python -m gdl.templates Afterburn          # every series, with tier
-    python -m gdl.templates Afterburn TLP725T  # the series a model takes
+    python -m gdl.templates Afterburn                  # every series, with tier
+    python -m gdl.templates Afterburn TLP300M [480x320]  # the series a model takes
 """
 import math
 import os
@@ -96,8 +97,15 @@ def _tier(row):
     return spec.tier_for(math.hypot(w, h) / row['dpi']) if row['dpi'] else None
 
 
-def template_for(theme, model, path=None):
-    """The series template a model takes, or None.
+def template_for(theme, model, size=None, path=None):
+    """The series template a model takes at a canvas, or None.
+
+    `size` is the canvas, (width, height): the model's own by default, and
+    either of a panel that rotates (gdl.spec.sizes) - a size it does not run at
+    has no series. The template must be drawn at that canvas: the 300M's are,
+    both ways up in Afterburn, and the 835M's and 1035M's 1220 Series is
+    1280x800 only, so a portrait one has none, as the wizard offers it Blank
+    (docs/design-rules.md section 1 has every turned panel's case).
 
     An exact (size, DPI) match first. Failing that, a size match only when the
     template is in the model's own tier: no template is authored at the 725's
@@ -109,7 +117,10 @@ def template_for(theme, model, path=None):
     """
     if model not in spec.MODELS_FULL or model in spec.SOFT_CLIENTS:
         return None
-    w, h, d, _ = spec.MODELS_FULL[model]
+    _, _, d, _ = spec.MODELS_FULL[model]
+    w, h = tuple(size) if size else spec.sizes(model)[0]
+    if (w, h) not in spec.sizes(model):
+        return None
     rows = [r for r in series(theme, path) if tuple(r['size']) == (w, h)]
     exact = [r for r in rows if d and abs(r['dpi'] - d) < 0.01]
     pick = exact or [r for r in rows if _tier(r) == spec.tier(model)]
@@ -128,8 +139,10 @@ def main(argv):
         print('no TemplateInfoTable.config in', ' or '.join(TABLE_DIRS))
         return 1
     if len(argv) > 2:
-        r = template_for(argv[1], argv[2])
-        print(r['series'] if r else f'no {argv[1]} series for {argv[2]}')
+        size = tuple(int(n) for n in argv[3].lower().split('x')) if len(argv) > 3 else None
+        r = template_for(argv[1], argv[2], size)
+        at = f' at {size[0]}x{size[1]}' if size else ''
+        print(r['series'] if r else f'no {argv[1]} series for {argv[2]}{at}')
         return 0 if r else 1
     for r in sorted(series(argv[1]), key=lambda r: (r['size'], r['series'])):
         print(f"{r['series']:<34} {r['size'][0]}x{r['size'][1]:<5} {r['dpi']:>8.2f} dpi  tier {_tier(r)}")

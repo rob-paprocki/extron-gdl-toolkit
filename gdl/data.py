@@ -17,15 +17,14 @@ Established by inspection of the six .gdl files in this repo:
   - BackgroundFillColor is alpha-0 everywhere; the PNG carries the fill
 """
 import base64
-import io
 import json
 import os
 import re
 import struct
 import sys
-import zipfile
 
-SIGS = (b'KP\x03\x04', b'KP\x01\x02', b'KP\x05\x06', b'KP\x07\x08')
+from .container import open_payload
+
 PT_TO_PX = 1.375  # the panel rasterizes at 99 DPI, not the usual 96
 NO_POPUP = 0xFFFFFFFFFFFFFFFF
 STALE_ID = re.compile(r'_ID(\d+)$')
@@ -42,23 +41,11 @@ LINE_FACTOR = {
 }
 
 
-def open_gdl(path):
-    """Un-mangle the KP signatures and return the outer container."""
-    with open(path, 'rb') as fh:
-        d = bytearray(fh.read())
-    for s in SIGS:
-        i = d.find(s)
-        while i != -1:
-            d[i:i + 2] = b'PK'
-            i = d.find(s, i + 1)
-    return zipfile.ZipFile(io.BytesIO(bytes(d)))
-
-
 def payload(path):
-    """Return the inner built-panel ZIP (the '*.tgz4' member)."""
-    z = open_gdl(path)
-    name = next(n for n in z.namelist() if n != 'ProjectGCP')
-    return zipfile.ZipFile(io.BytesIO(z.read(name)))
+    """Return the inner built-panel ZIP (the '*.tgz4' member). The container's
+    own reader: this one once swapped every KP in the file back to PK, data
+    included (gdl.container._records)."""
+    return open_payload(path)
 
 
 def png_size(raw):

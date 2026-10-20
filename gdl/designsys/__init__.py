@@ -14,6 +14,7 @@ vocabulary here is the spec's: a kind, a name, token names for colors, point
 sizes, `states`, `press`, `nav`, `does`.
 """
 import json
+import math
 import os
 import re
 import sys
@@ -102,15 +103,19 @@ def tokens(p):
 
 # -- the per-panel table -----------------------------------------------------------
 def models(p):
-    """{model: row} - every panel the profile's series serve, for the bundle to
-    derive each panel's layout from (docs/claude-design.md section 2).
+    """{panel: row} - every panel the profile's series serve, for the bundle to
+    derive each panel's layout from (docs/claude-design.md section 2). A panel
+    is gdl.spec.panel_id: its model, or model-Portrait / model-Landscape where a
+    series serves a panel that rotates the other way up (the 300M's two).
 
     A row is the series' own measurements (its `panels` entry: main region,
     rail band, popup region, background art and how it is drawn, the seed per
     model and what that seed can clone) with the model's own minimums from
-    gdl.spec: touch target and gap (9 mm and 2 mm at its DPI) and type floor.
-    A profile with no `panels` - Mach, Shockwave and Turbulence until their
-    phases - has none, and its components draw its one design panel.
+    gdl.spec: touch target and gap (9 mm and 2 mm at its DPI) and type floor -
+    or, for a panel turned where no series serves it that way up, its own
+    series' row transposed, flagged `turned` (below).
+    A profile with no `panels` has none, and its components draw its one
+    design panel.
     """
     from .. import spec
     out = {}
@@ -119,7 +124,7 @@ def models(p):
             continue
         for m in s['models']:
             touch, gap = spec.touch_minimums(m)
-            out[m] = {
+            out[spec.panel_id(m, s['size'])] = {
                 'series': series, 'size': list(s['size']), 'dpi': spec.dpi(m),
                 'tier': spec.tier(m), 'touch': touch, 'gap': gap, 'floor': spec.type_floor(m),
                 'main': s['main'], 'rail': s['rail'], 'rail_axis': s['rail_axis'],
@@ -130,6 +135,31 @@ def models(p):
                 'kinds': s.get('kinds') or {'slider': True, 'level': True, 'popup': True},
                 'borders': s.get('borders') or {},
             }
+    # A panel that runs the other way up from every series that draws it - the
+    # 520M, 521M, 535M, 835M and 1035M turned (docs/design-rules.md section 1) -
+    # is its series turned. Extron draws one panel both ways, the 300M, and its
+    # Landscape layout is its Portrait one transposed: main, rail and popup, the
+    # rail running the other way. Ours, not Extron's. No art: Extron draws none
+    # that way up, and the 300M's landscape art is the portrait's shape with its
+    # paint redrawn, which a rotation is not. Its seed is the model's own turned
+    # (New-GdlTurnedSeed.ps1), kept under the panel's name.
+    def turn(r):
+        return None if r is None else [r[1], r[0], r[3], r[2]]
+    for series, s in (p.get('panels') or {}).items():
+        if series.startswith('_'):
+            continue
+        for m in s['models']:
+            for size in spec.sizes(m):
+                pid = spec.panel_id(m, size)
+                if tuple(size) == tuple(s['size']) or pid in out:
+                    continue
+                row = dict(out[spec.panel_id(m, s['size'])])
+                # A series with no rail band (rail None) has none turned either.
+                row.update(size=list(size), turned=True, main=turn(s['main']), rail=turn(s['rail']),
+                           rail_axis={'column': 'row', 'row': 'column'}.get(s['rail_axis']),
+                           popup=list(s['popup'])[::-1] if s['popup'] else None, backgrounds={},
+                           seed=(s.get('seeds') or {}).get(pid))
+                out[pid] = row
     return out
 
 
@@ -670,18 +700,226 @@ def _example_button(p, key, name, extra=''):
               f'width: {r[2]}px; height: {r[3]}px')
 
 
+def _panels_eg(p, ms):
+    return ' '.join(m for m in ('TLP1035T', 'TLP725T', 'TLP525T', 'TLP320M') if m in ms) or p['model']
+
+
+def _panels_readme(p):
+    """The README's own word on a room's panels. A designer reads the README
+    first, and it called every artboard one page of the design panel: with
+    `panels` in the Page card alone, a room's other panels went unasked for
+    and only the design panel was built."""
+    ms = models(p)
+    if not ms:
+        return ''
+    return (f"- **Every panel the room has.** A room often has more than one panel - a table panel and a "
+            f"smaller one by the door. Name them all, by model, in `panels` on every Page "
+            f"(`panels=\"{_panels_eg(p, ms)}\"`), the panel the canvas is drawn on first: Claude Code builds one "
+            f"panel for each, laid out for its own screen from these artboards. Leave the room each needs - "
+            f"*Every panel the room has*, below, says how much.\n")
+
+
+def _model_names(names):
+    """'TLP525C/M/T, TLC521M': a model's variants together, a turned panel as
+    itself."""
+    out = {}
+    for n in names:
+        m = re.match(r'^(.*?\d+)([CMT]G?)(-\w+)?$', n)
+        base, var, turned = (m.group(1), m.group(2), m.group(3) or '') if m else (n, '', '')
+        out.setdefault((base, turned), []).append(var)
+    return ', '.join(f"{b}{'/'.join(vs)}{t}" for (b, t), vs in out.items())
+
+
+def _rail_holds(T, rail=None):
+    """How many touch-sized buttons a hub's rail holds beside the volume, as
+    railLayout stacks them: a level between Down and Up where the seed has no
+    slider (24 px of level still reads), else a slider at least a touch target
+    long; the panel's gap between, centred in the band with that gap's padding.
+    `rail` is the band a page leaves it (_room), the panel's own by default."""
+    r = rail or T.get('rail')
+    if not r:
+        return None
+    col = (T.get('rail_axis') or 'column') != 'row'
+    along, cross = (r[3], r[2]) if col else (r[2], r[3])
+    t, g = T['touch'], T['gap']
+    pad = math.floor(max(0, min(g, (cross - t) / 2)))
+    level = T['kinds'].get('slider') is False
+    volume = 2 * t + 24 + 2 * g if level else t
+    return max(0, math.floor((along - 2 * pad - volume) / (t + g)))
+
+
+def _js_round(x):
+    """Math.round: halves up, where Python's round() goes to the even."""
+    return math.floor(x + 0.5)
+
+
+def _hub_bands(d_lo, d_hi, d_size, t_lo, t_hi, t_size, k, touch):
+    """bundle.js hubBands on one axis - (lo, hi) of the target's main - with a
+    button in every band it carves: a band the design panel has beside main
+    and the target has not is cut from the target's main at the page's scale,
+    at least the touch minimum deep, at most a quarter of main."""
+    lo, hi, quarter = t_lo, t_hi, (t_hi - t_lo) / 4
+    if d_lo >= 1 and t_lo < 1:
+        lo = _js_round(min(max(d_lo * k, touch), quarter))
+    if d_size - d_hi >= 1 and t_size - t_hi < 1:
+        hi = _js_round(max(t_size - max((d_size - d_hi) * k, touch), t_hi - quarter))
+    return lo, hi
+
+
+def _room(p, D, T):
+    """(main, rail) a page lays out in on panel T, as bundle.js panelPage cuts
+    them. Where the bars are controls (Mach, Shockwave, Turbulence) the design
+    panel's header, footer and column are carved from a main that reaches the
+    screen's edge - a hub's - and the rail keeps to what is left between the
+    header and the footer. A band that holds a button is at least the touch
+    minimum deep: the README assumes each one does, so the room it gives is the
+    least a page has there. It took the uncut main, and promised Mach's 525
+    0.7 and three buttons beside the volume where a page has 0.51 to 0.55 and
+    one."""
+    main, rail = T['main'], T.get('rail')
+    if ((p.get('layout') or {}).get('bars') != 'controls' or T is D or T['tier'] == 'C'
+            or not D.get('main') or not main):
+        return main, rail
+    (dw, dh), (tw, th), dm = D['size'], T['size'], D['main']
+    k = min(tw / dw, th / dh)
+    x0, x1 = _hub_bands(dm[0], dm[0] + dm[2], dw, main[0], main[0] + main[2], tw, k, T['touch'])
+    y0, y1 = _hub_bands(dm[1], dm[1] + dm[3], dh, main[1], main[1] + main[3], th, k, T['touch'])
+    if rail and (T.get('rail_axis') or 'column') != 'row':
+        r0, r1 = max(rail[1], y0), min(rail[1] + rail[3], y1)
+        rail = [rail[0], r0, rail[2], r1 - r0]
+    return [x0, y0, x1 - x0, y1 - y0], rail
+
+
+def _panel_rooms(p):
+    """The README's table of the panels a system serves: those whose room is
+    the same in one row, the design panel's first - [(names, row, k, rail)].
+    `k` is the scale from the design panel's main region to the one a page has
+    on that panel (_room), which a control in main takes (bundle.js
+    scaleLayout, cutRect); a control then grows to the panel's touch minimum
+    and a word to its type floor. `rail` is the rail a page leaves it."""
+    ms = models(p)
+    D = ms.get(p['model'])
+    if not D:
+        return []
+    rows = {}
+    for m, T in ms.items():
+        main, rail = _room(p, D, T)
+        k = min(main[2] / D['main'][2], main[3] / D['main'][3])
+        key = (T['series'], tuple(T['size']), T['touch'], T['gap'], T['floor'], T['tier'], round(k, 2),
+               tuple(rail or ()))
+        rows.setdefault(key, (m, T, k, rail, []))[4].append(m)
+    out = [(names, T, k, rail) for _, T, k, rail, names in rows.values()]
+    out.sort(key=lambda r: p['model'] not in r[0])
+    return out
+
+
+def _panels_section(p):
+    """`## Every panel the room has`: what a designer leaves room for, panel by
+    panel. Three designers of a two-panel room drew the 1035 snug, and the 525
+    refused every artboard: its positions scale down, its controls grow to
+    66 px and its words to 18 pt. One read the bundle to find out how much, and
+    its room built on both."""
+    rooms = _panel_rooms(p)
+    if not rooms:
+        return ''
+    lines = []
+    for names, T, k, rail in rooms:
+        drawn = p['model'] in names
+        # Positions scale by k there and a control grows to the touch minimum
+        # about where it is: on this canvas that is a control of touch / k,
+        # and the gap there is gap / k here.
+        smallest, apart = math.ceil(T['touch'] / k), math.ceil(T['gap'] / k)
+        # The canvas's smallest type is 14 pt, the floor the design panel holds.
+        words = max(T['floor'], round(14 * k * 2) / 2) / 14 / k
+        if drawn:
+            kind = 'drawn here'
+        elif T['tier'] == 'C':
+            kind = 'rows'
+        elif T['tier'] == 'B':
+            n = _rail_holds(T, rail)
+            kind = 'hub' + (f": its rail holds the volume and {n} button{'' if n == 1 else 's'}"
+                            if n is not None else '')
+        else:
+            kind = 'scaled'
+        # A panel that lays its controls out again, in rows, sizes each to what
+        # it holds there (bundle.js flowLayout): no distance or room to keep.
+        room = ('- | -' if kind == 'rows' else
+                f"{smallest} px, {apart} px | {'1x' if words < 1.05 else f'{words:.1f}x'}")
+        lines.append(f"| {_model_names(names)} | {T['size'][0]}x{T['size'][1]} | {kind} | "
+                     f"{1 if drawn else round(k, 2):g} | {T['touch']} px, {T['gap']} px | {T['floor']} pt | "
+                     f"{room} |")
+    return (f"## Every panel the room has\n\n"
+            f"Nothing is drawn twice: each panel the room lists is laid out from these artboards for its own "
+            f"screen. Every position and box is scaled to it (Scale); each control then grows to its touch "
+            f"minimum and every word to its type floor, which on a small panel is more than the scale leaves. "
+            f"So for every panel the room lists, leave room here for what grows there:\n\n"
+            f"- **Controls.** *Here* is that panel's touch minimum and gap measured on this canvas: count any "
+            f"button or slider smaller than the first as that size, centred where it is - there it grows to "
+            f"the touch minimum - and keep any two the second apart.\n"
+            f"- **Words.** A label's or caption's box needs *Words* times the width its words take here, and "
+            f"room to be as much taller. Keep copy short, and break help into short lines.\n"
+            f"- **Sets.** Put a set of like controls - sources, presets - in a `Group`: its members share one "
+            f"cell on every panel, and it pages them where they do not fit. The `Rail` stacks its controls at "
+            f"each panel's gap. Loose controls only scale.\n"
+            f"- **Hubs** are one page of main controls beside a rail. Where the seed has no slider, a slider "
+            f"is a level between `-` and `+`, and the rail holds the volume and the buttons the table says; a "
+            f"`Group` shows in a popup in its own box, which the control program shows."
+            + (" The header, footer and side column drawn beside main here are cut from a hub's main, and "
+               "its rail keeps between them; a bar that holds a button is at least the touch minimum deep, "
+               "and the table assumes each one does."
+               if (p.get('layout') or {}).get('bars') == 'controls' else '') + "\n"
+            f"- **Rows**: the panel lays the page's controls out again, in rows.\n\n"
+            f"Set a Page's `preview` to a panel to see an artboard as that panel draws it: a control that "
+            f"collides with its neighbour, or a box its words overflow, is outlined.\n\n"
+            f"| Panels | Screen | Kind | Scale | Touch, gap | Type floor | Here | Words |\n"
+            f"|---|---|---|---|---|---|---|---|\n" + '\n'.join(lines) + '\n\n')
+
+
 def _panels_props(p):
     """The Page's `panels` and `preview` lines, for a system with a per-panel table."""
     ms = models(p)
     if not ms:
         return ''
-    eg = ' '.join(m for m in ('TLP1035T', 'TLP725T', 'TLP525T', 'TLP320M') if m in ms) or p['model']
-    return (f"- `panels`: every panel the room has, by model - `panels=\"{eg}\"`. The first is the panel the "
+    eg = _panels_eg(p, ms)
+    # A panel this system draws either way up is named for its way up too.
+    turned = sorted(m for m in ms if '-' in m)
+    either = (f", and one turned from its own canvas as model-Portrait or model-Landscape - "
+              f"{', '.join(f'`{t}`' for t in turned)}" if turned else '')
+    plain = [t for t in turned if ms[t].get('turned')]
+    if plain:
+        either += (f". Extron draws no template for {', '.join(f'`{t}`' for t in plain)}: each is its "
+                   f"series turned - its main region and rail transposed - on the page colour, with no "
+                   f"background art")
+    return (f"- `panels`: every panel the room has, by model - `panels=\"{eg}\"`{either}. The first is the panel the "
             f"canvas is drawn on; the translator builds one panel for each, each sized for its own screen "
             f"(docs/claude-design.md). The same on every artboard.\n"
             f"- `preview`: one of `panels` to draw this artboard as that panel derives it - its size, its "
             f"background, its main region, every control at that panel's touch minimum and type floor. "
-            f"Design on the first panel, preview the others.\n")
+            f"Design on the first panel, preview the others.\n" + _panels_bars(p))
+
+
+def _panels_bars(p):
+    """How a Page's own bars carry to other panels - for a system that draws
+    them as controls (`layout.bars`). Afterburn's chrome is its background
+    art, and its pages' own children scale whole."""
+    if (p.get('layout') or {}).get('bars') != 'controls':
+        return ''
+    # The hubs off the profile's own table: a series whose main region reaches
+    # its panel's top and bottom - Mach's and Shockwave's 520 and 535,
+    # Turbulence's 520 alone.
+    hubs = sorted(_series_named(p, lambda s: s.get('tier') != 'C' and s.get('main') and s['main'][1] <= 0
+                                and s['main'][1] + s['main'][3] >= s['size'][1]),
+                  key=lambda n: int(n.split()[0]) if n.split()[0].isdigit() else 0)
+    hub = (f" On a hub, whose main area reaches its top and bottom ({_the_series(hubs)}), the header, "
+           f"the footer and a column beside main get bands of their own carved from main, at the panel's "
+           f"scale - the touch minimum deep where they hold a button - and MainArea and the Rail keep to "
+           f"what those bands leave." if hubs else '')
+    return ("- On a large or mid-size panel other than the one drawn, what sits on the Page itself rather "
+            "than in MainArea or the Rail - a bar across the top or bottom, the buttons at its ends, a "
+            "modal's window - keeps to that panel's own bands: a bar drawn edge to edge spans it at its own "
+            "depth, and a button flush with a bar's end and the main area's edge fills that end. Draw bars "
+            f"as the template does, edge to edge.{hub} On a small panel what the Page holds reflows into "
+            "rows.\n")
 
 
 def _panels_main(p):
@@ -693,13 +931,70 @@ def _panels_main(p):
             "panel's type floor, and a control that collides with its neighbour is refused, by name.")
 
 
+def _series_named(p, test):
+    """The profile's series that pass `test`, in its own order, named without
+    the theme: ['520', '300 Portrait']."""
+    return [name[len(p['template']):].strip().removesuffix(' Series')
+            for name, s in (p.get('panels') or {}).items()
+            if not name.startswith('_') and s.get('models') and test(s)]
+
+
+def _the_series(names):
+    """'the 520, 320 and 300 Portrait Series'."""
+    return 'the ' + (names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' and ' + names[-1]) + ' Series'
+
+
 def _panels_rail(p):
     if not models(p):
         return ' Give it a position and size with its own style.'
-    return (" On a Page that lists `panels`, it takes each panel's own rail: beside the main region, or "
-            "below it, running across, on a panel too small to have one beside it (the 320). On a panel "
-            "whose seed cannot build a slider - the 525's, the 320's - a Slider becomes a Level with Up and "
-            "Down buttons, as Extron's own smaller templates draw volume.")
+    # Each from the profile's own table: Afterburn's 320 runs its rail below,
+    # Mach's has none at all.
+    below = _series_named(p, lambda s: s['rail'] and s['rail_axis'] == 'row')
+    none = _series_named(p, lambda s: not s['rail'])
+    level = _series_named(p, lambda s: (s.get('kinds') or {}).get('slider') is False)
+    text = " On a Page that lists `panels`, it takes each panel's own rail: beside the main region"
+    text += (f", or below it, running across, on a panel too small to have one beside it ({_the_series(below)})."
+             if below else '.')
+    if none:
+        one = len(none) == 1
+        text += (f" T{_the_series(none)[1:]} {'draws' if one else 'draw'} no rail band - "
+                 f"{'its template keeps' if one else 'their templates keep'} nothing on screen from page to "
+                 f"page - so a Rail on one of {'its' if one else 'their'} panels is refused: put what it holds "
+                 f"in the main region.")
+    if level:
+        text += (f" On a panel whose seed cannot build a slider - {_the_series(level)} - a Slider in it becomes "
+                 f"a Level with Down and Up buttons at its ends, stacked along the rail, the level taking the "
+                 f"length the rest leave.")
+    return text
+
+
+def _panels_slider(p):
+    """Where a Page's own Slider is a level, from the profile's own table."""
+    level = _series_named(p, lambda s: (s.get('kinds') or {}).get('slider') is False) if models(p) else None
+    if not level:
+        return ''
+    return (f" On a Page that lists `panels`, on a panel whose seed cannot build a slider - "
+            f"{_the_series(level)} - it becomes a Level with Up and Down buttons beside it, one at each end, so "
+            f"the level keeps the slider's length: draw it as long as the volume should read there. Extron's own "
+            f"smaller templates stand Up, Down and Mute beside their volume level, the level the length of the "
+            f"column. Up and Down take the look of the button nearest the slider where that look can draw them. "
+            f"A Slider in a Rail is stacked along it instead (Rail).")
+
+
+def _level_where(p):
+    """Where a Level cannot be built, from the profile's own table: a level is
+    cloned from the panel's seed, and the series whose `kinds` say a slider
+    and no level - the panel each canvas is drawn on among them - have none."""
+    if not models(p):
+        return ''
+    none = _series_named(p, lambda s: (s.get('kinds') or {}).get('level') is False
+                         and (s.get('kinds') or {}).get('slider') is not False)
+    if not none:
+        return ''
+    drawn = ((models(p).get(p['model']) or {}).get('kinds') or {}).get('level') is False
+    return (f" A Level is cloned from the panel's seed, and on {_the_series(none)} the seed carries a slider "
+            f"and no level{' - the panel the canvas is drawn on among them -' if drawn else ','} so a Level "
+            f"drawn for one of those panels is named on the canvas: use a Slider there.")
 
 
 def _panels_group(p):
@@ -836,7 +1131,7 @@ A filled shape behind other controls: a bar, a card, a well. `fill` (default `{p
 """,
         'Line': f"""# Line
 
-A divider. `orientation` (`horizontal`, default, or `vertical`), `color` (default `text-secondary`), `thickness` in px, `name`.
+A divider. `orientation` (`horizontal`, default, or `vertical`), `color` (default `{p['defaults']['line']['color']}`), `thickness` in px, `name`.
 
 ```html
 {_x(p, 'Line', ' name="Divider"', '', 'width: 1200px; height: 2px')}
@@ -844,7 +1139,7 @@ A divider. `orientation` (`horizontal`, default, or `vertical`), `color` (defaul
 """,
         'Slider': f"""# Slider
 
-A control the user drags: volume, a light level. Drawn as {t} builds it: a rounded rail `track` px wide (default {p['defaults']['slider']['track']}) down the middle of the control's box, the rail's filled part in `{p['defaults']['slider']['value']}`, {thumb_words}. The box is the touch area: make it at least as wide as the thumb. `orientation`: the direction the value grows, `{p['defaults']['slider']['orientation']}` by default as {t}'s own volume sliders are (`up`, `down`, `left`, `right`). `fill`: the rail's empty part, default `{p['defaults']['slider']['fill']}` - on a `raised` panel use `page`. `name`, and `does` - what it sets and whether it follows feedback. `value` (0-100) only draws the canvas. The filled part and the thumb come from the template's own slider, so they are not props.
+A control the user drags: volume, a light level. Drawn as {t} builds it: a rounded rail `track` px wide (default {p['defaults']['slider']['track']}) down the middle of the control's box, the rail's filled part in `{p['defaults']['slider']['value']}`, {thumb_words}. The box is the touch area: make it at least as wide as the thumb. `orientation`: the direction the value grows, `{p['defaults']['slider']['orientation']}` by default as {t}'s own volume sliders are (`up`, `down`, `left`, `right`). `fill`: the rail's empty part, default `{p['defaults']['slider']['fill']}` - on a `raised` panel use `page`. `name`, and `does` - what it sets and whether it follows feedback. `value` (0-100) only draws the canvas. The filled part and the thumb come from the template's own slider, so they are not props.{_panels_slider(p)}
 
 ```html
 {_x(p, 'Slider', ' name="Volume" does="Sets program volume; follows the DSP level."', '', f"width: {max(50, sl['thumb'], p['touch'])}px; height: 395px")}
@@ -852,7 +1147,7 @@ A control the user drags: volume, a light level. Drawn as {t} builds it: a round
 """,
         'Level': f"""# Level
 
-A meter the program drives: signal level, a countdown. A rail like Slider's with no thumb, filled in `{p['defaults']['level']['value']}`, and not touchable. `orientation` (default `{p['defaults']['level']['orientation']}`), `track`, `fill`, `name`, `does`.
+A meter the program drives: signal level, a countdown. A rail like Slider's with no thumb, filled in `{p['defaults']['level']['value']}`, and not touchable. `orientation` (default `{p['defaults']['level']['orientation']}`), `track`, `fill`, `name`, `does`.{_level_where(p)}
 
 ```html
 {_x(p, 'Level', ' name="MicLevel" orientation="up" does="Shows the microphone level."', '', 'width: 40px; height: 240px')}
@@ -860,7 +1155,7 @@ A meter the program drives: signal level, a countdown. A rail like Slider's with
 """,
         'Clock': f"""# Clock
 
-The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`), `date` (`MMMM d`), `datetime`, or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `text-secondary`), `name`.
+The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`), `date` (`MMMM d`), `datetime`, or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `{p['defaults']['clock']['color']}`), `name`.
 
 ```html
 {_x(p, 'Clock', ' name="Time"', '', 'width: 200px; height: 40px')}
@@ -1099,20 +1394,24 @@ def readme(p):
     else:
         layout_md = ''
     example = _example(p)
-    return f"""Every artboard on a canvas that uses this system is one page or popup of an Extron {p['model']} touch panel ({w}x{ht}) in Extron's {t} template. The canvas is built into a real GUI Designer project and its control map by Claude Code, so a canvas says two things: how the panel looks, drawn only with these components, and what every control does.
+    drawn = (f"one page or popup of the room's Extron touch panels in Extron's {t} template, drawn at the "
+             f"{p['model']}'s {w}x{ht}" if models(p) else
+             f"one page or popup of an Extron {p['model']} touch panel ({w}x{ht}) in Extron's {t} template")
+    return f"""Every artboard on a canvas that uses this system is {drawn}. The canvas is built into a real GUI Designer project and its control map by Claude Code, so a canvas says two things: how the panel looks, drawn only with these components, and what every control does.
 
 ## Designing a panel
 
 Start from what the panel has to do - the rooms, sources, calls and settings - and give every job a control.
 
-- **One artboard per page or popup.** Its root is one `{ns}.Page`, at {w}x{ht} for a page or a modal popup and {p['popup'][0]}x{p['popup'][1]} for a popup card. Give the artboard file a plain stem (`Home.dc.html`, `Help.dc.html`) and the Page a `name`. Mark the start page `start="true"`.
-- **Only these components are built.** Use {comps} for everything that shows, and `{ns}.MainArea` to place the main task. Flex and grid containers that paint nothing are fine for layout. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
-- **Say what every control does.** A button that shows another page or popup has `nav` - the target artboard's file stem - and becomes a working link in Play. Anything else it does goes in `does`, a plain sentence for the programmer: "Routes the laptop to the display." Labels the program rewrites, sliders and levels get a `does` too.
+- **One artboard per page or popup.** Its root is one `{ns}.Page`, at {w}x{ht} for a page or a modal popup and {p['popup'][0]}x{p['popup'][1]} for a popup card. Name the start page's file `Main.dc.html`, as the canvas names its entry, and every other plainly (`Call.dc.html`, `Help.dc.html`); a `nav` names one by that stem (`nav="Main"`). Give each Page a `name` - what the panel calls it - and mark the start page `start="true"`.
+{_panels_readme(p)}- **Only these components are built.** Use {comps} for everything that shows, and `{ns}.MainArea` to place the main task. Flex and grid containers that paint nothing are fine for layout. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
+- **Say what every control does.** A button that shows another page or popup has `nav` - the target artboard's file stem - and becomes a working link in Play; on the panel the program shows it, as the control map tells the programmer to. Anything else it does goes in `does`, a plain sentence for the programmer: "Routes the laptop to the display." Labels the program rewrites, sliders and levels get a `does` too.
 - **Give feedback with `states`.** A button's `states` are what the program switches it between, in order: `"Off, On"`, or `No Signal / Ready / Live` with each its own look. Every state must look different. `press` is the state shown while it is held.
-- **Popups.** A standard popup (`kind="popup"`, with a `group`) appears where a page has a `PopupRegion` for that group. A modal popup (`kind="modal"`) shows the page beneath, dimmed; put its card inside as a `Panel` and its buttons on the card, with a Close that returns to the page. Help, a confirmation, and a set of controls opened from a page - lighting, audio, camera select, presets - are modals, as {p['template']}'s own templates draw them; a page flip is for a mode of the room, such as a call or one source's controls. Whether an action asks for confirmation at all is the designer's choice, not a rule.
-- **A page the program opens by itself**, like an incoming call, has `reached-by="program"`. Every other page must be reachable by `nav` from the start page.
+- **Popups.** A standard popup (`kind="popup"`, with a `group`) appears where a page has a `PopupRegion` for that group. A modal popup (`kind="modal"`) shows the page beneath, dimmed; put its card inside as a `Panel` and its buttons on the card, with a Close: `nav` back to the page that opens it, or, where more than one page opens it, no `nav` and `does="Closes this popup."` - the program hides it and the page beneath shows again. Help, a confirmation, and a set of controls opened from a page - lighting, audio, camera select, presets - are modals, as {p['template']}'s own templates draw them; a page flip is for a mode of the room, such as a call or one source's controls. Whether an action asks for confirmation at all is the designer's choice, not a rule.
+- **A page the program opens by itself**, like an incoming call, has `reached-by="program"`; a button may lead to it as well. Every other page must be reachable by `nav` from the start page.
+- **A control on several pages** - Volume on Home and on Call - is a control on each, with an ID of its own. To make it one control to the program, give every copy the same `id`, a number under 1000 of your own (`id="101"`), and the same kind, `nav`, `does` and `states`: copies that do different things - Join Call opening the call page on Home and joining on Call - keep IDs of their own.
 
-{layout_md}{themes_md}## Visual foundations
+{layout_md}{_panels_section(p)}{themes_md}## Visual foundations
 
 - **Color.** Use the tokens by name, each for what its note says. {p['examples']['color_rule']} Extron caps a project at **six colors** (Design Standards p.49), captions included: pick six and keep to them.
 - **Type** is {p['font']['family']}. Sizes are points, drawn at {p['pt']} px per point as GUI Designer draws them: {type_line}. Nothing under 14 pt.
@@ -1130,6 +1429,10 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 ```html
 {example}
 ```
+
+## Consuming this system
+
+The components are `window.{ns}` - `{ns}.Page`, `{ns}.Button` and the rest - each mounted with `<x-import component-from-global-scope="{ns}.Button">`. Install the system on the canvas, then load in each artboard's `<head>`, after the `support.js` line, `components/bundle.css` and then `components/bundle.js` from the installed copy (`ds/<folder>/components/`). Each component's props, with an example, are in `components/<Name>/README.md`. The type is {p['font']['family']}, from Google Fonts: `<link rel="stylesheet" href="{p['font']['google']}">` in each artboard's `<helmet>`.
 """
 
 
@@ -1145,8 +1448,10 @@ def _example(p):
     inner = [
         _x(p, 'Label', ' name="RoomName" type="title" align="center"', 'Huddle Room',
            'position: absolute; left: 0px; top: 90px; width: 100%; height: 100px'),
+        # At the foot of the main region, 16 px up: 696 px down was inside
+        # Afterburn's 752 and below every bar theme's main region.
         _x(p, 'Clock', ' name="Date" format="date"', '',
-           'position: absolute; left: 17px; top: 696px; width: 360px; height: 40px'),
+           f"position: absolute; left: 17px; top: {p['layout']['main'][3] - 56}px; width: 360px; height: 40px"),
     ]
     # A source sits in the main region unless the template puts its sources
     # elsewhere: Shockwave's are tabs across the header, placed on the page.

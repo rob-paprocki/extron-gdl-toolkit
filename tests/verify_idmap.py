@@ -2,9 +2,10 @@
 
 An ID map and a panel generated from one spec agree by construction - until
 Build gets a say. Build renumbers pages (a page authored as 1000 comes back as
-51), keeps the donor's pages alongside the generated ones, and places the
-references that decide where a popup can appear. A programmer works from the
-map, so every ID and name in it is checked against the built file.
+51) and places the references that decide where a popup can appear, and a spec
+that keeps the donor's pages (`keep_donor_pages`) has them alongside its own. A
+programmer works from the map, so every ID and name in it is checked against
+the built file.
 
     python tests/verify_idmap.py <idmap_dir> <built.gdl>
 
@@ -111,7 +112,7 @@ def check_layout(idmap_dir, j, panel=None):
         m = json.load(fh)
     if m.get('panels'):
         if not panel:
-            raise ValueError('a map of every panel - name the panel this build is (--panel MODEL): '
+            raise ValueError('a map of every panel - name the panel this build is (--panel PANEL): '
                              + ', '.join(p['model'] for p in m['panels']))
         m = panel_view(m, panel)
     problems, notes, checked = [], [], 0
@@ -205,7 +206,7 @@ def main(argv):
         argv = argv[:i] + argv[i + 2:]
     if len(argv) != 3:
         print(__doc__.strip().splitlines()[0])
-        print('usage: verify_idmap.py <idmap_dir> <built.gdl> [--panel MODEL]')
+        print('usage: verify_idmap.py <idmap_dir> <built.gdl> [--panel PANEL]')
         return 2
     problems, notes, checked = check(argv[1], argv[2], panel)
     for n in notes:

@@ -14,11 +14,15 @@ opening GUI Designer.**
   live captions, translucent fills, a held button - is read off the file, not
   seen.
 - Also proven: Arial recovery, font application, UTF-8 specs, multi-page panels,
-  clean-room authoring, retarget from a seed (650/650), popup canvases that keep
-  their own size, and button feedback with any number of named states - authored
-  from a spec, or edited state by state on an existing panel.
+  a real-size panel of 23 pages (`docs/from-scratch.md` §5c), clean-room
+  authoring, retarget from a seed (650/650), popup canvases that keep their own
+  size, and button feedback with any number of named states - authored from a
+  spec, or edited state by state on an existing panel.
 - **Designed in Claude Design**: a canvas drawn with an Extron template's
   design system translates to a spec and builds (`docs/claude-design.md`).
+  From prose: one conference-room brief, given to a fresh designer per theme
+  with only the design system, built and verified on the TLP1035T in all four
+  themes, and on the 525 beside it in Afterburn (§6).
 - **What the controls do**, from the same spec: `gdl.idmap` checks the page
   flips and writes the programmer's ID map, verified against the built panel
   (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
@@ -33,94 +37,63 @@ opening GUI Designer.**
    `powershell/New-GdlSeed.ps1` clicks through GUI Designer's Project Create
    Wizard, which draws nothing in a locked or disconnected session, so the
    script refuses rather than click blind. Sign in at the console, or keep a
-   Remote Desktop window open and restored, for the run - about two minutes a
-   seed, with its build. Next needed when a theme's phase starts (item 5).
-2. **Say whether any client is still on GUI Designer 1.27.** What this toolkit
-   writes is stamped for 1.28 and has never been opened in 1.27 (*Backlog*).
-   If a client is, a 1.27 install to test against is the next step; if none
-   is, that Backlog item can go.
+   Remote Desktop window open and restored, for the run - from two minutes to
+   over twenty a seed, with its build (`docs/from-scratch.md` §7). Next needed
+   when a job needs a panel `seeds/README.md` lists as a gap.
 
 ## Mine, in order
 
-1. **Both orientations as targets.** Every `MODELS_FULL` entry holds one
-   orientation, where a built project's `Platform.SupportedResolutions` - the
-   ground truth - lists both for the 300M (320x480 and 480x320) and for the
-   835M and 1035M (1280x800 and 800x1280; `docs/design-rules.md` §1). So
-   `retarget` cannot make a portrait 835 or 1035 or a landscape 300M, and no
-   model reaches Afterburn's 300 Landscape series: `gdl.templates.template_for`
-   matches the model's one size, so the 300M (320x480) takes the Portrait
-   series, and the Landscape series' entry in `gdl/designsys/afterburn.json` has
-   no models and no seed, though `seeds/Afterburn 300M Landscape.gdl` exists.
-   The touch check and the corpus audit know the 300M both ways
-   (`gdl.spec.sizes`); the model table, the template match and the seed map do
-   not.
-2. **Fonts: declared is not carried.** `gdl.fonts` follows `layout.json`, which
-   does not always match what a project carries: a seed can declare Arial Black
-   and define no resource for it (`seeds/README.md` has which), or declare
-   `arial.ttf` twice with one of the two embedded (`gdl/fonts/README.md` has
-   which). `tests/audit_corpus.py` reports the first as a FAIL and cannot see
-   the second: `extract()` keys results by file name, so a declaration that
-   matches nothing hides behind one that does. GUI Designer adds Arial Black
-   when it builds: `archive/job-9fe2c865/tmp/rt/` holds a seed with no
-   resource for it and its build with one. Reading each `PBFontResource`'s own
-   `dataField` recovers what a project carries, from a `.glt` as well. A face a
-   seed has no resource for is still one a spec cannot ask for there - the
-   applier cannot add one (`seeds/README.md` has which seeds define which).
-3. **Run the bug hunt** (`workflows/gdl-bug-hunt.js`) on a host with enough
+1. **Run the bug hunt** (`workflows/gdl-bug-hunt.js`) on a host with enough
    commit limit for the fan-out. `tests/audit_corpus.py` has done the cheap deterministic
    part; the workflow is for the judgment-heavy dimensions: collection traps,
    dead guards, silent no-ops, plan-contract drift, verifier blind spots,
    fields a clone inherits, what is secretly Afterburn-only, layout-math edges.
-4. **A real-size panel.** Nothing generated has exceeded three pages; the client
-   project has 27. A 20+ page spec with navigation, popups shared across pages
-   and per-page popup references is where the next class of bug lives. With `nav`
-   the page flow is part of the spec, and `verify_idmap.py` checks it against
-   the build.
-5. **Claude Design as the front end: every panel.** Afterburn's design system
+2. **What a real-size build spends its time on.** `examples/boardroom-full.json`,
+   23 pages, builds and verifies, but Save and Build's time varied threefold
+   over runs of the same spec on one host, and dropping the donor's pages did
+   not decide it - though they are nearly all of a one-page panel's build
+   (`docs/from-scratch.md` §5c has the runs). Where Build's time
+   goes - per page, per control, per state, per resource, or what else on the
+   machine - is not measured, and a designer iterating on a real panel pays it
+   for each change. Those runs were made with GUI Designer in feature-flag mode,
+   and one seed shows how much the host's state can matter: the Afterburn 725
+   took 168 s, and 935 s made again in that mode with other work on the host
+   (`docs/from-scratch.md` §7). Measure with the mode off, on a quiet host,
+   with and without real-time scanning of the files a build writes, first.
+3. **Claude Design as the front end: every panel.** Afterburn's design system
    builds one canvas for every panel a room has, each sized for its physical
    screen - proven on the TLP Pro 1035, 725, 525 and 320 (`docs/claude-design.md`
-   §4 and §6). Mach, Shockwave and Turbulence are design systems for the
-   1280×800 TLP Pro 1025/1035 only. Each next needs:
-   - **Its per-series table, measured another way.** `tests/measure_series.py`
-     finds a series' main region in the opaque body of Afterburn's background
-     art, and these themes have none to find: it prints `main None rail None`
-     for every one of their series, because their pages name backgrounds it
-     cannot read as kit art (`mach-bg-02.png`, `SW_bkgd_01.png`, `bkgd_pc.png`)
-     and draw their bars, wells and rails as controls. Their regions come off
-     each series template's own controls.
-   - **Proof on two panels:** the 1035 and one smaller, a 725 or a 525. That
-     needs one small seed, not three - Mach has a 300M Portrait seed and no 725
-     or 525, Shockwave and Turbulence no small seed at all.
-   - **Seeds at the other sizes**, as a theme's series need them, made with
-     `New-GdlSeed.ps1`, which needs the connected desktop (*Yours*). 800x480 is
-     two series in all three themes - the 520, tier B, and the 720, tier A, which
-     take different layouts - where Afterburn has only the 520.
+   §4 and §6). Mach, Shockwave and Turbulence list every panel too - main
+   region and rail read off each template's own controls, since they lay their
+   bars, wells and rails as controls over photographs - with a seed for every
+   series they draw (`seeds/README.md`), and each theme's huddle is built on
+   the 1035, 725, 1525 and 720 and on its hubs - the 525, and Mach's and
+   Shockwave's 535 - against one ID map (§6). What is left, first, is **their
+   hubs from a real designer's canvas**: the huddles there were drawn with the
+   hub in mind, and the prose-in conference rooms (§6) are refused on the 525
+   for the derivation's own faults (§7) - a Group in a modal, a paged Group's
+   Previous and Next over its members, a band's grown controls off the screen.
+   Then **their 320s**.
+   The huddle canvases are refused there, by name (§7): the page's controls,
+   stacked in rows, need 285-482 px of its 240. Next: a rule for what a bar
+   theme's page becomes on a screen that holds a few rows. Extron's own Mach
+   320 spreads a room over twelve pages, each source a page of its own under
+   a 36 px title strip, with volume a level in a popup.
+   800x480 is two series in all three themes - the 520, tier B, and the 720,
+   tier A, which take different layouts - where Afterburn has only the 520.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
    A native-size seed beats a retarget, which matches Extron's own hand layout
    for only 22% of controls. The other gaps in `seeds/README.md` (Teams Rooms,
-   Zoom Rooms, 1366x768, 1280x720) wait for a job that needs one.
-6. **Icon-font glyphs in the spec vocabulary.** Kit images are in it - a
-   button's `image`, on itself or per state, which is how the Claude Design
-   systems draw icons - but the other proven route, font glyphs (~339 icons, no
-   image resource), still cannot be written in a spec.
-7. **Pick the seed automatically** - `gdl.spec donors --auto` choosing from
-   `seeds/` by theme and canvas, so a prose brief needs no file path.
-8. **Theme-portable borders.** No border resource is defined by every project
-   in the corpus. A spec that says `rounded` or `capsule` should resolve to
-   whatever the donor's family calls it.
-9. **Close `verify_built.py`'s remaining blind spots**: text alignment, donor
-   controls that ride along on a generated page unasked, and one volume-level
-   icon built in place of the next - at 64 px they differ by one thin wave, 7%
-   of the inked pixels, under the image check's 25%.
-10. **Retire the client fixtures.** `fixtures/` is a real client's project,
-    in the archive only, and the builds in `archive/gdlwork/` made with it as
-    the donor carry the same material (`archive/README.md` *Sensitivity*). The
-    render baseline is scored against the fixtures' snapshot exports, so they
-    go last: first a synthetic fixture with the same reach (many pages, every
-    control type the renderer scores) and GUI Designer's snapshot exports of
-    it, and a new `tests/baseline.json` from `tests/score.py` - which also gives
-    the public copy a render baseline; then delete them. The examples and CI
-    already run on a seed.
+   Zoom Rooms, Afterburn's 1520 and 535) wait for a job that needs one.
+4. **Retire the client fixtures.** `fixtures/` is a real client's project,
+   in the archive only, and the builds in `archive/gdlwork/` made with it as
+   the donor carry the same material (`archive/README.md` *Sensitivity*). The
+   render baseline is scored against the fixtures' snapshot exports, so they
+   go last: first a synthetic fixture with the same reach (many pages, every
+   control type the renderer scores) and GUI Designer's snapshot exports of
+   it, and a new `tests/baseline.json` from `tests/score.py` - which also gives
+   the public copy a render baseline; then delete them. The examples and CI
+   already run on a seed.
 
 ## Backlog - real, not urgent
 
@@ -140,9 +113,12 @@ opening GUI Designer.**
 - **Behavior the format carries but the spec cannot yet say:** the Offline Page
   and its enable flag, and a popup's auto-hide timeout (0 on every popup in the
   corpus). Both are applier work.
-- **An ID map for an existing panel.** `gdl.idmap` reads a spec; a client
-  project that was never a spec has none, though its built `layout.json` holds
-  every ID, type, page and caption a map needs.
+- **A seed of a panel's other form.** `seeds/` holds one form per size - the
+  725T, 525T, 320M, 1535M - so a TLP725M, 725C, 525M, 525C, 320C or 1535T spec
+  has no seed, and is refused the other form's rather than built as it
+  (`seeds/README.md`). `gdl.seeds pick` prints the `New-GdlSeed.ps1` line for
+  the form's own (`Afterburn TLP725M.gdl`); none has been made, so the wizard's
+  name for each form's panel type, as `seeds.panel_type()` spells it, is unproven.
 - `docs/from-scratch.md` §6: control-ID uniqueness and `referenceCountField`
   (question 6) are untested; an out-of-corpus border radius/thickness *builds*
   but was never checked to *rasterize* correctly; preview fidelity on a fully
@@ -153,8 +129,12 @@ opening GUI Designer.**
   difference in `gdl.design compare`. Open Sans Bold is Apache 2.0 like the
   others; adding it is a render change, so it needs `tests/score.py` before and
   after.
-- `gdl.fonts` cannot extract from a `.glt`: no `layout.json`, so no declared
-  sizes.
+- **`gdl.compose` draws a face in the build it finds, not the panel's.** A face
+  is resolved by family, so a panel on the Afterburn 320, 525, 725 or 300M
+  Portrait seed previews its icons in the kit's Extron-Afterburn, 6% of an em
+  lower than the build it embeds draws them (`docs/design-rules.md` §6).
+  Drawing each panel's own needs the face its project carries
+  (`gdl.fonts.carried`), which the compositor does not read.
 - **A horizontal slider in a template whose thumb is not square** (Shockwave's,
   52 across and 34 along). The spec turns the thumb's box as the canvas does, as
   Build keeps width and height literal: the Zoom Rooms seeds' two horizontal
@@ -169,9 +149,10 @@ opening GUI Designer.**
   the page's groups share, switched by a rail of group buttons - needs the Page
   to lay its groups out together; a page with several groups shows them all,
   each paged, until then.
-- **A left `Rail`.** A canvas has one Rail, the right one; side controls on the
-  left are mapped with the page, and on a panel with no room beside its main
-  region they are refused, by name.
+- **A left `Rail`.** A canvas has one Rail, the right one. Side controls on the
+  left are the Page's own - through the left band where the template draws
+  its bars as controls, with the page otherwise - and on a panel with no room
+  beside its main region they are refused, by name.
 - **An icon on a group's button.** On a small panel a Group becomes one button
   that opens its pages; it carries the group's title, and no icon yet.
 - **Smaller gaps in translating for every panel**, each found in review and
@@ -200,10 +181,6 @@ opening GUI Designer.**
   `New-FormatProbes.ps1` has been re-run on 1.28.0.7 and all three still author,
   open and build, but the Build Manager's own 0-errors/0-warnings readout was not
   re-read — only the resulting files were checked.
-- **The 1.28-written `.gdl` has not been opened in 1.27.** Output is now stamped
-  `Layout.Contracts 5.6.0.0`, so files this toolkit writes are probably not
-  backward-compatible; 1.27 was uninstalled by the upgrade, so it is untested
-  either way. Matters only if a client is still on the old version.
 - **A family whose own name ends in Regular, Bold or Italic** - Arial Rounded
   MT Bold, Britannic Bold - reads as its sibling (`Arial Rounded MT`):
   `font_resource_names()` and `Set-GdlFont` strip every trailing style word

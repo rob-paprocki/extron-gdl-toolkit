@@ -11,7 +11,11 @@ For every panel series of the theme (gdl.templates), it reads:
   * the kit's background PNG for each of the four themes: the main region is the
     art's opaque body (alpha 255), mapped onto the canvas the way the page draws
     it - no control draws Afterburn's squircle, the background image does;
-  * every seed of the theme in seeds/ (by part number): which control kinds it
+  * where no art draws one - Mach, Shockwave and Turbulence lay their bars,
+    wells and rails as controls over photographs with no alpha - the main region
+    and rail off the template's own Main* pages instead (control_regions);
+  * every seed of the theme in seeds/ (by part number and canvas - both 300M
+    seeds are one part, either way up): which control kinds it
     can clone (a seed with no PBSlider cannot author a slider) and which of the
     profile's border resources it lacks, each mapped to the seed's own of the
     same thickness and nearest radius.
@@ -22,9 +26,12 @@ every template and seed. The output is what gdl/designsys/<theme>.json's
 """
 import collections
 import glob
+import hashlib
+import io
 import json
 import os
 import re
+import struct
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -65,6 +72,110 @@ def kit_files(theme):
     return root, out
 
 
+# -- backgrounds by theme --------------------------------------------------------------
+# Mach's, Shockwave's and Turbulence's kits name their art otherwise -
+# '5472x3648_mach-bg-02.png', '1280x800 bkgd.png', 'bkgd_pc.png' - and their
+# templates often otherwise again - 'mach_bg_02.png', 'SW_bkgd_01.png' - so a
+# file is known by its stem: the name less any size prefix, its separators one.
+_SIZED = re.compile(r'^(\d+)x(\d+)[ _-]+(.+)$')
+
+
+def _stem(name):
+    base = os.path.basename(name or '').lower()
+    m = _SIZED.match(base)
+    return re.sub(r'[ _-]+', '-', m.group(3) if m else base)
+
+
+def _kit_size(name):
+    m = _SIZED.match(os.path.basename(name))
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def kit_pngs(theme):
+    """Every PNG of the theme's kit, relative to its resource root - the paths
+    spec.resolve_image takes - the first root's where two have one."""
+    out = {}
+    for root in spec.RESOURCE_ROOTS:
+        for f in glob.glob(os.path.join(root, theme, '**', '*.png'), recursive=True):
+            out.setdefault(os.path.relpath(f, root).replace('\\', '/').lower(),
+                           os.path.relpath(f, root).replace('\\', '/'))
+    return sorted(out.values())
+
+
+def template_art(p, resource):
+    """The PNG a template's image resource holds - System.Drawing.Bitmap's Data
+    is the file itself - or None."""
+    for r in p.instances('PBImageResource'):
+        if p.field(r, 'nameField') == resource:
+            data = p.deref((p.field(r, 'dataField') or {}).get('Data'))
+            return bytes(data) if data else None
+    return None
+
+
+def _png_size(path):
+    with open(path, 'rb') as fh:
+        head = fh.read(24)
+    return struct.unpack('>II', head[16:24]) if head[:8] == b'\x89PNG\r\n\x1a\n' and len(head) == 24 else None
+
+
+def own_art(data, files, digests=None):
+    """The kit files - {kit path: file on disk} - that hold the PNG `data`'s
+    pixels exactly: a template's art, which a seed made from the template
+    carries under the template's own name. The applier reuses a seed's image
+    only where name and pixels agree (Add-GdlImageResource), so these alone
+    may take that name. Only a file of the art's size, read off its PNG header,
+    is decoded; `digests` keeps each decoded file's across calls."""
+    from PIL import Image
+    Image.MAX_IMAGE_PIXELS = None
+    digests = {} if digests is None else digests
+
+    def digest(im):
+        return hashlib.sha256(im.convert('RGBA').tobytes()).hexdigest()
+    with Image.open(io.BytesIO(data)) as im:
+        size, want = im.size, digest(im)
+    out = set()
+    for k, f in files.items():
+        if not f or _png_size(f) != size:
+            continue
+        if f not in digests:
+            with Image.open(f) as im:
+                digests[f] = digest(im)
+        if digests[f] == want:
+            out.add(k)
+    return out
+
+
+def theme_backgrounds(profile, size, resource, kit, own=()):
+    """{theme id: {'image', 'file'}} for a series at `size` whose main page draws
+    `resource`: each of the profile's themes, as the kit file of the template's
+    own art where the kit has it - `own`, the files that are that art pixel for
+    pixel (own_art) - else of the theme's art at the series' size, else at the
+    nearest shape - of two that shape, the larger - and a theme the kit has no
+    art for left out. Only the template's own art takes the template's name,
+    which its seed carries with those pixels, so the applier reuses the seed's
+    copy; any other file goes by its kit name, and the applier appends it
+    unless the seed has that name with those pixels."""
+    import math
+    w, h = size
+    out = {}
+    for t in (profile or {}).get('themes', []):
+        same = [k for k in kit if _stem(k) == _stem(t.get('file'))]
+        if not same:
+            continue
+        mine = sorted(k for k in same if k in own)
+        if mine:
+            out[t['id']] = {'image': resource, 'file': mine[0]}
+            continue
+        sized = [k for k in same if _kit_size(k)]
+
+        def off(k):
+            kw, kh = _kit_size(k)
+            return (_kit_size(k) != (w, h), abs(math.log((kw / kh) / (w / h))), -kw * kh, k)
+        f = min(sized, key=off) if sized else same[0]
+        out[t['id']] = {'image': os.path.basename(f), 'file': f}
+    return out
+
+
 def resource_parts(name):
     """A template's background resource name -> (size, bg number, variant)."""
     m = _KIT.match(name or '')
@@ -96,6 +207,16 @@ def to_canvas(box, img, canvas, layout):
     return [round(ox + x0 * sx), round(oy + y0 * sy), round((x1 - x0) * sx), round((y1 - y0) * sy)]
 
 
+def art_main(box, img, canvas, layout):
+    """The main region the art draws: its opaque body mapped onto the canvas -
+    or None where it draws none, having no body or one that is the whole
+    picture. Mach's, Shockwave's and Turbulence's photographs are opaque
+    throughout and say nothing of where a page's content goes."""
+    if not box or tuple(box) == (0, 0, img[0], img[1]):
+        return None
+    return to_canvas(box, img, canvas, layout)
+
+
 def main_page(p, pages):
     """The page whose art a working page shows: the most-used background among
     pages named Main*, else among all pages."""
@@ -111,6 +232,232 @@ def main_page(p, pages):
     pool = named or [pg for pg in pages if pg['kind'] == 'page']
     counts = collections.Counter(bg(pg) for pg in pool if bg(pg)[0])
     return counts.most_common(1)[0][0] if counts else (None, 'fill')
+
+
+# -- regions from controls -----------------------------------------------------------
+# Mach, Shockwave and Turbulence lay their bars, wells and rails as controls over
+# photographs with no alpha, so there is no art body to measure. One rule reads
+# them off every theme's template: the themes differ only in which evidence they
+# carry - Mach end caps, Shockwave a well and a footer capsule standing off the
+# bottom, Turbulence side bars and a popup window filling what they leave, the
+# 520 and 535 hubs a side bar and a popup over their title strip. On Afterburn's
+# templates its main region's sides come within 13 px of the art's - 25 on the
+# 1230's left, where a 160 px column stops short of the squircle - and its top and
+# bottom up to 24 px outside, margins only the art draws; so Afterburn keeps its
+# art.
+#
+# Each constant was swept alone over the four themes' series templates. The
+# regions held for TOL 3-4 (at 2 the Turbulence 1520's bars, 3 px short of the
+# canvas, miss; from 5, Afterburn's labels 5 px off the edge read as touching),
+# RUN 0.5-0.999, HUG 0.03-0.14, BARGAP 0.025-0.2, NARROW 0.15-0.4, WELL 0.05-0.5,
+# SNAP 0.82-0.98 and CROSS 0.05-0.7.
+TOL = 4          # px within which a side touches an edge
+RUN = 0.9        # of an edge a bar's controls cover
+HUG = 0.03       # of the canvas a loose column or row stands off its edge, at most
+BARGAP = 0.05    # of the height a floating bar stands off its edge, at most
+NARROW = 0.2     # of the width a side bar or column is, at most
+WELL = 0.25      # of the canvas a well covers, at least
+SNAP = 0.9       # of the free canvas a popup window covers to be main
+CROSS = 0.5      # of the rail's width a bar covers to end the rail
+SURFACES = ('PBShape', 'PBImage')
+
+
+def _inside(a, b):
+    return (a[0] >= b[0] - TOL and a[1] >= b[1] - TOL and a[0] + a[2] <= b[0] + b[2] + TOL
+            and a[1] + a[3] <= b[1] + b[3] + TOL)
+
+
+def _inter(a, b):
+    x0, y0 = max(a[0], b[0]), max(a[1], b[1])
+    x1, y1 = min(a[0] + a[2], b[0] + b[2]), min(a[1] + a[3], b[1] + b[3])
+    return [x0, y0, x1 - x0, y1 - y0] if x1 > x0 and y1 > y0 else None
+
+
+def _area(r):
+    return r[2] * r[3] if r else 0
+
+
+def _covered(spans, lo, hi):
+    """How much of [lo, hi] the spans cover, bridging gaps of TOL or less."""
+    total, cur = 0, None
+    for a, b in sorted((max(a, lo), min(b, hi)) for a, b in spans if min(b, hi) > max(a, lo)):
+        if cur and a <= cur[1] + TOL:
+            cur[1] = max(cur[1], b)
+        else:
+            total += cur[1] - cur[0] if cur else 0
+            cur = [a, b]
+    return total + (cur[1] - cur[0] if cur else 0)
+
+
+def _surface(c):
+    # A label with a fill paints as a shape does.
+    return c['type'] in SURFACES or (c['type'] == 'PBLabel' and c['fill'])
+
+
+def page_bands(page, size):
+    """One working page's bands: where main's sides are on it - L, R, T, B, or
+    0, W, 0, H where no band stands - its standard popup's window, its well,
+    and the x-extents of its top and bottom bars' members."""
+    W, H = size
+    full = lambda r: r[0] <= TOL and r[1] <= TOL and r[0] + r[2] >= W - TOL and r[1] + r[3] >= H - TOL
+    # Build adds a full-canvas reference per modal popup; the others place the
+    # page's popups, and the largest is the standard popup's window.
+    refs = [c['rect'] for c in page['controls'] if c['type'] == 'PBPopupPageReference' and not full(c['rect'])]
+    ctl = [c for c in page['controls'] if c['type'] != 'PBPopupPageReference']
+    window = max(refs, key=_area) if refs else None
+    # Side bars: tall, narrow surfaces on a side (Turbulence, the hubs' menus).
+    bars = {'left': [], 'right': []}
+    for c in ctl:
+        x, _, w, h = c['rect']
+        if _surface(c) and h >= H / 2 and w <= NARROW * W:
+            if x <= TOL:
+                bars['left'].append(c['rect'])
+            elif x + w >= W - TOL:
+                bars['right'].append(c['rect'])
+    lo = max([r[0] + r[2] for r in bars['left']] or [0])
+    hi = min([r[0] for r in bars['right']] or [W])
+    in_bar = lambda r: any(_inside(r, b) for b in bars['left'] + bars['right'])
+    # Top and bottom bars: the controls on the edge, covering it between the
+    # side bars - a header of shapes and source tabs counts as one.
+    edges = {}
+    for edge in ('top', 'bottom'):
+        gap = (lambda r: r[1]) if edge == 'top' else (lambda r: H - (r[1] + r[3]))
+        members = [c['rect'] for c in ctl if c['rect'][3] < H / 2 and not in_bar(c['rect']) and gap(c['rect']) <= TOL]
+        depth = None
+        if members and _covered([(r[0], r[0] + r[2]) for r in members], lo, hi) >= RUN * (hi - lo):
+            depth = max(r[1] + r[3] for r in members) if edge == 'top' else min(r[1] for r in members)
+        else:
+            # A bar standing a little off the edge: Shockwave's footer capsule.
+            # Its band runs from it to the edge and holds what lies there.
+            floating = [c['rect'] for c in ctl if _surface(c) and c['rect'][2] >= W / 2 and c['rect'][3] < H / 2
+                        and TOL < gap(c['rect']) <= BARGAP * H]
+            if floating:
+                depth = max(r[1] + r[3] for r in floating) if edge == 'top' else min(r[1] for r in floating)
+                members = [c['rect'] for c in ctl if not in_bar(c['rect']) and (
+                    c['rect'][1] + c['rect'][3] <= depth + TOL if edge == 'top' else c['rect'][1] >= depth - TOL)]
+        if depth is None:
+            continue
+        band = [lo, 0, hi - lo, depth] if edge == 'top' else [lo, depth, hi - lo, H - depth]
+        # A bar the page's own standard popup is placed over is main, not
+        # chrome: the hubs' title strips.
+        if window and _area(_inter(window, band)) >= 0.5 * _area(band):
+            continue
+        edges[edge] = {'depth': depth, 'members': members}
+    member = [r for e in edges.values() for r in e['members']]
+    loose = [c['rect'] for c in ctl if c['rect'] not in member]
+    # Side bands: a side bar; else the narrowest end cap of a bar (Mach's footer
+    # buttons are as wide as its columns' bands); else controls flush with the
+    # side; else a column standing a little off it, centred in its band.
+    side = {}
+    for s in ('left', 'right'):
+        if bars[s]:
+            side[s] = lo if s == 'left' else hi
+            continue
+        near = (lambda r: r[0]) if s == 'left' else (lambda r: W - (r[0] + r[2]))
+        caps = [r for r in member if near(r) <= TOL and r[2] < W / 2
+                and not any(o != r and _inside(r, o) for o in member)]
+        flush = [r for r in loose if near(r) <= TOL and r[2] <= NARROW * W]
+        column = [r for r in loose if near(r) <= HUG * W and r[2] <= NARROW * W]
+        if caps:
+            side[s] = min(r[0] + r[2] for r in caps) if s == 'left' else max(r[0] for r in caps)
+        elif flush:
+            side[s] = max(r[0] + r[2] for r in flush) if s == 'left' else min(r[0] for r in flush)
+        elif column:
+            m = min(near(r) for r in column)
+            side[s] = max(r[0] + r[2] for r in column) + m if s == 'left' else min(r[0] for r in column) - m
+        else:
+            side[s] = 0 if s == 'left' else W
+    top = edges['top']['depth'] if 'top' in edges else 0
+    bottom = edges['bottom']['depth'] if 'bottom' in edges else H
+    # A row of controls hugging the bottom where nothing stands beside main: the
+    # tier C panels' rail.
+    if 'bottom' not in edges and side['right'] >= W:
+        row = [r for r in loose if H - (r[1] + r[3]) <= HUG * H and r[3] <= NARROW * H]
+        if row:
+            bottom = min(r[1] for r in row) - min(H - (r[1] + r[3]) for r in row)
+    # A well: a shape inside the canvas covering a quarter of it (Shockwave).
+    wells = [c['rect'] for c in ctl if c['type'] == 'PBShape' and c['rect'][0] > TOL and c['rect'][1] > TOL
+             and c['rect'][0] + c['rect'][2] < W - TOL and c['rect'][1] + c['rect'][3] < H - TOL
+             and _area(c['rect']) >= WELL * W * H]
+    return {'L': side['left'], 'R': side['right'], 'T': top, 'B': bottom, 'window': window,
+            'well': max(wells, key=_area) if wells else None,
+            'spans': {e: [(r[0], r[0] + r[2]) for r in v['members']] for e, v in edges.items()}}
+
+
+def _mode(values, prefer):
+    counts = collections.Counter(values)
+    most = max(counts.values())
+    return prefer(v for v, n in counts.items() if n == most)
+
+
+def control_regions(pages, size):
+    """{'main', 'rail', 'rail_axis'} off a series' pages, as gdl.project's
+    Project.pages() yields them: each working page's bands (page_bands), the
+    most common across them."""
+    W, H = size
+    named = [pg for pg in pages if pg['name']]
+    work = ([pg for pg in named if pg['kind'] == 'page' and pg['name'].startswith('Main')]
+            or [pg for pg in named if pg['kind'] == 'page'])
+    facts = [page_bands(pg, size) for pg in work]
+    if not facts:
+        return {'main': [0, 0, W, H], 'rail': None, 'rail_axis': None}
+    # A tie goes to more chrome: a page's band is never less than drawn.
+    L = _mode([f['L'] for f in facts], max)
+    R = _mode([f['R'] for f in facts], min)
+    T = _mode([f['T'] for f in facts], max)
+    B = _mode([f['B'] for f in facts], min)
+    free = [L, T, R - L, B - T]
+    main = free
+    wells = collections.Counter(tuple(f['well']) for f in facts if f['well'])
+    windows = collections.Counter(tuple(f['window']) for f in facts if f['window'])
+    if wells and wells.most_common(1)[0][1] >= 0.5 * len(facts):
+        main = list(wells.most_common(1)[0][0])
+    elif windows:
+        # A popup window filling the free canvas is main (Turbulence's sit a few
+        # px inside its bars); one that leaves a fifth of it is not (Mach's).
+        snap = _inter(list(windows.most_common(1)[0][0]), free)
+        if snap and _area(snap) >= SNAP * _area(free):
+            main = snap
+    # The rail starts at the right band where that is past main's edge (a
+    # window inside its bars), and runs between the bars that cross it.
+    right = max(main[0] + main[2], R) if R < W else main[0] + main[2]
+    bottom = max(main[1] + main[3], B) if B < H else main[1] + main[3]
+    if right < W - TOL:
+        def crosses(edge):
+            hits = sum(1 for f in facts if f['spans'].get(edge)
+                       and _covered(f['spans'][edge], right, W) >= CROSS * (W - right))
+            return hits >= 0.5 * len(facts)
+        y0 = T if T and crosses('top') else 0
+        y1 = B if B < H and crosses('bottom') else H
+        return {'main': main, 'rail': [right, y0, W - right, y1 - y0], 'rail_axis': 'column'}
+    if bottom < H - TOL:
+        return {'main': main, 'rail': [0, bottom, W, H - bottom], 'rail_axis': 'row'}
+    return {'main': main, 'rail': None, 'rail_axis': None}
+
+
+def regions(pages, size, art=None):
+    """{'main', 'rail', 'rail_axis'}: the art's main region, with the rail what
+    the canvas leaves beside it - right of it where there is room, else below -
+    where the art draws one (Afterburn); else the controls' (control_regions)."""
+    if not art:
+        return control_regions(pages, size)
+    w, h = size
+    right, bottom = art[0] + art[2], art[1] + art[3]
+    if right < w - 1:
+        return {'main': art, 'rail': [right, 0, w - right, h], 'rail_axis': 'column'}
+    if bottom < h - 1:
+        return {'main': art, 'rail': [0, bottom, w, h - bottom], 'rail_axis': 'row'}
+    return {'main': art, 'rail': None, 'rail_axis': None}
+
+
+def popup_region(pages, size):
+    """The template's standard popup region, [w, h]: its largest named non-modal
+    popup, where that fills a quarter of the canvas or more."""
+    w, h = size
+    popups = sorted((tuple(pg['size']) for pg in pages if pg['name'] and pg['kind'] == 'popup' and not pg['modal']),
+                    key=lambda s: s[0] * s[1])
+    big = popups[-1] if popups else None
+    return list(big) if big and big[0] * big[1] >= 0.25 * w * h else None
 
 
 def seed_facts(path, border_names):
@@ -131,13 +478,48 @@ def seed_facts(path, border_names):
         same = [r for r in have if _radius_thick(r) and want and _radius_thick(r)[1] == want[1]]
         if same:
             borders[name] = min(same, key=lambda r: abs(_radius_thick(r)[0] - want[0]))
-    return {'part': part, 'slider': kinds['PBSlider'] > 0, 'level': kinds['PBLevel'] > 0,
+    # Its canvas, as its pages are: both 300M seeds are one part number, and
+    # only the canvas says which series each is.
+    canvas = collections.Counter(tuple(pg['size']) for pg in p.pages()
+                                 if pg['kind'] == 'page' and pg.get('size'))
+    return {'part': part, 'size': list(canvas.most_common(1)[0][0]) if canvas else None,
+            'slider': kinds['PBSlider'] > 0, 'level': kinds['PBLevel'] > 0,
             'popup': std, 'borders': borders}
 
 
 def _radius_thick(resource):
     m = re.search(r'(\d+) Radius (\d+) Thick', resource or '')
     return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def match_seeds(theme, models, size, seeds):
+    """({model or panel: seed}, kinds, borders) of the series at `size` that
+    serves `models`, from `seeds` ({path: seed_facts()}).
+
+    A seed is a model's by part number and canvas - both 300M seeds are one
+    part, either way up. One at the model's other way up, where the theme draws
+    no template that way, is its own turned (New-GdlTurnedSeed.ps1) and is the
+    panel's (gdl.spec.panel_id), the 1035M portrait's under TLP1035M-Portrait.
+    Kinds and borders are what the series' own seed can clone, else a turned
+    one's: a retarget changes neither."""
+    out, kinds, borders = {}, None, None
+    for turned in (False, True):
+        for sp, facts in seeds.items():
+            for m in models:
+                if not facts['part'] or spec.part_number(m) != facts['part']:
+                    continue
+                at = tuple(facts['size'])
+                if not turned and at == tuple(size):
+                    out[m] = sp
+                elif turned and at != tuple(size) and at in spec.sizes(m) \
+                        and not templates.template_for(theme, m, at):
+                    out[spec.panel_id(m, at)] = sp
+                else:
+                    continue
+                if not turned or kinds is None:
+                    kinds = {k: facts[k] for k in ('slider', 'level', 'popup')}
+                    borders = facts['borders']
+    return out, kinds, borders
 
 
 def measure(theme, profile=None):
@@ -149,7 +531,7 @@ def measure(theme, profile=None):
             if fh.read(40).startswith(b'version https://git-lfs'):
                 continue
         seeds[os.path.relpath(f, REPO).replace('\\', '/')] = seed_facts(f, borders)
-    out = {}
+    out, pngs, digests = {}, None, {}
     for row in templates.series(theme):
         path = os.path.join(os.path.dirname(templates._default_path() or ''), row['file'])
         p = Project.open(path)
@@ -171,31 +553,28 @@ def measure(theme, profile=None):
             first = entry['backgrounds'].get('default')
             if first:
                 img, box = alpha_box(os.path.join(os.path.dirname(os.path.dirname(kit_files(theme)[0])), first['file']))
-                entry['main'] = to_canvas(box, img, (w, h), layout)
-        main = entry.get('main') or [0, 0, w, h]
-        right = main[0] + main[2]
-        if right < w - 1:
-            entry['rail'], entry['rail_axis'] = [right, 0, w - right, h], 'column'
-        elif main[1] + main[3] < h - 1:
-            bottom = main[1] + main[3]
-            entry['rail'], entry['rail_axis'] = [0, bottom, w, h - bottom], 'row'
-        else:
-            entry['rail'], entry['rail_axis'] = None, None
-        popups = sorted((tuple(pg['size']) for pg in pages if pg['kind'] == 'popup' and not pg['modal']),
-                        key=lambda s: s[0] * s[1])
-        big = popups[-1] if popups else None
-        entry['popup'] = list(big) if big and big[0] * big[1] >= 0.25 * w * h else None
+                drawn = art_main(box, img, (w, h), layout)
+                if drawn:
+                    entry['main'] = drawn
+        elif resource:
+            # Not Afterburn's kit art: a background for each of the profile's
+            # themes by its art's own name, and no region read off it.
+            if pngs is None:
+                pngs = kit_pngs(theme)
+            art = template_art(p, resource)
+            own = own_art(art, {k: spec.resolve_image(k) for k in pngs}, digests) if art else set()
+            entry['backgrounds'] = theme_backgrounds(profile, (w, h), resource, pngs, own)
+        entry.update(regions(pages, (w, h), entry.get('main')))
+        entry['popup'] = popup_region(pages, (w, h))
+        # Every model the series serves, either way up of one that rotates:
+        # Afterburn's 300 Landscape series is the 300M's, turned.
         for m in sorted(spec.MODELS_FULL):
-            hit = templates.template_for(theme, m)
-            if hit and hit['series'] == row['series']:
+            if any((templates.template_for(theme, m, s) or {}).get('series') == row['series']
+                   for s in spec.sizes(m)):
                 entry['models'].append(m)
-        entry['seeds'] = {}
-        for sp, facts in seeds.items():
-            for m in entry['models']:
-                if facts['part'] and spec.part_number(m) == facts['part']:
-                    entry['seeds'][m] = sp
-                    entry['kinds'] = {k: facts[k] for k in ('slider', 'level', 'popup')}
-                    entry['borders'] = facts['borders']
+        entry['seeds'], kinds, borders = match_seeds(theme, entry['models'], (w, h), seeds)
+        if kinds is not None:
+            entry['kinds'], entry['borders'] = kinds, borders
         out[row['series']] = entry
     return out
 

@@ -145,6 +145,19 @@ class TestLevel(unittest.TestCase):
         op = _spec([dict(self.LEVEL)]).plan()['pages'][0]['controls'][0]
         self.assertEqual(op['gauge_fill'], 0xFFD6B961)
 
+    def test_a_level_its_donor_draws_from_art_plans_no_bar(self):
+        """Where the donor's level fills from an image (check_donor's `art`), a
+        bar color never shows, so none is planned; and its empty track - its
+        background image, which the applier clears from every other clone - is
+        kept."""
+        art = {'level': {'fill': 'full.png', 'track': 'empty.png'}}
+        op = _spec([dict(self.LEVEL)]).plan(art=art)['pages'][0]['controls'][0]
+        self.assertIsNone(op['gauge_fill'])
+        self.assertTrue(op['keep_art'])
+        op = _spec([dict(self.LEVEL)]).plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['gauge_fill'], 0xFFD6B961)
+        self.assertFalse(op.get('keep_art'))
+
     def test_bar_is_a_control_key(self):
         self.assertEqual([p for p in _spec([dict(self.LEVEL)]).check() if 'bar' in p], [])
 
@@ -324,8 +337,40 @@ class TestDonorAvailability(unittest.TestCase):
                               'controls': [{'kind': 'label', 'rect': [0, 0, 8, 8]}]}]})
         alt = self._path('fixtures', 'gdl',
                          'client-boardroom-2.0.0.gdl')
-        problems = p.check_donor(alt)
+        problems = Panel(dict(p.spec, keep_donor_pages=True)).check_donor(alt)
         self.assertTrue(any('1000 - Home' in m and 'unique' in m for m in problems))
+
+    def test_a_donor_name_is_free_when_the_donor_is_dropped(self):
+        """The applier drops the donor's own pages and popups, by identity, unless
+        the spec keeps them - so a spec may use a name the donor does. The
+        Afterburn seeds have a popup called Laptop."""
+        donor = seed('Afterburn 1035.gdl')
+        if not usable(donor):
+            self.skipTest('seeds/Afterburn 1035.gdl is not here (an LFS pull fetches it)')
+        spec = {'name': 'T', 'model': 'TLP1035T', 'size': [1280, 800],
+                'theme': {'text': '#FFFFFF'},
+                'pages': [{'name': 'Laptop', 'number': 1000, 'controls': [
+                    {'kind': 'label', 'rect': [0, 0, 400, 80], 'text': 'Laptop'}]}]}
+        self.assertFalse(any('already exists in the donor' in m
+                             for m in Panel(spec).check_donor(donor)))
+        kept = Panel(dict(spec, keep_donor_pages=True)).check_donor(donor)
+        self.assertTrue(any("'Laptop' already exists in the donor" in m for m in kept), kept)
+
+    def test_the_offline_page_the_applier_keeps_still_collides(self):
+        """One of the donor's the applier keeps whatever the spec says: the
+        Offline Page, popup 65535, which every seed and fixture has. A spec page
+        of that name is written beside it, and Build refuses the duplicate only
+        once the build has started."""
+        donor = seed('Afterburn 1035.gdl')
+        if not usable(donor):
+            self.skipTest('seeds/Afterburn 1035.gdl is not here (an LFS pull fetches it)')
+        spec = {'name': 'T', 'model': 'TLP1035T', 'size': [1280, 800],
+                'theme': {'text': '#FFFFFF'},
+                'pages': [{'name': 'Offline Page', 'number': 1000, 'controls': [
+                    {'kind': 'label', 'rect': [0, 0, 400, 80], 'text': 'Offline'}]}]}
+        problems = Panel(spec).check_donor(donor)
+        self.assertTrue(any("'Offline Page' already exists in the donor" in m for m in problems),
+                        problems)
 
     @needs_client(MAIN_CLIENT, 'client-boardroom-archived-1025.gdl')
     def test_a_popup_name_the_donor_already_uses_is_reported(self):
@@ -336,7 +381,8 @@ class TestDonorAvailability(unittest.TestCase):
                                'group': 'G', 'size': [100, 60], 'controls': []}]})
         alt = self._path('fixtures', 'gdl',
                          'client-boardroom-2.0.0.gdl')
-        self.assertTrue(any('160 - Confirmation' in m for m in p.check_donor(alt)))
+        kept = Panel(dict(p.spec, keep_donor_pages=True))
+        self.assertTrue(any('160 - Confirmation' in m for m in kept.check_donor(alt)))
 
 
 class TestNameUniqueness(unittest.TestCase):
@@ -470,6 +516,65 @@ class TestExtronRules(unittest.TestCase):
         self.assertEqual(MODELS['TLP1230WTG'], (1920, 720))
         self.assertEqual(dpi('TLP1230WTG'), 166.0)
         self.assertEqual(touch_minimums('TLP1230WTG'), (59, 13))
+
+    def test_every_panel_that_rotates_runs_both_ways(self):
+        """GUI Designer's own platforms list both orientations for these six
+        (powershell/Get-GdlPlatforms.ps1 reads them), and its Project Create
+        Wizard offers a Resolution for each. The table held one orientation
+        for all but the 300M, so a portrait 835 or 1035 was no canvas at all."""
+        from gdl.spec import sizes
+        for model, (w, h) in (('TLP300M', (320, 480)), ('TLP520M', (800, 480)),
+                              ('TLC521M', (800, 480)), ('TLP535M', (1280, 720)),
+                              ('TLP835M', (1280, 800)), ('TLP1035M', (1280, 800))):
+            self.assertEqual(sizes(model), ((w, h), (h, w)), model)
+
+    def test_the_t_and_c_forms_of_a_rotating_panel_do_not(self):
+        """A rotating panel's T and C forms share its screen and list one
+        orientation, as other M forms do; the 1035T shares the 1035M's part
+        number too."""
+        from gdl.spec import sizes
+        for model in ('TLP835T', 'TLP835C', 'TLP1035T', 'TLP535T', 'TLP525M', 'TLP1025M'):
+            self.assertEqual(len(sizes(model)), 1, model)
+
+    def test_a_panel_is_its_model_and_its_way_up(self):
+        """A canvas lists panels by name, and one model that rotates is two
+        panels: its model on its own canvas, and model-Portrait or
+        model-Landscape the other way up - no model's name has a hyphen."""
+        from gdl.spec import MODELS, panel_id, panel_of
+        self.assertFalse([m for m in MODELS if '-' in m])
+        for pid, model, size in (('TLP1035T', 'TLP1035T', (1280, 800)),
+                                 ('TLP1035M', 'TLP1035M', (1280, 800)),
+                                 ('TLP1035M-Portrait', 'TLP1035M', (800, 1280)),
+                                 ('TLP300M', 'TLP300M', (320, 480)),
+                                 ('TLP300M-Landscape', 'TLP300M', (480, 320))):
+            self.assertEqual(panel_id(model, size), pid)
+            self.assertEqual(panel_of(pid), (model, size))
+        self.assertEqual(panel_id('TLP1035M'), 'TLP1035M')
+
+    def test_a_panel_that_does_not_run_that_way_up_is_none(self):
+        from gdl.spec import panel_id, panel_of
+        for bad in ('TLP1035T-Portrait', 'TLP1035M-Landscape', 'TLP300M-Portrait', 'TLP1035M-Sideways',
+                    'Nonesuch', 'TLP1035M-'):
+            with self.assertRaises(ValueError, msg=bad):
+                panel_of(bad)
+        with self.assertRaises(ValueError):
+            panel_id('TLP1035T', (800, 1280))
+
+    def test_a_portrait_canvas_has_a_minimum(self):
+        """800x1280 is the 835M's and the 1035M's; a size-only spec there is
+        held to the denser of the two, as at 1280x800."""
+        from gdl.spec import touch_minimums
+        self.assertEqual(touch_minimums((800, 1280)), touch_minimums('TLP835M'))
+        self.assertEqual(touch_minimums((480, 800)), touch_minimums('TLP520M'))
+        self.assertEqual(touch_minimums((720, 1280)), touch_minimums('TLP535M'))
+
+    def test_a_spec_may_ask_for_a_rotating_panels_other_way_up(self):
+        from gdl.spec import Panel
+        spec = {'name': 'T', 'model': 'TLP1035M', 'size': [800, 1280], 'popups': [],
+                'pages': [{'name': 'P', 'number': 1000, 'controls': []}]}
+        self.assertFalse(any('is not a canvas the' in x for x in Panel(spec).check()))
+        spec['model'] = 'TLP1035T'
+        self.assertTrue(any('is not a canvas the TLP1035T has' in x for x in Panel(spec).check()))
 
     def test_a_landscape_300m_has_a_minimum(self):
         """The 300M runs both ways up; a size-only spec at 480x320 had no row
@@ -676,6 +781,376 @@ class TestLayoutModel(unittest.TestCase):
         _, fills = p.layout()
         reds = [v for v in fills.values() if v['fill']['R'] == 255]
         self.assertEqual(len(reds), 1)
+
+
+class TestIcons(unittest.TestCase):
+    """A button or label is an icon by name - "icon": "cable_tv" - drawn as its
+    glyph in an icon font: the route besides kit images, with no image resource
+    behind it. A name is the face's own; a face that names nothing takes a
+    codepoint."""
+
+    def _panel(self, *controls, **top):
+        spec = {'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+                'pages': [{'name': 'P', 'number': 1000, 'controls': list(controls)}]}
+        spec.update(top)
+        return Panel(spec)
+
+    def _named(self):
+        from gdl.fonts import icon_face
+        if not icon_face('Extron-Afterburn')[0]:
+            self.skipTest('no Extron-Afterburn face here: neither recovered into gdl/fonts/ '
+                          'nor in seeds/Afterburn 1035.gdl')
+
+    def test_a_name_is_its_glyph_in_the_familys_icon_font(self):
+        self._named()
+        p = self._panel({'kind': 'button', 'name': 'Tv', 'rect': [0, 0, 160, 160],
+                         'icon': 'cable_tv'}, family='Afterburn')
+        c = p.pages[0]['controls'][0]
+        self.assertEqual((c['text'], c['font']), (chr(0xE908), 'Extron-Afterburn'))
+        self.assertEqual(p.check(), [])
+
+    def test_a_codepoint_needs_no_name(self):
+        p = self._panel({'kind': 'label', 'name': 'L', 'rect': [0, 0, 160, 160],
+                         'icon': 'U+E907', 'font': 'Extron-Afterburn'})
+        self.assertEqual(p.pages[0]['controls'][0]['text'], chr(0xE907))
+        self.assertEqual(p.check(), [])
+
+    def test_each_familys_icon_font(self):
+        """The face each theme's own template sets its glyph captions in."""
+        for family, font in (('Afterburn', 'Extron-Afterburn'), ('Mach', 'Extron-Lift'),
+                             ('Shockwave', 'Extron-Shockwave')):
+            p = self._panel({'kind': 'button', 'name': 'B', 'rect': [0, 0, 160, 160],
+                             'icon': 'U+00B9'}, family=family)
+            self.assertEqual(p.pages[0]['controls'][0]['font'], font)
+
+    def test_the_theme_names_the_icon_font_over_the_family(self):
+        p = self._panel({'kind': 'button', 'name': 'B', 'rect': [0, 0, 160, 160], 'icon': 'U+F030'},
+                        family='Shockwave', theme={'icon_font': 'Extron GUIC Video Conference 1a'})
+        self.assertEqual(p.pages[0]['controls'][0]['font'], 'Extron GUIC Video Conference 1a')
+
+    def test_a_grids_items_share_its_icon_states(self):
+        """A grid gives every item what it does not lay out - here the states
+        of a row of mute buttons - so an icon is resolved per item, after layout."""
+        p = self._panel({'grid': {'rect': [0, 0, 400, 100], 'cols': 2, 'kind': 'button',
+                                  'states': [{'name': 'Off'}, {'name': 'On', 'icon': 'U+E925'}],
+                                  'items': [{'name': 'A', 'icon': 'U+E930'},
+                                            {'name': 'B', 'icon': 'U+E930'}]}},
+                        family='Afterburn')
+        for c in p.pages[0]['controls']:
+            self.assertEqual((c['font'], c['text'], c['states'][1]['text']),
+                             ('Extron-Afterburn', chr(0xE930), chr(0xE925)))
+
+    def test_a_name_the_font_lacks_is_a_problem_naming_the_nearest(self):
+        self._named()
+        p = self._panel({'kind': 'button', 'name': 'Tv', 'rect': [0, 0, 160, 160],
+                         'icon': 'cabletv'}, family='Afterburn')
+        problems = p.check()
+        self.assertTrue(any("'cabletv'" in x and "'cable_tv'" in x for x in problems), problems)
+
+    def test_a_face_that_names_nothing_asks_for_a_codepoint(self):
+        """Mach's Extron-Lift and Extron-Shockwave name no glyph."""
+        from gdl import spec
+        saved = spec._GLYPHS.pop('Extron-Lift', None)
+        spec._GLYPHS['Extron-Lift'] = {}
+        try:
+            problems = self._panel({'kind': 'button', 'name': 'Power', 'rect': [0, 0, 160, 160],
+                                    'icon': 'power'}, family='Mach').check()
+        finally:
+            spec._GLYPHS.pop('Extron-Lift')
+            if saved is not None:
+                spec._GLYPHS['Extron-Lift'] = saved
+        self.assertTrue(any('names none of its glyphs' in x and 'U+E900' in x for x in problems), problems)
+
+    def test_an_icon_with_no_font_to_find_it_in_is_a_problem(self):
+        p = self._panel({'kind': 'button', 'name': 'Tv', 'rect': [0, 0, 160, 160], 'icon': 'U+E908'})
+        self.assertTrue(any('icon font' in x for x in p.check()), p.check())
+
+    def test_turbulence_draws_its_icons_as_images(self):
+        p = self._panel({'kind': 'button', 'name': 'Tv', 'rect': [0, 0, 160, 160], 'icon': 'U+E908'},
+                        family='Turbulence')
+        self.assertTrue(any('Turbulence' in x and 'images' in x for x in p.check()), p.check())
+
+    def test_an_icon_and_words_on_one_control_is_a_problem(self):
+        """A caption is drawn in one face, and an icon face has no letters."""
+        p = self._panel({'kind': 'button', 'name': 'Tv', 'rect': [0, 0, 160, 160],
+                         'icon': 'U+E908', 'text': 'Cable'}, family='Afterburn')
+        self.assertTrue(any('"icon" and "text"' in x for x in p.check()), p.check())
+
+    def test_a_state_with_words_on_an_icon_is_a_problem(self):
+        p = self._panel({'kind': 'button', 'name': 'Mute', 'rect': [0, 0, 160, 160], 'icon': 'U+E930',
+                         'states': [{'name': 'Off'}, {'name': 'On', 'text': 'Muted'}]},
+                        family='Afterburn')
+        self.assertTrue(any("state 'On'" in x and 'no letters' in x for x in p.check()), p.check())
+
+    def test_a_state_is_its_own_icon(self):
+        self._named()
+        p = self._panel({'kind': 'button', 'name': 'Mute', 'rect': [0, 0, 160, 160],
+                         'icon': 'mic_mute_1',
+                         'states': [{'name': 'Off'}, {'name': 'On', 'icon': 'mic_mute_2'}]},
+                        family='Afterburn')
+        c = p.pages[0]['controls'][0]
+        self.assertEqual(c['text'], chr(0xE930))
+        self.assertEqual(c['states'][1]['text'], chr(0xE925))
+        self.assertEqual(p.check(), [])
+
+    def test_the_spec_is_left_as_written(self):
+        spec = {'name': 'T', 'size': [1280, 800], 'family': 'Afterburn',
+                'pages': [{'name': 'P', 'controls': [
+                    {'kind': 'button', 'name': 'B', 'rect': [0, 0, 160, 160], 'icon': 'U+E908',
+                     'states': [{'name': 'Off'}, {'name': 'On', 'icon': 'U+E907'}]}]}]}
+        before = json.dumps(spec, sort_keys=True)
+        Panel(spec)
+        self.assertEqual(json.dumps(spec, sort_keys=True), before)
+
+    def test_the_icon_example_is_clean_on_its_seed(self):
+        """examples/icons.json is what GUI Designer built the icons from."""
+        self._named()
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        p = Panel.load(os.path.join(here, 'examples', 'icons.json'))
+        self.assertEqual(p.check(), [])
+        donor = seed('Afterburn 1035.gdl')
+        if usable(donor):
+            self.assertEqual(p.check_donor(donor), [])
+
+    def test_a_glyph_the_donors_face_lacks_is_a_donor_problem(self):
+        donor = seed('Afterburn 1035.gdl')
+        if not usable(donor):
+            self.skipTest('seeds/Afterburn 1035.gdl is not pulled from Git LFS here')
+        p = self._panel({'kind': 'button', 'name': 'Tv', 'rect': [0, 0, 160, 160], 'icon': 'U+E9FF',
+                         'states': [{'name': 'Off'}, {'name': 'On', 'icon': 'U+E908'}]},
+                        family='Afterburn')
+        problems = p.check_donor(donor)
+        self.assertTrue(any('U+E9FF' in x and 'Extron-Afterburn' in x for x in problems), problems)
+        self.assertFalse(any('U+E908' in x for x in problems), problems)
+
+    def test_the_mach_seeds_face_stops_short_of_the_installs(self):
+        """The Mach seeds carry 95 Extron-Lift glyphs, to U+E95E; the install's
+        has 121, to U+E978. One past the seed's builds blank."""
+        donor = seed('Mach 1035.gdl')
+        if not usable(donor):
+            self.skipTest('seeds/Mach 1035.gdl is not pulled from Git LFS here')
+        p = self._panel({'kind': 'button', 'name': 'B', 'rect': [0, 0, 160, 160], 'icon': 'U+E970'},
+                        {'kind': 'button', 'name': 'C', 'rect': [200, 0, 160, 160], 'icon': 'U+E95E'},
+                        family='Mach')
+        problems = p.check_donor(donor)
+        self.assertTrue(any('U+E970' in x for x in problems), problems)
+        self.assertFalse(any('U+E95E' in x for x in problems), problems)
+
+    def _op(self, p):
+        return p.plan()['pages'][0]['controls'][0]
+
+    def test_an_icon_in_on_is_the_on_states(self):
+        """`on` is shorthand for two states, Off and On, so an icon in it is
+        the On state's. It was dropped: the button planned two states alike."""
+        for c in ({'icon': 'U+E92F', 'on': {'fill': '#FF0000', 'icon': 'U+E930'}},
+                  {'on': {'icon': 'U+E930'}}):
+            p = self._panel(dict({'kind': 'button', 'name': 'Mute', 'rect': [0, 0, 160, 160]}, **c),
+                            family='Afterburn')
+            states = [(s['name'], s['text']) for s in self._op(p)['states']]
+            self.assertEqual(states, [('Off', chr(0xE92F) if 'icon' in c else ''),
+                                      ('On', chr(0xE930))], c)
+            self.assertEqual(p.pages[0]['controls'][0]['font'], 'Extron-Afterburn')
+
+    def test_a_nameless_icon_is_named_for_its_icon_not_its_glyph(self):
+        """A control's name falls back to its text, and an icon's text is its
+        glyph - a private-use character that a spreadsheet shows blank and a
+        redirected Windows stdout cannot print."""
+        self._named()
+        p = self._panel({'kind': 'button', 'rect': [0, 0, 160, 160], 'icon': 'cable_tv'},
+                        family='Afterburn')
+        self.assertEqual(self._op(p)['fields']['nameField'], 'cable_tv')
+
+    def test_check_prints_what_a_redirected_windows_stdout_can_take(self):
+        """cp1252 is what a Windows stdout redirected to a file encodes in, and
+        it has no glyph for most of what a spec quotes back - a nameless
+        control's caption here, in the problem that it leaves the canvas."""
+        import contextlib
+        import io
+        import tempfile
+        from gdl.spec import main
+        spec = {'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'}, 'pages': [
+            {'name': 'P', 'number': 1000, 'controls': [
+                {'kind': 'button', 'rect': [1200, 0, 160, 160], 'text': chr(0x2603)}]}]}
+        f = os.path.join(tempfile.mkdtemp(), 'spec.json')
+        with open(f, 'w', encoding='utf-8') as fh:
+            json.dump(spec, fh)
+        out = io.TextIOWrapper(io.BytesIO(), encoding='cp1252')
+        with contextlib.redirect_stdout(out):
+            code = main(['spec', 'check', f])
+        out.flush()
+        self.assertEqual(code, 1)
+        out.seek(0)
+        self.assertIn('2603', out.read())
+
+    def test_states_that_are_no_list_reach_check(self):
+        for states in (True, 'Off,On', {'Off': {}}):
+            for c in ({'text': 'x'}, {'icon': 'U+E908'}):
+                p = self._panel(dict({'kind': 'button', 'name': 'B', 'rect': [0, 0, 160, 160],
+                                      'states': states}, **c), family='Afterburn')
+                self.assertTrue(any('states must be a list' in x for x in p.check()),
+                                (states, c, p.check()))
+
+    def test_an_icon_no_face_can_hold_is_a_problem_not_a_crash(self):
+        for icon in ('U+110000', 'U+FFFFFF', 'U+D800', ['home'], {'a': 1}, 59656):
+            p = self._panel({'kind': 'label', 'name': 'L', 'rect': [0, 0, 160, 160],
+                             'icon': icon, 'font': 'Extron-Afterburn'})
+            self.assertTrue(any('icon' in x for x in p.check()), (icon, p.check()))
+            self.assertEqual(self._op(p)['fields'].get('textField', ''), '', icon)
+
+    def test_words_on_a_state_beside_an_icon_on_another_are_a_problem(self):
+        """Any icon on a button sets its face to the icon font, so every
+        state's words - its own, or the button's it shows - draw in a face
+        with no letters."""
+        for c in ({'text': 'Mute', 'states': [{'name': 'Off'}, {'name': 'On', 'icon': 'U+E930'}]},
+                  {'states': [{'name': 'Off', 'text': 'Mute'}, {'name': 'On', 'icon': 'U+E930'}]}):
+            p = self._panel(dict({'kind': 'button', 'name': 'B', 'rect': [0, 0, 160, 160]}, **c),
+                            family='Afterburn')
+            self.assertTrue(any("state 'Off'" in x and 'no letters' in x for x in p.check()),
+                            (c, p.check()))
+
+    def test_a_kind_that_draws_no_caption_takes_no_icon(self):
+        for kind in ('shape', 'slider', 'level', 'image', 'datetime', 'popup_ref'):
+            p = self._panel({'kind': kind, 'name': 'X', 'rect': [0, 0, 160, 160], 'icon': 'U+E908'},
+                            family='Afterburn')
+            self.assertTrue(any('takes no "icon"' in x for x in p.check()), (kind, p.check()))
+
+    def test_a_faces_own_name_is_read_before_a_codepoint(self):
+        """A face may name a glyph 'uni0081' where it maps U+F081 (Extron GUIC
+        Video Conference 1 does): its own name is what an icon sheet lists."""
+        from gdl import spec as gdlspec
+        saved = dict(gdlspec._GLYPHS)
+        self.addCleanup(lambda: (gdlspec._GLYPHS.clear(), gdlspec._GLYPHS.update(saved)))
+        gdlspec._GLYPHS['Odd Face'] = {'uni0081': 0xF081, 'home': 0xE926}
+        self.assertEqual(gdlspec.icon_codepoint('Odd Face', 'uni0081'), (0xF081, None))
+        self.assertEqual(gdlspec.icon_codepoint('Odd Face', 'U+0081'), (0x81, None))
+        self.assertEqual(gdlspec.icon_codepoint('Odd Face', 'uniE908'), (0xE908, None))
+
+
+class TestIconsCommand(unittest.TestCase):
+    """`python -m gdl.spec icons <family>` - the names and codepoints an icon
+    takes, and with a .png, a sheet of the glyphs to pick one by eye."""
+
+    def _run(self, *argv):
+        import contextlib
+        import io
+        from gdl.spec import main
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = main(['spec', 'icons', *argv])
+        return code, out.getvalue()
+
+    def _afterburn(self):
+        from gdl.fonts import icon_face
+        if not icon_face('Extron-Afterburn')[0]:
+            self.skipTest('no Extron-Afterburn face here')
+
+    def test_a_family_lists_its_glyphs_by_name(self):
+        self._afterburn()
+        code, out = self._run('Afterburn')
+        self.assertEqual(code, 0, out)
+        self.assertIn('U+E908  cable_tv', out)
+        self.assertIn('U+E912', out)            # drawn, and named nothing
+
+    def test_a_face_that_names_nothing_is_listed_by_codepoint(self):
+        """Read straight out of the seed when it is not recovered: recovering a
+        Mach seed into gdl/fonts/ would replace the Monotype Arial there."""
+        from gdl.seeds import usable
+        if not usable('seeds/Mach 1035.gdl'):
+            self.skipTest('seeds/Mach 1035.gdl is not pulled from Git LFS here')
+        code, out = self._run('Mach')
+        self.assertEqual(code, 0, out)
+        self.assertIn('U+E95E', out)
+        self.assertIn('95 glyph(s) in Extron-Lift, none named', out)
+
+    def test_a_family_with_no_icon_font_says_so(self):
+        code, out = self._run('Turbulence')
+        self.assertEqual(code, 1)
+        self.assertIn('images', out)
+
+    def test_a_face_found_nowhere_says_where_to_get_it(self):
+        from unittest import mock
+        from gdl import fonts
+        with mock.patch.object(fonts, 'icon_face', lambda font: (None, None)):
+            code, out = self._run('Shockwave')
+        self.assertEqual(code, 1)
+        self.assertIn('lfs pull', out)
+        self.assertNotIn('python -m gdl.fonts', out)
+
+    def test_a_sheet_draws_every_glyph(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed; the sheet is drawn with it')
+        self._afterburn()
+        out = os.path.join(tempfile.mkdtemp(), 'sheet.png')
+        code, text = self._run('Afterburn', out)
+        self.assertEqual(code, 0, text)
+        with Image.open(out) as im:
+            # 136 glyphs, ten to a row.
+            self.assertEqual(im.size[1] // (im.size[0] // 10), 14)
+
+
+class TestTheDonorsOwnPages(unittest.TestCase):
+    """A panel is its spec's pages and popups: the plan tells the applier to
+    drop the donor's, unless the spec keeps them on purpose."""
+
+    def test_a_plan_drops_them_by_default(self):
+        self.assertIs(_spec([]).plan()['keep_donor_pages'], False)
+
+    def test_a_spec_can_keep_them(self):
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+                   'keep_donor_pages': True,
+                   'pages': [{'name': 'P', 'number': 1000, 'controls': []}]})
+        self.assertIs(p.plan()['keep_donor_pages'], True)
+
+
+class TestEveryItemGetsACell(unittest.TestCase):
+    """A grid or stack lays each item into a cell of its own. Given rows and no
+    cols, a grid put every item in one row; given more items than cells, the
+    ones past the last cell were dropped - and check() said nothing of either,
+    unless a cell came out too small to touch. Both turned up writing a
+    23-page spec (examples/boardroom-full.json)."""
+
+    def test_a_grid_given_only_rows_lays_them_out_in_rows(self):
+        p = _spec([{'grid': {'rect': [0, 0, 100, 300], 'rows': 3, 'kind': 'button',
+                             'items': [{'text': 'a'}, {'text': 'b'}, {'text': 'c'}]}}])
+        model, _ = p.layout()
+        cs = model['Pages'][0]['Controls']
+        self.assertEqual([(c['Left'], c['Top']) for c in cs], [(0, 0), (0, 100), (0, 200)])
+
+    def test_rows_take_as_many_columns_as_the_items_need(self):
+        # Five items in two rows: three columns, the last cell empty.
+        p = _spec([{'grid': {'rect': [0, 0, 300, 200], 'rows': 2, 'kind': 'button',
+                             'items': [{'text': t} for t in 'abcde']}}])
+        model, _ = p.layout()
+        cs = model['Pages'][0]['Controls']
+        self.assertEqual([c['Text'] for c in cs], list('abcde'))
+        self.assertEqual({c['Width'] for c in cs}, {100})
+
+    def test_more_items_than_a_grid_has_cells_is_a_problem(self):
+        p = _spec([{'grid': {'name': 'Keys', 'rect': [0, 0, 400, 400], 'cols': 2, 'rows': 2,
+                             'kind': 'button', 'items': [{'text': t} for t in 'abcde']}}])
+        self.assertTrue(any("'Keys'" in x and '5 items' in x and '4 cells' in x
+                            for x in p.check()), p.check())
+
+    def test_more_items_than_a_stack_counts_is_a_problem(self):
+        p = _spec([{'stack': {'rect': [0, 0, 400, 400], 'count': 2, 'kind': 'button',
+                              'items': [{'text': t} for t in 'abc']}}])
+        self.assertTrue(any('3 items' in x and '2 cells' in x for x in p.check()), p.check())
+
+    def test_a_popup_is_held_to_it_too(self):
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+                   'pages': [{'name': 'P', 'number': 1000, 'controls': []}],
+                   'popups': [{'name': 'Pop', 'number': 9000, 'modal': True, 'controls': [
+                       {'grid': {'rect': [0, 0, 400, 400], 'cols': 1, 'rows': 1, 'kind': 'button',
+                                 'items': [{'text': 'a'}, {'text': 'b'}]}}]}]})
+        self.assertTrue(any("'Pop'" in x and '2 items' in x and '1 cell' in x
+                            for x in p.check()), p.check())
+
+    def test_fewer_items_than_cells_is_fine(self):
+        p = _spec([{'grid': {'rect': [0, 0, 400, 400], 'cols': 2, 'rows': 2, 'kind': 'button',
+                             'items': [{'text': 'a'}, {'text': 'b'}, {'text': 'c'}]}}])
+        self.assertFalse(any('cell' in x for x in p.check()), p.check())
 
 
 class TestNestedLayout(unittest.TestCase):
@@ -1059,6 +1534,42 @@ class TestButtonImages(unittest.TestCase):
             {'kind': 'button', 'name': 'B', 'rect': [0, 0, 120, 64], 'text': 'B',
              'fill': '#37394E', 'on': {'fill': '#37394E'}}]}])
         self.assertTrue(any('look identical' in m for m in p.check()), p.check())
+
+    # Two seeds' own geometry for the same built-ins (Project.border_geometry):
+    # Mach's 1035 defines 2D Rounded Rectangle at thickness 0, Afterburn's at 3.
+    MACH = {'2D Rounded Rectangle': {'radius': 1, 'thickness': 0},
+            '2D Rectangle': {'radius': 0, 'thickness': 0},
+            'Mach - 10 Radius 2 Thick': {'radius': 10, 'thickness': 2}}
+    AFTERBURN = {'2D Rounded Rectangle': {'radius': 10, 'thickness': 3},
+                 '2D Rectangle': {'radius': 0, 'thickness': 3}}
+
+    def test_a_stroke_its_seed_draws_no_thickness_for_is_a_problem(self):
+        """A built-in border's geometry is the seed's. On Mach's 1035 a
+        display button's Warming Up - an accent outline on 2D Rounded Rectangle
+        - built as its Off, the seed defining that shape at thickness 0;
+        verify_built caught it after the build. The same outline on Afterburn's
+        seed, which defines it at 3, is drawn."""
+        def project(border, stroke='#EDB95E'):
+            return _project([{'name': 'Home', 'controls': [
+                {'kind': 'button', 'name': 'Display', 'rect': [0, 0, 240, 64], 'text': 'Off',
+                 'fill': '#000000B4', 'border': border,
+                 'states': ['Off', {'name': 'Warming', 'stroke': stroke, 'color': '#EDB95E'}]}]}])
+        named = project('rounded').stroke_rules(self.MACH, 'seeds/Mach 1035.gdl')
+        self.assertTrue(any("'Warming'" in m and 'stroke is not drawn' in m and '2D Rounded Rectangle' in m
+                            and 'seeds/Mach 1035.gdl' in m for m in named), named)
+        self.assertEqual(project('mach').stroke_rules(self.MACH, 'seeds/Mach 1035.gdl'), [])
+        self.assertEqual(project('rounded').stroke_rules(self.AFTERBURN, 'seeds/Afterburn 1035.gdl'), [])
+        # A border the donor builds as its nearest is held to that one's.
+        swapped = project('afterburn').stroke_rules(self.MACH, 'seeds/Mach 1035.gdl',
+                                                    {'Afterburn - 10 Radius 2 Thick': '2D Rounded Rectangle'})
+        self.assertTrue(any("'Warming'" in m for m in swapped), swapped)
+        # A panel's own stroke, the same.
+        card = _project([{'name': 'Home', 'controls': [
+            {'kind': 'panel', 'name': 'Card', 'rect': [0, 0, 400, 300], 'fill': '#303030',
+             'stroke': '#FFFFFF', 'border': 'rect'}]}])
+        self.assertTrue(any('Card' in m for m in card.stroke_rules(self.MACH, 'the seed')))
+        # A null stroke is _states_of's problem, not a crash here.
+        self.assertEqual(project('rounded', stroke=None).stroke_rules(self.MACH, 'the seed'), [])
 
     def test_a_state_of_none_is_transparent_not_the_buttons_own(self):
         """A state's `none` turns its fill off; left out, it keeps the button's."""

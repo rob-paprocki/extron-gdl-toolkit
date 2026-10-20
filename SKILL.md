@@ -1,6 +1,6 @@
 ---
 name: extron-panel
-description: Use when creating, modifying or reviewing an Extron GUI Designer touch-panel (.gdl/.glt) — designing a panel from a description, editing an existing client panel, checking a design against Extron's standards, or previewing what a panel will look like before it is built.
+description: Use when creating, modifying or reviewing an Extron GUI Designer touch-panel (.gdl/.glt) — building a panel from a Claude Design canvas link or from a description, editing an existing client panel, checking a design against Extron's standards, or previewing what a panel will look like before it is built.
 ---
 
 # Building Extron touch panels
@@ -44,15 +44,25 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
    (`docs/design-rules.md` §1 lists them). The canvas is not a constant - and
    **DPI varies by nearly 2x within a resolution**, so naming the model is what
    makes the touch-target check right rather than merely safe. Ask if you don't
-   know it.
+   know it. A panel that rotates (`docs/design-rules.md` §1) also needs its way
+   up: a turned one's `size` is its turned canvas.
 2. **Pick the theme.** `gdl.themes.AFTERBURN` is the documented token set. For
    Mach/Shockwave/Turbulence, or a client's house style, run
    `python -m gdl.themes <template.glt>` and read the tokens off the template.
+   Name the theme family in the spec as `"family": "Afterburn"` (or `Mach`,
+   `Shockwave`, `Turbulence`): `gdl.spec donors <spec.json> --auto` and
+   `New-GdlPanel.ps1` without `-Donor` then find its seed by family, model and
+   canvas, read off each seed's own build rather than its name (`python -m
+   gdl.seeds pick <spec.json>`), and say how to make one where `seeds/` has
+   none - or why none can be made (`seeds/README.md`). `donors` refuses a donor
+   of another model or theme, picked or passed: the built panel is the donor's.
 3. **Write the spec** — see `examples/panel.json` for the full vocabulary and
    `examples/huddle.json` for a small one written straight from a prose brief.
    Use `grid`/`stack` for layout;
    never hand-type a rect. Nest them for sub-regions (a nested directive lays out
-   inside its parent cell, and a `rect` at that depth is an offset into it).
+   inside its parent cell, and a `rect` at that depth is an offset into it). A
+   `grid` given `rows` and no `cols` takes as many columns as its items need; a
+   column of buttons is a `stack`.
 
    **Give the buttons feedback.** A button with one appearance is inert: the
    control system sets it On and nothing on the panel changes. Set `"on"` in
@@ -64,15 +74,16 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
 
    Per button, `"on": "accent"` changes just the fill; `"on": {"fill": "surface",
    "color": "muted", "stroke": "accent", "border": "capsule"}` changes whatever
-   it names and inherits the rest from the Off appearance. Omit `on` entirely
+   it names - an `icon` or `image` too - and inherits the rest from the Off
+   appearance. Omit `on` entirely
    and the button keeps a single appearance, which is right for a label-like
    button and wrong for anything the control system drives.
 
    `Off`/`On` is what nearly every button in Extron's own templates uses
    (`docs/gdl-format.md` §7). When a button shows more than that, name its
    `states` in order -
-   each a name, or a name with its own `fill`, `stroke`, `color`, `border` and
-   `text`, inheriting the rest from the button:
+   each a name, or a name with its own `fill`, `stroke`, `color`, `border`,
+   `text`, `icon` and `image`, inheriting the rest from the button:
 
    ```json
    { "kind": "button", "name": "Display", "text": "Display Off", "fill": "raised",
@@ -122,6 +133,7 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
    popup that cannot appear where it is shown, a page nothing reaches.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    a size the model does not have, unknown resources and unknown control keys,
+   a `grid` or `stack` with more items than cells (the rest would not be laid out),
    and Extron's numeric standards on every page and popup (touch target, 2 mm
    between touch targets and no two overlapping - except the segments of one
    segmented control, which share a `joined` - ≤9 buttons per group, ≤6 colors
@@ -135,26 +147,39 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
    and needs no GUI Designer.
 6. **Check it against the donor**: `python -m gdl.spec donors <spec.json>
    <donor.gdl>`. The donor supplies every cloned control, so a type it lacks is
-   unauthorable — and its page/popup names are taken, which is a build error.
-   Both take a second to find here and a whole build to find there.
+   unauthorable. A font family it lacks is appended from a seed that carries
+   the face, and a border it lacks is built as its own of the nearest shape -
+   both said by `donors` and written by `plan --donor` (`New-GdlPanel.ps1`
+   passes the donor); only a face no seed carries, or a border of no shape near
+   enough, is refused (`seeds/README.md`). A family is named as the donor or
+   the seed spells it. Each takes seconds to find here - a face to append costs
+   a parse of the seed that carries it, 2 s for a Shockwave seed and up to 45 s
+   for a Turbulence one - and a whole build to find there.
 
-   **Pick the donor deliberately — it ships in the result.** The fixtures are a
-   real client's project, so a panel cloned from one carries their page names,
-   popups, artwork and retail fonts. For anything going to a client, use a
+   **Pick the donor deliberately — what the panel draws with comes from it.**
+   The applier drops the donor's own pages and popups once it has cloned what
+   it needs (`"keep_donor_pages": true` keeps them), but every border, font and
+   image a generated control draws with is the donor's: a panel cloned from a
+   client fixture draws in that client's retail fonts and artwork. For anything
+   going to a client, use a
    *seed* from `seeds/` — themed projects made through the Project Create
    Wizard (`powershell/New-GdlSeed.ps1`), across several theme families and sizes (`seeds/README.md` lists them; `git
    lfs pull` fetches them). Prefer one at the target size:
    `retarget` builds a correct panel at another size, but only 22% of controls
-   match what Extron's own designers drew there. Extron's `.glt` templates cannot be
+   match what Extron's own designers drew there. A panel turned where Extron
+   draws no template that way up has no seed from the wizard: its seed is its
+   default seed turned, by `powershell/New-GdlTurnedSeed.ps1`, whose line
+   `gdl.seeds pick` prints (`seeds/README.md`). Extron's `.glt` templates cannot be
    donors — they have no `PBProject`, and a file built from one makes GUI
    Designer open empty and offer the Create Wizard. `donors` refuses them with
    that explanation. See `docs/from-scratch.md` §5c.
 
    `donors` checks six things, each of which otherwise surfaces only in a build:
-   control types, page-name collisions, **border resources**, **font families**,
+   control types, page-name collisions (only a spec that keeps the donor's
+   pages can have one), **border resources**, **font families**,
    **canvas size** and **button states**. The font one is the sly one — a family
-   the donor has no `PBFontResource` for does not fail the build, it ships the
-   panel in the donor's face. The states one is a guard: the applier gives each
+   the donor has no `PBFontResource` for, and no seed carries to append, does not
+   fail the build, it ships the panel in the donor's face. The states one is a guard: the applier gives each
    button exactly the states the spec names by resizing the cloned donor's, and
    refuses a donor button whose states are flagged against that - which no
    project in the corpus does. Answer its complaints before building; that is
@@ -166,6 +191,9 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
    powershell\New-GdlPanel.ps1 -Spec examples\panel.json `
        -Donor "seeds\Afterburn 1035.gdl" -Output C:\gdlwork\Boardroom.gdl
    ```
+
+   Leave out `-Donor` and it builds on the seed for the spec's `"family"`
+   (step 2).
 
    check → donors → plan → apply → pack → open → Save and Build → wait →
    verify. It exits 0 only if the verifier passed, so it gates rather than
@@ -180,8 +208,9 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
    and verifies each against that map (`tests/verify_idmap.py --panel`).
 
    Without GUI Designer, stop at `python -m gdl.spec plan <spec.json>
-   out/plan.json`; the rest runs where it is installed, per
-   `docs/from-scratch.md` §7.
+   out/plan.json --donor <donor.gdl>` - without the donor, a border it lacks
+   is planned as named and builds as the clone's own; the rest runs where it
+   is installed, per `docs/from-scratch.md` §7.
 8. **Verify the build** (already done for you by `New-GdlPanel.ps1`):
    `python tests/verify_built.py out/plan.json <built.gdl>`. Do not skip this
    because the build was clean; that is exactly when it earns its keep. It
@@ -196,8 +225,9 @@ the real project, then apply:
 
 1. **Describe the change** - see `examples/edits.json`. Five ops:
    `rename` (captions), `restyle` (color remap), `states` (add, remove or
-   rename a button's states), `retarget` (another panel model, optionally
-   rescaling), `renumber` (addressable `userId`s). Selectors are ANDed and
+   rename a button's states), `retarget` (another panel model, or the other
+   way up for one that rotates, optionally rescaling), `renumber` (addressable
+   `userId`s). Selectors are ANDed and
    support exact or regex match on name and caption.
 2. **Check it**: `python -m gdl.edit check <edits.json> <panel.gdl>`. Every
    selector resolves against the real file, so "matched nothing" is an error
@@ -248,10 +278,12 @@ Each of these produced a build that reported success and a panel that was
 wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 
 - **Check the font came from the spec.** `Set-GdlFont` applies size, weight and
-  — only where the donor already has a `PBFontResource` for it — family. A
-  family the donor lacks is refused by `gdl.spec donors`, which stops
-  `New-GdlPanel.ps1` before anything is built; applied any other way, the panel
-  ships in the donor's face and `verify_built.py` catches it after.
+  — only where the project has a `PBFontResource` for it — family. A family the
+  donor lacks is appended first where a seed carries it (`plan --donor`); one
+  no seed carries is refused by `gdl.spec donors`, which stops
+  `New-GdlPanel.ps1` before anything is built. Applied any other way - a plan
+  made without `--donor` - the panel ships in the donor's face and
+  `verify_built.py` catches it after.
 - **Set `flattenTextField = false` on cloned buttons**, or Build bakes the
   donor's caption into every button's artwork (`docs/from-scratch.md` §5b). The
   applier does. The one exception is a spec button with `"flatten": true`, used
@@ -272,8 +304,9 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   elsewhere in the project.
 - **Popups go through `Register-GdlPopupGroup`, checked by
   `Test-GdlPopupBinding`** — a binding lives in four places (§6).
-- **Page and popup names share one namespace with the donor's.** `gdl.spec
-  donors` checks.
+- **A page or popup may not take the name of one the built panel keeps from
+  the donor** - its Offline Page, or every one under `keep_donor_pages`. Build
+  refuses the duplicate only once it has started; `gdl.spec donors` checks.
 - **Author every popup's size.** Build moves a control that overflows its page
   to 0,0, and a cloned popup keeps the donor's size.
 - **A bridge-saved file always needs rebuilding** — `Save-GdlProject` resets
@@ -301,9 +334,20 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   `fill_image` name it - both, since the applier writes only what it is given
   and a clone keeps its donor's other; such a slider is planned with no border
   or fill, since Build draws a bordered fill in place of the art.
-- **Icon fonts** — for single-color icons, faster and needs no resource.
-  Afterburn 136 glyphs at U+E900–E98C, Mach (Extron-Lift) 121 at U+E900–E978.
-  Place them as text in that face.
+- **Icon fonts** — for single-color icons, faster and needs no resource. Name
+  the glyph - `"icon": "cable_tv"` on a button, a label or a state - and it is
+  drawn in the icon font: the control's `font`, else the theme's `icon_font`,
+  else the face the spec's `"family"` sets its own icons in. Afterburn, Mach
+  and Shockwave each have one; Turbulence draws nearly all of its icons as images
+  (`docs/design-rules.md` §6 has the faces). `python -m gdl.spec icons
+  <family>` lists what an icon takes, and with a `.png` after it draws the
+  glyphs: Extron-Afterburn names its own (`cable_tv`, `home`, `power`); Mach's
+  and Shockwave's faces name none, so pick from the sheet and give the
+  codepoint, `"icon": "U+E93A"`. A name the face lacks is a `check` problem
+  that offers the nearest, and a glyph the donor's own face lacks is a `donors`
+  one - the Mach seeds embed an older Extron-Lift than the install has. An icon
+  is the control's whole caption, in a face with no letters, so its words go on
+  a label beside it. `examples/icons.json` has each of these.
 
 ## Verification gates — do not skip
 

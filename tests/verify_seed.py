@@ -65,6 +65,21 @@ def clone_share(pages, of):
     return hit / len(named) if named else 0.0
 
 
+def turned_pages(of, sx, sy):
+    """A template's pages as gdl.edit's retarget turns a project: every page's
+    canvas and every control's rect scaled per axis, each rounded."""
+    out = []
+    for pg in of:
+        w, h = pg['size']
+        ctrls = [dict(c, rect=c['rect'] if None in c['rect'] else
+                      (round(c['rect'][0] * sx), round(c['rect'][1] * sy),
+                       round(c['rect'][2] * sx), round(c['rect'][3] * sy)))
+                 for c in pg['controls']]
+        out.append(dict(pg, size=pg['size'] if None in (w, h) else (round(w * sx), round(h * sy)),
+                        controls=ctrls))
+    return out
+
+
 def series_problems(pages, size, model, theme):
     """Is the seed a clone of the series template GUI Designer takes for `model`?
 
@@ -72,19 +87,30 @@ def series_problems(pages, size, model, theme):
     application and the screen's number ('Afterburn All-inclusive 725' is the
     1020 series) - so the pages are compared. [] when there is no template to
     compare with: none installed here, or none of this theme serves the model."""
-    want = templates.template_for(theme, model)
-    if want is None:
+    home = templates.template_for(theme, model)
+    if home is None:
         return []
+    # A panel that rotates (gdl.spec.sizes) has a series per way up only where
+    # one is drawn that way: the 300M's, both ways in Afterburn; the 1035M's
+    # 1220 Series is 1280x800 alone, and the wizard offers it Blank turned. So
+    # its seed is its own turned by gdl.edit retarget (New-GdlTurnedSeed.ps1),
+    # and is compared with its series template turned the same way.
+    want = templates.template_for(theme, model, size)
+    if want is None:
+        if tuple(size) not in sizes(model) or tuple(size) == tuple(home['size']):
+            return [f"no {theme} template at {size[0]}x{size[1]} to compare with - GUI Designer takes "
+                    f"{home['series']} for a {model}"]
+        path = templates.path_of(home)
+        if not (path and os.path.exists(path)):
+            return []
+        sx, sy = size[0] / home['size'][0], size[1] / home['size'][1]
+        got = clone_share(pages, turned_pages(template_pages(path), sx, sy))
+        if got >= SERIES_SHARE:
+            return []
+        return [f"its pages are not the {home['series']} template's turned to {size[0]}x{size[1]} "
+                f"(only {got:.0%} are) - a {model} turned is its own seed turned"]
     same = [r for r in templates.series(theme) if tuple(r['size']) == tuple(size)]
-    if tuple(want['size']) == tuple(size):
-        mine = [want]
-    else:
-        # the 300M runs either way up, and its templates come in both
-        # orientations at one DPI
-        mine = [r for r in same if abs(r['dpi'] - want['dpi']) < 0.01]
-    if not mine:
-        return [f"no {theme} template at {size[0]}x{size[1]} to compare with - GUI Designer takes "
-                f"{want['series']} for a {model}"]
+    mine = [want]
     # a table without its templates beside it: nothing to read, and a verifier
     # that raises makes New-GdlSeed.ps1 delete a good seed
     if not all(templates.path_of(r) and os.path.exists(templates.path_of(r)) for r in mine):
@@ -114,6 +140,12 @@ def check_seed(path, model, min_pages=MIN_PAGES, min_controls=MIN_CONTROLS, them
     proj = next(p.instances('PBProject'), None)
     if proj is None:
         return [f'{path} has no PBProject - a template, not a project']
+    # Not a refusal: the seed is what the wizard made, and Apply-GdlPlan.ps1
+    # clears the value in every panel built on it. But no seed made without the
+    # mode carries one (docs/from-scratch.md section 7).
+    if p.field(proj, 'checksum'):
+        print(f"  note: checksum {p.field(proj, 'checksum')} - built with feature-flag mode's Gd "
+              f"Generate Checksum on, as no other seed is; a panel built on it does not keep it")
     plat = p.field(proj, 'platformField')
     got = p.field(plat, 'partNumberField') if plat is not None else None
     if got != part_number(model):

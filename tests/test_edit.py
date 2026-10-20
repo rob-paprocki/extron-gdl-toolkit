@@ -236,6 +236,52 @@ class TestRetarget(unittest.TestCase):
         self.assertTrue(any('already under the old' in w for w in warnings))
 
 
+class TestRetargetOrientation(unittest.TestCase):
+    """A panel that rotates (gdl.spec.sizes) is a target either way up. On a
+    seed, so the public copy runs it too."""
+
+    def setUp(self):
+        from _corpus import seed, usable
+        self.path = seed('Afterburn 1035.gdl')
+        if not usable(self.path):
+            self.skipTest('seeds/Afterburn 1035.gdl is not here (git lfs pull)')
+
+    def _plan(self, op):
+        return Edits({'edits': [op]}, self.path).check()
+
+    def test_a_1035m_turned_portrait_carries_its_canvas(self):
+        plan, errors, _ = self._plan({'op': 'retarget', 'model': 'TLP1035M', 'size': [800, 1280],
+                                      'scale': True})
+        self.assertEqual(errors, [])
+        self.assertEqual(plan['project'][0]['model'], 'TLP1035M')
+        self.assertEqual(plan['project'][0]['size'], [800, 1280])
+        # every page canvas turns with it: 1280x800 pages land at 800x1280
+        full = [p for p in plan['pages'] if p['was'] == [1280, 800]]
+        self.assertTrue(full)
+        self.assertTrue(all(p['size'] == [800, 1280] for p in full))
+
+    def test_without_a_size_it_is_the_panels_default(self):
+        plan, errors, _ = self._plan({'op': 'retarget', 'model': 'TLP1035M'})
+        self.assertEqual(errors, [])
+        self.assertEqual(plan['project'][0]['size'], [1280, 800])
+
+    def test_a_canvas_the_panel_does_not_run_at_is_an_error(self):
+        """The 1035T does not rotate; its platform lists one resolution."""
+        _, errors, _ = self._plan({'op': 'retarget', 'model': 'TLP1035T', 'size': [800, 1280],
+                                   'scale': True})
+        self.assertTrue(any('800x1280' in e and 'TLP1035T' in e for e in errors), errors)
+
+    def test_a_size_that_is_not_width_and_height_is_an_error_not_a_crash(self):
+        """'800x1280' is how New-GdlSeed.ps1 and gdl.templates take a canvas, so
+        it is the slip to expect here; it was read as the characters 8 and 0. A
+        list of one number crashed check() outright."""
+        for size in ('800x1280', [800], 800, [800, 1280, 1], ['800', '1280'], [800, None]):
+            with self.subTest(size=size):
+                _, errors, _ = self._plan({'op': 'retarget', 'model': 'TLP1035M', 'size': size,
+                                           'scale': True})
+                self.assertTrue(any('size is [width, height]' in e for e in errors), errors)
+
+
 @needs_client(MAIN_CLIENT)
 class TestSeverity(unittest.TestCase):
     def test_warnings_never_block_a_plan(self):

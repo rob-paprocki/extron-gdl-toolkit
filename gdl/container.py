@@ -1,7 +1,8 @@
 """Extract and repack Extron GUI Designer .gdl containers.
 
-A .gdl is a ZIP whose 4-byte record signatures read 'KP' instead of 'PK'.
-Swapping those two bytes back yields a normal archive holding 'ProjectGCP'
+A .gdl is a ZIP whose 4-byte record signatures read 'KP' instead of 'PK' -
+its records', not the same bytes in its data (_records). Swapping those two
+bytes back yields a normal archive holding 'ProjectGCP'
 (the .NET BinaryFormatter authoring graph) and a '*.tgz4' member that is itself
 a plain ZIP of the built panel payload (layout.json + N.png).
 
@@ -12,26 +13,63 @@ Usage:
 """
 import io
 import os
+import struct
 import sys
 import zipfile
 
-MANGLED = (b'KP\x03\x04', b'KP\x01\x02', b'KP\x05\x06', b'KP\x07\x08')
-NORMAL = (b'PK\x03\x04', b'PK\x01\x02', b'PK\x05\x06', b'PK\x07\x08')
+
+def _records(raw, m):
+    """Where a ZIP's records begin - its end of central directory record, each
+    central directory header, each local header and each data descriptor -
+    found as a ZIP reader finds them, from the end, with signatures starting
+    `m` (b'PK' plain, b'KP' as GUI Designer writes them).
+
+    Only these are signatures. The same four bytes can stand anywhere in a
+    member's compressed data: the Turbulence 725 huddle's ProjectGCP holds
+    KP 05 06 50 MB in, and swapping every occurrence in the file damaged 7
+    bytes of a PNG in it, which read as a wrong CRC-32 on a panel GUI Designer
+    had built whole."""
+    eocd = raw.rfind(m + b'\x05\x06', max(0, len(raw) - 65557))
+    if eocd < 0:
+        raise zipfile.BadZipFile('no end of central directory record')
+    count, start = struct.unpack('<H', raw[eocd + 10:eocd + 12])[0], struct.unpack('<I', raw[eocd + 16:eocd + 20])[0]
+    out, at = [eocd], start
+    for _ in range(count):
+        if raw[at:at + 4] != m + b'\x01\x02':
+            raise zipfile.BadZipFile(f'no central directory header at {at}')
+        flags = struct.unpack('<H', raw[at + 8:at + 10])[0]
+        csize = struct.unpack('<I', raw[at + 20:at + 24])[0]
+        flen, xlen, clen = struct.unpack('<HHH', raw[at + 28:at + 34])
+        local = struct.unpack('<I', raw[at + 42:at + 46])[0]
+        if raw[local:local + 4] != m + b'\x03\x04':
+            raise zipfile.BadZipFile(f'no local header at {local}')
+        out += [at, local]
+        if flags & 8:
+            lf, lx = struct.unpack('<HH', raw[local + 26:local + 30])
+            desc = local + 30 + lf + lx + csize
+            if raw[desc:desc + 4] == m + b'\x07\x08':
+                out.append(desc)
+        at += 46 + flen + xlen + clen
+    return out
 
 
-def _swap(raw, sigs, to):
+def _resign(raw, frm, to):
+    """A ZIP's bytes with its records' signatures turned from `frm` to `to` -
+    b'KP' to b'PK' to read a .gdl, back to write one - and nothing else."""
     d = bytearray(raw)
-    for s in sigs:
-        i = d.find(s)
-        while i != -1:
-            d[i:i + 2] = to
-            i = d.find(s, i + 1)
+    for at in _records(raw, frm):
+        d[at:at + 2] = to
     return bytes(d)
 
 
 def open_gdl_bytes(raw):
-    """A .gdl (or .glt) held in memory, as a normal ZipFile."""
-    return zipfile.ZipFile(io.BytesIO(_swap(raw, MANGLED, b'PK')))
+    """A .gdl (or .glt) held in memory, as a normal ZipFile. One whose records
+    already read PK is read as it is."""
+    try:
+        raw = _resign(raw, b'KP', b'PK')
+    except zipfile.BadZipFile:
+        pass
+    return zipfile.ZipFile(io.BytesIO(raw))
 
 
 def open_gdl(path):
@@ -85,7 +123,7 @@ def pack(template, gcp_bytes, dest, payload_bytes=None, name=None):
         if name is not None and payload_bytes is not None:
             z.writestr(name, payload_bytes)
     with open(dest, 'wb') as fh:
-        fh.write(_swap(buf.getvalue(), NORMAL, b'KP'))
+        fh.write(_resign(buf.getvalue(), b'PK', b'KP'))
     return dest
 
 

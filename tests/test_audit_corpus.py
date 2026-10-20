@@ -16,10 +16,59 @@ import audit_corpus  # noqa: E402
 
 def fact(name, **kw):
     f = {'name': name, 'canvas': None, 'fonts_missing': None, 'fonts_error': None,
-         'built': True, 'n_modal': 0, 'fullcanvas_refs': [], 'popup_mismatch': [],
-         'unrasterized': 0}
+         'fonts_not_carried': None, 'fonts_not_declared': None, 'built': True,
+         'n_modal': 0, 'fullcanvas_refs': [],
+         'popup_mismatch': [], 'unrasterized': 0}
     f.update(kw)
     return f
+
+
+class TestDeclaredIsNotCarried(unittest.TestCase):
+    """A seed can declare a face it carries nothing for - Arial Black, whose
+    resource a build adds only sometimes - and that is the seed, not a fault to
+    fail on.
+    A face it carries and the toolkit cannot recover is."""
+
+    def test_a_declaration_carried_by_nothing_is_said_not_failed(self):
+        F = [fact('seed.gdl', fonts_missing=[], fonts_not_carried=['ariblk.ttf (119,904 B)']),
+             fact('f.gdl', fonts_missing=[], fonts_not_carried=[])]
+        self.assertEqual(audit_corpus.inv_fonts(F), ('PASS', ['2 project(s) checked']))
+        self.assertEqual(audit_corpus.inv_fonts_not_carried(F),
+                         ('INFO', ['1 of 2 project(s)', 'seed.gdl: ariblk.ttf (119,904 B)']))
+
+    def test_none_is_said_plainly(self):
+        F = [fact('f.gdl', fonts_missing=[], fonts_not_carried=[])]
+        self.assertEqual(audit_corpus.inv_fonts_not_carried(F), ('PASS', ['1 project(s) checked']))
+
+    def test_all_three_are_on_the_list(self):
+        names = [n for n, _ in audit_corpus.INVARIANTS]
+        self.assertIn('every face a project declares and carries is recovered', names)
+        self.assertIn('faces declared and not carried', names)
+        self.assertIn('faces carried and not declared', names)
+
+    def test_a_face_carried_under_no_declaration_is_said_not_failed(self):
+        F = [fact('Turbulence 1035.gdl', fonts_missing=[], fonts_not_carried=[],
+                  fonts_not_declared=['Arial Regular (1,016,724 B)'])]
+        self.assertEqual(audit_corpus.inv_fonts(F), ('PASS', ['1 project(s) checked']))
+        self.assertEqual(audit_corpus.inv_fonts_not_declared(F),
+                         ('INFO', ['1 of 1 project(s)',
+                                   'Turbulence 1035.gdl: Arial Regular (1,016,724 B)']))
+
+
+class TestTheFactsOfARealSeed(unittest.TestCase):
+    """facts() itself, on the one seed CI pulls: the verdicts above are only as
+    good as the pairing that reduces a project to these lists."""
+
+    def test_the_seed_ci_has(self):
+        from _corpus import seed, usable
+        path = seed('Afterburn 1035.gdl')
+        if not usable(path):
+            self.skipTest('seeds/Afterburn 1035.gdl is not here (an LFS pull fetches it)')
+        f = audit_corpus.facts(path)
+        self.assertIsNone(f['fonts_error'])
+        self.assertEqual(f['fonts_not_carried'], ['ariblk.ttf (119,904 B)'])
+        self.assertEqual(f['fonts_missing'], [])
+        self.assertEqual(f['fonts_not_declared'], [])
 
 
 class TestCanvas(unittest.TestCase):

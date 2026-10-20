@@ -1,6 +1,7 @@
 {
   "name": "Huddle Room",
   "model": "TLP1035T",
+  "family": "Afterburn",
   "size": [1280, 800],
   "start_page": "Huddle Home",
 

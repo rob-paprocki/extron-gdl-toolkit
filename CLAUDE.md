@@ -58,13 +58,13 @@ author, build and verify in one session.
 
 | Runs anywhere | Needs GUI Designer installed |
 |---|---|
-| `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` / `templates` | every `powershell/*.ps1` |
+| `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` / `templates` | every `powershell/*.ps1` but `GdlBlocker.ps1`, which the others share and which needs Windows alone |
 | `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` (the last two score against the client fixtures, so in the archive) | File > Save and Build |
-| `gdl.spec` check / render / plan / donors | `examples/add-page-and-popup.ps1` |
+| `gdl.spec` check / render / plan / donors / icons | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
-| `gdl.idmap` check / write / write-panels | |
+| `gdl.idmap` check / write / write-panels / from-built | |
 | `gdl.designsys` build (its icons and backgrounds need Pillow and Extron's kit, and say so without them); `gdl.design` translate (needs headless Chrome) | |
-| the `python -m pytest` suite, with Pillow - a test that needs the seeds, the client fixtures, Extron's kit or the Design runtime skips without them | |
+| the `python -m pytest` suite, with Pillow - a test that needs the seeds, the client fixtures, Extron's kit, the Design runtime or Windows PowerShell skips without them | |
 | `tests/verify_built.py`, `tests/verify_idmap.py`, `tests/verify_seed.py` (it compares a seed's series only where Extron's templates are - the install or `vendor/` - and says so where they are not), `tests/type_probe.py`, given the built file or seed | |
 
 Setup is in `README.md` *Setup*. `fixtures/` is real client material, in the
@@ -132,9 +132,12 @@ python tests/verify_built.py out/plan.json out/generated.gdl
 
 It diffs the built `layout.json` against the plan that produced it and exits
 non-zero on any authored control that moved, lost its caption, or came back at
-the donor's font size instead of the spec's - and on a panel that boots into the
-wrong page, a popup that built as the wrong kind, or a button whose states
-came back more, fewer, misnamed or drawn alike.
+the donor's font size instead of the spec's, or with another text alignment -
+and on a panel that boots into the wrong page, carries a page or popup its plan
+does not name (the donor's, left in), or a control on a generated page or popup
+the plan did not put there, has a popup that built as the wrong kind, or a
+button whose states came back more, fewer, misnamed, drawn alike, or with a
+state built in another state's image.
 
 It also checks **color, off the artwork rather than the model.** That
 distinction is the whole point: a built control's `BackgroundFillColor` reads
@@ -153,10 +156,10 @@ python tests/verify_idmap.py out/idmap out/generated.gdl
 ```
 
 It checks every page and popup name and every control ID in the map against the
-built file - Build renumbers pages and keeps the donor's alongside, so agreement
-with the spec is not agreement with the panel. `docs/idmap.md` §5 has what else
+built file - Build renumbers pages, so agreement with the spec is not agreement
+with the panel. `docs/idmap.md` §5 has what else
 it checks. A map of every panel of a canvas is checked against each built panel
-in turn, naming it: `--panel <model>` (`docs/idmap.md` §7).
+in turn, naming it: `--panel <panel>` (`docs/idmap.md` §7).
 
 ## Driving GUI Designer
 
@@ -170,8 +173,10 @@ success.
 Preferences are stored per version, so an upgrade resets them, and the restored
 default for *Automatically Remove Unused Resource Library Items During Save and
 Build* is to ask. The first build then blocks on a modal that exposes no UIA
-patterns, `Wait-GdlBuild.ps1` times out with no diagnosis, and nothing is
-written. `docs/from-scratch.md` §7 *What will cost you time* has the fix.
+patterns, and nothing is built: the build wait stops on it and names it
+(`powershell\GdlBlocker.ps1`), as the scripts do for GUI Designer's Extron
+Insider login and its error boxes. `docs/from-scratch.md` §7 *What will cost
+you time* has the fix.
 
 ## Conventions
 
@@ -234,6 +239,14 @@ were updated. So:
   both runs of `workflows/gdl-bug-hunt.js`. Stream over
   projects instead of loading them all, keep workflows small, and let the OS
   manage the pagefile.
+- **A long Claude Code session on Windows shrinks that limit as it goes.** On
+  the development host every tool call leaked 20 to 60 kernel access tokens,
+  and after two days 1.4 GB of paged pool was held by them - not charged to
+  any process, so Task Manager shows nothing using it. Read the pool tags
+  (`Toke`, `SeAt`, `SeTd`, `SeDt`; poolmon, or NtQuerySystemInformation's
+  SystemPoolTagInformation) before blaming an application, and reboot to
+  free them. GUI Designer beside such a session is what Claude Code stopped
+  for low memory (`docs/history.md`).
 - **Do not write backslash escapes through a bash heredoc.** Backslash-v and
   backslash-a get interpreted before Python sees them, leaving literal 0x0B and
   0x07 bytes in the file. A doubled backslash does not survive either: `'C:\\'`

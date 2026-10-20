@@ -120,7 +120,7 @@ building it:
 ```bash
 python -m gdl.spec check  examples/panel.json     # ids, off-canvas, sizes, unknown resources
 python -m gdl.spec render examples/panel.json out/preview.png
-python -m gdl.spec plan   examples/panel.json out/plan.json   # ops for the applier
+python -m gdl.spec plan   examples/panel.json out/plan.json --donor "seeds/Afterburn 1035.gdl"   # ops for the applier
 ```
 
 ![generated panel](panel-preview.png)
@@ -246,9 +246,12 @@ Consequences worth keeping:
 **What Build adds by itself.** The generated page came back with 35 controls
 against 29 authored, which looked like clone contamination and is not: Build
 adds one full-canvas `PBPopupPageReference` per **modal** popup to **every**
-page, the Offline Page counting only when `EnableOfflinePage` is on — and the
-donor has seven modal popups, one of them a switched-off Offline Page. Every
-donor page carries the same six. The verifier ignores unauthored extras for this reason.
+page, the Offline Page counting only when `EnableOfflinePage` is on — and that
+build kept the donor's pages, which brought seven modal popups, one of them a
+switched-off Offline Page. The applier now drops the donor's own pages and
+popups (§5c), so a page gets one reference per modal the spec names. The
+verifier allows a full-canvas popup reference, which is what those are, and
+fails a page or popup carrying any other control its plan did not author.
 
 `Project > Verify` is not the build, and `BuildProject()` cannot be called
 headlessly — `docs/gdl-format.md` §2 has both. §7 is how the real build is
@@ -261,10 +264,11 @@ driven.
     spec -> layout pass + ID allocation -> build plan -> Apply-GdlPlan.ps1
          -> ProjectGCP -> gdl.container pack -> GUI Designer -> Save and Build
 
-Built on `seeds/Afterburn 1035.gdl` by `New-GdlPanel.ps1`, unattended, it
-verified with 0 problems: a page of 47 controls - the spec's 29, and the popup
-reference Build adds for each of the seed's 18 modal popups - 28 of them
-carrying rasterized artwork. `docs/generated-built.png` is that page rendered from GUI
+Built on `seeds/Afterburn 1035.gdl` by `New-GdlPanel.ps1`, unattended and
+with the seed's own pages kept - as every build was before §5c's real-size
+panel - it verified with 0 problems: a page of 47 controls - the spec's 29, and
+the popup reference Build adds for each of the seed's 18 modal popups - 28 of
+them carrying rasterized artwork. `docs/generated-built.png` is that page rendered from GUI
 Designer's *own* built payload, not a preview. Its volume row shows the first
 popup of the spec's `Volume` group, `2310 - Program Volume`, over the page's
 own label, as GUI Designer's snapshot does; the preview above draws the page
@@ -340,12 +344,16 @@ payload is Build's *output*, not its input.
 
 The project wrapper has to come from GUI Designer. `PBProject` cannot be
 constructed headlessly any more than a `PBPage` can, and a template has none to
-clone.
+clone - saving one as a `.gdl` in feature-flag mode keeps it a template (§7
+*Feature-flag mode*).
 
 So, once per theme:
 
 1. **File > New Project...**
 2. Step 1, pick the panel — ideally the size you will deliver on (see below).
+   A panel that rotates shows a **Resolution**, `(Landscape)` or `(Portrait)`;
+   Theme is offered only where a template is drawn that way up
+   (`docs/design-rules.md` §1).
 3. Step 2, choose **Theme**, then the theme, project font and application.
 4. **Create**, then save it into `seeds/`. That file is the seed.
 
@@ -383,8 +391,61 @@ Two things that seed taught, both now checked by `gdl.spec donors`:
   `Set-GdlFont` correctly leaves the donor's face, the panel builds clean, and
   it ships in Open Sans. Only `tests/verify_built.py` noticed, 14 controls deep.
 - **The spec's `model` is not the panel's model.** The built panel is whatever
-  the donor is - this seed is an 835M - and `model` only feeds the touch-target
-  check. A spec whose canvas differs from the donor's is now refused.
+  the donor is - this seed is an 835M: its platform and skin are the donor's,
+  and the applier never touches them. So `donors` refuses a donor whose canvas,
+  part number or theme is not the spec's `size`, `model` and `family`; the
+  1035T and 1035M share a part number, and so share a donor.
+
+### A real-size panel
+
+`examples/boardroom-full.json` is the size of a real job - the client project
+has 27 pages - built on `seeds/Afterburn 1035.gdl`: 23 pages reached from a
+Welcome start page, a page per source, room pages, three video-call pages and
+help; a Volume popup group shown on seven pages, each through its own popup
+reference; a Keypad group in a different place on each of two pages; three
+modals, two of them shown by the program; and Home, the status line, Room Off
+and the volume tabs mirrored under one ID each on every page that carries them.
+`New-GdlPanel.ps1 -IdMap` builds it unattended, and the build verifies: its 367
+controls - 336 on the pages, 31 in the six popups - and 378 ID-map references,
+0 problems.
+
+Getting there found these, each fixed, checked or measured:
+
+- **A grid's `rows` were ignored and its extra items dropped.** A `grid` given
+  `rows` and no `cols` laid every item in one row, and a grid or stack with
+  more items than cells dropped the rest - silently, unless a cell came out too
+  small to touch.
+- **The donor's own pages and popups shipped with the panel.** The seed's 7
+  pages and 29 popups sat beside the spec's, unreachable from its start page,
+  16 of their controls on 13 IDs the spec's own carry. The applier now drops
+  every page and popup it did not make itself - by identity, so a spec may use
+  a name the donor does - keeping GUI Designer's Offline Page, the 29th popup
+  (`"keep_donor_pages": true` keeps them all); `tests/verify_built.py` fails a
+  panel carrying a page or popup its plan does not name. The built file went
+  from 3.66 MB to 2.89. Only the pages and popups go: the donor's resource
+  library ships whole.
+- **Save and Build is slow, and its time varies.** Six builds of the spec ran
+  on one host. The five that ran to the end took 21 minutes with the donor's
+  content, then 28, 9, 21 and 22 without it - so the donor's content is not
+  what decides it (`docs/ROADMAP.md`, *What a real-size build spends its time
+  on*). The fourth was closed after a minute by a
+  wait that took it for wedged.
+- **A small spec's build is the seed's content.** `examples/panel.json` - one
+  page, 29 controls - built on the same seed in about a minute with the seed's
+  pages and popups dropped, and in about 11 minutes with them kept: 71 s
+  against 643 s from the click to the file written. The seed's 7 pages and 29
+  popups are nearly all of a one-page panel's build, and less than the spread
+  between two builds of the 23-page one.
+- **A fixed wait called a running build failed.** `Wait-GdlBuild.ps1` gave up
+  at 15 minutes while GUI Designer was still building; it now runs on while
+  GUI Designer is still busy (§7). The Build Manager is no sign of life: in
+  the build watched to its end it appeared only 20 minutes in, for the last 25
+  seconds before the save.
+
+The logs of all six builds, the window watcher's log, the last build's plan,
+ID map and built file, and the donor-kept build's file are in
+`archive/job-2419a20b/item4/`; the one-page panel's two builds are
+`archive/job-2419a20b/autoseed/` (dropped) and `wait/long-build.log` (kept).
 
 ### Automating the wizard: it works in 1.28
 
@@ -402,7 +463,9 @@ with no hands on the mouse. The working sequence is the plain one
 
 1. Panel Type. Expanding it lists 56 entries ("Select Your Panel" plus the 55
    models), which is also a convenient way to read the shipped panel list.
-2. For a soft client, a **Resolution** combo appears once the panel is chosen.
+2. For a soft client, or a panel that rotates (`docs/design-rules.md` §1), a
+   **Resolution** combo appears once the panel is chosen. Choose it before step
+   3: what Theme offers depends on it.
 3. Step 2's Blank / Theme radios, then Theme, then Application.
 4. Create.
 
@@ -426,9 +489,11 @@ committing. Only a real click on the list item works.
 
 `Create` and `Cancel` expose no patterns, so they need a click by position.
 
-**`powershell/New-GdlSeed.ps1` does all of this**, refuses a name the wizard
-does not offer, builds what it saves - Save As writes no `layout.json`, and every
-hand-made seed is built - and runs `tests/verify_seed.py` on it, removing the
+**`powershell/New-GdlSeed.ps1` does all of this**, and turns a rotating panel
+with `-Resolution 'WxH'` before the theme. It refuses a name the wizard does not
+offer, and a disabled Theme radio, as for a portrait 835M. It builds what it
+saves, since Save As writes no `layout.json` and every hand-made seed is built,
+and runs `tests/verify_seed.py` on it, removing the
 file if it does not build or the verifier refuses it or cannot run, so a seed
 nobody verified never stays where the next run finds it; a Save As that never
 finishes leaves no file either. The verifier checks the theme and part number,
@@ -481,8 +546,9 @@ person. It still needs GUI Designer running and a desktop to draw on.
   resources; the two archived fixtures carry 36. Across Extron's 50 installed
   templates the count runs **13 to 32**, so treat it as per-project and read it,
   never assume it. The low end matters: a Mach or Turbulence template offers 13
-  borders, so a spec that names a radius/thickness the target project has no
-  resource for will not resolve.
+  borders, so a radius/thickness the target project has no resource for builds
+  as its nearest shape, and is refused where it has none near enough
+  (`seeds/README.md`).
 - The preview's fidelity is measured against pages made of *built* artwork. A
   page of `TLPImageID = -1` controls is exercised by exactly one control in the
   whole corpus (the Offline Window), so the preview's accuracy on a fully
@@ -545,8 +611,9 @@ the default is not inside the repo.
   Resource Library Items During Save and Build*, whose default is to **ask**.
   The first Save and Build after an upgrade therefore opens a modal called
   **Save and Build Optimization** (Keep / Remove, plus "Don't show again") and
-  waits. Nothing is written while it is up, so `Wait-GdlBuild.ps1` simply times
-  out with no diagnosis — it is watching a file that will never change.
+  waits. Nothing is built while it is up and GUI Designer sits idle, which from
+  outside looks like a build that has not finished; the scripts stop at once
+  and name it (the next item).
 
   The dialog's own controls expose **no UIA patterns**, so `Invoke-GdlMenu.ps1`
   cannot dismiss it; it is a coordinate click or nothing. Set the preference
@@ -568,6 +635,22 @@ the default is not inside the repo.
 
   This is not a 1.28 feature; the preference is long-standing. It is an
   *upgrade* trap, and it will fire again on the next version.
+- **A dialog that waits on a person ends a scripted run, saying which.**
+  `GdlBlocker.ps1` names them: the upgrade prompt above; GUI Designer's
+  **Application Licensing** window, which can ask for an Extron Insider login
+  when it starts, with the user logged in, and opens nothing until someone
+  answers it; and its own error boxes, whose message it reads out. From
+  outside, each looks like slow work. The waits for GUI Designer to open a
+  file, for the seed wizard and its new project, for that project's menu bar
+  and Save As, and for the build ask on every poll and stop there - the build
+  wait only with GUI Designer idle behind the dialog, as it is behind one that
+  blocks, since a build may go on behind one that came up during it. A dialog
+  a menu click raises is seen once `Invoke-GdlMenu.ps1` gives up on its
+  blocked invoke, about a minute on. The login is the user's to give, never a
+  script's, and what that window says is never read: it shows their e-mail
+  address. A wait that runs out says what else GUI Designer is showing; its
+  Project Create Wizard in place of a file is how it refused a `.glt` page
+  library.
 - **Trigger the build with `Invoke-GdlMenu.ps1`, not SendKeys.** UI Automation
   clicks the menu item directly and needs no focus, so the pipeline runs while
   the machine is in use - or while no one is looking at it, since a minimized
@@ -579,14 +662,34 @@ the default is not inside the repo.
   terminal. `Send-GdlKeys.ps1` is only the fallback, and it verifies the window
   and refuses rather than typing blind. `Invoke()` throws `Operation timed out
   (0x80131505)` because it blocks on the build modal; the click landed anyway,
-  so watch the `.gdl`, not the exit code.
+  so watch the `.gdl`, not the exit code. It gives up 67 s after the click, and
+  only then does `Wait-GdlBuild.ps1` start its clock, whose *finished* is 8 s
+  after the write (the size held for 6 s at 2 s polls): from the click to the
+  file written is its *rewritten* time plus about 68 s.
 - **Wait by watching the `.gdl` itself, with `Wait-GdlBuild.ps1`.** Both obvious
   signals are wrong. The title's trailing `*` only means unsaved changes, so a
   freshly packed file opened clean never has one, and a wait on it returns at
   once onto the stale payload. The Build Manager window appears seconds *after*
   the click and closes about five seconds *before* the file is written, so
   trusting it truncates the payload. The file's mtime is the real signal: wait
-  for it to change, then to stop changing.
+  for it to change, then to stop changing. How long to wait is whether GUI
+  Designer is busy, and neither its writes nor its CPU alone says so. Idle, and
+  with a modal waiting on a person, it writes a steady 3.5 KB/s at under 3% of
+  a core - it never stops writing, so any write is no sign of life. A nine-minute
+  build wrote 300 KB/s at 15% to 25% of a core for eight minutes, then for 90
+  seconds wrote no more than idle at a full core, then saved. So busy is a
+  tenth of a core or 32 KB/s, and the wait runs on past `-TimeoutSeconds` while
+  GUI Designer is busy and gives up a minute after it goes idle, saying which it
+  was. A 23-page panel built for 9 to 28 minutes, and a fixed 15-minute wait
+  reported a failure while GUI Designer was still building. The measurements,
+  on 1.28.0.7, are in `archive/job-2419a20b/wait/`.
+- **A build can run blind: leave it alone.** In the real-size build watched to
+  its end (§5c), GUI Designer showed no Build Manager for 20 minutes - only for
+  the last 25 seconds before the save - and the menu invoke's timeout looked
+  like a click that missed; the build was running, and finished and verified
+  clean. One closed as hung after a minute was lost. Its window stops answering
+  for most of a build, too. Watch the process - its CPU and its writes
+  (`Win32_Process`), as the wait does - not its window.
 - **Take the baseline mtime before triggering, and pass it as `-Since`.**
   `Invoke-GdlMenu.ps1` blocks on the build modal, so when the build finishes
   before that call returns, a baseline sampled afterwards is already the
@@ -603,11 +706,98 @@ the default is not inside the repo.
   **File > Save and Build (Ctrl+Shift+B)**.
 - **A seed is made by `New-GdlSeed.ps1`**, which drives the Project Create
   Wizard (§5c). Unlike a build it needs a desktop: in a locked or
-  disconnected session the wizard's dropdowns never open, so it refuses.
+  disconnected session the wizard's dropdowns never open, so it refuses. Two
+  of its waits are long because GUI Designer is slow there, not stuck. Create
+  builds the project behind a *Please Wait... Updating References* dialog,
+  which for Mach's 1020 series outlasted a 180 s wait twice, and for
+  Turbulence's 720 series a 15-minute one, with other work running - so it
+  waits up to 30 minutes for the new project's title, and stops at once if
+  GUI Designer closes. A panel type below the open list's rows - the TLP Pro
+  1525TG's, near the end of it - is scrolled into view before it is clicked. And after Save As, GUI Designer stops
+  answering for a while - 16 s for the Mach 725 seed, 34 s for the Shockwave
+  and Turbulence ones - when UI Automation finds no menu in it, so it waits for
+  an answer before Save and Build, says if none came, and tries that menu up to
+  three times. A whole seed, Create to built file, takes from under two
+  minutes to over twenty - by the seeds' own creation and revision times, 85
+  to 168 s for the Afterburn 320, 525 and 725, and 560 to 1,337 s for the Mach,
+  Shockwave and Turbulence 725s. The theme is not what decides it: the
+  Afterburn 725, made again beside those three with feature-flag mode on and
+  other work on the host, took 935 s (`docs/ROADMAP.md`, *What a real-size
+  build spends its time on*). The 725 seeds' logs, the run that lost one to
+  the hung window, and that Afterburn 725 are in `archive/job-2419a20b/seeds/`.
+- **A seed the wizard cannot make is turned by `New-GdlTurnedSeed.ps1`** - a
+  panel turned where its theme draws no template that way up. No wizard: it
+  plans `gdl.edit retarget` on the model's own seed, applies it, then opens,
+  builds, waits for and closes GUI Designer as `New-GdlPanel.ps1` does, and
+  removes the seed if `tests/verify_seed.py` does not find it its series
+  template turned.
 - **Every panel of a canvas is built by `New-GdlPanels.ps1`** - one
   `New-GdlPanel.ps1` run per panel, as a child process each so one failure
   does not end the rest, strictly one after another: each run opens GUI
   Designer, builds and closes it, so two cannot share it.
+
+### Feature-flag mode
+
+GUI Designer has a feature-flag mode - a red status bar reading *Feature Flag
+Mode* - that adds a **Debug** and a **Templates** menu and more properties.
+What it shows on 1.28.0.7:
+
+- **Debug > Feature Flag Control** lists the flags: Allow Hidden Devices, Show
+  Cpu Memory Usage, Show Project Repair Option, Allow Internal Metrics, Gd Show
+  Hidden Props, Gd Show Bezel Options, Gd Advance Page Options, Gd Enable
+  Template Mode, Gd Allow Transparent Backgrounds, Gd Allow Editable Video
+  Object Id, Gd Generate Checksum and Gd Allow Editable Image Object Id. *Allow
+  Internal Metrics* lets a metrics service report usage; turn it off unless
+  that is wanted.
+- **Debug** also has *Set Project Screen Size* (Scale... or Don't Scale...),
+  *Create Bezel* (a layout creator for hardware buttons, light bars and encoder
+  knobs), three font-strip settings, *Edit Project Version*, and *Project
+  Tree* - pages, popups, modal popups and popup groups with their names and
+  ids, less than `gdl.project` reads. Bezel, font strip and project version
+  have not been tried.
+- **Debug > Set Project Screen Size > Scale...** is a plain per-axis scale of
+  every page's controls, the one `gdl.edit retarget` makes: taking the Afterburn
+  1535 seed to 1280x800 it matched that scale on 52 of 523 controls and was
+  within a pixel on the rest (it truncates where `gdl.edit` rounds), left every
+  font size alone, and scored the same against Extron's own 1035 layout. It
+  cannot make a page larger than the panel's resolution: asked to, it raises an
+  *Invalid Resize* modal per page and leaves the pages half-scaled, so never
+  save the result.
+- **Templates > Load GLT** opens a `.glt` as a project, titled with the panel
+  GUI Designer gives it: `TLP Pro 1020T` for Mach 1020 Series, `TLP Pro 1035T`
+  for Mach 1220 Series. Load a copy, read-only: the installed templates are
+  what the wizard copies from. *Save As* a `.gdl` writes the template's own
+  root, a `PBTemplate`, not a `PBProject`, and builds nothing - so it is not a
+  seed, and `tests/verify_seed.py` refuses it.
+- **Templates > Create GLT** opens the Template Manager on the open template:
+  its series - the stored `mSeries`, which it labels `TLP1020` for
+  `Series1020` and so on (`docs/gdl-format.md` §7) - resolution, style,
+  applications - each a named subset of its pages - and common graphics.
+- **Every installed template has one application** (the `.glt`'s
+  `mApplications`): *All-inclusive* in the Afterburn, Mach, Shockwave and
+  Turbulence templates, spelled three ways, and named for the product in the
+  ZRTP, Teams Rooms and Zoom Rooms ones; the Zoom Rooms pair alone has App ID 1,
+  the rest 0.
+- **The Template Manager's series list** is TLP300, TLP320, TLP520, TLP535,
+  TLP720, TLP835, TLP1020, TLP1035, TLP1220, TLP1230, TLP1520, TLP1720, TLI100,
+  VTLPWeb, VTLPiOS and VTLPAndroid - every stored series but ECP's, in an order
+  that is not the stored number's. No installed template's series is TLP835 or
+  TLP1035: a 1220 Series template opens as a TLP Pro 1035T panel, but its series
+  is TLP1220, which offers 1280x800 only - so Extron ships no portrait template
+  for either.
+- **Gd Show Hidden Props** adds an *Internal* category to a button (Press
+  Feedback State ID, TLP Default State ID) and *Misc* fields: HidePressFeedback,
+  HideVisualFeedback, HideTextFeedback, IsDynamicText, HwID, IsConfigurable,
+  IsHardwareBased and Description; a page adds CustomImageUpload.
+- **Gd Generate Checksum** leaves a plain save alone, but Save and Build with it
+  on writes `PBProject.checksum`, and `layout.json` a `Checksum`: a CRC-64 of
+  the project's metadata - application name and build, author, creation and
+  revision times, version. Decompiled, GUI Designer.exe's Save and Build
+  handler is its one writer, and nothing in the install reads it back. Every
+  project built with the flag off reads 0 - every seed but those built with it
+  on, which `seeds/README.md` names. `Apply-GdlPlan.ps1` clears it, so a panel
+  built on one of those carries only the checksum its own build writes, if any;
+  `tests/verify_seed.py` notes a seed that has one.
 
 ### Reading the screen back
 

@@ -17,10 +17,11 @@ tests/score.py gates a render change.
 
 Two things it deliberately does NOT treat as failures:
 
-  * extra controls on a page. Build adds one full-canvas PBPopupPageReference
-    per MODAL popup in the project, to every page. The client donor has
-    six modal popups, so every generated page comes back with six references
-    nobody authored. That is Build doing its job.
+  * Build's own popup references on a page. Build adds one full-canvas
+    PBPopupPageReference per MODAL popup in the project, to every page, so
+    every generated page comes back with one per modal the spec names - and
+    one per donor modal too, where the spec keeps the donor's pages. Nobody
+    authored them; that is Build doing its job.
   * a popup page larger than the spec's size. A popup inherits its displayed
     dimensions from the reference that shows it; the page's own size only has
     to be big enough to hold the controls.
@@ -45,6 +46,14 @@ from gdl.compose import load  # noqa: E402
 # tests/test_verify_built.py pins it.
 TYPE_NAME = {6: 'PopupPageReference', 7: 'Button', 8: 'DateTime', 9: 'Level',
              10: 'Image', 11: 'Label', 12: 'Line', 13: 'Shape', 27: 'Slider'}
+# TextAlignment -> the spec's word for it, for a problem to say ('centre' is an
+# input spelling only).
+_ALIGN_NAME = {v: k for k, v in __import__('gdl.spec', fromlist=['ALIGN']).ALIGN.items()
+               if k != 'centre'}
+# No alignment: what GUI Designer writes on a control whose states disagree -
+# all 69 such buttons in the archived builds, and none of the 8463 seed and
+# fixture buttons whose states agree.
+ALIGN_MIXED = 9
 
 
 def _caption(c):
@@ -222,11 +231,22 @@ def check_level_bars(plan_items, table, assets, kind):
             continue
         by_name = _index(got)
         for op in item['controls']:
-            if op.get('gauge_fill') is None:
-                continue
             name = (op.get('fields') or {}).get('nameField')
             c = by_name.get(name)
-            if c is None:
+            if op.get('keep_art') and c is not None:
+                # Drawn from its donor's art, planned no color: its empty and
+                # full art must both be built, and differ, or it shows no value.
+                checked += 1
+                lo, hi = c.get('TLPMinValueImageID'), c.get('TLPMaxValueImageID')
+                where = f"{kind} {item['name']!r} {name!r}"
+                if lo not in assets or hi not in assets:
+                    problems.append(f'{where}: drawn from its seed\'s art, but Build drew no '
+                                    f'{"empty" if lo not in assets else "full"} art '
+                                    f'(TLPMinValueImageID {lo}, TLPMaxValueImageID {hi})')
+                elif assets[lo] == assets[hi]:
+                    problems.append(f'{where}: its empty and full art are the same image - it shows no value')
+                continue
+            if op.get('gauge_fill') is None or c is None:
                 continue
             checked += 1
             tid = c.get('TLPMaxValueImageID')
@@ -337,7 +357,8 @@ def check_states(plan_items, table, assets, kind):
                         f'(TLPImageID {tid}), so it will draw nothing')
                     continue
                 problems += _state_image(where, i, bs, c, ws.get('image'), ws.get('fill'),
-                                         assets)
+                                         assets, [w.get('image') for j, w in enumerate(want)
+                                                  if j != i and w.get('image')])
                 shares = _shares(assets, tid)
                 dominant[i] = (tid, max(shares.items(), key=lambda kv: kv[1])[0]
                                if shares else None)
@@ -471,9 +492,9 @@ def check_rails(plan_items, table, assets, kind):
     backgroundImageField - which on a slider IS the track - so Shockwave's
     slider built an opaque black block where its seed's own draw the rail,
     and no other check looked. Build draws the two as the empty and full
-    assets, TLPMinValueImageID and TLPMaxValueImageID (rail_image): on the
-    seeds' own sliders they are their track and fill files within 0%
-    (Turbulence, Mach) and 8% (Shockwave), the black block 100% and 66%.
+    assets, TLPMinValueImageID and TLPMaxValueImageID, the full one the fill
+    over the track (rail_image): on the seeds' own sliders they are their
+    track and fill files within 0%, the black block 100% and 66%.
     """
     problems, checked = [], 0
     for item in plan_items:
@@ -504,9 +525,12 @@ def check_rails(plan_items, table, assets, kind):
                 w, h = Image.open(io.BytesIO(assets[tid])).size
                 vertical = c.get('Orientation') in (2, 3)   # up, down
                 thumb = c.get('SliderIndicatorHeight' if vertical else 'SliderIndicatorWidth')
+                # Full is the fill over the track.
+                under = (op.get('track_image') or {}).get('file') if part == 'fill' else None
+                under = under if under and os.path.exists(under) else None
 
-                def draw(file, w, h, tw=c.get('SliderTrackWidth'), thumb=thumb):
-                    return rail_image(file, w, h, tw, thumb, vertical)
+                def draw(file, w, h, tw=c.get('SliderTrackWidth'), thumb=thumb, under=under):
+                    return rail_image(file, w, h, tw, thumb, vertical, under)
 
                 off = image_mismatch(img['file'], assets[tid], w, h, draw=draw)
                 if off > IMAGE_OFF:
@@ -581,22 +605,30 @@ def stretch_image(file, w, h):
     return Image.open(file).convert('RGBA').resize((w, h), Image.Resampling.LANCZOS)
 
 
-def rail_image(file, w, h, track, thumb, vertical):
+def rail_image(file, w, h, track, thumb, vertical, under=None):
     """`file` as Build draws a slider's rail into a w x h control: stretched
     into a box the track's width across and the slider's length less the thumb
     along, centered - inset half the thumb at each end, where the thumb's
-    center stops. Measured on the seeds' own built sliders against their kit
-    files: every Turbulence and Mach rail 0% off so, Shockwave's 8% at most.
-    Drawn the whole length instead, Turbulence's 10 px stripes all land
-    elsewhere and its own rails read 48-54%; fitted as a button's image is,
-    a narrow bar is a few pixels off along its whole length. Only vertical
-    sliders were measured; a horizontal one is assumed to mirror them."""
+    center stops - and cut to the control where the track is wider than it:
+    the Shockwave 720's 47 px slider with a 52 px track built its rail 52 wide. The full
+    asset is the fill drawn over the track (`under`). Measured on the seeds'
+    own built sliders against their kit files: every Turbulence, Mach and
+    Shockwave rail 0% off so; drawn alone, Shockwave's fill 6-9%, its track's
+    rim showing round it. Drawn the whole length instead, Turbulence's 10 px
+    stripes all land elsewhere and its own rails read 48-54%; fitted as a
+    button's image is, a narrow bar is a few pixels off along its whole
+    length. Only vertical sliders were measured; a horizontal one is assumed
+    to mirror them."""
     across, along = (w, h) if vertical else (h, w)
-    track = max(1, min(track or across, across))
+    track = max(1, track or across)
     length = max(1, along - (thumb or 0))
-    out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    out = rail_image(under, w, h, track, thumb, vertical) if under else Image.new('RGBA', (w, h), (0, 0, 0, 0))
     im = stretch_image(file, *((track, length) if vertical else (length, track)))
-    at = ((across - track) // 2, (along - length) // 2)
+    at = (across - track) // 2
+    if at < 0:
+        im = im.crop((-at, 0, -at + across, length) if vertical else (0, -at, length, -at + across))
+        at = 0
+    at = (at, (along - length) // 2)
     out.alpha_composite(im, at if vertical else at[::-1])
     return out
 
@@ -623,9 +655,12 @@ def fit_image(file, w, h):
 # of the inked pixels off and it is another image. Measured on the Afterburn
 # 1035 seed's 117 captionless image states against their own kit files: all
 # under 8%, bar a round button whose 3 px ellipse ring nothing here draws
-# (36%). Against the other states' files - another icon, the unselected
-# variant, another accent's - 50% and up. The blind spot is one volume level
-# against the next: at 64 px they differ by one thin wave, 7%.
+# (36%). Against another icon's file - the unselected variant, another
+# accent's - 50% and up; but 40 of the 88 states whose button has a differing
+# image - every speaker and mic volume level, mute against level 1 too - have a
+# sibling under the gate, down to 6.9%: a level and the next differ by one thin
+# wave at 64 px. So each state is also held against its button's other states'
+# images, and nearer one of those than its own is a failure (_state_image).
 IMAGE_PIXEL, IMAGE_OFF, IMAGE_INSET = 60, 0.25, 4
 
 
@@ -700,12 +735,16 @@ def _gone(where, img):
     return []
 
 
-def _state_image(where, i, bs, c, image, fill, assets):
+def _state_image(where, i, bs, c, image, fill, assets, others=()):
     """A state's artwork must be the kit image the plan gave it.
 
     The button's model names no image once built - layout.json carries only
     the artwork - so the artwork is compared with the image fitted over the
-    planned fill (image_mismatch)."""
+    planned fill (image_mismatch). `others` are the button's other states'
+    images: two a step apart, a volume level and the next, differ by one thin
+    wave - a few per cent of the inked pixels at 64 px, under IMAGE_OFF - so
+    one built in the other's place passes alone, and is caught as nearer that
+    state's image than its own."""
     if not image:
         return []
     tid = bs.get('TLPImageID')
@@ -719,6 +758,16 @@ def _state_image(where, i, bs, c, image, fill, assets):
     if off > IMAGE_OFF:
         return [f"{label}: {off:.0%} of the artwork differs from the planned image "
                 f"{image['name']!r} - it is not that image"]
+    # The NEAREST of them is the one there: levels 1 and 2 can both be nearer
+    # than a planned level 3 that level 2 was built over.
+    nearest = min(((image_mismatch(o['file'], assets[tid], c['Width'], c['Height'], fill), o['name'])
+                   for o in others
+                   if o and o.get('name') != image['name'] and o.get('file') != image['file']
+                   and o.get('file') and os.path.exists(o['file'])), default=None)
+    if nearest and nearest[0] < off:
+        return [f"{label}: the artwork is nearer {nearest[1]!r} ({nearest[0]:.0%} differs) than "
+                f"its planned {image['name']!r} ({off:.0%}) - another state's image "
+                f'built in its place']
     return []
 
 
@@ -1054,6 +1103,32 @@ def check_start_page(plan, j):
     return []
 
 
+def check_only_planned(plan, j):
+    """Is the panel its plan's pages and popups, and nothing else?
+
+    The applier clones from the donor and used to leave the donor's own pages
+    and popups in place, unreachable from the start page and some of their
+    controls on IDs the spec's own carry (docs/from-scratch.md section 5c).
+    GUI Designer's Offline Page is its own and stays. A plan that keeps the
+    donor on purpose (`keep_donor_pages`) is not held to this.
+    """
+    if plan.get('keep_donor_pages'):
+        return []
+    offline = j.get('OfflinePageID', 65535)
+    out = []
+    want = {p['name'] for p in plan.get('pages') or []}
+    for p in j.get('Pages') or []:
+        if p['Name'] not in want:
+            out.append(f"page {p['Name']!r} is in the built file and not in the plan - "
+                       f"the donor's, left in")
+    want = {p['name'] for p in plan.get('popups') or []}
+    for p in j.get('PopupPages') or []:
+        if p['Name'] not in want and p.get('ID') != offline:
+            out.append(f"popup {p['Name']!r} is in the built file and not in the plan - "
+                       f"the donor's, left in")
+    return out
+
+
 def check_modal(plan, j):
     """Did each popup build modal or standard as planned, and can a modal show?
 
@@ -1128,6 +1203,18 @@ def check_placed(plan, pages, popups):
                 if want_text is not None and _caption(c) != want_text:
                     problems.append(f"{kind} {item['name']!r} {name!r}: caption "
                                     f'{_caption(c)!r}, planned {want_text!r}')
+                # The applier writes the alignment, and a clone keeps its
+                # donor's: a left-aligned label built centred reads off by half
+                # its width, and nothing else here would notice.
+                want_align, got_align = op.get('alignment'), c.get('TextAlignment')
+                if want_align is not None and got_align is not None and got_align != want_align:
+                    said = repr(_ALIGN_NAME.get(got_align, got_align))
+                    if got_align == ALIGN_MIXED:
+                        said = 'differs by state: ' + ', '.join(
+                            f"{s.get('Name')!r} {_ALIGN_NAME.get(s.get('TextAlignment'), s.get('TextAlignment'))!r}"
+                            for s in c.get('States') or [])
+                    problems.append(f"{kind} {item['name']!r} {name!r}: text alignment "
+                                    f'{said}, planned {_ALIGN_NAME.get(want_align, want_align)!r}')
                 # A hidden press or state feedback builds a button that
                 # never shows what the plan drew for it, and a clone brings
                 # its donor's flags.
@@ -1142,6 +1229,65 @@ def check_placed(plan, pages, popups):
                 if want_pattern is not None and c.get('Pattern') != want_pattern:
                     problems.append(f"{kind} {item['name']!r} {name!r}: clock pattern "
                                     f"{c.get('Pattern')!r}, planned {want_pattern!r}")
+            # A generated page or popup is a donor's, cloned and cleared: a
+            # control of the donor's left on it ships unasked. Build's own are
+            # one full-canvas popup reference per modal popup, on every page.
+            planned = {op['fields'].get('nameField') for op in item['controls']}
+            canvas = (0, 0, got.get('Width'), got.get('Height'))
+            for c in got.get('Controls') or []:
+                if c.get('Name') in planned:
+                    continue
+                if c.get('Type') == 6 and (c.get('Left'), c.get('Top'), c.get('Width'),
+                                           c.get('Height')) == canvas:
+                    continue
+                problems.append(f"{kind} {item['name']!r}: {c.get('Name')!r} "
+                                f"({TYPE_NAME.get(c.get('Type'), c.get('Type'))}) is on it and "
+                                f"not in the plan - the donor's, left in")
+    return problems, checked
+
+
+def check_borders(plan, built_path):
+    """(problems, checked): every planned control's and state's border is the
+    resource the plan names. layout.json keeps no border's name - Build
+    rasterizes it - so the built project is read. A plan made without its donor
+    (`gdl.spec plan` with no --donor) names a border the donor lacks; the
+    applier then leaves the clone's own and only warns, and the artwork shows a
+    border either way."""
+    want = {}
+    for kind, items in (('page', plan.get('pages') or []), ('popup', plan.get('popups') or [])):
+        for item in items:
+            for op in item.get('controls') or []:
+                sts = [s.get('border') for s in op.get('states') or []]
+                if op.get('border') or any(sts):
+                    name = (op.get('fields') or {}).get('nameField')
+                    want[(kind, item['name'], name)] = (op.get('border'), op.get('states') or [])
+    if not want:
+        return [], 0
+    from gdl.project import Project
+    got = {}
+    for pg in Project.open(built_path).pages():
+        for c in pg['controls']:
+            got.setdefault((pg['kind'], pg['name'], c['name']), c)
+    problems, checked = [], 0
+    for (kind, item, name), (border, states) in want.items():
+        c = got.get((kind, item, name))
+        if c is None:
+            continue            # check_placed reports a planned control that is not there
+        where = f'{kind} {item!r} {name!r}'
+        if border:
+            checked += 1
+            have = (c.get('border') or {}).get('resource')
+            if have != border:
+                problems.append(f'{where}: border {have!r}, planned {border!r}')
+        for i, st in enumerate(states):
+            if not st.get('border'):
+                continue
+            checked += 1
+            built = c['states'][i] if i < len(c.get('states') or []) else {}
+            have = (built.get('border') or {}).get('resource')
+            if have != st['border']:
+                problems.append(f"{where} state {st.get('name') or i!r}: border {have!r}, "
+                                f"planned {st['border']!r}")
     return problems, checked
 
 
@@ -1195,9 +1341,13 @@ def check(plan_path, built_path):
         checked += n
         for note in notes:
             print(f'  STATE FILL NOT DOMINANT (survived, but check it by eye): {note}')
+    probs, n = check_borders(plan, built_path)
+    problems += probs
+    checked += n
     problems += check_page_background(plan['pages'], pages, assets)
     problems += check_popup_background(plan.get('popups') or [], popups, assets)
     problems += check_start_page(plan, j)
+    problems += check_only_planned(plan, j)
     problems += check_modal(plan, j)
 
     return problems, checked
@@ -1211,7 +1361,15 @@ def main(argv):
     problems, checked = check(argv[1], argv[2])
     for p in problems:
         print('  ' + p)
-    print(f'{checked} authored control(s) verified against the build, '
+    # Checks, not controls: each control is checked several ways - place,
+    # fill, font, each state, its border - and the tally was read as a count
+    # of controls in three PRs' evidence.
+    with open(argv[1], encoding='utf-8') as fh:
+        plan = json.load(fh)
+    n = (len(plan.get('controls') or []) if plan.get('generated_by') == 'gdl.edit' else
+         sum(len(item.get('controls') or [])
+             for item in (plan.get('pages') or []) + (plan.get('popups') or [])))
+    print(f'{checked} check(s) on {n} authored control(s) against the build, '
           f'{len(problems)} problem(s)')
     return 1 if problems else 0
 

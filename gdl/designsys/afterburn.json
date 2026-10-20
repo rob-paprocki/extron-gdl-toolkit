@@ -538,7 +538,7 @@
       "rail: what the canvas leaves beside the main region - right of it on every series that has room, below it (a footer, running across) on the 320 and the portrait 300.",
       "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
       "backgrounds: the kit's four page backgrounds per size, for the main page (the 520 and 535 split theirs into _start and _main; a working page takes _main). image is the name the template gives its default; the others take the kit file's name. The 1720 draws the 1520's 6830x3840 art, as its template does.",
-      "seeds, kinds, borders: each seed in seeds/ by part number - what control kinds it can clone (the 525, 320 and 300M seeds have levels and no slider; the 320 has no standard popup), and each profile border it lacks mapped to its own of the same thickness and nearest radius.",
+      "seeds, kinds, borders: each seed in seeds/ by part number and canvas (both 300M seeds are one part, either way up), and one of a model's other way up where no template is drawn so - a turned seed - under its panel (TLP1035M-Portrait) - what control kinds it can clone (the 525, 320 and 300M seeds have levels and no slider; the 320 has no standard popup), and each profile border it lacks mapped to its own of the same thickness and nearest radius.",
       "Measured with tests/measure_series.py Afterburn."
     ],
     "Afterburn 1220 Series": {
@@ -572,7 +572,7 @@
         "blue-slate": {"image": "6400x4000_bg3-blueslate.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg3-blueslate.png"},
         "grape": {"image": "6400x4000_bg4-grape.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png"}
       },
-      "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl"},
+      "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl", "TLP1035M-Portrait": "seeds/Afterburn 1035 Portrait.gdl"},
       "kinds": {"slider": true, "level": false, "popup": true}
     },
     "Afterburn 1020 Series": {
@@ -741,7 +741,7 @@
       "size": [480, 320],
       "dpi": 164.83,
       "tier": "C",
-      "models": [],
+      "models": ["TLP300M"],
       "main": [0, 0, 392, 320],
       "rail": [392, 0, 88, 320],
       "rail_axis": "column",
@@ -753,7 +753,9 @@
         "blue-slate": {"image": "2400x1600_bg3-blueslate.png", "file": "Afterburn/Backgrounds/2400x1600/TLP 300M Landscape/2400x1600_bg3-blueslate.png"},
         "grape": {"image": "2400x1600_bg4-grape.png", "file": "Afterburn/Backgrounds/2400x1600/TLP 300M Landscape/2400x1600_bg4-grape.png"}
       },
-      "seeds": {}
+      "seeds": {"TLP300M": "seeds/Afterburn 300M Landscape.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": true},
+      "borders": {"afterburn-flat": "Afterburn - 14 Radius 0 Thick"}
     }
   }
 }

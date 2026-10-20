@@ -57,7 +57,9 @@ machine you are already working on.
   **4.22.0.0 → 5.6.0.0** and `GUI Designer.exe.config` carries no binding
   redirect for it. Output written under 1.28 is restamped `1.28.0.7` /
   `5.6.0.0`, so files this toolkit writes are probably not openable in 1.27;
-  that was not tested, because 1.27 was gone. `pytest` was unaffected (157
+  that was not tested, because 1.27 was gone, and in October 2026 the owner
+  ruled it out of scope: no client is on 1.27, and a legacy project is brought
+  up to 1.28 rather than written for 1.27. `pytest` was unaffected (157
   passing before the upgrade, 157 after), the authoring example ran clean, and a
   real client project opened with no conversion prompt and rebuilt twice
   with identical page, control, border and font counts.
@@ -83,6 +85,31 @@ machine you are already working on.
 
 Each of these was believed, written down, and later found wrong. The current
 statement is in the live docs; this is the record that it changed.
+
+- **Extron's own templates keep points fixed** - written with the type floor
+  (`docs/design-rules.md` §1), from the 1035 and 725. Read off the seeds made
+  at every size in October 2026, their 520s do, but their 535s step up: Mach's
+  and Shockwave's 535 text starts at 18 pt and is mostly 20 to 36, where their
+  1035s' is 12 to 20.
+- **GUI Designer writes a member's CRC-32 wrong.** The verifier stopped on the
+  Turbulence 725 huddle with zipfile's `Bad CRC-32 for file 'ProjectGCP'`. Built
+  four times, once with GUI Designer left running, it came out the same, its
+  data inflating whole and GUI Designer reopening it, so Save and Build was
+  taken to have written the CRC wrong, and the readers were made to read past
+  it. A review found the file whole: `gdl.container` swapped every `KP`
+  signature in the file back to `PK`, and that `ProjectGCP` holds `KP 05 06`
+  50 MB into its compressed data - 7 bytes of a PNG, damaged by the reader.
+  Only the records are swapped now, and the readers are strict again
+  (`docs/gdl-format.md` §1). `pack()` had swapped the same way on write, so a
+  file it wrote that GUI Designer never rebuilt carries data signatures
+  swapped too, which the old reader's swap undid: one is in the repo,
+  `archive/job-9fe2c865/tmp/fb/pre.gdl`, its payload's two put back in
+  October 2026, so it reads whole, each CRC agreeing. The copies in commits
+  already public cannot be mended, and `check --history` reads every commit,
+  so it refused them and every publish after; in a .gdl a member of which does
+  not read whole, the check now swaps every signature pattern back, as the old
+  reader did, and reads it where every CRC then agrees (`tools/public_sync.py`
+  `_old_pack`).
 
 - **The Project Create Wizard cannot be automated.** Twice wrong, in different
   ways. The original claim, true of 1.27.0.9, was that its descendant tree came
@@ -262,6 +289,21 @@ statement is in the live docs; this is the record that it changed.
   bounding rect, so the angle is arbitrary too.
 - **Icons are not only font glyphs.** An earlier draft overcorrected to "icons
   come from a font, not images". Both routes work.
+- **Shockwave has an icon font.** `docs/design-rules.md` §6 said its font "has
+  only 18 glyphs and is not an icon set" and put Shockwave with Turbulence as
+  images-only. Its sixteen glyphs are line-drawn transport and chevrons, and
+  the Shockwave 1035 seed's own template sets 98 captions in them.
+- **A spec's page and popup names had to be unique against the whole donor.**
+  They were, while a generated panel kept the donor's own pages and popups. The
+  applier now drops every one it did not make but the Offline Page, so only
+  that name - or all of them, under `keep_donor_pages` - can collide.
+- **A fixed wait was enough for a build.** `Wait-GdlBuild.ps1` gave up at 15
+  minutes, which a 23-page panel overran while GUI Designer was still building;
+  the Build Manager window, tried next as the sign of life, was absent for all
+  but the last seconds of a long build. GUI Designer's writes, tried after it,
+  are no sign either: it writes a steady 3.5 KB/s idle and behind a modal, so a
+  wait on any write would have outlasted a blocked build by two hours. The wait
+  now follows its CPU and its writes together (`docs/from-scratch.md` §7).
 - **Panel model names must be read from GUI Designer's shipped list**, not
   reconstructed from internal class symbols — class names outlive retired
   models and will mislead you. See `docs/design-rules.md`.
@@ -374,6 +416,67 @@ statement is in the live docs; this is the record that it changed.
   run in the job that has none, and one test passed by asserting nothing when
   no seed was there. Those tests now skip, CI runs every test file, and a step
   in `ci.yml` fails when one is not named.
+
+- **Mach, Shockwave and Turbulence's first builds on the 725 were wrong where the
+  canvas looked right** (2026-10-11). Mach's source tiles reach their captions
+  with three line breaks, which on the 725's 106 px tiles at its 16 pt type
+  floor ran the caption past the tile's edge, and GUI Designer clipped it. The
+  translator then kept only the breaks that fit - measured at the canvas's 1.2
+  em, which a review showed is 2.4 px a line short of the 1.362 em GUI Designer
+  lays Open Sans out at, so it now measures with the face's own metrics. The
+  same review found the band mapping that keeps these themes' bars to each
+  panel's bands applied to Afterburn too, moving its 525 modals 57 px off the
+  screen's centre, and snapping edges by up to 4 px on the panel the canvas was
+  drawn on; it now runs only where the bars are controls, and only on another
+  panel. Building every proof panel again stopped at the first, when the
+  development host ran low on memory, and Claude Code stopped the build, as
+  it had a seed batch run beside the test suite; after a reboot all six were
+  built again from the fixed code and verified (2026-10-12). The commit limit
+  was 12.5 GB (11.7 GB of RAM and a
+  system-managed pagefile still at its 768 MB), and 1.4 GB of the 10.4 GB
+  committed was kernel paged pool held by 549,521 access tokens (pool tag
+  `Toke`, with `SeAt`, `SeTd` and `SeDt`) - leaked since the host's boot 46
+  hours before at 20 to 60 for every tool call Claude Code ran, measured by
+  pool tag around single calls; 200 processes started inside one call leaked
+  none, and no process held their handles. A reboot frees them.
+- **The first hub builds verified, and their volume did not work as one**
+  (2026-10-12). Mach's, Shockwave's and Turbulence's 525 and 535 built with
+  the slider a level between its Up and Down: 15 to 42 px of level, Mach's 525
+  8x20, where none of Extron's templates draws one shorter than 175 px - it
+  floored the level at 8 px. Shockwave's and Turbulence's levels fill from
+  images, so the bar color planned for them never showed, the verifier held
+  the art to it, and the applier cleared their empty track. Up and Down now
+  stand beside the level, as Extron's own Start pages stand theirs, in the look
+  of the Mute below where that look can draw them; an art level keeps its art. The same run found the verifier
+  drew a slider's full asset as its fill alone: the Shockwave 720's slider,
+  right, read 25% off, its track's rim showing round a narrower fill.
+- **A design system's README was believed enough for a two-panel room, and
+  was not** (2026-10-16 to 10-19). Prose in had been proven once, on Afterburn,
+  and every multi-panel proof since was a canvas drawn with its smaller panels
+  in mind. Four fresh designers, given one conference-room brief and only the
+  design system, drew every TLP1035T clean and three of four 525s that the
+  translator refused: the README named no panel's touch minimum, gap or type
+  floor - a 525's 66 px, 15 px and 18 pt - and the one designer who built on
+  both had read the bundle for them. They also found the README's own layouts
+  breaking the gates (Shockwave's flush tabs, rail buttons 4 px apart, sliders
+  under 53 px), no word on loading the bundle, a modal's Close told to `nav`
+  home from a call, and Turbulence's states example drawing Warming as On.
+  Built, their canvases showed what verify_built alone had caught: a built-in
+  border's geometry was taken to be GUI Designer's, read once off the client
+  fixture (`BORDER_GEOMETRY`), and is each seed's own - Mach's 1035 defines 2D
+  Rounded Rectangle at radius 1 and thickness 0, so a stroke on Mach's
+  buttons, on it as most of the seed's own are, had never drawn. This branch
+  first took that for every 2D shape everywhere; CI's clean-room example, whose
+  capsule strokes build, said otherwise. It then moved Mach's buttons to
+  `mach`, the seed's 10 px border, on the profile's word that every button used
+  it; the seed puts 554 of its 662 button states on 2D Rounded Rectangle and 16
+  on `mach`, and after a review the buttons went back. The README's room for a
+  hub, written then, read the hub's uncut main: Mach's 525 has 0.51 of the
+  canvas's scale and one button beside the volume where it said 0.7 and three.
+  And most of Mach's, Shockwave's and Turbulence's seeds have no line to clone.
+  A second round of fresh designers, from the READMEs that now say all this,
+  built and verified every 1035; their 525s are refused by the hub derivation
+  itself (`docs/claude-design.md` §7).
 
 ## Dated facts moved out of the live docs
 

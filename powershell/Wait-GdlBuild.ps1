@@ -27,7 +27,24 @@
         from a running one.
 
     So: wait for the file to change, then wait for it to stop changing. Exits 0
-    when the payload is written and stable, 1 on timeout.
+    when the payload is written and stable, 1 on timeout, and 2 at once when
+    GUI Designer sits idle behind a dialog it waits on a person for
+    (GdlBlocker.ps1), saying which.
+
+    A real-size panel builds for longer than any fixed timeout a small one
+    wants, and a 15-minute wait reported a failure while GUI Designer was still
+    building (docs/from-scratch.md section 5c has what one took). So past
+    -TimeoutSeconds the wait runs on while GUI Designer is busy, and gives up a
+    minute after it goes idle, up to -MaxSeconds. Idle includes a modal that
+    blocks a build; the ones GdlBlocker.ps1 names - among them the prompt an
+    upgrade's reset preferences raise - end the wait at once instead.
+
+    Busy is a share of a core or a rate of writing well above what GUI Designer
+    does idle, and it takes both. Any write at all is no sign of life: idle, and
+    behind a modal, GUI Designer writes a steady 3.5 KB/s. A build writes
+    300 KB/s at 15% of a core for minutes, and then for a minute and more writes
+    no more than idle at a full core (section 7 has the measurements). The Build
+    Manager is no sign either: a long build can show none until its last seconds.
 
     Capture the mtime BEFORE triggering the build and pass it as -Since:
 
@@ -44,12 +61,35 @@
 param(
     [Parameter(Mandatory)][string]$ProjectFile,
     [int]$TimeoutSeconds = 900,
+    [int]$MaxSeconds = 7200,
     [int]$StableSeconds = 6,
     [int]$PollSeconds = 2,
     [Nullable[DateTime]]$Since = $null
 )
 
 if (-not (Test-Path $ProjectFile)) { throw "not found: $ProjectFile" }
+. (Join-Path $PSScriptRoot 'GdlBlocker.ps1')
+
+# What GUI Designer has done so far - bytes written and CPU seconds, as Windows
+# counts them - summed over every instance, since with two open the build could
+# be either's. $null when none is running.
+function Get-GdActivity {
+    $ps = @(Get-CimInstance Win32_Process -Filter "Name='GUI Designer.exe'" -ErrorAction SilentlyContinue)
+    if (-not $ps.Count) { return $null }
+    $user = ($ps | Measure-Object -Property UserModeTime -Sum).Sum
+    $kernel = ($ps | Measure-Object -Property KernelModeTime -Sum).Sum
+    [pscustomobject]@{
+        Written = [double](($ps | Measure-Object -Property WriteTransferCount -Sum).Sum)
+        Cpu     = ([double]$user + [double]$kernel) / 1e7
+    }
+}
+
+# Busy, between two polls: a tenth of a core, or 32 KB/s written. Measured on
+# 1.28.0.7, idle and behind a modal GUI Designer stays under 3% of a core and
+# 5 KB/s; every two-second step of two nine-minute builds was five times one
+# or the other, or more (docs/from-scratch.md section 7).
+$BusyCpu = 0.10
+$BusyBytes = 32KB
 
 $before = Get-Item $ProjectFile
 
@@ -72,8 +112,47 @@ $written = ($before.LastWriteTime -ne $t0)
 if ($written) { Write-Output '  already rewritten before the wait started' }
 $lastSize = -1
 $stableFor = 0
+# When GUI Designer was last busy; the wait outlasts it by a minute.
+$seen = -1
+$last = Get-GdActivity
+$lastAt = $sw.Elapsed.TotalSeconds
+# Whether GUI Designer was running at all, so a wait that ends is not blamed on
+# a modal when there was nothing to show one.
+$ran = $null -ne $last
+$told = $false
 
-while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+while ($sw.Elapsed.TotalSeconds -lt $MaxSeconds) {
+    $now = $sw.Elapsed.TotalSeconds
+    # Only while waiting for the write: once the file has moved, what is left
+    # is the stability check, which takes seconds.
+    if (-not $written) {
+        $a = Get-GdActivity
+        $dt = $now - $lastAt
+        $busy = $false
+        if ($null -ne $a) {
+            $ran = $true
+            if ($null -ne $last -and $dt -gt 0 -and
+                (($a.Cpu - $last.Cpu) / $dt -ge $BusyCpu -or ($a.Written - $last.Written) / $dt -ge $BusyBytes)) {
+                $busy = $true
+                if ($now -ge $TimeoutSeconds -and -not $told) {
+                    Write-Output ("  past {0}s and GUI Designer is still busy - waiting on it" -f $TimeoutSeconds)
+                    $told = $true
+                }
+                $seen = $now
+            }
+        }
+        $last = $a
+        $lastAt = $now
+        # A dialog that waits on a person does not go away by itself, so say
+        # which now rather than at the end - but only with GUI Designer idle
+        # behind it, as it is behind a modal that blocks the build. Busy, it
+        # may be building still, and giving up would throw that build away.
+        if (-not $busy) {
+            $why = Get-GdlBlocker
+            if ($why) { Write-Output "  $why"; exit 2 }
+        }
+        if ($now -ge $TimeoutSeconds -and ($seen -lt 0 -or $now - $seen -ge 60)) { break }
+    }
     Start-Sleep -Seconds $PollSeconds
     $it = Get-Item $ProjectFile
 
@@ -99,5 +178,10 @@ while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
     }
 }
 
-Write-Output ("no completed build after {0}s (written={1})" -f $TimeoutSeconds, $written)
+$state = if ($null -eq (Get-GdActivity)) {
+        if ($ran) { 'exited' } else { 'is not running' }
+    } elseif ($seen -lt 0) { 'sat idle - a modal waiting on a person, or a click that never landed' }
+    else { "has been idle since t+{0:N0}s" -f $seen }
+Write-Output (("no completed build after {0:N0}s (written={1}; GUI Designer {2})" -f
+               $sw.Elapsed.TotalSeconds, $written, $state) + "$(Get-GdlShowing)")
 exit 1

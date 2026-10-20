@@ -237,14 +237,29 @@ class TestModels(unittest.TestCase):
         self.m = designsys.models(self.p)
 
     def test_every_afterburn_model_resolves(self):
-        from gdl.spec import tier, touch_minimums, type_floor
+        from gdl.spec import panel_of, tier, touch_minimums, type_floor
         self.assertIn('TLP725T', self.m)
-        for model, row in self.m.items():
-            with self.subTest(model=model):
+        for pid, row in self.m.items():
+            with self.subTest(panel=pid):
+                model, size = panel_of(pid)
+                self.assertEqual(row['size'], list(size))
                 self.assertEqual(row['tier'], tier(model))
                 self.assertEqual((row['touch'], row['gap']), touch_minimums(model))
                 self.assertEqual(row['floor'], type_floor(model))
                 self.assertEqual(len(row['main']), 4)
+
+    def test_a_panel_turned_from_its_models_canvas_is_a_row_of_its_own(self):
+        """A canvas lists the 300M either way up, and Afterburn draws both: its
+        300 Landscape series is the TLP300M-Landscape, on its own seed. Keyed
+        by model, the table had room for one, and the Landscape row listed no
+        model and no seed."""
+        row = self.m['TLP300M-Landscape']
+        self.assertEqual((row['series'], row['size'], row['rail_axis']),
+                         ('Afterburn 300 Landscape Series', [480, 320], 'column'))
+        self.assertEqual(row['seed'], 'seeds/Afterburn 300M Landscape.gdl')
+        self.assertIn('kinds', self.p['panels']['Afterburn 300 Landscape Series'])
+        self.assertEqual(self.m['TLP300M']['series'], 'Afterburn 300 Portrait Series')
+        self.assertEqual(self.m['TLP300M']['seed'], 'seeds/Afterburn 300M Portrait.gdl')
 
     def test_the_design_panel_agrees_with_the_profile(self):
         """The profile's touch, spacing, size, popup and main area state the
@@ -261,45 +276,334 @@ class TestModels(unittest.TestCase):
         self.assertIn('9600x3600', self.m['TLP1230WTG']['backgrounds']['grape']['file'])
         self.assertEqual(self.m['TLP725T']['fit'], 'stretch')
 
-    def test_no_series_claims_a_model_twice(self):
+    def test_no_two_series_claim_one_panel(self):
+        """A model one series serves either way up is two panels; a model
+        two series served on one canvas would be one row hiding another."""
+        from gdl.spec import panel_id
         seen = {}
         for series, row in self.p['panels'].items():
             if series.startswith('_'):
                 continue
             for m in row['models']:
-                self.assertNotIn(m, seen, f'{m} in {series} and {seen.get(m)}')
-                seen[m] = series
+                pid = panel_id(m, row['size'])
+                self.assertNotIn(pid, seen, f'{pid} in {series} and {seen.get(pid)}')
+                seen[pid] = series
 
     def test_no_720_row(self):
         """Afterburn has no 720 template; its only 800x480 one is a 5in hub."""
         self.assertNotIn('TLP720T', self.m)
 
-    def test_profiles_without_panels_have_no_models(self):
-        for t in ('mach', 'shockwave', 'turbulence'):
-            self.assertEqual(designsys.models(designsys.load(t)), {}, t)
-
     def test_the_table_agrees_with_the_install(self):
+        """A row is the series the install draws its panel with - or, turned,
+        the one it draws the panel's other way up with, where it draws none."""
         from gdl import templates
         if not templates.table():
             self.skipTest('no TemplateInfoTable.config')
-        for model, row in self.m.items():
-            self.assertEqual(templates.template_for('Afterburn', model)['series'], row['series'], model)
+        from gdl.spec import panel_of
+        for pid, row in self.m.items():
+            model, size = panel_of(pid)
+            here = templates.template_for('Afterburn', model, size)
+            if row.get('turned'):
+                self.assertIsNone(here, pid)
+                self.assertEqual(templates.template_for('Afterburn', model)['series'], row['series'], pid)
+            else:
+                self.assertEqual(here['series'], row['series'], pid)
 
     def test_a_seed_named_is_that_models_seed(self):
+        from gdl.spec import panel_of
         from verify_seed import check_seed
-        here = [m for m in ('TLP1035T', 'TLP725T', 'TLP525T', 'TLP320M')
+        here = [m for m in ('TLP1035T', 'TLP725T', 'TLP525T', 'TLP320M', 'TLP300M', 'TLP300M-Landscape')
                 if usable(os.path.join(REPO, self.m[m]['seed']))]
         if not here:
             self.skipTest('seeds not present (git lfs pull)')
-        for model in here:
-            path = os.path.join(REPO, self.m[model]['seed'])
-            self.assertEqual(check_seed(path, model, theme='Afterburn'), [], model)
+        for pid in here:
+            path = os.path.join(REPO, self.m[pid]['seed'])
+            self.assertEqual(check_seed(path, panel_of(pid)[0], theme='Afterburn'), [], pid)
 
     def test_the_small_seeds_say_what_they_cannot_clone(self):
         self.assertFalse(self.m['TLP525T']['kinds']['slider'])
         self.assertTrue(self.m['TLP725T']['kinds']['slider'])
         self.assertFalse(self.m['TLP320M']['kinds']['popup'])
         self.assertEqual(self.m['TLP320M']['borders']['afterburn'], 'Afterburn - 7 Radius 2 Thick')
+
+
+class TestATurnedPanelWithNoTemplate(unittest.TestCase):
+    """The 520M, 521M, 535M, 835M and 1035M run either way up, and Extron draws
+    none of them turned (docs/design-rules.md section 1). Each is its own
+    series turned: Extron draws one panel both ways, the 300M, and its
+    Landscape layout is its Portrait one transposed."""
+
+    TURNED = ('TLP1035M-Portrait', 'TLP835M-Portrait', 'TLP535M-Portrait',
+              'TLP520M-Portrait', 'TLC521M-Portrait')
+
+    def setUp(self):
+        self.m = designsys.models(designsys.load('afterburn'))
+
+    @staticmethod
+    def _turn(r):
+        return None if r is None else [r[1], r[0], r[3], r[2]]
+
+    def test_each_is_a_row_of_its_own_and_no_other_is(self):
+        self.assertEqual(sorted(p for p, r in self.m.items() if r.get('turned')), sorted(self.TURNED))
+
+    def test_its_regions_are_its_series_transposed(self):
+        for pid in self.TURNED:
+            own, row = self.m[pid.split('-')[0]], self.m[pid]
+            with self.subTest(panel=pid):
+                self.assertEqual(row['series'], own['series'])
+                self.assertEqual(row['size'], own['size'][::-1])
+                self.assertEqual(row['main'], self._turn(own['main']))
+                self.assertEqual(row['rail'], self._turn(own['rail']))
+                self.assertEqual(row['rail_axis'], {'column': 'row', 'row': 'column'}[own['rail_axis']])
+                self.assertEqual(row['popup'], own['popup'][::-1] if own['popup'] else None)
+                self.assertEqual((row['kinds'], row['borders']), (own['kinds'], own['borders']))
+                self.assertEqual((row['dpi'], row['touch'], row['floor']), (own['dpi'], own['touch'], own['floor']))
+
+    def test_the_rule_is_how_extron_draws_the_300m_both_ways(self):
+        port, land = self.m['TLP300M'], self.m['TLP300M-Landscape']
+        self.assertEqual(land['main'], self._turn(port['main']))
+        self.assertEqual(land['rail'], self._turn(port['rail']))
+        self.assertEqual((port['rail_axis'], land['rail_axis']), ('row', 'column'))
+        self.assertEqual((port['popup'], land['popup']), (None, None))
+        self.assertFalse(land.get('turned'))
+
+    def test_it_has_no_art(self):
+        """Extron draws none that way up; its 300M's landscape art is the
+        portrait's shape transposed with the paint redrawn, which a rotation
+        would not be."""
+        for pid in self.TURNED:
+            self.assertEqual(self.m[pid]['backgrounds'], {}, pid)
+
+    def test_what_claude_design_reads_says_which_have_no_art(self):
+        text = designsys._panels_props(designsys.load('afterburn'))
+        self.assertIn('`TLP300M-Landscape`', text)
+        plain = text[text.index('no template'):]
+        self.assertIn('`TLP1035M-Portrait`', plain)
+        self.assertNotIn('TLP300M-Landscape', plain)
+
+    def test_a_series_with_no_rail_turns_to_none(self):
+        """measure_series writes no rail band for a series whose main region
+        fills its canvas, and the bundle draws such a panel; turned, it has
+        none either."""
+        import copy
+        p = copy.deepcopy(designsys.load('afterburn'))
+        s = p['panels']['Afterburn 535 Series']
+        s['rail'], s['rail_axis'] = None, None
+        row = designsys.models(p)['TLP535M-Portrait']
+        self.assertEqual((row['rail'], row['rail_axis']), (None, None))
+
+    def test_a_turned_seed_is_found_under_its_panel(self):
+        import copy
+        p = copy.deepcopy(designsys.load('afterburn'))
+        p['panels']['Afterburn 1220 Series']['seeds']['TLP1035M-Portrait'] = 'seeds/X.gdl'
+        m = designsys.models(p)
+        self.assertEqual(m['TLP1035M-Portrait']['seed'], 'seeds/X.gdl')
+        self.assertEqual(m['TLP1035M']['seed'], 'seeds/Afterburn 1035.gdl')
+        self.assertIsNone(m['TLP835M-Portrait']['seed'])
+
+
+class TestWhatTheRailSays(unittest.TestCase):
+    """The Rail's README names, from the profile's own table, the series whose
+    rail runs below the main region, those whose template draws none, and those
+    whose seed builds no slider - so a theme's says what is true of its own."""
+
+    def test_afterburns(self):
+        text = designsys._panels_rail(designsys.load('afterburn'))
+        self.assertIn('or below it, running across, on a panel too small to have one beside it '
+                      '(the 320 and 300 Portrait Series).', text)
+        self.assertIn('whose seed cannot build a slider - the 520, 320, 300 Portrait and 300 Landscape '
+                      'Series -', text)
+        self.assertNotIn('no rail band', text)
+
+    def test_a_series_whose_template_draws_no_rail_band_is_named(self):
+        import copy
+        p = copy.deepcopy(designsys.load('afterburn'))
+        for s in ('Afterburn 320 Series', 'Afterburn 535 Series'):
+            p['panels'][s]['rail'], p['panels'][s]['rail_axis'] = None, None
+        text = designsys._panels_rail(p)
+        self.assertIn('(the 300 Portrait Series)', text)
+        self.assertIn('The 535 and 320 Series draw no rail band - their templates keep', text)
+
+    def test_machs(self):
+        """Mach's 320 keeps nothing on screen from page to page; its 300 runs
+        its rail along the bottom, and its seed builds a level, not a slider."""
+        text = designsys._panels_rail(designsys.load('mach'))
+        self.assertIn('The 320 Series draws no rail band - its template keeps', text)
+        self.assertIn('beside it (the 300 Series).', text)
+        self.assertIn('cannot build a slider - the 535, 520, 320 and 300 Series -', text)
+
+
+class TestWhatTheLevelSays(unittest.TestCase):
+    """The Level's README names, from the profile's own table, the series whose
+    seeds carry no level to clone - where the canvas names a Level."""
+
+    def test_afterburns(self):
+        text = designsys._level_where(designsys.load('afterburn'))
+        self.assertIn('on the 1220, 1020, 1720 and 1230 Series the seed carries a slider and no level - '
+                      'the panel the canvas is drawn on among them - so a Level drawn for one of those panels '
+                      'is named on the canvas: use a Slider there.', text)
+
+    def test_machs(self):
+        self.assertIn('on the 1220, 1020, 1520, 1720 and 720 Series the seed carries',
+                      designsys._level_where(designsys.load('mach')))
+
+    def test_nothing_without_a_table_or_a_seed_lacking_one(self):
+        import copy
+        p = copy.deepcopy(designsys.load('mach'))
+        self.assertIn('Level', designsys.component_docs(p)['Level'])
+        for s in p['panels'].values():
+            if isinstance(s, dict) and s.get('kinds'):
+                s['kinds']['level'] = True
+        self.assertEqual(designsys._level_where(p), '')
+        del p['panels']
+        self.assertEqual(designsys._level_where(p), '')
+
+
+class TestWhatThePageSays(unittest.TestCase):
+    """The Page README says how a Page's own bars carry to other panels only
+    for a system that draws them as controls; Afterburn's chrome is its
+    background art."""
+
+    def test_a_system_whose_bars_are_controls(self):
+        text = designsys._panels_props(designsys.load('mach'))
+        self.assertIn('On a large or mid-size panel other than the one drawn', text)
+        self.assertIn('get bands of their own carved from main', text)
+
+    def test_each_names_its_own_hubs(self):
+        """Read off each table: Turbulence has a 520 hub and no 535."""
+        self.assertIn('(the 520 and 535 Series)', designsys._panels_props(designsys.load('mach')))
+        self.assertIn('(the 520 Series)', designsys._panels_props(designsys.load('turbulence')))
+
+    def test_afterburns_says_nothing_of_bars(self):
+        self.assertNotIn('edge to edge', designsys._panels_props(designsys.load('afterburn')))
+
+
+class TestEveryThemesPanels(unittest.TestCase):
+    """Every theme's per-panel table, measured by tests/measure_series.py: each
+    panel resolves, the design panel agrees with the profile, no two series
+    claim one panel, and the table agrees with the install."""
+    THEMES = ('afterburn', 'mach', 'shockwave', 'turbulence')
+
+    def test_every_profile_has_one(self):
+        for t in self.THEMES:
+            self.assertTrue(designsys.models(designsys.load(t)), t)
+
+    def test_every_panel_resolves(self):
+        from gdl.spec import panel_of, tier, touch_minimums, type_floor
+        for t in self.THEMES:
+            for pid, row in designsys.models(designsys.load(t)).items():
+                with self.subTest(theme=t, panel=pid):
+                    model, size = panel_of(pid)
+                    self.assertEqual(row['size'], list(size))
+                    self.assertEqual(row['tier'], tier(model))
+                    self.assertEqual((row['touch'], row['gap']), touch_minimums(model))
+                    self.assertEqual(row['floor'], type_floor(model))
+                    self.assertEqual(len(row['main']), 4)
+
+    def test_the_design_panel_agrees_with_the_profile(self):
+        for t in self.THEMES:
+            p = designsys.load(t)
+            d = designsys.models(p)[p['model']]
+            with self.subTest(theme=t):
+                self.assertEqual((d['touch'], d['gap']), (p['touch'], p['spacing']))
+                self.assertEqual(d['size'], p['size'])
+                self.assertEqual(d['popup'], p['popup'])
+                self.assertEqual(d['main'], p['layout']['main'])
+                self.assertEqual(d['seed'], p['seed'])
+
+    def test_no_two_series_claim_one_panel(self):
+        from gdl.spec import panel_id
+        for t in self.THEMES:
+            seen = {}
+            for series, row in designsys.load(t)['panels'].items():
+                if series.startswith('_'):
+                    continue
+                for m in row['models']:
+                    pid = panel_id(m, row['size'])
+                    self.assertNotIn(pid, seen, f'{t}: {pid} in {series} and {seen.get(pid)}')
+                    seen[pid] = series
+
+    def test_the_table_agrees_with_the_install(self):
+        from gdl import templates
+        if not templates.table():
+            self.skipTest('no TemplateInfoTable.config')
+        from gdl.spec import panel_of
+        for t in self.THEMES:
+            p = designsys.load(t)
+            for pid, row in designsys.models(p).items():
+                model, size = panel_of(pid)
+                here = templates.template_for(p['template'], model, size)
+                with self.subTest(theme=t, panel=pid):
+                    if row.get('turned'):
+                        self.assertIsNone(here)
+                        self.assertEqual(templates.template_for(p['template'], model)['series'], row['series'])
+                    else:
+                        self.assertEqual(here['series'], row['series'])
+
+    def test_a_seed_named_is_that_models_seed(self):
+        from gdl.spec import panel_of
+        from verify_seed import check_seed
+        checked = 0
+        for t in ('mach', 'shockwave', 'turbulence'):
+            p = designsys.load(t)
+            for pid, row in designsys.models(p).items():
+                if not row['seed'] or not usable(os.path.join(REPO, row['seed'])):
+                    continue
+                checked += 1
+                with self.subTest(theme=t, panel=pid):
+                    self.assertEqual(check_seed(os.path.join(REPO, row['seed']), panel_of(pid)[0],
+                                                theme=p['template']), [])
+        if not checked:
+            self.skipTest('seeds not present (git lfs pull)')
+
+    def test_a_profile_with_no_table_has_no_panels(self):
+        """A theme whose profile has no `panels` yet - the next one Extron ships
+        - draws its design panel alone, and its README says nothing of panels."""
+        import copy
+        p = copy.deepcopy(designsys.load('mach'))
+        del p['panels']
+        self.assertEqual(designsys.models(p), {})
+        self.assertEqual(designsys._panels_props(p), '')
+        self.assertEqual(designsys._panels_main(p), '')
+        self.assertEqual(designsys._panels_group(p), '')
+        self.assertEqual(designsys._panels_rail(p), ' Give it a position and size with its own style.')
+
+
+class TestTheOtherThemesTables(unittest.TestCase):
+    """What Mach's, Shockwave's and Turbulence's tables say that Afterburn's
+    could not teach: art by its own name, wells, no rail at all."""
+
+    def test_machs_300_fills_its_own_art_and_the_others_stretch_the_photographs(self):
+        m = designsys.models(designsys.load('mach'))
+        self.assertEqual((m['TLP300M']['fit'], m['TLP300M']['backgrounds']['sunset']),
+                         ('fill', {'image': 'mach_bg_02.png', 'file': 'Mach/Backgrounds/320x480/320x480_mach-bg-02.png'}))
+        self.assertEqual(m['TLP1035T']['backgrounds']['dome']['file'],
+                         'Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png')
+        self.assertEqual(m['TLP1035T']['fit'], 'stretch')
+
+    def test_the_320s_have_no_rail_and_machs_300_runs_its_along_the_bottom(self):
+        for t in ('mach', 'shockwave', 'turbulence'):
+            row = designsys.models(designsys.load(t))['TLP320M']
+            self.assertEqual((row['rail'], row['rail_axis']), (None, None), t)
+        m = designsys.models(designsys.load('mach'))
+        self.assertEqual((m['TLP300M']['rail_axis'], m['TLP300M-Landscape']['rail_axis']), ('row', 'column'))
+        self.assertTrue(m['TLP300M-Landscape']['turned'])
+
+    def test_shockwaves_main_is_its_well_and_its_haze_is_at_each_size(self):
+        m = designsys.models(designsys.load('shockwave'))
+        self.assertEqual(m['TLP725T']['main'], [133, 90, 739, 430])
+        self.assertEqual(m['TLP725T']['backgrounds']['haze']['file'], 'Shockwave/backgrounds/1024x600_bkgd.png')
+        # The 535 stretches its template's own 800x480 haze, which the kit
+        # has, under the name its seed carries; the 320's own 320x240 the kit
+        # lacks, and the nearest shape it builds goes by its own name.
+        self.assertEqual(m['TLP535M']['backgrounds']['haze'],
+                         {'image': '800x480 bkgd.png', 'file': 'Shockwave/backgrounds/800x480 bkgd.png'})
+        self.assertEqual(m['TLP320M']['backgrounds']['haze'],
+                         {'image': '1280x800 bkgd.png', 'file': 'Shockwave/backgrounds/1280x800 bkgd.png'})
+
+    def test_turbulences_art_is_one_size(self):
+        m = designsys.models(designsys.load('turbulence'))
+        self.assertEqual(m['TLP725T']['backgrounds']['corridor'], {'image': 'bkgd_pc.png', 'file': 'Turbulence/bkgd_pc.png'})
 
 
 class TestKit(unittest.TestCase):
@@ -692,6 +996,192 @@ class TestBuild(unittest.TestCase):
         self.assertIn('modal', popups)
         # The owner's rule, unchanged: nothing forces a confirmation.
         self.assertIn('not a rule', popups)
+
+    def test_the_readme_says_to_list_every_panel_the_room_has(self):
+        """A designer reads the README first, and it called every artboard one
+        page of a TLP1035T: `panels` was in the Page card alone, so a room's
+        door panel was never asked for and only the 1035 was built."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                text = designsys.readme(p)
+                line = next((ln for ln in text.splitlines() if ln.startswith('- **Every panel the room has.**')), '')
+                self.assertIn('`panels=', line)
+                self.assertIn('on every Page', line)
+                self.assertNotIn(f"one page or popup of an Extron {p['model']}", text)
+
+    def test_the_readme_gives_every_panels_room(self):
+        """Every designer of a two-panel room drew the 1035 snug and the 525
+        failed: positions scale there, controls grow to its touch minimum and
+        words to its type floor, and no doc said by how much. One read the
+        bundle to find out, and its room built on both. The README says, per
+        panel, how far apart two controls' centres must be on the canvas, how
+        much room words need there, and what a hub's rail holds. A review of
+        #38 found a hub's row read off its uncut main: Mach's 525 promised 0.7
+        and three buttons beside the volume where a page has 0.51 and one."""
+        # Mach's 525 cuts the canvas's header, footer and left column from its
+        # main - [84, 66, 618, 348], a button in each bar - and scales it by
+        # 0.511 (348/681); its rail keeps to the same 348 px, which holds the
+        # level, Down, Up and one button. Afterburn's chrome is art, so its
+        # main is whole and scales by 0.638 (480/752). 66 px and 15 px there
+        # are these here.
+        for theme, here, words, rail in (('mach', '130 px, 30 px', '2.5', '1 button'),
+                                         ('afterburn', '104 px, 24 px', '2.0', '3 buttons')):
+            with self.subTest(theme=theme):
+                text = designsys.readme(designsys.load(theme))
+                section = text.split('## Every panel the room has', 1)[1].split('\n## ', 1)[0]
+                rows = [ln for ln in section.splitlines() if ln.startswith('| ') and ' px' in ln]
+                hub = next(ln for ln in rows if 'TLP525' in ln)
+                self.assertIn(f'| {here} |', hub)
+                self.assertIn(f'| {words}x |', hub)
+                self.assertIn(f'the volume and {rail} |', hub)
+                drawn = next(ln for ln in rows if 'TLP1035M/T' in ln)
+                self.assertIn('| 53 px, 12 px |', drawn)
+                self.assertIn('| 1x |', drawn)
+                # Each model once, its variants together.
+                self.assertIn('TLP525C/M/T', hub)
+                # The 320 lays its controls out again: no distance to keep.
+                self.assertTrue(next(ln for ln in rows if 'TLP320' in ln).endswith('| - | - |'))
+
+    def test_the_readme_ends_with_how_to_load_the_system(self):
+        """The Design type looks for the bundle, its global and the stylesheet
+        in the README's "Consuming this system" end; all four designers found
+        none and guessed the bundle from a file listing."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                text = designsys.readme(p)
+                end = text.split('\n## Consuming this system\n', 1)[1]
+                self.assertNotIn('\n## ', end)
+                for want in (f"`window.{p['namespace']}`", '`components/bundle.css`',
+                             '`components/bundle.js`', 'components/<Name>/README.md', p['font']['google']):
+                    self.assertIn(want, end)
+                self.assertLess(end.index('bundle.css'), end.index('bundle.js'))
+
+    def test_the_readme_names_the_start_page_main(self):
+        """The Design type names a canvas's entry `Main.dc.html`; the README
+        said `Home.dc.html`, and every designer had to choose."""
+        text = designsys.readme(designsys.load('mach'))
+        line = next(ln for ln in text.splitlines() if ln.startswith('- **One artboard per page or popup.**'))
+        self.assertIn('`Main.dc.html`', line)
+        self.assertNotIn('Home.dc.html', line)
+
+    def test_the_states_example_draws_every_state_differently(self):
+        """The Button README says every state must look different, and
+        Turbulence's own example drew Warming exactly as On."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                states = json.loads(designsys.load(theme)['examples']['states'])
+                looks = [json.dumps({k: v for k, v in s.items() if k != 'name'}, sort_keys=True)
+                         if isinstance(s, dict) else '{}' for s in states]
+                self.assertEqual(len(set(looks)), len(looks), looks)
+
+    def test_a_line_and_a_clock_name_their_real_default(self):
+        """Line's and Clock's READMEs said `text-secondary` for every theme;
+        Shockwave's defaults are `text` and `raised`, and Turbulence has no
+        `text-secondary` at all."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                docs = designsys.component_docs(p)
+                names = {t['name'] for t in designsys.tokens(p)['color']['tokens']}
+                for comp in ('Line', 'Clock'):
+                    want = p['defaults'][comp.lower()]['color']
+                    self.assertIn(want, names, comp)
+                    self.assertIn(f'(default `{want}`)', docs[comp])
+
+    def test_the_example_keeps_inside_its_main_region(self):
+        """The Example's Clock sat 696 px down its MainArea - inside
+        Afterburn's 752, below Mach's 681, Shockwave's 574 and Turbulence's
+        549."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                main = p['layout']['main']
+                example = designsys.readme(p).split('## Example', 1)[1]
+                inside = example.split('MainArea"', 1)[1].split('\n  </x-import>', 1)[0]
+                for top, h in re.findall(r'top: (\d+)px; width: [\d%]+(?:px)?; height: (\d+)px', inside):
+                    self.assertLessEqual(int(top) + int(h), main[3])
+
+    def test_the_readme_answers_what_every_designer_asked(self):
+        """Four fresh designers asked the same three things. A `nav` reaches
+        the programmer, not the panel - the ID map says "Shows page 'Main'" -
+        so a modal opened from two pages and closed with nav="Main" sent the
+        call page home. A program page may also be led to. And a control on
+        two pages is two controls unless it shares an `id`."""
+        text = designsys.readme(designsys.load('mach'))
+        popups = next(ln for ln in text.splitlines() if ln.startswith('- **Popups.**'))
+        self.assertIn('does="Closes this popup."', popups)
+        self.assertIn('more than one page', popups)
+        program = next(ln for ln in text.splitlines() if ln.startswith('- **A page the program opens'))
+        self.assertIn('may lead to it as well', program)
+        several = next(ln for ln in text.splitlines() if ln.startswith('- **A control on several pages**'))
+        self.assertIn('the same `id`', several)
+        # A JoinCall that opens the call page on Home and joins on Call shared
+        # an id, and the ID map refused it: a mirror is one function.
+        self.assertIn('`nav`', several)
+
+    def test_the_layout_keeps_to_the_gates(self):
+        """Each Layout described its seed's geometry, and a designer who
+        followed it failed the spec check on the design panel: Shockwave's
+        source tabs flush, Mach's rail buttons stacked with no gap, sliders
+        under the touch minimum. Where the seed breaks a gate, the Layout
+        says what to draw."""
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                layout = designsys.readme(designsys.load(theme)).split('## Layout', 1)[1].split('\n## ', 1)[0]
+                for gone in ('stacked with no gap', 'four pixels apart', 'about 30 wide centered',
+                             'about 108 apart,', 'slider 52 wide centered', 'slider 52x315 centered',
+                             'flush with the bottom'):
+                    self.assertNotIn(gone, layout)
+        shockwave = designsys.readme(designsys.load('shockwave')).splitlines()
+        header = next(ln for ln in shockwave if ln.startswith('- **The header'))
+        self.assertIn('`Group joined="true"`', header)
+
+    def test_machs_buttons_take_the_border_its_seed_draws_them_on(self):
+        """Mach's buttons are on the border most of its seed's button states
+        use - 2D Rounded Rectangle, 554 of 662, which the seed defines square
+        and strokeless. A review caught them moved to `mach`, its 10 px rounded
+        border, on the word of a README line the seed contradicts: rounder than
+        Extron's own Mach."""
+        import collections
+        from gdl import seeds
+        from gdl.project import Project
+        if not seeds.usable('seeds/Mach 1035.gdl'):
+            self.skipTest('seeds/Mach 1035.gdl is not here (git lfs pull)')
+        p = designsys.load('mach')
+        proj = Project.open(seeds.path('seeds/Mach 1035.gdl'))
+        used = collections.Counter((proj.border(st) or {}).get('resource')
+                                   for b in proj.instances('PBButton') for st in proj.states(b))
+        most = used.most_common(1)[0][0]
+        for v in ('ghost', 'solid', 'highlight'):
+            self.assertEqual(p['borders'][p['buttons'][v]['look']['border']]['resource'], most, v)
+
+    def test_a_built_in_border_draws_as_its_seed_defines_it(self):
+        """A built-in border's geometry is the seed's, not GUI Designer's:
+        Mach's 1035 defines 2D Rounded Rectangle at radius 1 and thickness 0,
+        and the profile's radius 10 and thickness 3 drew a rounded outline in
+        the preview that the panel built square and strokeless - a designer
+        told two states apart by it. Each built-in a profile offers draws as
+        its design panel's seed defines it."""
+        from gdl import seeds
+        from gdl.project import Project
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                seed = designsys.models(p)[p['model']]['seed']
+                if not seeds.usable(seed):
+                    self.skipTest(f'{seed} is not here (git lfs pull)')
+                own = Project.open(seeds.path(seed)).border_geometry()
+                for key, b in p['borders'].items():
+                    g = own.get(b['resource'])
+                    if g is None or not b['resource'].startswith('2D '):
+                        continue
+                    self.assertEqual(b['thickness'], g['thickness'], key)
+                    if b['resource'] == '2D Rounded Rectangle':
+                        self.assertEqual(b['radius'], g['radius'], key)
+                    if not g['thickness']:
+                        self.assertIn('no stroke', b['usage'], key)
 
     def test_a_revision_keeps_the_pages_keys(self):
         with tempfile.TemporaryDirectory() as d:

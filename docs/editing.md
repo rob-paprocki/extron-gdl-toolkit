@@ -15,7 +15,7 @@ checked, but has not been through a build.
 | `restyle` | remap colors on each control and each state, text color included | 5 sliders built, 5/5 off the artwork; a fill held only on a state and a text color, built and correct |
 | `states` | give a button the states it should have: add, remove, rename or reorder them, and set each one's look | grown 2 to 3, trimmed 3 to 2, and a state inserted before On; built, every state and press state correct |
 | `renumber` | reassign addressable `userId`s in bands | planned + checked |
-| `retarget` | move to another panel model, optionally rescaling | **654/654 on the fixture; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved** |
+| `retarget` | move to another panel model, or turn one that rotates, optionally rescaling | **654/654 on the fixture; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved; 650/650 on the same seed turned to a portrait 1035M** |
 
 ## The shape
 
@@ -33,6 +33,10 @@ error up front rather than a silent no-op discovered on the panel. Errors
 block the plan; warnings never do — a retarget of a real project always
 surfaces dozens of pre-existing touch-target violations, and refusing on those
 would mean refusing the job.
+
+The edited panel's programmer gets an ID map off its build, as a generated
+panel's does from its spec: `python -m gdl.idmap from-built <built.gdl> <out>`
+(`docs/idmap.md` §8).
 
 ## What a caption actually is
 
@@ -115,7 +119,9 @@ that states meant to differ built as different images.
 ## Retargeting
 
 Three fields must agree: `platformField` (a `PBTouchPanelPlatformPro` subclass
-instance), `platformTypeField` (`PlatformProTypeEnum`) and `screenSizeField`.
+instance), `platformTypeField` (`PlatformProTypeEnum`) and `screenSizeField` -
+and on a panel turned the other way up, the platform's own resolution fields
+too (below).
 
 Two things had to be got right, and each produced a file that opened and built
 and was wrong.
@@ -153,6 +159,20 @@ factors as its own controls. A full-canvas page lands exactly on the screen size
 is that canvas and contents move together, so nothing can overflow that did not
 overflow before. `tests/test_retarget_canvas.py` pins it.
 
+**A panel that rotates is turned with `size`.** The panels that run either way
+up (`docs/design-rules.md` §1) take one of their two canvases:
+`{"op": "retarget", "model": "TLP1035M", "size": [800, 1280], "scale": true}`.
+Without `size` a retarget lands on the panel's default way up; a size the model
+does not run at, or one that is not `[width, height]`, is an error. The applier
+writes the platform's own resolution fields as well as the screen size - the
+fields that say which way up a project is (`docs/gdl-format.md` §7). Turned, the Afterburn 1035 seed built 650/650, every
+page at 800x1280. A per-axis scale to the other way up stretches each control
+0.625 by 1.6, so it makes a donor the right shape, not a portrait design: a
+portrait page is authored at the turned canvas, in a spec. That is how a panel
+turned where its theme draws no template that way up gets a seed:
+`powershell/New-GdlTurnedSeed.ps1` turns the model's own and builds it
+(`seeds/README.md`).
+
 `check` catches the general form of this before anything is built: any control that would
 fall outside its page after the edit is an **error**, because Build relocates it
 silently. It runs against each page's own new canvas, popups included — they
@@ -189,7 +209,9 @@ have drawn."
 `gdl/spec.py`'s `MODELS_FULL` lists all 55 panels GUI Designer builds for, with
 resolution, DPI and Extron part number, read from the assemblies via
 `GetDefaultResolutionDpi` and `CreatePlatform` rather than transcribed from the
-Project Create Wizard. `research/data/platform-details.txt` is the raw capture.
+Project Create Wizard. `powershell/Get-GdlPlatforms.ps1` regenerates the raw
+capture, `research/data/platform-details.txt`, with each panel's supported
+resolutions.
 
 The correction that matters: **DPI is per model, not per resolution.** 1280x800
 alone spans 124.75 (TLP Pro 1220/1225), 149 (TLC 1026M, TLP Pro 1025/1035,

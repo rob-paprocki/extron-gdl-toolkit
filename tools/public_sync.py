@@ -32,7 +32,8 @@ Git LFS files are checked by their content, read from the local LFS store; a fil
 content is not there is refused, never passed unseen. Containers - .gdl, .glt, .tgz4 and
 ProjectGCP streams, and any zip or gzip member inside one whatever it is named - are checked
 member by member, as UTF-8 and as UTF-16 at either byte alignment; one that does not open is
-refused. Any other binary must be on BINARY_OK with the hash of the bytes a person looked at:
+refused - but for a .gdl the old pack() wrote, whose swapped data signatures are put back
+where every CRC then agrees (_old_pack). Any other binary must be on BINARY_OK with the hash of the bytes a person looked at:
 no text check reads an image. Paths, commit messages and tag messages are checked too, and a
 private pattern is matched across a line break, since a hard wrap splits a two-word name.
 Nothing private is ever echoed: a hit is reported by its kind and place, masked.
@@ -52,6 +53,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
+import zlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -76,6 +78,8 @@ EXCLUDE = [
     "archive/job-9fe2c865/timeline.jsonl",               # evidence kept as it was; names the client
     "archive/job-9fe2c865/tmp/statenames.py",
     "archive/job-9fe2c865/tmp/states.py",
+    "archive/job-2419a20b/",                             # build logs naming the owner's folders,
+                                                         # and built files no one has reviewed
     "docs/superpowers/specs/2026-10-07-public-private-split-design.md",   # the split's own notes:
     "docs/superpowers/plans/2026-10-07-public-private-split.md",          # what is held back, and why
     "*__pycache__/*", "*.pyc",                           # byte code embeds the path it was built from
@@ -330,6 +334,27 @@ def _opened(data):
         return None
 
 
+# A member that does not read whole: its data fails its CRC, or its deflate
+# stream does not inflate.
+_DAMAGED = (zipfile.BadZipFile, zlib.error, EOFError)
+
+
+def _old_pack(data):
+    """A .gdl the old pack() wrote, opened: it swapped every signature pattern
+    in its output, a payload's data with the records', and the old reader
+    swapped them all back. So does this, and keeps the result only if every
+    member then reads whole - each CRC proves the bytes. A published commit
+    carries one (archive/job-9fe2c865/tmp/fb/pre.gdl, as it was before it was
+    mended), and `check --history` reads every commit."""
+    for sig in (b"\x03\x04", b"\x01\x02", b"\x05\x06", b"\x07\x08"):
+        data = data.replace(b"KP" + sig, b"PK" + sig)
+    try:
+        z = zipfile.ZipFile(io.BytesIO(data))
+        return z if z.testzip() is None else None
+    except _DAMAGED:
+        return None
+
+
 def members(path, data):
     """(name, bytes) of every member of a container, opening any member that is itself a zip,
     a .gdl or a gzip stream whatever it is named - searched compressed, its words would never
@@ -342,8 +367,21 @@ def members(path, data):
     if z is None:
         yield path, None
         return
+    tried = False
     for n in z.namelist():
-        inner, where = z.read(n), path + "!" + n
+        where = path + "!" + n
+        try:
+            inner = z.read(n)
+        except _DAMAGED:
+            # A .gdl the old pack() wrote (_old_pack), mended once; or a
+            # damaged file - refused, as one that does not open.
+            fixed = None if tried or data[:2] != b"KP" else _old_pack(data)
+            tried = True
+            if fixed is None:
+                yield where, None
+                continue
+            z = fixed
+            inner = z.read(n)
         if inner[:2] == GZIP_MAGIC:
             try:
                 inner, where = gzip.decompress(inner), where + " (gunzipped)"

@@ -115,8 +115,9 @@ built `layout.json`:
   of that name is checked, not just the first.
 - Every button the map lists states for built with exactly those states, in
   that order, and shows the mapped state while pressed.
-- No other control on a mapped page shares a mapped ID. A donor page doing so is
-  a note, because it answers to the same handler if it is ever shown.
+- No other control on a mapped page shares a mapped ID. A donor page doing so -
+  only a spec that keeps them (`keep_donor_pages`) has any - is a note, because
+  it answers to the same handler if it is ever shown.
 - No page or popup name appears twice.
 - Every popup a button shows can appear over every page it can be shown on.
 
@@ -141,7 +142,7 @@ A canvas that lists several panels is translated to one spec per panel, and
 one program drives them all. So it gets **one map**:
 
 ```bash
-python -m gdl.idmap write-panels out/huddle out/huddle/idmap      # every out/huddle/<model>/spec.json
+python -m gdl.idmap write-panels out/huddle out/huddle/idmap      # every out/huddle/<panel>/spec.json
 python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725T
 ```
 
@@ -167,8 +168,9 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   from 50001 up - the same on every panel it is on - and is listed only on those
   panels. The first popup of a derived group has no button leading to it: the
   program shows it as its page comes up, and the page table says so.
-- **A slider on a panel that cannot build one** - the 525's and 320's seeds have
-  levels and no slider - is a level there, with that derived Up and Down. It
+- **A slider on a panel that cannot build one** - the 520s', 535s', 320s' and
+  300M's seeds have levels and no slider (the profile's `kinds`,
+  `docs/claude-design.md` §4) - is a level there, with that derived Up and Down. It
   keeps the slider's ID, and its type reads *Slider; Level on TLP525T, TLP320M*.
 - **Checked across panels:** one ID is one control - the same name and kind -
   on every panel, and a control the canvas draws is on every panel: nothing is
@@ -176,3 +178,35 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
 - **Verified per build.** A built panel is one panel, so the verifier takes
   that panel's view of the map (`--panel`): its pages, popups, navigation and
   the controls on it, each where it is there.
+
+## 8. A panel that was never a spec
+
+A client project made in GUI Designer by hand has no spec to write a map from,
+but its build holds everything a map lists but the functions:
+
+```bash
+python -m gdl.idmap from-built <panel.gdl> out/idmap
+```
+
+writes the same three files off the built `layout.json` - every ID, its type,
+each page and control name it is at, its caption, a button's states and its
+press state - and the page it boots into. What `layout.json` leaves out is
+read from the project beside it: each popup's group, and a caption Build
+flattened into the control's artwork, which leaves its text empty - 71 of the
+Afterburn 1035 seed's 365 IDs. Its Function column is empty: a `.gdl` carries
+no behavior (§1), so what each control does is the programmer's to fill in. A
+control whose ID is 0 - what GUI Designer leaves on one nobody numbered, 98
+controls in the client fixture, 59 of them buttons - is left out and counted,
+since nothing can address it. An ID on several controls is one row, from its
+first copy; where another copy differs in type, states or press state, the map
+says which above its tables. A glyph caption in an icon face is the glyph's
+name - `icon: close`, as the spec's map gives an `icon` - or its codepoint
+where the face names none: its character is one a spreadsheet shows blank, as
+on 30 of the Afterburn 1035 seed's controls.
+
+Read off a panel built from a spec, it agrees with the map that spec wrote on
+every ID, type, place and caption, and on every state the spec lists. A button
+the spec gives no states keeps its clone's, which the built map names and the
+spec's cannot; an icon the spec gives by codepoint is named by its glyph where
+the face names one (`tests/test_idmap.py`). The project must have been built:
+Save and Build writes the `layout.json` it reads.

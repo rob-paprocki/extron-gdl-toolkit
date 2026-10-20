@@ -286,6 +286,19 @@ class TestOutput(unittest.TestCase):
         help_btn = next(c for c in d['controls'] if c['at'][0]['name'] == 'HelpBtn')
         self.assertEqual(help_btn['function'], "Shows page 'Huddle Help'")
 
+    def test_an_icons_caption_is_its_name_not_its_glyph(self):
+        """An icon's caption is a private-use character, which a spreadsheet
+        shows blank: the map says which icon it is."""
+        spec = {'name': 'T', 'size': [1280, 800], 'family': 'Afterburn',
+                'theme': {'text': '#FFFFFF'}, 'pages': [{'name': 'P', 'number': 1000, 'controls': [
+                    {'kind': 'button', 'name': 'Tv', 'id': 11, 'rect': [0, 0, 160, 160],
+                     'icon': 'U+E908'},
+                    {'kind': 'button', 'name': 'Mic', 'id': 12, 'rect': [200, 0, 160, 160],
+                     'states': [{'name': 'Off', 'icon': 'U+E92F'}, {'name': 'On', 'icon': 'U+E930'}]}]}]}
+        d = IdMap(Panel(spec)).data()
+        self.assertEqual({c['at'][0]['name']: c['at'][0]['caption'] for c in d['controls']},
+                         {'Tv': 'icon: U+E908', 'Mic': 'icon: U+E92F'})
+
     def test_pages_carry_no_number(self):
         # Build does not keep a page's number, so a map that listed one would
         # hand the programmer an address that does not exist.
@@ -422,6 +435,305 @@ class TestPanels(unittest.TestCase):
     def test_the_maps_agree_and_check_clean(self):
         from gdl.idmap import check_panels
         self.assertEqual(check_panels(self.maps()), [])
+
+
+class TestTheRealSizeExample(unittest.TestCase):
+    """examples/boardroom-full.json is a panel the size of a real one - the
+    client project has 27 pages; nothing generated before had more than three.
+    It stays clean so its build stays repeatable (docs/from-scratch.md §5c, *A
+    real-size panel*)."""
+    PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        'examples', 'boardroom-full.json')
+
+    def test_it_checks_clean_with_its_one_dead_end(self):
+        problems, notes = load(self.PATH).check()
+        self.assertEqual(problems, [])
+        # Shutting Down has no way out on the panel: the program returns to
+        # Welcome when the room is off.
+        self.assertEqual(len(notes), 1)
+        self.assertIn("'Shutting Down' is a dead end", notes[0])
+
+    def test_it_is_the_size_it_says(self):
+        p = Panel.load(self.PATH)
+        self.assertGreaterEqual(len(p.pages), 20)
+        volume = [pg['name'] for pg in p.pages
+                  if any(c.get('kind') == 'popup_ref' and c.get('group') == 'Volume'
+                         for c in pg['controls'])]
+        self.assertGreaterEqual(len(volume), 7, volume)
+        keypads = {tuple(c['rect']) for pg in p.pages for c in pg['controls']
+                   if c.get('kind') == 'popup_ref' and c.get('group') == 'Keypad'}
+        self.assertEqual(len(keypads), 2, 'one Keypad reference per page, each in its own place')
+
+    def test_its_chrome_is_one_control_to_the_program(self):
+        p = Panel.load(self.PATH)
+        on = [pg['name'] for pg in p.pages if any(c['id'] == 41 for c in pg['controls'])]
+        self.assertGreaterEqual(len(on), 20)
+        rows = [c for c in load(self.PATH).data()['controls'] if c['id'] == 41]
+        self.assertEqual(len(rows), 1, 'a mirror is listed once')
+
+
+class TestABuiltPanelsUnnumberedControls(unittest.TestCase):
+    def test_a_control_with_no_id_is_left_out_and_counted(self):
+        """GUI Designer leaves 0 on a control nobody numbered - 98 controls in
+        the client fixture, 59 of them buttons - and nothing can address one."""
+        from gdl.idmap import BuiltMap
+        layout = {'DefaultPage': 1, 'PopupPages': [], 'Pages': [{'ID': 1, 'Name': 'Home', 'Controls': [
+            {'Type': 11, 'UserId': 0, 'Name': 'Static', 'Text': 'Welcome'},
+            {'Type': 7, 'UserId': 5, 'Name': 'Go', 'States': [{'Name': 'Off', 'Text': 'Go'}]}]}]}
+        m = BuiltMap(layout)
+        d = m.data()
+        self.assertEqual([c['id'] for c in d['controls']], [5])
+        self.assertEqual(d['unnumbered'], 1)
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out, True)
+        m.write(out)
+        with open(os.path.join(out, 'idmap.md'), encoding='utf-8') as fh:
+            self.assertIn('1 control carries no ID', fh.read())
+
+
+class TestABuiltPanelsGlyphCaptions(unittest.TestCase):
+    """A glyph caption is a private-use character - or, in Extron-Shockwave,
+    a Latin-1 one standing for an icon - which a spreadsheet shows blank or as
+    the wrong thing. The map names the glyph, as a spec's map names its icon."""
+
+    @staticmethod
+    def _map(text, font):
+        from gdl.idmap import BuiltMap
+        layout = {'DefaultPage': 1, 'PopupPages': [], 'Pages': [{'ID': 1, 'Name': 'Home', 'Controls': [
+            {'Type': 7, 'UserId': 5, 'Name': 'B', 'Font': {'Name': font},
+             'States': [{'Name': 'Off', 'Text': text}]}]}]}
+        return BuiltMap(layout).data()['controls'][0]['at'][0]['caption']
+
+    def test_a_glyph_is_named_by_its_codepoint_where_its_face_names_none(self):
+        self.assertEqual(self._map(chr(0xE926), 'Some Icon Face'), 'icon: U+E926')
+        self.assertEqual(self._map(chr(0xB1), 'Extron-Shockwave'), 'icon: U+00B1')
+
+    def test_words_are_words(self):
+        self.assertEqual(self._map('Laptop', 'Open Sans'), 'Laptop')
+        self.assertEqual(self._map(chr(0xB1) + '5', 'Open Sans'), chr(0xB1) + '5')
+
+    def test_the_seeds_own_glyph_captions_are_named(self):
+        from gdl.container import open_payload
+        from gdl.fonts import icon_face
+        from gdl.idmap import BuiltMap
+        seed = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            'seeds', 'Afterburn 1035.gdl')
+        with open(seed, 'rb') as fh:
+            if fh.read(40).startswith(b'version https://git-lfs'):
+                self.skipTest('seeds/Afterburn 1035.gdl is not pulled from Git LFS here')
+        if not icon_face('Extron-Afterburn')[0]:
+            self.skipTest('no Extron-Afterburn face here to read its glyph names from')
+        d = BuiltMap(json.loads(open_payload(seed).read('layout.json'))).data()
+        captions = [a['caption'] for c in d['controls'] for a in c['at']]
+        self.assertFalse([x for x in captions if any(0xE000 <= ord(ch) <= 0xF8FF for ch in x)])
+        self.assertIn('icon: close', captions)
+        self.assertIn('icon: fast_forward', captions)
+
+
+class TestAPanelThatWasNeverASpec(unittest.TestCase):
+    """A client project that was never a spec has no map, though its built
+    layout.json holds every ID, type, page and caption one needs. Read off the
+    23-page panel's own build, the map must agree with the one its spec wrote -
+    everything but what controls do, which no .gdl carries."""
+
+    BUILD = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         'archive', 'job-2419a20b', 'item4', 'build6')
+
+    def setUp(self):
+        gdl = os.path.join(self.BUILD, 'BoardroomFull.gdl')
+        if not os.path.isfile(gdl):
+            self.skipTest('the archived real-size build is not here')
+        with open(gdl, 'rb') as fh:
+            if fh.read(40).startswith(b'version https://git-lfs'):
+                self.skipTest('the archived real-size build is not pulled from Git LFS here')
+        from gdl.idmap import BuiltMap
+        self.built = BuiltMap.open(gdl).data()
+        with open(os.path.join(self.BUILD, 'idmap', 'idmap.json'), encoding='utf-8') as fh:
+            self.spec = json.load(fh)
+
+    def test_it_boots_where_the_spec_said(self):
+        self.assertEqual(self.built['start_page'], self.spec['start_page'])
+
+    def test_every_page_and_popup_as_the_spec_named_them(self):
+        self.assertEqual(sorted(p['name'] for p in self.built['pages']),
+                         sorted(p['name'] for p in self.spec['pages']))
+        self.assertEqual(sorted((p['name'], p['modal'], p['group']) for p in self.built['popups']),
+                         sorted((p['name'], p['modal'], p['group']) for p in self.spec['popups']))
+
+    def test_every_id_its_type_places_and_captions(self):
+        def rows(d):
+            return {c['id']: (c['type'], sorted((a['container'], a['name'], a['caption']) for a in c['at']))
+                    for c in d['controls']}
+        self.assertEqual(rows(self.built), rows(self.spec))
+
+    def test_a_buttons_states_as_the_program_sets_them(self):
+        want = {c['id']: (c.get('states'), c.get('press')) for c in self.spec['controls']
+                if c['type'] == 'Button' and c.get('states')}
+        got = {c['id']: (c.get('states'), c.get('press')) for c in self.built['controls']
+               if c['id'] in want}
+        self.assertEqual(got, want)
+
+    def test_what_a_control_does_is_left_to_the_programmer(self):
+        self.assertTrue(all(c['function'] == '' and c['nav'] is None for c in self.built['controls']))
+        self.assertEqual(self.built['navigation'], [])
+
+    def test_the_command_writes_all_three(self):
+        import contextlib
+        import io
+        from gdl.idmap import main
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out, True)
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = main(['idmap', 'from-built', os.path.join(self.BUILD, 'BoardroomFull.gdl'), out])
+        self.assertEqual(code, 0)
+        self.assertEqual(sorted(os.listdir(out)), ['idmap.csv', 'idmap.json', 'idmap.md'])
+        with open(os.path.join(out, 'idmap.md'), encoding='utf-8') as fh:
+            self.assertIn('BoardroomFull.gdl', fh.read())
+
+
+def _pulled(path):
+    """`path` is here and not a Git LFS pointer."""
+    if not os.path.isfile(path):
+        return False
+    with open(path, 'rb') as fh:
+        return not fh.read(40).startswith(b'version https://git-lfs')
+
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+class TestASeedReadOffItsBuild(unittest.TestCase):
+    """The Afterburn 1035 seed - the one seed CI pulls - read as a panel that
+    was never a spec: what layout.json says, and what only the project does."""
+
+    SEED = os.path.join(ROOT, 'seeds', 'Afterburn 1035.gdl')
+
+    @classmethod
+    def setUpClass(cls):
+        if not _pulled(cls.SEED):
+            raise unittest.SkipTest('seeds/Afterburn 1035.gdl is not pulled from Git LFS here')
+        from gdl.idmap import BuiltMap
+        cls.d = BuiltMap.open(cls.SEED).data()
+
+    def _row(self, uid):
+        return next(c for c in self.d['controls'] if c['id'] == uid)
+
+    def test_a_flattened_caption_is_read_off_the_project(self):
+        """Build bakes a FlattenText caption into the control's artwork and
+        leaves its layout.json text empty - 71 of the seed's 365 IDs."""
+        self.assertEqual(self._row(8231)['at'][0]['caption'], 'Preset 1')
+        self.assertEqual(self._row(8020)['at'][0]['caption'], 'Audio')
+
+    def test_its_popups_and_their_groups_without_the_offline_page(self):
+        popups = {p['name']: p for p in self.d['popups']}
+        self.assertNotIn('Offline Page', popups)
+        self.assertEqual((popups['PC']['modal'], popups['PC']['group']), (False, 'Controls'))
+        self.assertEqual((popups['Help']['modal'], popups['Help']['group']), (True, None))
+        self.assertEqual(self.d['start_page'], 'Start')
+
+    def test_the_command_writes_all_three(self):
+        import contextlib
+        import io
+        from gdl.idmap import main
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out, True)
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = main(['idmap', 'from-built', self.SEED, out])
+        self.assertEqual(code, 0)
+        self.assertEqual(sorted(os.listdir(out)), ['idmap.csv', 'idmap.json', 'idmap.md'])
+        with open(os.path.join(out, 'idmap.csv'), encoding='utf-8') as fh:
+            self.assertIn('Preset 1', fh.read())
+
+
+class TestWhatABuildDoesNotSay(unittest.TestCase):
+    @staticmethod
+    def _md(layout):
+        from gdl.idmap import BuiltMap
+        out = tempfile.mkdtemp()
+        try:
+            BuiltMap(layout).write(out)
+            with open(os.path.join(out, 'idmap.md'), encoding='utf-8') as fh:
+                return fh.read()
+        finally:
+            shutil.rmtree(out, True)
+
+    def test_an_ungrouped_popup_and_an_unknown_start_say_so(self):
+        md = self._md({'DefaultPage': 99, 'Pages': [{'ID': 1, 'Name': 'Home', 'Controls': []}],
+                       'PopupPages': [{'ID': 2, 'Name': 'Volume Level', 'Modal': False,
+                                       'IsGroupValid': False, 'GroupID': 0, 'Controls': []}]})
+        self.assertNotIn('None', md)
+        self.assertIn('popup, no group', md)
+
+    def test_a_built_map_lists_every_buttons_states(self):
+        """'A button with none listed keeps the states of the button it was
+        cloned from' is a spec's: off a build, every button lists its own."""
+        md = self._md({'DefaultPage': 1, 'PopupPages': [], 'Pages': [{'ID': 1, 'Name': 'Home', 'Controls': [
+            {'Type': 7, 'UserId': 5, 'Name': 'Go', 'States': [{'Name': 'Off', 'Text': 'Go'}]}]}]})
+        self.assertNotIn('cloned from', md)
+
+    def test_copies_of_one_id_that_differ_are_noted(self):
+        """The map lists an ID once, from its first copy; a program setting a
+        state by index needs to know where another copy numbers them otherwise."""
+        from gdl.idmap import BuiltMap
+
+        def mute(*states, press=None):
+            return {'Type': 7, 'UserId': 171, 'Name': 'Mute', 'TLPPressFeedbackStateID': press,
+                    'States': [{'Name': s} for s in states]}
+        layout = {'DefaultPage': 1, 'PopupPages': [], 'Pages': [
+            {'ID': 1, 'Name': 'Home', 'Controls': [mute('Muted', 'Level 3_1', press=0)]},
+            {'ID': 2, 'Name': 'Room', 'Controls': [mute('Muted', 'Level 1', press=0)]},
+            {'ID': 3, 'Name': 'Desk', 'Controls': [mute('Muted', 'Level 3_1', press=0)]}]}
+        notes = [x for x in BuiltMap(layout).data()['panel'] if '171' in x]
+        self.assertEqual(len(notes), 1, notes)
+        self.assertIn('Room / Mute', notes[0])
+        self.assertIn('Level 1', notes[0])
+        self.assertNotIn('Desk', notes[0])
+        self.assertIn('ID 171', self._md(layout))
+
+    def test_a_file_that_is_not_a_build_is_refused_not_raised(self):
+        import contextlib
+        import io
+        from gdl.idmap import main
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        pointer = os.path.join(d, 'Panel.gdl')
+        with open(pointer, 'wb') as fh:
+            fh.write(b'version https://git-lfs.github.com/spec/v1\noid sha256:0\nsize 1\n')
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = main(['idmap', 'from-built', pointer, os.path.join(d, 'out')])
+        self.assertEqual(code, 1)
+        self.assertIn('git lfs pull', out.getvalue())
+        self.assertFalse(os.path.exists(os.path.join(d, 'out')))
+
+
+class TestAPanelBuiltFromBareButtons(unittest.TestCase):
+    """examples/huddle.json leaves 7 of its 13 buttons' states to the clone:
+    off its build, the map agrees with the spec's on the type, places and
+    caption of every ID the spec numbers, and names the states the spec's map
+    could not. The build is from before the applier dropped the donor's own
+    pages, so it holds theirs too."""
+
+    BUILT = os.path.join(ROOT, 'archive', 'gdlwork', 'out', 'Huddle.gdl')
+
+    def setUp(self):
+        if not _pulled(self.BUILT):
+            self.skipTest('archive/gdlwork/out/Huddle.gdl is not pulled from Git LFS here')
+
+    def test_it_agrees_and_names_the_clones_states(self):
+        from gdl.idmap import BuiltMap
+        built = BuiltMap.open(self.BUILT).data()
+        spec = load(os.path.join(ROOT, 'examples', 'huddle.json')).data()
+
+        def rows(d):
+            return {c['id']: (c['type'], sorted((a['container'], a['name'], a['caption']) for a in c['at']))
+                    for c in d['controls']}
+        want = rows(spec)
+        self.assertEqual({k: v for k, v in rows(built).items() if k in want}, want)
+        bare = [c['id'] for c in spec['controls'] if c['type'] == 'Button' and not c.get('states')]
+        self.assertTrue(bare)
+        got = {c['id']: c.get('states') for c in built['controls'] if c['id'] in bare}
+        self.assertTrue(all(got.values()), got)
 
 
 if __name__ == '__main__':

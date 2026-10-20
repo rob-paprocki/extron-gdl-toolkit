@@ -1,6 +1,6 @@
 """Turn a Claude Design canvas into a spec - one for each panel it lists.
 
-    python -m gdl.design translate <canvas dir> <out dir>         # out/<model>/spec.json
+    python -m gdl.design translate <canvas dir> <out dir>         # out/<panel>/spec.json
     python -m gdl.design translate <canvas dir> <out spec.json>   # the design panel's
 
 A canvas whose Pages list `panels` is translated once per panel: the design
@@ -83,6 +83,16 @@ PROBE = r"""
   // text, so it overflows both ways and scrollHeight sees only the half below
   // - one extra line went unnamed. Read on screen, so a scaled container's
   // text is measured as it shows.
+  // A label's and a clock's words, boxed on their own: the box drawn round
+  // them is often bigger, and overlapping a button is harmless where the
+  // words are clear of it (the translator's _collisions).
+  var WORDS = { label: 1, datetime: 1 };
+  function wordsBox(el, ox, oy) {
+    var rg = document.createRange();
+    rg.selectNodeContents(el);
+    var t = rg.getBoundingClientRect();
+    return t.width > 0 && t.height > 0 ? [t.left - ox, t.top - oy, t.width, t.height] : null;
+  }
   function overflows(el, kind) {
     if (!TEXT[kind]) return false;
     var line = parseFloat(getComputedStyle(el).lineHeight) || 20;
@@ -120,6 +130,14 @@ PROBE = r"""
           var c = { gdl: el.getAttribute('data-gdl'), rect: box, href: el.getAttribute('href') };
           if (at >= 0) c.part = at;
           if (overflows(el, g.kind)) c.overflow = true;
+          if (WORDS[g.kind]) {
+            var wb = wordsBox(el, at >= 0 ? pr[at].left : o.left, at >= 0 ? pr[at].top : o.top);
+            if (wb) {
+              c.text_rect = wb;
+              // Its em as it shows: a scaled container's text is drawn smaller.
+              c.text_em = parseFloat(getComputedStyle(el).fontSize) * (el.offsetHeight ? r.height / el.offsetHeight : 1);
+            }
+          }
           out.controls.push(c);
           continue;
         }
@@ -159,9 +177,10 @@ def render(board_path, chrome, size, timeout=90, panel=None):
 
     The probe goes into a copy beside the original, so relative paths -
     support.js, ds/<folder>/ - resolve the same way they do on the canvas.
-    `panel` is the model to lay it out for: set before the design system
-    loads, as `window.__GDL_PANEL`, which a Page that lists panels derives
-    for (docs/claude-design.md section 2). Without it, the design panel.
+    `panel` is the panel to lay it out for (gdl.spec.panel_id): set before
+    the design system loads, as `window.__GDL_PANEL`, which a Page that lists
+    panels derives for (docs/claude-design.md section 2). Without it, the
+    design panel.
     """
     with open(board_path, encoding='utf-8') as fh:
         src = fh.read()
@@ -228,16 +247,20 @@ class Canvas:
                 rendered[b] = render(os.path.join(self.folder, *b.split('/')), self.chrome,
                                      (int(w.get('w') or 1280), int(w.get('h') or 800)))
         spec, problems, notes = self._spec(rendered)
+        if spec is not None:
+            if not self._seed_has_line(spec):
+                notes = notes + lines_as_shapes(spec)
+            problems = problems + _spec_check(spec, self._seed_geometry(spec), problems)
         for item in (spec or {}).get('pages', []) + (spec or {}).get('popups', []):
             item.pop('_host', None)
         return spec, problems, notes
 
     def translate_panels(self, rendered=None):
-        """({model: spec} or None, {model: problems}, {model: notes}) - one spec
+        """({panel: spec} or None, {panel: problems}, {panel: notes}) - one spec
         per panel the canvas's Pages list, each laid out for its panel by the
         design system (window.__GDL_PANEL). All or nothing: any panel with a
         problem means no specs. A canvas that lists no panels is its profile's
-        one design panel. `rendered` maps model -> board -> probe output, for
+        one design panel. `rendered` maps panel -> board -> probe output, for
         tests; otherwise each board is laid out in Chrome once per panel."""
         if rendered is None:
             if not self.chrome:
@@ -264,31 +287,40 @@ class Canvas:
                     rendered[m][b] = design_run[b] if m is None or drawn == m else render(
                         os.path.join(self.folder, *b.split('/')), self.chrome, self._size(b), panel=m)
         specs, problems, notes = {}, {}, {}
+        # The first panel listed is the one the canvas is drawn on: what met
+        # there was drawn so.
+        drawn = next(iter(rendered.values()), {})
         for m, boards in rendered.items():
             self.problems, self.notes = [], []
             spec, probs, nts = self._spec(boards)
+            if boards is not drawn:
+                for b, o in boards.items():
+                    probs = probs + _collisions(drawn.get(b), o)
             key = m or (spec or {}).get('model') or ''
-            if m and spec is not None and spec.get('model') != m:
-                probs = probs + [f"laid out for the {spec.get('model')}, not the {m} - remove the "
+            if m and spec is not None and _panel(spec) != m:
+                probs = probs + [f"laid out for the {_panel(spec)}, not the {m} - remove the "
                                  f"Pages' `preview` before translating, or set it to {m}"]
             if spec is not None:
                 self._seed_rules(spec, key, probs)
             problems[key] = [f'{key}: {q}' if key else q for q in probs]
             notes[key] = [f'{key}: {q}' if key else q for q in nts]
             specs[key] = spec
+        # Before the IDs are pinned, which number unnamed controls by kind.
+        for model, q in lines_everywhere(specs, self._seed_has_line).items():
+            notes[model] += [f'{model}: {x}' if model else x for x in q]
         if not any(problems.values()) and all(v is not None for v in specs.values()):
             for model, q in pin_ids(specs, list(specs)).items():
                 problems[model] += [f'{model}: {x}' if model else x for x in q]
-            # Each panel's spec as `gdl.spec check` sees it - the touch
-            # minimum, the floor, the spacing a grown caption may have broken -
-            # here, before a build is ever started. Panel mutates what it reads.
-            from copy import deepcopy
-            for model, spec in specs.items():
-                probe = deepcopy(spec)
-                for item in probe['pages'] + probe['popups']:
-                    item.pop('_host', None)
-                problems[model] += [f'{model}: {x}' if model else x
-                                    for x in gdlspec.Panel(probe).check()]
+        # Each panel's spec as `gdl.spec check` sees it - the touch minimum,
+        # the floor, the spacing a grown caption may have broken - here,
+        # before a build is ever started, and for every panel drawn whatever
+        # else is wrong: checked only on a clean canvas, a designer who revised
+        # for what one read named met a new list in the next.
+        for model, spec in specs.items():
+            if spec is None:
+                continue
+            problems[model] += [f'{model}: {x}' if model else x
+                                for x in _spec_check(spec, self._seed_geometry(spec), problems[model])]
         for spec in specs.values():
             for item in (spec or {}).get('pages', []) + (spec or {}).get('popups', []):
                 item.pop('_host', None)
@@ -310,29 +342,58 @@ class Canvas:
         return []
 
     _SEED_NAMES = {}
+    # seed -> whether it carries a PBLine to clone.
+    _SEED_LINES = {}
+    # seed -> its own border geometry (Project.border_geometry).
+    _SEED_GEOMETRY = {}
+
+    def _seed_geometry(self, spec):
+        """The seed's border geometry, or None where the seed is not here: a
+        stroke is drawn only on a border the seed gives a thickness."""
+        seed = spec.get('_seed')
+        if not seed or not seeds.usable(seed):
+            return None
+        if seed not in self._SEED_GEOMETRY:
+            from .project import Project
+            self._SEED_GEOMETRY[seed] = Project.open(seeds.path(seed)).border_geometry()
+        return self._SEED_GEOMETRY[seed]
+
+    def _seed_has_line(self, spec):
+        """Whether the spec's seed carries a PBLine to clone - the donor check
+        refuses a line otherwise. True where the seed is not here to say."""
+        seed = spec.get('_seed')
+        if not seed or not seeds.usable(seed):
+            return True
+        if seed not in self._SEED_LINES:
+            from .project import Project
+            self._SEED_LINES[seed] = any(True for _ in Project.open(seeds.path(seed)).instances('PBLine'))
+        return self._SEED_LINES[seed]
 
     def _seed_rules(self, spec, model, problems):
         """A panel builds on its own seed: it must be here, and nothing the
         layout derived may take a name the seed already has."""
         seed = spec.get('_seed')
         theme = self.template or 'Afterburn'
+        # `model` names the panel; the seed is made for its model at its canvas.
+        at = (spec.get('model'), spec.get('size'))
         if not seed:
-            problems.append(f'no seed for a {model} - make one: {seeds.command(theme, model, None)} - '
+            problems.append(f'no seed for a {model} - make one: {seeds.command(theme, at[0], None, at[1])} - '
                             f'{seeds.listing(theme)}')
             return
         if not seeds.usable(seed):
             problems.append(f'its seed {seed} is not here (or is a Git LFS pointer - git lfs pull) - '
-                            f'make it: {seeds.command(theme, model, seed)}')
+                            f'make it: {seeds.command(theme, at[0], seed, at[1])}')
             return
         if seed not in self._SEED_NAMES:
+            # The specs this writes never keep the seed's pages, so the applier
+            # drops them all but the one it keeps (gdl.spec.kept_names).
             from .project import Project
-            self._SEED_NAMES[seed] = {pg['name'] for pg in Project.open(seeds.path(seed)).pages()
-                                      if pg['name']}
+            self._SEED_NAMES[seed] = gdlspec.kept_names(Project.open(seeds.path(seed)).pages())
         taken = self._SEED_NAMES[seed]
         for item in spec['pages'] + spec['popups']:
             if item['name'] in taken:
-                problems.append(f"{item['name']!r} is a page or popup the seed {seed} already has - "
-                                'rename it, or the build fails')
+                problems.append(f"{item['name']!r} is a page of the seed {seed} that the built panel "
+                                'keeps - rename it, or Build refuses the duplicate')
 
     # -- building the spec ---------------------------------------------------
     def _spec(self, rendered):
@@ -447,7 +508,7 @@ class Canvas:
         rail = designsys.slider_rail(profile)
         # A border the panel's seed lacks is its own of that thickness (the
         # model table's `borders`: the 320's 7 Radius 2 Thick for the profile's
-        # 10 Radius 2 Thick) - a spec may only name what its donor carries.
+        # 10 Radius 2 Thick), written into the spec as the plan would build it.
         swap = first.get('borders') or {}
         for item in pages + popups:
             item['controls'] = [c for c in (self._control(item['name'], raw, stems)
@@ -460,6 +521,8 @@ class Canvas:
                     if isinstance(st, dict) and st.get('border') in swap:
                         st['border'] = swap[st['border']]
             for c in item['controls']:
+                if c['kind'] == 'button':
+                    _fit_breaks(c, profile['pt'], profile['font']['family'])
                 if c['kind'] == 'slider' and thumb:
                     c['thumb_image'] = thumb[0]
                 if c['kind'] == 'slider':
@@ -478,8 +541,10 @@ class Canvas:
         model, size, seed = profile['model'], list(profile['size']), profile['seed']
         listed = first.get('panels') if first.get('panel') else None
         if first.get('panel'):
-            model = first['panel']
-            size = list(gdlspec.MODELS[model])
+            # A panel is its model, the other way up as model-Portrait or
+            # model-Landscape (gdl.spec.panel_id): the spec is the model at its canvas.
+            model, size = gdlspec.panel_of(first['panel'])
+            size = list(size)
             seed = first.get('seed')
         spec = {
             'name': self.index.get('title') or 'Panel',
@@ -599,6 +664,209 @@ class Canvas:
         return c
 
 
+def _line_px(family, bold, px):
+    """A caption line as GUI Designer lays it out: the face's usWinAscent +
+    usWinDescent at that size - 1.362 em for Open Sans, where the canvas's line
+    box is 1.2 em. The Mach 725's built tiles show it: a caption one break
+    shorter moved 15 px, half a 30 px line at 16 pt. Bold sets no other
+    height. Without the face here, the canvas's own measure."""
+    from . import fonts, sfnt
+    path = fonts.face_path(family, 1 if bold else 0) or fonts.face_path(family)
+    if not path:
+        return px * 1.2
+    a, d = sfnt.Advances(path).vmetrics(px)
+    return a + d
+
+
+def _fit_breaks(c, pt, family):
+    """A caption below its icon keeps as many of its leading line breaks as
+    fit in its button on this panel - in the button's own caption and each
+    state's. The template's tiles reach the caption with breaks counted for the
+    panel the canvas is drawn on; on a smaller one the tile shrinks and the
+    caption stops at the panel's type floor, and three breaks put the Mach
+    725's 106 px source tiles' 16 pt captions past their edge, where GUI
+    Designer clipped them. A line is as the panel lays it out (_line_px)."""
+    if not c.get('size'):
+        return
+    line = _line_px(family, c.get('bold'), c['size'] * pt)
+
+    def fit(text):
+        if not isinstance(text, str) or not text.startswith('\r\n'):
+            return text
+        rest = text.lstrip('\r\n')
+        breaks, lines = (len(text) - len(rest)) // 2, rest.count('\r\n') + 1
+        while breaks and (breaks + lines) * line > c['rect'][3]:
+            breaks -= 1
+        return '\r\n' * breaks + rest
+    if 'text' in c:
+        c['text'] = fit(c['text'])
+    for s in c.get('states') or []:
+        if isinstance(s, dict) and 'text' in s:
+            s['text'] = fit(s['text'])
+
+
+# What a finger presses: words may not reach one.
+TOUCH = ('button', 'slider', 'level')
+
+
+def _meet(a, b):
+    """How deep two boxes meet - the lesser of what they share across and
+    down - or 0 where they share less than 2 px across and 1 down."""
+    w = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
+    h = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
+    return min(w, h) if w >= 2 and h >= 1 else 0
+
+
+# What a pair that met as drawn may meet by more on another panel - the
+# rounding of a layout scaled to it - before it is named.
+_DRAWN_SLACK = 4
+
+
+# Characters that reach below the baseline - or might: anything outside
+# printable ASCII is assumed to.
+_PLAIN = set(' !"#%&\'*+-.0123456789:<=>?ABCDEFGHIJKLMNOPRSTUVWXYZ^abcdefhiklmnorstuvwxz~')
+
+
+def _ink(c, g, dx, dy):
+    """A label's or a clock's words as their glyphs fill them: the probe's box
+    round them - each line's content area, the face's ascent and descent,
+    1.36 em for Open Sans, deeper than the 1.2 em line it sits on - less the
+    quarter em that ascent keeps above the tallest glyph (Open Sans's is
+    1.07 em, its ascenders reach 0.76), and, where no character of a label's
+    words reaches below the line, the quarter em its descent keeps under them
+    (0.29 em). A clock's words change, so they keep theirs. Two labels' 28 pt
+    boxes 5 px over each other on a 535 left their words clear, and so did
+    Mach's 'Volume' over its level's Up."""
+    x, y, w, h = c['text_rect']
+    em = c.get('text_em') or 0
+    top = min(0.25 * em, h / 2)
+    text = g.get('text') if g.get('kind') == 'label' else None
+    foot = min(0.25 * em, (h - top) / 2) if isinstance(text, str) and set(text) <= _PLAIN else 0
+    return [x + dx, y + dy + top, w, h - top - foot]
+
+
+def lines_as_shapes(spec):
+    """Every line in `spec` as a filled shape of its box, for a seed with no
+    PBLine to clone - most of Mach's, Shockwave's and Turbulence's sizes. A
+    design-system Line is level or upright and its box is the band it draws
+    (bundle.js Line), so the shape draws it exactly - with no border resource:
+    on 2D Rectangle a 2 px band built fully transparent (Turbulence 1035,
+    verify_built). Returns a note per line."""
+    notes = []
+    for item in spec['pages'] + spec['popups']:
+        for i, c in enumerate(item['controls']):
+            if c.get('kind') != 'line':
+                continue
+            shape = {'kind': 'panel', 'rect': c['rect'], 'fill': c.get('fill'), 'border': 'none'}
+            if c.get('name'):
+                shape['name'] = c['name']
+            item['controls'][i] = shape
+            who = f"{item['name']!r} {c['name']}" if c.get('name') else repr(item['name'])
+            notes.append(f"{who}: a Line, built as a filled shape - a panel's seed has no line to clone")
+    return notes
+
+
+def lines_everywhere(specs, has_line):
+    """A canvas's lines as shapes on every panel if any panel's seed has no
+    line to clone (`has_line(spec)` false), as lines on all of them otherwise -
+    {panel: notes}, empty where nothing changed. One way on every panel: decided
+    panel by panel, an unnamed Line was a shape on the 1035 and a line on the
+    525 - Mach's 525 seed has a PBLine, its 1035 none - the unnamed controls
+    were numbered apart, and the ID map refused the canvas."""
+    live = {m: s for m, s in specs.items() if s is not None}
+    if all(has_line(s) for s in live.values()):
+        return {}
+    return {m: lines_as_shapes(s) for m, s in live.items()}
+
+
+def _spec_check(spec, geometry=None, known=()):
+    """`gdl.spec check`'s problems with a translated spec, as a build would
+    meet them - touch minimums, gaps - and, given its seed's border_geometry(),
+    a stroke the seed's border does not draw: on a copy, as Panel mutates what
+    it reads and `_host` is the translator's own.
+
+    It runs whatever else is wrong, so it can meet a spec it cannot read: a
+    colour no token names stays on its control, and `color()` raises. Where
+    the translator has already said why (`known`), that is the problem; where
+    it has not, the failure is one."""
+    from copy import deepcopy
+    probe = deepcopy(spec)
+    for item in probe['pages'] + probe['popups']:
+        item.pop('_host', None)
+    try:
+        panel = gdlspec.Panel(probe)
+        out = list(panel.check())
+        if geometry is not None:
+            out += panel.stroke_rules(geometry, spec.get('_seed'))
+    except ValueError as e:
+        return [] if known else [f'the spec check could not read it: {e}']
+    return out
+
+
+def _collisions(drawn, laid):
+    """Words a panel's layout ran into a touch target or into other words,
+    beyond where they met as drawn (`drawn`: the same board on the panel the
+    canvas is drawn on; _DRAWN_SLACK) - by page and name, an unnamed control
+    by its kind and place. A label's box is often bigger than its
+    words, and overlapping a button is harmless; the words reaching it are
+    not. Two touch targets that meet are gdl.spec check's. Laid out for the
+    Shockwave 720, the huddle's clock box ran 6 px into Help and nothing said
+    whether its date did.
+
+    A Group's cells, where it pages them, are a popup over the page in its
+    region (a part of kind popup), reported in the popup's own coordinates:
+    they are held against the page's in the page's, and two popups of one
+    group, which never show together, against each other not at all. A part
+    of kind page is a page of its own."""
+    def met(o):
+        parts = [dict(json.loads(p['gdl']), rect=p['rect']) for p in o.get('parts') or []]
+        cs, unnamed = [], {}
+        for c in o.get('controls') or []:
+            g = json.loads(c['gdl'])
+            # A Clock need not be named: an unnamed control is its kind and
+            # its place among the unnamed of its kind, the same on every panel.
+            name = g.get('name')
+            if not name:
+                unnamed[g.get('kind')] = unnamed.get(g.get('kind'), 0) + 1
+                name = f"{g.get('kind')} {unnamed[g.get('kind')]}"
+            p = c.get('part')
+            d = parts[p] if p is not None and p < len(parts) else None
+            dx, dy = (d['rect'][0], d['rect'][1]) if d and d.get('kind') == 'popup' else (0, 0)
+            r = c['rect']
+            cs.append((name, g.get('kind'), p, d, [r[0] + dx, r[1] + dy, r[2], r[3]],
+                       _ink(c, g, dx, dy) if c.get('text_rect') else None))
+
+        def together(p1, d1, p2, d2):
+            if p1 == p2:
+                return True
+            if (d1 is not None and d1.get('kind') != 'popup') or (d2 is not None and d2.get('kind') != 'popup'):
+                return False
+            return d1 is None or d2 is None or d1.get('group') != d2.get('group')
+
+        found = {}
+        for i, (n1, _, p1, d1, _, t1) in enumerate(cs):
+            if not t1:
+                continue
+            for j, (n2, k2, p2, d2, r2, t2) in enumerate(cs):
+                if j == i or not together(p1, d1, p2, d2):
+                    continue
+                if k2 in TOUCH:
+                    deep = _meet(t1, r2)
+                    if deep:
+                        found[(n1, n2)] = ('run into', deep)
+                elif t2 and j > i:
+                    deep = _meet(t1, t2)
+                    if deep:
+                        found[(n1, n2)] = ('run into the words of', deep)
+        return found
+    page = json.loads(laid['page']['gdl']).get('name') if laid.get('page') else None
+    # A pair that met as drawn is the designer's - as deep as it was drawn.
+    drawn_met = met(drawn) if drawn else {}
+    return [f'{page!r} {a}: its words {how} {b} on this panel - give them room'
+            for (a, b), (how, deep) in met(laid).items()
+            if (a, b) not in drawn_met or deep > drawn_met[(a, b)][1] + _DRAWN_SLACK]
+
+
 def css_to_argb(v):
     """'#RRGGBBAA' (CSS) -> '#AARRGGBB' (the spec). Six digits pass through."""
     if isinstance(v, str) and re.fullmatch(r'#[0-9A-Fa-f]{8}', v):
@@ -643,7 +911,7 @@ DERIVED_IDS = 50001
 
 
 def pin_ids(specs, order):
-    """One ID per canvas control on every panel - {model: [problems]}.
+    """One ID per canvas control on every panel - {panel: [problems]}.
 
     A program drives every panel with one set of IDs. So each canvas control's
     ID is allocated once, on the panel the canvas is drawn on (`order[0]`), in
@@ -726,8 +994,17 @@ def pin_ids(specs, order):
     return problems
 
 
+def _panel(spec):
+    """The panel a spec is laid out for (gdl.spec.panel_id) - its model where
+    its canvas is no panel's."""
+    try:
+        return gdlspec.panel_id(spec.get('model'), spec.get('size'))
+    except (KeyError, TypeError, ValueError):
+        return spec.get('model')
+
+
 def clear_panels(out_dir, keep=()):
-    """Remove every <out_dir>/<model>/spec.json but `keep`'s; the paths removed.
+    """Remove every <out_dir>/<panel>/spec.json but `keep`'s; the paths removed.
 
     A spec an earlier translate wrote, for a panel the canvas has since dropped
     or from a run that has since failed, was read by the ID map and built by
@@ -745,7 +1022,7 @@ def clear_panels(out_dir, keep=()):
 
 
 def write_panels(specs, out_dir):
-    """Each panel's spec to <out_dir>/<model>/spec.json, and no other panel's
+    """Each panel's spec to <out_dir>/<panel>/spec.json, and no other panel's
     left there; the paths written."""
     clear_panels(out_dir, keep=set(specs))
     written = []
@@ -872,7 +1149,7 @@ def compare(folder, built, out_dir, chrome=None):
     shows. Writes <out_dir>/index.html and a PNG pair per artboard; returns
     [(page name, % of pixels that differ)].
 
-    `built` may be a folder of panels - <model>/<panel>.gdl, as
+    `built` may be a folder of panels - <panel>/<Name>.gdl, as
     New-GdlPanels.ps1 writes them - and then the page has a section per panel:
     each artboard drawn for that panel, and each page or popup its layout
     derived (a Group's) shown as Play shows it after a tap, beside it as built.
@@ -921,7 +1198,12 @@ def compare_panels(folder, built_dir, out_dir, chrome=None):
         os.makedirs(sub, exist_ok=True)
         b_ = _Built(found[m])
         rows = []
-        size = tuple(gdlspec.MODELS[m]) if m in gdlspec.MODELS else (1280, 800)
+        # A built folder is named for its panel (gdl.spec.panel_id), which is
+        # its canvas too: TLP300M-Landscape is 480x320, its model 320x480.
+        try:
+            size = gdlspec.panel_of(m)[1]
+        except ValueError:
+            size = (1280, 800)
         for b in canvas.boards():
             path = os.path.join(folder, *b.split('/'))
             stem = re.sub(r'[^A-Za-z0-9_.-]', '_', b.rsplit('.dc.html', 1)[0])

@@ -48,8 +48,8 @@
     {"name": "button", "pt": 14, "weight": 400, "usage": "A button's caption - the seed's 12 pt lifted to the 14 pt floor - and a source tab's name."}
   ],
   "borders": {
-    "rect": {"resource": "2D Rectangle", "radius": 0, "thickness": 3, "usage": "A square-cornered bar: the header."},
-    "rounded": {"resource": "2D Rounded Rectangle", "radius": 10, "thickness": 3, "usage": "A modal's card and the video well."},
+    "rect": {"resource": "2D Rectangle", "radius": 0, "thickness": 0, "usage": "A square-cornered bar: the header. In seeds/Shockwave 1035.gdl it draws no stroke."},
+    "rounded": {"resource": "2D Rounded Rectangle", "radius": 2, "thickness": 1, "usage": "A modal's card and the video well."},
     "capsule": {"resource": "2D Capsule", "radius": 9999, "thickness": 3, "usage": "The footer bar."},
     "rounded-3d-selected": {"resource": "3D Rounded Rectangle Selected", "radius": 10, "thickness": 1, "usage": "The ring a modal's Close gains when pressed."},
     "none": {"resource": "", "radius": 0, "thickness": 0, "usage": "No border: the kit's image draws the button's whole shape."}
@@ -167,12 +167,14 @@
     {"id": "saturn", "name": "Saturn", "scheme": "default", "image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png", "usage": "Saturn and its rings on black - the seed's Start page."}
   ],
   "layout": {
+    "bars": "controls",
+    "bars_note": "Its bars and rails are controls over the photograph, not background art, so on a panel other than the one drawn a Page's own children go through both panels' bands (docs/claude-design.md section 4).",
     "main": [168, 120, 926, 574],
     "main_note": "The video well: a `well` Panel with the `rounded` border, where the chosen source shows, or its name and status in white while nothing is connected.",
     "regions": [
-      "**The header (1280x91 at 0,0) is a `page` Panel with the source tabs across it**: `source` buttons 152x91, their names below their glyphs, the row centered on the page (the seed starts its six at x 169, over the well's left edge; fewer than that reads lopsided there).",
-      "**The left rail (x 29, 120 wide) holds the display**: a `Display` label in `body-strong`, then `button`s 120x80 four pixels apart, and `tile`s 120x110 below for anything with a two-line name (Screen Control, Lighting Control).",
-      "**The right rail (x 1127, 120 wide) holds volume**: a `Volume` label, a slider 52x315 centered under it, a `square` Mute 80x80 below (icon red), and an Audio Control `tile`.",
+      "**The header (1280x91 at 0,0) is a `page` Panel with the source tabs across it**: `source` buttons 152x91 in a `Group joined=\"true\"`, flush as the seed draws them - a joined row is one control strip, which the 12 px the toolkit checks between touchable controls does not split, and it stays a row on every panel - their names below their glyphs, the row centered on the page (the seed starts its six at x 169, over the well's left edge; fewer than that reads lopsided there).",
+      "**The left rail (x 29, 120 wide) holds the display**: a `Display` label in `body-strong`, then `button`s 120x80, 12 px apart (the seed's are 4 apart, under the 12 px the toolkit checks between two touchable controls), and `tile`s 120x110 below for anything with a two-line name (Screen Control, Lighting Control).",
+      "**The right rail (x 1127, 120 wide) holds volume**: a `Volume` label, a slider centered under it (the seed's is 52x315; make it 54 wide, since 52 is under the 53 px touch minimum the toolkit checks), a `square` Mute 80x80 below (icon red), and an Audio Control `tile`.",
       "**The footer is a `page` Panel with the `capsule` border, 928x62 at 166,718**: a `wide` Room Mode (gray_round) at its left, the date and time centered in `raised`, and a `pill` Help (yellow) at its right. Power, a red `pill` 143x59, sits outside it at 1115,720."
     ]
   },
@@ -189,6 +191,179 @@
       "960x440": 170,
       "1248x440": 300,
       "744x456": 160
+    }
+  },
+  "panels": {
+    "_source": [
+      "Series, sizes, DPI and tier: GUI Designer's own TemplateInfoTable.config, through gdl/templates.py; each series' models are the MODELS_FULL models gdl.templates.template_for gives it, by model.",
+      "main and rail: off the series template's own Main* pages (tests/measure_series.py control_regions). On the tier A series main is the well - the shape inside the canvas the page's content sits on - and the rail the right band between the header and the footer capsule, which stands off the bottom edge.",
+      "The 520 and 535 hubs keep a menu bar down the right: main is the canvas left of it, its title strip included, since Extron places the standard popup over it; the rail is the bar. The 320 keeps nothing on screen from page to page - its volume is a popup no page opens - so it has no rail.",
+      "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
+      "backgrounds: haze is the template's own art where the kit has it pixel for pixel - the 520's and the 535's 800x480 bkgd.png, which the 535 stretches as its template does - keeping the template's name, which its seed carries with those pixels; else the kit's '<size> bkgd.png' at the series' size, else the nearest shape - the 5464x3072 on the 1720, the 1280x800 on the 320, whose own 320x240 the kit lacks - under the kit file's name, which the applier appends. Saturn is its one 5464x3072 file (tests/measure_series.py theme_backgrounds, own_art). The tier A templates draw SW_bkgd_01.png, which is no kit file's pixels.",
+      "seeds, kinds: each seed in seeds/ by part number and canvas, and what control kinds it can clone - the 720's, 725's, 1035's, 1525's and 1535's a slider and no level; the 320's, 525's and 535's a level and no slider; the 320's no popup.",
+      "Measured with tests/measure_series.py Shockwave."
+    ],
+    "Shockwave 1220 Series": {
+      "size": [1280, 800],
+      "dpi": 124.75,
+      "tier": "A",
+      "models": [
+        "TLC1026M",
+        "TLP1025M",
+        "TLP1025T",
+        "TLP1035M",
+        "TLP1035T",
+        "TLP1220MG",
+        "TLP1220TG",
+        "TLP1225MG",
+        "TLP1225TG",
+        "TLP835C",
+        "TLP835M",
+        "TLP835T",
+        "ZRTP1025M",
+        "ZRTP1025T"
+      ],
+      "main": [168, 120, 926, 574],
+      "rail": [1094, 91, 186, 627],
+      "rail_axis": "column",
+      "popup": [921, 574],
+      "fit": "stretch",
+      "backgrounds": {
+        "haze": {"image": "1280x800 bkgd.png", "file": "Shockwave/backgrounds/1280x800 bkgd.png"},
+        "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
+      },
+      "seeds": {"TLP1035M": "seeds/Shockwave 1035.gdl", "TLP1035T": "seeds/Shockwave 1035.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Shockwave 1020 Series": {
+      "size": [1024, 600],
+      "dpi": 118.0,
+      "tier": "A",
+      "models": [
+        "TLC726M",
+        "TLP1020M",
+        "TLP1020T",
+        "TLP1022M",
+        "TLP1022T",
+        "TLP725C",
+        "TLP725M",
+        "TLP725T",
+        "ZRTP725M",
+        "ZRTP725T"
+      ],
+      "main": [133, 90, 739, 430],
+      "rail": [872, 75, 152, 455],
+      "rail_axis": "column",
+      "popup": [736, 430],
+      "fit": "stretch",
+      "backgrounds": {
+        "haze": {"image": "1024x600_bkgd.png", "file": "Shockwave/backgrounds/1024x600_bkgd.png"},
+        "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
+      },
+      "seeds": {"TLP725T": "seeds/Shockwave 725.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Shockwave 1520 Series": {
+      "size": [1366, 768],
+      "dpi": 100.45,
+      "tier": "A",
+      "models": ["TLP1520MG", "TLP1520TG", "TLP1525MG", "TLP1525TG"],
+      "main": [189, 116, 988, 551],
+      "rail": [1177, 91, 189, 597],
+      "rail_axis": "column",
+      "popup": [982, 551],
+      "fit": "stretch",
+      "backgrounds": {
+        "haze": {"image": "1366x768 bkgd.png", "file": "Shockwave/backgrounds/1366x768 bkgd.png"},
+        "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
+      },
+      "seeds": {"TLP1525TG": "seeds/Shockwave 1525.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Shockwave 1720 Series": {
+      "size": [1920, 1080],
+      "dpi": 127.7,
+      "tier": "A",
+      "models": ["TLP1535M", "TLP1535T", "TLP1720MG", "TLP1720TG", "TLP1725MG", "TLP1725TG"],
+      "main": [265, 162, 1387, 774],
+      "rail": [1652, 127, 268, 840],
+      "rail_axis": "column",
+      "popup": [1380, 774],
+      "fit": "stretch",
+      "backgrounds": {
+        "haze": {"image": "5464x3072_bkgd.png", "file": "Shockwave/backgrounds/5464x3072_bkgd.png"},
+        "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
+      },
+      "seeds": {"TLP1535M": "seeds/Shockwave 1535.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Shockwave 720 Series": {
+      "size": [800, 480],
+      "dpi": 133.33,
+      "tier": "A",
+      "models": ["TLP720C", "TLP720M", "TLP720T"],
+      "main": [104, 72, 578, 344],
+      "rail": [682, 60, 118, 364],
+      "rail_axis": "column",
+      "popup": [575, 344],
+      "fit": "stretch",
+      "backgrounds": {
+        "haze": {"image": "800x480 bkgd.png", "file": "Shockwave/backgrounds/800x480 bkgd.png"},
+        "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
+      },
+      "seeds": {"TLP720T": "seeds/Shockwave 720.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Shockwave 535 Series": {
+      "size": [1280, 720],
+      "dpi": 293.72,
+      "tier": "B",
+      "models": ["TLP535M", "TLP535T"],
+      "main": [0, 0, 1120, 720],
+      "rail": [1120, 0, 160, 720],
+      "rail_axis": "column",
+      "popup": [1123, 720],
+      "fit": "stretch",
+      "backgrounds": {
+        "haze": {"image": "800x480 bkgd.png", "file": "Shockwave/backgrounds/800x480 bkgd.png"},
+        "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
+      },
+      "seeds": {"TLP535T": "seeds/Shockwave 535.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": true}
+    },
+    "Shockwave 520 Series": {
+      "size": [800, 480],
+      "dpi": 188.15,
+      "tier": "B",
+      "models": ["TLC521M", "TLC526M", "TLP520M", "TLP525C", "TLP525M", "TLP525T"],
+      "main": [0, 0, 700, 480],
+      "rail": [700, 0, 100, 480],
+      "rail_axis": "column",
+      "popup": [702, 480],
+      "fit": "stretch",
+      "backgrounds": {
+        "haze": {"image": "800x480 bkgd.png", "file": "Shockwave/backgrounds/800x480 bkgd.png"},
+        "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
+      },
+      "seeds": {"TLP525T": "seeds/Shockwave 525.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": true}
+    },
+    "Shockwave 320 Series": {
+      "size": [320, 240],
+      "dpi": 113.65,
+      "tier": "C",
+      "models": ["TLP320C", "TLP320M"],
+      "main": [0, 36, 320, 204],
+      "rail": null,
+      "rail_axis": null,
+      "popup": null,
+      "fit": "stretch",
+      "backgrounds": {
+        "haze": {"image": "1280x800 bkgd.png", "file": "Shockwave/backgrounds/1280x800 bkgd.png"},
+        "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
+      },
+      "seeds": {"TLP320M": "seeds/Shockwave 320.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": false}
     }
   }
 }

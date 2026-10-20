@@ -269,6 +269,69 @@ class TestCheckIsNotFooled(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn('does not open', out)
 
+    def test_a_member_that_does_not_read_whole_is_refused(self):
+        """A damaged member - its data failing its CRC, or a deflate stream
+        that does not inflate - is a container that does not open, refused by
+        name; it crashed build and check. (One the old pack() wrote is mended:
+        the next test.)"""
+        deflated = io.BytesIO()
+        with zipfile.ZipFile(deflated, 'w', zipfile.ZIP_DEFLATED) as z:
+            z.writestr('project1.tgz4', bytes(range(256)) * 64)
+        raw = bytearray(deflated.getvalue())
+        raw[60] ^= 0xFF
+        code, out = Repo({'README.md': '# x\n', 'archive/gdlwork/x/bad.gdl': bytes(raw)}).run('check', 'archive')
+        self.assertEqual(code, 1, out)
+        self.assertIn('does not open', out)
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w', zipfile.ZIP_STORED) as z:
+            z.writestr('project1.tgz4', b'payload ' * 64)
+        raw = bytearray(buf.getvalue())
+        raw[raw.index(b'payload') + 3] ^= 0x20
+        r = Repo({'README.md': '# x\n', 'archive/gdlwork/x/pre.gdl': bytes(raw)})
+        code, out = r.run('check', 'archive')
+        self.assertEqual(code, 1, out)
+        self.assertIn('does not open', out)
+        code, out = r.run('build', '--archive', 'archive', '--public', 'public')
+        self.assertNotEqual(code, 0, out)
+
+    def test_a_gdl_the_old_pack_wrote_is_read_and_checked(self):
+        """The old pack() swapped every signature pattern in what it wrote, a
+        payload's data with the records', and the old reader's swap undid it;
+        the strict reader cannot, and `check --history` refused a published
+        commit's such file as a container that does not open - so every push
+        after it. The patterns the records do not account for are put back
+        where every CRC then agrees, and what the file holds is checked as
+        anything else is; a member those do not mend is still refused."""
+        def old_pack(content):
+            # The built panel is a zip of its own, stored where its bytes do
+            # not compress: its records, and the patterns in its data, swapped
+            # with the container's.
+            inner = io.BytesIO()
+            with zipfile.ZipFile(inner, 'w', zipfile.ZIP_STORED) as z:
+                z.writestr('layout.json', content)
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, 'w', zipfile.ZIP_STORED) as z:
+                z.writestr('ProjectGCP', b'graph')
+                z.writestr('project1.tgz4', inner.getvalue())
+            raw = buf.getvalue()
+            for s in (b'\x03\x04', b'\x01\x02', b'\x05\x06'):
+                raw = raw.replace(b'PK' + s, b'KP' + s)
+            return raw
+        clean = old_pack(b'images ' + b'PK\x03\x04' + b' and ' + b'PK\x05\x06' + b' end')
+        r = Repo({'README.md': '# x\n', 'archive/fb/pre.gdl': clean})
+        code, out = r.run('check', 'archive')
+        self.assertEqual(code, 0, out)
+        r = Repo({'README.md': '# x\n', 'archive/fb/pre.gdl': old_pack(b'room ' + WORD.encode() + b' PK\x03\x04')})
+        code, out = r.run('check', 'archive')
+        self.assertEqual(code, 1, out)
+        self.assertNotIn('does not open', out)
+        self.assertIn('pre.gdl!project1.tgz4!layout.json', out)
+        damaged = bytearray(clean)
+        damaged[damaged.index(b' and ') + 1] ^= 0x20
+        code, out = Repo({'README.md': '# x\n', 'archive/fb/pre.gdl': bytes(damaged)}).run('check', 'archive')
+        self.assertEqual(code, 1, out)
+        self.assertIn('does not open', out)
+
     def test_a_zip_or_gzip_member_under_any_name_is_opened(self):
         for inner in (zip_bytes({'layout.json': WORD.encode()}), gzip.compress(WORD.encode() * 3)):
             r = Repo({'archive/gdlwork/x/project1.tgz4': zip_bytes({'assets.bin': inner})})

@@ -31,8 +31,13 @@ class Advances:
     """Character -> advance width in font units, plus the em size to scale by."""
 
     def __init__(self, path):
-        with open(path, 'rb') as fh:
-            self.d = fh.read()
+        """`path` is a font file, or a face's bytes - a donor's embedded face
+        is read straight out of its records (gdl.fonts.carried)."""
+        if isinstance(path, (bytes, bytearray)):
+            self.d = bytes(path)
+        else:
+            with open(path, 'rb') as fh:
+                self.d = fh.read()
         self.tables = self._directory()
         self.upem = self._upem()
         self.hmtx = self._hmtx()
@@ -194,3 +199,38 @@ class Advances:
         """(ascent, descent) in pixels at a given em size, unrounded."""
         return (self.win_ascent * px / self.upem,
                 self.win_descent * px / self.upem)
+
+    def glyph_names(self):
+        """{name: codepoint} for each mapped glyph the font names itself.
+
+        An icon font names its icons in its `post` table, version 2.0:
+        Extron-Afterburn calls U+E908 'cable_tv'. Only the font's own names are
+        read - an index under 258 is one of the Mac standard set ('.notdef',
+        'space') and names no icon - only a name that says something (the
+        Turbulence seed's Extron GUIC Video Conference 1 names one glyph ''),
+        and only for a character that draws: Extron-Afterburn names U+0000
+        'null' too. A font with no names (version 3.0, the Extron-Lift a Mach
+        seed carries) has none.
+        """
+        try:
+            post = self._table(b'post')
+        except ValueError:
+            return {}
+        if len(post) < 34 or struct.unpack('>I', post[:4])[0] != 0x00020000:
+            return {}
+        n = struct.unpack('>H', post[32:34])[0]
+        index = struct.unpack(f'>{n}H', post[34:34 + 2 * n])
+        own, p = [], 34 + 2 * n
+        while p < len(post):
+            length = post[p]
+            own.append(post[p + 1:p + 1 + length].decode('latin-1'))
+            p += 1 + length
+        char = {}
+        for ch, gid in sorted(self.cmap.items()):
+            if ch >= 0x20:
+                char.setdefault(gid, ch)
+        out = {}
+        for gid, i in enumerate(index):
+            if i >= 258 and i - 258 < len(own) and own[i - 258] and gid in char:
+                out.setdefault(own[i - 258], char[gid])
+        return out

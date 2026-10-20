@@ -56,6 +56,47 @@ class TestTable(unittest.TestCase):
         self.assertEqual(templates.template_for('Afterburn', 'TLP300M')['series'],
                          'Afterburn 300 Portrait Series')
 
+    def test_a_landscape_300m_takes_the_landscape_series(self):
+        """Asked for the 300M the other way up, the series drawn that way up -
+        the one GUI Designer's wizard seeds when its Resolution is 480x320."""
+        self.assertEqual(templates.template_for('Afterburn', 'TLP300M', (480, 320))['series'],
+                         'Afterburn 300 Landscape Series')
+
+    def test_the_default_canvas_is_the_one_asked_for_without_a_size(self):
+        self.assertEqual(templates.template_for('Afterburn', 'TLP300M', (320, 480)),
+                         templates.template_for('Afterburn', 'TLP300M'))
+
+    def test_a_theme_with_no_landscape_300_has_none(self):
+        """Mach's 300 Series is portrait; the wizard offers a landscape 300M
+        Afterburn alone."""
+        self.assertIsNotNone(templates.template_for('Mach', 'TLP300M'))
+        self.assertIsNone(templates.template_for('Mach', 'TLP300M', (480, 320)))
+
+    def test_a_portrait_1035_or_835_has_no_series(self):
+        """Their series, the 1220, is drawn at 1280x800 only: the wizard offers
+        them Blank alone when turned portrait."""
+        for model in ('TLP1035M', 'TLP835M'):
+            self.assertIsNone(templates.template_for('Afterburn', model, (800, 1280)), model)
+
+    def test_a_canvas_the_model_does_not_run_at_has_no_series(self):
+        """The 1035T does not rotate: 800x1280 is not its canvas, whatever a
+        1220 Series template is drawn at."""
+        self.assertIsNone(templates.template_for('Afterburn', 'TLP1035T', (800, 1280)))
+        self.assertIsNone(templates.template_for('Afterburn', 'TLP725T', (1280, 800)))
+
+    def test_the_command_line_takes_a_canvas(self):
+        import contextlib
+        import io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = templates.main(['templates', 'Afterburn', 'TLP300M', '480x320'])
+        self.assertEqual((rc, out.getvalue().strip()), (0, 'Afterburn 300 Landscape Series'))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = templates.main(['templates', 'Afterburn', 'TLP1035M', '800x1280'])
+        self.assertEqual(rc, 1)
+        self.assertIn('800x1280', out.getvalue())
+
     def test_series_lists_one_theme_without_soft_clients(self):
         rows = templates.series('Afterburn')
         self.assertTrue(rows)

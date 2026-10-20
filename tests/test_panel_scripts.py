@@ -59,5 +59,53 @@ class TestPathsAreTheShells(unittest.TestCase):
                 self.assertNotRegex(script, rf'GetFullPath\(\${p}\)', f'{name} -{p}')
 
 
+class TestAPanelKeepsNoDonorsChecksum(unittest.TestCase):
+    def test_the_applier_clears_the_donors_checksum_before_it_saves(self):
+        """A seed built with Gd Generate Checksum on carries a CRC of its own
+        metadata (docs/from-scratch.md section 7). Cloned, a panel would ship
+        that stale value; cleared, its own build writes its own, or none."""
+        script = _read('Apply-GdlPlan.ps1')
+        self.assertRegex(script, r"Set-GdlField \$project 'checksum' ")
+        self.assertLess(script.index("'checksum'"), script.index('Save-GdlProject $project'))
+
+
+class TestAFaceThePlanBringsIsAppended(unittest.TestCase):
+    def test_the_applier_appends_the_plans_fonts_before_any_control(self):
+        """Set-GdlFont binds a control to a family only if the project has a
+        resource for it, so the faces go in first."""
+        script = _read('Apply-GdlPlan.ps1')
+        append = script.index('Add-GdlFontResource $project $f')
+        self.assertLess(append, script.index('$madePages = New-Object'))
+        self.assertIn('function Add-GdlFontResource', _read('GdlApply.ps1'))
+
+    def test_the_appended_resource_is_recorded_as_its_carrier_records_it(self):
+        """Every field the plan's entry carries is written: a clone left with
+        the donor's own value - its first resource's author - says nothing."""
+        body = _read('GdlApply.ps1').split('function Add-GdlFontResource', 1)[1]
+        body = body.split('\nfunction ', 1)[0]
+        for field in ('windowsFamilyNameField', 'windowsStyleNameField', 'embeddedFileNameField',
+                      'filenameField', 'sizeField', 'dataField', 'mIsDefault', 'authorField'):
+            self.assertRegex(body, rf"Set-GdlField \$new '{field}'", field)
+
+
+class TestThePlanKnowsItsDonor(unittest.TestCase):
+    def test_the_plan_is_written_against_the_donor(self):
+        """A border the donor lacks is built as the donor's own nearest only
+        when the plan is told which donor (gdl.spec plan --donor)."""
+        self.assertRegex(_read('New-GdlPanel.ps1'),
+                         r"'plan', \$Spec, \$plan, '--donor', \$Donor")
+
+
+class TestALevelKeepsItsArt(unittest.TestCase):
+    def test_a_level_drawn_from_art_keeps_its_empty_track(self):
+        """A clone's background image is cleared - but a level whose donor
+        draws it from art (the plan's `keep_art`: Shockwave's, Turbulence's)
+        keeps it, as it is the empty bar; cleared, the hubs' levels built a
+        plain block where the seed's own draw it."""
+        script = _read('Apply-GdlPlan.ps1')
+        self.assertRegex(script, r"if \(-not \$op\.keep_art\) \{\s*Set-GdlFieldIfPresent \$c "
+                                 r"'backgroundImageField' \$null")
+
+
 if __name__ == '__main__':
     unittest.main()

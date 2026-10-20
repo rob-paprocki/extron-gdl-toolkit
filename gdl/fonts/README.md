@@ -62,36 +62,62 @@ table (28 bytes for Arial, 30 for Arial Black), so an extractor that matches
 neither. Those bytes are not in the project: the embedded array ends at the last
 table (Arial) or two bytes after it (Arial Black), and `extract()` keeps the
 declared length, so each recovered file ends in 28 bytes of the project's next
-records. Every other face is cut exactly. `tests/test_fonts.py` pins this.
+records. Every other face is cut exactly, and so is any face written from its
+resource (below). `tests/test_fonts.py` pins this.
 
 ## …but not every project embeds every face it declares
 
 `layout.json` declares a face by file name and size, and a project carries its
-own list of font resources, so the two can disagree. Run over `seeds/`:
+own list of font resources, so the two can disagree. What a project carries is
+each resource's own data - `gdl.fonts.carried()` reads it, from a `.glt`
+template as readily as a project - and `python -m gdl.fonts` pairs each
+declaration with a carried face one by one (`gdl.fonts.match()`), then names
+every declaration it carries nothing for (`DECLARED, NOT CARRIED`) and every
+face no declaration names (`CARRIED, NOT DECLARED`). A face declared and
+carried that the stream scan cannot find is written from its resource, and the
+line says so. When every declaration is found and every face the stream carries
+is declared - every fixture - there is nothing to say, and the command answers
+without parsing the project, which takes a large seed most of a minute. Run
+over `seeds/`:
 
 - **Arial Black** (`ariblk.ttf`, 119,904 bytes) is embedded only in the seeds
   that define a resource for it - `seeds/README.md` has which. The rest declare
-  it and define no resource for it, so there is nothing to recover. GUI
-  Designer adds the resource when it builds:
-  `archive/job-9fe2c865/tmp/rt/seed.gdl` has none and `retargeted.gdl`, its
-  build, has one.
+  it and define no resource for it, so there is nothing to recover. A build
+  can add the resource - `archive/job-9fe2c865/tmp/rt/seed.gdl` has none and
+  `retargeted.gdl`, its build, has one - but does not always: half the seeds
+  made from Extron's Mach, Shockwave and Turbulence templates were built and
+  have none, and what decides it is not known. A face a donor has no resource for is appended from a seed
+  that carries it, never from this directory (`gdl.fonts.find_face`,
+  `seeds/README.md`).
 - **Arial** (`arial.ttf`) is Monotype Arial 5.10, 778,580 bytes, in the Afterburn
-  seeds for the 1035, 1230W, 1535, 725, 835 and both ECP presets and in both Zoom
-  Rooms seeds. Every other seed embeds the Windows Arial of the machine that made
+  seeds for the 1035, 1230W, 1535, 725, 835 and both ECP presets, in the
+  Shockwave 320, 525 and 535 seeds and in both Zoom Rooms seeds. Every other seed embeds the Windows Arial of the machine that made
   it, 7.05 (1,016,724 bytes) or 7.06 (1,045,720), and all of them but Turbulence
   still declare the Monotype file as well, so they declare `arial.ttf` twice and
-  the first matches nothing. `extract()` keys results by file name, so the
-  declaration that matches hides the one that does not. Turbulence declares only
-  the Monotype file and carries a Windows Arial 7.05 under an Arial resource with
-  no embedded file name, so `extract()` returns no `arial.ttf` for it.
+  carry one of the two. Turbulence declares only the Monotype file and carries a
+  Windows Arial - 7.05 in the 1035 seed, 7.06 in the 725 - under an Arial
+  resource with no embedded file name, so
+  `extract()`, which goes by the declared name and size, returns no `arial.ttf`
+  for it, and `python -m gdl.fonts` says both sides of that.
 - **Extron-Shockwave** (`extron_shockwave.ttf`, 3,736 bytes, the smallest face
-  in the corpus) is embedded in every Shockwave seed and recovered like any
-  other.
+  in the corpus) is embedded in every Shockwave seed, and read out of one
+  rather than recovered (below).
 
 Recovering from a seed that embeds a Windows Arial replaces the Monotype
-`arial.ttf` here; the fixtures all embed the Monotype one. The renderer needs
-nothing from a seed: it reads Arial and Arial Black from this directory, which the
-fixtures supply. `docs/ROADMAP.md` tracks recovering what a project carries.
+`arial.ttf` here; the fixtures all embed the Monotype one. So the icon faces
+only the Mach and Shockwave seeds carry - Extron-Lift and Extron-Shockwave - are
+not recovered at all: the renderer and a spec's `icon` read each straight out of
+its family's 1035 seed (`gdl.fonts.seed_face`), and leave this directory alone.
+Arial and Arial Black they read from here, which the fixtures supply. A face is
+drawn in the one build found, whichever build the panel embeds: Extron-Afterburn
+is the kit's, which the 1035 seeds embed, and the 320, 525, 725 and 300M
+Portrait seeds embed one of their own whose glyphs sit 6% of an em higher
+(`docs/design-rules.md` §6).
+
+A template has no `layout.json`, so nothing in it declares a face; `python -m
+gdl.fonts "<Template>.glt" gdl/fonts/` writes every face it carries, each under
+its resource's own file name, or GUI Designer's `arial.ttf` and `ariblk.ttf`
+for the System faces, whose resources in a template name no file.
 
 Prefer the embedded copy over an installed one even on a host that has Arial.
 The embedded face is the one GUI Designer rasterized the ground-truth snapshots
@@ -100,12 +126,13 @@ with; the system copy is whatever build the OS happens to ship. Windows' own
 
 ## A missing face is said aloud
 
-`face()` takes a face from the files recovered here first, then from the host's
-fonts, and raises `LookupError` only when neither has it. A face missing here
-draws in a stand-in: the recovered Arial, after a partial recovery, or the
-host's copy - and on a host with Arial installed (Windows, macOS) the host's
-Arial stands in for every face, so a checkout that skipped recovery renders on
-it and scores worse - the render baseline reads 2.81% instead of 2.19%.
-`gdl.compose.FALLBACKS` records every face drawn in anything but its own
-recovered file, and `tests/score.py record` refuses to write a score over one,
-naming the recovery loop above.
+`face()` takes a face from its own file recovered here first; then, for an
+icon face no recovery put here, from its family's seed (above); then from a
+stand-in - the recovered Arial, after a partial recovery, or the host's copy of
+the face or of Arial - and raises `LookupError` only when none has it. On a host
+with Arial installed (Windows, macOS) the host's Arial stands in for every face
+missing here, so a checkout that skipped recovery renders on it and scores
+worse - the render baseline reads 2.81% instead of 2.19%.
+`gdl.compose.FALLBACKS` records every face drawn in a stand-in, and
+`tests/score.py record` refuses to write a score over one, naming the recovery
+loop above.

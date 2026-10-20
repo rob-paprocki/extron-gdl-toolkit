@@ -211,7 +211,8 @@
   }
   function grow(r, m, keep) {
     var w = Math.max(r[2], m[0]), ht = Math.max(r[3], m[1]);
-    if (keep) {
+    // A box of no size has no shape to keep.
+    if (keep && r[2] > 0 && r[3] > 0) {
       // Kit art is drawn to fit its box: grown on one side only it would sit
       // in a new shape and move off the caption laid out round it.
       var f = Math.max(w / r[2], ht / r[3]);
@@ -271,28 +272,165 @@
   // 320's) is a level with Up and Down buttons, as Extron's own 520 and 320
   // templates draw volume. The level keeps the slider's name and ID; Up and
   // Down are navigation the program handles (derived, in the ID map).
-  function asLevel(it, r, axis, T, key) {
+  // Up and Down stand beside the level, one at each of its ends, where there
+  // is room across for the level's track, a gap and a button: Extron's own
+  // 520 and 535 stand Up, Down and Mute beside their volume level, the level
+  // the length of the column - Mach 525's is 14 x 309 beside 66 px buttons,
+  // and none of its templates draws one shorter than 175 px - where between
+  // Up and Down the hubs' levels came out 15 to 42 px long. One at each end
+  // is this layout's: the column's other buttons are the canvas's to place.
+  // The three keep to `band`, the
+  // cross-axis span of the band the slider is in (a hub's menu bar), centred
+  // where the slider was, with the panel's spacing minimum between the level
+  // and its buttons and at least that from the band's sides - or, in a band
+  // too narrow for that (a hub's 98 to 104 px menu bar), an equal share of
+  // what it leaves: a level is not touched, and Extron's own Shockwave 525
+  // leaves 8 px. Failing that, they keep to `page`, the spacing minimum
+  // between them. Without the room, the level is between them, and at least
+  // 24 px long, as a rail's is.
+  // Up and Down look like the button the canvas draws nearest the slider, in
+  // its band where it has one, as Extron draws its volume Up, Down and Mute
+  // alike - Mach 525's three on one transparent ground, Turbulence's three
+  // rings; in the default look Mach's showed as two faint tiles on its photo
+  // beside a solid Mute. `items` and `band` are in the design's own
+  // coordinates.
+  function stepVariant(it, items, band, a) {
+    var cx = it.rect[0] + it.rect[2] / 2, cy = it.rect[1] + it.rect[3] / 2, best = null, d0 = Infinity;
+    items.forEach(function (o) {
+      if (o === it || o.kind !== 'button' || !o.rect) return;
+      var ox = o.rect[0] + o.rect[2] / 2, oy = o.rect[1] + o.rect[3] / 2;
+      if (band && ((a ? oy : ox) < band[0] || (a ? oy : ox) > band[1])) return;
+      var d = Math.sqrt((ox - cx) * (ox - cx) + (oy - cy) * (oy - cy));
+      if (d < d0) { d0 = d; best = o; }
+    });
+    var v = best && best.props && best.props.variant, V = v && P.buttons[v];
+    if (!V) return null;
+    // Only a look Up and Down can be drawn in: one drawn without the kit, or
+    // one whose kit size has the theme's own volume icons. Another kit look
+    // draws the icon its button names - an End Call, a laptop - or, with
+    // none named, nothing: Afterburn's icon look, which the translator
+    // refused. The theme's default button is used there.
+    var steps = P.defaults.level.steps || {};
+    var at = V.kit && KIT && KIT.files && KIT.files[V.kit];
+    return !V.kit || at && steps.up && steps.down && at[steps.up] && at[steps.down] ? v : null;
+  }
+  function asLevel(it, r, axis, T, key, band, page, variant) {
     var p = it.props || {};
     var name = p.name || 'Slider';
-    var t = T.touch, g = T.gap;
-    var along = axis === 'row' ? r[2] : r[3];
-    if (along < 2 * t + 2 * g + 8) return { els: [], problems: [name + ' cannot fit a level with Up and Down on a ' + T.model] };
-    var up = axis === 'row' ? [r[0] + r[2] - t, r[1] + (r[3] - t) / 2, t, t] : [r[0] + (r[2] - t) / 2, r[1], t, t];
-    var down = axis === 'row' ? [r[0], r[1] + (r[3] - t) / 2, t, t] : [r[0] + (r[2] - t) / 2, r[1] + r[3] - t, t, t];
-    var lv = axis === 'row' ? [r[0] + t + g, r[1], r[2] - 2 * (t + g), r[3]] : [r[0], r[1] + t + g, r[2], r[3] - 2 * (t + g)];
+    var t = T.touch, g = T.gap, row = axis === 'row';
+    var along = row ? r[2] : r[3];
+    var tw = Number(p.track) || P.defaults.level.track;
+    var sp = band ? Math.min(g, Math.floor((band[1] - band[0] - tw - t) / 3)) : -1;
+    var gi = sp >= 2 ? sp : g;
+    var lo = sp >= 2 ? band[0] + sp : page && page[1] - page[0] >= tw + g + t ? page[0] : null;
+    var hi = sp >= 2 ? band[1] - sp : lo != null ? page[1] : null;
+    var up, down, lv;
+    if (along >= 2 * t + g && lo != null) {
+      var across = tw + gi + t;
+      var c0 = Math.round(Math.max(lo, Math.min((row ? r[1] + r[3] / 2 : r[0] + r[2] / 2) - across / 2, hi - across)));
+      var b0 = c0 + tw + gi;
+      lv = row ? [r[0], c0, r[2], tw] : [c0, r[1], tw, r[3]];
+      up = row ? [r[0] + r[2] - t, b0, t, t] : [b0, r[1], t, t];
+      down = row ? [r[0], b0, t, t] : [b0, r[1] + r[3] - t, t, t];
+    } else {
+      if (along < 2 * t + 2 * g + 24) return { els: [], problems: [name + ' cannot fit a level with Up and Down on a ' + T.model] };
+      up = row ? [r[0] + r[2] - t, r[1] + (r[3] - t) / 2, t, t] : [r[0] + (r[2] - t) / 2, r[1], t, t];
+      down = row ? [r[0], r[1] + (r[3] - t) / 2, t, t] : [r[0] + (r[2] - t) / 2, r[1] + r[3] - t, t, t];
+      lv = row ? [r[0] + t + g, r[1], r[2] - 2 * (t + g), r[3]] : [r[0], r[1] + t + g, r[2], r[3] - 2 * (t + g)];
+    }
+    // The theme's own volume icons (its level's `steps`) where that look draws
+    // from the kit and the kit has them at its size, else '+' and '-'.
+    var V = P.buttons[variant] || P.buttons[P.defaults.button.variant];
+    var size = V.kit || (V.with_icon && V.with_icon.bare);
+    var steps = P.defaults.level.steps || {};
     function btn(suffix, caption, verb, rect) {
+      var icon = steps[suffix.toLowerCase()];
+      icon = icon && size && KIT && KIT.files && KIT.files[size] && KIT.files[size][icon] ? icon : null;
       return h('div', { key: key + suffix, style: cell(rect) },
-               h(Button, { name: name + ' ' + suffix, derived: true, text: caption,
+               h(Button, { name: name + ' ' + suffix, derived: true, variant: variant || undefined,
+                           icon: icon || undefined, text: icon ? '' : caption,
                            does: verb + ' ' + name + ' one step.' }));
     }
     var level = Object.assign({}, p, { orientation: axis === 'row' ? 'right' : 'up', fromSlider: true });
     return { els: [btn('Down', '-', 'Lowers', down), h('div', { key: key + 'level', style: cell(lv) }, h(Level, level)),
                    btn('Up', '+', 'Raises', up)], problems: [] };
   }
+  // A page's own children, on a panel other than the one drawn, go through
+  // both panels' main regions rather than at one scale for the page, where
+  // the template draws its bars as controls. Main's edges cut each page into
+  // the same bands - the header and footer, the bands beside main, main - and
+  // a child moves with its band. An edge on a cut, or within 4 px of one,
+  // stays on it, so a bar across the page stretches with it and an end cap
+  // stays at the end of its band; a child with no edge on one keeps its
+  // shape, at the scale of the band its centre is in - or, where it stretches
+  // the other way, at this way's own. Mach, Shockwave and Turbulence draw
+  // their bars as controls, and their series' bands are not one scale of
+  // each other's: scaled whole, the 1035's header stopped 32 px short of
+  // each side of the 725 and came out 48 deep where its template's is 60.
+  // The 4 px: Turbulence's header ends 4 px above its main region, as its
+  // template's does, and is still the header.
+  function onCut(v, s) {
+    for (var i = 0; i < s.length; i++) if (Math.abs(v - s[i]) <= 4) return i;
+    return -1;
+  }
+  function bandOf(v, s) {
+    for (var i = 1; i < s.length - 1; i++) if (v <= s[i]) return i;
+    return s.length - 1;
+  }
+  function through(v, s, t) {
+    var i = bandOf(v, s), span = s[i] - s[i - 1];
+    return span > 0 ? t[i - 1] + (v - s[i - 1]) * (t[i] - t[i - 1]) / span : t[i - 1];
+  }
+  function bandScale(v, s, t) {
+    var i = bandOf(v, s), span = s[i] - s[i - 1];
+    return span > 0 ? (t[i] - t[i - 1]) / span : 1;
+  }
+  function cutRect(r, cut) {
+    var ax = [0, 1].map(function (a) {
+      var s = cut.from[a], lo = r[a], hi = r[a] + r[a + 2];
+      var at = onCut(lo, s), to = onCut(hi, s);
+      return { s: s, t: cut.to[a], lo: lo, hi: hi, at: at, to: to, both: at >= 0 && to >= 0 && at !== to,
+               k: bandScale((lo + hi) / 2, s, cut.to[a]) };
+    });
+    var out = [0, 0, 0, 0];
+    ax.forEach(function (x, a) {
+      var k = ax[1 - a].both ? x.k : Math.min(ax[0].k, ax[1].k);
+      var size = (x.hi - x.lo) * k, lo, hi;
+      if (x.both) { lo = x.t[x.at]; hi = x.t[x.to]; }
+      else if (x.at >= 0) { lo = x.t[x.at]; hi = lo + size; }
+      else if (x.to >= 0) { hi = x.t[x.to]; lo = hi - size; }
+      else { var m = through((x.lo + x.hi) / 2, x.s, x.t); lo = m - size / 2; hi = m + size / 2; }
+      out[a] = lo; out[a + 2] = hi - lo;
+    });
+    out.both = [ax[0].both, ax[1].both];
+    return out;
+  }
+  // A target's cuts on one axis - [0, main's start, main's end, size] - where
+  // a band the design panel has and the target has not is carved from the
+  // target's main at the page's scale `k`, at most a quarter of main a side.
+  // A hub's main runs from its top to its bottom and from its left edge to
+  // its menu bar (the 520's, the 535's): a header, a footer or a column drawn
+  // beside main had nowhere to go and collapsed to nothing. Extron's own hub
+  // templates keep a title strip at the top of main, so a header there is
+  // the hub's way too.
+  // Whole pixels: cell() rounds a rect's top and height apart, so a footer
+  // under a cut at 670.5 ended at 721 on the 535's 720 and left the canvas.
+  // A carved band that holds a button or a slider is at least the panel's
+  // touch minimum deep (`minLo`, `minHi`): the 535's 49 px footer grew its end
+  // cap to 104 px, up into the menu bar's mute.
+  function hubBands(dLo, dHi, dSize, tLo, tHi, tSize, k, minLo, minHi) {
+    var lo = tLo, hi = tHi, quarter = (tHi - tLo) / 4;
+    if (dLo >= 1 && tLo < 1) lo = Math.round(Math.min(Math.max(dLo * k, minLo || 0), quarter));
+    if (dSize - dHi >= 1 && tSize - tHi < 1) {
+      hi = Math.round(Math.max(tSize - Math.max((dSize - dHi) * k, minHi || 0), tHi - quarter));
+    }
+    return [0, lo, hi, tSize];
+  }
   // Tiers A and B, and the panel the canvas was drawn for: every child at its
-  // own design rect, mapped by the frame's scale, then grown about its centre
-  // to what it needs on this panel.
-  function scaleLayout(items, D, T, L, frame) {
+  // own design rect, mapped by the frame's scale - or a page's own, through
+  // its bands (`cut`, above) - then grown about its centre to what it needs on
+  // this panel.
+  function scaleLayout(items, D, T, L, frame, cut) {
     var f = fit(D, frame);
     var els = [], probs = [];
     items.forEach(function (it, i) {
@@ -301,7 +439,29 @@
           ? React.cloneElement(it.host, { key: 'f' + i, style: { display: 'contents' } }) : it.host);
         return;
       }
-      var r = [f.x - frame[0] + it.rect[0] * f.s, f.y - frame[1] + it.rect[1] * f.s, it.rect[2] * f.s, it.rect[3] * f.s];
+      var c = cut;
+      var r = c ? cutRect(it.rect, c)
+        : [f.x - frame[0] + it.rect[0] * f.s, f.y - frame[1] + it.rect[1] * f.s, it.rect[2] * f.s, it.rect[3] * f.s];
+      if (it.kind === 'box' && c) {
+        // A plain container keeps its own layout, scaled whole to its place
+        // among the bands (as below): by the way it spans, edge to edge, where
+        // it spans one way - a row the depth of its bar stays in the bar
+        // (Turbulence's source tabs, scaled by their width's band, stood 3 px
+        // out of the 725's header), and a column across main fills main's
+        // width (its Help's steps, scaled by main's height, no longer held
+        // their words) - else by the smaller of its two sides. Centred in its
+        // place where it comes out smaller than it.
+        var rx = it.rect[2] ? r[2] / it.rect[2] : Infinity, ry = it.rect[3] ? r[3] / it.rect[3] : Infinity;
+        var bk = r.both[0] && !r.both[1] ? rx : r.both[1] && !r.both[0] ? ry : Math.min(rx, ry);
+        if (!isFinite(bk)) bk = f.s;
+        var ox = r[0] + Math.max(0, r[2] - it.rect[2] * bk) / 2, oy = r[1] + Math.max(0, r[3] - it.rect[3] * bk) / 2;
+        var placed = { position: 'absolute', left: Math.round(ox - it.rect[0] * bk) + 'px',
+                       top: Math.round(oy - it.rect[1] * bk) + 'px', width: 0, height: 0,
+                       transform: 'scale(' + bk + ')', transformOrigin: '0 0' };
+        els.push(h(Ctx.Provider, { key: 'b' + i, value: Object.assign({}, L, { k: bk, css: bk }) },
+                   h('div', { style: placed }, it.host)));
+        return;
+      }
       if (it.kind === 'box') {
         // A plain container keeps its own layout, scaled as a whole; what is
         // in it grows to its minimum from inside (Button's own min size). The
@@ -317,7 +477,13 @@
         return;
       }
       if (it.kind === 'slider' && T.kinds && T.kinds.slider === false) {
-        var lv = asLevel(it, r, it.rect[2] > it.rect[3] ? 'row' : 'column', T, 's' + i);
+        var a = it.rect[2] > it.rect[3] ? 1 : 0, page = [0, frame[2 + a]], band = page, drawn = null;
+        if (c) {
+          var bi = bandOf(it.rect[a] + it.rect[a + 2] / 2, c.from[a]);
+          band = [c.to[a][bi - 1], c.to[a][bi]];
+          drawn = [c.from[a][bi - 1], c.from[a][bi]];
+        }
+        var lv = asLevel(it, r, a ? 'row' : 'column', T, 's' + i, band, page, stepVariant(it, items, drawn, a));
         els = els.concat(lv.els);
         probs = probs.concat(lv.problems);
         return;
@@ -327,7 +493,12 @@
                    React.cloneElement(it.comp, { __box: [Math.round(r[2]), Math.round(r[3])], __k: f.s })));
         return;
       }
-      els.push(placeHost(it.host, grow(r, needs(it, L), hasArt(it)), 'c' + i));
+      var g = grow(r, needs(it, L), hasArt(it));
+      // Grown past a bar shallower than the touch minimum (the 725's 57 px
+      // footer), a page's own child stays on the page: Build moves a control
+      // that crosses its page's edge.
+      if (c || L.keepIn) g = [Math.min(Math.max(g[0], 0), frame[2] - g[2]), Math.min(Math.max(g[1], 0), frame[3] - g[3]), g[2], g[3]];
+      els.push(placeHost(it.host, g, 'c' + i));
     });
     return { els: els, problems: probs, k: f.s };
   }
@@ -377,7 +548,11 @@
           w = Math.min(W, Math.max(it.rect[2] * k, textWidth(text, g.css) + 8));
           ht = n[1];
         } else if (it.kind === 'slider') {
-          w = Math.min(W, Math.max(it.rect[2] * k, 3 * T.touch)); ht = T.touch;
+          // As a level (asLevel), Down and Up at the touch minimum with 24 px
+          // of level between them: three touch minimums were 2 px short of it
+          // on the 320.
+          var least = T.kinds && T.kinds.slider === false ? 2 * T.touch + 2 * T.gap + 24 : 0;
+          w = Math.min(W, Math.max(it.rect[2] * k, 3 * T.touch, least)); ht = T.touch;
         } else if (it.kind === 'group') {
           // On a small panel a Group is the button that opens its pages, or a
           // segmented control's one row: what it needs, not its drawn box.
@@ -413,7 +588,10 @@
         var r = [x, y + Math.round((line.h - c.h) / 2), c.w, c.h];
         placed[c.it.i] = r;
         if (c.it.kind === 'slider' && T.kinds && T.kinds.slider === false) {
-          var lv = asLevel(c.it, r, 'row', T, 's' + c.it.i);
+          // Its line is one touch minimum deep, which cannot hold Up and Down
+          // beside it: they are along it.
+          var lv = asLevel(c.it, r, 'row', T, 's' + c.it.i, null, null,
+                           c.it.rect ? stepVariant(c.it, items, null, 0) : null);
           els = els.concat(lv.els);
           probs = probs.concat(lv.problems);
         } else if (c.it.kind === 'group') {
@@ -446,9 +624,9 @@
     });
     return { els: back.concat(els), problems: probs, k: k };
   }
-  function layout(items, D, frame, L, where) {
+  function layout(items, D, frame, L, where, cut) {
     var flow = L.panel.tier === 'C' && L.model !== L.designModel;
-    return flow ? flowLayout(items, D, L.panel, L, frame, where) : scaleLayout(items, D, L.panel, L, frame);
+    return flow ? flowLayout(items, D, L.panel, L, frame, where) : scaleLayout(items, D, L.panel, L, frame, cut);
   }
   function outlined(style, probs) {
     return probs.length ? Object.assign({}, style, { outline: '2px dashed #FF00FF', outlineOffset: '-2px' }) : style;
@@ -512,7 +690,8 @@
       template: P.template, size: [w, ht], does: props.does,
       panels: asked && listed.length ? listed : null
     });
-    return h(Ctx.Provider, { value: { scheme: scheme, colors: colors } },
+    // `page`: drawn on a Page, which builds - not a component's own card.
+    return h(Ctx.Provider, { value: { scheme: scheme, colors: colors, page: true } },
       h('div', { 'data-gdl': data, 'data-theme': theme.id, className: 'xgdl-page',
                  style: asked && problems.length ? outlined(style, problems) : style },
         props.children, asked ? problems.map(problem) : null));
@@ -536,7 +715,42 @@
     // children - a modal's title and steps - at this type before layout ends.
     var L = { scheme: scheme, colors: colors, aware: true, panel: T, design: D, model: model,
               designModel: designModel, tier: T.tier, k: fit([0, 0, dw, dh], [0, 0, tw, th]).s };
-    var out = layout(itemsOf(props.children, [dw, dh]), [0, 0, dw, dh], [0, 0, tw, th], L, props.name || 'the page');
+    // A page's own children go through both panels' bands where the template
+    // draws its bars as controls (`layout.bars`: Mach, Shockwave, Turbulence),
+    // on a panel other than the one drawn - there they stay as drawn.
+    // Afterburn's chrome is its background art, and its pages' own children
+    // - a modal's card - scale whole about the screen's centre, as Extron's
+    // own 525 centres its modals. A popup's, shown in a region of main, at
+    // main's scale.
+    var bands = full && model !== designModel && P.layout.bars === 'controls' && D.main && T.main;
+    var own = bands ? itemsOf(props.children, [dw, dh]) : [];
+    // The touch minimum where a band beside main on axis `a` holds a control
+    // a finger presses.
+    function touchIn(a, lo, hi) {
+      return own.some(function (it) {
+        var c = it.rect ? it.rect[a] + it.rect[a + 2] / 2 : -1;
+        return (it.kind === 'button' || it.kind === 'slider') && c >= lo && c <= hi;
+      }) ? T.touch : 0;
+    }
+    var cut = bands ? {
+      from: [[0, D.main[0], D.main[0] + D.main[2], dw], [0, D.main[1], D.main[1] + D.main[3], dh]],
+      to: [hubBands(D.main[0], D.main[0] + D.main[2], dw, T.main[0], T.main[0] + T.main[2], tw, L.k,
+                    touchIn(0, 0, D.main[0]), touchIn(0, D.main[0] + D.main[2], dw)),
+           hubBands(D.main[1], D.main[1] + D.main[3], dh, T.main[1], T.main[1] + T.main[3], th, L.k,
+                    touchIn(1, 0, D.main[1]), touchIn(1, D.main[1] + D.main[3], dh))] } : null;
+    // What a MainArea and a column Rail lay out keeps to what those bands
+    // leave - on a hub, the main region less the bands carved from it, and
+    // the menu bar between the header and the footer - not under the bars.
+    // Elsewhere the bands are the panel's own, and this changes nothing.
+    if (cut && T.tier !== 'C') {
+      var bx = cut.to[0], by = cut.to[1], col = T.rail && (T.rail_axis || 'column') !== 'row';
+      var r0 = col ? Math.max(T.rail[1], by[1]) : 0, r1 = col ? Math.min(T.rail[1] + T.rail[3], by[2]) : 0;
+      L.panel = Object.assign({}, T, {
+        main: [bx[1], by[1], bx[2] - bx[1], by[2] - by[1]],
+        rail: col ? [T.rail[0], r0, T.rail[2], r1 - r0] : T.rail });
+    }
+    var out = layout(itemsOf(props.children, [dw, dh]), [0, 0, dw, dh], [0, 0, tw, th], L, props.name || 'the page',
+                     cut);
     L.k = out.k;
     problems = problems.concat(out.problems);
     var bgArt = kind === 'page' ? (T.backgrounds || {})[theme.id] || null : null;
@@ -583,7 +797,12 @@
     var L = React.useContext(Ctx);
     if (L && L.aware) {
       var D = L.design.main, T = L.panel.main;
-      var out = layout(itemsOf(props.children, [D[2], D[3]]), [0, 0, D[2], D[3]], [0, 0, T[2], T[3]], L,
+      // Where the bars are controls, main lies between them, and a control
+      // grown to the panel's touch minimum stays in it rather than reach
+      // under a bar (a 60 px button flush with main's bottom, 104 px on the
+      // 535, ended 25 px into its footer).
+      var Lm = P.layout.bars === 'controls' ? Object.assign({}, L, { keepIn: true }) : L;
+      var out = layout(itemsOf(props.children, [D[2], D[3]]), [0, 0, D[2], D[3]], [0, 0, T[2], T[3]], Lm,
                        'the main area');
       var st = { position: 'absolute', left: T[0] + 'px', top: T[1] + 'px', width: T[2] + 'px',
                  height: T[3] + 'px', boxSizing: 'border-box' };
@@ -645,19 +864,27 @@
       } else if (it.kind === 'button') {
         var n = needs(it, Lk);
         if (p.variant === 'icon' || P.buttons[p.variant] && P.buttons[p.variant].kit && !textOf(p.children, p.text)) {
-          var sq = Math.max(t, Math.round(64 * k));
-          slots.push({ it: it, i: i, role: 'host', along: sq, cross: sq });
+          // At the size its seed draws its variant at, where the variant has
+          // one (Turbulence's ring, 100 x 100), else an icon button's 64. At a
+          // generic 64 a ring looked nothing like the template's, and a
+          // designer placed the rail's controls by hand instead.
+          var vs = (P.buttons[p.variant] && P.buttons[p.variant].size) || [64, 64];
+          var vw = Math.max(t, Math.round(vs[0] * k)), vh = Math.max(t, Math.round(vs[1] * k));
+          slots.push({ it: it, i: i, role: 'host', along: col ? vh : vw, cross: col ? vw : vh });
         } else {
           var designed = it.rect ? (col ? it.rect[3] : it.rect[2]) * k : 64 * k;
           slots.push({ it: it, i: i, role: 'host', along: Math.max(col ? n[1] : n[0], designed),
                        cross: Math.max(size, col ? n[0] : n[1]) });
         }
       } else if (it.kind === 'label' || it.kind === 'clock') {
+        // Read, not touched: it spans the band, where the touch padding is for
+        // its neighbours. Held to it, a Volume heading overflowed every hub's
+        // rail at the hub's type floor.
         var g = font(p, it.kind === 'clock' ? P.defaults.clock.type : P.defaults.label.type, Lk);
         var line = lineHeight(g.size) + 2;
         slots.push({ it: it, i: i, role: 'host',
                      along: col ? line : textWidth(textOf(p.children, p.text), g.css) + 8,
-                     cross: col ? size : line });
+                     cross: col ? cross : line });
       } else if (it.host) {
         slots.push({ it: it, i: i, role: 'host', along: it.rect ? (col ? it.rect[3] : it.rect[2]) * k : t,
                      cross: size });
@@ -1161,9 +1388,22 @@
       else { thumb.top = 'calc(50% - ' + s / 2 + 'px)'; thumb[o === 'right' ? 'left' : 'right'] = at; }
       kids.push(h('div', { key: 't', style: thumb }));
     }
+    // A seed with a slider and no level (its series' `kinds` in the profile:
+    // the design panel's among them) has no level to clone, and the build
+    // refuses one there (gdl.spec
+    // donors). So a Level is named where it is drawn, on the panel it is
+    // drawn for - or, on a Page that lists no panels, on the system's own -
+    // as a Slider is turned into a level where the seed has no slider.
+    var panel = L.panel || (L.page && P.models && P.models[P.model]);
+    var lacks = kind === 'level' && panel && panel.kinds && panel.kinds.level === false
+      ? (props.name || 'Level') + ' is a Level, which the ' + (panel.model || P.model) + "'s seed cannot build"
+        + (panel.kinds.slider ? ' - a Slider can' : '')
+      : null;
+    if (lacks) kids.push(problem(lacks, 'level'));
+    var box = { position: 'relative', boxSizing: 'border-box', width: '100%', height: '100%' };
     return h('div', {
       className: 'xgdl xgdl-' + kind,
-      style: { position: 'relative', boxSizing: 'border-box', width: '100%', height: '100%' },
+      style: lacks ? outlined(box, [lacks]) : box,
       'data-gdl': gdl({ kind: kind, name: props.name, id: props.id != null ? Number(props.id) : null,
                         fill: fill, border: props.border || d.border, orientation: o,
                         track: t, thumb: s || null,

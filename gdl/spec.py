@@ -26,7 +26,7 @@ description of those properties.
 
     python -m gdl.spec check  examples/panel.json
     python -m gdl.spec render examples/panel.json out/preview.png
-    python -m gdl.spec plan   examples/panel.json out/plan.json
+    python -m gdl.spec plan   examples/panel.json out/plan.json --donor "seeds/Afterburn 1035.gdl"
 
 What it cannot do is prove GUI Designer will accept the result. Nothing here
 touches a real `.gdl`; see docs/from-scratch.md for what still needs a human.
@@ -79,7 +79,9 @@ BORDERS = {
     'mach': 'Mach - 10 Radius 2 Thick',
 }
 # radius/thickness per resource, read from the fixtures' own PBBorderResource
-# dataField. Only what the preview needs to draw; the real geometry is Build's.
+# dataField. Only what the preview needs to draw; the real geometry is Build's,
+# and a seed's own (Project.border_geometry) can differ: Mach's 1035 defines
+# 2D Rounded Rectangle at radius 1 and thickness 0.
 BORDER_GEOMETRY = {
     '': (0, 0),
     '2D Rectangle': (0, 3), '2D Rectangle_1': (0, 0),
@@ -99,13 +101,63 @@ BORDER_GEOMETRY = {
     # box, which in the square boxes these take is the circle Build draws.
     'Afterburn - Elipse 0 Thick': (9999, 0),
 }
+
+# A border resource's shape - (kind, radius, thickness), kind '2d' or '3d' with
+# '-ellipse' for an ellipse - from its name where the name says it ("Afterburn
+# - 10 Radius 2 Thick"), else from BORDER_GEOMETRY; None where neither does.
+# The `zGD - Default` copies 15 of the 29 seeds and fixtures carry are among
+# those, and every project carries the plain built-ins.
+_RADIUS_THICK = re.compile(r'(\d+)\s*Radius\s*(\d+)\s*Thick', re.I)
+_THICK = re.compile(r'(\d+)\s*Thick', re.I)
+
+
+def border_shape(name):
+    if not name:
+        return None
+    kind = '3d' if name.startswith('3D') else '2d'
+    if re.search(r'el+ipse', name, re.I):         # Extron spells its own Elipse
+        m = _THICK.search(name)
+        thick = int(m.group(1)) if m else (BORDER_GEOMETRY.get(name) or (0, None))[1]
+        return None if thick is None else (kind + '-ellipse', 0, thick)
+    m = _RADIUS_THICK.search(name)
+    if m:
+        return kind, int(m.group(1)), int(m.group(2))
+    if name in BORDER_GEOMETRY:
+        return (kind,) + tuple(BORDER_GEOMETRY[name])
+    return None
+
+
+def _border_family(name):
+    """'Afterburn - 10 Radius 2 Thick' -> 'Afterburn'; a built-in -> None."""
+    return name.split(' - ', 1)[0] if ' - ' in name else None
+
+
+def nearest_border(wanted, defined):
+    """The border resource in `defined` - a donor's - to build `wanted` as
+    where the donor lacks it, or None: of the same kind (2D, 3D, ellipse), from
+    the same family first - a theme's own, or the built-ins - then of the
+    nearest thickness, then the nearest radius. That is the Afterburn design system's
+    own choice for the 320, whose seed has no 10-radius pair: 10 Radius 2 Thick
+    builds as 7 Radius 2 Thick, and 10 Radius 0 Thick as 14 Radius 0 Thick."""
+    want = border_shape(wanted)
+    if want is None:
+        return None
+    kind, radius, thick = want
+    cands = [(n, s) for n, s in ((n, border_shape(n)) for n in defined)
+             if n != wanted and s and s[0] == kind]
+    family = _border_family(wanted)
+    pool = [c for c in cands if _border_family(c[0]) == family] or cands
+    if not pool:
+        return None
+    return min(pool, key=lambda c: (abs(c[1][2] - thick), abs(c[1][1] - radius), c[0]))[0]
 # Every panel GUI Designer can target: (width, height, DPI, Extron part number).
 #
 # Read out of the ASSEMBLIES, not off the Project Create Wizard's list box.
 # `PBTouchPanelPlatformPro.GetDefaultResolutionDpi(type, out w, out h, out dpi)`
 # and `CreatePlatform(project, type)` are Extron's own, so this is primary
-# source. `out/probe-22-createplatform.ps1` regenerates it and
-# `research/data/platform-details.txt` is the raw capture.
+# source. `powershell/Get-GdlPlatforms.ps1` regenerates the raw capture,
+# `research/data/platform-details.txt`, which also lists the resolutions each
+# platform supports.
 #
 # The part number matters: GUI Designer identifies a panel by it, and a project
 # whose platform object lacks one opens as "Unknown" no matter how correct the
@@ -201,12 +253,20 @@ MODELS_FULL['TLP300M'] = (320, 480, MODELS_FULL['TLP300M'][2],
 # table). Extron's own TemplateInfoTable.config - the template installer's
 # table, NRBF, readable with gdl/nrbf.py - gives its "Afterburn 1230 Series"
 # 1920x720 at 166.0 DPI, the canvas a built 1230W project reports too
-# (docs/design-rules.md section 1).
+# (docs/design-rules.md section 1), and the one resolution its platform's own
+# supportedResolutions lists.
 MODELS_FULL['TLP1230WTG'] = (1920, 720, 166.0, MODELS_FULL['TLP1230WTG'][3])
 
-# A model whose panel runs either way up. The 300M's templates come portrait and
-# landscape (Afterburn 300 Portrait and Landscape Series, both 164.83 DPI).
-ORIENTATIONS = {'TLP300M': ((320, 480), (480, 320))}
+# A model whose panel runs either way up: its platform's own supportedResolutions
+# lists both (powershell/Get-GdlPlatforms.ps1, research/data/platform-details.txt),
+# and GUI Designer's Project Create Wizard offers a Resolution for it. These six
+# M forms are the only panels of one fixed resolution that list a second; their
+# T and C forms do not, though the 1035T shares the 1035M's part number.
+# MODELS_FULL holds the factory default, first. A theme reaches the second
+# orientation only where a template is drawn at it (gdl/templates.py);
+# docs/design-rules.md section 1 has which.
+ORIENTATIONS = {m: ((MODELS_FULL[m][0], MODELS_FULL[m][1]), (MODELS_FULL[m][1], MODELS_FULL[m][0]))
+                for m in ('TLP300M', 'TLP520M', 'TLC521M', 'TLP535M', 'TLP835M', 'TLP1035M')}
 
 # name -> (width, height). The common case; the rest of MODELS_FULL is there
 # when you need the DPI or the part number.
@@ -228,6 +288,33 @@ def part_number(model):
 def sizes(model):
     """Every canvas a model runs at: its one resolution, or both orientations."""
     return ORIENTATIONS.get(model) or ((MODELS_FULL[model][0], MODELS_FULL[model][1]),)
+
+
+def panel_id(model, size=None):
+    """A panel by name: its model on the model's own canvas (sizes()[0]), and
+    model-Portrait or model-Landscape the other way up of one that rotates - a
+    canvas's `panels`, a design system's table, a folder of specs. No model's
+    name has a hyphen. ValueError for a canvas the model does not run at."""
+    own = sizes(model)
+    size = tuple(size) if size else own[0]
+    if size not in own:
+        raise ValueError(f'a {model} runs at {" or ".join("%dx%d" % s for s in own)}, '
+                         f'not {size[0]}x{size[1]}')
+    if size == own[0]:
+        return model
+    return f"{model}-{'Portrait' if size[1] > size[0] else 'Landscape'}"
+
+
+def panel_of(pid):
+    """(model, canvas) of a panel_id(); ValueError for a name that is not one."""
+    model = str(pid).partition('-')[0]
+    if model not in MODELS_FULL:
+        raise ValueError(f'{pid!r} is not a panel: {model!r} is no model GUI Designer builds for')
+    for size in sizes(model):
+        if panel_id(model, size) == pid:
+            return model, size
+    raise ValueError(f'{pid!r} is not a panel: a {model} runs '
+                     f'{" or ".join(panel_id(model, s) for s in sizes(model))}')
 
 
 # Soft clients and interfaces run on a screen their model does not define, so
@@ -345,7 +432,8 @@ def type_floor(target):
     of cap height on a 1035 and 1.1 mm on a 535. The floor keeps the 14 pt as it
     reads on a 1025/1035: 14 x DPI / 149, rounded up - a minimum is never
     rounded down - and never under 14. Ours, not Extron's: Extron's own templates
-    keep points fixed (docs/design-rules.md section 1).
+    break it on dense panels - their 520s keep the 1035's points, their 535s
+    step up short of it (docs/design-rules.md section 1).
     """
     if isinstance(target, str):
         d = dpi(target)
@@ -369,7 +457,7 @@ CONTROL_KEYS = frozenset((
     'kind', 'name', 'rect', 'id', 'text', 'fill', 'stroke', 'color', 'border', 'size', 'bold',
     'italic', 'align', 'font', 'states', 'on', 'press', 'nav', 'does', 'image', 'thumb_image',
     'track_image', 'fill_image', 'group', 'orientation', 'track', 'bar', 'thumb', 'thumb_height', 'from',
-    'to', 'thickness', 'format', 'flatten', 'type', 'grid', 'stack',
+    'to', 'thickness', 'format', 'flatten', 'type', 'grid', 'stack', 'icon',
     # Added by a panel's layout (docs/claude-design.md): navigation it derived,
     # and the segmented control a segment belongs to.
     'derived', 'joined',
@@ -381,7 +469,56 @@ TOUCHABLE = {'button', 'slider'}
 # 256 on PBProject, on the TLP Pro 1035 platform and on PBButton, read through
 # the installed assemblies. The corpus never goes past four.
 MAX_STATES = 256
-STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text', 'image'}
+STATE_KEYS = {'name', 'fill', 'stroke', 'color', 'text_color', 'border', 'text', 'image', 'icon'}
+
+# Which face an icon is drawn in, by theme family, and where that face is read
+# from, are font facts: gdl/fonts.py (ICON_FONTS, icon_face).
+_GLYPHS = {}
+
+
+def glyph_names(font):
+    """{name: codepoint} a face names its glyphs by - {} for one that names
+    none - or None when there is no face to read (gdl.fonts.icon_face,
+    gdl.sfnt.Advances.glyph_names)."""
+    if font not in _GLYPHS:
+        from .fonts import icon_face
+        from .sfnt import Advances
+        data = icon_face(font)[0]
+        _GLYPHS[font] = Advances(data).glyph_names() if data else None
+    return _GLYPHS[font]
+
+
+def icon_codepoint(font, icon):
+    """(codepoint, None), or (None, why): `icon` is a glyph's name in `font`, or
+    its codepoint as U+E908 / uniE908 - the way into a face that names
+    nothing, as Mach's Extron-Lift and Extron-Shockwave do. The face's own
+    names come first: Extron GUIC Video Conference 1 names its glyph at U+F081
+    'uni0081', and its names are what an icon sheet lists."""
+    if not isinstance(icon, str):
+        return None, f"icon {icon!r}: an icon is a glyph's name or its codepoint, as U+E908"
+    names = glyph_names(font)
+    if names and icon in names:
+        return names[icon], None
+    m = re.fullmatch(r'(?:[Uu]\+|uni)([0-9A-Fa-f]{4,6})', icon)
+    if m:
+        cp = int(m.group(1), 16)
+        if cp > 0x10FFFF or 0xD800 <= cp <= 0xDFFF:
+            return None, f'icon {icon!r}: U+{cp:04X} is no character, so no face maps a glyph there'
+        return cp, None
+    if names is None:
+        return None, (f'icon {icon!r}: no {font} face here to read its glyph names from - '
+                      f'neither recovered into gdl/fonts/ nor in a seed pulled from Git LFS; '
+                      f'a codepoint, as U+E908, needs no names')
+    if not names:
+        return None, (f'icon {icon!r}: {font} names none of its glyphs - give the codepoint, '
+                      f'as U+E900; python -m gdl.spec icons <family> <sheet.png> draws them')
+    import difflib
+    near = difflib.get_close_matches(icon, list(names), n=3, cutoff=0.6)
+    return None, (f'icon {icon!r} is not a glyph of {font}'
+                  + (f" - did you mean {', '.join(repr(n) for n in near)}?" if near else '')
+                  + ' (python -m gdl.spec icons lists them)')
+
+
 # How a button's image sits in it, as Extron's own image buttons all have it:
 # ImageLayoutEnum Fill (fit, keeping the aspect) and AlignmentEnum
 # MiddleCenter. The kit draws each icon, its selection line and its label room
@@ -587,6 +724,21 @@ def stack(rect, count, gap=0, horizontal=False, pad=0):
                 gap=gap, pad=pad)
 
 
+# The donor page the applier keeps whatever a spec says (Apply-GdlPlan.ps1):
+# the Offline Page, popup 65535, which every seed and fixture has.
+OFFLINE_PAGE_ID = 65535
+
+
+def kept_names(pages, keep_donor_pages=False):
+    """The donor's page and popup names that are still in the built panel, so
+    a spec's may not take them - Build refuses a duplicate only once it has
+    started. `pages` is gdl.project.Project.pages(). Every one, for a spec that
+    keeps the donor's pages; otherwise the applier drops all it did not make
+    but the Offline Page."""
+    return {pg['name'] for pg in pages
+            if pg['name'] and (keep_donor_pages or pg['id'] == OFFLINE_PAGE_ID)}
+
+
 class Panel:
     """A spec, laid out and ID-allocated, ready to render or to hand to a writer."""
 
@@ -608,11 +760,118 @@ class Panel:
         self.pages = []
         self.popups = []
         self._groups = {}
+        self._overflow = []
+        # What _icons could not draw, for check(), and each glyph it did draw -
+        # (where, face, codepoint) - for check_donor() to find in the donor's face.
+        self._icon_problems = []
+        self._icon_glyphs = []
         # Image resources the spec brings with it: name -> file (resolve_image).
         # A page's `background_image` names one of these or one the donor
         # already defines.
         self.images = dict(spec.get('images') or {})
         self._build()
+
+    # -- icons -------------------------------------------------------------
+    def _icon_font(self):
+        """(face, None) an `icon` is drawn in when its control names none - the
+        theme's `icon_font`, else its family's (ICON_FONTS) - or (None, why)."""
+        from .fonts import ICON_FONTS
+        if self.theme.get('icon_font'):
+            return self.theme['icon_font'], None
+        family = str(self.spec.get('family') or '').lower()
+        key = next((k for k in ICON_FONTS if k.lower() == family), None)
+        if key and ICON_FONTS[key]:
+            return ICON_FONTS[key], None
+        if key:
+            return None, (f'{key} has no icon font - its template draws nearly all its icons '
+                          f'as images (docs/design-rules.md section 6): give it an "image", '
+                          f'or name the "font" its icon is in')
+        return None, ('an icon needs an icon font - the control\'s "font", the theme\'s '
+                      '"icon_font", or the spec\'s "family"')
+
+    def _icons(self, controls, where):
+        """Each control that names an icon - its own or a state's - drawn as
+        the glyph: `text` the glyph's character, `font` the icon font. Run on
+        the laid-out controls, so an icon a grid gives every item is each
+        item's own. What cannot be drawn is a check() problem."""
+        out = []
+        for c in controls:
+            c = self._on_as_states(c)
+            # Anything but a list is _state_rules' to report, not this to read.
+            states = c['states'] if isinstance(c.get('states'), list) else []
+            if 'icon' not in c and not any(isinstance(s, dict) and 'icon' in s for s in states):
+                out.append(c)
+                continue
+            if 'icon' in c and not c.get('name'):
+                # A name falls back to the text, which is about to be the glyph: a
+                # private-use character a spreadsheet shows blank and a Windows
+                # stdout redirected to a file cannot print.
+                c = dict(c, name=str(c['icon']))
+            label = f"{where} {c.get('name') or '?'}"
+            kind = c.get('kind', 'panel')
+            if kind not in ('button', 'label'):
+                self._icon_problems.append(f'{label}: a {kind} takes no "icon" - it draws no '
+                                           f'caption to set one in; a button or a label does')
+                out.append(c)
+                continue
+            font, why = (c['font'], None) if c.get('font') else self._icon_font()
+            if not font:
+                self._icon_problems.append(f'{label}: {why}')
+                out.append(c)
+                continue
+            c = dict(c, font=font)
+            if 'icon' in c:
+                if c.get('text'):
+                    self._icon_problems.append(
+                        f'{label}: has both "icon" and "text" - a caption is drawn in one face, '
+                        f'so the icon replaces the words; put them on a label beside it')
+                c['text'] = self._glyph(c['icon'], font, label)
+            if states:
+                c['states'] = [self._icon_state(s, c, font, label) for s in states]
+            out.append(c)
+        return out
+
+    def _on_as_states(self, c):
+        """A button's `on` that names an icon, as the Off and On states it is
+        shorthand for (_feedback), so the icon is the On state's as a state's
+        own would be. Left as `on`, the icon was dropped."""
+        if c.get('kind') != 'button' or 'states' in c:
+            return c
+        on = c.get('on', self.theme.get('on'))
+        if not (isinstance(on, dict) and 'icon' in on):
+            return c
+        c = {k: v for k, v in c.items() if k != 'on'}
+        c['states'] = [{'name': 'Off'}, dict(on, name='On')]
+        return c
+
+    def _icon_state(self, s, c, font, label):
+        name = s.get('name') if isinstance(s, dict) else s
+        where = f"{label} state {name!r}"
+        if isinstance(s, dict) and 'icon' in s:
+            if s.get('text'):
+                self._icon_problems.append(
+                    f'{where}: has both "icon" and "text" - the icon replaces the words')
+            return dict(s, text=self._glyph(s['icon'], font, where))
+        # Any icon on the button sets its face to the icon font, so a state's
+        # words - its own, or the button's it shows - draw in a face with none.
+        if isinstance(s, dict) and 'text' in s:
+            if s['text']:
+                self._icon_problems.append(
+                    f'{where}: has "text" on an icon - it would draw in {font}, which has '
+                    f'no letters; give the state an "icon"')
+        elif 'icon' not in c and c.get('text'):
+            self._icon_problems.append(
+                f"{where}: shows the button's \"text\" {c['text']!r} in {font}, which has no "
+                f'letters - give the state an "icon", or put the words on a label beside it')
+        return s
+
+    def _glyph(self, icon, font, label):
+        cp, why = icon_codepoint(font, icon)
+        if why:
+            self._icon_problems.append(f'{label}: {why}')
+            return ''
+        self._icon_glyphs.append((label, font, cp))
+        return chr(cp)
 
     @classmethod
     def load(cls, path):
@@ -638,14 +897,29 @@ class Panel:
                 spread = item.get('grid') or item.get('stack')
                 items = spread.get('items') or []
                 rect = self._region(spread.get('rect'), region)
+                label = spread.get('name') or (items[0].get('text') if items else '?')
                 if 'grid' in item:
-                    cells = grid(rect, spread.get('cols', len(items)),
-                                 spread.get('rows', 1), spread.get('gap', 0),
+                    # Given rows and no cols, as many columns as the items
+                    # need. One column per item was the default whatever the
+                    # rows, which laid a three-row grid out as a single row.
+                    rows = spread.get('rows', 1)
+                    cols = spread['cols'] if 'cols' in spread else (
+                        -(-len(items) // rows) if isinstance(rows, int) and rows >= 1
+                        else len(items))
+                    cells = grid(rect, cols, rows, spread.get('gap', 0),
                                  spread.get('gap_y'), spread.get('pad', 0))
                 else:
                     cells = stack(rect, spread.get('count', len(items)),
                                   spread.get('gap', 0), spread.get('horizontal', False),
                                   spread.get('pad', 0))
+                if len(items) > len(cells):
+                    # One item to a cell, and zip() below stops at the last
+                    # cell: the rest were dropped without a word.
+                    n = len(cells)
+                    self._overflow.append(
+                        f"{'grid' if 'grid' in item else 'stack'} {str(label)!r}: "
+                        f"{len(items)} items for {n} cell{'' if n == 1 else 's'} - "
+                        f"the last {len(items) - n} would not be laid out")
                 shared = {k: v for k, v in spread.items()
                           if k not in ('rect', 'cols', 'rows', 'gap', 'gap_y',
                                        'pad', 'items', 'count', 'horizontal')}
@@ -655,7 +929,6 @@ class Panel:
                 kinds = [sub.get('kind', shared.get('kind')) for sub in items]
                 nbtn = sum(1 for k in kinds if k == 'button')
                 if nbtn:
-                    label = spread.get('name') or (items[0].get('text') if items else '?')
                     self._groups[str(label)] = self._groups.get(str(label), 0) + nbtn
                 for cell, sub in zip(cells, items):
                     merged = dict(shared)
@@ -722,18 +995,20 @@ class Panel:
         # the project before it hands out the first free one.
         flat_popups = []
         for pu in self.spec.get('popups') or []:
-            self._groups = {}
-            flat_popups.append((pu, self._controls(pu.get('controls') or [], []),
-                                dict(self._groups)))
+            self._groups, self._overflow = {}, []
+            flat = self._controls(pu.get('controls') or [], [])
+            flat_popups.append((pu, self._icons(flat, f"popup {pu.get('name')!r}"),
+                                dict(self._groups), list(self._overflow)))
         flat_pages = []
         for pg in self.spec.get('pages') or []:
-            self._groups = {}
-            flat_pages.append((pg, self._controls(pg.get('controls') or [], []),
-                               dict(self._groups)))
-        taken = {c['id'] for _, cs, _ in flat_pages + flat_popups for c in cs
+            self._groups, self._overflow = {}, []
+            flat = self._controls(pg.get('controls') or [], [])
+            flat_pages.append((pg, self._icons(flat, f"page {pg.get('name')!r}"),
+                               dict(self._groups), list(self._overflow)))
+        taken = {c['id'] for _, cs, _, _ in flat_pages + flat_popups for c in cs
                  if c.get('id')}
 
-        for i, (pg, controls, groups) in enumerate(flat_pages):
+        for i, (pg, controls, groups, overflow) in enumerate(flat_pages):
             page_no = pg.get('number')
             if page_no is None:
                 page_no = 1000 * (i + 1)
@@ -756,10 +1031,11 @@ class Panel:
                                             self.theme.get('background_layout')),
                 'controls': controls,
                 'group_sizes': groups,
+                'overflow': overflow,
             })
 
         self.popups = []
-        for i, (pu, controls, groups) in enumerate(flat_popups):
+        for i, (pu, controls, groups, overflow) in enumerate(flat_popups):
             # A band per popup. The default used to be 9000 + i, so popup i's
             # band began inside popup i-1's and two unnumbered popups shared IDs.
             number = pu.get('number', 9000 + 100 * i)
@@ -785,6 +1061,7 @@ class Panel:
                                      or '#000000', self.theme),
                 'controls': controls,
                 'group_sizes': groups,
+                'overflow': overflow,
             })
 
         # The page the panel boots into. Without it a generated panel opens on
@@ -873,8 +1150,17 @@ class Panel:
         model, fills = self.layout()
         return render_page(model['Pages'][page], {}, self.size, fills=fills)
 
-    def plan(self):
+    def plan(self, swaps=None, fonts=None, art=None):
         """A build plan: the clone-and-set operations that would write this spec.
+
+        `swaps` maps a border resource the spec names to the one the donor
+        builds it as (border_swaps, `plan --donor`); every op's border, and
+        every state's, is written through it. `fonts` lists the faces to append
+        to the donor first - {family, style, file, embedded, source, size,
+        default, author, carrier}, the file written beside the plan and
+        `carrier` the seed it is copied from. `art` is check_donor's: where the
+        donor's level is drawn from images, every level keeps them (`keep_art`)
+        and is planned no bar color.
 
         Deliberately *data*, not code. Writing the authoring model needs 32-bit
         Windows PowerShell and GUI Designer, which cannot be tested here - so
@@ -902,11 +1188,16 @@ class Panel:
                 'controls': [self._op_for(c, i) for i, c in enumerate(pg['controls'])],
             })
 
-        return {
+        plan = {
             'generated_by': 'gdl.spec',
             # By NAME: the applier resolves it to the id it gives that page,
             # which only exists once the donor has decided what is free.
             'default_page': self.start_page,
+            # The panel is these pages and popups: the applier drops the
+            # donor's own once it has cloned what it needs from them. A seed
+            # left in shipped its whole demo, unreachable, sharing IDs with the
+            # spec's controls.
+            'keep_donor_pages': bool(self.spec.get('keep_donor_pages')),
             'popup_groups': sorted({p['group'] for p in self.popups if p['group']}),
             'popups': self._popup_ops(),
             # Appended to the donor's resource library where it lacks them;
@@ -918,7 +1209,27 @@ class Panel:
                      'applier via Get-GdlNextPageId, not here - the donor '
                      'project decides what is free.'),
             'pages': pages,
+            # Faces the donor lacks, appended before any control is cloned so
+            # Set-GdlFont finds them (Add-GdlFontResource).
+            'fonts': list(fonts or []),
         }
+        if swaps:
+            for item in plan['pages'] + plan['popups']:
+                for op in item['controls']:
+                    if op.get('border') in swaps:
+                        op['border'] = swaps[op['border']]
+                    for st in op.get('states') or []:
+                        if st.get('border') in swaps:
+                            st['border'] = swaps[st['border']]
+        if (art or {}).get('level'):
+            # The donor's level fills from an image (check_donor): a bar color
+            # never shows, and its empty track, its background image, is kept.
+            for item in plan['pages'] + plan['popups']:
+                for op in item['controls']:
+                    if op.get('donor_type') == 'PBLevel':
+                        op['gauge_fill'] = None
+                        op['keep_art'] = True
+        return plan
 
     def _image_op(self, name):
         """A page's background image, or a button state's, for the plan: its
@@ -931,7 +1242,7 @@ class Panel:
     # -- checks ------------------------------------------------------------
     def check(self):
         """Problems a human would otherwise find on the Windows box."""
-        out = []
+        out = list(self._icon_problems)
         if self.model and self.spec.get('size') and tuple(self.spec['size']) not in sizes(self.model):
             out.append(f"size {'x'.join(map(str, self.spec['size']))} is not a canvas the {self.model} "
                        f"has - it is {' or '.join('%dx%d' % s for s in sizes(self.model))}")
@@ -974,8 +1285,10 @@ class Panel:
                 if b and b not in BORDERS and b not in BORDER_GEOMETRY:
                     out.append(f'{where}: unknown border resource {b!r} - a generator may '
                                f'only reference resources the project already carries')
+            out += [f"page {pg['number']} {o}" for o in pg.get('overflow') or []]
             out += self._house_rules(pg)
         for pu in self.popups:
+            out += [f"popup {pu['name']!r} {o}" for o in pu.get('overflow') or []]
             out += self._house_rules(pu, f"popup {pu['name']!r}")
             seen = {}
             for c in pu['controls']:
@@ -1231,6 +1544,41 @@ class Panel:
                             bool(c.get('track_image')) != bool(c.get('fill_image')):
                         out.append(f'{where}: a rail takes both track_image and fill_image '
                                    f"- with one, the clone keeps its donor's other")
+        return out
+
+    def stroke_rules(self, geometry, source, swaps=None):
+        """A stroke must be on a border that draws one - in the project it is
+        built in. `geometry` is that project's border_geometry(), `swaps` the
+        borders it builds as its nearest (border_swaps).
+
+        A built-in border's thickness is the project's own: Mach's 1035 seed
+        defines 2D Rounded Rectangle at thickness 0 (and radius 1), so a display
+        button on it built its Warming Up - an accent outline on Off's fill -
+        as Off's very artwork, and its Cooling Down's white outline was not
+        drawn either. Afterburn's and Turbulence's define it at 3, and draw it.
+        """
+        out = []
+        swaps = swaps or {}
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for pg in items:
+                for c in pg['controls']:
+                    where = f"{kind} {pg['name']!r} {c.get('name') or c.get('text') or '?'}"
+                    fill, stroke, text_color, border = self._base_look(c)
+                    looks = (self._states_for(c, fill, stroke, text_color, border)
+                             if c.get('kind') == 'button' else None) or \
+                        [{'name': None, 'stroke': _argb(stroke), 'border': border}]
+                    for s in looks:
+                        # A null stroke is the spec's own problem (_states_of).
+                        if not (s['stroke'] or 0) >> 24 & 0xFF:
+                            continue
+                        built = swaps.get(s['border'], s['border'])
+                        g = geometry.get(built)
+                        if g is None or g.get('thickness'):
+                            continue
+                        who = f"its {s['name']!r} state's" if s['name'] else 'its'
+                        out.append(f"{where}: {who} stroke is not drawn - {source} defines "
+                                   f"{built!r} with no thickness. Give it a border that draws a "
+                                   f"stroke, or tell it apart by its fill")
         return out
 
     def _state_rules(self):
@@ -1510,8 +1858,15 @@ class Panel:
                 seen[n] = f'{kind} {n!r}'
         return out
 
-    def check_donor(self, path):
+    def check_donor(self, path, swaps=None, fonts=None, art=None):
         """Can this donor supply every control type, and do any names collide?
+
+        `swaps`, a dict if one is given, is filled with each border the donor
+        lacks and builds as its own nearest instead (border_swaps), `fonts`
+        with each family it lacks and a seed carries, to append
+        (gdl.fonts.find_face) - what `donors` says aloud and `plan --donor`
+        writes - and `art` with the images a level it clones is drawn from,
+        which `plan --donor` plans by (keep_art).
 
         Clone-never-construct means a type absent from the donor cannot be
         authored at all, and donors genuinely differ: the _alt fixture has no
@@ -1543,9 +1898,8 @@ class Panel:
                 f'material in it, make a seed project first (File > New, pick the '
                 f'panel and theme, save) and use that.')
 
-        have, names = set(), set()
+        have = set()
         for pg in proj.pages():
-            names.add(pg['name'])
             for c in pg['controls']:
                 have.add(c['type'])
         out += [f'donor {path} has no {t} to clone - that control type cannot '
@@ -1559,26 +1913,141 @@ class Panel:
         # donor that defines 2D Capsule but never draws with it would look like
         # it lacked one - which is the false positive this check first produced,
         # against a spec that had already built cleanly.
+        # One the donor lacks is built as the donor's own of the nearest shape
+        # where it has one - within a family the seeds differ: the 320's has no
+        # 10-radius pair - and is a problem only where it has none.
         borders = proj.border_resource_names()
-        for want in sorted(self.needs_borders() - borders):
-            out.append(f'border resource {want!r} is not defined in {path} - a '
-                       f'spec may only name resources the donor already carries. '
-                       f'It defines: {", ".join(sorted(borders))}')
+        found = self.border_swaps(borders)
+        if swaps is not None:
+            swaps.update(found)
+        for want in sorted(self.needs_borders() - borders - set(found)):
+            out.append(f'border resource {want!r} is not defined in {path}, and it '
+                       f'defines none of that shape to build it as. It defines: '
+                       f'{", ".join(sorted(borders))}')
+        # A swap can make two states one: states that differ only by border
+        # look alike where the donor builds both borders as one resource - Off
+        # in 10 Radius 0 Thick and On in 14 Radius 0 Thick on the 320, whose
+        # nearest to the first is the second. check() saw two borders.
+        for item in (self.pages + self.popups) if found else []:
+            for c in item['controls']:
+                looks = self._states_for(c, *self._base_look(c)) or [] if self._feedback(c) else []
+
+                def built(s):
+                    return {k: found.get(v, v) if k == 'border' else v
+                            for k, v in s.items() if k != 'name'}
+                for i, a in enumerate(looks):
+                    for b in looks[i + 1:]:
+                        if a['border'] != b['border'] and built(a) == built(b):
+                            out.append(
+                                f"{item['name']!r} {c.get('name') or c.get('text') or '?'}: "
+                                f"states {a['name']!r} and {b['name']!r} differ only by border, "
+                                f"and {path} builds both as {built(a)['border']!r} - the panel "
+                                f'would show no difference. Give one its own fill, stroke, '
+                                f'color, text or image, or a border the donor has')
+        # A stroke on a border the donor defines with no thickness is never
+        # drawn - Mach's 2D Rounded Rectangle - and verify_built learns it only
+        # after a build, where two states apart only by it share one image.
+        out += self.stroke_rules(proj.border_geometry(), path, found)
 
         # Fonts, for the same reason but a softer failure: a family the donor
         # lacks does not stop the build, it silently ships in the donor's face.
         # The three-page panel built cleanly in Open Sans while its spec asked
-        # for Forma DJR Display, and only the built-file verifier noticed.
-        fonts = proj.font_resource_names()
-        for want in sorted(self.needs_fonts() - fonts):
-            out.append(f'font family {want!r} has no resource in {path}, so every '
-                       f'control asking for it will build in the donor\'s face '
-                       f'instead. It defines: {", ".join(sorted(fonts))}')
+        # for Forma DJR Display, and only the built-file verifier noticed. A
+        # face a seed carries is appended instead (find_face, plan --donor).
+        # A family is named as the donor or the seed spells it: one spelled
+        # otherwise is refused, as it was before a face could be appended.
+        from . import seeds
+        from .fonts import find_face
+        defined = proj.font_resource_names()
+        spelled = {d.casefold(): d for d in defined}
+        appended = {}
+        for want in sorted(self.needs_fonts() - defined, key=str):
+            if isinstance(want, str) and want.casefold() in spelled:
+                out.append(f'font family {want!r} is not defined in {path}, which defines '
+                           f'{spelled[want.casefold()]!r} - name it so')
+                continue
+            face = find_face(want)
+            if face and face['family'] != want:
+                out.append(f"font family {want!r} is not defined in {path}, and "
+                           f"{face['carrier']} carries it as {face['family']!r} - name it so")
+            elif face:
+                appended[want] = face
+            else:
+                pointers = [s for s in seeds.here() if not seeds.usable(s)]
+                none = (f'no seed here carries the face to append - {len(pointers)} of '
+                        f'seeds/ are Git LFS pointers (git lfs pull)' if pointers else
+                        'no seed carries the face to append')
+                out.append(f'font family {want!r} has no resource in {path}, and {none} - '
+                           f'every control asking for it would build in the donor\'s face. '
+                           f'It defines: {", ".join(sorted(defined))}')
+        if fonts is not None:
+            fonts.update(appended)
+
+        # A level the template draws from art. The one the applier clones
+        # fills with a color (gaugeFillType 0: Afterburn's, Mach's) or from an
+        # image (1: Shockwave's, Turbulence's), which Build draws in place of
+        # any color - so no bar color is planned for it - and draws its empty
+        # track from its background image, which the applier clears from every
+        # other clone. `art['level']` names the two images (plan: `keep_art`).
+        if art is not None:
+            lv = proj.first_control('PBLevel')
+            kind = proj.field(lv, 'gaugeFillTypeField') if lv is not None else None
+            if isinstance(kind, dict) and kind.get('value__') == 1:
+                art['level'] = {
+                    part: proj.field(proj.field(lv, field), 'resourceNameField') or None
+                    for part, field in (('fill', 'gaugeFillImageField'), ('track', 'backgroundImageField'))}
+
+        # Icons. A glyph is drawn from the face the DONOR embeds, and one face
+        # differs by build: the Mach seeds carry Extron-Lift's 95 glyphs, to
+        # U+E95E, where the install's has 121, to U+E978. A codepoint the
+        # donor's face does not map builds without complaint and draws nothing.
+        # A face to be appended is the one drawn from, so it is the one read.
+        if self._icon_glyphs:
+            from .fonts import carried
+            from .sfnt import Advances
+            faces, maps = {}, {}
+            for f in carried(proj):
+                faces.setdefault(f['family'], (f['bytes'], f'the {f["family"]} {path} carries'))
+            for font, face in appended.items():
+                faces.setdefault(font, (face['bytes'], f"the {font} to be appended from "
+                                                       f"{face['carrier']}"))
+            for where, font, cp in self._icon_glyphs:
+                if font not in faces:
+                    if font in defined:     # no resource at all is reported above
+                        out.append(f'{where}: {path} defines {font} but carries no face '
+                                   f'for it to draw U+{cp:04X} in')
+                    continue
+                if font not in maps:
+                    maps[font] = Advances(faces[font][0]).cmap
+                if cp not in maps[font]:
+                    out.append(f'{where}: {faces[font][1]} has no glyph at '
+                               f'U+{cp:04X} - it would build blank')
+
+        # Model and theme. The built panel is the donor's - the applier never
+        # touches its platform or skin - whatever the spec names. seeds/ names a
+        # seed for its size, so a TLP725M spec lands on 'Afterburn 725.gdl', a
+        # TLP725T of the same canvas that every other gate here passes. The
+        # 1035T and 1035M share a part number, so they share a donor.
+        top = next(proj.instances('PBProject'), None)
+        plat = proj.field(top, 'platformField') if top is not None else None
+        got = proj.field(plat, 'partNumberField') if plat is not None else None
+        if self.model and got and got != part_number(self.model):
+            from .seeds import models_of
+            out.append(f"the donor {path} is a {models_of(got)} ({got}), and the spec's model a "
+                       f'{self.model} ({part_number(self.model)}) - the built panel is the '
+                       f"donor's model. Build on a {self.model} seed (python -m gdl.seeds pick "
+                       f'<spec>), or retarget the donor to it first (python -m gdl.edit)')
+        family = self.spec.get('family')
+        skin = proj.field(top, 'skinField') if top is not None else None
+        if isinstance(family, str) and family.strip() and isinstance(skin, str) and skin \
+                and skin.casefold() != family.strip().casefold():
+            out.append(f"the donor {path} is a {skin} project, and the spec's family "
+                       f'{family.strip()} - the built panel is in the donor\'s theme. Name the '
+                       f'family it is, or build on a {family.strip()} seed')
 
         # Canvas. The spec lays out against its own `size`, but the built panel
-        # is whatever model the DONOR is - the spec's `model` only feeds the
-        # touch-target check. Author 1024x600 into a 1280x800 project and the
-        # layout is right by its own arithmetic and wrong on the panel.
+        # is whatever the DONOR is. Author 1024x600 into a 1280x800 project and
+        # the layout is right by its own arithmetic and wrong on the panel.
         canvas = collections.Counter(
             tuple(pg['size']) for pg in proj.pages()
             if pg.get('kind') != 'popup' and pg.get('size'))
@@ -1631,10 +2100,16 @@ class Panel:
                                        f"{want!r} is neither in the spec's `images` nor "
                                        f'defined in {path}')
 
+        # Names can collide only with the donor's pages and popups that are
+        # still there: every one, for a spec that keeps them; otherwise the
+        # Offline Page, which the applier keeps when it drops the rest.
+        keep = bool(self.spec.get('keep_donor_pages'))
+        taken = kept_names(proj.pages(), keep)
         for it in list(self.pages) + list(self.popups):
-            if it['name'] in names:
-                out.append(f"{it['name']!r} already exists in the donor project - page and "
-                           f'popup names must be unique, and Build rejects duplicates')
+            if it['name'] in taken:
+                out.append(f"{it['name']!r} already exists in the donor project - page "
+                           f'and popup names must be unique, and Build rejects duplicates'
+                           + ('' if keep else " (the applier keeps the donor's Offline Page)"))
         return out
 
     def needs(self):
@@ -1642,14 +2117,25 @@ class Panel:
         return {KIND_TYPE.get(c.get('kind', 'panel'), 'PBShape')
                 for pg in self.pages + self.popups for c in pg['controls']}
 
+    def border_swaps(self, defined):
+        """{border resource this spec names: the one to build it as} for each
+        that `defined` - a donor's border resources - lacks and has one of the
+        same shape for (nearest_border)."""
+        out = {}
+        for want in sorted(self.needs_borders() - set(defined)):
+            sub = nearest_border(want, defined)
+            if sub:
+                out[want] = sub
+        return out
+
     def needs_borders(self):
         """Every named border RESOURCE this spec references, already resolved.
 
-        A spec may only point at a resource the donor already carries - creating
-        one has never been tested against GUI Designer - so which donor you use
-        decides which borders are available. That varies far more than it looks:
-        the client fixture carries 32 and a fresh themed project carries 6.
-        `2D Capsule` is in the first and not the second.
+        A plan may only point at a resource the donor carries - creating one
+        has never been tested against GUI Designer - so which donor you use
+        decides which borders a spec's names are built as: its own where it
+        has them, else its nearest shape (border_swaps). Every project defines
+        GUI Designer's 13 built-ins; the themed seeds carry 13 to 31 in all.
         """
         out = set()
         for pg in self.pages + self.popups:
@@ -1724,15 +2210,59 @@ class Panel:
                    for s in specs)
 
 
+def _icons_command(family, sheet=None):
+    """Every glyph a family's icon face draws, by codepoint and by the name the
+    face gives it, if any - and with `sheet`, the glyphs drawn to pick from by
+    eye, which is the only way into a face that names nothing."""
+    from .fonts import ICON_FONTS, icon_face
+    key = next((k for k in ICON_FONTS if k.lower() == family.lower()), None)
+    if key and not ICON_FONTS[key]:
+        print(f'{key} has no icon font - its template draws its icons as images '
+              f'(docs/design-rules.md section 6)')
+        return 1
+    font = ICON_FONTS[key] if key else family
+    from .sfnt import Advances
+    data, where = icon_face(font)
+    if not data:
+        print(f'no {font} face here: it is not recovered into gdl/fonts/'
+              + (f', and seeds/{key} 1035.gdl is not pulled - git lfs pull --include '
+                 f'"seeds/{key} 1035.gdl"' if key else ''))
+        return 1
+    face = Advances(data)
+    names = {cp: n for n, cp in face.glyph_names().items()}
+    cps = sorted(c for c, g in face.cmap.items() if c > 0x20 and g)
+    for cp in cps:
+        print(f'  U+{cp:04X}  {names.get(cp, "")}'.rstrip())
+    print(f'{len(cps)} glyph(s) in {font}, {len(names) or "none"} named, from {where}'
+          + ('' if names or not cps else ' - an icon gives its codepoint, as "U+%04X"' % cps[0]))
+    if sheet:
+        from .compose import glyph_sheet          # Pillow
+        glyph_sheet(data, sheet)
+        print(f'drawn -> {sheet}')
+    return 0
+
+
 def main(argv):
+    # A report quotes the spec back - a caption, a room name - and a Windows
+    # stdout redirected to a file encodes cp1252, which has none of most of
+    # that: escape what it cannot take rather than crash mid-report.
+    try:
+        sys.stdout.reconfigure(errors='backslashreplace')
+    except (AttributeError, ValueError):
+        pass
     if len(argv) < 3:
         print(__doc__.strip().split('\n\n')[0])
         print('\n  python -m gdl.spec render <spec.json> <out.png> [page]'
               '\n  python -m gdl.spec check  <spec.json>'
-              '\n  python -m gdl.spec plan   <spec.json> <plan.json>'
-              '\n  python -m gdl.spec donors <spec.json> <donor.gdl|template.glt>')
+              '\n  python -m gdl.spec plan   <spec.json> <plan.json> [--donor <donor.gdl>]'
+              '\n  python -m gdl.spec donors <spec.json> [<donor.gdl>|--auto]  (--auto: the'
+              '\n      seed for the spec\'s "family", model and canvas - the default)'
+              '\n  python -m gdl.spec icons  <family or icon font> [sheet.png]'
+              '   (what an "icon" takes; the sheet draws them)')
         return 2
     cmd, path = argv[1], argv[2]
+    if cmd == 'icons':
+        return _icons_command(path, argv[3] if len(argv) > 3 else None)
     panel = Panel.load(path)
     problems = panel.check()
     if cmd == 'check':
@@ -1742,23 +2272,79 @@ def main(argv):
               f'{sum(len(p["controls"]) for p in panel.pages)} controls')
         return 1 if problems else 0
     if cmd == 'donors':
-        problems = panel.check_donor(argv[3])
+        donor = argv[3] if len(argv) > 3 else '--auto'
+        if donor == '--auto':
+            # The seed for the spec's family, model and canvas (gdl.seeds).
+            from . import seeds
+            picked, why = seeds.for_spec(panel.spec)
+            if not picked:
+                print('  ' + why)
+                return 1
+            print(f'donor: {picked}')
+            donor = seeds.path(picked)
+        swaps, fonts = {}, {}
+        problems = panel.check_donor(donor, swaps=swaps, fonts=fonts)
         for p in problems:
             print('  ' + p)
+        for want, got in swaps.items():
+            print(f'  border {want!r} is not in {donor}: built as {got!r}, its nearest '
+                  f'(plan --donor writes it)')
+        for want, face in fonts.items():
+            print(f"  font {want!r} is not in {donor}: appended from {face['carrier']} "
+                  f'(plan --donor writes it)')
         print(f'{len(panel.needs())} control type(s) needed: '
               f'{", ".join(sorted(panel.needs()))}')
         print(f'{len(problems)} donor problem(s)')
         return 1 if problems else 0
     if cmd == 'plan':
+        # <plan.json> and --donor <gdl>, in either order. A misplaced --donor
+        # was taken for the plan path, and a plan named '--donor' written.
+        out_path, donor, rest = None, None, list(argv[3:])
+        while rest:
+            a = rest.pop(0)
+            if a == '--donor' and rest and not rest[0].startswith('--'):
+                donor = rest.pop(0)
+            elif a.startswith('--') or out_path is not None:
+                out_path = None
+                break
+            else:
+                out_path = a
+        if out_path is None or rest:
+            print('  python -m gdl.spec plan <spec.json> <plan.json> [--donor <donor.gdl>]')
+            return 2
         if problems:
             for p in problems:
                 print('  ' + p)
             return 1
-        plan = panel.plan()
-        with open(argv[3], 'w', encoding='utf-8') as fh:
+        swaps, fonts, art = {}, [], {}
+        if donor:
+            # What `donors` says it does (check_donor): the borders the donor
+            # lacks, built as its own nearest, and the faces it lacks that a
+            # seed carries, written beside the plan for the applier to append.
+            # Its problems are `donors`' to refuse; this writes what it can.
+            from .fonts import _file_name
+            faces = {}
+            panel.check_donor(donor, swaps=swaps, fonts=faces, art=art)
+            for want, got in swaps.items():
+                print(f'  border {want!r} is built as {got!r}, the nearest {donor} has')
+            for want, face in faces.items():
+                # As the carrier records it: Arial Black, a face GUI Designer
+                # supplies, has no file names and declares 28 bytes past its data.
+                where = os.path.join(os.path.dirname(os.path.abspath(out_path)), 'fonts',
+                                     _file_name(face))
+                os.makedirs(os.path.dirname(where), exist_ok=True)
+                with open(where, 'wb') as fh:
+                    fh.write(face['bytes'])
+                fonts.append({'family': face['family'], 'style': face['style'], 'file': where,
+                              'embedded': face['file'], 'source': face['source'],
+                              'size': face['size'] or len(face['bytes']), 'default': face['default'],
+                              'author': face['author'], 'carrier': face['carrier']})
+                print(f"  font {want!r} is appended to it from {face['carrier']}")
+        plan = panel.plan(swaps, fonts, art)
+        with open(out_path, 'w', encoding='utf-8') as fh:
             json.dump(plan, fh, indent=1)
         print(f'{len(plan["pages"])} page(s), '
-              f'{sum(len(p["controls"]) for p in plan["pages"])} control ops -> {argv[3]}')
+              f'{sum(len(p["controls"]) for p in plan["pages"])} control ops -> {out_path}')
         return 0
     if cmd == 'render':
         if problems:

@@ -5,6 +5,10 @@
             -Donor "seeds\Afterburn 1035.gdl" `
             -Output C:\gdlwork\Boardroom.gdl
 
+    Without -Donor it builds on the seed for the spec's "family", model and
+    canvas (python -m gdl.seeds pick), and refuses with the line that makes the
+    seed when there is none.
+
     Everything the Windows half used to need a person for:
 
         check -> donors -> plan -> apply -> pack -> open -> Save and Build
@@ -42,7 +46,7 @@
 #>
 param(
     [Parameter(Mandatory)][string]$Spec,
-    [Parameter(Mandatory)][string]$Donor,
+    [string]$Donor,
     [Parameter(Mandatory)][string]$Output,
     [string]$IdMap,
     [string]$Work,
@@ -56,19 +60,17 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 $ps32 = 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe'
 $gd = Join-Path $InstallDir 'GUI Designer.exe'
+. (Join-Path $PSScriptRoot 'GdlBlocker.ps1')
 
 if (-not (Test-Path $ps32)) { throw "32-bit PowerShell 5.1 not found at $ps32" }
 if (-not (Test-Path $gd))   { throw "GUI Designer not found at $gd" }
-foreach ($p in @($Spec, $Donor)) {
-    if (-not (Test-Path $p)) { throw "not found: $p" }
-}
-
-$Spec   = (Resolve-Path $Spec).Path
-$Donor  = (Resolve-Path $Donor).Path
+if (-not (Test-Path $Spec)) { throw "not found: $Spec" }
+$Spec = (Resolve-Path $Spec).Path
 # Relative to where the shell is, as for any cmdlet. [IO.Path]::GetFullPath uses
 # the process's own directory, which `cd` does not move in Windows PowerShell,
 # so in a shell started elsewhere a relative -Output built the panel there. All
-# of them before Push-Location $repo below, which moves what this reads.
+# of them before any Push-Location $repo - the seed pick's below as much as the
+# build's - which moves what this reads.
 $Output = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Output)
 if ($IdMap) { $IdMap = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($IdMap) }
 
@@ -78,6 +80,18 @@ if (-not $Work) {
     $Work = Join-Path 'C:\gdlwork' ([System.IO.Path]::GetFileNameWithoutExtension($Output))
 }
 $Work = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Work)
+
+if (-not $Donor) {
+    # The seed for the spec's "family", model and canvas, from the repo root,
+    # where gdl imports.
+    Push-Location $repo
+    try { $picked = & $Python -m gdl.seeds pick $Spec } finally { Pop-Location }
+    if ($LASTEXITCODE -ne 0) { throw "no seed to build on: $($picked -join [Environment]::NewLine)" }
+    $Donor = Join-Path $repo ([string]$picked).Trim()
+    Write-Output "donor: $Donor"
+}
+if (-not (Test-Path $Donor)) { throw "not found: $Donor" }
+$Donor = (Resolve-Path $Donor).Path
 
 # This used to be `Remove-Item $Work -Recurse -Force`, and it deleted the spec it
 # was about to build. -Output C:\gdlwork\huddle\Huddle.gdl derives a work
@@ -133,11 +147,12 @@ try {
         Run $Python @('-m', 'gdl.idmap', 'check', $Spec) 'ID map check'
     }
 
-    Step 'donor check - every cloned type available, no page name collision'
+    Step 'donor check - every cloned type available, no name the built panel keeps'
     Run $Python @('-m', 'gdl.spec', 'donors', $Spec, $Donor) 'donor check'
 
     Step 'plan'
-    Run $Python @('-m', 'gdl.spec', 'plan', $Spec, $plan) 'plan'
+    # Against the donor: a border it lacks is planned as its own nearest.
+    Run $Python @('-m', 'gdl.spec', 'plan', $Spec, $plan, '--donor', $Donor) 'plan'
 
     Step 'extract the donor'
     Run $Python @('-m', 'gdl.container', 'extract', $Donor, $Work) 'extract'
@@ -166,20 +181,17 @@ try {
         # Get-Process caches the title; without Refresh it reads 'GUI Designer'
         # forever and this loop never exits.
         if ($proc) { $proc.Refresh() }
+        # A dialog that waits on a person - an Extron Insider login - does not
+        # go away by itself, so say which now rather than in three minutes.
+        $why = Get-GdlBlocker
+        if ($why) { throw "GUI Designer did not open ${leaf}: $why" }
     } while ((-not $proc -or $proc.MainWindowTitle -notlike "*$leaf*") -and (Get-Date) -lt $deadline)
     if (-not $proc -or $proc.MainWindowTitle -notlike "*$leaf*") {
-        # Distinguish "slow" from "refused". GUI Designer does not report a file
-        # it declines to open - it comes up empty and shows the Project Create
-        # Wizard, which from out here looks identical to a hang. The usual cause
-        # is a donor with no PBProject (a .glt template is a page library, not a
-        # project); `gdl.spec donors` now catches that at step 2.
-        $wizard = $null -ne (Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue)
-        $hint = if ($wizard) {
-            " GUI Designer is running but has not opened it - check for a Project " +
-            "Create Wizard on screen, which means it rejected the file rather than " +
-            "being slow."
-        } else { '' }
-        throw "GUI Designer did not open $leaf within 180s.$hint"
+        # Slow or refused: what it shows says which. Handed a donor with no
+        # PBProject (a .glt template is a page library, not a project) it came
+        # up empty, showing the Project Create Wizard; `gdl.spec donors` now
+        # catches that at step 2.
+        throw "GUI Designer did not open $leaf within 180s.$(Get-GdlShowing -Opening)"
     }
     Write-Output "  $($proc.MainWindowTitle)"
 
@@ -222,8 +234,8 @@ try {
         Run $Python @('-m', 'gdl.idmap', 'write', $Spec, $IdMap) 'ID map'
 
         Step 'verify the ID map against the build'
-        # Build renumbers pages and keeps the donor's alongside, so the names and
-        # IDs a programmer will work from are checked against what was built.
+        # Build renumbers pages, so the names and IDs a programmer will work
+        # from are checked against what was built.
         Run $Python @((Join-Path $repo 'tests\verify_idmap.py'), $IdMap, $Output) `
             'ID map verification'
     }

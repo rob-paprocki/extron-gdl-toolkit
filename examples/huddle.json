@@ -1,6 +1,7 @@
 {
   "name": "Huddle Room",
   "model": "TLP1035T",
+  "family": "Afterburn",
   "size": [1280, 800],
 
   "_brief": "Written straight from a prose brief: 'A huddle room panel for a 1035T. Dark, big and simple - non-technical users. Top bar with the room name and whether a call is active. Three large source buttons across the middle. A volume row. And a red End Call button bottom-right, clearly separated.' Kept as an example because building it found two bugs the worked example could not: the applier never set the font (every size fell back to the donor), and a spec was read in the locale codepage, so the en-dash on the volume-down button arrived as mojibake. Both are gated now.",

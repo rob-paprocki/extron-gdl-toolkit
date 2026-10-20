@@ -20,34 +20,12 @@ from .container import open_gdl
 from .data import popup_ref  # noqa: E402
 
 PT = 1.375           # 99 DPI, per the glyph-outline measurements
-FONTDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts')
 
-# family + bold/italic -> the actual binary
-FILES = {
-    ('Arial', 0, 0): 'arial.ttf', ('Arial', 1, 0): 'arialbd.ttf',
-    ('Arial', 0, 1): 'ariali.ttf', ('Arial', 1, 1): 'arialbi.ttf',
-    ('Arial Black', 0, 0): 'ariblk.ttf',
-    ('Open Sans', 0, 0): 'opensans-regular.ttf',
-    ('Open Sans Light', 0, 0): 'opensans-light.ttf',
-    ('Forma DJR Display', 0, 0): 'formadjrdisplay-regular_1.otf',
-    ('Extron-Afterburn', 0, 0): 'afterburn_modified.ttf',
-    ('Crestron General', 0, 0): 'crestron_general.ttf',
-    ('Extron GUIC Video Conference 1', 0, 0): 'extron_guic_video_conference_1.ttf',
-}
-# Some faces are embedded under different EmbeddedFileNames in different
-# projects: the _alt fixtures ship Afterburn as extron_-_afterburn_1a.ttf. Miss
-# these and the face silently falls back to Arial, which is easy not to notice.
-ALIASES = {
-    'afterburn_modified.ttf': ['extron_-_afterburn_1a.ttf'],
-    # The system faces ship under Windows 8.3-ish names on Windows and spelled-out
-    # ones on macOS. Without these, every Arial variant quietly resolves to plain
-    # Arial off Windows - the bold and the black would render as regular.
-    'arial.ttf': ['Arial.ttf'],
-    'arialbd.ttf': ['Arial Bold.ttf'],
-    'ariali.ttf': ['Arial Italic.ttf'],
-    'arialbi.ttf': ['Arial Bold Italic.ttf'],
-    'ariblk.ttf': ['Arial Black.ttf'],
-}
+# family + bold/italic -> the file it is recovered as, and the other names a
+# face is embedded under, and where. One table, in gdl/fonts.py: a spec reads
+# its icons' glyph names from the same files without Pillow. FONTDIR is bound
+# here too, so a test can point the renderer elsewhere.
+from .fonts import ALIASES, FILES, FONTDIR, seed_face  # noqa: E402
 # Fallback only. Arial and Arial Black ARE embedded in the .gdl - every fixture
 # and every Extron template carries Monotype Arial 5.10 and Arial Black 5.06 -
 # so `python -m gdl.fonts` puts them in FONTDIR and this list is never reached.
@@ -63,8 +41,9 @@ SYSFONTS = (
 WINFONTS = SYSFONTS[0]          # kept: referenced by name elsewhere
 _cache = {}
 _sysindex = None
-# Every face drawn in anything but its own recovered file, for a caller to say
-# so: on a checkout that never ran `python -m gdl.fonts`, every face falls back
+# Every face drawn in a stand-in - neither its own recovered file nor, for an
+# icon face, its seed's - for a caller to say so: on a checkout that never ran
+# `python -m gdl.fonts`, every face falls back
 # to the host's Arial and the render baseline scores 2.81% for 2.19% - silently,
 # since a fallback is not an error - and after a partial recovery each missing
 # face draws in the recovered Arial instead. tests/score.py refuses to record
@@ -98,6 +77,14 @@ def face(name, bold, italic, px):
     own = [c for c in [primary] + ALIASES.get(primary or '', []) if c]
     candidates = own + [c for c in ['arial.ttf'] if c not in own]
     for fn in candidates:
+        if fn not in own:
+            # Before anything stands in: an icon face no recovery put here,
+            # read straight out of its family's seed. Recovering a Mach or
+            # Shockwave seed would replace the Monotype Arial here with theirs.
+            data = seed_face(name)[0]
+            if data:
+                f = _cache[key] = ImageFont.truetype(io.BytesIO(data), size=px)
+                return f
         p = os.path.join(FONTDIR, fn)
         if os.path.exists(p):
             if fn not in own:
@@ -151,7 +138,8 @@ def advances(fnt):
     path = getattr(fnt, 'path', None)
     if path not in _adv:
         try:
-            _adv[path] = sfnt.Advances(path)
+            # A face read out of a seed (face()) is opened from memory.
+            _adv[path] = sfnt.Advances(path.getvalue() if isinstance(path, io.BytesIO) else path)
         except Exception:
             # A face we cannot parse falls back to Pillow's own measurement
             # rather than failing the render.
@@ -522,6 +510,27 @@ def load(path):
     j = json.loads(inner.read('layout.json'))
     assets = {int(n[:-4]): inner.read(n) for n in inner.namelist() if n.endswith('.png')}
     return j, assets
+
+
+def glyph_sheet(data, out, cols=10, cell=96):
+    """Every glyph a face draws - its bytes - ten to a row, each with its
+    codepoint and the name the face gives it: how an icon is picked out of a
+    face that names nothing (python -m gdl.spec icons)."""
+    face = sfnt.Advances(data)
+    cps = sorted(c for c, g in face.cmap.items() if c > 0x20 and g)
+    names = {cp: n for n, cp in face.glyph_names().items()}
+    img = Image.new('RGB', (cols * cell, max(1, -(-len(cps) // cols)) * cell), (27, 29, 38))
+    d = ImageDraw.Draw(img)
+    glyph = ImageFont.truetype(io.BytesIO(data), cell // 2)
+    label = ImageFont.load_default()
+    for i, cp in enumerate(cps):
+        x, y = i % cols * cell, i // cols * cell
+        d.rectangle([x + 2, y + 2, x + cell - 3, y + cell - 3], outline=(58, 62, 82))
+        d.text((x + cell // 2, y + cell * 2 // 5), chr(cp), font=glyph, fill='white', anchor='mm')
+        d.text((x + 6, y + cell - 26), f'U+{cp:04X}', font=label, fill=(154, 160, 184))
+        if cp in names:
+            d.text((x + 6, y + cell - 14), names[cp][:14], font=label, fill=(154, 160, 184))
+    img.save(out)
 
 
 def diff_stats(a, b):

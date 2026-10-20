@@ -1,0 +1,46 @@
+{
+  "name": "Icon Sources",
+  "_why": "Icon-font glyphs by name and by codepoint (SKILL.md, Icons): a source row whose icons are Extron-Afterburn's own names with the words on a label beneath, a mute whose two states are two glyphs, and Home by codepoint.",
+  "family": "Afterburn",
+  "model": "TLP1035T",
+  "size": [1280, 800],
+  "theme": {
+    "background": "#12131C",
+    "surface": "#242634",
+    "raised": "#2E3142",
+    "accent": "#3D8BFD",
+    "text": "#FFFFFF",
+    "muted": "#BABCCE",
+    "font": "Open Sans",
+    "size": 16,
+    "on": "accent"
+  },
+  "pages": [
+    {
+      "name": "Sources",
+      "number": 1000,
+      "start": true,
+      "controls": [
+        {"kind": "panel", "name": "Header", "rect": [0, 0, 1280, 96], "fill": "surface", "border": "rect"},
+        {"kind": "button", "name": "Home", "rect": [24, 16, 64, 64], "icon": "U+E926", "size": 28,
+         "fill": "raised", "border": "afterburn"},
+        {"kind": "label", "name": "Title", "rect": [112, 24, 600, 48], "text": "Sources", "size": 24,
+         "align": "left"},
+        {"kind": "button", "name": "Power", "rect": [1192, 16, 64, 64], "icon": "power", "size": 28,
+         "fill": "raised", "border": "afterburn"},
+        {"grid": {"rect": [104, 200, 1072, 220], "cols": 4, "gap": 48, "kind": "button", "size": 72,
+                  "fill": "raised", "border": "afterburn",
+                  "states": [{"name": "Off"}, {"name": "On", "fill": "accent"}],
+                  "items": [{"name": "Laptop", "icon": "laptop"}, {"name": "PC", "icon": "pc"},
+                            {"name": "CableTV", "icon": "cable_tv"}, {"name": "Bluray", "icon": "bluray"}]}},
+        {"grid": {"rect": [104, 432, 1072, 40], "cols": 4, "gap": 48, "kind": "label", "color": "muted",
+                  "items": [{"name": "LaptopLabel", "text": "Laptop"}, {"name": "PCLabel", "text": "Room PC"},
+                            {"name": "CableTVLabel", "text": "Cable TV"}, {"name": "BlurayLabel", "text": "Blu-ray"}]}},
+        {"kind": "button", "name": "MicMute", "rect": [560, 560, 160, 160], "size": 56,
+         "fill": "raised", "border": "afterburn",
+         "states": [{"name": "Off", "icon": "mic_level_2"}, {"name": "On", "icon": "mic_mute_1", "fill": "accent"}]},
+        {"kind": "label", "name": "MicLabel", "rect": [520, 728, 240, 40], "text": "Microphone", "color": "muted"}
+      ]
+    }
+  ]
+}

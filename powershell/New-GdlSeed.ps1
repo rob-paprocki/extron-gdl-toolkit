@@ -5,10 +5,21 @@
         powershell\New-GdlSeed.ps1 -PanelType 'TLP Pro 725T' -ListThemes
         powershell\New-GdlSeed.ps1 -PanelType 'TLP Pro 725T' -Model TLP725T `
             -Theme 'Afterburn' -Output 'seeds\Afterburn 725.gdl'
+        powershell\New-GdlSeed.ps1 -PanelType 'TLP Pro 300M' -Model TLP300M `
+            -Theme 'Afterburn' -Resolution '480x320' -Output 'seeds\Afterburn 300M Landscape.gdl'
 
     -List prints what Panel Type offers; -ListThemes what Theme offers once a
-    panel is chosen. Names are the wizard's own, exactly. -Output is relative to
-    where the shell is, or absolute: its folder must exist and the file must not.
+    panel is chosen (and turned, with -Resolution). Names are the wizard's own,
+    exactly. -Output is relative to where the shell is, or absolute: its folder
+    must exist and the file must not.
+
+    -Resolution 'WxH' turns a panel that rotates (gdl.spec.sizes): the wizard
+    shows a Resolution combo for one, '1280 x 800  (Landscape)' and
+    '800 x 1280  (Portrait)', starting at the panel's default. A theme is
+    offered only where a template is drawn that way up (docs/design-rules.md
+    section 1 has which), so the Theme radio may be disabled, which stops the
+    script before Create. -List ignores it; a value that is not WxH is refused
+    with the other bad arguments, before GUI Designer is touched.
 
     Only a real click commits a combo. ValuePattern.SetValue and
     SelectionItemPattern.Select both leave the wizard reading right and
@@ -31,15 +42,17 @@
 
     Exit codes: 0 made and verified; 2 bad arguments; 3 a name the wizard does
     not offer (it prints what it does); 4 a click that did not take; 5 GUI
-    Designer or a dialog did not appear; 6 the verifier could not run; 7 it
-    did not build; the verifier's code if it refused. On 6, 7 and a refusal the
-    saved file is removed, and so is one that Save As left unfinished (5).
+    Designer or a dialog did not appear, or one waits on a person (it says
+    which - GdlBlocker.ps1); 6 the verifier could not run; 7 it did not build;
+    the verifier's code if it refused. On 6, 7 and a refusal the saved file is
+    removed, and so is one that Save As left unfinished (5).
 #>
 param(
     [string]$PanelType,
     [string]$Model,
     [string]$Theme,
     [string]$Application,
+    [string]$Resolution,
     [string]$Output,
     [switch]$List,
     [switch]$ListThemes,
@@ -79,10 +92,18 @@ if (-not $List) {
         }
         if (Test-Path -LiteralPath $Output) { Write-Output "$Output exists - not overwriting a seed"; exit 2 }
     }
+    # Its form is checked here, before GUI Designer is closed and relaunched;
+    # only whether the wizard offers that canvas has to wait for the wizard.
+    # docs/design-rules.md writes a canvas with the times sign, so that reads too
+    # (as ×: Windows PowerShell reads a script without a BOM as ANSI).
+    if ($Resolution -and $Resolution -notmatch '^\s*(\d+)\s*[x×]\s*(\d+)\s*$') {
+        Write-Output "-Resolution '$Resolution' is not WxH, as '480x320'"; exit 2
+    }
 }
 
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+. (Join-Path $PSScriptRoot 'GdlBlocker.ps1')
 Add-Type @"
 using System; using System.Text; using System.Collections.Generic; using System.Runtime.InteropServices;
 [StructLayout(LayoutKind.Sequential)] public struct SeedPt { public int X; public int Y; }
@@ -259,10 +280,18 @@ function Get-Items($combo) {
         # The open dropdown is a window of its own; the wizard's own lists are not it.
         foreach ($w in Get-GdWindows) {
             if ($w.Current.Name -eq 'Project Create Wizard') { continue }
+            $wr = $w.Current.BoundingRectangle
             foreach ($li in $w.FindAll($TS::Descendants, $cond)) {
                 $r = $li.Current.BoundingRectangle
-                $out += [pscustomobject]@{ Name = $li.Current.Name
-                                           X = [int]($r.X + $r.Width / 2); Y = [int]($r.Y + $r.Height / 2) }
+                # An item scrolled out of a virtualised list can have no
+                # rectangle at all, whose infinities [int] refuses: it is off,
+                # with no point to click until it is scrolled into view.
+                $x = 0; $y = 0
+                if (-not $r.IsEmpty) { $x = [int]($r.X + $r.Width / 2); $y = [int]($r.Y + $r.Height / 2) }
+                # Out of view: below (or above) the dropdown's own rows.
+                $off = $li.Current.IsOffscreen -or $r.IsEmpty -or
+                       $x -lt $wr.Left -or $x -gt $wr.Right -or $y -lt $wr.Top -or $y -gt $wr.Bottom
+                $out += [pscustomobject]@{ Name = $li.Current.Name; X = $x; Y = $y; El = $li; Off = $off }
             }
         }
     }
@@ -288,6 +317,29 @@ function Select-ComboItem($name, $item) {
         Close-Combo $combo
         Stop-Gd; exit 3
     }
+    if ($hit.Off) {
+        # 'TLP Pro 1525TG', 46th of the 56 panel types, lies below the open
+        # list's rows: a click at the point it is drawn misses the list and the
+        # combo still reads 'Select Your Panel'. Scrolled into view first -
+        # by the item, else by the list - and found again where it now is.
+        $done = $false
+        try {
+            $hit.El.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern).ScrollIntoView()
+            $done = $true
+        } catch { }
+        if (-not $done) {
+            $list = [System.Windows.Automation.TreeWalker]::ControlViewWalker.GetParent($hit.El)
+            try {
+                $sp = $list.GetCurrentPattern([System.Windows.Automation.ScrollPattern]::Pattern)
+                $at = [array]::IndexOf(@($items | ForEach-Object Name), $item)
+                $sp.SetScrollPercent([System.Windows.Automation.ScrollPattern]::NoScroll,
+                                     [math]::Min(100, 100 * $at / [math]::Max(1, $items.Count - 1)))
+            } catch { }
+        }
+        Start-Sleep -Milliseconds 600
+        $r = $hit.El.Current.BoundingRectangle
+        $hit = [pscustomobject]@{ Name = $hit.Name; X = [int]($r.X + $r.Width / 2); Y = [int]($r.Y + $r.Height / 2) }
+    }
     Invoke-Click $hit.X $hit.Y
     Start-Sleep -Seconds 2
     $v = (Get-Combo $name).GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
@@ -296,6 +348,31 @@ function Select-ComboItem($name, $item) {
         Stop-Gd; exit 4
     }
     Write-Output "  $name $v"
+}
+
+function Select-Resolution($wanted) {
+    # 'WxH' -> the wizard's own item, '480 x 320  (Landscape)'. Matched on the
+    # numbers, since the item also says which way up and spaces it its own way.
+    # The form was checked with the arguments.
+    $null = $wanted -match '^\s*(\d+)\s*[x×]\s*(\d+)\s*$'
+    $pattern = "^\s*$($Matches[1])\s*x\s*$($Matches[2])\b"
+    $combo = Get-Combo 'Resolution:'
+    $items = Get-Items $combo
+    $hit = $items | Where-Object { $_.Name -match $pattern } | Select-Object -First 1
+    if (-not $hit) {
+        Write-Output "'$wanted' is not offered under 'Resolution:'. It offers:"
+        $items | ForEach-Object { Write-Output "  $($_.Name)" }
+        Close-Combo $combo
+        Stop-Gd; exit 3
+    }
+    Invoke-Click $hit.X $hit.Y
+    Start-Sleep -Seconds 2
+    $v = (Get-Combo 'Resolution:').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
+    if ($v -ne $hit.Name) {
+        Write-Output "clicked '$($hit.Name)' under 'Resolution:' but it reads '$v'"
+        Stop-Gd; exit 4
+    }
+    Write-Output "  Resolution: $v"
 }
 
 function Click-Named($name) {
@@ -307,6 +384,18 @@ function Click-Named($name) {
     Invoke-Click ([int]($r.X + $r.Width / 2)) ([int]($r.Y + $r.Height / 2))
 }
 
+# A dialog GUI Designer waits on a person behind - an Extron Insider login
+# (GdlBlocker.ps1) - does not go away by itself: end the run now, saying which,
+# rather than at a deadline that says only that something did not appear.
+function Stop-IfBlocked([scriptblock]$cleanup) {
+    $why = Get-GdlBlocker
+    if (-not $why) { return }
+    Write-Output $why
+    Stop-Gd
+    if ($cleanup) { Start-Sleep -Seconds 1; & $cleanup }
+    exit 5
+}
+
 function Wait-For([scriptblock]$test, [int]$seconds, [string]$what, [scriptblock]$cleanup) {
     $deadline = (Get-Date).AddSeconds($seconds)
     while ((Get-Date) -lt $deadline) {
@@ -314,9 +403,10 @@ function Wait-For([scriptblock]$test, [int]$seconds, [string]$what, [scriptblock
         # poll that found nothing yet, not a failure.
         try { $r = & $test } catch { $r = $null }
         if ($r) { return $r }
+        Stop-IfBlocked $cleanup
         Start-Sleep -Milliseconds 700
     }
-    Write-Output "$what did not appear within $seconds s"
+    Write-Output "$what did not appear within $seconds s.$(Get-GdlShowing)"
     Stop-Gd
     # With GUI Designer gone nothing holds a half-written file open; give it a second to let go.
     if ($cleanup) { Start-Sleep -Seconds 1; & $cleanup }
@@ -344,7 +434,10 @@ Start-Process -FilePath $gd
 # with no combos or hangs. So wait for its own, and use the menu only if none
 # comes.
 $deadline = (Get-Date).AddSeconds(180)
-while (-not (Get-Wizard) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 700 }
+while (-not (Get-Wizard) -and (Get-Date) -lt $deadline) {
+    Stop-IfBlocked
+    Start-Sleep -Milliseconds 700
+}
 if (-not (Get-Wizard)) {
     # Invoke blocks on the modal and times out; the wizard opens regardless.
     & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
@@ -361,6 +454,8 @@ if ($List) {
 }
 
 Select-ComboItem 'Panel Type:' $PanelType
+# Before the theme: what Theme offers depends on which way up the panel is.
+if ($Resolution) { Select-Resolution $Resolution }
 
 if ($ListThemes) {
     $combo = Get-Combo 'Theme:'
@@ -387,11 +482,21 @@ if (Save-Shot $shot) { Write-Output "wizard as created: $shot" }
 else { Write-Output 'no screenshot of the wizard (screen capture failed); the verifier still checks the result' }
 
 Click-Named 'Create'
+# Create builds the project from the series template behind a "Please Wait...
+# Updating References" dialog: the Mach 1020's outlasted a 180 s wait twice, with
+# two reviews running beside it, where the Afterburn seeds' had come in under it,
+# and the Turbulence 720's outlasted 900 s with tests running beside it.
+# A GUI Designer that is gone will make no project, so that ends the wait at once.
 $proc = Wait-For {
     $p = Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($p) { $p.Refresh() }   # MainWindowTitle is cached until Refresh
-    if ($p -and $p.MainWindowTitle -like 'GUI Designer - `[*') { $p }
-} 180 'the new project'
+    if (-not $p) { return 'gone' }
+    $p.Refresh()   # MainWindowTitle is cached until Refresh
+    if ($p.MainWindowTitle -like 'GUI Designer - `[*') { $p }
+} 1800 'the new project'
+if ($proc -is [string]) {
+    Write-Output 'GUI Designer closed during Create - there is no new project'
+    exit 5
+}
 Write-Output "  $($proc.MainWindowTitle)"
 
 # -- save it --------------------------------------------------------------------
@@ -410,6 +515,7 @@ while (((Get-Date) - $t0).TotalSeconds -lt 180) {
         }
         if ($main -and $main.FindFirst($TS::Descendants, (New-Cond 'File' $CT::MenuItem))) { break }
     } catch { }   # a window closed mid-walk; look again
+    Stop-IfBlocked
     Start-Sleep -Seconds 2
 }
 Write-Output ("  menu bar after {0:N0} s" -f ((Get-Date) - $t0).TotalSeconds)
@@ -468,9 +574,31 @@ Write-Output "saved $Output"
 # seed is built, as every hand-made one is. By the menu through UI Automation,
 # which needs no focus, and waited on as New-GdlPanel.ps1 waits (from-scratch.md
 # section 7): the baseline is taken first, since the invoke blocks on the build.
+# Not before GUI Designer answers again, though: after saving the Mach 725 it
+# was Not Responding, and a hung window shows UI Automation no menu - the one
+# try at Save and Build found none and the seed was deleted as unbuilt.
+$t1 = Get-Date
+$answered = $false
+while (((Get-Date) - $t1).TotalSeconds -lt 300) {
+    $p = Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $p) { break }
+    $p.Refresh()
+    if ($p.Responding) { $answered = $true; break }
+    Start-Sleep -Seconds 2
+}
+# Said either way: a GUI Designer that never answered fails the menu below as
+# one that did not build, which would hide why.
+$waited = ((Get-Date) - $t1).TotalSeconds
+if ($answered) { Write-Output ("  answering after {0:N0} s" -f $waited) }
+elseif (-not $p) { Write-Output '  GUI Designer is gone - it closed after Save As' }
+else { Write-Output ("  GUI Designer did not answer within {0:N0} s - trying its menu anyway" -f $waited) }
 $buildFrom = (Get-Item $Output).LastWriteTime
-& "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
-    -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'Save and Build' | ForEach-Object { "  menu: $_" }
+for ($try = 1; $try -le 3; $try++) {
+    & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
+        -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'Save and Build' | ForEach-Object { "  menu: $_" }
+    if ($LASTEXITCODE -eq 0) { break }
+    Start-Sleep -Seconds 5
+}
 $built = $LASTEXITCODE -eq 0
 if ($built) {
     & "$env:WINDIR\SysWOW64\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `

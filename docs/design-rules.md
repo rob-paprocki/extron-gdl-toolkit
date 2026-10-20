@@ -29,12 +29,15 @@ Control Pro (ECP) is new**. A count check would have missed the swap.
 | 320 × 240 | TLP Pro 320C, TLP Pro 320M |
 | 320 × 480, and 480 × 320 | TLP Pro 300M - either way up (`gdl.spec.ORIENTATIONS`) |
 | 800 × 480 | **TLC** Pro 521M, **TLC** Pro 526M, TLP Pro 520M, TLP Pro 525C/M/T, TLP Pro 720C/M/T |
+| 480 × 800 | **TLC** Pro 521M, TLP Pro 520M - turned |
 | 1024 × 600 | **TLC** Pro 726M, TLP Pro 725C/M/T, TLP Pro 1020M/T, TLP Pro 1022M/T, ZRTP Pro 725M/T |
 | 1280 × 720 | TLP Pro 535M, TLP Pro 535T |
+| 720 × 1280 | TLP Pro 535M - turned |
 | 1280 × 800 | **TLC** Pro 1026M, TLP Pro 835C/M/T, TLP Pro 1025M/T, TLP Pro 1035M/T, TLP Pro 1220MG/TG, TLP Pro 1225MG/TG, ZRTP Pro 1025M/T |
+| 800 × 1280 | TLP Pro 835M, TLP Pro 1035M - turned |
 | 1366 × 768 | TLP Pro 1520MG/TG, TLP Pro 1525MG/TG |
 | 1920 × 1080 | TLI Pro 101, TLI Pro 201, TLP Pro 1535M/T, TLP Pro 1720MG/TG, TLP Pro 1725MG/TG |
-| 1920 × 720 | TLP Pro 1230WTG — 166 DPI, from Extron's TemplateInfoTable.config; the probe reads the base platform class |
+| 1920 × 720 | TLP Pro 1230WTG — 166 DPI; its platform's default reads 800 × 480, but the one resolution it supports is 1920 × 720 |
 
 **Tiers** - this toolkit's reading of Extron's per-series templates, not an
 Extron rule. By physical diagonal (`gdl.spec.tier`): **A**, 6.5" and up, the
@@ -48,8 +51,11 @@ have no tier - their screen is the host's.
 minimum (§2) is 2.2 mm of cap height on a 1035 and 1.1 mm on a 535. The toolkit
 holds text to **14 pt × DPI / 149, rounded up, never under 14**
 (`gdl.spec.type_floor`), which is the 14 pt as it reads on the TLP Pro 1025/1035:
-16 pt on a 725, 18 on an 835 or 525, 28 on a 535. Extron's own templates keep
-points fixed, so they break it on dense panels.
+16 pt on a 725, 18 on an 835 or 525, 28 on a 535. Extron's own templates break
+it on dense panels: their 520 series keep the 1035's sizes - most of Mach's 525
+text is 13 to 22 pt, as on its 1035 - and their 535s step up, but short of
+it - Mach's and Shockwave's from 18 pt, most of it 20 to 36 (each seed's built
+`layout.json`).
 
 **A panel's series** - the Extron template its layout and background art come
 from - is chosen by model (`gdl/templates.py`), never by resolution alone:
@@ -68,12 +74,14 @@ like Extron Control for Web. Extron ships six templates for it (Afterburn / Mach
 / Shockwave × ECP 16-9 and ECP 16-10), and the wizard offers only those three
 themes when ECP is the panel type.
 
-**ECP is the one entry whose canvas is a choice, not a property.** Every other
-row in this table is a panel with a fixed resolution; ECP is an app, and the
-wizard adds a *Resolution* dropdown with seven presets. `MODELS_FULL` carries
-1920 × 1080 because that is what `GetDefaultResolutionDpi` reports, but that is a
-default, not a constraint. The real list, read from a built project's
-`Platform.SupportedResolutions`:
+**A soft client's canvas is a choice, not a property**, and so is which way up
+one of the panels that rotate (below) is: for both, the wizard adds a
+*Resolution* dropdown once the panel type is chosen. Every other row in this
+table is one fixed resolution. Each soft client's presets are in
+`research/data/platform-details.txt`. ECP is an app, and its dropdown has seven.
+`MODELS_FULL` carries 1920 × 1080 because that is what `GetDefaultResolutionDpi`
+reports, but that is a default, not a constraint. The real list, read from a
+built project's `Platform.SupportedResolutions`:
 
 | Preset | Canvas |
 |---|---|
@@ -100,12 +108,22 @@ outright (its integer slot, 19, is now an orphaned gap) and no `PBCCI700Platform
 remains, so GUI Designer 1.28 cannot construct it and the wizard no longer lists
 it. The hardware is discontinued.
 
-The table gives one orientation per model, but a platform that rotates supports
-both — the TLP Pro 300M builds at 320 × 480 and 480 × 320, the 835M and 1035M at
-1280 × 800 and 800 × 1280. Extron's Teams Rooms and Zoom Rooms control
-templates also use 1920 × 1200 and 986 × 740, on platforms this table does not
-list. A built project's `layout.json` (`Platform.SupportedResolutions`) is the
-ground truth.
+**Six panels run either way up**: the TLP Pro 300M, 520M, 535M, 835M and
+1035M and the TLC Pro 521M, all M forms. Each platform lists the resolutions it
+supports, and these are the only panels of one fixed resolution that list a
+second - the "turned" rows above. Their T and C forms list one, though the 1035T
+shares the 1035M's part number, and so does every other M; of the soft clients,
+the TLI Pro 201 has portrait presets among its many.
+`powershell/Get-GdlPlatforms.ps1` reads the list for every panel, and a built
+project's `layout.json` (`Platform.SupportedResolutions`, `Orientation` 0 or 1)
+agrees. The wizard's Resolution dropdown turns them, but a theme is offered
+only where a template is drawn that way up: the 300M in Afterburn either way
+(Mach's 300 is portrait alone), and none of the other five turned - a turned
+520M, 521M, 535M, 835M or 1035M starts Blank, or from a retarget
+(`docs/editing.md`; `powershell/New-GdlTurnedSeed.ps1` makes its seed so). This
+is the list the other docs point to. Extron's Teams
+Rooms and Zoom Rooms control templates also use 1920 × 1200 and 986 × 740, on
+platforms this table does not list.
 
 **TLC and TLP are different product lines** — TLC Pro 521M/526M/726M/1026M are
 not TLP panels. An earlier version of this table conflated them, because the
@@ -297,14 +315,32 @@ Extron's kits ship: Afterburn 3,376 files, Shockwave 1,124 and Mach 596 under
 **Icon fonts.** For single-color icons the theme guide says to use the theme
 font instead, which needs no resource at all:
 
-| Font | Glyphs | Range |
-|---|---|---|
-| `Extron - Afterburn 1a` | 136 | U+E900–U+E98C |
-| `Extron-Lift` (Mach) | 121 | U+E900–U+E978 |
-| `Extron GUIC Video Conference 1` | 203 | U+F008–U+F0FF |
+| Font | Glyphs | Range | Glyph names |
+|---|---|---|---|
+| `Extron-Afterburn` (Afterburn), the kit's `Extron - Afterburn 1a.ttf` | 136 | U+E900–U+E98C | its own: `cable_tv`, `home`, `power` |
+| `Extron-Lift` (Mach), installed | 121 | U+E900–U+E978 | its codepoints, `uniE900` |
+| `Extron-Lift`, as the Mach seeds embed it | 95 | U+E900–U+E95E | none |
+| `Extron-Shockwave` (Shockwave) | 16 | U+00B0–U+00BF | none |
+| `Extron GUIC Video Conference 1`, as the client fixtures embed it | 203 | U+F008–U+F0FF | 41, as codepoints (`uni7B`) |
+| `Extron GUIC Video Conference 1`, as the Turbulence seed embeds it | 220 | U+F020–U+F0FF | 104, as words (`Keyboard`) |
 
-Shockwave's font has only 18 glyphs and is not an icon set; Turbulence ships no
-font. Those two are images-only.
+Each theme's template sets its glyph captions in its own face - counted on the
+1035 seeds, Afterburn 60, Mach 112, Shockwave 98 - which is the face a spec's
+`icon` defaults to (`SKILL.md`). Extron-Shockwave is not a general set: its
+sixteen glyphs are line-drawn transport (play, pause, skip, rewind), the four
+chevrons, plus, minus, refresh, a dot, a circle and a square, outside the
+Private Use Area. Turbulence's template draws its icons as images, bar two
+glyphs in faces no `icon` defaults to: the dialer's keyboard key in Extron GUIC
+Video Conference 1 and Apple TV's play and pause in Extron GUI Configurator.
+
+A face differs by build, and a panel draws from the build its project embeds.
+The Mach seeds' Extron-Lift stops at U+E95E, so a glyph past it builds blank
+on a panel made from one; the Afterburn 320, 525, 725 and 300M Portrait seeds
+embed Extron-Afterburn as a build of their own (61,452 bytes to the kit's
+61,180), with the same glyphs at the same codepoints, every one drawn 6% of an
+em higher - which the preview, drawing the kit's build, does not show. Mach's and
+Afterburn's faces share most codepoints (U+E908 is the cable box in both,
+U+E926 home), but not all, so a Mach glyph is picked from Mach's own face.
 
 ## 7. Extron ships the donor library
 
@@ -400,8 +436,9 @@ filenames under each theme's `Buttons\` and `Icons\`:
 
 Mach's sheet is laid out against a `1280x800 Mockup` layer, and its `READ ME`
 layer states the theme uses **Open Sans and Open Sans Light** — which matches
-what the Mach seeds declare. Which of them define a font resource for each, so
-a spec can ask for it there, is in `seeds/README.md`.
+what the Mach seeds declare. Which of them define a font resource for each -
+and so draw it with no face appended from another seed - is in
+`seeds/README.md`.
 
 Shockwave's sheet has no hex-named colour group; it carries `Selected Rectangle`
 and `Unselected Rectangle` layers per swatch instead, with the same five swatches

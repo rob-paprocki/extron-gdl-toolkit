@@ -59,6 +59,38 @@ class TestStartPage(unittest.TestCase):
         self.assertEqual(vb.check_start_page({}, self.LAYOUT), [])
 
 
+class TestNothingButThePlan(unittest.TestCase):
+    """A generated panel is its spec's pages and popups. The donor's own stayed
+    in the built file - a seed's whole demo beside the spec's - unreachable,
+    and some of their controls on the spec's own IDs (docs/from-scratch.md
+    section 5c)."""
+    LAYOUT = {'OfflinePageID': 65535,
+              'Pages': [{'ID': 51, 'Name': 'Home', 'Controls': []},
+                        {'ID': 3, 'Name': 'Main VC', 'Controls': []}],
+              'PopupPages': [{'ID': 52, 'Name': 'Confirm', 'Modal': True},
+                             {'ID': 65535, 'Name': 'Offline Page', 'Modal': True},
+                             {'ID': 9, 'Name': 'Recording Controls', 'Modal': True}]}
+    PLAN = {'pages': [{'name': 'Home'}], 'popups': [{'name': 'Confirm', 'modal': True}]}
+
+    def test_a_donor_page_or_popup_left_in_is_reported(self):
+        vb = _vb(self)
+        problems = vb.check_only_planned(self.PLAN, self.LAYOUT)
+        self.assertEqual(len(problems), 2, problems)
+        self.assertTrue(any("'Main VC'" in p for p in problems), problems)
+        self.assertTrue(any("'Recording Controls'" in p for p in problems), problems)
+
+    def test_the_offline_page_is_gui_designers_own(self):
+        vb = _vb(self)
+        layout = dict(self.LAYOUT, Pages=self.LAYOUT['Pages'][:1],
+                      PopupPages=self.LAYOUT['PopupPages'][:2])
+        self.assertEqual(vb.check_only_planned(self.PLAN, layout), [])
+
+    def test_a_plan_that_keeps_the_donor_is_not_held_to_it(self):
+        vb = _vb(self)
+        self.assertEqual(vb.check_only_planned(dict(self.PLAN, keep_donor_pages=True),
+                                               self.LAYOUT), [])
+
+
 class TestModalPopups(unittest.TestCase):
     def _layout(self, modal, refs=True):
         page = {'ID': 51, 'Name': 'Home', 'Controls': [_ref(52)] if refs else []}
@@ -118,6 +150,118 @@ class TestPressFeedback(unittest.TestCase):
                  'Height': 1, 'HidePressFeedback': hidden, 'HideVisualFeedback': False}]}}
             problems = vb.check_placed(plan, pages, {})[0]
             self.assertEqual(any('HidePressFeedback' in p for p in problems), bad, problems)
+
+
+class TestAlignment(unittest.TestCase):
+    """The applier writes each control's text alignment and a clone keeps its
+    donor's: a left-aligned label built centred reads off by half its width.
+    Nothing checked it once the panel was built."""
+
+    def _check(self, built):
+        vb = _vb(self)
+        plan = {'pages': [{'name': 'Home', 'controls': [
+            {'alignment': 4, 'fields': {'nameField': 'Title'}}]}]}
+        pages = {'Home': {'ID': 51, 'Name': 'Home', 'Width': 1280, 'Height': 800, 'Controls': [
+            {'ID': 1, 'Type': 11, 'Name': 'Title', 'Left': 0, 'Top': 0, 'Width': 1,
+             'Height': 1, 'TextAlignment': built}]}}
+        return vb.check_placed(plan, pages, {})[0]
+
+    def test_a_label_built_with_another_alignment_is_reported(self):
+        problems = self._check(3)
+        self.assertTrue(any('alignment' in p and "'left'" in p and "'center'" in p
+                            for p in problems), problems)
+
+    def test_the_planned_alignment_passes(self):
+        self.assertEqual(self._check(4), [])
+
+    def test_states_that_disagree_are_named_not_numbered(self):
+        """9 is no alignment: GUI Designer writes it on a control whose states
+        disagree - every such button in the archived builds, and none of the
+        seed and fixture buttons whose states agree."""
+        vb = _vb(self)
+        plan = {'pages': [{'name': 'Home', 'controls': [
+            {'alignment': 3, 'fields': {'nameField': 'Laptop'}}]}]}
+        pages = {'Home': {'ID': 51, 'Name': 'Home', 'Width': 1280, 'Height': 800, 'Controls': [
+            {'ID': 1, 'Type': 7, 'Name': 'Laptop', 'Left': 0, 'Top': 0, 'Width': 1, 'Height': 1,
+             'TextAlignment': 9, 'States': [{'Name': 'Off', 'TextAlignment': 3},
+                                            {'Name': 'On', 'TextAlignment': 4}]}]}}
+        problems = [p for p in vb.check_placed(plan, pages, {})[0] if 'alignment' in p]
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("'Off' 'center', 'On' 'left'", problems[0])
+        self.assertNotIn('alignment 9', problems[0])
+
+
+class TestNothingUnplannedOnAPage(unittest.TestCase):
+    """A generated page is cloned from a donor page and cleared; a control of
+    the donor's left on it ships unasked. Build adds one full-canvas popup
+    reference per modal to every page, and those are its own."""
+    PLAN = {'pages': [{'name': 'Home', 'controls': [{'fields': {'nameField': 'Help'}}]}]}
+
+    def _pages(self, *extra):
+        return {'Home': {'ID': 51, 'Name': 'Home', 'Width': 1280, 'Height': 800, 'Controls': [
+            {'ID': 1, 'Type': 7, 'Name': 'Help', 'Left': 10, 'Top': 10, 'Width': 100,
+             'Height': 60}] + list(extra)}}
+
+    def test_a_control_the_plan_did_not_make_is_reported(self):
+        vb = _vb(self)
+        stray = {'ID': 2, 'Type': 7, 'Name': 'Record', 'Left': 200, 'Top': 10, 'Width': 100,
+                 'Height': 60}
+        problems = vb.check_placed(self.PLAN, self._pages(stray), {})[0]
+        self.assertTrue(any("'Record'" in p and 'not in the plan' in p for p in problems),
+                        problems)
+
+    def test_builds_own_modal_references_are_not(self):
+        vb = _vb(self)
+        ref = {'ID': 3, 'Type': 6, 'Name': 'Popup Page Reference', 'Left': 0, 'Top': 0,
+               'Width': 1280, 'Height': 800}
+        self.assertEqual(vb.check_placed(self.PLAN, self._pages(ref), {})[0], [])
+
+
+class TestBorders(unittest.TestCase):
+    """layout.json keeps no border's name - Build rasterizes it - so a plan
+    that names one the donor lacks (`plan` run without --donor) left the
+    clone's own border, the applier only warning, and every gate green. The
+    built project still names each control's and state's border."""
+
+    REPO = os.path.dirname(HERE)
+
+    def _seed(self):
+        seed = os.path.join(self.REPO, 'seeds', 'Afterburn 1035.gdl')
+        if not usable(seed):
+            self.skipTest('seeds/Afterburn 1035.gdl is not pulled from Git LFS here')
+        return seed
+
+    @staticmethod
+    def _plan(border):
+        return {'pages': [{'name': 'Start', 'controls': [
+            {'fields': {'nameField': 'Main Volume Slider'}, 'border': border}]}]}
+
+    def test_a_built_border_is_the_planned_one(self):
+        vb = _vb(self)
+        problems, checked = vb.check_borders(self._plan('Afterburn - 14 Radius 0 Thick'), self._seed())
+        self.assertEqual((problems, checked), ([], 1))
+
+    def test_a_border_the_plan_names_and_the_build_lacks_is_a_problem(self):
+        vb = _vb(self)
+        problems, _ = vb.check_borders(self._plan('Afterburn - 10 Radius 0 Thick'), self._seed())
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("'Afterburn - 14 Radius 0 Thick', planned 'Afterburn - 10 Radius 0 Thick'", problems[0])
+
+    def test_each_states_border_is_checked(self):
+        vb = _vb(self)
+        build = os.path.join(self.REPO, 'archive', 'job-2419a20b', 'borders')
+        if not usable(os.path.join(build, 'Borders320.gdl')):
+            self.skipTest('the archived 320 border build is not pulled from Git LFS here')
+        with open(os.path.join(build, 'plan.json'), encoding='utf-8') as fh:
+            plan = json.load(fh)
+        built = os.path.join(build, 'Borders320.gdl')
+        self.assertEqual(vb.check_borders(plan, built)[0], [])
+        laptop = next(op for op in plan['pages'][0]['controls']
+                      if op['fields'].get('nameField') == 'Laptop')
+        laptop['states'][1]['border'] = 'Afterburn - 10 Radius 0 Thick'
+        problems = vb.check_borders(plan, built)[0]
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("state 'On'", problems[0])
 
 
 class TestEditIds(unittest.TestCase):
@@ -196,6 +340,23 @@ class TestLevelFill(unittest.TestCase):
             problems, checked = vb.check_level_bars(plan, table, {35: _png(self.TRACK), 36: _png(bar)}, 'page')
             self.assertEqual(bool(problems), bad, problems)
             self.assertEqual(checked, 1)
+
+    def test_a_level_drawn_from_art_shows_a_value(self):
+        """A level whose donor draws it from art keeps that art (keep_art),
+        and is planned no bar color to hold it to - but its empty and full art
+        must both be built, and differ, or it shows no value."""
+        vb = _vb(self)
+        plan = [{'name': 'Home', 'controls': [
+            {'fields': {'nameField': 'Volume'}, 'gauge_fill': None, 'keep_art': True}]}]
+        table = {'Home': {'ID': 51, 'Name': 'Home', 'Controls': [
+            {'ID': 8, 'Type': 9, 'Name': 'Volume', 'TLPImageID': 36,
+             'TLPMinValueImageID': 35, 'TLPMaxValueImageID': 36}]}}
+        for empty, full, bad in ((self.TRACK, self.BAR, False), (self.BAR, self.BAR, True)):
+            problems, checked = vb.check_level_bars(plan, table, {35: _png(empty), 36: _png(full)}, 'page')
+            self.assertEqual(bool(problems), bad, problems)
+            self.assertEqual(checked, 1)
+        problems, _ = vb.check_level_bars(plan, table, {35: _png(self.TRACK)}, 'page')
+        self.assertTrue(problems)
 
 
 class TestFontResourceReference(unittest.TestCase):
@@ -367,6 +528,68 @@ class TestStateImage(unittest.TestCase):
         img = {'name': planned, 'file': self.files[planned]}
         return self.vb._state_image('page Home Mute', 1, bs, c, img, None,
                                     {7: self.art[built]} if built else {})
+
+    def test_a_near_twin_built_in_its_place_is_caught_by_the_other_states(self):
+        """Two volume levels a step apart differ by one thin wave - a few per
+        cent of the inked pixels at 64 px, under what one image is allowed
+        alone. Against the button's other states' images it is caught: the
+        artwork is nearer another state's image than its own."""
+        import io
+        from PIL import Image, ImageDraw
+        files = {}
+        for name, waves in (('vol2.png', 2), ('vol3.png', 3)):
+            im = Image.new('RGBA', (440, 440), (0, 0, 0, 0))
+            d = ImageDraw.Draw(im)
+            d.rectangle((60, 150, 200, 290), fill=(186, 188, 206, 255))
+            for k in range(waves):
+                x = 230 + k * 60
+                d.rectangle((x, 150 - k * 30, x + 16, 290 + k * 30), fill=(186, 188, 206, 255))
+            files[name] = os.path.join(self.dir, name)
+            im.save(files[name])
+
+        def art(name):
+            buf = io.BytesIO()
+            self.vb.fit_image(files[name], 64, 64).save(buf, 'PNG')
+            return buf.getvalue()
+
+        c = {'Width': 64, 'Height': 64}
+        bs = {'Name': 'Level 2', 'TLPImageID': 7}
+        own = {'name': 'vol2.png', 'file': files['vol2.png']}
+        other = {'name': 'vol3.png', 'file': files['vol3.png']}
+        swapped = {7: art('vol3.png')}
+        self.assertEqual(self.vb._state_image('page Audio Vol', 2, bs, c, own, None, swapped), [],
+                         'the case this is for: alone, the near twin passes')
+        problems = self.vb._state_image('page Audio Vol', 2, bs, c, own, None, swapped, [other])
+        self.assertTrue(any("nearer 'vol3.png'" in p for p in problems), problems)
+        self.assertEqual(self.vb._state_image('page Audio Vol', 2, bs, c, own, None,
+                                              {7: art('vol2.png')}, [other]), [])
+
+    def test_the_nearest_of_the_other_states_is_the_one_named(self):
+        """Level 2 built where level 3 was planned: level 1 is nearer than the
+        planned image too, and comes first, but level 2 is the one there."""
+        import io
+        from PIL import Image, ImageDraw
+        files = {}
+        for waves in (1, 2, 3):
+            im = Image.new('RGBA', (440, 440), (0, 0, 0, 0))
+            d = ImageDraw.Draw(im)
+            d.rectangle((60, 150, 200, 290), fill=(186, 188, 206, 255))
+            for k in range(waves):
+                x = 230 + k * 60
+                d.rectangle((x, 150 - k * 30, x + 16, 290 + k * 30), fill=(186, 188, 206, 255))
+            files[waves] = os.path.join(self.dir, f'vol{waves}.png')
+            im.save(files[waves])
+        buf = io.BytesIO()
+        self.vb.fit_image(files[2], 64, 64).save(buf, 'PNG')
+        c = {'Width': 64, 'Height': 64}
+        bs = {'Name': 'Level 3', 'TLPImageID': 7}
+        img = {w: {'name': f'vol{w}.png', 'file': f} for w, f in files.items()}
+        off = {w: self.vb.image_mismatch(f, buf.getvalue(), 64, 64, None) for w, f in files.items()}
+        self.assertLess(off[1], off[3], 'the case: the first sibling is nearer than the plan too')
+        problems = self.vb._state_image('page Audio Vol', 3, bs, c, img[3], None,
+                                        {7: buf.getvalue()}, [img[1], img[2]])
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("nearer 'vol2.png' (0% differs)", problems[0])
 
     def test_the_planned_image_passes(self):
         self.assertEqual(self._check('two.png', 'two.png'), [])
@@ -547,6 +770,55 @@ class TestStateImage(unittest.TestCase):
             self.assertEqual((n, bool(problems)), (2, bad), problems)
         self.assertIn('track', problems[0])
 
+    def test_a_sliders_full_art_is_its_fill_over_its_track(self):
+        """Build draws a slider's full asset as its fill over its track, and
+        each at SliderTrackWidth even where that is wider than the control -
+        centred, and cut to it. So drawn, every seed slider of the three
+        image-drawn themes is 0% off; the fill alone left Shockwave's 6 to 9%,
+        its track's rim showing round its narrower fill, and the Shockwave 720's - a
+        47 px slider given the 1035's 52 px track - 25%, failing a panel that
+        was right. The built art here is drawn by hand."""
+        import io
+        from PIL import Image, ImageDraw
+        dark, light = (26, 25, 25, 160), (230, 230, 230, 255)
+        files = {}
+        for name, (x0, x1), color in (('track.png', (20, 79), dark), ('fill.png', (30, 69), light)):
+            im = Image.new('RGBA', (100, 600), (0, 0, 0, 0))
+            ImageDraw.Draw(im).rectangle((x0, 0, x1, 599), fill=color)
+            files[name] = os.path.join(self.dir, name)
+            im.save(files[name])
+
+        def art(w, h, *bars):
+            im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+            for x0, x1, color in bars:
+                layer = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+                ImageDraw.Draw(layer).rectangle((x0, 0, x1, h - 1), fill=color)
+                im.alpha_composite(layer)
+            buf = io.BytesIO()
+            im.save(buf, 'PNG')
+            return buf.getvalue()
+
+        op = {'fields': {'nameField': 'Volume'},
+              'track_image': {'name': 'track.png', 'file': files['track.png']},
+              'fill_image': {'name': 'fill.png', 'file': files['fill.png']}}
+
+        def check(w, track, assets):
+            table = {'Home': {'Name': 'Home', 'Controls': [
+                {'ID': 1, 'Name': 'Volume', 'Width': w, 'Height': 300, 'SliderTrackWidth': track,
+                 'SliderIndicatorWidth': w, 'SliderIndicatorHeight': 0, 'Orientation': 2,
+                 'TLPMinValueImageID': 1, 'TLPMaxValueImageID': 2}]}}
+            return self.vb.check_rails([{'name': 'Home', 'controls': [op]}], table, assets, 'page')[0]
+
+        # A 60 px control, its track 60: the track's bar is x 12-47, the fill's 18-41.
+        full = art(60, 300, (12, 47, dark), (18, 41, light))
+        self.assertEqual(check(60, 60, {1: art(60, 300, (12, 47, dark)), 2: full}), [])
+        self.assertTrue(check(60, 60, {1: art(60, 300, (12, 47, dark)), 2: art(60, 300, (18, 41, light))}))
+        # A 30 px control given a 60 px track: Build draws the track 60 wide,
+        # its bar the control's whole 30 - not 15, as a track cut to 30 would.
+        whole = art(30, 300, (0, 29, dark), (3, 26, light))
+        self.assertEqual(check(30, 60, {1: art(30, 300, (0, 29, dark)), 2: whole}), [])
+        self.assertTrue(check(30, 60, {1: art(30, 300, (7, 22, dark)), 2: whole}))
+
     def test_two_icons_on_one_ground_are_not_called_alike(self):
         """Afterburn's mute: both speaker icons are mostly their #414459
         ground, so their artwork has one plurality color and still differs."""
@@ -573,6 +845,60 @@ class TestStateImage(unittest.TestCase):
         problems, _, _ = self.vb.check_states([{'name': 'Home', 'controls': [op]}], table, art,
                                               'page')
         self.assertEqual(problems, [])
+
+
+class TestStateImageOnTheSeed(unittest.TestCase):
+    """The near-twin margin on real Build artwork: the Afterburn seed's 'Main
+    Volume Mute' on Audio Settings, a mute image and volume levels a wave
+    apart, against Extron's own kit files. A level built with the level
+    before's art passes the image gate alone; held against the button's other
+    states it is caught, and the one it is named as is the one there."""
+    SEED = os.path.join(os.path.dirname(HERE), 'seeds', 'Afterburn 1035.gdl')
+
+    def setUp(self):
+        self.vb = _vb(self)
+        import glob
+        from gdl.spec import RESOURCE_ROOTS
+        if not usable(self.SEED):
+            self.skipTest('seeds/Afterburn 1035.gdl is not here (git lfs pull)')
+        kit = {}
+        for root in RESOURCE_ROOTS:
+            for f in glob.glob(os.path.join(root, 'Afterburn', '**', '*.png'), recursive=True):
+                kit.setdefault(os.path.basename(f), f)
+        from gdl.compose import load
+        from gdl.project import Project
+        layout, self.assets = load(self.SEED)
+        p = Project.open(self.SEED)
+        page = next(o for o in p.o.values() if isinstance(o, dict)
+                    and p.kind(o).split('.')[-1] in ('PBPage', 'PBPopupPage')
+                    and p.field(o, 'nameField') == 'Audio Settings')
+        btn = next(c for c in map(p.deref, p.items(p.field(page, 'controlsField')))
+                   if isinstance(c, dict) and p.field(c, 'nameField') == 'Main Volume Mute')
+        names = [p.field(p.field(s, 'buttonImageField'), 'resourceNameField') for s in p.states(btn)]
+        built = next(pg for pg in layout['Pages'] + layout['PopupPages']
+                     if pg['Name'] == 'Audio Settings')
+        self.c = next(c for c in built['Controls'] if c['ID'] == p.field(btn, 'idField'))
+        if not names or any(n not in kit for n in names):
+            self.skipTest("Extron's Afterburn kit is not here (vendor/README.md)")
+        self.imgs = [{'name': n, 'file': kit[n]} for n in names]
+
+    def _check(self, i, built_state):
+        others = [x for j, x in enumerate(self.imgs) if j != i]
+        return self.vb._state_image('page Audio Settings', i, self.c['States'][built_state],
+                                    self.c, self.imgs[i], None, self.assets, others)
+
+    def test_every_state_as_built_passes_against_its_siblings(self):
+        for i in range(len(self.imgs)):
+            self.assertEqual(self._check(i, i), [], self.imgs[i]['name'])
+
+    def test_a_level_built_with_the_one_befores_art_is_caught_and_named(self):
+        i = len(self.imgs) - 1
+        alone = self.vb._state_image('page Audio Settings', i, self.c['States'][i - 1], self.c,
+                                     self.imgs[i], None, self.assets)
+        self.assertEqual(alone, [], 'the case: alone, the near twin passes')
+        problems = self._check(i, i - 1)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn(f"nearer {self.imgs[i - 1]['name']!r}", problems[0])
 
 
 class TestEditStates(unittest.TestCase):

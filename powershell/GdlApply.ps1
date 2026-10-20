@@ -345,6 +345,53 @@ function Add-GdlImageResource {
     return $use
 }
 
+function Add-GdlFontResource {
+    <#  Give the project a font resource for a family it defines none for: a
+        clone of one of its own, filled with the face a seed carries and
+        recorded as that seed records it - family and style, file names (none
+        for a face GUI Designer supplies itself, such as Arial Black), declared
+        size, default flag and author (the plan's `fonts`, from
+        gdl.fonts.find_face). Clone-never-construct, as Add-GdlImageResource. A
+        family the project already has is left alone. #>
+    param($Project, $Font)
+    $resources = Get-GdlField $Project.ResourceSet 'resourcesField'
+    $donor = $null
+    foreach ($r in $resources) {
+        if ($r.GetType().Name -ne 'PBFontResource') { continue }
+        $name = Get-GdlField $r 'nameField'
+        if (($name -replace '(\s+(Regular|Bold|Italic))+$', '') -ieq $Font.family) { return }
+        if (-not $donor) { $donor = $r }
+    }
+    if (-not $donor) { Note-Problem "font '$($Font.family)': no PBFontResource in the project to clone"; return }
+    if (-not $Font.file -or -not (Test-Path $Font.file)) {
+        Note-Problem "font '$($Font.family)': its face '$($Font.file)' is not there"
+        return
+    }
+    $new = Copy-GdlObject $donor
+    Set-GdlField $new 'nameField' "$($Font.family) Regular Bold Italic"
+    # Deep-cloned lists, the new resource's own: rewrite them in place.
+    $families = Get-GdlField $new 'familyNameField'
+    $families.Clear(); [void]$families.Add([string]$Font.family)
+    $styles = Get-GdlField $new 'styleNameField'
+    $styles.Clear(); [void]$styles.Add('Regular Bold Italic')
+    Set-GdlField $new 'windowsFamilyNameField' ([string]$Font.family)
+    Set-GdlField $new 'windowsStyleNameField' ([string]$Font.style)
+    Set-GdlField $new 'embeddedFileNameField' $Font.embedded
+    Set-GdlField $new 'filenameField' $Font.source
+    Set-GdlField $new 'sizeField' ([int]$Font.size)
+    Set-GdlField $new 'dataField' ([System.IO.File]::ReadAllBytes($Font.file))
+    Set-GdlField $new 'mIsDefault' ([bool]$Font.default)
+    if ($null -ne $Font.author) {
+        # 0 where GUI Designer supplied the face, 1 where it was added from a
+        # file. The clone holds the donor's first resource's: in the Afterburn
+        # 1035 seed, Arial's 0, where the Open Sans Light appended is 1.
+        $author = Get-GdlField $new 'authorField'
+        Set-GdlField $new 'authorField' ([Enum]::ToObject($author.GetType(), [int]$Font.author))
+    }
+    $resources.Add($new)
+    Write-Output "font '$($Font.family)' ($($Font.style)) appended, $([int]$Font.size) bytes"
+}
+
 function Set-GdlImage {
     <#  Point an image slot - a page's backgroundImageField, a state's
         buttonImageField - at the image resource named $Name, by a clone of an
@@ -470,10 +517,11 @@ function Set-GdlFont {
         class of failure as flattenText.
 
         Family is deliberately conservative. GUI Designer resolves a face
-        through a named font RESOURCE, and appending a new one has never been
-        tested here - so a family the project does not already carry is a
-        reported problem rather than a silent wrong typeface. Size and weight
-        are safe: they are plain fields on the cloned PBFont and its style. #>
+        through a named font RESOURCE, so a family the project has no resource
+        for - none of its own, and none the plan had appended first
+        (Add-GdlFontResource) - is a reported problem rather than a silent wrong
+        typeface. Size and weight are safe: they are plain fields on the cloned
+        PBFont and its style. #>
     param($Project, $Control, $Font)
     if ($null -eq $Font) { return }
 

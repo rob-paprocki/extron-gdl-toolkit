@@ -82,7 +82,12 @@ function Add-GdlControls {
         # Only the type probe (tests/type_probe.py) asks for $true.
         Set-GdlFieldIfPresent $c 'flattenTextField' ([bool]$op.flatten) | Out-Null
         Set-GdlFieldIfPresent $c 'buttonImageField' $null | Out-Null
-        Set-GdlFieldIfPresent $c 'backgroundImageField' $null | Out-Null
+        # But a level drawn from art (the plan's keep_art: its donor's fills
+        # from an image, Shockwave's and Turbulence's) keeps it: it is the
+        # empty bar, and cleared the hubs' levels built a plain block there.
+        if (-not $op.keep_art) {
+            Set-GdlFieldIfPresent $c 'backgroundImageField' $null | Out-Null
+        }
         # A control's own transparency (percent) fades everything it draws, and
         # a clone keeps its donor's: Shockwave's first PBShape is the video well
         # on Main SD, 85% transparent, so every panel cloned from it built at
@@ -227,6 +232,12 @@ function Add-GdlControls {
 
 Initialize-Gdl -InstallDir $InstallDir
 $project = Open-GdlProject $DonorProject
+# A seed built with feature-flag mode's Gd Generate Checksum on carries a
+# CRC-64 of its own metadata (docs/from-scratch.md section 7), which a panel
+# cloned from it would ship stale. Cleared, the panel's own build writes its
+# own, or none, as every other project has.
+$checksum = Get-GdlField $project 'checksum'
+Set-GdlField $project 'checksum' ([Activator]::CreateInstance($checksum.GetType()))
 # NOT $plan: PowerShell variables are case-insensitive, so $plan and the
 # $Plan parameter are the same variable, and the parsed object overwrites the
 # path it was read from.
@@ -253,7 +264,19 @@ foreach ($im in @($spec.images)) {
 function Get-PlanImageName([string]$Name) { if ($script:ImageAs.ContainsKey($Name)) { $script:ImageAs[$Name] } else { $Name } }
 $imageRef = Find-GdlImageRef $project
 
+# Faces the donor defines no resource for, which a seed carries (gdl.fonts.
+# find_face, plan --donor): appended before any control is cloned, so
+# Set-GdlFont finds each family as if the donor had it.
+foreach ($f in @($spec.fonts)) {
+    if ($null -eq $f) { continue }
+    Add-GdlFontResource $project $f
+}
+
 $pageIds = @{}
+# The pages and popups this plan makes, by identity: the donor's own are dropped
+# at the end, and one of them may have a name a spec page has too.
+$madePages = New-Object System.Collections.ArrayList
+$made = @()
 foreach ($pg in $spec.pages) {
     $pageId = Get-GdlNextPageId $project
     $pageIds[$pg.name] = $pageId
@@ -296,6 +319,7 @@ foreach ($pg in $spec.pages) {
         $pages = Get-GdlField $project 'pagesField'
         if (-not $pages) { throw 'no pagesField on the project' }
         $pages.Add($newPage)
+        [void]$madePages.Add($newPage)
     }
 }
 
@@ -457,6 +481,80 @@ if (@($spec.popups).Count) {
             else { Note-Problem "popup '$($m.Name)' is not correctly bound: $($chk.problems -join '; ')" }
         }
     }
+}
+
+# -- the donor's own pages and popups ------------------------------------------
+# Deliberately last, once nothing more is cloned. A generated panel is its
+# plan's pages and popups, and the donor's own used to stay beside them,
+# unreachable from its start page and some of their controls on IDs the spec's
+# own carry (docs/from-scratch.md section 5c has the panel that showed it). GUI
+# Designer's Offline Page (id 65535) is its own and stays; so does a popup group
+# any remaining popup or reference names. A spec keeps the donor's on purpose
+# with keep_donor_pages.
+if (-not $spec.keep_donor_pages -and -not $WhatIf) {
+    $OFFLINE = [uint64]65535
+    # By identity, not by name: a donor page may share a spec page's name, and
+    # then a name would keep both - which Build rejects.
+    $madePopups = New-Object System.Collections.ArrayList
+    foreach ($m in @($made)) { if ($m) { [void]$madePopups.Add($m.Popup) } }
+    $pages = Get-GdlField $project 'pagesField'
+    $pops = Get-GdlField $project 'popupPagesField'
+    $dropPages = @($pages | Where-Object { -not $madePages.Contains($_) })
+    $dropPops = @($pops | Where-Object {
+        -not $madePopups.Contains($_) -and [uint64](Get-GdlField $_ 'idField') -ne $OFFLINE })
+    foreach ($p in $dropPages) { [void]$pages.Remove($p) }
+    foreach ($p in $dropPops) { [void]$pops.Remove($p) }
+
+    # A group stays while a remaining popup belongs to it or a remaining
+    # reference is bound to it; the donor's others name popups that are gone.
+    # The list itself, not @() around it: Get-GdlField returns it whole, so
+    # @() made a one-item array of the List and no reference was ever seen.
+    $usedGroups = @{}
+    foreach ($p in $pops) { $usedGroups[[int](Get-GdlField $p 'groupIDField')] = $true }
+    foreach ($pg in @($pages) + @($pops)) {
+        $controls = Get-GdlField $pg 'controlsField'
+        foreach ($c in $controls) {
+            if ($c -and $c.GetType().Name -eq 'PBPopupPageReference') {
+                $b = Get-GdlField $c 'popupPageIDField'
+                if ($b) { $usedGroups[[int](Get-GdlField $b 'groupIDField')] = $true }
+            }
+        }
+    }
+    $groups = Get-GdlField $project 'popupPageGroupsField'
+    $dropGroups = @($groups | Where-Object { -not $usedGroups.ContainsKey([int](Get-GdlField $_ 'idField')) })
+    foreach ($g in $dropGroups) { [void]$groups.Remove($g) }
+
+    # The drop is the last change made to the project, so it is asserted like
+    # the bindings above: a reference left naming a group that is gone builds,
+    # and reads "Unassigned".
+    $registered = @{}
+    foreach ($g in $groups) { $registered[[int](Get-GdlField $g 'idField')] = $true }
+    foreach ($pg in @($pages) + @($pops)) {
+        $controls = Get-GdlField $pg 'controlsField'
+        foreach ($c in $controls) {
+            if (-not $c -or $c.GetType().Name -ne 'PBPopupPageReference') { continue }
+            $b = Get-GdlField $c 'popupPageIDField'
+            $gid = if ($b) { [int](Get-GdlField $b 'groupIDField') } else { 0 }
+            if ($gid -ne 0 -and -not $registered.ContainsKey($gid)) {
+                Note-Problem ("'$(Get-GdlField $c 'nameField')' on '$(Get-GdlField $pg 'nameField')' " +
+                    "names popup group $gid, which is not in the project - it would read Unassigned")
+            }
+        }
+    }
+
+    # The Offline Page's back-pointers name the full-canvas references Build
+    # made for it on the donor's pages, which are gone. Build writes its own
+    # again, as it does for a cloned modal's (above).
+    foreach ($p in $pops) {
+        if ([uint64](Get-GdlField $p 'idField') -ne $OFFLINE) { continue }
+        $backs = Get-GdlField $p 'popupReferencesField'
+        if ($backs) {
+            Set-GdlFieldIfPresent $p 'popupReferencesField' ([Activator]::CreateInstance($backs.GetType())) | Out-Null
+        }
+        Set-GdlFieldIfPresent $p 'hasReferencesField' $false | Out-Null
+    }
+    Write-Output ("dropped the donor's own: $($dropPages.Count) page(s), $($dropPops.Count) popup(s), " +
+                  "$($dropGroups.Count) popup group(s)")
 }
 
 if ($script:Problems.Count) {

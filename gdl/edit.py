@@ -21,8 +21,9 @@ The five operations:
             as well as the control's.
   states    give a button the states it should have: add, remove or rename
             them, and set how each looks.
-  retarget  move the project to another panel model. Sets the three fields that
-            have to agree (platform instance, platform type enum, screen size)
+  retarget  move the project to another panel model, or turn one that rotates
+            (`size`). Sets the fields that have to agree (platform instance,
+            platform type enum, screen size, and the platform's own resolution)
             and optionally rescales the layout.
   renumber  reassign the addressable IDs (`userIdField`) in per-page bands.
 
@@ -41,7 +42,7 @@ import re
 import sys
 
 from .project import Project
-from .spec import (HEX, MAX_STATES, MODELS, PRESS_FIELD, DEFAULT_FIELD, dpi,
+from .spec import (HEX, MAX_STATES, MODELS, PRESS_FIELD, DEFAULT_FIELD, dpi, sizes,
                    touch_minimums, MM_TOUCH_TARGET)
 
 # The colors `restyle` rewrites, on the control and on each state: the field,
@@ -486,14 +487,17 @@ class Edits:
         return out
 
     def _retarget(self, e, ops, problems, project_ops, page_ops):
-        """Move the project to another panel model.
+        """Move the project to another panel model, or turn one that rotates.
 
         Three fields have to agree or GUI Designer is being told two different
         things about what it is building for: the platform INSTANCE
         (`platformField`, a `PBTouchPanelPlatformPro` subclass), the enum
-        (`platformTypeField`) and `screenSizeField`. The applier constructs the
-        class, because a platform is one of the few objects that does construct
-        headlessly - it holds no project state.
+        (`platformTypeField`) and `screenSizeField` - and on a turned panel the
+        platform's own `horizontalResolutionField`/`verticalResolutionField`
+        too. The applier makes the platform with Extron's own factory,
+        `CreatePlatform(project, type)`: one built with a bare constructor has
+        no part number, and GUI Designer titles the project Unknown
+        (docs/editing.md).
 
         Every PAGE also carries its own canvas, and scaling the controls without
         scaling the canvas is the silent-destruction case: Build moves anything
@@ -518,7 +522,29 @@ class Edits:
             problems.append(f'retarget: {model!r} is not a panel GUI Designer builds for'
                             + (f'; did you mean {", ".join(sorted(near))}?' if near else ''))
             return None
-        new_size = MODELS[model]
+        # `size` turns a panel that rotates the other way up (gdl.spec.sizes);
+        # without one it is the panel's default. The applier writes it into the
+        # platform's own resolution fields as well as the screen size - the
+        # only fields that say which way up a project is (docs/gdl-format.md
+        # section 7).
+        size = e.get('size')
+        if size:
+            # '800x1280' is how New-GdlSeed.ps1 and gdl.templates take a
+            # canvas, so it is the slip to expect, and it was read as the
+            # characters 8 and 0; a list of one number crashed check().
+            if not (isinstance(size, (list, tuple)) and len(size) == 2
+                    and all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                            and float(v).is_integer() for v in size)):
+                problems.append(f'retarget: size is [width, height], as [800, 1280] - '
+                                f'not {size!r}')
+                return None
+            new_size = tuple(int(v) for v in size)
+        else:
+            new_size = MODELS[model]
+        if new_size not in sizes(model):
+            problems.append(f'retarget: {model} does not run at {new_size[0]}x{new_size[1]} - it is '
+                            + ' or '.join('%dx%d' % s for s in sizes(model)))
+            return None
         self._model = model
         old_size = self._screen_size()
         # No `platform_class` hint here on purpose. It used to carry

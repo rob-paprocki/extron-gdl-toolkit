@@ -56,6 +56,73 @@ class TestVerifySeed(unittest.TestCase):
         self.assertTrue(any('theme' in p and "'Afterburn'" in p and "'Mach'" in p for p in probs), probs)
 
 
+class TestATurnedSeed(unittest.TestCase):
+    """Where no template is drawn that way up - the 1035M portrait - a seed is
+    its model's own turned by gdl.edit retarget (New-GdlTurnedSeed.ps1), so it
+    is compared with its series template turned the same way: every canvas and
+    control scaled per axis, each rounded."""
+
+    def setUp(self):
+        if not TABLE:
+            self.skipTest("Extron's template table is not here (vendor/README.md)")
+        self.seed = _seed('Afterburn 1035.gdl')
+
+    @staticmethod
+    def _turned(seed, model, size):
+        """The seed's pages as gdl.edit's own retarget plan turns them."""
+        from gdl.edit import Edits
+        e = Edits({'edits': [{'op': 'retarget', 'model': model, 'size': list(size), 'scale': True}]}, seed)
+        plan, problems = e.plan()
+        assert problems == [], problems
+        sizes = {(p['kind'], p['page']): p['size'] for p in plan['pages']}
+        rects = {(o['page'], o['control']): o['fields'] for o in plan['controls']}
+        out = []
+        for pg in e.pages:
+            ctrls = []
+            for c in pg['controls']:
+                f = rects.get((pg['id'], c['obj_id']))
+                ctrls.append(dict(c, rect=(f['leftField'], f['topField'], f['widthField'], f['heightField'])
+                                  if f else c['rect']))
+            out.append(dict(pg, size=sizes.get((pg['kind'], pg['id']), pg['size']), controls=ctrls))
+        return out
+
+    def test_a_seed_turned_is_its_template_turned(self):
+        pages = self._turned(self.seed, 'TLP1035M', (800, 1280))
+        self.assertEqual(verify_seed.series_problems(pages, (800, 1280), 'TLP1035M', 'Afterburn'), [])
+
+    def test_a_seed_not_turned_is_refused_at_the_turned_canvas(self):
+        from gdl.project import Project
+        pages = list(Project.open(self.seed).pages())
+        probs = verify_seed.series_problems(pages, (800, 1280), 'TLP1035M', 'Afterburn')
+        self.assertEqual(len(probs), 1)
+        self.assertIn('turned', probs[0])
+
+
+class TestAChecksumIsNoted(unittest.TestCase):
+    """Feature-flag mode's Gd Generate Checksum writes a CRC-64 of a project's
+    metadata on Save and Build (docs/from-scratch.md section 7). A seed made
+    with it on is still a seed - the applier clears it in every panel built on
+    one - but no other seed carries one, so the verifier says so."""
+
+    def _say(self, seed, model, theme=None):
+        import contextlib
+        import io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            probs = verify_seed.check_seed(seed, model, theme=theme)
+        return probs, out.getvalue()
+
+    def test_a_seed_built_with_it_on_is_noted_not_refused(self):
+        probs, said = self._say(_seed('Mach 725.gdl'), 'TLP725T', 'Mach')
+        self.assertEqual(probs, [])
+        self.assertIn('Gd Generate Checksum', said)
+
+    def test_a_seed_without_one_says_nothing_of_it(self):
+        probs, said = self._say(_seed('Afterburn 1035.gdl'), 'TLP1035T')
+        self.assertEqual(probs, [])
+        self.assertNotIn('checksum', said.lower())
+
+
 class TestWhatTheScriptRelies(unittest.TestCase):
     """New-GdlSeed.ps1 deletes the seed it built when this refuses it, so a
     refusal must be the seed's fault - not the case of a theme the wizard
@@ -138,6 +205,22 @@ class TestSeriesOfASeed(unittest.TestCase):
         series at the other size."""
         self.assertEqual(verify_seed.series_problems(self.pages('Afterburn 300 Landscape Series'),
                                                      (480, 320), 'TLP300M', 'Afterburn'), [])
+
+    def test_a_canvas_no_template_of_the_theme_draws_is_refused(self):
+        """Mach's 300 Series is portrait, so no wizard makes a landscape Mach
+        300M; a seed at 480x320 calling itself one is something else."""
+        probs = verify_seed.series_problems(self.pages('Mach 300 Series'), (480, 320), 'TLP300M', 'Mach')
+        self.assertEqual(len(probs), 1, probs)
+        self.assertIn('480x320', probs[0])
+        self.assertIn('Mach 300 Series', probs[0])
+
+    def test_a_portrait_1035_is_refused_as_no_series_draws_it(self):
+        """The 1220 Series is 1280x800 only; a 1035M seed at 800x1280 is a
+        Blank project or a retarget, not a series template's clone."""
+        probs = verify_seed.series_problems(self.pages('Afterburn 1220 Series'), (800, 1280),
+                                            'TLP1035M', 'Afterburn')
+        self.assertEqual(len(probs), 1, probs)
+        self.assertIn('800x1280', probs[0])
 
     def test_a_model_the_theme_has_no_series_for_has_nothing_to_compare(self):
         """Afterburn has no 720 template, so a 720 seed of its theme is not

@@ -1,6 +1,7 @@
 {
   "name": "Multipage Probe",
   "model": "TLP1035T",
+  "family": "Afterburn",
   "size": [
     1280,
     800

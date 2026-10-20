@@ -5,9 +5,9 @@
     "Colors: seeds/Mach 1035.gdl's own button per-state fill, stroke and text color, and its PBShape fills (python theme_survey.py, and Project.fill_map()/pages() from gdl/project.py), cross-checked against `python -m gdl.themes` on 'Mach 1020 Series.glt' and against Mach Styles.psd's 'Colors' layer group and its selected/unselected same-hue alpha-only rule (docs/design-rules.md section 7; research/psd_layer_names.py run on 'C:\\Users\\Public\\Documents\\Extron\\GUI Designer Templates\\Resources\\Mach\\Style Sheet\\Mach Styles.psd'). `page` is approximated, not measured: Mach's own pages usually show a full-bleed photo (its 'Main BG Image'/'mach-bg-02' PSD layers) that no flat token can represent, so `page` stands in with the template's own dominant SOLID (fully opaque) fill instead - #303030, on 13 of the seed's own header/footer PBShape bars, matching 13 of gdl.themes' extract on the raw .glt exactly - the same method gdl/designsys/shockwave.json's own `page` uses. `scrim` is not measured per-theme at all: Build draws every modal popup as the page beneath under black at alpha 166 (0xA6) regardless of its authored background - the same value gdl/designsys/afterburn.json reports measuring identically on the Afterburn, Mach and Shockwave seeds - so it is fixed here to match, not derived from Mach's own palette, and gdl/spec.py's Panel.palette() excludes a modal's background from the six-color count for the same reason.",
     "Type: seeds/Mach 1035.gdl's own label and button point sizes in the 'Open Sans' face. The seed also defines 'Open Sans Light', at 12 to 35 pt, which this system does not offer; a spec can ask for it (Project.font_resource_names() lists it; docs/design-rules.md section 7). Counts corroborated exactly by seeds/Mach ECP 16-10.gdl and, in shape, by seeds/Mach 1535.gdl. Every measured Font.Style.Bold is false, so every style here is weight 400, unlike Afterburn's - Mach's real hierarchy leans on the Light face, not on bold, matching Shockwave's own finding.",
     "Borders: gdl.spec.BORDERS keys whose resource seeds/Mach 1035.gdl defines (Project.border_resource_names()) - `mach`, its own, plus the four generic 2D primitives also defined there. Radius/thickness from gdl.spec.BORDER_GEOMETRY, except `ellipse`: BORDER_GEOMETRY's own entry for '2D Ellipse' is (0, 3), which is the resource's raw dataField and not a corner radius - GUI Designer draws this shape as an ellipse by object type - so radius is set to -1 (a circle) here, the same convention gdl/designsys/afterburn.json's own ellipse uses. Project.border_resources() shows only `mach` and `rounded` (2D Rounded Rectangle) actually drawn with in the seed; `rect`, `capsule` and `ellipse` are defined but otherwise-undrawn-with generic escape hatches, as in the Afterburn profile.",
-    "Buttons: seeds/Mach 1035.gdl's own per-state fills, borders and images, read with gdl.project.Project on every PBButton state. ghost and solid author '2D Rounded Rectangle' (`rounded`) on most buttons and no border on a minority (Help, Power Down, Camera 1/2); the `mach` resource the seed defines is drawn by none of them. Icons are small, mostly transparent kit images laid over the button's fill (1376x440_pc.png with a caption indented four spaces; 440x440_camera.png with the caption below; 700x448_power.png alone) - `with_icon` - never a whole-button image as Afterburn's are. The seed's confirm action (Confirmation's Power Down) is its own look: #A829258C, then solid alert when pressed, no border - `alert`. A few buttons draw an Extron-Lift glyph (Screen Up/Down, Back); a spec cannot place a glyph, so the kit's own images of the same icons stand in.",
+    "Buttons: seeds/Mach 1035.gdl's own per-state fills, borders and images, read with gdl.project.Project on every PBButton state. ghost and solid author '2D Rounded Rectangle' (`rounded`) on most buttons and no border on a minority (Help, Power Down, Camera 1/2); the `mach` resource the seed defines is on 16 of its 662 button states. Icons are small, mostly transparent kit images laid over the button's fill (1376x440_pc.png with a caption indented four spaces; 440x440_camera.png with the caption below; 700x448_power.png alone) - `with_icon` - never a whole-button image as Afterburn's are. The seed's confirm action (Confirmation's Power Down) is its own look: #A829258C, then solid alert when pressed, no border - `alert`. A few buttons draw an Extron-Lift glyph (Screen Up/Down, Back); a spec cannot place a glyph, so the kit's own images of the same icons stand in.",
     "Schemes: one, `default`. Mach's named swatches (green, blue, red, yellow, white, gray - Mach Styles.psd's 'Colors' group) act as fixed status colors used together on a single seed panel - e.g. seeds/Mach 1035.gdl uses yellow for selection and red and green elsewhere, all in the one project - not as alternate branding schemes a project picks one of, unlike Afterburn's four.",
-    "Slider: measured on Main Volume Slider (30x290): an 8 px track, a 30x30 thumb, all three drawn from images the seed carries and the kit folder does not - 8x500_mach_track_bg@3x.png, 8x500_mach_track_fill@3x.png, 40_mach_thumb@3x.png - extracted to vendor/ with `python -m gdl.designsys extract mach`. A clone keeps its donor's, which is these, so the panel is right either way; the canvas draws them. Level: assumed, as before - the seed has none.",
+    "Slider: measured on Main Volume Slider (30x290): an 8 px track, a 30x30 thumb, all three drawn from images the seed carries and the kit folder does not - 8x500_mach_track_bg@3x.png, 8x500_mach_track_fill@3x.png, 40_mach_thumb@3x.png - extracted to vendor/ with `python -m gdl.designsys extract mach`. A clone keeps its donor's, which is these, so the panel is right either way; the canvas draws them. Level: assumed, as before - the seed has none; its Up and Down, where a level stands in for a slider, show the kit's volume-up and volume-down where their look draws an icon (`steps`), as the 525's own Volume Up and Down are glyphs.",
     "Themes: every one of Mach 1035's 8 pages draws mach-bg-02.png, the pastel mountain sunset, full-bleed (Project.pages()); the kit ships it and five others at 5472x3648 (Resources/Mach/Backgrounds). All six are offered, the seed's first. Extron publishes no pairing for Mach, and it has one accent scheme.",
     "Layout: Mach 1035's Main Select Source and Start. A shade header bar 1280x64 at 0,0 with the page's title in white; a shade footer bar 1280x55 at 0,745 (Room Mode 140 wide, the date and time centered, Help 70, Power Down 140); a left rail at x 17, 103 wide (a heading, then stacked 103x60 buttons); a right rail at x 1161 (Volume, a vertical slider, Mute); the rest between the bars is the photo. Labels on the photo - rail headings, source captions - are black (#000000, the seed's own); labels on a bar are white."
   ],
@@ -146,13 +146,13 @@
       "resource": "Mach - 10 Radius 2 Thick",
       "radius": 10,
       "thickness": 2,
-      "usage": "Mach's own rounded corner: buttons, panels, cards and slider/level tracks. The only border every button archetype uses; the panel draws it from this named border, never from pixels."
+      "usage": "Mach's own rounded corner, 10 px with a 2 px stroke: slider and level tracks, and 16 of the seed's 662 button states. Most of its buttons are on `rounded`, which the seed draws square; give a button this border for a rounded corner or an outline."
     },
     "rounded": {
       "resource": "2D Rounded Rectangle",
-      "radius": 10,
-      "thickness": 3,
-      "usage": "A generic rounded rectangle. One of only two border resources the seed actually draws with, on 2 shapes."
+      "radius": 1,
+      "thickness": 0,
+      "usage": "A generic rounded rectangle. One of only two border resources the seed actually draws with, on 2 shapes. In seeds/Mach 1035.gdl it draws no stroke and its corners come out square (radius 1)."
     },
     "rect": {
       "resource": "2D Rectangle",
@@ -346,7 +346,8 @@
       "border": "mach",
       "orientation": "up",
       "track": 8,
-      "value": "accent"
+      "value": "accent",
+      "steps": {"up": "volume-up", "down": "volume-down"}
     },
     "clock": {
       "type": "body",
@@ -378,7 +379,7 @@
     "states_note": "In Mach a selected or On state usually moves the same fill to a brighter alpha (raised/pressed, shade/shade-on); a state that has to stand out further, like this one, fills solid `accent` instead, with a `page`-colored caption for contrast - see the highlight variant.",
     "on_off": "[\"Off\",{\"name\":\"On\",\"fill\":\"pressed\"}]",
     "group_note": "The cap is Mach's own source row - four across, on the source page's tiles (100x100, 60 px apart) and the header's tabs (190x64, butted) - but the gap is not: set `gap` and `cell` for the group you mean.",
-    "color_rule": "A theme's photo behind everything; `shade` for the header and footer bars and the rail buttons, `raised`/`pressed` for the lighter ghost buttons; `text` on a bar or button, `ink` on the photo; `accent` only for a selected item, with a `page` caption; `alert` only for a confirmed, irreversible action."
+    "color_rule": "A theme's photo behind everything; `shade` for the header and footer bars and the rail buttons, `raised`/`pressed` for the lighter ghost buttons; `text` on a bar or button, `ink` on the photo; `accent` only for a selected item, with a `page` caption; `alert` only for a fault someone has to act on, or a mute that is on - never for shutting the room down."
   },
   "themes": [
     {
@@ -431,6 +432,8 @@
     }
   ],
   "layout": {
+    "bars": "controls",
+    "bars_note": "Its bars and rails are controls over the photograph, not background art, so on a panel other than the one drawn a Page's own children go through both panels' bands (docs/claude-design.md section 4).",
     "main": [
       140,
       64,
@@ -439,10 +442,10 @@
     ],
     "main_note": "Between the header and footer bars (64-745 down) and between the rails (140-1140 across): the photo, where the page's main task sits.",
     "regions": [
-      "**The header bar (1280x64 at 0,0) is a `shade` Panel with the page's title centered on it**, a `heading` Label in `text` (Select a source, Room Title).",
+      "**The header bar (1280x64 at 0,0) is a `shade` Panel with the page's title centered on it**, a `header` Label in `text` (Select a source, Room Title).",
       "**The footer bar (1280x55 at 0,745) is `shade` too**, holding a `footer` Room Mode button at its left (140 wide), the date and time centered in `text-secondary`, and `footer` Help (70) and Power (140) buttons at its right.",
-      "**The left rail (x 17, 103 wide) holds grouped controls:** a heading in `ink` on the photo (Display, Settings, Lighting Preset), then a column of `solid` buttons 103x60, stacked with no gap inside a group.",
-      "**The right rail (x 1161, 103 wide) holds volume:** a `Volume` heading in `ink`, a vertical slider about 30 wide centered under it, and a `solid` Mute button 103x60 below.",
+      "**The left rail (x 17, 103 wide) holds grouped controls:** a heading in `ink` on the photo (Display, Settings, Lighting Preset), then a column of `solid` buttons 103x60, 12 px apart (the seed stacks a group's with no gap, under the 12 px the toolkit checks between two touchable controls).",
+      "**The right rail (x 1161, 103 wide) holds volume:** a `Volume` heading in `ink`, a vertical slider centered under it (Mach draws it about 30 wide; make it 54, since 30 is under the 53 px touch minimum the toolkit checks), and a `solid` Mute button 103x60 below.",
       "**Sources sit in the middle of the photo** as `source` tiles about 150x150, the row centered on the page, each with its name as its caption on the tile; a status line or a single action is centered under them."
     ]
   },
@@ -465,6 +468,232 @@
       "960x440": 210,
       "1508x440": 330,
       "546x440": 120
+    }
+  },
+  "panels": {
+    "_source": [
+      "Series, sizes, DPI and tier: GUI Designer's own TemplateInfoTable.config, through gdl/templates.py; each series' models are the MODELS_FULL models gdl.templates.template_for gives it, by model.",
+      "main and rail: off the series template's own Main* pages (tests/measure_series.py control_regions). Mach lays its header and footer bars and its settings and volume columns over a photograph as controls, the footer's end buttons as wide as the columns' bands: main lies between the bars and between the end buttons, and the rail is the right band between the bars. The standard popup's window covers four-fifths of main and is not it.",
+      "The 520 and 535 hubs keep a menu bar down the right: main is the canvas left of it, the rail the bar. The 300 has a footer bar and no columns, so its rail is the footer, running across. The 320 keeps nothing on screen from page to page - its volume is a popup no page opens - so it has no rail.",
+      "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
+      "backgrounds: each theme's photograph from the kit, by its art's own name (tests/measure_series.py theme_backgrounds): every series but the 300 stretches the 3:2 5472x3648 ones; the 300 fills its own 320x480 ones. The template's default is its kit file pixel for pixel and keeps the template's name for it (mach-bg-02.png; the 300's mach_bg_02.png), which its seed carries with those pixels; the others take the kit file's, which the applier appends.",
+      "seeds, kinds: each seed in seeds/ by part number and canvas, and what control kinds it can clone - the 720's, 725's, 1035's, 1525's and 1535's a slider and no level; the 300M's, 320's, 525's and 535's a level and no slider; the 320's no popup.",
+      "Measured with tests/measure_series.py Mach."
+    ],
+    "Mach 1220 Series": {
+      "size": [1280, 800],
+      "dpi": 124.75,
+      "tier": "A",
+      "models": [
+        "TLC1026M",
+        "TLP1025M",
+        "TLP1025T",
+        "TLP1035M",
+        "TLP1035T",
+        "TLP1220MG",
+        "TLP1220TG",
+        "TLP1225MG",
+        "TLP1225TG",
+        "TLP835C",
+        "TLP835M",
+        "TLP835T",
+        "ZRTP1025M",
+        "ZRTP1025T"
+      ],
+      "main": [140, 64, 1000, 681],
+      "rail": [1140, 64, 140, 681],
+      "rail_axis": "column",
+      "popup": [995, 549],
+      "fit": "stretch",
+      "backgrounds": {
+        "sunset": {"image": "mach-bg-02.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png"},
+        "dome": {"image": "5472x3648_mach-bg-01.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png"},
+        "lake": {"image": "5472x3648_mach-bg-03.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png"},
+        "forest": {"image": "5472x3648_mach-bg-04.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png"},
+        "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
+        "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
+      },
+      "seeds": {"TLP1035M": "seeds/Mach 1035.gdl", "TLP1035T": "seeds/Mach 1035.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Mach 1020 Series": {
+      "size": [1024, 600],
+      "dpi": 118.0,
+      "tier": "A",
+      "models": [
+        "TLC726M",
+        "TLP1020M",
+        "TLP1020T",
+        "TLP1022M",
+        "TLP1022T",
+        "TLP725C",
+        "TLP725M",
+        "TLP725T",
+        "ZRTP725M",
+        "ZRTP725T"
+      ],
+      "main": [123, 60, 778, 483],
+      "rail": [901, 60, 123, 483],
+      "rail_axis": "column",
+      "popup": [710, 405],
+      "fit": "stretch",
+      "backgrounds": {
+        "sunset": {"image": "mach-bg-02.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png"},
+        "dome": {"image": "5472x3648_mach-bg-01.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png"},
+        "lake": {"image": "5472x3648_mach-bg-03.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png"},
+        "forest": {"image": "5472x3648_mach-bg-04.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png"},
+        "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
+        "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
+      },
+      "seeds": {"TLP725T": "seeds/Mach 725.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Mach 1520 Series": {
+      "size": [1366, 768],
+      "dpi": 100.45,
+      "tier": "A",
+      "models": ["TLP1520MG", "TLP1520TG", "TLP1525MG", "TLP1525TG"],
+      "main": [149, 60, 1068, 651],
+      "rail": [1217, 60, 149, 651],
+      "rail_axis": "column",
+      "popup": [1061, 527],
+      "fit": "stretch",
+      "backgrounds": {
+        "sunset": {"image": "mach-bg-02.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png"},
+        "dome": {"image": "5472x3648_mach-bg-01.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png"},
+        "lake": {"image": "5472x3648_mach-bg-03.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png"},
+        "forest": {"image": "5472x3648_mach-bg-04.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png"},
+        "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
+        "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
+      },
+      "seeds": {"TLP1525TG": "seeds/Mach 1525.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Mach 1720 Series": {
+      "size": [1920, 1080],
+      "dpi": 127.7,
+      "tier": "A",
+      "models": ["TLP1535M", "TLP1535T", "TLP1720MG", "TLP1720TG", "TLP1725MG", "TLP1725TG"],
+      "main": [210, 84, 1499, 917],
+      "rail": [1709, 84, 211, 917],
+      "rail_axis": "column",
+      "popup": [1491, 741],
+      "fit": "stretch",
+      "backgrounds": {
+        "sunset": {"image": "mach-bg-02.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png"},
+        "dome": {"image": "5472x3648_mach-bg-01.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png"},
+        "lake": {"image": "5472x3648_mach-bg-03.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png"},
+        "forest": {"image": "5472x3648_mach-bg-04.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png"},
+        "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
+        "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
+      },
+      "seeds": {"TLP1535M": "seeds/Mach 1535.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Mach 720 Series": {
+      "size": [800, 480],
+      "dpi": 133.33,
+      "tier": "A",
+      "models": ["TLP720C", "TLP720M", "TLP720T"],
+      "main": [96, 48, 608, 386],
+      "rail": [704, 48, 96, 386],
+      "rail_axis": "column",
+      "popup": [554, 324],
+      "fit": "stretch",
+      "backgrounds": {
+        "sunset": {"image": "mach-bg-02.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png"},
+        "dome": {"image": "5472x3648_mach-bg-01.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png"},
+        "lake": {"image": "5472x3648_mach-bg-03.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png"},
+        "forest": {"image": "5472x3648_mach-bg-04.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png"},
+        "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
+        "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
+      },
+      "seeds": {"TLP720T": "seeds/Mach 720.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Mach 535 Series": {
+      "size": [1280, 720],
+      "dpi": 293.72,
+      "tier": "B",
+      "models": ["TLP535M", "TLP535T"],
+      "main": [0, 0, 1123, 720],
+      "rail": [1123, 0, 157, 720],
+      "rail_axis": "column",
+      "popup": [1123, 720],
+      "fit": "stretch",
+      "backgrounds": {
+        "sunset": {"image": "mach-bg-02.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png"},
+        "dome": {"image": "5472x3648_mach-bg-01.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png"},
+        "lake": {"image": "5472x3648_mach-bg-03.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png"},
+        "forest": {"image": "5472x3648_mach-bg-04.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png"},
+        "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
+        "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
+      },
+      "seeds": {"TLP535T": "seeds/Mach 535.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": true}
+    },
+    "Mach 520 Series": {
+      "size": [800, 480],
+      "dpi": 188.15,
+      "tier": "B",
+      "models": ["TLC521M", "TLC526M", "TLP520M", "TLP525C", "TLP525M", "TLP525T"],
+      "main": [0, 0, 702, 480],
+      "rail": [702, 0, 98, 480],
+      "rail_axis": "column",
+      "popup": [702, 480],
+      "fit": "stretch",
+      "backgrounds": {
+        "sunset": {"image": "mach-bg-02.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png"},
+        "dome": {"image": "5472x3648_mach-bg-01.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png"},
+        "lake": {"image": "5472x3648_mach-bg-03.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png"},
+        "forest": {"image": "5472x3648_mach-bg-04.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png"},
+        "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
+        "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
+      },
+      "seeds": {"TLP525T": "seeds/Mach 525.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": true}
+    },
+    "Mach 320 Series": {
+      "size": [320, 240],
+      "dpi": 113.65,
+      "tier": "C",
+      "models": ["TLP320C", "TLP320M"],
+      "main": [0, 36, 320, 204],
+      "rail": null,
+      "rail_axis": null,
+      "popup": null,
+      "fit": "stretch",
+      "backgrounds": {
+        "sunset": {"image": "mach-bg-02.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-02.png"},
+        "dome": {"image": "5472x3648_mach-bg-01.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-01.png"},
+        "lake": {"image": "5472x3648_mach-bg-03.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-03.png"},
+        "forest": {"image": "5472x3648_mach-bg-04.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-04.png"},
+        "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
+        "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
+      },
+      "seeds": {"TLP320M": "seeds/Mach 320.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": false}
+    },
+    "Mach 300 Series": {
+      "size": [320, 480],
+      "dpi": 164.83,
+      "tier": "C",
+      "models": ["TLP300M"],
+      "main": [0, 0, 320, 400],
+      "rail": [0, 400, 320, 80],
+      "rail_axis": "row",
+      "popup": null,
+      "fit": "fill",
+      "backgrounds": {
+        "sunset": {"image": "mach_bg_02.png", "file": "Mach/Backgrounds/320x480/320x480_mach-bg-02.png"},
+        "dome": {"image": "320x480_mach-bg-01.png", "file": "Mach/Backgrounds/320x480/320x480_mach-bg-01.png"},
+        "lake": {"image": "320x480_mach-bg-03.png", "file": "Mach/Backgrounds/320x480/320x480_mach-bg-03.png"},
+        "forest": {"image": "320x480_mach-bg-04.png", "file": "Mach/Backgrounds/320x480/320x480_mach-bg-04.png"},
+        "ridges": {"image": "320x480_mach-bg-05.png", "file": "Mach/Backgrounds/320x480/320x480_mach-bg-05.png"},
+        "facade": {"image": "320x480_mach-bg-06.png", "file": "Mach/Backgrounds/320x480/320x480_mach-bg-06.png"}
+      },
+      "seeds": {"TLP300M": "seeds/Mach 300M Portrait.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": true}
     }
   }
 }

@@ -1,6 +1,7 @@
 {
   "name": "Clean Room 835",
   "model": "TLP835M",
+  "family": "Afterburn",
   "size": [
     1280,
     800

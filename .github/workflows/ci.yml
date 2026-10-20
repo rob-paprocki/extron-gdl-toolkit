@@ -29,7 +29,8 @@ name: ci
 #          seed CI pulls runs, and what reads another seed or Extron's
 #          template table skips (below).
 #   CAN  - what the scripts that need GUI Designer promise their callers, as
-#          text (tests/test_seed_script.py, test_panel_scripts.py), and the
+#          text (tests/test_seed_script.py, test_panel_scripts.py,
+#          test_gd_blocker.py), and the
 #          corpus audit's verdicts on the facts it reduces a project to
 #          (tests/test_audit_corpus.py); the audit itself reads the seeds and
 #          Extron's templates.
@@ -87,8 +88,8 @@ jobs:
       - name: the worked example is still satisfiable by its donor
         # Catches both donor failures without a Windows box: a control type the
         # donor cannot supply (clone-never-construct), and a page or popup name
-        # the donor already uses - which is a hard build error, and cost a round
-        # trip to the VM to discover.
+        # the built panel keeps from the donor - which is a hard build error, and
+        # cost a round trip to the VM to discover.
         run: |
           python -m gdl.spec donors examples/panel.json "seeds/Afterburn 1035.gdl"
 
@@ -209,6 +210,12 @@ jobs:
         # render path.
         run: python tests/test_fonts.py
 
+      - name: an icon font's glyphs are read by name
+        # A spec's `icon` names a glyph the way the face names it. The rules run
+        # on a face the test builds; Extron-Afterburn's own names come out of the
+        # seed this job pulls.
+        run: python tests/test_sfnt.py
+
       - name: the ID map - navigation checks and output
         # Every addressable control's ID, page, caption and function, and the
         # page flips checked. docs/idmap.md is the home.
@@ -255,9 +262,19 @@ jobs:
         # Text pins: running powershell/New-GdlSeed.ps1 needs GUI Designer.
         run: python tests/test_seed_script.py
 
+      - name: what a measured series is served by, and where its regions are
+        # The regions rule runs on pages made in the test. What reads Extron's
+        # templates or their table skips: neither is on the runner.
+        run: python tests/test_measure_series.py
+
       - name: the panel scripts' contract with their caller
         # Text pins: running powershell/New-GdlPanel.ps1 needs GUI Designer.
         run: python tests/test_panel_scripts.py
+
+      - name: where a run that drives GUI Designer asks what is in its way
+        # Text pins. What powershell/GdlBlocker.ps1 sees is tested against a
+        # stand-in window, which needs Windows, so those skip here.
+        run: python tests/test_gd_blocker.py
 
       - name: the corpus audit's verdicts, on facts
         # The audit itself reads every seed and Extron's templates and takes
@@ -270,6 +287,9 @@ jobs:
       - name: the public copy's builder and its pre-push hook
         # Throwaway repositories; git and git-lfs are on the runner.
         run: python tests/test_public_sync.py
+
+      - name: the skill Claude Code loads triggers as SKILL.md says
+        run: python tests/test_skill.py
 
       - name: every tests/test_*.py is run by a job in this file
         # A test file added and not named here would run nowhere, and nothing

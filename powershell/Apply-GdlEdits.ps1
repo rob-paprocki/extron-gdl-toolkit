@@ -169,7 +169,19 @@ foreach ($op in $spec.project) {
     }
     Write-Output "   platform $($inst.GetType().Name) part $(Get-GdlField $inst 'partNumberField')"
 
+    # CreatePlatform hands back the panel's default way up. A panel that rotates
+    # (gdl.spec.sizes) is turned by its platform's own horizontal and vertical
+    # resolution and the project's screen size - the project-level fields the
+    # 300M's two Afterburn seeds differ in (docs/gdl-format.md section 7).
+    $turned = ([int](Get-GdlField $inst 'horizontalResolutionField') -ne [int]$op.size[0] -or
+               [int](Get-GdlField $inst 'verticalResolutionField') -ne [int]$op.size[1])
+    if ($turned) { Write-Output "   turned to $($op.size -join 'x')" }
+
     if (-not $WhatIf) {
+        if ($turned) {
+            Set-GdlField $inst 'horizontalResolutionField' ([int]$op.size[0])
+            Set-GdlField $inst 'verticalResolutionField' ([int]$op.size[1])
+        }
         Set-GdlFieldIfPresent $proj 'platformField' $inst | Out-Null
         Set-GdlField $proj 'platformTypeField' $etype
         Set-GdlFieldIfPresent $proj 'screenSizeField' `

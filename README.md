@@ -9,6 +9,18 @@ pages, popup page references and controls) and build successfully.
 
 Not affiliated with Extron.
 
+## Start here
+
+In Claude Code, in this repository, ask for the panel you want: *"build the
+huddle canvas at <claude.ai link> for a TLP Pro 1035 and 725"*, *"make a
+boardroom panel from this brief"*, *"change the client's 1035 panel so..."*.
+The `extron-panel` skill (`.claude/skills/`) points Claude Code at the
+procedure, `SKILL.md`. A canvas designed in Claude Design with an Extron
+template's design system is built as `docs/claude-design.md` §1 says, and comes
+out as each panel's built `.gdl`, the programmer's ID map and a sign-off page.
+Building needs Windows and GUI Designer, and building from a canvas Chrome too
+(`CLAUDE.md` *Environment*); *Setup*, below, gets a machine ready.
+
 ## Why
 
 A `.gdl` is opaque: a ZIP with deliberately mangled signatures wrapping a .NET
@@ -35,6 +47,8 @@ together.
 | `powershell/New-GdlPanel.ps1` | a spec to a built, verified panel, with nobody touching GUI Designer |
 | `powershell/New-GdlPanels.ps1` | every panel of a canvas built on its own seed, each verified against one ID map |
 | `powershell/New-GdlSeed.ps1` | a seed for any panel and theme, made through GUI Designer's Project Create Wizard |
+| `powershell/New-GdlTurnedSeed.ps1` | a seed for a panel turned where its theme draws no template that way up: its own seed turned, built and verified |
+| `powershell/Get-GdlPlatforms.ps1` | every panel GUI Designer builds for, from its own assemblies: resolution, DPI, part number and the resolutions it runs at |
 | `viewer/` | builds a single-file HTML browser for every page and popup |
 | `tests/score.py` | scores the render against ground truth and fails on any regression |
 | `tests/compare_snapshots.py` | the same comparison, printed per page |
@@ -44,6 +58,7 @@ together.
 | `tests/type_probe.py` | measures how many pixels a point is on a panel, off captions Build bakes |
 | `examples/` | worked spec, edit set and authoring script, all of which run |
 | `SKILL.md` | the repeatable procedure. Start here to build or modify a panel |
+| `.claude/skills/extron-panel/` | registers `SKILL.md` as a Claude Code skill, so asking for a panel in this repo finds it |
 | `docs/gdl-format.md` | the format writeup. Read this first |
 | `docs/from-scratch.md` | generating a panel from a spec, and driving GUI Designer from a script |
 | `docs/editing.md` | changing a panel that already exists |
@@ -71,6 +86,7 @@ Verified with:
 | Python | 3.11.9 | everything; reading, editing and plan generation are stdlib-only |
 | Pillow, pytest | 12.3.0, 9.1.1 | rendering and the test suite |
 | Git LFS | 3.7.1 | `seeds/` and `archive/` |
+| Google Chrome or Chromium | 155.0.8059.40 | a Claude Design canvas: `gdl.design` lays it out and draws its sign-off page headless (`--chrome` or `CHROME` for one it does not find) |
 | Extron GUI Designer | **1.28.0.7**, the tested boundary | writing and building a `.gdl` — `CLAUDE.md` *Environment* says what else that needs |
 
 Then, from the repo root:
@@ -132,7 +148,8 @@ against.
 Write the change as JSON, resolve it against the real project, then apply it.
 Five operations: `rename` captions and `restyle` colors, both state by state;
 `states` to add, remove or rename a button's states; `retarget` to another
-panel model with optional rescaling; and `renumber` addressable IDs. Selectors
+panel model, or the other way up for a panel that rotates, with optional
+rescaling; and `renumber` addressable IDs. Selectors
 are ANDed and match exactly or by regex. `docs/editing.md` has the detail.
 
 ```bash
@@ -149,17 +166,22 @@ matches nothing is an error here rather than a silent no-op at apply time.
 python -m gdl.spec check   examples/panel.json          # ids, off-canvas, sizes, resources
 python -m gdl.spec render  examples/panel.json out/preview.png
 python -m gdl.spec donors  examples/panel.json "seeds/Afterburn 1035.gdl"
-python -m gdl.spec plan    examples/panel.json out/plan.json
+python -m gdl.spec donors  examples/panel.json --auto   # the seed for its "family"
+python -m gdl.spec icons   Mach out/mach-icons.png       # what an "icon" takes, drawn
+python -m gdl.spec plan    examples/panel.json out/plan.json --donor "seeds/Afterburn 1035.gdl"
 
 python -m gdl.idmap check examples/huddle-functions.json   # what the controls do
 python -m gdl.idmap write examples/huddle-functions.json out/idmap
+python -m gdl.idmap from-built <panel.gdl> out/idmap        # a panel that was never a spec
 ```
 
 Look at the preview before building. The compositor is scored against GUI
-Designer's own output, so it is a real preview. `donors` finds in a second what
+Designer's own output, so it is a real preview. `donors` finds in seconds what
 would otherwise surface only in a build — a control type the donor cannot
-supply, a page or popup name it already uses, a border resource or font it
-lacks. `SKILL.md` has the full procedure, and where GUI Designer is installed
+supply, a page or popup name the built panel keeps from it, a font it lacks and
+no seed carries, a border it lacks and has nothing of that shape for. A face a
+seed carries, or a border of a near shape, it names, and `plan --donor` appends
+or builds. `SKILL.md` has the full procedure, and where GUI Designer is installed
 `powershell\New-GdlPanel.ps1` runs all of it, build and verification included.
 A spec can also say what its controls do; `gdl.idmap` checks the page flips and
 writes the programmer's ID map from the same file (`docs/idmap.md`).
@@ -222,8 +244,9 @@ what the residual is. Known gaps, and everything left to do, are in
 
 ## Fonts
 
-The renderer resolves faces from `gdl/fonts/` before the system font path. A
-face it cannot find there draws in a stand-in - the host's copy, or Arial - and
+The renderer resolves faces from `gdl/fonts/`, then an icon face from its
+family's seed, before the system font path. A face it cannot find in any draws
+in a stand-in - the host's copy, or Arial - and
 `tests/score.py record` refuses to score over one; a face found nowhere raises.
 `gdl/fonts/README.md` has which faces are tracked and why, how the rest are
 recovered from the fixtures, and which projects declare faces they do not embed.

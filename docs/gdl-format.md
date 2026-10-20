@@ -24,6 +24,15 @@ back and any standard ZIP tool opens it. Two members:
 Editing only `ProjectGCP` is enough. The payload goes stale and GUI Designer
 rebuilds it.
 
+**Only the records' signatures are swapped.** A member's compressed data can
+hold the same four bytes by chance - the Turbulence huddle's 725
+(`tests/data/design-panels-turbulence`) holds `KP 05 06` 50 MB into its
+`ProjectGCP`, and a later version of the huddle built on the 1525 a `KP 03 04`
+37 MB into its own - so swapping every occurrence in
+the file damages that data, and reads as a wrong CRC-32 on a file GUI Designer
+wrote whole. `gdl.container` finds the records as a ZIP reader does, from the
+end of central directory, and swaps those alone, reading and writing.
+
 ## 2. What Build actually does
 
 Measured by diffing a project before and after a build:
@@ -132,6 +141,7 @@ Backing fields worth knowing:
 | `popupIDField`, `groupIDField` | `PBPopupPageID` | on the reference control |
 | `popupPageGroupsField` | `PBProject` | the group registry |
 | `defaultPageField` | `PBProject` | the start page, as a page's `idField` - see §7 |
+| `nameField`, `familyNameField`, `styleNameField`, `windowsFamilyNameField`, `windowsStyleNameField`, `embeddedFileNameField`, `filenameField`, `sizeField`, `dataField`, `mIsDefault` | `PBFontResource` | a face: `dataField` its bytes, `sizeField` the size the project declares, which is not always theirs, `mIsDefault` set on a face GUI Designer supplies (Arial Black). A clone of the project's first, every field set from a project that carries the face, builds and is declared (`seeds/README.md`) |
 
 ## 5. Modal vs standard popups
 
@@ -204,15 +214,24 @@ A generator should assert all four agree rather than trusting the writes.
   popup's own size before adding controls to it.
 - **Build adds one full-canvas `PBPopupPageReference` per modal popup to every
   page — the Offline Page included only when `EnableOfflinePage` is on.** A
-  generated page therefore comes back with more controls than were authored —
-  six more with the client donor, which has seven modal popups, one of
-  them an Offline Page that is switched off. It is not contamination from the
-  clone; the donor's own pages carry the same six. `tests/audit_corpus.py`
-  checks the rule against every built project it can reach: only the Turbulence
-  and Afterburn 320 seeds have the Offline Page on, and both reference it too.
+  generated page therefore comes back with more controls than were authored:
+  one for each modal popup still in the project - the spec's own, since the
+  applier drops the donor's (`docs/from-scratch.md` §5c), and every one of the
+  donor's too under `keep_donor_pages`. It is not contamination from the
+  clone; the donor's own pages carry the same references. `tests/audit_corpus.py`
+  checks the rule against every built project it can reach, the few seeds with
+  the Offline Page on among them - each references it too.
 - **A built seed does not name the series template it came from.** A `.glt` is a
-  `PBTemplate`: `mSeries` (GUI Designer's `TLPSeries` - `Series1020`, `Series520`
-  and so on), its resolution and DPI, and the pages. The project the Create Wizard
+  `PBTemplate`: `mSeries`, its resolution and DPI, and the pages. `mSeries` is
+  GUI Designer's `TLPSeries`, stored as its number: 1 `Series1020`, 2
+  `Series720`, 3 `Series520`, 4 `SeriesVTLPWeb`, 5 `SeriesVTLPiOS`, 6
+  `SeriesTLI`, 7 `Series320`, 8 `Series1520`, 9 `Series1220`, 10 `Series1720`,
+  12 `SeriesVTLPAndroid`, 13 `Series300`, 14 `Series1230`, 15 `Series535`, 16
+  `Series835`, 17 `Series1035`, 18 `SeriesVTLPEcp`. An Afterburn, Mach,
+  Shockwave or Turbulence file named `<Theme> NNN Series` stores the series of
+  that number; the ZRTP files named 725 and 1025 store 1 and 9, the Teams Rooms
+  and Zoom Rooms ones 4, the ECP ones 18, and no installed template stores 16
+  or 17. The project the Create Wizard
   makes from one has none of that but the pages: its `nameField` is the theme, the
   application and a label per screen (`Afterburn All-inclusive 725` comes from the
   1020 series, `... 525` from the 520), and `layout.json` adds a platform and a
@@ -241,6 +260,19 @@ A generator should assert all four agree rather than trusting the writes.
   `Unknown: file.gdl` however correct `platformField`, `platformTypeField` and
   `screenSizeField` are - it identifies a panel by **part number**. Use
   `PBTouchPanelPlatformPro.CreatePlatform(PBProject, PlatformProTypeEnum)`.
+- **Which way up a project is lives in three fields:** its platform's
+  `horizontalResolutionField` and `verticalResolutionField`, and the project's
+  `screenSizeField`. Those are the project-level fields that differ between the
+  two Afterburn 300M seeds, portrait and landscape; everything else that differs
+  is content - names, dates, the pages' own sizes, the controls the two series
+  templates draw. The platform also carries the `supportedResolutions` it may
+  take, both ways up for the panels that rotate (`docs/design-rules.md` §1);
+  `CreatePlatform` hands back the default way, so a turned retarget writes the
+  resolution fields after it.
+  `layout.json` reports the result as `Platform.Orientation`, 0 for the first
+  supported resolution and 1 for the second. A retarget of the Afterburn 1035
+  seed to a TLP1035M at 800x1280 builds with every page at 800x1280, the
+  full-canvas modals too, and its 880x525 popups scaled to 550x840.
 - **A popup's authored size is its real size** — and a retarget must resize
   `PopupPages` as well as `Pages`. Resizing only `Pages` leaves every scaled
   popup control overflowing the old canvas, and Build moves them all to 0,0 (297
@@ -351,24 +383,35 @@ A generator should assert all four agree rather than trusting the writes.
   `TLPMaxValueImageID`, each stretched into `sliderTrackWidth` across and the
   slider's length less the thumb along, centered - inset half the thumb at
   each end, where its center stops: Mach's 8 px rail in a 30 px slider,
-  Turbulence's 44 px striped one 26 px short of each end. Those sliders author
+  Turbulence's 44 px striped one 26 px short of each end. The full asset is the
+  fill drawn over the track - Shockwave's fill is narrower than its track, whose
+  rim shows round it - and a track wider than its slider is still drawn
+  `sliderTrackWidth` across, centered and cut to the control: a 47 px slider
+  with a 52 px track. So drawn, every rail of the three themes' seeds reads 0%
+  off its kit files (`rail_image` in `tests/verify_built.py`). Those sliders author
   no border and a Transparent fill; one with a border resource and a fill builds
   that bordered fill in place of the art, so a Shockwave slider planned with
   the rounded border and black fill builds an opaque black block with the right
-  images on the model. The applier clears every clone's `backgroundImageField`,
-  which on a slider is its track, so the plan writes the rail and the verifier
-  reads it back off the two assets.
+  images on the model. The applier clears every clone's `backgroundImageField`
+  - on a slider, its track - but an art-drawn level's (below), so the plan
+  writes the rail and the verifier reads it back off the two assets.
 - **A Level's `TLPImageID` is its full bar; a Slider's is its empty track.**
   Build writes both kinds' empty and full art as `TLPMinValueImageID` and
   `TLPMaxValueImageID`, and names one of them as the control's `TLPImageID`:
   the max on all 33 Levels in the seeds and fixtures, the min on all 206
   Sliders. So a Level's authored fill - its track - is on its min asset, and
   its `TLPImageID` reads back as the accent bar.
-- **A Level is its rail, and its bar is `gaugeFillColorField`.** Build draws a
+- **A Level is its rail, and its bar is a color or an image.** Build draws a
   Level over its whole box - it has no track width, unlike a slider - and every
-  Afterburn seed's Level is 15 px across. Its filled part is
-  `gaugeFillColorField`, `#626ACF` (scheme 1's secondary accent) in every
-  seed, so a clone keeps that under any other scheme until it is set.
+  Afterburn seed's Level is 15 px across. `gaugeFillTypeField` says which bar:
+  0, `gaugeFillColorField` - Afterburn's and Mach's seeds, Afterburn's
+  `#626ACF` (scheme 1's secondary accent), so a clone keeps that under any
+  other scheme until it is set; 1, `gaugeFillImageField` over the empty track
+  in `backgroundImageField` - Shockwave's and Turbulence's, whose color is an
+  unused `#0000FF` - which Build draws in place of any color. The applier
+  clears every clone's background image, but a level its donor draws from art
+  keeps it (the plan's `keep_art`, from `gdl.spec`'s donor check) and is
+  planned no bar color, and the verifier holds its empty and full art apart.
 - **A page's background image is a named `PBImageResource`**, referenced from
   `backgroundImageField` by a `PBResourceReferenceImage` and drawn by
   `backgroundImageLayoutField` over the page fill - the Afterburn seeds fit
@@ -422,6 +465,26 @@ A generator should assert all four agree rather than trusting the writes.
   and footer art is alpha 128 throughout. `tests/verify_built.py` reads a
   translucent fill off the pixels at its alpha, as it reads an opaque one off
   the opaque pixels.
+- **A built-in border draws as its project defines it.** Every project carries
+  its own copy of GUI Designer's 13 built-ins, each a `PBBorderInfo` in its
+  resource's `dataField` - `cornerRadiusField`, `thicknessField` - and seeds
+  differ (`Project.border_geometry`): 2D Rounded Rectangle is radius 1 and
+  thickness 0 in the Mach 1035 and 525, 2 and 1 in the Shockwave 1035, 10 and 3
+  in the Turbulence and Afterburn ones; 2D Rectangle is thickness 3 in the
+  Mach 1035 and 0 in its 525. Build draws exactly that. On the Mach 1035 a button
+  on 2D Rounded Rectangle whose Warming Up state was Off's fill with an accent
+  `borderColorField` built as Off's very artwork, its Cooling Down's white
+  outline was not drawn either, and its corners came out square - a 460 x 100
+  button's corner pixel at alpha 96 of the fill's 180. On the clean-room
+  panel's 2D Capsule, thickness 3, the stroke is three pixels of `muted` inside
+  the edge. `BORDER_GEOMETRY` is the client fixture's and only the preview's.
+  So `gdl.spec donors`, and the translator with the panel's own seed, name a
+  stroke on a border the seed gives no thickness (`Panel.stroke_rules`), and
+  each design system draws a built-in as its design panel's seed defines it.
+  Mach's ghost, solid and highlight buttons stay on 2D Rounded Rectangle, as
+  554 of the seed's 662 button states are - square, their states told apart by
+  fill. `Mach - 10 Radius 2 Thick`, on 16 of them, builds rounded: the same
+  button on it has its corner and (3, 3) empty and (6, 6) fill.
 - **A kit image button carries its image on each state, not on the control.**
   Every image button in the Afterburn 1035 and 1535 seeds has an empty
   control-level `buttonImageField` and one per state, drawn `Fill` and
@@ -463,7 +526,9 @@ result; its last run, over 6 fixtures, 23 seeds and 50 templates:
 | `userId` fits in UInt16 | PASS - highest 61,091 |
 | A button's caption lives on its state | PASS - state 88.5%, formatted state 11.5% |
 | One full-canvas popup reference per shown modal popup, per page | PASS on all 25 built projects that have a modal popup |
-| Every declared face is recoverable | **FAIL** - 15 of 29 built projects declare Arial Black and define no resource for it, and Turbulence carries its Arial under no file name; see `gdl/fonts/README.md` and `docs/ROADMAP.md` |
+| Every face a project declares and carries is recovered | PASS on all 29 built projects, declaration by declaration |
+| Faces declared and not carried | INFO - 23 of 29 built projects, every seed and no fixture: `ariblk.ttf` in the 15 seeds that define no Arial Black resource, and the Monotype `arial.ttf` in the 14 that carry a Windows Arial in its place; see `gdl/fonts/README.md` |
+| Faces carried and not declared | INFO - 1 of 29 built projects: the Turbulence 1035 seed's Windows Arial, carried under a resource that names no file |
 | Every canvas is a model the table can target, either way up | **FAIL** - 1920x1200 and 986x740, the Teams Rooms and Zoom Rooms control templates, whose platforms the table does not list; see `docs/ROADMAP.md` |
 | Border resources shared across themes | INFO - none common to all 79 projects; Afterburn 17-32, Mach 13-15, Shockwave 13-14, Turbulence 13, Zoom Rooms 16-17 |
 | Controls Build leaves unrasterized | INFO - 2 to 187 per project, in all 29 built; the baseline to compare a suspect build against |

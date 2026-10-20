@@ -7,7 +7,7 @@
     "Contrast: the seed's lit caption, LimeGreen on its white lit art, is 2.1:1 - below docs/design-rules.md section 2's 4.5:1. It is the seed's own pair, kept and flagged; the dock's teal lit art carries it at 5.8:1.",
     "Type: every drawn caption and label is Open Sans Light, regular weight (the seed sets Bold only on uncaptioned states and an icon font); the system carries Open Sans at 400, a little heavier. Labels 16 pt (36), 36 (17), 20 (16); captions 16 (146 states) and 20 (88, the keyboard). The draft's 35 pt and 10 pt bold came off states with no caption and are gone.",
     "Borders: 13 defined, 4 drawn - 2D Rounded Rectangle on all 28 shapes, 2D Rectangle on the 6 search rows' states, the 3D Gradient pair on the 12 preset states. No button has a control-level border.",
-    "Slider: all 10 seed sliders are image-drawn - 52 wide, sliderTrackWidth 44, thumb 52x52 from 102x102_thumb_turb_sq.png, rail 52x535_turb_slider_bg.png under 52x535_turb_slider_fill.png - with no fill or border. The seed has no level; `level` is assumed.",
+    "Slider: all 10 seed sliders are image-drawn - 52 wide, sliderTrackWidth 44, thumb 52x52 from 102x102_thumb_turb_sq.png, rail 52x535_turb_slider_bg.png under 52x535_turb_slider_fill.png - with no fill or border. The seed has no level; `level` is the 525's, whose seed has no slider: the volume level on its Start page - the first, the one the applier clones - is 10 wide by 236, drawn from 24x535_vert_vol-bars_full.png over _empty.png, as the 320's is 12 wide. Its Up and Down, where a level stands in for a slider, show the kit's volume_up and volume_down where their look draws an icon (`steps`) - the 525's own, beside its Volume Mute.",
     "Layout, from Main SD: a 1280x133 header holding six 127x133 source tabs from x 141, 140 px rails either side, a 997x110 footer at 140,688, and the 995x549 popup region at 140,137 where a source's popup shows. Every page stretches its photo (backgroundImageLayoutField 1): bkgd_pc behind the device pages, bkgd_home behind Select a Source, bkgd_home_plain behind Room Mode, bkgd_start behind Start. bkgd_home and bkgd_start paint bars into the photo and only suit those layouts, so they are not themes; the templates add bkgd_lighting, bkgd_swoop_plain and bkgd_water-1_plain.",
     "Sizes: each button variant's `size` is the size the seed draws it at - the most common rect among its buttons, read by the art their first state shows: the square tile 87x90 (39 of 43), the ring 100x100 (18), the dock's tile 140x108 (23), a call tile 140x89, a source tab 127x133, a wide bar 383x100, a scene picture 266x209, an answer 240x129, a preset 218x149, the Start disc 271x282, Close 60x60."
   ],
@@ -175,7 +175,8 @@
       "track_image": "52x535_turb_slider_bg.png",
       "fill_image": "52x535_turb_slider_fill.png"
     },
-    "level": {"fill": "ink", "border": "rounded", "orientation": "up", "track": 24, "value": "text"},
+    "level": {"fill": "ink", "border": "rounded", "orientation": "up", "track": 10, "value": "text",
+              "steps": {"up": "volume_up", "down": "volume_down"}},
     "clock": {"type": "body", "color": "text"}
   },
   "cover": {
@@ -196,7 +197,7 @@
   "examples": {
     "source": {"attrs": "variant=\"source\" icon=\"input_laptop\"", "text": "Laptop", "rect": [577, 0, 127, 133], "in_main": false},
     "help": {"attrs": "variant=\"source\" icon=\"input_help\"", "text": "Help", "rect": [141, 690, 103, 108]},
-    "states": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"Warming\",\"look\":\"on\",\"color\":\"accent\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"accent\"}]",
+    "states": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"Warming\",\"look\":\"off\",\"color\":\"accent\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"accent\"}]",
     "states_note": "In Turbulence a state shows itself through the kit's image: at rest the art is gray, a ring or nothing, lit it is white or teal, and a lit caption is `accent`. A state can name its own `icon` (Share Content's lit image is Stop Sharing) or `look` (vc_power-dn's green).",
     "on_off": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"accent\"}]",
     "group_note": "Neither is Turbulence's: its source row is six 127x133 tabs across the header, about 14 px apart, and its source page's tiles (266x209) run two and three to a row. Set `cap`, `cell` and `gap` for the group you mean.",
@@ -210,13 +211,15 @@
     {"id": "water", "name": "Water", "scheme": "default", "image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png", "usage": "The darkest: a faint water texture over navy - from Turbulence's templates."}
   ],
   "layout": {
+    "bars": "controls",
+    "bars_note": "Its bars and rails are controls over the photograph, not background art, so on a panel other than the one drawn a Page's own children go through both panels' bands (docs/claude-design.md section 4).",
     "main": [140, 137, 995, 549],
     "main_note": "The popup region, between the header and footer bars and the rails: the chosen source's popup shows here, drawn straight on the photo - its name in `title`, a message in `body`, or its transport keys.",
     "regions": [
       "**The header (1280x133 at 0,0) is a `shade` Panel with the source tabs across it**: `source` tabs 127x133 flush with its top, about 141 apart, their names under their glyphs, the row centered on the page (the seed starts its six at x 141, over the left rail's edge).",
-      "**The left rail (140 wide, x 0, from y 133 down) is a `rail` Panel holding the display**: a `Display` label 140x61, then `ring`s 100x100 at x 19 (On, Off, Mute) about 108 apart, and `dock` launchers 140x108 flush with the bottom (Screen Control, Lighting Control).",
-      "**The right rail (140 wide, x 1138) holds volume**: a `Volume` label, a slider 52 wide centered under it, a `ring` mute 100x100 below, and an Audio Control `dock` at the bottom.",
-      "**The footer (997x110 at 140,688) is a `shade` Panel**: Help (a `source` tab, input_help, 103x108) and Room Mode (`dock`) at its left, the date and time centered, and Power Down (`button`, vc_power-dn, 103x108) at its right.",
+      "**The left rail (140 wide, x 0, from y 133 down) is a `rail` Panel holding the display**: a `Display` label 140x61, then `ring`s 100x100 at x 19 (On, Off, Mute) 112 apart (the seed's are 108 apart, 8 px between, under the 12 px the toolkit checks between two touchable controls), and `dock` launchers 140x108 at the bottom, 12 px apart (Screen Control, Lighting Control).",
+      "**The right rail (140 wide, x 1138) holds volume**: a `Volume` label, a slider centered under it (the seed's is 52 wide; make it 54, since 52 is under the 53 px touch minimum the toolkit checks), a `ring` mute 100x100 below, and an Audio Control `dock` at the bottom.",
+      "**The footer (997x110 at 140,688) is a `shade` Panel**: Help (a `source` tab, input_help, 103x108) and Room Mode (`dock`) at its left, Help 12 px in from its end (x 152) to clear the left rail's dock beside it, the date and time centered, and Power Down (`button`, vc_power-dn, 103x108) at its right.",
       "**A modal is a card or a window over the `scrim`**: a `page` card (Help 761x500, the power-down confirmation 800x448) centered on the page, or a `raised` window 1120x684 at 80,56 with `page` cards inside; a 36 pt title, and a `close` 60x60 5 px inside the top right."
     ]
   },
@@ -275,6 +278,163 @@
       "880x880": 280,
       "900x648": 270,
       "1152x1152": 100
+    }
+  },
+  "panels": {
+    "_source": [
+      "Series, sizes, DPI and tier: GUI Designer's own TemplateInfoTable.config, through gdl/templates.py; each series' models are the MODELS_FULL models gdl.templates.template_for gives it, by model.",
+      "main and rail: off the series template's own Main* pages (tests/measure_series.py control_regions). Turbulence frames its pages with side bars and a header and footer; its standard popup's window fills what they leave, a few pixels inside the bars, and is main. The rail is the right bar's band between the header and footer.",
+      "The 520 hub keeps a menu bar down the right: main is the canvas left of it, its title strip included, since Extron places the standard popup over it; the rail is the bar. The 320 keeps nothing on screen from page to page - its volume is a popup no page opens - so it has no rail.",
+      "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
+      "backgrounds: each theme's art, one size each, out of the templates (vendor/; tests/measure_series.py theme_backgrounds), stretched as every series draws it. The template's own (bkgd_pc.png, the 320's bkgd_water-1_plain.png, the 520's bkgd_swoop_plain.png) is that file pixel for pixel and keeps its name, which its seed carries with those pixels.",
+      "seeds, kinds: each seed in seeds/ by part number and canvas, and what control kinds it can clone - the 720's, 725's, 1035's and 1525's a slider and no level; the 320's and 525's a level and no slider; the 320's no popup.",
+      "Measured with tests/measure_series.py Turbulence."
+    ],
+    "Turbulence 1220 Series": {
+      "size": [1280, 800],
+      "dpi": 124.75,
+      "tier": "A",
+      "models": [
+        "TLC1026M",
+        "TLP1025M",
+        "TLP1025T",
+        "TLP1035M",
+        "TLP1035T",
+        "TLP1220MG",
+        "TLP1220TG",
+        "TLP1225MG",
+        "TLP1225TG",
+        "TLP835C",
+        "TLP835M",
+        "TLP835T",
+        "ZRTP1025M",
+        "ZRTP1025T"
+      ],
+      "main": [140, 137, 995, 549],
+      "rail": [1138, 133, 142, 667],
+      "rail_axis": "column",
+      "popup": [995, 549],
+      "fit": "stretch",
+      "backgrounds": {
+        "corridor": {"image": "bkgd_pc.png", "file": "Turbulence/bkgd_pc.png"},
+        "bokeh": {"image": "bkgd_home_plain.png", "file": "Turbulence/bkgd_home_plain.png"},
+        "office": {"image": "bkgd_lighting.png", "file": "Turbulence/bkgd_lighting.png"},
+        "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
+        "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
+      },
+      "seeds": {"TLP1035M": "seeds/Turbulence 1035.gdl", "TLP1035T": "seeds/Turbulence 1035.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Turbulence 1020 Series": {
+      "size": [1024, 600],
+      "dpi": 118.0,
+      "tier": "A",
+      "models": [
+        "TLC726M",
+        "TLP1020M",
+        "TLP1020T",
+        "TLP1022M",
+        "TLP1022T",
+        "TLP725C",
+        "TLP725M",
+        "TLP725T",
+        "ZRTP725M",
+        "ZRTP725T"
+      ],
+      "main": [112, 103, 796, 412],
+      "rail": [911, 100, 113, 500],
+      "rail_axis": "column",
+      "popup": [796, 412],
+      "fit": "stretch",
+      "backgrounds": {
+        "corridor": {"image": "bkgd_pc.png", "file": "Turbulence/bkgd_pc.png"},
+        "bokeh": {"image": "bkgd_home_plain.png", "file": "Turbulence/bkgd_home_plain.png"},
+        "office": {"image": "bkgd_lighting.png", "file": "Turbulence/bkgd_lighting.png"},
+        "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
+        "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
+      },
+      "seeds": {"TLP725T": "seeds/Turbulence 725.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Turbulence 1520 Series": {
+      "size": [1366, 768],
+      "dpi": 100.45,
+      "tier": "A",
+      "models": ["TLP1520MG", "TLP1520TG", "TLP1525MG", "TLP1525TG"],
+      "main": [149, 131, 1061, 527],
+      "rail": [1214, 127, 152, 641],
+      "rail_axis": "column",
+      "popup": [1061, 527],
+      "fit": "stretch",
+      "backgrounds": {
+        "corridor": {"image": "bkgd_pc.png", "file": "Turbulence/bkgd_pc.png"},
+        "bokeh": {"image": "bkgd_home_plain.png", "file": "Turbulence/bkgd_home_plain.png"},
+        "office": {"image": "bkgd_lighting.png", "file": "Turbulence/bkgd_lighting.png"},
+        "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
+        "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
+      },
+      "seeds": {"TLP1525TG": "seeds/Turbulence 1525.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Turbulence 720 Series": {
+      "size": [800, 480],
+      "dpi": 133.33,
+      "tier": "A",
+      "models": ["TLP720C", "TLP720M", "TLP720T"],
+      "main": [88, 83, 622, 330],
+      "rail": [712, 80, 88, 400],
+      "rail_axis": "column",
+      "popup": [622, 330],
+      "fit": "stretch",
+      "backgrounds": {
+        "corridor": {"image": "bkgd_pc.png", "file": "Turbulence/bkgd_pc.png"},
+        "bokeh": {"image": "bkgd_home_plain.png", "file": "Turbulence/bkgd_home_plain.png"},
+        "office": {"image": "bkgd_lighting.png", "file": "Turbulence/bkgd_lighting.png"},
+        "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
+        "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
+      },
+      "seeds": {"TLP720T": "seeds/Turbulence 720.gdl"},
+      "kinds": {"slider": true, "level": false, "popup": true}
+    },
+    "Turbulence 520 Series": {
+      "size": [800, 480],
+      "dpi": 188.15,
+      "tier": "B",
+      "models": ["TLC521M", "TLC526M", "TLP520M", "TLP525C", "TLP525M", "TLP525T"],
+      "main": [0, 0, 696, 480],
+      "rail": [696, 0, 104, 480],
+      "rail_axis": "column",
+      "popup": [702, 480],
+      "fit": "stretch",
+      "backgrounds": {
+        "corridor": {"image": "bkgd_pc.png", "file": "Turbulence/bkgd_pc.png"},
+        "bokeh": {"image": "bkgd_home_plain.png", "file": "Turbulence/bkgd_home_plain.png"},
+        "office": {"image": "bkgd_lighting.png", "file": "Turbulence/bkgd_lighting.png"},
+        "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
+        "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
+      },
+      "seeds": {"TLP525T": "seeds/Turbulence 525.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": true}
+    },
+    "Turbulence 320 Series": {
+      "size": [320, 240],
+      "dpi": 113.65,
+      "tier": "C",
+      "models": ["TLP320C", "TLP320M"],
+      "main": [0, 36, 320, 204],
+      "rail": null,
+      "rail_axis": null,
+      "popup": null,
+      "fit": "stretch",
+      "backgrounds": {
+        "corridor": {"image": "bkgd_pc.png", "file": "Turbulence/bkgd_pc.png"},
+        "bokeh": {"image": "bkgd_home_plain.png", "file": "Turbulence/bkgd_home_plain.png"},
+        "office": {"image": "bkgd_lighting.png", "file": "Turbulence/bkgd_lighting.png"},
+        "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
+        "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
+      },
+      "seeds": {"TLP320M": "seeds/Turbulence 320.gdl"},
+      "kinds": {"slider": false, "level": true, "popup": false}
     }
   }
 }

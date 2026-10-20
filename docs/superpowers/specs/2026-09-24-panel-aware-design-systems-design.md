@@ -117,7 +117,8 @@ a device preset and a DPI from the canvas; the table's 220 DPI is a default.
   **14 pt scaled by the panel's DPI over 149, never below 14** - the 14 pt
   minimum as it reads on the TLP Pro 1025/1035, the family the first design
   system targets. That is 16 pt on a 725, 18 pt on an 835 or 525, and 28 pt on
-  a 535. Extron's own templates do not do this; they keep points fixed.
+  a 535. Extron's own templates break it on dense panels: their 520s keep the
+  1035's points and their 535s step up short of it (`docs/design-rules.md` §1).
 - **Tokens state the design panel only.** The Design System format lets only
   colors vary (per theme); everything per-panel lives in a model table the
   bundle carries, built from `MODELS_FULL`, and reaches components through the
@@ -232,17 +233,22 @@ phases add is the panel-aware part.
 **Phase 2 - Mach.** Registered, with every design-system test run against every
 template; themes from its kit's photos; its slider the seed's own art - an 8 px
 track, `8x500_mach_track_bg@3x.png`, which is what the built seed draws, not the
-kit's `15x182_empty.png`. Left: its per-series layouts, and proof on two panels.
+kit's `15x182_empty.png`. Its per-series table is measured off its templates'
+controls (`tests/measure_series.py`), every series has a seed, and it is
+proven on the 1035, 725, 1525 and 720 and its 525 and 535 hubs
+(`docs/claude-design.md` §6). Left: its 320 (§7 there).
 
 **Phase 3 - Shockwave.** Its profile builds, with `examples` and the slider and
-level in the shape the others use. Left: backgrounds for its four resolutions,
-its per-series layouts, and proof on two panels.
+level in the shape the others use; its per-series table, backgrounds included,
+is measured off its templates, every series has a seed, and it is proven on
+the 1035, 725, 1525 and 720 and its 525 and 535 hubs. Left: its 320.
 
 **Phase 4 - Turbulence.** Its art is extracted from its seed and six templates
 (1.28 has no Turbulence kit beside the others - `docs/design-rules.md` §7), and
 its borders are surveyed off the seed (2D Rectangle is drawn, on the six search
-rows' states). Left: seeds at its other sizes from `New-GdlSeed.ps1`, its
-per-series layouts, and proof on two panels.
+rows' states), and its per-series table is measured off its templates; every
+series has a seed, and it is proven on the 1035, 725, 1525 and 720 and its
+525 hub. Left: its 320.
 
 ## 6. Also found
 

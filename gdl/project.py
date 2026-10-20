@@ -244,6 +244,8 @@ class Project:
             'fill': self.color(self.field(st, 'borderFillColorField')),
             'stroke': self.color(self.field(st, 'borderColorField')),
             'text_color': self.color(self.field(st, 'textColorField')),
+            # A state names its own border resource, as the control does.
+            'border': self.border(st),
         }
 
     def control(self, obj):
@@ -359,6 +361,20 @@ class Project:
                     continue
                 yield self._page(pg, kind)
 
+    def first_control(self, suffix):
+        """The first control of a class, pages before popups, each in its own
+        order - the one `Apply-GdlPlan.ps1` clones for it (Get-GdlDonor)."""
+        proj = next(self.instances('PBProject'), None)
+        if proj is None:
+            return None
+        for field in ('pagesField', 'popupPagesField'):
+            for pg in self.items(self.field(proj, field)):
+                for c in self.items(self.field(pg, 'controlsField')):
+                    c = self.deref(c)
+                    if isinstance(c, dict) and self.kind(c).rsplit('.', 1)[-1] == suffix:
+                        return c
+        return None
+
     def fill_map(self):
         """(page id, control id) -> the fill Build would have rasterized.
 
@@ -399,11 +415,31 @@ class Project:
         box, so an unavailable border is a one-second check here instead of a
         per-control complaint after a plan has been applied and packed.
 
-        Every project carries the ~14 GUI Designer built-ins twice - once plain
-        and once `zGD - Default ...` - plus its theme's own. A fresh Afterburn
-        1220 defines 31, the client fixture 34.
+        Every project carries GUI Designer's 13 built-ins, and 15 of the 29
+        seeds and fixtures carry them again as `zGD - Default ...`; Afterburn,
+        Mach and Zoom Rooms add their own. A fresh Afterburn 1220 defines 31,
+        the client fixture 34.
         """
         return self._resource_names('PBBorderResource')
+
+    def border_geometry(self):
+        """{name: {'radius', 'thickness'}} for every border resource the project
+        defines, off its own `PBBorderInfo` (`dataField`).
+
+        A built-in's geometry is the project's, not GUI Designer's: every
+        project carries its own copy of the 13, and seeds differ. Mach's 1035
+        defines 2D Rounded Rectangle at radius 1 and thickness 0, so a stroke on
+        it is never drawn and its corners come out square, where Afterburn's
+        and Turbulence's define it at 10 and 3; Mach's 525 has 2D Rectangle at
+        thickness 0 where its 1035 has 3. Build draws what the project says.
+        """
+        out = {}
+        for r in self.instances('PBBorderResource'):
+            name, info = self.field(r, 'nameField'), self.field(r, 'dataField')
+            if name and isinstance(info, dict):
+                out[name] = {'radius': self.field(info, 'cornerRadiusField'),
+                             'thickness': self.field(info, 'thicknessField')}
+        return out
 
     def font_resource_names(self):
         """Every font FAMILY the project defines a resource for.
@@ -421,9 +457,10 @@ class Project:
         names in `PBFont.nameField`, and stripping the weight folded each into its
         plain sibling and reported a face missing from a seed that defines it.
 
-        A spec naming a family the donor has no resource for does not fail: the
-        applier leaves the donor's font and says so. That is the right call and
-        also easy to miss, since the panel then builds cleanly in the wrong face.
+        A control naming a family the project has no resource for does not
+        fail: the applier leaves the donor's font and says so, and the panel
+        builds cleanly in the wrong face. So `check_donor` refuses one - unless a
+        seed carries the face, which `plan --donor` appends (gdl.fonts.find_face).
         """
         out = set()
         for name in self._resource_names('PBFontResource'):
