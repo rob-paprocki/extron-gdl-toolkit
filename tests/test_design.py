@@ -1846,11 +1846,22 @@ class TestTurbulencesHubHeader(_Probe, unittest.TestCase):
     THEME = 'turbulence'
 
     def test_the_profiles_header_depth_is_the_bundles(self):
-        depth = designsys.load('turbulence')['layout']['hub_header']['depth']
+        depth = designsys.load(self.THEME)['layout']['hub_header']['depth']
         for model, want in sorted(depth.items()):
             with self.subTest(model=model):
                 _, ctl, _ = self.probe('Tabs.dc.html', model)
                 self.assertEqual(max(ctl['Tab%d' % i][1][3] for i in range(1, 7)), want)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestShockwavesHubHeader(TestTurbulencesHubHeader):
+    """Shockwave's Layout heads its pages with joined source tabs too: the
+    round-three room's 525 header came out as deep as them, where the README
+    had taken a button's 66."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-hub-shockwave')
+    THEME = 'shockwave'
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -1966,6 +1977,30 @@ class TestARailsLabel(_Probe, unittest.TestCase):
         _, rect, overflow = ctl['VolumeLabel']
         self.assertEqual((rect[0], rect[2]), (band[0], band[2]))
         self.assertFalse(overflow)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestARailsCaption(_Probe, unittest.TestCase):
+    """A button in a Rail fills the rail across, so its caption needs only
+    the button's own padding, 10 px a side: the round-three Mach room's Mute -
+    its Muted caption at the 525's 18 pt - was refused at 100 px across a
+    98 px rail, held to the 24 px a loose button keeps."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-panels-mach')
+    THEME = 'mach'
+    PAGE = ('does="The room\'s home page: share a source, set volume, end the call." style="position: '
+            'absolute; left: 0px; top: 0px; width: 1280px; height: 800px">')
+    RAIL = ('<x-import component-from-global-scope="ExtronMach.Rail" style="position: absolute; left: 1161px; '
+            'top: 80px; width: 103px; height: 650px">'
+            '<x-import component-from-global-scope="ExtronMach.Button" name="RailMute" variant="solid" '
+            'states=\'[{"name":"Off","text":"Mute"},{"name":"On","fill":"alert","color":"text","text":"Muted"}]\' '
+            'style="width: 103px; height: 60px">Mute</x-import></x-import>')
+
+    def test_a_captioned_button_fills_the_hubs_rail(self):
+        _, ctl, out = self.probe('Home.dc.html', 'TLP525T', edit=(self.PAGE, self.PAGE + self.RAIL))
+        self.assertEqual([p for p in out['problems'] if 'RailMute' in p], [])
+        self.assertFalse(ctl['RailMute'][2], ctl['RailMute'][1])
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),

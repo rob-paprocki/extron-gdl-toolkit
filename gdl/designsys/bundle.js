@@ -230,8 +230,12 @@
   }
   // The least a control can be on this panel: a button at the touch minimum
   // and as big as its caption at the panel's type; a slider that wide across
-  // its rail; a line of text at least one line tall.
-  function needs(it, L) {
+  // its rail; a line of text at least one line tall. `filled`: a button that
+  // fills its box across, as a Rail's do, needs only its own padding round
+  // its caption (10 px a side) and its border where a look strokes one, not
+  // the 4 px more a loose one keeps - the round-three Mach room's Mute came
+  // to 100 px with them, and was refused in the 525's 98 px rail.
+  function needs(it, L, filled) {
     var T = L.panel, p = it.props || {};
     if (it.kind === 'button') {
       var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
@@ -245,7 +249,18 @@
       }));
       var lines = img && img.caption === 'below' && words_[0] ? (img.breaks || 2) + 1 : 1;
       var tall = words_[0] ? lines * lineHeight(f.size) + 4 : 0;
-      return [Math.max(T.touch, Math.ceil(wide + (img ? 8 : 24))), Math.max(T.touch, tall)];
+      // The widest border a look of it strokes (edge(): a stroke on a border
+      // with thickness), which its box holds inside it.
+      var base = Object.assign({}, V.look || {}), edgeW = 0;
+      if (p.border != null) base.border = p.border;
+      if (p.stroke != null) base.stroke = p.stroke;
+      [{}].concat((list(p.states) || []).filter(function (s) { return s && typeof s === 'object'; }))
+        .forEach(function (s) {
+          var lk = Object.assign({}, base, s), bd = P.borders[lk.border];
+          if (lk.stroke && bd && bd.thickness) edgeW = Math.max(edgeW, bd.thickness);
+        });
+      return [Math.max(T.touch, Math.ceil(wide + (img ? 8 : filled ? 20 + 2 * edgeW : 24))),
+              Math.max(T.touch, tall)];
     }
     if (it.kind === 'slider') return [T.touch, T.touch];
     if (it.kind === 'group' && truthy(p.joined)) {
@@ -887,7 +902,7 @@
       } else if (it.kind === 'slider' || it.kind === 'level') {
         slots.push({ it: it, i: i, role: 'host', flex: true, cross: Math.min(size, Math.max(t, 54 * k)) });
       } else if (it.kind === 'button') {
-        var n = needs(it, Lk);
+        var n = needs(it, Lk, true);
         if (p.variant === 'icon' || P.buttons[p.variant] && P.buttons[p.variant].kit && !textOf(p.children, p.text)) {
           // At the size its seed draws its variant at, where the variant has
           // one (Turbulence's ring, 100 x 100), else an icon button's 64. At a

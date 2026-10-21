@@ -473,10 +473,16 @@ statement is in the live docs; this is the record that it changed.
   on `mach`, and after a review the buttons went back. The README's room for a
   hub, written then, read the hub's uncut main: Mach's 525 has 0.51 of the
   canvas's scale and one button beside the volume where it said 0.7 and three.
+  Then it counted a hub's rail without its heading and a header without the
+  source tabs Shockwave's and Turbulence's Layouts put there: the round-three
+  Shockwave room's rail of a heading, the volume and Mute needed 344 px of its
+  320, and a 525 rail button's caption was held to 4 px more than the button's
+  own padding, so Mach's Mute, 2 px over, was refused.
   And most of Mach's, Shockwave's and Turbulence's seeds have no line to clone.
   A second round of fresh designers, from the READMEs that now say all this,
-  built and verified every 1035; their 525s are refused by the hub derivation
-  itself (`docs/claude-design.md` §7).
+  built and verified every 1035; their 525s were refused by the hub derivation
+  itself, whose faults #39 fixed, and a third round, after #40, built and
+  verified every 525 too (`docs/claude-design.md` §6).
 
 ## Dated facts moved out of the live docs
 

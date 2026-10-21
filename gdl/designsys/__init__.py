@@ -730,12 +730,14 @@ def _model_names(names):
     return ', '.join(f"{b}{'/'.join(vs)}{t}" for (b, t), vs in out.items())
 
 
-def _rail_holds(T, rail=None):
+def _rail_holds(T, rail=None, heading=0):
     """How many touch-sized buttons a hub's rail holds beside the volume, as
     railLayout stacks them: a level between Down and Up where the seed has no
     slider (24 px of level still reads), else a slider at least a touch target
     long; the panel's gap between, centred in the band with that gap's padding.
-    `rail` is the band a page leaves it (_room), the panel's own by default."""
+    `rail` is the band a page leaves it (_room), the panel's own by default;
+    `heading` the slot a heading over the volume takes in a column rail
+    (_rail_heading), with its gap."""
     r = rail or T.get('rail')
     if not r:
         return None
@@ -745,7 +747,18 @@ def _rail_holds(T, rail=None):
     pad = math.floor(max(0, min(g, (cross - t) / 2)))
     level = T['kinds'].get('slider') is False
     volume = 2 * t + 24 + 2 * g if level else t
-    return max(0, math.floor((along - 2 * pad - volume) / (t + g)))
+    return max(0, math.floor((along - 2 * pad - volume - (heading if col else 0)) / (t + g)))
+
+
+def _rail_heading(p, T, k):
+    """The slot a volume rail's heading takes on panel T, gap and all, as
+    railLayout lays a Label: one line of the label type at that panel's type,
+    2 px more. Mach's, Shockwave's and Turbulence's Layouts each head their
+    volume rail ("Volume"), and the README's count left it out: Shockwave's
+    525 rail of a heading, the volume and Mute needed 344 px of its 320."""
+    pt = next((x['pt'] for x in p['type'] if x['name'] == p['defaults']['label']['type']), 14)
+    size = max(T['floor'], _js_round(pt * k * 2) / 2)
+    return math.ceil(size * p['pt'] * 1.2) + 2 + T['gap']
 
 
 def _js_round(x):
@@ -842,9 +855,21 @@ def _panels_section(p):
         elif T['tier'] == 'C':
             kind = 'rows'
         elif T['tier'] == 'B':
-            n = _rail_holds(T, rail)
-            kind = 'hub' + ('' if n is None else ': its rail holds the volume alone' if n == 0 else
-                            f": its rail holds the volume and {n} button{'' if n == 1 else 's'}")
+            # The bar themes head their volume rail; Afterburn's has none.
+            headed = (p.get('layout') or {}).get('bars') == 'controls'
+            col = (T.get('rail_axis') or 'column') != 'row'
+            heading = _rail_heading(p, T, min(T['size'][0] / p['size'][0], T['size'][1] / p['size'][1])) \
+                if headed and col else 0
+            n = _rail_holds(T, rail, heading)
+            if n is None:
+                kind = 'hub'
+            elif n == 0:
+                kind = 'hub: its rail holds ' + ('a heading and the volume' if heading else 'the volume alone')
+            else:
+                kind = (f"hub: its rail holds {'a heading, ' if heading else ''}the volume and {n} "
+                        f"button{'' if n == 1 else 's'}"
+                        # A row rail's heading takes its word's width, which only the bundle measures.
+                        + (' - fewer beside a heading' if headed and not col else ''))
         else:
             kind = 'scaled'
         # A panel that lays its controls out again, in rows, sizes each to what
@@ -872,7 +897,10 @@ def _panels_section(p):
             f"every large and mid-size panel there. The `Rail` stacks its controls at each panel's gap. Loose controls only "
             f"scale.\n"
             f"- **Hubs** are one page of main controls beside a rail. Where the seed has no slider, a slider "
-            f"is a level between `-` and `+`, and the rail holds the volume and the buttons the table says; a "
+            f"is a level between `-` and `+`, and the rail holds what the table says - a heading over the "
+            f"volume counted in a column rail where the template heads it, and in a row rail a heading takes "
+            f"its word's width - and a button there fills the rail across, its caption needing only the "
+            f"button's own padding and border; a "
             f"`Group` on a page shows in a popup in its own box, which the control program shows."
             + (" The header, footer and side column drawn beside main here are cut from a hub's main, and "
                "its rail keeps between them; a bar that holds a button is at least the touch minimum deep, "

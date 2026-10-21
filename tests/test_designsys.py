@@ -1052,9 +1052,33 @@ class TestBuild(unittest.TestCase):
         text = designsys.readme(designsys.load('turbulence'))
         section = text.split('## Every panel the room has', 1)[1].split('\n## ', 1)[0]
         hub = next(ln for ln in section.splitlines() if ln.startswith('| ') and 'TLP525' in ln)
-        self.assertIn('| hub: its rail holds the volume alone |', hub)
+        self.assertIn('| hub: its rail holds a heading and the volume |', hub)
         self.assertIn('| 124 px, 29 px |', hub)
         self.assertIn("the Layout's own source tabs", section)
+
+    def test_a_measured_hub_header_covers_every_hub(self):
+        """A hub with no measured depth would read a button's again, silently
+        (review of #40)."""
+        for theme in ('shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                hubs = {m for m, T in designsys.models(p).items() if T['tier'] == 'B'}
+                self.assertEqual(set(p['layout']['hub_header']['depth']), hubs)
+
+    def test_a_hubs_rail_count_keeps_room_for_its_heading(self):
+        """Mach's, Shockwave's and Turbulence's Layouts head their volume rail
+        ("Volume"), a line at the hub's type and a gap - 47 px on the 525 -
+        and the count left it out: the round-three Shockwave room's rail of a
+        heading, the volume and Mute needed 344 px of its 320. Mach's 525 has
+        room for one button under it; Afterburn's rail has no heading."""
+        for theme, kind in (('shockwave', 'a heading and the volume'),
+                            ('mach', 'a heading, the volume and 1 button'),
+                            ('afterburn', 'the volume and 3 buttons')):
+            with self.subTest(theme=theme):
+                text = designsys.readme(designsys.load(theme))
+                section = text.split('## Every panel the room has', 1)[1].split('\n## ', 1)[0]
+                hub = next(ln for ln in section.splitlines() if ln.startswith('| ') and 'TLP525' in ln)
+                self.assertIn(f'| hub: its rail holds {kind} |', hub)
 
     def test_the_readme_ends_with_how_to_load_the_system(self):
         """The Design type looks for the bundle, its global and the stylesheet

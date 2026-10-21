@@ -1,0 +1,24 @@
+{
+  "attachments": {},
+  "boards": {
+    "Tabs.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Tabs",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {},
+  "order": [
+    "Tabs.dc.html"
+  ],
+  "pages": [],
+  "title": "Shockwave hub header",
+  "v": 3
+}

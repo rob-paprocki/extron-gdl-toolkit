@@ -241,7 +241,7 @@ pixels. On the canvas they are `<x-import component-from-global-scope=
 |---|---|---|
 | Page | a page or popup | `name`, `kind` (`page`, `popup`, `modal`), `group`, `start`, `reached-by`, the `theme` (background and accent) or an accent `scheme` alone; `panels` (every panel the room has, the first the one it is drawn on) and `preview` (one of them to draw it as) |
 | MainArea | nothing of its own | a frame: its children are placed inside the template's main area - on each panel, that panel's own |
-| Rail | nothing of its own | a frame: its children stack in the rail beside the main area, or across below it where there is no room beside it |
+| Rail | nothing of its own | a frame: its children stack in the rail beside the main area, or across below it where there is no room beside it; a button in it fills it across, its caption needing only the button's own padding |
 | Group | its members; on a smaller panel, the popups or pages it becomes | `title`, `cell`, `gap`, `cap`, `joined`: equal cells in its box - in place, paged as popups in its box (Previous and Next under its cells, or at the row's ends in a box one cell deep - arrows where their words leave no room), or pages of their own opened by a button, by the panel's size; in a modal or a popup on a large or mid-size panel only in place, since a popup shows no popups |
 | Button | `button` | caption, `variant`, `icon`, `states` (names, each with its own look, caption and kit image), `press` - the state the panel shows while it is held, which the canvas draws while it is held too - `nav`, `does`, `id` |
 | Label | `label` | text, `type` or `size`, `color`, `align`, `does` |
@@ -495,22 +495,33 @@ clock's words' own box, and anything that paints outside a component. Chrome is 
   shape where the seed has none. Mach's percentages are its translucent
   `shade` drawn at full strength and the states each artboard `show`s;
   Shockwave's modals add the start page the build shows beneath, where the
-  canvas shows the page colour.
+  canvas shows the page colour. Round three, fresh designers on Sonnet from the
+  READMEs after #39 and #40, every room translated for both panels and built
+  and verified on each:
+
+  | Theme | Panel | Pages, popups | Layout | ID map | Home | Call | Modals |
+  |---|---|---|---|---|---|---|---|
+  | Mach | TLP1035T | 2, 3 | 282 checks on 54, 0 problems | 55, 0 | 25.1% | 25.7% | 13.2-34.3% |
+  | Mach | TLP525T | 2, 5 | 318 on 60, 0 | 61, 0 | 36.7% | 32.2% | 17.6-33.6% |
+  | Shockwave | TLP1035T | 2, 3 | 238 on 66, 0 | 67, 0 | 6.9% | 11.3% | 47.4-68.6% |
+  | Shockwave | TLP525T | 2, 6 | 272 on 75, 0 | 82, 0 | 13.5% | 18.0% | 51.9-70.3% |
+  | Turbulence | TLP1035T | 2, 3 | 216 on 62, 0 | 59, 0 | 15.9% | 13.6% | 2.8-3.2% |
+  | Turbulence | TLP525T | 2, 8 | 260 on 74, 0 | 80, 0 | 15.2% | 13.4% | 5.1-6.6% |
+
+  Mach's took no revision once a Rail's button needed only its own padding
+  round its caption (#40); Shockwave's and Turbulence's took two each, from the
+  gates' own words - a rail fuller than the 525's under its heading, tiles
+  whose captions broke the Words rule, Groups whose gaps scale with the page.
+  The percentages are round two's kind: translucency drawn at full strength,
+  and the start page under a modal.
 
 ## 7. What is left
 
-- Mach, Shockwave and Turbulence on a 525 from a real designer's canvas. The
-  round-two conference rooms (§6) were the first to reach the hub's
-  derivation, and its own faults there are fixed: a Group in a modal lays out
-  in place, and is named where it does not fit; a Group one cell deep pages
-  with Previous and Next at its row's ends, as arrows where their words leave
-  no room; a band beside main is as deep as a Group in it, and a Group grown
-  past its box keeps to the page. Translated again, those rooms' 525s are
-  refused for their own layouts - rails holding more than the hub's, loose
-  controls drawn too close to stay apart once grown - drawn from a README that
-  put Mach's 525 at 0.7 of the canvas and three buttons beside the volume. A
-  third round of fresh designers, from the README as it now reads, is next. A
-  bar drawn as a Panel does not yet grow with a deeper Group in it.
+- A bar drawn as a Panel does not grow with a deeper Group in it - on the 525
+  Shockwave's source tabs stand below its header bar - and a Group's gap,
+  which scales with the page, does not give way to its cells before the Group
+  pages: Turbulence's round-three designer narrowed its gaps by hand to fit
+  the 525 (§6).
 - Mach, Shockwave and Turbulence on their 320s. Every series has a seed and
   its profile lists it, but the huddle canvases above are refused there, by
   name: the page's controls, stacked in rows, need 285-482 px of its 240.
