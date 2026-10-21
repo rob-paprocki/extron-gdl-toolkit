@@ -514,7 +514,7 @@
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
       "seeds": {"TLP1035M": "seeds/Mach 1035.gdl", "TLP1035T": "seeds/Mach 1035.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Mach 1020 Series": {
       "size": [1024, 600],
@@ -546,7 +546,7 @@
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
       "seeds": {"TLP725T": "seeds/Mach 725.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Mach 1520 Series": {
       "size": [1366, 768],
@@ -567,7 +567,7 @@
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
       "seeds": {"TLP1525TG": "seeds/Mach 1525.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Mach 1720 Series": {
       "size": [1920, 1080],
@@ -588,7 +588,7 @@
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
       "seeds": {"TLP1535M": "seeds/Mach 1535.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Mach 720 Series": {
       "size": [800, 480],
@@ -609,7 +609,7 @@
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
       "seeds": {"TLP720T": "seeds/Mach 720.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Mach 535 Series": {
       "size": [1280, 720],
@@ -630,7 +630,7 @@
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
       "seeds": {"TLP535T": "seeds/Mach 535.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
     },
     "Mach 520 Series": {
       "size": [800, 480],
@@ -651,7 +651,7 @@
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
       "seeds": {"TLP525T": "seeds/Mach 525.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
     },
     "Mach 320 Series": {
       "size": [320, 240],
@@ -672,7 +672,7 @@
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
       "seeds": {"TLP320M": "seeds/Mach 320.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": false}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": false}
     },
     "Mach 300 Series": {
       "size": [320, 480],
@@ -693,7 +693,7 @@
         "facade": {"image": "320x480_mach-bg-06.png", "file": "Mach/Backgrounds/320x480/320x480_mach-bg-06.png"}
       },
       "seeds": {"TLP300M": "seeds/Mach 300M Portrait.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
     }
   }
 }

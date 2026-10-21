@@ -132,7 +132,7 @@ def models(p):
                 'seed': (s.get('seeds') or {}).get(m),
                 # A series no seed measures can clone what the template has;
                 # its panels are refused for want of a seed before that matters.
-                'kinds': s.get('kinds') or {'slider': True, 'level': True, 'popup': True},
+                'kinds': s.get('kinds') or {'slider': True, 'level': True, 'datetime': True, 'popup': True},
                 'borders': s.get('borders') or {},
             }
     # A panel that runs the other way up from every series that draws it - the
@@ -958,8 +958,25 @@ def _panels_bars(p):
             "than in MainArea or the Rail - a bar across the top or bottom, the buttons at its ends, a "
             "modal's window - keeps to that panel's own bands: a bar drawn edge to edge spans it at its own "
             "depth, and a button flush with a bar's end and the main area's edge fills that end. Draw bars "
-            f"as the template does, edge to edge.{hub} On a small panel what the Page holds reflows into "
-            "rows.\n")
+            f"as the template does, edge to edge.{hub}{_small_pages(p)}\n")
+
+
+def _small_pages(p):
+    """What a bar theme's Page becomes on its small panels (overPages in the
+    bundle), the strip's depth off the profile's own table."""
+    small = [s for name, s in (p.get('panels') or {}).items()
+             if not name.startswith('_') and s.get('models') and s.get('tier') == 'C' and s.get('main')]
+    if not small:
+        return ' On a small panel what the Page holds reflows into rows.'
+    strip = small[0]['main'][1]
+    return (f" On a small panel ({_the_series(_series_named(p, lambda s: s.get('tier') == 'C'))}) a Page is "
+            f"drawn as Extron's own small templates draw theirs: its header bar becomes the {strip} px title "
+            f"strip, with the labels on it where they fit there, and the rest - the Page's own controls, "
+            f"MainArea's and the Rail's - reflows into rows under it, region by region: the header's, main's, "
+            f"the columns' left to right, then the footer's, each in the order you placed them. Rows one "
+            f"screen cannot hold go on over pages of their own - Home 2, Home 3 - each under the strip, with "
+            f"Previous and Next at its foot; a row never splits. Words wider than the screen break into "
+            f"lines. A modal holds one screen there: say in it what fits one.")
 
 
 def _panels_main(p):
@@ -967,7 +984,10 @@ def _panels_main(p):
         return ''
     return (" On a Page that lists `panels`, it is each panel's own main region, and what is in it is laid "
             "out for that panel: scaled as the region is on a large or mid-size screen, and on a small one "
-            "(the 320's) reflowed into rows in the order you placed them. Leave room: a caption grows to the "
+            "(the 320's) reflowed into rows in the order you placed them"
+            + (" - a bar theme's with the Page's, by region, and over pages of their own where they do not "
+               "fit (Page)" if (p.get('layout') or {}).get('bars') == 'controls' else '')
+            + ". Leave room: a caption grows to the "
             "panel's type floor, and a control that collides with its neighbour is refused, by name.")
 
 
@@ -999,13 +1019,27 @@ def _panels_rail(p):
         one = len(none) == 1
         text += (f" T{_the_series(none)[1:]} {'draws' if one else 'draw'} no rail band - "
                  f"{'its template keeps' if one else 'their templates keep'} nothing on screen from page to "
-                 f"page - so a Rail on one of {'its' if one else 'their'} panels is refused: put what it holds "
-                 f"in the main region.")
+                 f"page - so ")
+        text += ("on one of its panels what a Rail holds joins the Page's rows (Page)."
+                 if (p.get('layout') or {}).get('bars') == 'controls' else
+                 f"a Rail on one of {'its' if one else 'their'} panels is refused: put what it holds in the "
+                 f"main region.")
     if level:
         text += (f" On a panel whose seed cannot build a slider - {_the_series(level)} - a Slider in it becomes "
                  f"a Level with Down and Up buttons at its ends, stacked along the rail, the level taking the "
                  f"length the rest leave.")
     return text
+
+
+def _clock_none(p):
+    """The series whose seed has no date and time control to clone, from the
+    profile's own table: a Clock is refused on their panels."""
+    none = _series_named(p, lambda s: (s.get('kinds') or {}).get('datetime') is False)
+    if not none:
+        return ''
+    return (f" {_the_series(none)[0].upper()}{_the_series(none)[1:]}'s seed has no date and time control to "
+            f"clone, so a Clock on a Page that lists one of its panels is refused there: a room with that "
+            f"panel shows the time in words the program sets, a Label, or not at all.")
 
 
 def _panels_slider(p):
@@ -1046,7 +1080,8 @@ def _panels_group(p):
             "with Previous and Next - under its cells, or at the row's ends where its box is one cell deep, "
             "arrows there where their words leave no room; on "
             "a mid-size one (the 525's) always as popups in its box, the region the program shows them in; on "
-            "a small one (the 320's) as one button that opens pages of their own, each with Back. In a modal "
+            "a small one (the 320's) as one button that opens pages of their own, each with Back - a joined "
+            "group too, where its one row is wider than the screen. In a modal "
             "or a popup on a large or mid-size panel it is laid out in place, since a popup shows no popups. Previous, Next, "
             "Back and that button are navigation the program handles - the ID map lists them. A group that "
             "cannot fit even so is named, never dropped.")
@@ -1198,7 +1233,7 @@ A meter the program drives: signal level, a countdown. A rail like Slider's with
 """,
         'Clock': f"""# Clock
 
-The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`), `date` (`MMMM d`), `datetime`, or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `{p['defaults']['clock']['color']}`), `name`.
+The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`), `date` (`MMMM d`), `datetime`, or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `{p['defaults']['clock']['color']}`), `name`.{_clock_none(p)}
 
 ```html
 {_x(p, 'Clock', ' name="Time"', '', 'width: 200px; height: 40px')}

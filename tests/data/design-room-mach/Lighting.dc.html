@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lighting</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Lighting" kind="modal" theme="lake" panels="TLP1035T TLP525T TLP320M" does="The four lighting presets - Full, Meeting, Presentation and Off. The program recalls the touched preset and lights the current one. Opened from Home.">
+  <x-import component-from-global-scope="ExtronMach.Panel" name="LightingCard" fill="page" border="mach" style="position: absolute; left: 140px; top: 100px; width: 1000px; height: 600px"></x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="LightingTitle" type="heading" align="center" color="text" style="position: absolute; left: 180px; top: 125px; width: 920px; height: 60px">Lighting Preset</x-import>
+  <x-import component-from-global-scope="ExtronMach.Group" title="Lighting Presets" cell="400x130" gap="40" cap="2" style="position: absolute; left: 190px; top: 210px; width: 900px; height: 310px">
+    <x-import component-from-global-scope="ExtronMach.Button" name="LightFull" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' does="Recalls the Full lighting preset; On while it is the current preset." style="width: 400px; height: 130px">Full</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="LightMeeting" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' show="On" does="Recalls the Meeting lighting preset; On while it is the current preset." style="width: 400px; height: 130px">Meeting</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="LightPresentation" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' does="Recalls the Presentation lighting preset; On while it is the current preset." style="width: 400px; height: 130px">Presentation</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="LightOff" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' does="Recalls the Off lighting preset, turning the room lights off; On while it is the current preset." style="width: 400px; height: 130px">Off</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="LightingClose" variant="solid" nav="Main" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' style="position: absolute; left: 490px; top: 590px; width: 300px; height: 80px">Close</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

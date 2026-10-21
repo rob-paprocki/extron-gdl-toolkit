@@ -21,8 +21,9 @@ opening GUI Designer.**
 - **Designed in Claude Design**: a canvas drawn with an Extron template's
   design system translates to a spec and builds (`docs/claude-design.md`).
   From prose: one conference-room brief, given to a fresh designer per theme
-  with only the design system, built and verified on the TLP1035T in all four
-  themes, and on the 525 beside it in Afterburn (§6).
+  with only the design system, built and verified on the TLP1035T and the 525
+  beside it in all four themes, and on the 320 in Mach, Shockwave and
+  Turbulence (§6).
 - **What the controls do**, from the same spec: `gdl.idmap` checks the page
   flips and writes the programmer's ID map, verified against the built panel
   (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
@@ -70,12 +71,10 @@ opening GUI Designer.**
    the 1035, 725, 1525 and 720 and on its hubs - the 525, and Mach's and
    Shockwave's 535 - against one ID map (§6) - and in each a conference room
    drawn from prose by a fresh designer is built and verified on the 1035 and
-   the 525 (§6, round three). What is left, first, is **their 320s**.
-   The huddle canvases are refused there, by name (§7): the page's controls,
-   stacked in rows, need 285-482 px of its 240. Next: a rule for what a bar
-   theme's page becomes on a screen that holds a few rows. Extron's own Mach
-   320 spreads a room over twelve pages, each source a page of its own under
-   a 36 px title strip, with volume a level in a popup.
+   the 525 (§6, round three) - and on the 320, where a page goes on over
+   pages of its own under the series' title strip, as Extron's own Mach 320
+   spreads a room over twelve (§4, §6). What is left is in §7: a modal that
+   says more than the 320's one screen, and a plain container there.
    800x480 is two series in all three themes - the 520, tier B, and the 720,
    tier A, which take different layouts - where Afterburn has only the 520.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.

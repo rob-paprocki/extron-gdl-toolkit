@@ -188,6 +188,11 @@ function Add-GdlControls {
                     if ($s -and $s.name) {
                         Set-GdlFieldIfPresent $st 'nameField' $s.name | Out-Null
                     }
+                    # A state's own transparency fades what it draws as the
+                    # control's does, and a clone keeps its donor's: one of the
+                    # Mach 320 seed's states is 30%, and every button cloned
+                    # from it built its fill at 70% of the planned alpha.
+                    Set-GdlFieldIfPresent $st 'transparencyField' ([double]0) | Out-Null
                     Set-GdlColor $Project $st 'textColorField' $tcolor
                     Set-GdlColor $Project $st 'borderFillColorField' $fill
                     Set-GdlColor $Project $st 'borderColorField' $stroke

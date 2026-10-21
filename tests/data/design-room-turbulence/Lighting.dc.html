@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boardroom Lighting</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Lighting" kind="modal" theme="office" panels="TLP1035T TLP525T TLP320M" does="Chooses one of the four room lighting presets: Full, Meeting, Presentation or Off.">
+
+  <x-import component-from-global-scope="ExtronTurbulence.Panel" name="LightingCard" fill="page" border="rounded" style="position: absolute; left: 140px; top: 160px; width: 1000px; height: 480px"></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="LightingTitle" type="title" align="left" style="position: absolute; left: 180px; top: 175px; width: 500px; height: 70px">Lighting</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="LightingClose" variant="close" nav="Main" style="position: absolute; left: 1075px; top: 165px; width: 60px; height: 60px"></x-import>
+
+  <x-import component-from-global-scope="ExtronTurbulence.Group" title="Lighting" cell="400x100" gap="24" cap="2" style="position: absolute; left: 180px; top: 270px; width: 920px; height: 290px">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="LightFull" variant="wide" states="Off, On" does="Sets the room lighting to the Full preset; On while it is the active preset." style="width: 400px; height: 100px">Full</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="LightMeeting" variant="wide" states="Off, On" does="Sets the room lighting to the Meeting preset; On while it is the active preset." style="width: 400px; height: 100px">Meeting</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="LightPresentation" variant="wide" states="Off, On" does="Sets the room lighting to the Presentation preset; On while it is the active preset." style="width: 400px; height: 100px">Presentation</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="LightOff" variant="wide" states="Off, On" does="Turns the room lighting off; On while the lights are off." style="width: 400px; height: 100px">Off</x-import>
+  </x-import>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

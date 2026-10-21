@@ -45,8 +45,8 @@ CHROME = (r'C:\Program Files\Google\Chrome\Application\chrome.exe',
 FIELDS = {
     'button': ('id', 'text', 'fill', 'stroke', 'color', 'border', 'size', 'bold', 'align',
                'states', 'press', 'nav', 'does', 'derived', 'joined'),
-    'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does'),
-    'panel': ('fill', 'stroke', 'border'),
+    'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does', 'derived'),
+    'panel': ('fill', 'stroke', 'border', 'derived'),
     'line': ('fill', 'thickness', 'from', 'to'),
     'slider': ('id', 'fill', 'border', 'orientation', 'track', 'thumb', 'thumb_height', 'does'),
     'level': ('id', 'fill', 'border', 'orientation', 'track', 'bar', 'does'),
@@ -977,7 +977,10 @@ def pin_ids(specs, order):
         for it in spec['pages'] + spec['popups']:
             for c in it['controls']:
                 if c.get('derived'):
-                    c['id'] = did[(it['name'], c['name'])]
+                    # A derived copy of an unnamed card has nothing to key an
+                    # ID by, and a shape needs none.
+                    if c.get('name'):
+                        c['id'] = did[(it['name'], c['name'])]
                     continue
                 if not c.get('name') and c['kind'] in ('button', 'label', 'slider', 'level') and len(specs) > 1:
                     continue

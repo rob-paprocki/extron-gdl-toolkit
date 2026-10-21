@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Call" reached-by="program" theme="saturn" panels="TLP1035T TLP525T TLP320M" does="The Microsoft Teams call page. The program shows it by itself when a call comes in on the room PC, and Video Call on Home opens it. Join or end the call, pick a camera preset, turn camera privacy on and off, and see at once whether the microphones are muted.">
+<x-import component-from-global-scope="ExtronShockwave.Panel" name="Header" fill="page" border="rect" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 91px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Group" title="Sources" joined="true" cell="152x91" gap="0" cap="4" style="position: absolute; left: 336px; top: 0px; width: 608px; height: 91px">
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Laptop" id="111" variant="source" icon="laptop_white" states="Off, On" does="Routes the laptop at the table to the display; On while it is the source on the display." style="width: 152px; height: 91px">Laptop</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="ShareLink" id="112" variant="source" icon="sharelink_white" states="Off, On" does="Routes ShareLink, the wireless share, to the display; On while it is the source on the display." style="width: 152px; height: 91px">ShareLink</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="RoomPC" id="113" variant="source" icon="pc_white" states="Off, On" show="On" does="Routes the room PC to the display; On while it is the source on the display." style="width: 152px; height: 91px">Room PC</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="DocCamera" id="114" variant="source" icon="doc-cam_white" states="Off, On" does="Routes the document camera to the display; On while it is the source on the display." style="width: 152px; height: 91px">Doc Camera</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Lights" id="104" variant="tile" icon="gray" nav="Lighting" style="position: absolute; left: 29px; top: 220px; width: 120px; height: 110px">Lights</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="HomeBtn" variant="tile" icon="gray" nav="Main" style="position: absolute; left: 29px; top: 410px; width: 120px; height: 110px">Home</x-import>
+<x-import component-from-global-scope="ExtronShockwave.MainArea">
+<x-import component-from-global-scope="ExtronShockwave.Label" name="CallApp" type="heading" align="center" style="position: absolute; left: 0px; top: 10px; width: 926px; height: 50px">Microsoft Teams</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="CallStatus" type="title" align="center" does="Shows the Teams call state - Ready to join, Incoming call or In call; the program rewrites it." style="position: absolute; left: 0px; top: 60px; width: 926px; height: 80px">Incoming call</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="MicStatus" type="body-strong" align="center" does="Shows Microphones muted while the microphones are muted and Microphones on while they are live; the program rewrites it." style="position: absolute; left: 0px; top: 140px; width: 926px; height: 50px">Microphones muted</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="JoinCall" variant="action" icon="r_call_green" size="16" does="Joins the Microsoft Teams meeting, or answers the incoming call, on the room PC." style="position: absolute; left: 50px; top: 208px; width: 308px; height: 110px">Join</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="EndCall" variant="action" icon="r_end-call_red" size="16" does="Ends the Microsoft Teams call on the room PC." style="position: absolute; left: 410px; top: 208px; width: 308px; height: 110px">End Call</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Mute" id="102" variant="square" icon="red" states='[{"name":"Live"},{"name":"Muted","look":"on","color":"alert"}]' does="Mutes and unmutes the program audio; Muted while the program audio is muted." style="position: absolute; left: 786px; top: 223px; width: 80px; height: 80px">Mute</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="CameraLabel" type="body-strong" align="left" style="position: absolute; left: 60px; top: 330px; width: 400px; height: 50px">Camera</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Group" title="Camera" cell="176x110" gap="24" cap="3" style="position: absolute; left: 60px; top: 384px; width: 576px; height: 110px">
+<x-import component-from-global-scope="ExtronShockwave.Button" name="CameraWide" variant="button" icon="gray" size="18" states="Off, On" does="Moves the room camera to its Wide preset; On while that preset is active." style="width: 176px; height: 110px">Wide</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="CameraTable" variant="button" icon="gray" size="18" states="Off, On" show="On" does="Moves the room camera to its Table preset; On while that preset is active." style="width: 176px; height: 110px">Table</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="CameraPresenter" variant="button" icon="gray" size="18" states="Off, On" does="Moves the room camera to its Presenter preset; On while that preset is active." style="width: 176px; height: 110px">Presenter</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="CameraPrivacy" variant="button" icon="gray" size="18" states='[{"name":"Off"},{"name":"On","look":"on","icon":"red","color":"alert","text":"Privacy On"}]' does="Turns camera privacy on and off for the room camera; On while privacy is on." style="position: absolute; left: 690px; top: 384px; width: 176px; height: 110px">Privacy Off</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Rail">
+<x-import component-from-global-scope="ExtronShockwave.Label" name="VolumeLabel" type="body-strong" align="center" style="width: 120px; height: 50px">Volume</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Slider" name="Volume" id="101" value="60" does="Sets the program volume; follows the DSP level." style="width: 54px"></x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Panel" name="Footer" fill="page" border="capsule" style="position: absolute; left: 166px; top: 718px; width: 928px; height: 62px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="MicMute" id="103" variant="wide" icon="gray_round" states='[{"name":"Live"},{"name":"Muted","look":"on","icon":"red_round","color":"alert","text":"Mics Muted"}]' show="Muted" does="Mutes and unmutes every microphone in the room; the program lights it red as Muted while the microphones are muted." style="position: absolute; left: 176px; top: 720px; width: 168px; height: 60px">Mics On</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Clock" name="DateTime" format="time" size="14" align="center" style="position: absolute; left: 740px; top: 720px; width: 220px; height: 60px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="HelpBtn" id="105" variant="pill" icon="yellow" nav="Help" style="position: absolute; left: 518px; top: 720px; width: 143px; height: 59px">Help</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="PowerBtn" id="106" variant="pill" icon="red" nav="ConfirmRoomOff" style="position: absolute; left: 1115px; top: 720px; width: 143px; height: 59px">Power</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

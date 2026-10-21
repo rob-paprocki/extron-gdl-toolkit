@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Help</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Help" kind="modal" theme="saturn" panels="TLP1035T TLP525T TLP320M" does="Explains how to share a screen and gives the AV desk number, extension 4400. Opened from Home and from Call.">
+<x-import component-from-global-scope="ExtronShockwave.Panel" name="Card" fill="raised" border="rounded" style="position: absolute; left: 180px; top: 110px; width: 921px; height: 574px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Title" type="title" align="left" color="text-secondary" style="position: absolute; left: 220px; top: 130px; width: 560px; height: 90px">Help</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Close" variant="close" does="Closes this popup." style="position: absolute; left: 1010px; top: 140px; width: 64px; height: 64px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="ShareHeading" type="heading" align="left" color="text-secondary" style="position: absolute; left: 220px; top: 220px; width: 740px; height: 56px">To share a screen</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Step1" type="body" align="left" color="text-secondary" style="position: absolute; left: 220px; top: 280px; width: 841px; height: 50px">1. Press Display if it is off.</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Step2" type="body" align="left" color="text-secondary" style="position: absolute; left: 220px; top: 330px; width: 841px; height: 50px">2. Press your source at the top:</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Step2Sources1" type="body" align="left" color="text-secondary" style="position: absolute; left: 260px; top: 380px; width: 801px; height: 50px">Laptop, ShareLink (wireless),</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Step2Sources2" type="body" align="left" color="text-secondary" style="position: absolute; left: 260px; top: 430px; width: 801px; height: 50px">Room PC or Doc Camera.</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Step3" type="body" align="left" color="text-secondary" style="position: absolute; left: 220px; top: 480px; width: 841px; height: 50px">3. The lit source is on the display.</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Line" name="Divider" orientation="horizontal" color="text-secondary" thickness="2" style="position: absolute; left: 220px; top: 552px; width: 841px; height: 2px"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="AVDesk" type="heading" bold="true" align="left" color="text-secondary" style="position: absolute; left: 220px; top: 570px; width: 841px; height: 70px">Call the AV desk: extension 4400</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

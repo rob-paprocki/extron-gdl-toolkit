@@ -91,6 +91,21 @@
     }
   }
   function lineHeight(size) { return Math.ceil(size * P.pt * 1.2); }
+  // Words in lines no wider than `width` at `css`, at the spaces between
+  // them; a line break already in them stays one.
+  function wrapWords(text, css, width) {
+    var out = [];
+    String(text).split(/\r?\n/).forEach(function (para) {
+      var line = '';
+      para.split(/\s+/).forEach(function (w) {
+        if (!w) return;
+        var t = line ? line + ' ' + w : w;
+        if (line && textWidth(t, css) > width) { out.push(line); line = w; } else line = t;
+      });
+      out.push(line);
+    });
+    return out;
+  }
   function truthy(v) { return v === true || v === 'true' || v === 'yes' || v === '1'; }
 
   // -- props that arrive as text from markup --------------------------------
@@ -263,7 +278,7 @@
               Math.max(T.touch, tall)];
     }
     if (it.kind === 'slider') return [T.touch, T.touch];
-    if (it.kind === 'group' && truthy(p.joined)) {
+    if (it.kind === 'group' && joinedHere(p, L)) {
       var seg = segments(p, L);
       return [seg.n * seg.cw, seg.ch];
     }
@@ -530,6 +545,23 @@
   // it needs, rows centred - and a panel card behind a set of them is drawn
   // behind where they land. What does not fit is a problem, never dropped.
   function flowLayout(items, D, T, L, frame, where) {
+    var R = flowRows(items, D, T, L, frame, where);
+    var total = R.laid.reduce(function (s, line) { return s + line.h + line.gap; }, 0);
+    if (total > frame[3] - 2 * R.tight) {
+      R.probs.push(where + ' needs ' + Math.round(total) + ' px of a ' + T.model + "'s " + frame[3] + ' - it does not fit');
+    }
+    var put = placeRows(R, R.laid, [0, 0, frame[2], frame[3]], Math.round(Math.max(R.tight, (frame[3] - total) / 2)));
+    var back = cardsBehind(R, put.placed, [0, 0, frame[2], frame[3]], true, function (card, r) {
+      return placeHost(card.host, r, 'card' + card.i);
+    });
+    return { els: back.concat(R.els, put.els), problems: R.probs, k: R.k };
+  }
+  // The rows a frame's children reflow into on a tier C panel: each line of
+  // controls at what each needs on it, wrapped to the frame's width, and the
+  // gap above it - none above the first. `band(it)`, where given, orders the
+  // controls by region first, and a row is never two regions'.
+  function flowRows(items, D, T, L, frame, where, band) {
+    var bandOf = band || function () { return 0; };
     var f = fit(D, frame), k = f.s;
     var pad = T.gap, gap = T.gap, tight = 2;
     var W = frame[2] - 2 * pad, els = [], probs = [];
@@ -547,14 +579,15 @@
         flow.push(it);
       }
     });
-    flow.sort(function (a, b) { return (a.rect[1] - b.rect[1]) || (a.rect[0] - b.rect[0]); });
+    flow.sort(function (a, b) { return (bandOf(a) - bandOf(b)) || (a.rect[1] - b.rect[1]) || (a.rect[0] - b.rect[0]); });
     // Rows: a control joins the row above while its middle is inside it.
     var rows = [];
     flow.forEach(function (it) {
       var mid = it.rect[1] + it.rect[3] / 2;
       var row = rows[rows.length - 1];
-      if (row && mid >= row.top && mid <= row.bottom) { row.items.push(it); row.bottom = Math.max(row.bottom, it.rect[1] + it.rect[3]); }
-      else rows.push({ top: it.rect[1], bottom: it.rect[1] + it.rect[3], items: [it] });
+      if (row && row.band === bandOf(it) && mid >= row.top && mid <= row.bottom) {
+        row.items.push(it); row.bottom = Math.max(row.bottom, it.rect[1] + it.rect[3]);
+      } else rows.push({ top: it.rect[1], bottom: it.rect[1] + it.rect[3], items: [it], band: bandOf(it) });
     });
     // Sizes on this panel, then rows that are too wide wrap.
     var laid = [];
@@ -570,6 +603,15 @@
                                          : textOf((it.props || {}).children, (it.props || {}).text);
           w = Math.min(W, Math.max(it.rect[2] * k, textWidth(text, g.css) + 8));
           ht = n[1];
+          // Words wider than the screen break into lines, each as GUI Designer
+          // lays one out (1.362 em of Open Sans, where the canvas's is 1.2):
+          // the round-three Help modals' sentences, one 26 px line in a 302 px
+          // box on the 320, ran past it into the next.
+          it.lines = null;
+          if (it.kind === 'label' && textWidth(text, g.css) + 8 > W) {
+            it.lines = wrapWords(text, g.css, W - 8);
+            ht = it.lines.length * Math.ceil(g.size * P.pt * 1.37) + 2;
+          }
         } else if (it.kind === 'slider') {
           // As a level (asLevel), Down and Up at the touch minimum with 24 px
           // of level between them: three touch minimums were 2 px short of it
@@ -592,21 +634,21 @@
       if (line.length) laid.push(line);
     });
     function touchy(line) { return line.some(function (c) { return c.it.kind === 'button' || c.it.kind === 'slider'; }); }
-    var total = 0;
     laid.forEach(function (line, n) {
       line.h = Math.max.apply(null, line.map(function (c) { return c.h; }));
       line.gap = n ? (touchy(line) || touchy(laid[n - 1]) ? gap : tight) : 0;
-      total += line.h + line.gap;
     });
-    if (total > frame[3] - 2 * tight) {
-      probs.push(where + ' needs ' + Math.round(total) + ' px of a ' + T.model + "'s " + frame[3] + ' - it does not fit');
-    }
-    var y = Math.round(Math.max(tight, (frame[3] - total) / 2));
-    var placed = {};
-    laid.forEach(function (line) {
-      y += line.gap;
-      var wsum = line.reduce(function (s, c) { return s + c.w; }, 0) + gap * (line.length - 1);
-      var x = Math.round((frame[2] - wsum) / 2);
+    return { laid: laid, cards: cards, flow: flow, items: items, els: els, probs: probs,
+             k: k, T: T, pad: pad, gap: gap, tight: tight };
+  }
+  // flowRows' `lines` in `box` from `top` down, each centred across it - the
+  // first with no gap above it, wherever it fell in the flow.
+  function placeRows(R, lines, box, top) {
+    var T = R.T, els = [], placed = {}, y = box[1] + top;
+    lines.forEach(function (line, n) {
+      if (n) y += line.gap;
+      var wsum = line.reduce(function (s, c) { return s + c.w; }, 0) + R.gap * (line.length - 1);
+      var x = box[0] + Math.round((box[2] - wsum) / 2);
       line.forEach(function (c) {
         var r = [x, y + Math.round((line.h - c.h) / 2), c.w, c.h];
         placed[c.it.i] = r;
@@ -614,38 +656,224 @@
           // Its line is one touch minimum deep, which cannot hold Up and Down
           // beside it: they are along it.
           var lv = asLevel(c.it, r, 'row', T, 's' + c.it.i, null, null,
-                           c.it.rect ? stepVariant(c.it, items, null, 0) : null);
+                           c.it.rect ? stepVariant(c.it, R.items, null, 0) : null);
           els = els.concat(lv.els);
-          probs = probs.concat(lv.problems);
+          R.probs = R.probs.concat(lv.problems);
         } else if (c.it.kind === 'group') {
           els.push(React.cloneElement(c.it.host, { key: 'g' + c.it.i, style: cell(r) },
-                     React.cloneElement(c.it.comp, { __box: [c.w, c.h], __k: k })));
+                     React.cloneElement(c.it.comp, { __box: [c.w, c.h], __k: R.k })));
+        } else if (c.it.lines) {
+          els.push(React.cloneElement(c.it.host, { key: 'c' + c.it.i, style: cell(r) },
+                     React.cloneElement(c.it.comp, { __text: c.it.lines.join('\r\n') })));
         } else {
           els.push(placeHost(c.it.host, r, 'c' + c.it.i));
         }
-        x += c.w + gap;
+        x += c.w + R.gap;
       });
       y += line.h;
     });
-    // A card goes behind the controls it was drawn behind, wherever they land.
-    var back = [];
-    cards.forEach(function (card) {
-      var c = card.rect, box = null;
-      flow.forEach(function (it) {
+    return { els: els, placed: placed };
+  }
+  // A card goes behind the controls it was drawn behind, wherever they land
+  // in `box`. One drawn behind none (`lone`) goes in the middle of `box` at
+  // the frame's scale; one whose controls all landed elsewhere, nowhere.
+  // `draw(card, rect)` makes its element.
+  function cardsBehind(R, placed, box, lone, draw) {
+    var back = [], pad = R.pad, k = R.k;
+    R.cards.forEach(function (card) {
+      var c = card.rect, b = null, any = false;
+      R.flow.forEach(function (it) {
         var r = it.rect;
-        if (r[0] >= c[0] && r[1] >= c[1] && r[0] + r[2] <= c[0] + c[2] && r[1] + r[3] <= c[1] + c[3] && placed[it.i]) {
-          var q = placed[it.i];
-          box = box ? [Math.min(box[0], q[0]), Math.min(box[1], q[1]), Math.max(box[2], q[0] + q[2]), Math.max(box[3], q[1] + q[3])]
-                    : [q[0], q[1], q[0] + q[2], q[1] + q[3]];
+        if (!(r[0] >= c[0] && r[1] >= c[1] && r[0] + r[2] <= c[0] + c[2] && r[1] + r[3] <= c[1] + c[3])) return;
+        any = true;
+        var q = placed[it.i];
+        if (!q) return;
+        b = b ? [Math.min(b[0], q[0]), Math.min(b[1], q[1]), Math.max(b[2], q[0] + q[2]), Math.max(b[3], q[1] + q[3])]
+              : [q[0], q[1], q[0] + q[2], q[1] + q[3]];
+      });
+      if (!b && (any || !lone)) return;
+      var x0 = box[0], y0 = box[1], x1 = box[0] + box[2], y1 = box[1] + box[3];
+      var r = b ? [Math.max(x0, b[0] - pad), Math.max(y0, b[1] - pad),
+                   Math.min(x1, b[2] + pad) - Math.max(x0, b[0] - pad),
+                   Math.min(y1, b[3] + pad) - Math.max(y0, b[1] - pad)]
+                : [x0 + (box[2] - c[2] * k) / 2, y0 + (box[3] - c[3] * k) / 2, c[2] * k, c[3] * k];
+      back.push(draw(card, r));
+    });
+    return back;
+  }
+  // A bar theme's page on a tier C panel (the 320), as Extron's own 320
+  // templates draw one: the page's header bar is the title strip above the
+  // series' main region - 36 px on Mach's, Shockwave's and Turbulence's -
+  // with the labels drawn on it where they fit there, and everything else -
+  // the page's own controls, its MainArea's and its Rail's, since the 320 has
+  // no rail - reflows in rows in design order in main. Rows one screen cannot
+  // hold go on over pages of their own (Home 2, Home 3), each under the
+  // strip, with Previous and Next at main's foot, as a Group's pages do. A
+  // row never splits. Extron's own Mach 320 spreads a room over twelve pages
+  // this way; the round-three rooms needed 201 to 359 px of its 240.
+  function overPages(items, D, T, L, name) {
+    var dw = D.size[0], M = T.main, sw = T.size[0];
+    var strip = [0, 0, sw, M[1]];
+    // The scale the page's rows are laid out at, as flowRows lays them.
+    var R0k = fit([0, 0, dw, D.size[1]], [0, 0, M[2], M[3]]).s;
+    // Play: Next and Previous show a page by setting the one shown.
+    var shown = { set: null };
+    function shower(p) { return function () { if (shown.set) shown.set(p); }; }
+    // The MainArea's and the Rail's children, where the page drew them: a
+    // Rail's need no place of their own, so they stack in its band in order.
+    var flat = [];
+    items.forEach(function (it) {
+      if (it.kind === 'mainarea' && D.main) {
+        itemsOf(it.comp.props.children, [D.main[2], D.main[3]]).forEach(function (c) {
+          if (c.rect) c.rect = [c.rect[0] + D.main[0], c.rect[1] + D.main[1], c.rect[2], c.rect[3]];
+          flat.push(c);
+        });
+      } else if (it.kind === 'rail') {
+        var band = D.rail || it.rect || [0, 0, dw, D.size[1]];
+        var row = (D.rail_axis || 'column') === 'row', at = row ? band[0] : band[1];
+        React.Children.toArray(it.comp.props.children).forEach(function (host) {
+          if (!React.isValidElement(host)) return;
+          var c = itemsOf([host])[0], st = host.props.style || {};
+          var w = len(st.width, band[2]), ht = len(st.height, band[3]);
+          w = w == null ? (row ? T.touch / R0k : band[2]) : w;
+          ht = ht == null ? (row ? band[3] : T.touch / R0k) : ht;
+          c.rect = row ? [at, band[1] + (band[3] - ht) / 2, w, ht] : [band[0] + (band[2] - w) / 2, at, w, ht];
+          at += (row ? w : ht) + 1;
+          flat.push(c);
+        });
+      } else {
+        flat.push(it);
+      }
+    });
+    // The header: a Panel across the page's top, ending above main.
+    var head = null;
+    flat.forEach(function (it) {
+      var r = it.rect;
+      if (!head && it.kind === 'panel' && r && r[1] <= 1 && r[2] >= 0.9 * dw && D.main && r[1] + r[3] <= D.main[1] + 2) head = it;
+    });
+    // Its labels, in the strip where they fit across it at the panel's type.
+    var Lk = Object.assign({}, L, { k: R0k });
+    var titles = [], widths = [];
+    if (head) {
+      var hb = head.rect[1] + head.rect[3];
+      titles = flat.filter(function (it) {
+        return (it.kind === 'label' || it.kind === 'clock') && it.rect && it.rect[1] + it.rect[3] / 2 < hb;
+      }).sort(function (a, b) { return a.rect[0] - b.rect[0]; });
+      var widths = titles.map(function (it) {
+        var g = font(it.props || {}, it.kind === 'clock' ? P.defaults.clock.type : P.defaults.label.type, Lk);
+        var text = it.kind === 'clock' ? clockSample(CLOCK_FORMATS[(it.props || {}).format || 'time'] || (it.props || {}).format)
+                                       : textOf((it.props || {}).children, (it.props || {}).text);
+        return Math.ceil(textWidth(text, g.css) + 8);
+      });
+      var across = widths.reduce(function (s, w) { return s + w; }, 0) + T.gap * Math.max(0, titles.length - 1);
+      var deep = titles.every(function (it) { return needs(it, Lk)[1] <= strip[3]; });
+      if (!titles.length || across > sw - 2 * T.gap || !deep) { titles = []; widths = []; }
+    }
+    var rest = flat.filter(function (it) { return it !== head && titles.indexOf(it) < 0; });
+    // By region, as the page reads on a screen that holds a few rows: the
+    // header's, main's, the side columns' left to right, then the footer's.
+    // In design order alone a rail's 520 px slider beside main took main's
+    // controls into its row, and they came out in the order they ran across.
+    var dm = D.main;
+    function region(it) {
+      var cx = it.rect[0] + it.rect[2] / 2, cy = it.rect[1] + it.rect[3] / 2;
+      if (cy < dm[1]) return 0;
+      if (cy > dm[1] + dm[3]) return 4;
+      return cx < dm[0] ? 2 : cx > dm[0] + dm[2] ? 3 : 1;
+    }
+    var R = flowRows(rest, [0, 0, dw, D.size[1]], T, L, [0, 0, M[2], M[3]], name, dm ? region : null);
+    var nav = T.touch, room = M[3] - 2 * R.tight;
+    // Into pages: all on one when they fit, else each holds what fits above a
+    // row of Previous and Next.
+    var total = R.laid.reduce(function (s, line, n) { return s + line.h + (n ? line.gap : 0); }, 0);
+    var parts = [[]];
+    if (total <= room) {
+      parts[0] = R.laid;
+    } else {
+      var avail = room - nav - R.gap, used = 0;
+      R.laid.forEach(function (line) {
+        var cur = parts[parts.length - 1];
+        var add = line.h + (cur.length ? line.gap : 0);
+        if (cur.length && used + add > avail) { parts.push([line]); used = line.h; return; }
+        cur.push(line); used += add;
+      });
+      parts.forEach(function (lines, p) {
+        var deepest = lines.reduce(function (s, line, n) { return s + line.h + (n ? line.gap : 0); }, 0);
+        if (deepest > avail) {
+          R.probs.push(name + (p ? ' ' + (p + 1) : '') + ' has a row ' + Math.round(deepest) + ' px deep, more than the '
+                       + Math.round(avail) + " a page of a " + T.model + ' holds above Previous and Next - it does not fit');
         }
       });
-      var r = box ? [Math.max(0, box[0] - pad), Math.max(0, box[1] - pad),
-                     Math.min(frame[2], box[2] + pad) - Math.max(0, box[0] - pad),
-                     Math.min(frame[3], box[3] + pad) - Math.max(0, box[1] - pad)]
-                  : [(frame[2] - c[2] * k) / 2, (frame[3] - c[3] * k) / 2, c[2] * k, c[3] * k];
-      back.push(placeHost(card.host, r, 'card' + card.i));
+    }
+    function partName(p) { return p ? name + ' ' + (p + 1) : name; }
+    var navFont = font({}, P.defaults.button.type, Lk);
+    function navW(word) { return Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24)); }
+    // The strip on each page: the header and its labels, on a later page a
+    // copy the layout derived.
+    function stripOf(p) {
+      var els = [];
+      function put(it, r, key) {
+        els.push(p ? React.cloneElement(it.host, { key: key, style: cell(r) }, React.cloneElement(it.comp, { derived: true }))
+                   : placeHost(it.host, r, key));
+      }
+      if (head) put(head, strip, 'head' + p);
+      var x = Math.round((sw - (widths.reduce(function (s, w) { return s + w; }, 0) + T.gap * (titles.length - 1))) / 2);
+      titles.forEach(function (it, j) { put(it, [x, 0, widths[j], strip[3]], 'title' + p + '-' + j); x += widths[j] + T.gap; });
+      return els;
+    }
+    var drawn = {};
+    var pages = parts.map(function (lines, p) {
+      var deep = lines.reduce(function (s, line, n) { return s + line.h + (n ? line.gap : 0); }, 0);
+      var hold = parts.length > 1 ? room - nav - R.gap : room;
+      var put = placeRows(R, lines, [M[0], M[1], M[2], M[3]], Math.round(Math.max(R.tight, (hold - deep) / 2)));
+      // The first page a card is drawn on has the card; a later one, a copy.
+      var back = cardsBehind(R, put.placed, M, p === 0, function (card, r) {
+        if (!drawn[card.i]) { drawn[card.i] = true; return placeHost(card.host, r, 'card' + card.i); }
+        return React.cloneElement(card.host, { key: 'card' + p + '-' + card.i, style: cell(r) },
+                                  React.cloneElement(card.comp, { derived: true }));
+      });
+      var els = stripOf(p).concat(back, put.els);
+      if (parts.length > 1) {
+        var ny = M[1] + M[3] - R.tight - nav;
+        if (p > 0) {
+          els.push(h('div', { key: 'prev' + p, style: cell([M[0] + T.gap, ny, navW('Previous'), nav]) },
+                     h(Button, { name: partName(p) + ' Previous', derived: true, text: 'Previous', goes: partName(p - 1),
+                                 onPress: shower(p - 1) })));
+        }
+        if (p < parts.length - 1) {
+          var wn = navW('Next');
+          els.push(h('div', { key: 'next' + p, style: cell([M[0] + M[2] - T.gap - wn, ny, wn, nav]) },
+                     h(Button, { name: partName(p) + ' Next', derived: true, text: 'Next', goes: partName(p + 1),
+                                 onPress: shower(p + 1) })));
+        }
+      }
+      return els;
     });
-    return { els: back.concat(els), problems: probs, k: k };
+    var els = R.els.concat(pages[0]);
+    if (pages.length > 1) {
+      els.push(h(Parts, { key: 'parts', names: pages.map(function (_, p) { return partName(p); }), pages: pages, shown: shown }));
+    }
+    return { els: els, problems: R.probs, k: R.k };
+  }
+  // The pages a page goes on over, each laid over it as a page of its own
+  // that wears the page's look; its Groups' pages come Back to it.
+  function Parts(props) {
+    var L = React.useContext(Ctx);
+    var st = React.useState(0);
+    props.shown.set = st[1];
+    var forced = typeof window !== 'undefined' && window.__GDL_SHOW ? String(window.__GDL_SHOW) : null;
+    var cur = st[0];
+    props.names.forEach(function (n, p) { if (forced === n) cur = p; });
+    return props.pages.slice(1).map(function (els, j) {
+      var p = j + 1, name = props.names[p];
+      var look = Object.assign({ kind: 'page', name: name, host: L.pageName || 'Page', size: L.panel.size },
+                               L.pageLook || {});
+      return h(Ctx.Provider, { key: 'part' + p, value: Object.assign({}, L, { pageName: name }) },
+        h('div', { 'data-gdl-part': JSON.stringify(look),
+                   style: Object.assign({ position: 'fixed', left: 0, top: 0, width: L.panel.size[0] + 'px',
+                                          height: L.panel.size[1] + 'px', zIndex: 5,
+                                          visibility: cur === p ? 'visible' : 'hidden' }, L.pageStyle || {}) }, els));
+    });
   }
   function layout(items, D, frame, L, where, cut) {
     var flow = L.panel.tier === 'C' && L.model !== L.designModel;
@@ -789,8 +1017,12 @@
         main: [bx[1], by[1], bx[2] - bx[1], by[2] - by[1]],
         rail: col ? [T.rail[0], r0, T.rail[2], r1 - r0] : T.rail });
     }
-    var out = layout(itemsOf(props.children, [dw, dh]), [0, 0, dw, dh], [0, 0, tw, th], L, props.name || 'the page',
-                     cut);
+    // A bar theme's page on the 320: under a title strip, over as many pages
+    // as its rows need (overPages).
+    var over = kind === 'page' && T.tier === 'C' && model !== designModel && P.layout.bars === 'controls' && T.main;
+    var out = over ? overPages(itemsOf(props.children, [dw, dh]), D, T, L, props.name || 'Page')
+                   : layout(itemsOf(props.children, [dw, dh]), [0, 0, dw, dh], [0, 0, tw, th], L, props.name || 'the page',
+                            cut);
     L.k = out.k;
     problems = problems.concat(out.problems);
     var bgArt = kind === 'page' ? (T.backgrounds || {})[theme.id] || null : null;
@@ -1010,6 +1242,16 @@
     });
     return { n: items.length, cw: Math.ceil(cw), ch: Math.ceil(ch), cell: cellD };
   }
+  // A segmented control (a joined Group) is one row of touching segments -
+  // but not across more than a tier C panel's screen: Shockwave's four
+  // 152 px source tabs needed 336 px of the 320's 320. There it pages as any
+  // Group does, a button that opens its segments' pages.
+  function joinedHere(p, L) {
+    if (!truthy(p.joined)) return false;
+    if (!(L && L.aware && L.tier === 'C' && L.model !== L.designModel)) return true;
+    var seg = segments(p, L);
+    return seg.n * seg.cw <= L.panel.size[0] - 2 * L.panel.gap;
+  }
   function Group(props) {
     var L = useLook();
     var items = itemsOf(props.children);
@@ -1017,7 +1259,7 @@
     var cap = Number(props.cap) || 4;
     var cellD = cellsOf(props, items);
     var gapD = props.gap != null ? Number(props.gap) : 49;
-    var joined = truthy(props.joined);
+    var joined = joinedHere(props, L);
     var shown = React.useState(null);
     // A member is a component in a cell. Anything else - a wrapper div, an
     // sc-for - keeps what it holds and is named: cloned with no children, it
@@ -1374,6 +1616,8 @@
   function Label(props) {
     var L = useLook();
     var f = font(props, P.defaults.label.type, L);
+    // `__text`: its words as a tier C layout broke them into lines (flowRows).
+    var words_ = props.__text != null ? props.__text : textOf(props.children, props.text);
     var color = props.color || P.defaults.label.color;
     var align = props.align || 'left';
     return h('div', {
@@ -1387,9 +1631,11 @@
         minHeight: L.aware ? (lineHeight(f.size) + 2) / (L.css || 1) + 'px' : undefined
       },
       'data-gdl': gdl({ kind: 'label', name: props.name, id: props.id != null ? Number(props.id) : null,
-                        text: textOf(props.children, props.text), color: color, size: f.size,
-                        bold: f.bold, align: align, does: props.does })
-    }, textOf(props.children, props.text));
+                        text: words_, color: color, size: f.size,
+                        bold: f.bold, align: align, does: props.does,
+                        // A copy a panel's layout repeats (overPages' title strip).
+                        derived: truthy(props.derived) || null })
+    }, words_);
   }
 
   // -- Panel: a filled shape behind other controls --------------------------
@@ -1405,7 +1651,7 @@
                background: paint(L.colors, fill), border: edge(b, L.colors, stroke),
                borderRadius: radius(b) },
       'data-gdl': gdl({ kind: 'panel', name: props.name, fill: fill, stroke: stroke,
-                        border: border })
+                        border: border, derived: truthy(props.derived) || null })
     });
   }
 
@@ -1536,6 +1782,15 @@
     var fmt = props.format || 'time';
     var sample = clockSample(CLOCK_FORMATS[fmt] || fmt);
     var align = props.align || 'left';
+    // A seed with no date and time control (its series' `kinds`: Shockwave's
+    // and Turbulence's 320s) has none to clone, and the build refuses one
+    // there (gdl.spec donors), so a Clock is named on the panel it cannot be
+    // built for.
+    var panel = L.panel || (L.page && P.models && P.models[P.model]);
+    var lacks = panel && panel.kinds && panel.kinds.datetime === false
+      ? (props.name || 'Clock') + " is a date and time, which the " + (panel.model || P.model)
+        + "'s seed cannot build"
+      : null;
     return h('div', {
       className: 'xgdl xgdl-clock',
       style: { boxSizing: 'border-box', width: '100%', height: '100%', display: 'flex',
@@ -1545,7 +1800,7 @@
                         // Always: the spec's own default is center, so a
                         // left clock that said nothing built centered.
                         bold: f.bold, align: align, format: fmt })
-    }, sample);
+    }, sample, lacks ? problem(lacks, 'clock') : null);
   }
 
   // -- PopupRegion: where a group's popups appear ---------------------------

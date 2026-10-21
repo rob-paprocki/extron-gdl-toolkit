@@ -206,7 +206,7 @@
       "The 520 and 535 hubs keep a menu bar down the right: main is the canvas left of it, its title strip included, since Extron places the standard popup over it; the rail is the bar. The 320 keeps nothing on screen from page to page - its volume is a popup no page opens - so it has no rail.",
       "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
       "backgrounds: haze is the template's own art where the kit has it pixel for pixel - the 520's and the 535's 800x480 bkgd.png, which the 535 stretches as its template does - keeping the template's name, which its seed carries with those pixels; else the kit's '<size> bkgd.png' at the series' size, else the nearest shape - the 5464x3072 on the 1720, the 1280x800 on the 320, whose own 320x240 the kit lacks - under the kit file's name, which the applier appends. Saturn is its one 5464x3072 file (tests/measure_series.py theme_backgrounds, own_art). The tier A templates draw SW_bkgd_01.png, which is no kit file's pixels.",
-      "seeds, kinds: each seed in seeds/ by part number and canvas, and what control kinds it can clone - the 720's, 725's, 1035's, 1525's and 1535's a slider and no level; the 320's, 525's and 535's a level and no slider; the 320's no popup.",
+      "seeds, kinds: each seed in seeds/ by part number and canvas, and what control kinds it can clone - the 720's, 725's, 1035's, 1525's and 1535's a slider and no level; the 320's, 525's and 535's a level and no slider; the 320's no popup, and no date and time to clone.",
       "Measured with tests/measure_series.py Shockwave."
     ],
     "Shockwave 1220 Series": {
@@ -239,7 +239,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP1035M": "seeds/Shockwave 1035.gdl", "TLP1035T": "seeds/Shockwave 1035.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Shockwave 1020 Series": {
       "size": [1024, 600],
@@ -267,7 +267,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP725T": "seeds/Shockwave 725.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Shockwave 1520 Series": {
       "size": [1366, 768],
@@ -284,7 +284,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP1525TG": "seeds/Shockwave 1525.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Shockwave 1720 Series": {
       "size": [1920, 1080],
@@ -301,7 +301,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP1535M": "seeds/Shockwave 1535.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Shockwave 720 Series": {
       "size": [800, 480],
@@ -318,7 +318,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP720T": "seeds/Shockwave 720.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Shockwave 535 Series": {
       "size": [1280, 720],
@@ -335,7 +335,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP535T": "seeds/Shockwave 535.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
     },
     "Shockwave 520 Series": {
       "size": [800, 480],
@@ -352,7 +352,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP525T": "seeds/Shockwave 525.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
     },
     "Shockwave 320 Series": {
       "size": [320, 240],
@@ -369,7 +369,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP320M": "seeds/Shockwave 320.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": false}
+      "kinds": {"slider": false, "level": true, "datetime": false, "popup": false}
     }
   }
 }

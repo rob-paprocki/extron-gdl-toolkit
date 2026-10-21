@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Help</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Help" kind="modal" theme="lake" panels="TLP1035T TLP525T TLP320M" does="Explains how to share a screen and gives the AV desk extension. Opened from the Help button on Home and on Call.">
+  <x-import component-from-global-scope="ExtronMach.Panel" name="HelpCard" fill="page" border="mach" style="position: absolute; left: 90px; top: 90px; width: 1100px; height: 620px"></x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="HelpTitle" type="heading" align="center" color="text" style="position: absolute; left: 130px; top: 120px; width: 1020px; height: 60px">How to Share a Screen</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="HelpStep1" type="body" align="left" color="text" style="position: absolute; left: 160px; top: 210px; width: 960px; height: 60px">1. Touch the source you want to show.</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="HelpStep2" type="body" align="left" color="text" style="position: absolute; left: 160px; top: 280px; width: 960px; height: 60px">2. Laptop: share with ShareLink.</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="HelpStep3" type="body" align="left" color="text" style="position: absolute; left: 160px; top: 350px; width: 960px; height: 60px">3. The lit tile is on the display.</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="HelpAVDesk" type="body" bold="true" align="center" color="text" style="position: absolute; left: 130px; top: 450px; width: 1020px; height: 60px">Call the AV desk at extension 4400.</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="HelpClose" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' does="Closes this popup." style="position: absolute; left: 490px; top: 590px; width: 300px; height: 80px">Close</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

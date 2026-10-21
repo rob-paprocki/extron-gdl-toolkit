@@ -482,7 +482,11 @@ statement is in the live docs; this is the record that it changed.
   A second round of fresh designers, from the READMEs that now say all this,
   built and verified every 1035; their 525s were refused by the hub derivation
   itself, whose faults #39 fixed, and a third round, after #40, built and
-  verified every 525 too (`docs/claude-design.md` §6).
+  verified every 525 too (`docs/claude-design.md` §6). Until 2026-10-21 a bar
+  theme's page on the 320 reflowed into rows across the whole screen and was
+  refused there - the huddles needed 285 to 482 px of its 240, the round-three
+  rooms 201 to 359 - and the README told a designer a Rail there was refused;
+  now the page goes on over pages of its own under the title strip.
 
 ## Dated facts moved out of the live docs
 

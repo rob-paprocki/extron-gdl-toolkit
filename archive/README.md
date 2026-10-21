@@ -23,6 +23,7 @@ that name the client or the owner's folders: `tools/public_sync.py`'s
 | `gdlwork/` | `C:\gdlwork` | Build scratch from 2026-09-08/09 (session `d41fdd7d`). See below. |
 | `job-9fe2c865/` | `C:\Users\<user>\.claude\jobs\9fe2c865` | Scratch from 2026-09-09/10 (session `9fe2c865`). See below. |
 | `job-2419a20b/` | `C:\Users\<user>\.claude\jobs\2419a20b` | Build evidence from 2026-10-10 and 11 (session `2419a20b`). See below. |
+| `job-e823df9b/` | `out/` of the `gd-128-upgrade` worktree | Build evidence from 2026-10-21 (session `e823df9b`). See below. |
 | `desktop/gdl-retarget-proof/` | `C:\Users\<user>\Desktop\gdl-retarget-proof` | The retarget and feedback-state builds, as handed over. |
 | `claude/memory/` | `~\.claude\projects\Z--GitHub-rob-paprocki\memory` | Claude Code's saved notes for this folder: the project goal, the move to native Windows, American spelling. |
 | `claude/sessions/` | `~\.claude\projects\Z--GitHub-rob-paprocki*` | Claude Code transcripts - see below. |
@@ -76,6 +77,15 @@ the built files are not reviewed for it.
 | `hubs/` | Mach, Shockwave and Turbulence on every panel but the 320, built: each `<theme>-build.log` is `New-GdlPanels.ps1` building that theme's hub-ready canvas (`tests/data/design-panels-<theme>`, the Huddle listing the TLP1035T, TLP725T, TLP1525TG, TLP720T, TLP535T and TLP525T - Turbulence draws no 535), each panel on its own seed and verified against one ID map; `<theme>-hubs-build.log` builds the hubs again, `-Models`, with their Up and Down in the look of the Mute below them where that look can draw them (Mach's, Turbulence's; Shockwave's in its default), against the same map. `<theme>-<525 or 535>-home-design.png` and `-built.png` are `gdl.design compare`'s Home on that hub, as designed and as built. The logs are UTF-8, from PowerShell 7. |
 | `prose-in/` | A conference room from one prose brief, drawn by a fresh designer per theme with nothing but the Design type's instructions and the theme's design system, read back, translated and built: `round1/` from the READMEs as they were (every 1035 clean; only Afterburn's 525, built on both panels), `round2/` from the READMEs after (every 1035 built and verified), `round3/` from the READMEs after #39 and #40 (Mach's, Shockwave's and Turbulence's rooms built and verified on the 1035 and the 525). Each holds the canvases, the translator's and the builds' logs and the sign-off images; its `README.md` has the brief and what each round showed. The PowerShell 5.1 build logs are decoded from UTF-16. |
 | `wait/` | What `Wait-GdlBuild.ps1` tells a build from a modal by (`docs/from-scratch.md` §7). `modal.log`: GUI Designer's writes idle and behind its About box. `modal-wait.log`: the wait, and the writes-only wait before it, against that modal. `icon-build.csv` and `long-build.csv`: two nine-minute builds sampled every two seconds - bytes written, CPU seconds, whether the window answered - with `long-build.log`, the second run under the wait at a 60-second timeout. |
+
+## job-e823df9b/
+
+Build evidence from 2026-10-21 (session `e823df9b`), held back from the public
+copy whole for the same reasons as `job-2419a20b/`.
+
+| Path | What it is |
+|---|---|
+| `room-320/` | The round-three conference rooms (`job-2419a20b/prose-in/round3/`) with the TLP320M listed, each translated once and built by `New-GdlPanels.ps1` on the 1035, the 525 and the 320 against one ID map: on the 320 each page under its title strip and over pages of its own (`docs/claude-design.md` §4, §6). Mach's and Shockwave's Help modals are revised to fit the 320's one screen, and Shockwave's and Turbulence's clocks taken off, since their 320 seeds have no date and time control to clone. Each theme's folder holds the canvas as translated, the specs, the ID map, the build log (decoded from UTF-16) and the sign-off images. |
 
 ## claude/sessions/
 

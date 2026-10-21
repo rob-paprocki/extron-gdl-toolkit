@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm Room Off</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Confirm Room Off" kind="modal" theme="office" panels="TLP1035T TLP525T TLP320M" does="Asks before the room is turned off; opened from Home and from Call by Power Down.">
+
+  <x-import component-from-global-scope="ExtronTurbulence.Panel" name="ConfirmCard" fill="page" border="rounded" style="position: absolute; left: 240px; top: 176px; width: 800px; height: 448px"></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="ConfirmTitle" type="title" align="left" style="position: absolute; left: 280px; top: 196px; width: 650px; height: 70px">Power Down the Room?</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="ConfirmClose" variant="close" does="Closes this popup." style="position: absolute; left: 975px; top: 181px; width: 60px; height: 60px"></x-import>
+
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="CancelPowerDown" variant="button" icon="cancel" does="Closes this popup without powering down." style="position: absolute; left: 454px; top: 380px; width: 146px; height: 153px"></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="ConfirmPowerDown" variant="button" icon="vc_power-dn" states='[{"name":"Off","look":"green"},{"name":"On","look":"on"}]' nav="Main" does="Powers the room down: the display goes off and any call ends; the panel returns to Home." style="position: absolute; left: 680px; top: 380px; width: 146px; height: 153px"></x-import>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

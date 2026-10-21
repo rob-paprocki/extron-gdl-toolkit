@@ -1,0 +1,26 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-21T12:00:00Z" },
+  "title": "Boardroom Panels",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1280, "h": 800, "title": "Home", "is_interactive": true },
+    "Call.dc.html": { "x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Call", "is_interactive": true },
+    "Lighting.dc.html": { "x": 0, "y": 1220, "w": 1280, "h": 800, "title": "Lighting", "is_interactive": true },
+    "Help.dc.html": { "x": 1360, "y": 1220, "w": 1280, "h": 800, "title": "Help", "is_interactive": true },
+    "ConfirmRoomOff.dc.html": { "x": 2720, "y": 1220, "w": 1280, "h": 800, "title": "Confirm Room Off", "is_interactive": true }
+  },
+  "order": [
+    "Main.dc.html",
+    "Call.dc.html",
+    "Lighting.dc.html",
+    "Help.dc.html",
+    "ConfirmRoomOff.dc.html"
+  ],
+  "notes": {
+    "pages": { "x": 0, "y": -300, "text": "Pages", "kind": "title1", "maxW": 2640 },
+    "modals": { "x": 0, "y": 920, "text": "Modals", "kind": "title1", "maxW": 4000 }
+  },
+  "designSystems": []
+}

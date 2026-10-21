@@ -8,6 +8,7 @@ Artifact tool), and skips without them.
 """
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -1229,11 +1230,11 @@ class TestInChrome(unittest.TestCase):
 
     def _translate_panels(self, template, data, edit=None):
         """As _translate, one spec per panel the canvas lists. `edit`:
-        (board, old, new), applied to that board first."""
+        (board, old, new), or a list of them, applied to that board first."""
         d = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, d, True)
         shutil.copytree(os.path.join(HERE, 'data', data), d, dirs_exist_ok=True)
-        if edit:
+        for edit in ([edit] if edit and isinstance(edit[0], str) else edit or []):
             path = os.path.join(d, edit[0])
             with open(path, encoding='utf-8') as fh:
                 src = fh.read()
@@ -1270,6 +1271,46 @@ class TestInChrome(unittest.TestCase):
         self.assertTrue(any('Overflowing' in p and 'does not fit' in p for p in drawn), drawn)
         # The spec check's word for two touch targets that meet (`page N A / B`).
         self.assertTrue(any('GapA / GapB' in p for p in drawn), drawn)
+
+    def test_the_round_three_rooms_translate_for_the_320(self):
+        """The round-three conference rooms, drawn by fresh designers for the
+        1035 and the 525, translate for the 320 as well, against the one ID
+        map: each page under its title strip, over as many pages as its rows
+        need. A modal holds one screen, and Mach's and Shockwave's Help modals
+        say more than the 320's holds; and Shockwave's and Turbulence's 320
+        seeds have no date and time control to clone. Revised as their gates'
+        words ask - Mach's AV desk said shorter, Shockwave's sources left to
+        the tabs they name, the clock off the pages - the rooms translate."""
+        def label(name, text, x, y, w, h=50):
+            return (f'<x-import component-from-global-scope="ExtronShockwave.Label" name="{name}" type="body" '
+                    f'align="left" color="text-secondary" style="position: absolute; left: {x}px; top: {y}px; '
+                    f'width: {w}px; height: {h}px">{text}</x-import>')
+        sw_clock = ('<x-import component-from-global-scope="ExtronShockwave.Clock" name="DateTime" format="time" '
+                    'size="14" align="center" style="position: absolute; left: 740px; top: 720px; width: 220px; '
+                    'height: 60px"></x-import>')
+        tb_clock = ('<x-import component-from-global-scope="ExtronTurbulence.Clock" name="Clock" format="datetime" '
+                    'type="body" align="center" style="position: absolute; left: 360px; top: 711px; width: 560px; '
+                    'height: 64px"></x-import>')
+        edits = {
+            'mach': [('Help.dc.html', 'Call the AV desk at extension 4400.', 'AV desk: ext. 4400.')],
+            'shockwave': [('Help.dc.html', label('Step2Sources1', 'Laptop, ShareLink (wireless),', 260, 380, 801), ''),
+                          ('Help.dc.html', label('Step2Sources2', 'Room PC or Doc Camera.', 260, 430, 801), ''),
+                          ('Help.dc.html', 'Call the AV desk: extension 4400', 'AV desk: ext. 4400'),
+                          ('Main.dc.html', sw_clock, ''), ('Call.dc.html', sw_clock, '')],
+            'turbulence': [('Main.dc.html', tb_clock, ''), ('Call.dc.html', tb_clock, '')],
+        }
+        for theme, edit in edits.items():
+            with self.subTest(theme=theme):
+                if not all(seeds.usable(f'seeds/{theme.title()} {s}.gdl') for s in ('1035', '525', '320')):
+                    self.skipTest(f'the {theme} seeds are not here (git lfs pull)')
+                if not designsys.kit_root(designsys.load(theme)):
+                    self.skipTest(f"Extron's {theme} kit is not here")
+                specs, problems, _ = self._translate_panels(theme, f'design-room-{theme}', edit=edit)
+                self.assertEqual({m: p for m, p in problems.items() if p}, {})
+                self.assertEqual(sorted(specs), ['TLP1035T', 'TLP320M', 'TLP525T'])
+                small = specs['TLP320M']
+                self.assertEqual((small['size'], small['_seed']), ([320, 240], f'seeds/{theme.title()} 320.gdl'))
+                self.assertIn('Home 2', [pg['name'] for pg in small['pages']])
 
     def test_each_themes_huddle_translates_for_every_panel_but_the_320(self):
         """Mach's, Shockwave's and Turbulence's huddles, drawn on the 1035 and
@@ -2459,6 +2500,145 @@ class TestGroupsInChrome(_Probe, unittest.TestCase):
                     for m, (_, mr) in part.items():
                         if m in ('Q1', 'Q2', 'Q3', 'Q4'):
                             self.assertFalse(_overlaps(r, mr), (n, r, m, mr))
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestABarThemeOnThe320(_Probe, unittest.TestCase):
+    """A bar theme's page on the 320, as Extron's own 320 templates draw one:
+    its header bar becomes the 36 px title strip, and what the page holds -
+    its own controls, its MainArea's and its Rail's, since the 320 has no rail
+    - reflows in rows in design order under it, going on over pages of its
+    own (Home 2, Home 3) with Next and Previous where one screen cannot hold
+    them. The round-three conference rooms, drawn for the 1035 and the 525,
+    needed 201 to 359 px of the 320's 240 and were refused."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-room-mach')
+    THEME = 'mach'
+    ORDER = ('SourceHeading', 'DisplayState', 'JoinCall', 'DateTime')
+    # What a board cannot do on the 320, by name. A modal holds one screen:
+    # a popup over the page, it does not go on over more, and its designer's
+    # four steps, each two lines on the 320, and the AV desk are too deep.
+    REFUSED = {'Help.dc.html': ["Help needs 247 px of a TLP320M's 240 - it does not fit"]}
+    STRIP = [0, 0, 320, 36]
+    MAIN = [0, 36, 320, 204]
+
+    def split(self, board):
+        """The probe's output, its parts, and each part's controls by part
+        name - None for the page itself."""
+        _, _, out = self.probe(board, 'TLP320M')
+        parts = [json.loads(p['gdl']) for p in out['parts']]
+        on = {}
+        for c in out['controls']:
+            i = c.get('part')
+            on.setdefault(None if i is None else parts[i]['name'], []).append(
+                (json.loads(c['gdl']), [round(v) for v in c['rect']]))
+        return out, parts, on
+
+    @staticmethod
+    def over(parts, page):
+        """The pages a page goes on over: Home 2, Home 3."""
+        return [p for p in parts if p['kind'] == 'page' and p.get('host') == page
+                and re.fullmatch(re.escape(page) + r' \d+', p['name'])]
+
+    def test_every_board_fits_the_320(self):
+        for board in sorted(f for f in os.listdir(self.CANVAS) if f.endswith('.dc.html')):
+            with self.subTest(board=board):
+                out, _, _ = self.split(board)
+                self.assertEqual(out['problems'], self.REFUSED.get(board, []))
+
+    def test_the_page_goes_on_over_pages_of_its_own(self):
+        _, parts, on = self.split('Main.dc.html')
+        more = self.over(parts, 'Home')
+        self.assertTrue(more)
+        self.assertEqual([p['name'] for p in more], ['Home %d' % i for i in range(2, len(more) + 2)])
+        for p in more:
+            self.assertEqual(p['size'], [320, 240])
+        touch = designsys.models(designsys.load(self.THEME))['TLP320M']['touch']
+        names = ['Home'] + [p['name'] for p in more]
+        for i, here in enumerate(names):
+            ctl = {g.get('name'): (g, r) for g, r in on[None if i == 0 else here]}
+            for word, to in (('Next', names[i + 1] if i + 1 < len(names) else None),
+                             ('Previous', names[i - 1] if i else None)):
+                if to is None:
+                    self.assertNotIn(here + ' ' + word, ctl)
+                    continue
+                g, r = ctl[here + ' ' + word]
+                self.assertEqual((g['kind'], g['nav'], g['derived']), ('button', to, True))
+                self.assertTrue(_inside(r, self.MAIN), (here, word, r))
+                self.assertGreaterEqual(min(r[2:]), touch, (here, word, r))
+
+    def test_the_title_strip_heads_each_of_them(self):
+        _, parts, on = self.split('Main.dc.html')
+        for where in [None] + [p['name'] for p in self.over(parts, 'Home')]:
+            strip = [g for g, r in on[where] if g['kind'] == 'panel' and r == self.STRIP]
+            self.assertEqual(len(strip), 1, where)
+            self.assertEqual(bool(strip[0].get('derived')), where is not None, where)
+
+    def test_the_rest_lies_in_main_in_design_order_and_once(self):
+        _, parts, on = self.split('Main.dc.html')
+        wheres = [None] + [p['name'] for p in self.over(parts, 'Home')]
+        seen, at = [], {}
+        for n, where in enumerate(wheres):
+            for g, r in on[where]:
+                if g['kind'] == 'panel' and r == self.STRIP:
+                    continue
+                self.assertTrue(_inside(r, self.STRIP) or _inside(r, self.MAIN), (where, g.get('name'), r))
+                if not g.get('derived'):
+                    seen.append(g.get('name'))
+                    at[g.get('name')] = (n, r[1])
+        self.assertEqual(len(seen), len(set(seen)), seen)
+        self.assertEqual([at[n] for n in self.ORDER], sorted(at[n] for n in self.ORDER))
+
+    def test_a_page_with_no_header_bar_still_goes_on_over(self):
+        """With no bar across its top the strip is empty, and the rest still
+        goes on over pages - a review found the strip's labels read before
+        anything set them, and the whole artboard drew nothing."""
+        if self.THEME != 'mach':
+            self.skipTest("Mach's room is the one with a header Panel to take away")
+        bar = ('<x-import component-from-global-scope="ExtronMach.Panel" name="HeaderBar" fill="shade" '
+               'border="rect" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 64px">'
+               '</x-import>')
+        _, _, out = self.probe('Main.dc.html', 'TLP320M', edit=(bar, ''))
+        self.assertEqual(out['problems'], [])
+        self.assertTrue(self.over([json.loads(p['gdl']) for p in out['parts']], 'Home'))
+
+    def test_a_group_on_a_later_page_comes_back_to_it(self):
+        """A Group's own pages, opened from Home 2, go Back to Home 2."""
+        _, parts, on = self.split('Main.dc.html')
+        for where in [p['name'] for p in self.over(parts, 'Home')]:
+            for g, _ in on[where]:
+                if g['kind'] == 'button' and g.get('derived') and str(g.get('nav', '')).startswith(where + ' '):
+                    if g['name'].endswith((' Next', ' Previous')):
+                        continue
+                    group = [p for p in parts if p['name'] == g['nav']]
+                    self.assertEqual(group[0]['host'], where)
+                    backs = [b for b, _ in on[g['nav']] if b.get('name', '').endswith(' Back')]
+                    self.assertEqual([b['nav'] for b in backs], [where])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestShockwaveOnThe320(TestABarThemeOnThe320):
+    CANVAS = os.path.join(HERE, 'data', 'design-room-shockwave')
+    THEME = 'shockwave'
+    ORDER = ('RoomName', 'SourceStatus', 'Display', 'DateTime')
+    # Its designer's nine lines of help, as Mach's four steps, are too deep;
+    # and the 320's seed has no date and time control to clone.
+    CLOCK = ["DateTime is a date and time, which the TLP320M's seed cannot build"]
+    REFUSED = {'Help.dc.html': ["Help needs 306 px of a TLP320M's 240 - it does not fit"],
+               'Main.dc.html': CLOCK, 'Call.dc.html': CLOCK}
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestTurbulenceOnThe320(TestABarThemeOnThe320):
+    CANVAS = os.path.join(HERE, 'data', 'design-room-turbulence')
+    THEME = 'turbulence'
+    ORDER = ('DisplayStatus', 'SourceStatus', 'OpenCall', 'Clock')
+    # The 320's seed has no date and time control to clone.
+    CLOCK = ["Clock is a date and time, which the TLP320M's seed cannot build"]
+    REFUSED = {'Main.dc.html': CLOCK, 'Call.dc.html': CLOCK}
 
 
 if __name__ == '__main__':

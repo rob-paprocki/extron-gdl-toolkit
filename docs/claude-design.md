@@ -308,10 +308,25 @@ tokens used, resolved for the canvas's accent scheme.
     leave, a control grown to the touch minimum staying inside main. On the
     panel the canvas is drawn on they stay as drawn;
     on a small panel (tier C, the 320's) they reflow into rows in the order
-    the controls were placed;
+    the controls were placed - and in a template that draws its bars as
+    controls a Page is drawn as Extron's own 320 templates draw theirs: its
+    header bar is the series' 36 px title strip, with the labels on it where
+    they fit there, and everything else - the Page's own controls, its
+    `MainArea`'s and its `Rail`'s, since the 320 has no rail - reflows into
+    rows in main under it, region by region (the header's, main's, the columns'
+    left to right, the footer's), each region's in design order. Rows one
+    screen cannot hold go on over pages of their own (Home 2, Home 3), each
+    under the strip - a copy the layout derived - with Previous and Next at
+    main's foot; a row never splits, and a card goes behind its controls on
+    each page they land on. Words wider than the screen break into lines, a
+    line as GUI Designer lays one out. A modal holds one screen: it is a popup
+    over a page, and it does not go on over more;
   - a `Group` in place, paged in its box as popups with no fill of their own -
     the page shows through, as through the seed's own group popups - or turned
-    into pages of its own opened by a button, by the panel's size;
+    into pages of its own opened by a button, by the panel's size; a joined
+    Group (a segmented control) stays one row, but where that row is wider than
+    a small panel's screen - Shockwave's four source tabs on the 320 - it
+    opens pages as any Group does;
   - a Slider a Level with Up and Down where the panel's seed has no slider - its
     series' `kinds` in the profile's `panels` say which: the 520s', 535s' and
     320s' seeds, Afterburn's 300M either way up and Mach's 300M. Where a
@@ -514,6 +529,25 @@ clock's words' own box, and anything that paints outside a component. Chrome is 
   whose captions broke the Words rule, Groups whose gaps scale with the page.
   The percentages are round two's kind: translucency drawn at full strength,
   and the start page under a modal.
+- **The same rooms on the 320** (`archive/job-e823df9b/room-320/`): the
+  round-three canvases with the TLP320M listed, each translated once and built
+  on the 1035, the 525 and the 320 against one ID map - every 1035 and 525
+  again with 0 problems, and on the 320:
+
+  | Theme | Pages, popups | Layout | ID map | Home over |
+  |---|---|---|---|---|
+  | Mach | 11, 3 | 502 checks on 90, 0 problems | 93, 0 | Home to Home 4 |
+  | Shockwave | 15, 3 | 386 on 101, 0 | 111, 0 | Home to Home 4 |
+  | Turbulence | 14, 3 | 376 on 101, 0 | 104, 0 | Home to Home 4 |
+
+  Each page under its title strip, over pages of its own with Previous and
+  Next, its Groups' pages coming Back to the page they are on. Three things
+  the 320 asked of the canvases, each named by its gate: Mach's and
+  Shockwave's Help modals said more than one screen holds and were revised to
+  fit, and Shockwave's and Turbulence's clocks came off, since their 320
+  seeds have no date and time control to clone (§7). And one of the Mach 320
+  seed's button states is 30% transparent, so its clones built every fill at
+  70% of its alpha until the applier cleared it (`docs/gdl-format.md`).
 
 ## 7. What is left
 
@@ -522,11 +556,17 @@ clock's words' own box, and anything that paints outside a component. Chrome is 
   which scales with the page, does not give way to its cells before the Group
   pages: Turbulence's round-three designer narrowed its gaps by hand to fit
   the 525 (§6).
-- Mach, Shockwave and Turbulence on their 320s. Every series has a seed and
-  its profile lists it, but the huddle canvases above are refused there, by
-  name: the page's controls, stacked in rows, need 285-482 px of its 240.
-  `docs/ROADMAP.md`, *Claude Design as the front end: every panel*, has what
-  comes next.
+- A modal on the 320 holds one screen, so one that says more is refused
+  there, by name: Mach's and Shockwave's round-three Help modals were, until
+  revised (§6). Going on over more modals, as a page goes on over pages, is
+  unbuilt: whether a modal's button can show another modal is unproven.
+- Shockwave's and Turbulence's 320 seeds have no date and time control to
+  clone (their profiles' `kinds`), so a Clock on a canvas listing the 320 is
+  refused there, by name; the round-three rooms built there with theirs taken
+  off (§6). Cloning the control from another of the theme's seeds is unbuilt.
+- A plain container - a flex column of labels, as the huddles' Help pages
+  hold - cannot reflow on a small panel, and is refused there, by name; the
+  Page README still offers flex and grid containers without that caveat.
 - On a mid-size panel each Group pages in its own box; the spec's hub - one
   region every group shares, switched by a rail of group buttons - is backlog,
   as are a left `Rail` and an icon on a group's button.

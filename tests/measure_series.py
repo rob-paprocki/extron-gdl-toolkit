@@ -484,7 +484,7 @@ def seed_facts(path, border_names):
                                  if pg['kind'] == 'page' and pg.get('size'))
     return {'part': part, 'size': list(canvas.most_common(1)[0][0]) if canvas else None,
             'slider': kinds['PBSlider'] > 0, 'level': kinds['PBLevel'] > 0,
-            'popup': std, 'borders': borders}
+            'datetime': kinds['PBDateTime'] > 0, 'popup': std, 'borders': borders}
 
 
 def _radius_thick(resource):
@@ -517,7 +517,7 @@ def match_seeds(theme, models, size, seeds):
                 else:
                     continue
                 if not turned or kinds is None:
-                    kinds = {k: facts[k] for k in ('slider', 'level', 'popup')}
+                    kinds = {k: facts[k] for k in ('slider', 'level', 'datetime', 'popup')}
                     borders = facts['borders']
     return out, kinds, borders
 

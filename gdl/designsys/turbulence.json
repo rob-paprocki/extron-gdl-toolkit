@@ -292,7 +292,7 @@
       "The 520 hub keeps a menu bar down the right: main is the canvas left of it, its title strip included, since Extron places the standard popup over it; the rail is the bar. The 320 keeps nothing on screen from page to page - its volume is a popup no page opens - so it has no rail.",
       "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
       "backgrounds: each theme's art, one size each, out of the templates (vendor/; tests/measure_series.py theme_backgrounds), stretched as every series draws it. The template's own (bkgd_pc.png, the 320's bkgd_water-1_plain.png, the 520's bkgd_swoop_plain.png) is that file pixel for pixel and keeps its name, which its seed carries with those pixels.",
-      "seeds, kinds: each seed in seeds/ by part number and canvas, and what control kinds it can clone - the 720's, 725's, 1035's and 1525's a slider and no level; the 320's and 525's a level and no slider; the 320's no popup.",
+      "seeds, kinds: each seed in seeds/ by part number and canvas, and what control kinds it can clone - the 720's, 725's, 1035's and 1525's a slider and no level; the 320's and 525's a level and no slider; the 320's no popup, and no date and time to clone.",
       "Measured with tests/measure_series.py Turbulence."
     ],
     "Turbulence 1220 Series": {
@@ -328,7 +328,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP1035M": "seeds/Turbulence 1035.gdl", "TLP1035T": "seeds/Turbulence 1035.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Turbulence 1020 Series": {
       "size": [1024, 600],
@@ -359,7 +359,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP725T": "seeds/Turbulence 725.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Turbulence 1520 Series": {
       "size": [1366, 768],
@@ -379,7 +379,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP1525TG": "seeds/Turbulence 1525.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Turbulence 720 Series": {
       "size": [800, 480],
@@ -399,7 +399,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP720T": "seeds/Turbulence 720.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Turbulence 520 Series": {
       "size": [800, 480],
@@ -419,7 +419,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP525T": "seeds/Turbulence 525.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
     },
     "Turbulence 320 Series": {
       "size": [320, 240],
@@ -439,7 +439,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP320M": "seeds/Turbulence 320.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": false}
+      "kinds": {"slider": false, "level": true, "datetime": false, "popup": false}
     }
   }
 }

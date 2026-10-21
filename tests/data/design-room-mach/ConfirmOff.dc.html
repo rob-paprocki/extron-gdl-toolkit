@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm Room Off</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Confirm Room Off" kind="modal" theme="lake" panels="TLP1035T TLP525T TLP320M" does="Asks whether to turn the room off. Opened from the Power button on Home and on Call.">
+  <x-import component-from-global-scope="ExtronMach.Panel" name="ConfirmCard" fill="page" border="mach" style="position: absolute; left: 240px; top: 210px; width: 800px; height: 380px"></x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="ConfirmTitle" type="heading" align="center" color="text" style="position: absolute; left: 280px; top: 250px; width: 720px; height: 80px">Turn the room off?</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="ConfirmCancel" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' does="Closes this popup." style="position: absolute; left: 300px; top: 440px; width: 300px; height: 100px">Cancel</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="TurnOff" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' does="Turns the room off: the display, the lights and the audio, ending any call, then closes this popup." style="position: absolute; left: 680px; top: 440px; width: 300px; height: 100px">Turn Off</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -573,7 +573,7 @@
         "grape": {"image": "6400x4000_bg4-grape.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png"}
       },
       "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl", "TLP1035M-Portrait": "seeds/Afterburn 1035 Portrait.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Afterburn 1020 Series": {
       "size": [1024, 600],
@@ -603,7 +603,7 @@
         "grape": {"image": "5120x3000_bg4-grape.png", "file": "Afterburn/Backgrounds/5120x3000/TLP 725/5120x3000_bg4-grape.png"}
       },
       "seeds": {"TLP725T": "seeds/Afterburn 725.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Afterburn 1520 Series": {
       "size": [1366, 768],
@@ -640,7 +640,7 @@
         "grape": {"image": "6830x3840_bg4-grape.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg4-grape.png"}
       },
       "seeds": {"TLP1535M": "seeds/Afterburn 1535.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Afterburn 1230 Series": {
       "size": [1920, 720],
@@ -659,7 +659,7 @@
         "grape": {"image": "9600x3600_bg4_grape.png", "file": "Afterburn/Backgrounds/9600x3600/9600x3600_bg4_grape.png"}
       },
       "seeds": {"TLP1230WTG": "seeds/Afterburn 1230W.gdl"},
-      "kinds": {"slider": true, "level": false, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
     },
     "Afterburn 520 Series": {
       "size": [800, 480],
@@ -678,7 +678,7 @@
         "grape": {"image": "4000x2400_bg4-grape_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg4-grape_main.png"}
       },
       "seeds": {"TLP525T": "seeds/Afterburn 525.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
     },
     "Afterburn 535 Series": {
       "size": [1280, 720],
@@ -715,7 +715,7 @@
         "grape": {"image": "1600x1200_bg4-grape.png", "file": "Afterburn/Backgrounds/1600x1200/1600x1200_bg4-grape.png"}
       },
       "seeds": {"TLP320M": "seeds/Afterburn 320.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": false},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": false},
       "borders": {"afterburn": "Afterburn - 7 Radius 2 Thick", "afterburn-flat": "Afterburn - 14 Radius 0 Thick"}
     },
     "Afterburn 300 Portrait Series": {
@@ -735,7 +735,7 @@
         "grape": {"image": "1600x2400_bg4-grape.png", "file": "Afterburn/Backgrounds/1600x2400/TLP 300M/1600x2400_bg4-grape.png"}
       },
       "seeds": {"TLP300M": "seeds/Afterburn 300M Portrait.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
     },
     "Afterburn 300 Landscape Series": {
       "size": [480, 320],
@@ -754,7 +754,7 @@
         "grape": {"image": "2400x1600_bg4-grape.png", "file": "Afterburn/Backgrounds/2400x1600/TLP 300M Landscape/2400x1600_bg4-grape.png"}
       },
       "seeds": {"TLP300M": "seeds/Afterburn 300M Landscape.gdl"},
-      "kinds": {"slider": false, "level": true, "popup": true},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
       "borders": {"afterburn-flat": "Afterburn - 14 Radius 0 Thick"}
     }
   }

@@ -455,7 +455,11 @@ A generator should assert all four agree rather than trusting the writes.
   its five Main pages 85.0 and its Offline Window 25.0. A clone keeps its
   donor's, and the seed's first shape is a well, so a panel cloned from it
   builds at 15% opacity with the right fill in every field. The spec says
-  translucency with the fill's alpha, so the applier writes 0.
+  translucency with the fill's alpha, so the applier writes 0. A button's
+  `PBState` carries a `transparencyField` of its own that fades that state the
+  same way: one of the Mach 320 seed's 66 states is 30.0, and the buttons
+  cloned from it built every fill at 70% of its alpha (180 as 126). The
+  applier writes 0 there too.
 - **A translucent fill reaches the artwork at its own alpha.** Build writes the
   alpha exactly and the color within premultiplying's rounding: Turbulence's
   rail, black at 38, built (0, 0, 0, 38) throughout, and its shade, #020D1A at
