@@ -486,7 +486,13 @@ statement is in the live docs; this is the record that it changed.
   theme's page on the 320 reflowed into rows across the whole screen and was
   refused there - the huddles needed 285 to 482 px of its 240, the round-three
   rooms 201 to 359 - and the README told a designer a Rail there was refused;
-  now the page goes on over pages of its own under the title strip.
+  now the page goes on over pages of its own under the title strip. And
+  until then a hub's bar drawn as a Panel kept its scaled depth under the
+  controls grown in it (Shockwave's 525 header 71 px deep under 94 px tabs),
+  a Group's gap held at its scale and the Group paged or was refused first,
+  and the READMEs left a designer to guess how a Group sits in a larger box,
+  where a Rail goes and whether it takes a Label, what a `datetime` clock
+  prints, and what a state keeps of its variant's look.
 
 ## Dated facts moved out of the live docs
 

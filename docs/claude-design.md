@@ -303,7 +303,10 @@ tokens used, resolved for the canvas's accent scheme.
     touch minimum deep where the band holds a button, as deep as a Group's
     cells where it holds one, and Extron's hub templates keep a title strip
     at the top of main - a Group grown past its box keeps to the page as a
-    control does, the right column goes
+    control does, a bar or card drawn as a Panel grows to hold what was drawn
+    in it (Shockwave's header under its source tabs, its footer capsule
+    under Mic Mute; elsewhere a bar keeps its series' own depth, as Extron's
+    templates draw it), the right column goes
     to the menu bar, and `MainArea` and the `Rail` keep to what those bands
     leave, a control grown to the touch minimum staying inside main. On the
     panel the canvas is drawn on they stay as drawn;
@@ -323,7 +326,9 @@ tokens used, resolved for the canvas's accent scheme.
     over a page, and it does not go on over more;
   - a `Group` in place, paged in its box as popups with no fill of their own -
     the page shows through, as through the seed's own group popups - or turned
-    into pages of its own opened by a button, by the panel's size; a joined
+    into pages of its own opened by a button, by the panel's size; its gap,
+    which scales with the page, gives way to its cells first, down to the
+    panel's 2 mm, before it pages; a joined
     Group (a segmented control) stays one row, but where that row is wider than
     a small panel's screen - Shockwave's four source tabs on the 320 - it
     opens pages as any Group does;
@@ -548,14 +553,11 @@ clock's words' own box, and anything that paints outside a component. Chrome is 
   seeds have no date and time control to clone (§7). And one of the Mach 320
   seed's button states is 30% transparent, so its clones built every fill at
   70% of its alpha until the applier cleared it (`docs/gdl-format.md`).
+  Built again after a hub's bars came to hold what is in them and a Group's
+  gap to give way (§4): all nine panels, 0 problems.
 
 ## 7. What is left
 
-- A bar drawn as a Panel does not grow with a deeper Group in it - on the 525
-  Shockwave's source tabs stand below its header bar - and a Group's gap,
-  which scales with the page, does not give way to its cells before the Group
-  pages: Turbulence's round-three designer narrowed its gaps by hand to fit
-  the 525 (§6).
 - A modal on the 320 holds one screen, so one that says more is refused
   there, by name: Mach's and Shockwave's round-three Help modals were, until
   revised (§6). Going on over more modals, as a page goes on over pages, is

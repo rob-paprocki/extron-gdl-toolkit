@@ -953,7 +953,8 @@ def _panels_bars(p):
     hub = (f" On a hub, whose main area reaches its top and bottom ({_the_series(hubs)}), the header, "
            f"the footer and a column beside main get bands of their own carved from main, at the panel's "
            f"scale - the touch minimum deep where they hold a button, and as deep as a Group's cells where "
-           f"they hold one - and MainArea and the Rail keep to what those bands leave." if hubs else '')
+           f"they hold one - a bar or card drawn as a Panel growing with them to hold what was drawn in it - and "
+           f"MainArea and the Rail keep to what those bands leave." if hubs else '')
     return ("- On a large or mid-size panel other than the one drawn, what sits on the Page itself rather "
             "than in MainArea or the Rail - a bar across the top or bottom, the buttons at its ends, a "
             "modal's window - keeps to that panel's own bands: a bar drawn edge to edge spans it at its own "
@@ -1012,7 +1013,8 @@ def _panels_rail(p):
     below = _series_named(p, lambda s: s['rail'] and s['rail_axis'] == 'row')
     none = _series_named(p, lambda s: not s['rail'])
     level = _series_named(p, lambda s: (s.get('kinds') or {}).get('slider') is False)
-    text = " On a Page that lists `panels`, it takes each panel's own rail: beside the main region"
+    text = (" On a Page that lists `panels`, place no Rail yourself: it takes each panel's own rail, whatever "
+            "position or size you give it - beside the main region")
     text += (f", or below it, running across, on a panel too small to have one beside it ({_the_series(below)})."
              if below else '.')
     if none:
@@ -1143,7 +1145,7 @@ The {t} page's main region, as a layout container: {_main_words(p)} It paints no
 """,
         'Rail': f"""# Rail
 
-The page's column of system controls - volume, mute, help, power - beside the main region, as {t}'s own pages put them on the right. Its children need no positions: they stack down it in order, each as big as it needs to be on the panel, and a Slider or Level takes the length the others leave. It paints nothing and is not a control.{_panels_rail(p)}
+The page's column of system controls - volume, mute, help, power - beside the main region, as {t}'s own pages put them on the right. Its children need no positions: they stack down it in order, each as big as it needs to be on the panel, and a Slider or Level takes the length the others leave. It paints nothing and is not a control. A Label or a Clock in it is one line deep and as wide as the rail (as long as its words, on a rail that runs across), so a heading such as Volume goes above the Slider it names.{_panels_rail(p)}
 
 ```html
 {_x(p, 'Rail', '', chr(10) + '  ' + _x(p, 'Slider', ' name="Volume"') + chr(10) + '  ' + _example_button(p, 'help', 'HelpBtn') + chr(10))}
@@ -1151,7 +1153,7 @@ The page's column of system controls - volume, mute, help, power - beside the ma
 """,
         'Group': f"""# Group
 
-A titled set of like controls - the sources, the presets, the cameras - laid out as a grid of equal cells in the Group's own box, `cap` to a row. Give the box room: it is where the group lives on every panel. Its children need no positions.
+A titled set of like controls - the sources, the presets, the cameras - laid out as a grid of equal cells in the Group's own box, `cap` to a row. Give the box room: it is where the group lives on every panel. Its children need no positions. The cells keep their size and `gap`, and spare room is not shared out among them: the grid sits centred in the box, across and down, and a last row of fewer cells is centred under the others. Where the group pages, its cells sit at the top of the box with Previous and Next under them - except in a box one cell deep, where the cells stay centred and Previous and Next (or arrows) stand at the row's ends. On a panel where the cells do not fit at the page's scale, the gap gives way first - down to the panel's own 2 mm - before the group pages.
 
 Props:
 - `title`: what the group is called. On a panel too small to show it in place, its pages and the button that opens them take this name.
@@ -1173,13 +1175,13 @@ Props:
 {variants}
 - `icon`: {_icon_prop(p)} The names, by variant:
 {_icons_md(p)}
-- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own image, from the variant's list). Off and On start from the variant's look. Every state must look different. {p['examples']['states_note']}
+- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own image, from the variant's list). A state changes only what it names: the rest - fill, stroke, color, border and, on an image button, its icon - stays as the variant draws it. A state named `Off` or `On` first takes the variant's own Off or On look; on an image button the first state shows the `off` image and the others `on`, unless the state sets `look`. Every state must look different. {p['examples']['states_note']}
 - `press`: the state shown while the button is held. Default: On, else the second state. The canvas draws it while you hold the button in Play, as the panel does, so give it a look that reads as pressed. It cannot be the state the button rests in, and a button with a single state has nothing to show - give it a second.
 - `nav`: the artboard this button shows, by its file name without `.dc.html` - `nav="Help"` shows `Help.dc.html`. The button becomes that link, so Play follows it.
 - `does`: anything else it does, in a sentence for the programmer: "Routes the laptop to the display; Live while it is routed."
 - `show`: the state to draw on the canvas (default the first). Design only.
 - `name`: the control's name; `id` pins its number.
-- `fill`, `stroke`, `color`, `border` override the variant for every state.
+- `fill`, `stroke`, `color`, `border` set the look of every state that does not set its own - and the variant's `On` sets its own, so give `On` its look in `states` to change it.
 
 Size an image button to its kit image's shape, or the image is letterboxed: {shapes}.
 
@@ -1233,7 +1235,7 @@ A meter the program drives: signal level, a countdown. A rail like Slider's with
 """,
         'Clock': f"""# Clock
 
-The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`), `date` (`MMMM d`), `datetime`, or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `{p['defaults']['clock']['color']}`), `name`.{_clock_none(p)}
+The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`, drawn `12:00 AM`), `date` (`MMMM d`, `September 28`), `datetime` (`MMMM d, h:mm tt`, `September 28, 12:00 AM`), or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; the panel shows the real time; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `{p['defaults']['clock']['color']}`), `name`.{_clock_none(p)}
 
 ```html
 {_x(p, 'Clock', ' name="Time"', '', 'width: 200px; height: 40px')}

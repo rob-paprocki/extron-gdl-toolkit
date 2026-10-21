@@ -2619,6 +2619,63 @@ class TestABarThemeOnThe320(_Probe, unittest.TestCase):
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
                      'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestABarHoldsWhatIsInIt(_Probe, unittest.TestCase):
+    """A bar drawn as a Panel grows with what it holds: on the 525 the
+    round-three Shockwave room's header came out 71 px deep and its source
+    tabs, grown to the touch minimum, 94 - they stood below the bar."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-room-shockwave')
+    THEME = 'shockwave'
+
+    def test_the_header_holds_its_tabs_on_the_525(self):
+        _, ctl, out = self.probe('Main.dc.html', 'TLP525T')
+        self.assertEqual(out['problems'], [])
+        bar = ctl['Header'][1]
+        self.assertEqual(bar[1], 0)
+        for n in ('Laptop', 'ShareLink', 'RoomPC', 'DocCamera'):
+            tab = ctl[n][1]
+            self.assertLessEqual(tab[1] + tab[3], bar[1] + bar[3], (n, tab, bar))
+
+    def test_the_footer_still_ends_at_the_screens_foot(self):
+        _, ctl, _ = self.probe('Main.dc.html', 'TLP525T')
+        foot = ctl['Footer'][1]
+        self.assertLessEqual(foot[1] + foot[3], 480)
+        for n in ('MicMute', 'HelpBtn'):
+            r = ctl[n][1]
+            self.assertGreaterEqual(r[1], foot[1], (n, r, foot))
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAGroupsGapGivesWay(_Probe, unittest.TestCase):
+    """A Group's gap, which scales with the page, gives way to its cells - down
+    to the panel's own 2 mm - before the Group pages or is refused: the
+    round-three Turbulence designer narrowed its Lighting gaps by hand before
+    its cells fitted the 525."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-room-turbulence')
+    THEME = 'turbulence'
+    WIDE = ('title="Lighting" cell="400x100" gap="24"', 'title="Lighting" cell="400x100" gap="80"')
+
+    def test_a_wide_gap_narrows_to_fit_the_525(self):
+        _, ctl, out = self.probe('Lighting.dc.html', 'TLP525T', edit=self.WIDE)
+        self.assertEqual(out['problems'], [])
+        gap = designsys.models(designsys.load(self.THEME))['TLP525T']['gap']
+        cells = sorted((r for g, r, _ in ctl.values() if g.get('kind') == 'button' and r[3] == 66 and r[2] > r[3]), key=lambda r: (r[1], r[0]))
+        self.assertEqual(len(cells), 4, cells)
+        across = cells[1][0] - (cells[0][0] + cells[0][2])
+        self.assertGreaterEqual(across, gap)
+
+    def test_where_it_fits_the_gap_is_as_drawn(self):
+        """On the 1035 it is drawn for, the wide gap stays wide."""
+        _, ctl, out = self.probe('Lighting.dc.html', None, edit=self.WIDE)
+        cells = sorted((r for g, r, _ in ctl.values() if g.get('kind') == 'button' and r[2] == 400), key=lambda r: (r[1], r[0]))
+        self.assertEqual(len(cells), 4, cells)
+        self.assertEqual(cells[1][0] - (cells[0][0] + cells[0][2]), 80)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
 class TestShockwaveOnThe320(TestABarThemeOnThe320):
     CANVAS = os.path.join(HERE, 'data', 'design-room-shockwave')
     THEME = 'shockwave'

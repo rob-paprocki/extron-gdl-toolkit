@@ -460,6 +460,16 @@
     }
     return [0, lo, hi, tSize];
   }
+  // Where a Group in box `r` comes out on its own (Group, tiers A and B): at
+  // least one cell, centred on its box, kept to the page as it keeps itself
+  // (`room`). A joined Group is its one row.
+  function groupOut(it, r, room, k, L) {
+    var p = it.comp.props, seg = segments(p, Object.assign({}, L, { k: k }));
+    var w = Math.max(r[2], truthy(p.joined) ? seg.n * seg.cw : seg.cw), ht = Math.max(r[3], seg.ch);
+    var x = r[0] + (r[2] - w) / 2, y = r[1] + (r[3] - ht) / 2;
+    if (room) { x = Math.min(Math.max(x, 0), room[2] - w); y = Math.min(Math.max(y, 0), room[3] - ht); }
+    return [x, y, w, ht];
+  }
   // Tiers A and B, and the panel the canvas was drawn for: every child at its
   // own design rect, mapped by the frame's scale - or a page's own, through
   // its bands (`cut`, above) - then grown about its centre to what it needs on
@@ -467,6 +477,8 @@
   function scaleLayout(items, D, T, L, frame, cut) {
     var f = fit(D, frame);
     var els = [], probs = [];
+    // Where each control came out, and each Panel's slot, for holds() below.
+    var out = [], cards = [];
     items.forEach(function (it, i) {
       if (!it.rect || it.kind === 'mainarea' || it.kind === 'rail') {
         els.push(it.kind === 'mainarea' || it.kind === 'rail'
@@ -529,6 +541,7 @@
         els.push(React.cloneElement(it.host, { key: 'g' + i, style: cell(r) },
                    React.cloneElement(it.comp, { __box: [Math.round(r[2]), Math.round(r[3])], __k: f.s,
                                                  __room: room })));
+        out.push({ it: it, r: groupOut(it, r, room, f.s, L) });
         return;
       }
       var g = grow(r, needs(it, L), hasArt(it));
@@ -536,7 +549,31 @@
       // footer), a page's own child stays on the page: Build moves a control
       // that crosses its page's edge.
       if (c || L.keepIn) g = [Math.min(Math.max(g[0], 0), frame[2] - g[2]), Math.min(Math.max(g[1], 0), frame[3] - g[3]), g[2], g[3]];
+      if (it.kind === 'panel' && c && c.hub) cards.push({ at: els.length, it: it, g: g, i: i });
+      else out.push({ it: it, r: g });
       els.push(placeHost(it.host, g, 'c' + i));
+    });
+    // On a hub a bar or a card among a page's own controls holds what was
+    // drawn in it, grown to the panel's touch minimum, as the band carved for
+    // it does: on the 525 the round-three
+    // Shockwave room's header came out 71 px deep under 94 px source tabs,
+    // and its footer capsule 39 under a 66 px Mic Mute. Elsewhere a bar keeps
+    // its series' own depth, as Extron's templates draw it, and a control grown
+    // past it stays on the page (above): the 725's footer is 57.
+    cards.forEach(function (cd) {
+      var d = cd.it.rect, g = cd.g.slice();
+      out.forEach(function (o) {
+        var q = o.it.rect;
+        if (!q) return;
+        var cx = q[0] + q[2] / 2, cy = q[1] + q[3] / 2;
+        if (cx < d[0] || cx > d[0] + d[2] || cy < d[1] || cy > d[1] + d[3]) return;
+        var x0 = Math.min(g[0], o.r[0]), y0 = Math.min(g[1], o.r[1]);
+        var x1 = Math.max(g[0] + g[2], o.r[0] + o.r[2]), y1 = Math.max(g[1] + g[3], o.r[1] + o.r[3]);
+        g = [x0, y0, x1 - x0, y1 - y0];
+      });
+      g = [Math.max(0, g[0]), Math.max(0, g[1]), Math.min(frame[2], g[0] + g[2]) - Math.max(0, g[0]),
+           Math.min(frame[3], g[1] + g[3]) - Math.max(0, g[1])];
+      els[cd.at] = placeHost(cd.it.host, g, 'c' + cd.i);
     });
     return { els: els, problems: probs, k: f.s };
   }
@@ -999,7 +1036,11 @@
       to: [hubBands(D.main[0], D.main[0] + D.main[2], dw, T.main[0], T.main[0] + T.main[2], tw, L.k,
                     touchIn(0, 0, D.main[0]), touchIn(0, D.main[0] + D.main[2], dw)),
            hubBands(D.main[1], D.main[1] + D.main[3], dh, T.main[1], T.main[1] + T.main[3], th, L.k,
-                    touchIn(1, 0, D.main[1]), touchIn(1, D.main[1] + D.main[3], dh))] } : null;
+                    touchIn(1, 0, D.main[1]), touchIn(1, D.main[1] + D.main[3], dh))],
+      // A hub: its main reaches an edge the drawn panel's does not, so its
+      // bars are bands carved from main for what they hold (hubBands).
+      hub: (T.main[1] < 1 && D.main[1] >= 1) || (T.main[1] + T.main[3] > th - 1 && D.main[1] + D.main[3] <= dh - 1)
+           || (T.main[0] < 1 && D.main[0] >= 1) } : null;
     // What a MainArea and a column Rail lay out keeps to what those bands
     // leave - on a hub, the main region less the bands carved from it, and
     // the menu bar between the header and the footer - not under the bars.
@@ -1380,6 +1421,17 @@
     var bx = props.__box, W = Math.max(bx[0], cw), H = Math.max(bx[1], ch);
     // Two pixels of slack: cells and box are each rounded to whole pixels, and
     // three cells drawn to fill a box exactly must not come out one too wide.
+    function holds(gg) {
+      return Math.max(1, Math.min(cap, Math.floor((W + gg + 2) / (cw + gg))))
+             * Math.max(1, Math.floor((H + gg + 2) / (ch + gg)));
+    }
+    // The gap scales with the page, the cells grow to their minimum: before
+    // the Group pages, its gap gives way to them, down to the panel's own
+    // 2 mm. The round-three Turbulence room's Lighting presets did not fit
+    // the 525 at their scaled 24 px until its designer narrowed them by hand.
+    if (!joined && n > holds(g)) {
+      for (var gg = g - 1; gg >= T.gap; gg--) if (n <= holds(gg)) { g = gg; break; }
+    }
     var perRow = Math.max(1, Math.min(cap, Math.floor((W + g + 2) / (cw + g))));
     var rows = Math.max(1, Math.floor((H + g + 2) / (ch + g)));
     W = Math.max(W, perRow * cw + (perRow - 1) * g);
