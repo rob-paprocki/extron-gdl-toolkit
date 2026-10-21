@@ -1043,6 +1043,19 @@ class TestBuild(unittest.TestCase):
                 # The 320 lays its controls out again: no distance to keep.
                 self.assertTrue(next(ln for ln in rows if 'TLP320' in ln).endswith('| - | - |'))
 
+    def test_turbulences_hub_room_is_read_with_its_own_source_tabs(self):
+        """Turbulence's Layout puts six source tabs across its header, and on a
+        hub a band is as deep as a Group it holds - 118 px on the 525 with the
+        seed's captions (`layout.hub_header`, measured) where the table took a
+        button's 66, and promised a button beside the volume that the tabs
+        leave no room for (review of #39)."""
+        text = designsys.readme(designsys.load('turbulence'))
+        section = text.split('## Every panel the room has', 1)[1].split('\n## ', 1)[0]
+        hub = next(ln for ln in section.splitlines() if ln.startswith('| ') and 'TLP525' in ln)
+        self.assertIn('| hub: its rail holds the volume alone |', hub)
+        self.assertIn('| 124 px, 29 px |', hub)
+        self.assertIn("the Layout's own source tabs", section)
+
     def test_the_readme_ends_with_how_to_load_the_system(self):
         """The Design type looks for the bundle, its global and the stylesheet
         in the README's "Consuming this system" end; all four designers found

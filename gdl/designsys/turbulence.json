@@ -213,6 +213,11 @@
   "layout": {
     "bars": "controls",
     "bars_note": "Its bars and rails are controls over the photograph, not background art, so on a panel other than the one drawn a Page's own children go through both panels' bands (docs/claude-design.md section 4).",
+    "hub_header": {
+      "depth": {"TLC521M": 118, "TLC521M-Portrait": 118, "TLC526M": 118, "TLP520M": 118, "TLP520M-Portrait": 118,
+                "TLP525C": 118, "TLP525M": 118, "TLP525T": 118},
+      "_source": "How deep the header comes out on each hub holding the Layout's own source tabs - six 127x133 `source` tabs 14 apart, with the seed's captions (PC, Laptop, Blu-ray, AUX, Tuner, Doc Cam): a band beside main is as deep as a Group it holds (bundle.js touchIn), and the tabs grow to their captions at the hub's 18 pt floor; longer captions are deeper. Measured by the bundle in headless Chrome, and re-measured by tests/test_design.py. The README's room for a hub reads it, where it assumed a button."
+    },
     "main": [140, 137, 995, 549],
     "main_note": "The popup region, between the header and footer bars and the rails: the chosen source's popup shows here, drawn straight on the photo - its name in `title`, a message in `body`, or its transport keys.",
     "regions": [

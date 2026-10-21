@@ -416,13 +416,17 @@
   // Whole pixels: cell() rounds a rect's top and height apart, so a footer
   // under a cut at 670.5 ended at 721 on the 535's 720 and left the canvas.
   // A carved band that holds a button or a slider is at least the panel's
-  // touch minimum deep (`minLo`, `minHi`): the 535's 49 px footer grew its end
-  // cap to 104 px, up into the menu bar's mute.
+  // touch minimum deep, and one that holds a Group as deep as its cells
+  // (`minLo`, `minHi`): the 535's 49 px footer grew its end cap to 104 px, up
+  // into the menu bar's mute. What a band holds wins over the quarter, which
+  // bounds only its scaled depth: capped, the round-two Turbulence room's
+  // 128 px source tabs kept a 120 px header on the 525 and stood 8 px into
+  // main. panelPage names a main the bands leave smaller than a control.
   function hubBands(dLo, dHi, dSize, tLo, tHi, tSize, k, minLo, minHi) {
     var lo = tLo, hi = tHi, quarter = (tHi - tLo) / 4;
-    if (dLo >= 1 && tLo < 1) lo = Math.round(Math.min(Math.max(dLo * k, minLo || 0), quarter));
+    if (dLo >= 1 && tLo < 1) lo = Math.round(Math.max(Math.min(dLo * k, quarter), minLo || 0));
     if (dSize - dHi >= 1 && tSize - tHi < 1) {
-      hi = Math.round(Math.max(tSize - Math.max((dSize - dHi) * k, minHi || 0), tHi - quarter));
+      hi = Math.round(tSize - Math.max(Math.min((dSize - dHi) * k, tSize - tHi + quarter), minHi || 0));
     }
     return [0, lo, hi, tSize];
   }
@@ -489,8 +493,12 @@
         return;
       }
       if (it.kind === 'group') {
+        // Its box's place and the frame's size (`__room`), so a Group grown
+        // past its box keeps to the page as a control does (below).
+        var room = c || L.keepIn ? [Math.round(r[0]), Math.round(r[1]), frame[2], frame[3]] : null;
         els.push(React.cloneElement(it.host, { key: 'g' + i, style: cell(r) },
-                   React.cloneElement(it.comp, { __box: [Math.round(r[2]), Math.round(r[3])], __k: f.s })));
+                   React.cloneElement(it.comp, { __box: [Math.round(r[2]), Math.round(r[3])], __k: f.s,
+                                                 __room: room })));
         return;
       }
       var g = grow(r, needs(it, L), hasArt(it));
@@ -713,8 +721,10 @@
     }
     // At the page's own scale from the start: needs() measures the page's own
     // children - a modal's title and steps - at this type before layout ends.
+    // `within`: what the page is - page, modal or popup. A Group in a modal
+    // or popup cannot page as popups: a popup is shown only from a page.
     var L = { scheme: scheme, colors: colors, aware: true, panel: T, design: D, model: model,
-              designModel: designModel, tier: T.tier, k: fit([0, 0, dw, dh], [0, 0, tw, th]).s };
+              designModel: designModel, tier: T.tier, k: fit([0, 0, dw, dh], [0, 0, tw, th]).s, within: kind };
     // A page's own children go through both panels' bands where the template
     // draws its bars as controls (`layout.bars`: Mach, Shockwave, Turbulence),
     // on a panel other than the one drawn - there they stay as drawn.
@@ -724,13 +734,22 @@
     // main's scale.
     var bands = full && model !== designModel && P.layout.bars === 'controls' && D.main && T.main;
     var own = bands ? itemsOf(props.children, [dw, dh]) : [];
-    // The touch minimum where a band beside main on axis `a` holds a control
-    // a finger presses.
+    // The depth a band beside main on axis `a` needs for what it holds: the
+    // touch minimum where a finger presses a control there, and a Group's own
+    // cells on this panel - Shockwave's source tabs in its header grew to
+    // 94 px in a band cut 55 deep, and centred on it stood 19 px above the
+    // screen.
     function touchIn(a, lo, hi) {
-      return own.some(function (it) {
+      return own.reduce(function (most, it) {
         var c = it.rect ? it.rect[a] + it.rect[a + 2] / 2 : -1;
-        return (it.kind === 'button' || it.kind === 'slider') && c >= lo && c <= hi;
-      }) ? T.touch : 0;
+        if (c < lo || c > hi) return most;
+        if (it.kind === 'button' || it.kind === 'slider') return Math.max(most, T.touch);
+        if (it.kind === 'group' && it.comp) {
+          var sg = segments(it.comp.props, L);
+          return Math.max(most, T.touch, a ? sg.ch : sg.cw);
+        }
+        return most;
+      }, 0);
     }
     var cut = bands ? {
       from: [[0, D.main[0], D.main[0] + D.main[2], dw], [0, D.main[1], D.main[1] + D.main[3], dh]],
@@ -744,6 +763,12 @@
     // Elsewhere the bands are the panel's own, and this changes nothing.
     if (cut && T.tier !== 'C') {
       var bx = cut.to[0], by = cut.to[1], col = T.rail && (T.rail_axis || 'column') !== 'row';
+      // What the bars hold wins over main (hubBands): two deep ones can leave
+      // it less than a control, or nothing.
+      if (bx[2] - bx[1] < T.touch || by[2] - by[1] < T.touch) {
+        problems.push('the bars a ' + model + ' carves from its main leave it ' + (bx[2] - bx[1]) + 'x'
+                      + (by[2] - by[1]) + ', less than a control - give the bars less to hold there');
+      }
       var r0 = col ? Math.max(T.rail[1], by[1]) : 0, r1 = col ? Math.min(T.rail[1] + T.rail[3], by[2]) : 0;
       L.panel = Object.assign({}, T, {
         main: [bx[1], by[1], bx[2] - bx[1], by[2] - by[1]],
@@ -936,9 +961,11 @@
   // On each panel every cell is as big as its largest member needs (touch
   // minimum, caption at the panel's type), and then, by tier: A - in place,
   // or, if they do not fit, its pages as popups in its box with Previous and
-  // Next; B - a popup group in its box always (the region the program shows
-  // it in); C - one button that opens its pages, each a page of its own with
-  // Back. Every control keeps its name; what cannot fit even so is named.
+  // Next; B - on a page a popup group in its box always (the region the
+  // program shows it in); A or B in a modal or a popup - in place, since a
+  // popup shows no popups; C - one button that opens its pages, each a page
+  // of its own with Back. Every control keeps its name; what cannot fit even
+  // so is named.
   function cellsOf(props, items) {
     var cd = String(props.cell || '').split(/[x, ]+/).map(Number);
     if (cd.length === 2 && cd[0] > 0 && cd[1] > 0) return cd;
@@ -1016,15 +1043,25 @@
       return h('div', { key: key, style: cell(r) },
                h(Button, { name: title + ' ' + suffix, derived: true, text: word, goes: to, onPress: onPress }));
     }
+    // Grown past its box, it keeps to the page as any control does
+    // (scaleLayout's `__room`: its box's place and the frame's size) - Build
+    // moves a control that crosses its page's edge.
+    function keep(left, top, w, ht) {
+      var rm = props.__room;
+      if (!rm) return [left, top];
+      return [Math.min(Math.max(left, -rm[0]), rm[2] - rm[0] - w),
+              Math.min(Math.max(top, -rm[1]), rm[3] - rm[1] - ht)];
+    }
     var problems = loose.slice();
     // A segmented control is one row of touching segments on every panel:
     // paged, or split into pages, it would no longer be one control.
     if (joined) {
       var JW = Math.max(props.__box[0], n * cw), JH = Math.max(props.__box[1], ch);
       var jr = gridPlace(n, n, cw, ch, 0, JW, JH);
+      var jp = keep(Math.round((props.__box[0] - JW) / 2), Math.round((props.__box[1] - JH) / 2), JW, JH);
       return h('div', { className: 'xgdl-group',
-                        style: { position: 'absolute', left: Math.round((props.__box[0] - JW) / 2) + 'px',
-                                 top: Math.round((props.__box[1] - JH) / 2) + 'px', width: JW + 'px', height: JH + 'px' } },
+                        style: { position: 'absolute', left: jp[0] + 'px', top: jp[1] + 'px',
+                                 width: JW + 'px', height: JH + 'px' } },
                items.map(function (it, i) { return member(it, jr[i], 'c' + i); }).concat(problems.map(problem)));
     }
     // Tier C: the box holds one button; the items are pages of their own.
@@ -1089,17 +1126,49 @@
     var perRow = Math.max(1, Math.min(cap, Math.floor((W + g + 2) / (cw + g))));
     var rows = Math.max(1, Math.floor((H + g + 2) / (ch + g)));
     W = Math.max(W, perRow * cw + (perRow - 1) * g);
-    var popup = L.tier === 'B' && L.model !== L.designModel;
-    var root = { position: 'absolute', left: Math.round((bx[0] - W) / 2) + 'px', top: Math.round((bx[1] - H) / 2) + 'px',
-                 width: W + 'px', height: H + 'px' };
+    // A modal or a popup can show no popup group - a popup is shown only from
+    // a page - so there a Group lays out in place, on a hub as well: the
+    // round-two conference rooms' Lighting Presets, a popup group in their
+    // Lighting modal, could never be shown.
+    var inPopup = L.within === 'modal' || L.within === 'popup';
+    var popup = L.tier === 'B' && L.model !== L.designModel && !inPopup;
+    var rp = keep(Math.round((bx[0] - W) / 2), Math.round((bx[1] - H) / 2), W, H);
+    var root = { position: 'absolute', left: rp[0] + 'px', top: rp[1] + 'px', width: W + 'px', height: H + 'px' };
     if (n <= perRow * rows && !popup) {
       var at = gridPlace(n, perRow, cw, ch, g, W, H);
       return h('div', { className: 'xgdl-group', style: outlined(root, problems) },
                items.map(function (it, i) { return member(it, at[i], 'c' + i); }).concat(problems.map(problem)));
     }
+    if (inPopup) {
+      // Nor can it page there: its pages would be popups. What does not fit
+      // is named, and drawn in rows past its box.
+      problems.push(title + ' cannot page in a ' + L.within + ' - its pages would be popups, which only a page '
+                    + 'can show - and its ' + n + ' cells of ' + cw + 'x' + ch + ' do not fit its ' + W + 'x' + H
+                    + ' box on a ' + T.model + ': give it a box that holds them all there, or put it on a page');
+      var over = gridPlace(n, perRow, cw, ch, g, W, Math.ceil(n / perRow) * (ch + g) - g, 0);
+      return h('div', { className: 'xgdl-group', style: outlined(root, problems) },
+               items.map(function (it, i) { return member(it, over[i], 'c' + i); }).concat(problems.map(problem)));
+    }
     var fits = n <= perRow * rows;
     var avail = fits ? rows : Math.floor((H - nav) / (ch + g));
-    var perPage = perRow * avail;
+    // No room under a row for Previous and Next - a row of presets drawn one
+    // cell deep, its cells grown on a 525 - and they go at its ends: under it
+    // they overlapped the row, and the Group was refused (the round-two rooms'
+    // Sources, Lighting and Camera Presets).
+    // Where their words leave no cell between them, they are arrows at the
+    // touch minimum - Mach's Sources, 113 px cells in a 320 px box - with the
+    // names the ID map gives them still Previous and Next. Single guillemets:
+    // Windows-1252 has them, so every theme's face draws them.
+    var side = null;
+    if (!fits && avail < 1 && H >= nav) {
+      [['Previous', 'Next'], ['\u2039', '\u203a']].forEach(function (said) {
+        if (side) return;
+        var sp = navW(said[0]), sn = navW(said[1]), inner = W - sp - sn - 2 * g;
+        var across = Math.max(0, Math.min(cap, Math.floor((inner + g + 2) / (cw + g))));
+        if (across >= 1) side = { p: sp, n: sn, inner: inner, across: across, said: said };
+      });
+    }
+    var perPage = side ? side.across * rows : perRow * avail;
     if (perPage < 1) {
       problems.push(title + ' cannot fit a row of ' + cw + 'x' + ch + ' cells and its Previous and Next in its '
                     + W + 'x' + H + ' box on a ' + T.model);
@@ -1112,9 +1181,25 @@
     for (var pi = 0; pi < count; pi++) {
       var mine2 = items.slice(pi * perPage, (pi + 1) * perPage);
       var top = count > 1 ? 0 : null;
-      var spots2 = gridPlace(mine2.length, perRow, cw, ch, g, W, count > 1 ? H - nav - g : H, top);
+      var spots2 = side
+        ? gridPlace(mine2.length, side.across, cw, ch, g, side.inner, H).map(function (s) {
+            return [s[0] + side.p + g, s[1], s[2], s[3]];
+          })
+        : gridPlace(mine2.length, perRow, cw, ch, g, W, count > 1 ? H - nav - g : H, top);
       var kids2 = mine2.map(function (it, j) { return member(it, spots2[j], 'p' + pi + 'c' + j); });
       (function (p0) {
+        if (side) {
+          var ys = Math.round((H - nav) / 2);
+          if (p0 > 0) {
+            kids2.push(navButton('Previous', side.said[0], partName(p0 - 1), function () { shown[1](p0 - 1); },
+                                 [0, ys, side.p, nav], 'prev' + p0));
+          }
+          if (p0 < count - 1) {
+            kids2.push(navButton('Next', side.said[1], partName(p0 + 1), function () { shown[1](p0 + 1); },
+                                 [W - side.n, ys, side.n, nav], 'next' + p0));
+          }
+          return;
+        }
         var y = H - nav, right = W;
         if (p0 < count - 1) {
           var wn = navW('Next');

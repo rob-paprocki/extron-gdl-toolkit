@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Strip Test</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Strip Test" theme="grape" panels="TLP1035T TLP525T" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.MainArea">
+<x-import component-from-global-scope="ExtronAfterburn.Group" title="Strip" cell="200x100" gap="20" cap="6" style="position: absolute; left: 36px; top: 300px; width: 1080px; height: 100px">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="R1">One</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="R2">Two</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="R3">Three</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="R4">Four</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="R5">Five</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="R6">Six</x-import>
+</x-import>
+</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

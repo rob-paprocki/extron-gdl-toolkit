@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tabs</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Tabs" panels="TLP1035T TLC521M TLC521M-Portrait TLC526M TLP520M TLP520M-Portrait TLP525C TLP525M TLP525T" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronTurbulence.Panel" name="Header" fill="shade" border="rect" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 133px"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Group" title="Sources" cell="127x133" gap="14" cap="6" style="position: absolute; left: 141px; top: 0px; width: 832px; height: 133px">
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Tab1" variant="source" icon="input_pc">PC</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Tab2" variant="source" icon="input_laptop">Laptop</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Tab3" variant="source" icon="input_bluray">Blu-ray</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Tab4" variant="source" icon="input_ipod">AUX</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Tab5" variant="source" icon="input_tuner">Tuner</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Tab6" variant="source" icon="input_doc-cam">Doc Cam</x-import>
+</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

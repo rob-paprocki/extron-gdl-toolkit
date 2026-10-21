@@ -16,6 +16,38 @@
       "w": 1280,
       "x": 1360,
       "y": 0
+    },
+    "Lights.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Lights Test",
+      "w": 1280,
+      "x": 0,
+      "y": 880
+    },
+    "Crowd.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Crowd Test",
+      "w": 1280,
+      "x": 1360,
+      "y": 880
+    },
+    "Strip.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Strip Test",
+      "w": 1280,
+      "x": 2720,
+      "y": 0
+    },
+    "Pair.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Pair Test",
+      "w": 1280,
+      "x": 2720,
+      "y": 880
     }
   },
   "designSystems": [],
@@ -25,7 +57,11 @@
   "notes": {},
   "order": [
     "Groups.dc.html",
-    "Tiny.dc.html"
+    "Tiny.dc.html",
+    "Lights.dc.html",
+    "Crowd.dc.html",
+    "Strip.dc.html",
+    "Pair.dc.html"
   ],
   "pages": [],
   "title": "Groups",

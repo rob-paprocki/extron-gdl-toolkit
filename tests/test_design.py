@@ -1494,6 +1494,11 @@ def _inside(rect, box, slack=1):
     return x >= bx - slack and y >= by - slack and x + w <= bx + bw + slack and y + h <= by + bh + slack
 
 
+def _overlaps(a, b):
+    """Two rects share pixels."""
+    return a[0] < b[0] + b[2] and b[0] < a[0] + a[2] and a[1] < b[1] + b[3] and b[1] < a[1] + a[3]
+
+
 def _level_beside(test, theme, panel, probe):
     """Up and Down stand beside the level a slider becomes, one at each of its
     ends - Extron's own 520 and 535 stand theirs beside it, the level the
@@ -1792,10 +1797,60 @@ class TestShockwavesBars(_Probe, unittest.TestCase):
         self.assertEqual((x, y, w), (0, 0, 800))
         self.assertAlmostEqual(h, 91 * 0.6, delta=1)
 
+    HEADER = ('<x-import component-from-global-scope="ExtronShockwave.Panel" name="Header" style="position: absolute; '
+              'left: 0px; top: 0px; width: 1280px; height: 91px"></x-import>')
+    TABS = ('<x-import component-from-global-scope="ExtronShockwave.Group" title="Tabs" joined="true" cell="152x91" '
+            'gap="0" cap="4" style="position: absolute; left: 336px; top: 0px; width: 608px; height: 91px">'
+            + ''.join('<x-import component-from-global-scope="ExtronShockwave.Button" name="Tab%d" variant="source" '
+                      'icon="%s" style="width: 152px; height: 91px">%s</x-import>' % (i + 1, icon, word)
+                      for i, (icon, word) in enumerate((('laptop_white', 'Laptop'), ('sharelink_white', 'ShareLink'),
+                                                        ('pc_white', 'Room PC'), ('doc-cam_white', 'Doc Cam'))))
+            + '</x-import>')
+
+    def test_a_group_in_a_hubs_header_keeps_to_the_screen(self):
+        """The round-two Shockwave room drew its sources as tabs in its 91 px
+        header. On the 525 a band beside main counted a button's touch minimum
+        and never a Group's cells, so the header was cut 55 px deep and the
+        tabs, grown past it, were centred on it - 19 px above the screen. The
+        band is as deep as its tabs, and main - the Well starts it - begins
+        under them."""
+        _, ctl, _ = self.probe('Home.dc.html', 'TLP525T', edit=(self.HEADER, self.HEADER + self.TABS))
+        tabs = [ctl['Tab%d' % i][1] for i in range(1, 5)]
+        for r in tabs:
+            self.assertTrue(_inside(r, [0, 0, 800, 480]), tabs)
+        self.assertGreaterEqual(ctl['Well'][1][1], max(r[1] + r[3] for r in tabs), (ctl['Well'][1], tabs))
+
+    def test_bars_that_leave_main_no_room_are_named(self):
+        """What a band holds wins over its quarter of main, so a bar deep
+        enough could leave main nothing: named, not drawn as a negative box."""
+        tall = self.TABS.replace('cell="152x91"', 'cell="152x600"')
+        _, _, out = self.probe('Home.dc.html', 'TLP525T', edit=(self.HEADER, self.HEADER + tall))
+        self.assertTrue(any('carves from its main leave it' in p for p in out['problems']), out['problems'])
+
+
     def test_a_hubs_level_runs_beside_its_up_and_down(self):
         for panel in ('TLP525T', 'TLP535T'):
             with self.subTest(panel=panel):
                 _level_beside(self, 'shockwave', panel, self.probe)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestTurbulencesHubHeader(_Probe, unittest.TestCase):
+    """The README reads Turbulence's hub rows off its header as its Layout
+    fills it - six source tabs with the seed's captions - from the depth the
+    bundle gives them (`layout.hub_header`). Measured again here, so the
+    profile cannot drift from what the bundle draws."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-hub-turbulence')
+    THEME = 'turbulence'
+
+    def test_the_profiles_header_depth_is_the_bundles(self):
+        depth = designsys.load('turbulence')['layout']['hub_header']['depth']
+        for model, want in sorted(depth.items()):
+            with self.subTest(model=model):
+                _, ctl, _ = self.probe('Tabs.dc.html', model)
+                self.assertEqual(max(ctl['Tab%d' % i][1][3] for i in range(1, 7)), want)
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -2305,6 +2360,70 @@ class TestGroupsInChrome(_Probe, unittest.TestCase):
         r = [ctl[n][1] for n in ('M1', 'M2', 'M3')]
         self.assertEqual([r[0][0] + r[0][2], r[1][0] + r[1][2]], [r[1][0], r[2][0]])
         self.assertEqual({ctl[n][0].get('joined') for n in ('M1', 'M2', 'M3')}, {'Modes'})
+
+    def test_a_group_in_a_modal_lays_out_in_place_on_a_525(self):
+        """A 525's Group is a popup group shown in a region of the page, and a
+        modal is a popup, which can show none: the round-two conference rooms'
+        Lighting Presets built a popup group no page referenced. In a modal it
+        lays out in place, as it fits."""
+        _, ctl, out = self.probe('Lights.dc.html', 'TLP525T')
+        self.assertEqual(out['parts'], [])
+        self.assertNotIn('popup_ref', [json.loads(c['gdl'])['kind'] for c in out['controls']])
+        for n in ('P1', 'P2', 'P3', 'P4'):
+            self.assertTrue(_inside(ctl[n][1], [0, 0, 800, 480]), (n, ctl[n][1]))
+        self.assertEqual(out['problems'], [])
+
+    def test_a_group_a_modal_cannot_hold_is_refused_by_name(self):
+        """Nor can it page there - its pages would be popups - so a Group too
+        big for its box in a modal is named, with what to do."""
+        _, _, out = self.probe('Crowd.dc.html', 'TLP525T')
+        self.assertEqual(out['parts'], [])
+        self.assertTrue(any('Scenes' in p and 'TLP525T' in p and 'cannot page in a modal' in p
+                            for p in out['problems']), out['problems'])
+
+    def test_a_group_one_row_deep_pages_with_previous_and_next_beside_it(self):
+        """On a 525 a row of presets drawn one cell deep had no room under it
+        for Previous and Next: the Group was refused, and its derived buttons
+        overlapped its members (Mach's Sources and Lighting, Shockwave's Camera
+        Presets, Turbulence's Sources). Beside the row they fit."""
+        _, _, out = self.probe('Strip.dc.html', 'TLP525T')
+        self.assertEqual(out['problems'], [])
+        parts = self.parts(out)
+        strip = [i for i, p in enumerate(parts) if p.get('group') == 'Strip Test Strip']
+        self.assertGreaterEqual(len(strip), 2)
+        on = {}
+        for c in out['controls']:
+            on.setdefault(c.get('part'), []).append((json.loads(c['gdl']).get('name'), c['rect']))
+        members = {'R%d' % i for i in range(1, 7)}
+        self.assertEqual(sorted(n for i in strip for n, _ in on.get(i, []) if n in members), sorted(members))
+        for i in strip:
+            navs = [(n, r) for n, r in on[i] if n in ('Strip Previous', 'Strip Next')]
+            self.assertTrue(navs, parts[i]['name'])
+            for n, r in navs:
+                self.assertTrue(_inside(r, [0, 0] + parts[i]['size']), (n, r, parts[i]['size']))
+                for m, mr in on[i]:
+                    if m in members:
+                        self.assertFalse(_overlaps(r, mr), (n, r, m, mr))
+
+    def test_a_box_too_narrow_for_their_words_gets_arrows(self):
+        """Mach's Sources - 113 px cells in a 320 px box - had no room for
+        Previous and Next in words even beside one cell; touch-sized arrows
+        fit. The controls keep their names: the ID map still says which."""
+        _, _, out = self.probe('Pair.dc.html', 'TLP525T')
+        self.assertEqual(out['problems'], [])
+        on = {}
+        for c in out['controls']:
+            g = json.loads(c['gdl'])
+            on.setdefault(c.get('part'), {})[g.get('name')] = (g, c['rect'])
+        navs = [v for part in on.values() for n, v in part.items() if n in ('Pair Previous', 'Pair Next')]
+        self.assertTrue(navs)
+        self.assertEqual({g.get('text') for g, _ in navs}, {'\u2039', '\u203a'})
+        for part in on.values():
+            for n, (g, r) in part.items():
+                if n in ('Pair Previous', 'Pair Next'):
+                    for m, (_, mr) in part.items():
+                        if m in ('Q1', 'Q2', 'Q3', 'Q4'):
+                            self.assertFalse(_overlaps(r, mr), (n, r, m, mr))
 
 
 if __name__ == '__main__':

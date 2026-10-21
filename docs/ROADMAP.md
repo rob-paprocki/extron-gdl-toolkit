@@ -70,10 +70,11 @@ opening GUI Designer.**
    the 1035, 725, 1525 and 720 and on its hubs - the 525, and Mach's and
    Shockwave's 535 - against one ID map (§6). What is left, first, is **their
    hubs from a real designer's canvas**: the huddles there were drawn with the
-   hub in mind, and the prose-in conference rooms (§6) are refused on the 525
-   for the derivation's own faults (§7) - a Group in a modal, a paged Group's
-   Previous and Next over its members, a band's grown controls off the screen.
-   Then **their 320s**.
+   hub in mind, and the prose-in conference rooms (§6), the first to reach the
+   hub's derivation, found three faults in it, now fixed; their 525s are
+   refused for their own layouts, drawn from a README that over-stated the
+   hub's room. Next, a third round of fresh designers from the README as it
+   now reads (§7). Then **their 320s**.
    The huddle canvases are refused there, by name (§7): the page's controls,
    stacked in rows, need 285-482 px of its 240. Next: a rule for what a bar
    theme's page becomes on a screen that holds a few rows. Extron's own Mach

@@ -242,7 +242,7 @@ pixels. On the canvas they are `<x-import component-from-global-scope=
 | Page | a page or popup | `name`, `kind` (`page`, `popup`, `modal`), `group`, `start`, `reached-by`, the `theme` (background and accent) or an accent `scheme` alone; `panels` (every panel the room has, the first the one it is drawn on) and `preview` (one of them to draw it as) |
 | MainArea | nothing of its own | a frame: its children are placed inside the template's main area - on each panel, that panel's own |
 | Rail | nothing of its own | a frame: its children stack in the rail beside the main area, or across below it where there is no room beside it |
-| Group | its members; on a smaller panel, the popups or pages it becomes | `title`, `cell`, `gap`, `cap`, `joined`: equal cells in its box - in place, paged as popups in its box, or pages of their own opened by a button, by the panel's size |
+| Group | its members; on a smaller panel, the popups or pages it becomes | `title`, `cell`, `gap`, `cap`, `joined`: equal cells in its box - in place, paged as popups in its box (Previous and Next under its cells, or at the row's ends in a box one cell deep - arrows where their words leave no room), or pages of their own opened by a button, by the panel's size; in a modal or a popup on a large or mid-size panel only in place, since a popup shows no popups |
 | Button | `button` | caption, `variant`, `icon`, `states` (names, each with its own look, caption and kit image), `press` - the state the panel shows while it is held, which the canvas draws while it is held too - `nav`, `does`, `id` |
 | Label | `label` | text, `type` or `size`, `color`, `align`, `does` |
 | Panel | `panel` | `fill`, `stroke`, `border` |
@@ -300,8 +300,10 @@ tokens used, resolved for the canvas's accent scheme.
     reaches its top and bottom and its left edge (the Page README names each
     system's), the header, the footer and a column beside main get bands of
     their own carved from main at the page's scale, in whole pixels - the
-    touch minimum deep where the band holds a button, and Extron's hub
-    templates keep a title strip at the top of main - the right column goes
+    touch minimum deep where the band holds a button, as deep as a Group's
+    cells where it holds one, and Extron's hub templates keep a title strip
+    at the top of main - a Group grown past its box keeps to the page as a
+    control does, the right column goes
     to the menu bar, and `MainArea` and the `Rail` keep to what those bands
     leave, a control grown to the touch minimum staying inside main. On the
     panel the canvas is drawn on they stay as drawn;
@@ -498,11 +500,17 @@ clock's words' own box, and anything that paints outside a component. Chrome is 
 ## 7. What is left
 
 - Mach, Shockwave and Turbulence on a 525 from a real designer's canvas. The
-  round-two conference rooms (§6) are the first to reach the hub's derivation,
-  and it refuses them for its own faults: a Group in a modal becomes a popup
-  group no page can show; a paged Group's derived Previous and Next overlap its
-  members; and a header or footer band's controls, grown to the touch minimum,
-  leave the screen. `docs/ROADMAP.md` has them.
+  round-two conference rooms (§6) were the first to reach the hub's
+  derivation, and its own faults there are fixed: a Group in a modal lays out
+  in place, and is named where it does not fit; a Group one cell deep pages
+  with Previous and Next at its row's ends, as arrows where their words leave
+  no room; a band beside main is as deep as a Group in it, and a Group grown
+  past its box keeps to the page. Translated again, those rooms' 525s are
+  refused for their own layouts - rails holding more than the hub's, loose
+  controls drawn too close to stay apart once grown - drawn from a README that
+  put Mach's 525 at 0.7 of the canvas and three buttons beside the volume. A
+  third round of fresh designers, from the README as it now reads, is next. A
+  bar drawn as a Panel does not yet grow with a deeper Group in it.
 - Mach, Shockwave and Turbulence on their 320s. Every series has a seed and
   its profile lists it, but the huddle canvases above are refused there, by
   name: the page's controls, stacked in rows, need 285-482 px of its 240.

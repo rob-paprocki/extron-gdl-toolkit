@@ -753,37 +753,43 @@ def _js_round(x):
     return math.floor(x + 0.5)
 
 
-def _hub_bands(d_lo, d_hi, d_size, t_lo, t_hi, t_size, k, touch):
-    """bundle.js hubBands on one axis - (lo, hi) of the target's main - with a
-    button in every band it carves: a band the design panel has beside main
-    and the target has not is cut from the target's main at the page's scale,
-    at least the touch minimum deep, at most a quarter of main."""
+def _hub_bands(d_lo, d_hi, d_size, t_lo, t_hi, t_size, k, min_lo, min_hi):
+    """bundle.js hubBands on one axis - (lo, hi) of the target's main: a band
+    the design panel has beside main and the target has not is cut from the
+    target's main at the page's scale, that depth at most a quarter of main,
+    and the band then at least as deep as what it holds (`min_lo`, `min_hi`)."""
     lo, hi, quarter = t_lo, t_hi, (t_hi - t_lo) / 4
     if d_lo >= 1 and t_lo < 1:
-        lo = _js_round(min(max(d_lo * k, touch), quarter))
+        lo = _js_round(max(min(d_lo * k, quarter), min_lo))
     if d_size - d_hi >= 1 and t_size - t_hi < 1:
-        hi = _js_round(max(t_size - max((d_size - d_hi) * k, touch), t_hi - quarter))
+        hi = _js_round(t_size - max(min((d_size - d_hi) * k, t_size - t_hi + quarter), min_hi))
     return lo, hi
 
 
-def _room(p, D, T):
+def _room(p, D, T, model=None):
     """(main, rail) a page lays out in on panel T, as bundle.js panelPage cuts
     them. Where the bars are controls (Mach, Shockwave, Turbulence) the design
     panel's header, footer and column are carved from a main that reaches the
     screen's edge - a hub's - and the rail keeps to what is left between the
     header and the footer. A band that holds a button is at least the touch
-    minimum deep: the README assumes each one does, so the room it gives is the
-    least a page has there. It took the uncut main, and promised Mach's 525
-    0.7 and three buttons beside the volume where a page has 0.51 to 0.55 and
-    one."""
+    minimum deep, and one that holds a Group as deep as its cells: the README
+    assumes a button in each, and in a header the Layout fills with source
+    tabs those tabs (the profile's `layout.hub_header`, measured), so the room
+    it gives is the least a page drawn to the Layout has there. It took the
+    uncut main, and promised Mach's 525 0.7 and three buttons beside the
+    volume where a page has 0.51 to 0.55 and one; then a button in every bar,
+    and Turbulence's 525 a button beside its volume where its own source tabs
+    leave none."""
     main, rail = T['main'], T.get('rail')
     if ((p.get('layout') or {}).get('bars') != 'controls' or T is D or T['tier'] == 'C'
             or not D.get('main') or not main):
         return main, rail
     (dw, dh), (tw, th), dm = D['size'], T['size'], D['main']
     k = min(tw / dw, th / dh)
-    x0, x1 = _hub_bands(dm[0], dm[0] + dm[2], dw, main[0], main[0] + main[2], tw, k, T['touch'])
-    y0, y1 = _hub_bands(dm[1], dm[1] + dm[3], dh, main[1], main[1] + main[3], th, k, T['touch'])
+    head = (((p.get('layout') or {}).get('hub_header') or {}).get('depth') or {}).get(model, 0)
+    x0, x1 = _hub_bands(dm[0], dm[0] + dm[2], dw, main[0], main[0] + main[2], tw, k, T['touch'], T['touch'])
+    y0, y1 = _hub_bands(dm[1], dm[1] + dm[3], dh, main[1], main[1] + main[3], th, k,
+                        max(T['touch'], head), T['touch'])
     if rail and (T.get('rail_axis') or 'column') != 'row':
         r0, r1 = max(rail[1], y0), min(rail[1] + rail[3], y1)
         rail = [rail[0], r0, rail[2], r1 - r0]
@@ -803,7 +809,7 @@ def _panel_rooms(p):
         return []
     rows = {}
     for m, T in ms.items():
-        main, rail = _room(p, D, T)
+        main, rail = _room(p, D, T, m)
         k = min(main[2] / D['main'][2], main[3] / D['main'][3])
         key = (T['series'], tuple(T['size']), T['touch'], T['gap'], T['floor'], T['tier'], round(k, 2),
                tuple(rail or ()))
@@ -837,8 +843,8 @@ def _panels_section(p):
             kind = 'rows'
         elif T['tier'] == 'B':
             n = _rail_holds(T, rail)
-            kind = 'hub' + (f": its rail holds the volume and {n} button{'' if n == 1 else 's'}"
-                            if n is not None else '')
+            kind = 'hub' + ('' if n is None else ': its rail holds the volume alone' if n == 0 else
+                            f": its rail holds the volume and {n} button{'' if n == 1 else 's'}")
         else:
             kind = 'scaled'
         # A panel that lays its controls out again, in rows, sizes each to what
@@ -859,14 +865,20 @@ def _panels_section(p):
             f"- **Words.** A label's or caption's box needs *Words* times the width its words take here, and "
             f"room to be as much taller. Keep copy short, and break help into short lines.\n"
             f"- **Sets.** Put a set of like controls - sources, presets - in a `Group`: its members share one "
-            f"cell on every panel, and it pages them where they do not fit. The `Rail` stacks its controls at "
-            f"each panel's gap. Loose controls only scale.\n"
+            f"cell on every panel, and it pages them where they do not fit, its Previous and Next under them "
+            f"or, in a box one cell deep, at the row's ends - as arrows where their words leave no room. In a "
+            f"modal or a popup a Group cannot page - its "
+            f"pages would be popups, which only a page shows - so give its box room for all its members on "
+            f"every large and mid-size panel there. The `Rail` stacks its controls at each panel's gap. Loose controls only "
+            f"scale.\n"
             f"- **Hubs** are one page of main controls beside a rail. Where the seed has no slider, a slider "
             f"is a level between `-` and `+`, and the rail holds the volume and the buttons the table says; a "
-            f"`Group` shows in a popup in its own box, which the control program shows."
+            f"`Group` on a page shows in a popup in its own box, which the control program shows."
             + (" The header, footer and side column drawn beside main here are cut from a hub's main, and "
                "its rail keeps between them; a bar that holds a button is at least the touch minimum deep, "
-               "and the table assumes each one does."
+               "and one that holds a Group as deep as its cells - the table assumes a button in each"
+               + (", and in the header the Layout's own source tabs with the seed's captions (longer "
+                  "captions are deeper)" if (p.get('layout') or {}).get('hub_header') else '') + "."
                if (p.get('layout') or {}).get('bars') == 'controls' else '') + "\n"
             f"- **Rows**: the panel lays the page's controls out again, in rows.\n\n"
             f"Set a Page's `preview` to a panel to see an artboard as that panel draws it: a control that "
@@ -912,8 +924,8 @@ def _panels_bars(p):
                   key=lambda n: int(n.split()[0]) if n.split()[0].isdigit() else 0)
     hub = (f" On a hub, whose main area reaches its top and bottom ({_the_series(hubs)}), the header, "
            f"the footer and a column beside main get bands of their own carved from main, at the panel's "
-           f"scale - the touch minimum deep where they hold a button - and MainArea and the Rail keep to "
-           f"what those bands leave." if hubs else '')
+           f"scale - the touch minimum deep where they hold a button, and as deep as a Group's cells where "
+           f"they hold one - and MainArea and the Rail keep to what those bands leave." if hubs else '')
     return ("- On a large or mid-size panel other than the one drawn, what sits on the Page itself rather "
             "than in MainArea or the Rail - a bar across the top or bottom, the buttons at its ends, a "
             "modal's window - keeps to that panel's own bands: a bar drawn edge to edge spans it at its own "
@@ -1003,10 +1015,13 @@ def _panels_group(p):
     return ("\n\nOn a Page that lists `panels`, every cell on each panel is as big as its largest member "
             "needs - the touch minimum, its caption at the panel's type - and then the group is laid out by "
             "the panel's size: on a large screen in place, or, if its members do not fit, as pages in its box "
-            "with Previous and Next; on a mid-size one (the 525's) always as popups in its box, the region the "
-            "program shows them in; on a small one (the 320's) as one button that opens pages of their own, "
-            "each with Back. Previous, Next, Back and that button are navigation the program handles - the ID "
-            "map lists them. A group that cannot fit even so is named, never dropped.")
+            "with Previous and Next - under its cells, or at the row's ends where its box is one cell deep, "
+            "arrows there where their words leave no room; on "
+            "a mid-size one (the 525's) always as popups in its box, the region the program shows them in; on "
+            "a small one (the 320's) as one button that opens pages of their own, each with Back. In a modal "
+            "or a popup on a large or mid-size panel it is laid out in place, since a popup shows no popups. Previous, Next, "
+            "Back and that button are navigation the program handles - the ID map lists them. A group that "
+            "cannot fit even so is named, never dropped.")
 
 
 def component_docs(p):

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lights Test</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Lights Test" kind="modal" theme="grape" panels="TLP1035T TLP525T" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.Group" title="Presets" cell="200x100" gap="40" cap="2" style="position: absolute; left: 340px; top: 220px; width: 600px; height: 320px">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="P1">Full</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="P2">Meeting</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="P3">Present</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="P4">Off</x-import>
+</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
