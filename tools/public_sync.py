@@ -81,6 +81,7 @@ EXCLUDE = [
     "archive/job-2419a20b/",                             # build logs naming the owner's folders,
                                                          # and built files no one has reviewed
     "archive/job-e823df9b/",                             # the same, from the 320's proof
+    "archive/dc-runtime/",                               # Anthropic's Design runtime, not ours to publish
     "docs/superpowers/specs/2026-10-07-public-private-split-design.md",   # the split's own notes:
     "docs/superpowers/plans/2026-10-07-public-private-split.md",          # what is held back, and why
     "*__pycache__/*", "*.pyc",                           # byte code embeds the path it was built from

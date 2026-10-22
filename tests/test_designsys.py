@@ -1,4 +1,4 @@
-"""The design systems published to Claude Design (gdl/designsys).
+"""The design systems published as Design System artifacts (gdl/designsys).
 
 Two contracts. The Design System page silently DROPS what it cannot read - a
 token name with a space, a color it does not parse, a family written as a map -
@@ -989,7 +989,7 @@ class TestBuild(unittest.TestCase):
     def test_the_readme_says_help_is_a_modal(self):
         """Extron's own templates draw Help, confirmations and a room's control
         subsets as full-screen modals over the page; a page flip is for a mode
-        of the room. Left unsaid, Claude Design drew Help as a page."""
+        of the room. Left unsaid, the designer drew Help as a page."""
         text = designsys.readme(designsys.load('afterburn'))
         popups = next(line for line in text.splitlines() if line.startswith('- **Popups.**'))
         self.assertIn('Help', popups)

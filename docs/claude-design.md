@@ -1,14 +1,20 @@
-# Designing a panel in Claude Design
+# Designing a panel on a Design canvas
 
-The goal: describe what a panel has to **do**, in prompts, to Claude Design; get
-a canvas drawn in the real Extron template; and have Claude Code turn that
-canvas into a working `.gdl` and its ID map. Claude Design is where the panel is
-designed. Claude Code is where it is built, because only Claude Code can run GUI
-Designer.
+The goal: describe what a panel has to **do**, in prompts, to Claude in the
+Claude app; get a **Design canvas** - an Artifact made from the Design type,
+artboards laid out on a canvas - drawn in the real Extron template; and have
+Claude Code turn that canvas into a working `.gdl` and its ID map. The canvas
+is where the panel is designed. Claude Code is where it is built, because only
+Claude Code can run GUI Designer.
+
+What this reads is the Artifact: the canvas's own files and the Design type's
+runtime it serves (§5). Claude Design's own site, claude.ai/design, closes on
+2026-12-14, as design moves to Artifacts in the Claude app; every canvas here
+has been built from a Design artifact, and none needs that site.
 
 ```
 prompts about functionality
-      │  Claude Design, using one Extron template's design system
+      │  a Design canvas in the Claude app, using one Extron template's design system
       ▼
 canvas: one artboard per page or popup, drawn from the system's components
       │  Claude Code reads the canvas (Artifact tool)
@@ -25,12 +31,12 @@ something anyone edits or exports back to a canvas.
 ## 1. Using it
 
 There are two roles, which can be the same person. The **designer** works in
-Claude Design and never needs this repo or Windows. The **builder** works in
+the Claude app and never needs this repo or Windows. The **builder** works in
 Claude Code on the machine GUI Designer runs on.
 
 | Role | Needs |
 |---|---|
-| Designer | a claude.ai account with Claude Design, and the template's design system in it - *Extron Afterburn*, *Mach*, *Shockwave* or *Turbulence* |
+| Designer | a claude.ai account that can make Design artifacts, with the template's design system shared to it - *Extron Afterburn*, *Mach*, *Shockwave* or *Turbulence* |
 | Builder | this repo, set up as `README.md` *Setup* says, on a machine with GUI Designer 1.28.0.7 (`CLAUDE.md` *Environment*), with the seeds pulled from Git LFS and Chrome installed; and Claude Code signed in to a claude.ai account that can open the canvas |
 
 ### Once: publish the design system
@@ -57,10 +63,10 @@ Because it carries Extron's artwork, the system is published private (§2
 *Icons*), to the account Claude Code is signed in to. The designer works in
 that account, or has the system shared with theirs.
 
-### Design: in Claude Design
+### Design: on a Design canvas
 
-1. Start a design that uses the template's design system - *Extron Afterburn*
-   in this example.
+1. In the Claude app, start a design - a Design canvas - that uses the
+   template's design system - *Extron Afterburn* in this example.
 2. Describe the panel by what it has to **do**; the system already knows what
    the template looks like. Say:
    - the room and its panels - every panel the room has, by model, and a panel
@@ -92,7 +98,7 @@ that account, or has the system shared with theirs.
    One display that can be off, warming up, on or cooling down. Volume with mute,
    End Call, help, and turning the room off asks for confirmation.*
 
-   The system's README makes Claude Design draw only with its components, one
+   The system's README makes the designer draw only with its components, one
    artboard per page or popup, list every panel the room has on each Page, and
    record what every control does.
 3. **Check it in Play.** A button that opens another page follows its link.
@@ -140,7 +146,7 @@ for the panel and its ID map. It:
    its seed's own borders, a stroke on one the seed gives no thickness, whatever
    else is wrong, so one read names everything: a
    designer who revised for the layout problems alone met the spacing ones in
-   the next. The fix goes on the canvas, back in Claude Design, where the
+   the next. The fix goes on the canvas, back in the Claude app, where the
    designer can see it; then Claude Code reads it again.
 3. **Builds and verifies it**, with nobody touching GUI Designer. Before the
    first unattended build on a machine, and after any GUI Designer upgrade, set
@@ -208,7 +214,7 @@ Claude Code publishes the result with the Artifact tool.
 | **Modals** | As Build draws them: the page beneath under black at alpha 166, whatever background the popup has. So a modal carries no background of its own. |
 | **Spacing and sizes** | The panel's touch minimum and spacing for its model (`touch_minimums`), and GUI Designer's 10 px nudge. The tokens state the design panel; every other panel's comes from the profile's per-panel table. |
 | **Panels** | A per-panel table (`panels`), one entry per Extron series: the models it serves (`gdl/templates.py`), its main region - measured off its background art where the art draws it (Afterburn's squircle), else off its template's own controls (Mach's bars, Shockwave's well, Turbulence's side bars) - the rail band beside or below it, or none where the template keeps nothing on screen from page to page (those three themes' 320s), its popup region, a background per theme and how its pages draw them (Fill or Stretch), and per seed, what the seed can clone and which of the profile's borders it lacks. `gdl.designsys.models()` adds each model's own touch minimum, gap and type floor (`docs/design-rules.md` §1); the bundle carries it so a Page can draw any of them. Measured with `tests/measure_series.py`. |
-| **README** | The panel's rules and its function vocabulary: what Claude Design reads first. Its iconography, its example page and the components' own READMEs and previews are drawn from the profile (`iconography`, `examples.source` and `examples.help`, its variants, type styles and tokens), so each names only what its template has. *Every panel the room has* tabulates, for each panel the system serves, the room a design leaves for it on the canvas - that panel's touch minimum and gap measured here, how much wider than its words a box must be, what a hub's rail holds - from the scale, touch minimum and type floor that panel's layout applies; four fresh designers of a two-panel room, without it, drew the 1035 snug and saw the 525 refused. Where a template's own geometry breaks a gate - Shockwave's flush tabs, Mach's sliders 30 px wide - the Layout says what to draw instead. It answers what each of those designers asked: a modal opened from several pages closes with `does`, not `nav`, since a `nav` is what the programmer is told to show; a control on several pages is one control only with one `id`. It ends with *Consuming this system*: the global, the bundle and the font link. |
+| **README** | The panel's rules and its function vocabulary: what the designer reads first. Its iconography, its example page and the components' own READMEs and previews are drawn from the profile (`iconography`, `examples.source` and `examples.help`, its variants, type styles and tokens), so each names only what its template has. *Every panel the room has* tabulates, for each panel the system serves, the room a design leaves for it on the canvas - that panel's touch minimum and gap measured here, how much wider than its words a box must be, what a hub's rail holds - from the scale, touch minimum and type floor that panel's layout applies; four fresh designers of a two-panel room, without it, drew the 1035 snug and saw the 525 refused. Where a template's own geometry breaks a gate - Shockwave's flush tabs, Mach's sliders 30 px wide - the Layout says what to draw instead. It answers what each of those designers asked: a modal opened from several pages closes with `does`, not `nav`, since a `nav` is what the programmer is told to show; a control on several pages is one control only with one `id`. It ends with *Consuming this system*: the global, the bundle and the font link. |
 | **Donor** | The seed the panel is built on. The canvas's design system therefore also chooses the donor. |
 
 A profile is checked against the seed's **built artwork**, not only its model
@@ -368,6 +374,21 @@ designer places controls with flex and grid, so a box exists only after layout -
 and a probe reads every component's box relative to its Page, a label's and a
 clock's words' own box, and anything that paints outside a component. Chrome is the only new runtime need, and only here.
 
+The runtime is the canvas's own: the Design type's `artifact-type/dc-runtime.js`,
+which the canvas serves and the build saves beside its artboards as
+`support.js`. It is the Design type's to change, release by release, and its
+markup (`<x-import component-from-global-scope=…>`), its `canvas.json` and
+how it renders are everything the translator reads. So the runtimes the Chrome
+suite has passed on are pinned by SHA-256 in `gdl/dc_runtime.json`, and
+`translate` refuses a canvas whose runtime is not one of them, by name, with
+what to do: run the Chrome suite with `GDL_DC_RUNTIME` set to it, and when it
+passes, `python -m gdl.design pin-runtime <it> --seen <where it came from>`.
+`--new-runtime` translates anyway, the build gates still verifying; and run on
+a runtime that is not pinned, the suite fails one test that says to pin it.
+`pin-runtime` keeps a copy of each in the archive (`archive/dc-runtime/`, in
+the private repository only). `compare` refuses the same runtime, since the
+sign-off lays the canvas out on it too.
+
 ## 6. Verification
 
 - `tests/test_design.py` checks the translation rules on the probe's output,
@@ -495,7 +516,7 @@ clock's words' own box, and anything that paints outside a component. Chrome is 
   (`archive/job-2419a20b/prose-in/`, which has the brief): a boardroom with a
   TLP Pro 1035T on the table and a 525T by the door, given to a fresh Claude
   per theme with nothing but the Design type's instructions and the system as
-  Claude Design is served it. Round one, from the READMEs as they were: every
+  a Design canvas serves it. Round one, from the READMEs as they were: every
   1035 translated clean, and only Afterburn's 525 - its designer read the
   bundle for the 525's numbers, and its room built and verified on both panels.
   What each designer had to guess became the README's *Every panel the room

@@ -1,6 +1,6 @@
 ---
 name: extron-panel
-description: Use when creating, modifying or reviewing an Extron GUI Designer touch-panel (.gdl/.glt) — building a panel from a Claude Design canvas link or from a description, editing an existing client panel, checking a design against Extron's standards, or previewing what a panel will look like before it is built.
+description: Use when creating, modifying or reviewing an Extron GUI Designer touch-panel (.gdl/.glt) — building a panel from a Design canvas link or from a description, editing an existing client panel, checking a design against Extron's standards, or previewing what a panel will look like before it is built.
 ---
 
 # Building Extron touch panels
@@ -29,7 +29,7 @@ the same as "the panel looks right" (see the `flattenText` trap below).
 
 ## Two workflows
 
-A panel designed in Claude Design with an Extron template's design system
+A panel designed on a Design canvas with an Extron template's design system
 comes in through workflow A: `python -m gdl.design translate` writes its spec -
 one per panel the canvas lists, each with its own seed - and every step from 4
 on applies to each, with one difference: the panels share one ID map, so they

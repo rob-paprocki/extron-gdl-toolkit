@@ -1,6 +1,6 @@
 ---
 name: extron-panel
-description: Use when creating, modifying or reviewing an Extron GUI Designer touch-panel (.gdl/.glt) — building a panel from a Claude Design canvas link or from a description, editing an existing client panel, checking a design against Extron's standards, or previewing what a panel will look like before it is built.
+description: Use when creating, modifying or reviewing an Extron GUI Designer touch-panel (.gdl/.glt) — building a panel from a Design canvas link or from a description, editing an existing client panel, checking a design against Extron's standards, or previewing what a panel will look like before it is built.
 ---
 
 # Extron touch panels
@@ -8,7 +8,7 @@ description: Use when creating, modifying or reviewing an Extron GUI Designer to
 The procedure lives in this repository's `SKILL.md`, at its root. Read it now
 and follow it:
 
-- **A Claude Design canvas** (a claude.ai link to a design made with the
+- **A Design canvas** (a claude.ai link to a Design artifact made with the
   template's design system): `docs/claude-design.md` §1 *Build: in Claude Code*
   - read the canvas, translate it, build and verify every panel it lists, and
   put each artboard beside its built page for sign-off.

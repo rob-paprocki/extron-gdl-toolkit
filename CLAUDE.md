@@ -211,7 +211,7 @@ were updated. So:
   | Driving GUI Designer from a script | `docs/from-scratch.md` §7 |
   | Generating a panel, step by step | `SKILL.md` |
   | What controls do, and the ID map | `docs/idmap.md` |
-  | Designing a panel in Claude Design | `docs/claude-design.md` |
+  | Designing a panel on a Design canvas | `docs/claude-design.md` |
   | Editing an existing panel | `docs/editing.md` |
   | Verification gates and the render baseline | `CLAUDE.md` *Verifying a change* |
   | Render findings | `docs/render-fidelity.md` |

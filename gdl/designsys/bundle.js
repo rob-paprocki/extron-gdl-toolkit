@@ -1,6 +1,6 @@
 /* @ds-bundle: __HEADER__ */
 /*
- * Extron touch-panel components for Claude Design - one template's look.
+ * Extron touch-panel components for a Design canvas - one template's look.
  *
  * Written by gdl/designsys, which puts a template's profile in P below.
  * Every component draws the template's own look and carries its

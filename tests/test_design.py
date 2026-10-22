@@ -1,4 +1,4 @@
-"""The Claude Design canvas -> spec translator (gdl/design.py).
+"""The Design canvas -> spec translator (gdl/design.py).
 
 Most of these feed the translator what the in-browser probe reports, so they
 run anywhere. The last class lays a real canvas out in headless Chrome with
@@ -1126,6 +1126,62 @@ class TestSeeds(unittest.TestCase):
 
 
 RUNTIME = os.environ.get('GDL_DC_RUNTIME')
+
+
+class TestTheRuntimePin(unittest.TestCase):
+    """The Design type's runtime is the Design type's to change. A canvas
+    whose runtime the suite has not passed on is refused by name, with what
+    to do, until it is pinned (gdl/dc_runtime.json)."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir, True)
+        pins = os.path.join(self.dir, 'dc_runtime.json')
+        shutil.copy(design.RUNTIMES, pins)
+        self.addCleanup(setattr, design, 'RUNTIMES', design.RUNTIMES)
+        design.RUNTIMES = pins
+        self.addCleanup(setattr, design, 'ARCHIVE', design.ARCHIVE)
+        design.ARCHIVE = os.path.join(self.dir, 'archive', 'dc-runtime')
+        os.makedirs(os.path.dirname(design.ARCHIVE))
+        self.canvas = os.path.join(self.dir, 'canvas')
+        os.makedirs(self.canvas)
+        self.js = os.path.join(self.canvas, 'support.js')
+        with open(self.js, 'w', encoding='utf-8') as fh:
+            fh.write('/* a runtime no suite has passed on */')
+
+    def test_an_unproven_runtime_is_refused_by_name(self):
+        why = design.runtime_problem(self.canvas)
+        self.assertIn(design.runtime_sha(self.js)[:12], why)
+        self.assertIn('pin-runtime', why)
+        self.assertEqual(design.main(['gdl.design', 'translate', self.canvas, os.path.join(self.dir, 'out')]), 1)
+
+    def test_pinned_it_passes_and_is_kept(self):
+        self.assertEqual(design.main(['gdl.design', 'pin-runtime', self.js, '--seen', 'a test']), 0)
+        self.assertIsNone(design.runtime_problem(self.canvas))
+        sha = design.runtime_sha(self.js)
+        self.assertEqual(design.proven_runtimes()[sha]['seen'], 'a test')
+        self.assertEqual(design.runtime_sha(os.path.join(design.ARCHIVE, sha[:16], 'dc-runtime.js')), sha)
+
+    def test_the_sign_off_is_refused_on_it_too(self):
+        self.assertEqual(design.main(['gdl.design', 'compare', self.canvas, 'built.gdl', self.dir]), 1)
+
+    def test_pin_runtime_says_how_when_asked_wrong(self):
+        for argv in (['pin-runtime'], ['pin-runtime', self.js], ['pin-runtime', self.js, '--seen'],
+                     ['pin-runtime', '--seen', 'x', self.js], ['pin-runtime', 'no-such.js', '--seen', 'x']):
+            with self.subTest(argv=argv):
+                self.assertEqual(design.main(['gdl.design'] + argv), 2)
+
+    def test_a_folder_with_no_runtime_is_not_this_checks_to_refuse(self):
+        os.remove(self.js)
+        self.assertIsNone(design.runtime_problem(self.canvas))
+
+    @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME), 'needs $GDL_DC_RUNTIME')
+    def test_the_suites_own_runtime_is_pinned(self):
+        """The canary for the suite: run it on a new runtime and this fails
+        until that runtime is pinned - once the rest has passed on it."""
+        self.assertIn(design.runtime_sha(RUNTIME), design.proven_runtimes(),
+                      f'{RUNTIME} is not in gdl/dc_runtime.json: if every other test passed on it, '
+                      'pin it with python -m gdl.design pin-runtime')
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -2333,7 +2389,7 @@ class TestPanelsInChrome(_Probe, unittest.TestCase):
                     self.assertTrue(_inside(r, [0, 0] + page['size']), (panel, board, name, r))
 
     def test_a_preview_page_draws_at_its_panel(self):
-        """In Claude Design nothing is injected: `preview` picks the panel."""
+        """On a Design canvas nothing is injected: `preview` picks the panel."""
         page, ctl, _ = self.probe('Home.dc.html', edit=('start="true"', 'start="true" preview="TLP725T"'))
         self.assertEqual((page['panel'], page['size']), ('TLP725T', [1024, 600]))
 

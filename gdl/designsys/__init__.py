@@ -1,4 +1,4 @@
-"""Build an Extron template's design system for Claude Design.
+"""Build an Extron template's design system, a Design System artifact.
 
     python -m gdl.designsys build afterburn out/designsys/afterburn
 
@@ -1090,7 +1090,7 @@ def _panels_group(p):
 
 
 def component_docs(p):
-    """{name: README markdown} - guidelines Claude Design reads before mounting."""
+    """{name: README markdown} - guidelines a designer reads before mounting."""
     t = p['template']
     # The seed's own size, where the profile records it: a designer drawing a
     # tile smaller than the template does gets a caption that spills.

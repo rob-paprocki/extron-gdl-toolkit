@@ -131,9 +131,9 @@ and a four-state Display button among its Off/On ones - was built on
 name, caption, text color and press state included. The map's 28 references
 verified with 0 problems.
 
-## 6. Designing in Claude Design
+## 6. Designing on a Design canvas
 
-A Claude Design canvas carries the same keys - a prototype link is `nav`, a
+A Design canvas carries the same keys - a prototype link is `nav`, a
 component's function is `does`, its variants are `states`. `docs/claude-design.md`.
 
 ## 7. One map for every panel

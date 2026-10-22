@@ -1,4 +1,4 @@
-"""Turn a Claude Design canvas into a spec - one for each panel it lists.
+"""Turn a Design canvas into a spec - one for each panel it lists.
 
     python -m gdl.design translate <canvas dir> <out dir>         # out/<panel>/spec.json
     python -m gdl.design translate <canvas dir> <out spec.json>   # the design panel's
@@ -24,6 +24,8 @@ Anything on an artboard that paints but is not one of the system's components
 is reported and blocks the spec: a panel cannot build it, and a design that
 looked right and shipped different is the failure this repo exists to catch.
 """
+import datetime
+import hashlib
 import html
 import json
 import os
@@ -214,6 +216,66 @@ def render(board_path, chrome, size, timeout=90, panel=None):
     out = json.loads(html.unescape(m.group(1)))
     out['errors'] = errors
     return out
+
+
+# The Design type's runtimes the Chrome suite has passed on (dc_runtime.json).
+# The translator lays a canvas out with the runtime the canvas itself serves,
+# and that runtime is the Design type's to change, release by release - its
+# markup, its index and how it renders are all this translator reads. One the
+# suite has not passed on is refused by name, so a change shows up as that
+# rather than as a canvas that translates wrong.
+RUNTIMES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dc_runtime.json')
+# Where each pinned runtime is kept, in the private archive (not the public copy).
+ARCHIVE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'archive', 'dc-runtime')
+
+
+def runtime_sha(path):
+    with open(path, 'rb') as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def proven_runtimes():
+    with open(RUNTIMES, encoding='utf-8') as fh:
+        return {r['sha256']: r for r in json.load(fh)['proven']}
+
+
+def runtime_problem(folder):
+    """A problem naming the canvas's runtime (its support.js) if the suite
+    has not passed on it, else None."""
+    path = os.path.join(folder, 'support.js')
+    if not os.path.exists(path):
+        return None
+    sha = runtime_sha(path)
+    if sha in proven_runtimes():
+        return None
+    return (f"this canvas's Design runtime (support.js, sha256 {sha[:12]}) is not one the toolkit has "
+            'been proven on (gdl/dc_runtime.json): the Design type has changed. Run the Chrome suite '
+            f'with GDL_DC_RUNTIME={path}, and when it passes, python -m gdl.design pin-runtime {path} '
+            '--seen <where it came from>; or translate with --new-runtime, and the build gates still verify')
+
+
+def pin_runtime(path, seen, suite=None):
+    """Add `path`'s runtime to dc_runtime.json, and keep a copy of it in the
+    archive where there is one; returns its entry."""
+    with open(RUNTIMES, encoding='utf-8') as fh:
+        data = json.load(fh)
+    sha = runtime_sha(path)
+    if os.path.isdir(os.path.dirname(ARCHIVE)):
+        keep = os.path.join(ARCHIVE, sha[:16])
+        os.makedirs(keep, exist_ok=True)
+        shutil.copyfile(path, os.path.join(keep, 'dc-runtime.js'))
+    for r in data['proven']:
+        if r['sha256'] == sha:
+            return r
+    entry = {'sha256': sha, 'bytes': os.path.getsize(path),
+             'proven': datetime.date.today().isoformat(), 'seen': seen}
+    if suite:
+        entry['suite'] = suite
+    data['proven'].append(entry)
+    with open(RUNTIMES, 'w', encoding='utf-8', newline='\n') as fh:
+        json.dump(data, fh, indent=2, ensure_ascii=False)
+        fh.write('\n')
+    return entry
 
 
 class Canvas:
@@ -551,7 +613,7 @@ class Canvas:
             'model': model,
             'size': size,
             '_seed': seed,
-            '_from': f"Claude Design canvas, {profile['template']} ({scheme})",
+            '_from': f"Design canvas, {profile['template']} ({scheme})",
             # Every panel the canvas builds, the one it is drawn on first.
             **({'_panels': listed} if listed else {}),
             'theme': theme,
@@ -1145,7 +1207,7 @@ figcaption{{margin-top:6px;color:#a9aab8}} .note{{color:#a9aab8;margin:0 0 8px}}
 def compare(folder, built, out_dir, chrome=None):
     """Each artboard beside the page GUI Designer built from it, for sign-off.
 
-    Claude Design does not draw like GUI Designer, so a client signs off on
+    A Design canvas does not draw like GUI Designer, so a client signs off on
     the built panel, not on the canvas. The built side is gdl.compose's render
     of the built file's own artwork - scored against GUI Designer's snapshots
     (CLAUDE.md, Verifying a change) - so what shows there is what the panel
@@ -1238,8 +1300,26 @@ def compare_panels(folder, built_dir, out_dir, chrome=None):
 
 
 def main(argv):
+    if len(argv) >= 2 and argv[1] == 'pin-runtime':
+        def flag(name):
+            i = argv.index(name) if name in argv else -1
+            return argv[i + 1] if 0 <= i < len(argv) - 1 and not argv[i + 1].startswith('--') else None
+        seen, suite = flag('--seen'), flag('--suite')
+        if len(argv) < 3 or argv[2].startswith('--') or not os.path.isfile(argv[2]) or not seen \
+                or ('--suite' in argv and not suite):
+            print('  python -m gdl.design pin-runtime <dc-runtime.js> --seen <where it came from> '
+                  '[--suite <what passed>]')
+            return 2
+        e = pin_runtime(argv[2], seen, suite)
+        print(f"proven: {e['sha256']} ({e['bytes']:,} bytes) -> {RUNTIMES}")
+        return 0
     if len(argv) >= 5 and argv[1] == 'compare':
         chrome = argv[argv.index('--chrome') + 1] if '--chrome' in argv else None
+        # The sign-off lays the canvas out on its runtime too.
+        unproven = runtime_problem(argv[2])
+        if unproven and '--new-runtime' not in argv:
+            print('  PROBLEM ' + unproven)
+            return 1
         for name, pct in compare(argv[2], argv[3], argv[4], chrome):
             print(f'  {pct:5.1f}%  {name}')
         print(f"-> {os.path.join(argv[4], 'index.html')}")
@@ -1249,10 +1329,17 @@ def main(argv):
         print('\n  python -m gdl.design translate <canvas dir> <out dir>        one spec per panel'
               '\n  python -m gdl.design translate <canvas dir> <out spec.json>  the design panel only'
               ' [--lenient]'
-              '\n      [--chrome PATH]'
-              '\n  python -m gdl.design compare <canvas dir> <built.gdl> <out dir>')
+              '\n      [--chrome PATH] [--new-runtime]'
+              '\n  python -m gdl.design compare <canvas dir> <built.gdl> <out dir>'
+              '\n  python -m gdl.design pin-runtime <dc-runtime.js> --seen <where it came from>')
         return 2
     chrome = argv[argv.index('--chrome') + 1] if '--chrome' in argv else None
+    unproven = runtime_problem(argv[2])
+    if unproven and '--new-runtime' not in argv:
+        print('  PROBLEM ' + unproven)
+        return 1
+    if unproven:
+        print('  note    ' + unproven)
     canvas = Canvas(argv[2], chrome)
     if not argv[3].lower().endswith('.json'):
         # One spec per panel the canvas lists, each in its own folder - or none.

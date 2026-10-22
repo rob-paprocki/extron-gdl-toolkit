@@ -15,7 +15,7 @@ In Claude Code, in this repository, ask for the panel you want: *"build the
 huddle canvas at <claude.ai link> for a TLP Pro 1035 and 725"*, *"make a
 boardroom panel from this brief"*, *"change the client's 1035 panel so..."*.
 The `extron-panel` skill (`.claude/skills/`) points Claude Code at the
-procedure, `SKILL.md`. A canvas designed in Claude Design with an Extron
+procedure, `SKILL.md`. A Design canvas drawn in the Claude app with an Extron
 template's design system is built as `docs/claude-design.md` §1 says, and comes
 out as each panel's built `.gdl`, the programmer's ID map and a sign-off page.
 Building needs Windows and GUI Designer, and building from a canvas Chrome too
@@ -37,8 +37,8 @@ together.
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
 | `gdl/edit.py` | change vocabulary for an existing panel: rename, restyle, states, retarget, renumber |
 | `gdl/idmap.py` | the ID map a programmer works from: every addressable control, where it is, what it does |
-| `gdl/designsys/` | an Extron template as a Claude Design design system: its profile, and the components every template shares |
-| `gdl/design.py` | turns a Claude Design canvas into a spec for each panel it lists, laying it out in headless Chrome |
+| `gdl/designsys/` | an Extron template as a Design System artifact: its profile, and the components every template shares |
+| `gdl/design.py` | turns a Design canvas into a spec for each panel it lists, laying it out in headless Chrome with the canvas's own runtime, pinned in `gdl/dc_runtime.json` |
 | `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
 | `gdl/templates.py` | Extron's series templates, from GUI Designer's own table: which template a model takes |
 | `powershell/GdlProject.ps1` | authoring bridge: load, clone, edit, save a real project graph |
@@ -62,7 +62,7 @@ together.
 | `docs/gdl-format.md` | the format writeup. Read this first |
 | `docs/from-scratch.md` | generating a panel from a spec, and driving GUI Designer from a script |
 | `docs/editing.md` | changing a panel that already exists |
-| `docs/claude-design.md` | designing a panel in Claude Design and building it from the canvas |
+| `docs/claude-design.md` | designing a panel on a Design canvas and building it from the canvas |
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
 | `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |
@@ -86,7 +86,7 @@ Verified with:
 | Python | 3.11.9 | everything; reading, editing and plan generation are stdlib-only |
 | Pillow, pytest | 12.3.0, 9.1.1 | rendering and the test suite |
 | Git LFS | 3.7.1 | `seeds/` and `archive/` |
-| Google Chrome or Chromium | 155.0.8059.40 | a Claude Design canvas: `gdl.design` lays it out and draws its sign-off page headless (`--chrome` or `CHROME` for one it does not find) |
+| Google Chrome or Chromium | 155.0.8059.40 | a Design canvas: `gdl.design` lays it out and draws its sign-off page headless (`--chrome` or `CHROME` for one it does not find) |
 | Extron GUI Designer | **1.28.0.7**, the tested boundary | writing and building a `.gdl` — `CLAUDE.md` *Environment* says what else that needs |
 
 Then, from the repo root:
@@ -101,7 +101,13 @@ Then, from the repo root:
    `python -m gdl.fonts "seeds/Afterburn 1035.gdl" gdl/fonts/`.
 4. With GUI Designer installed, repopulate `vendor/`; `vendor/README.md` has
    the commands.
-5. `python -m pytest`, then `python tests/audit_corpus.py`. Any FAIL the audit
+5. For translating a canvas and the Chrome tests, the Design type's runtime:
+   set `GDL_DC_RUNTIME` to a copy of `artifact-type/dc-runtime.js`, read off
+   any Design canvas with Claude Code's Artifact tool, or - in the private
+   archive repository only - its copy under `archive/dc-runtime/`. It must be
+   one `gdl/dc_runtime.json` pins
+   (`docs/claude-design.md` §5). Without it the Chrome tests skip.
+6. `python -m pytest`, then `python tests/audit_corpus.py`. Any FAIL the audit
    reports should already be an open item in `docs/ROADMAP.md`.
 
 Three things trip a fresh Windows machine: cloning into a deep directory needs

@@ -18,7 +18,7 @@ opening GUI Designer.**
   authoring, retarget from a seed (650/650), popup canvases that keep their own
   size, and button feedback with any number of named states - authored from a
   spec, or edited state by state on an existing panel.
-- **Designed in Claude Design**: a canvas drawn with an Extron template's
+- **Designed on a Design canvas**: a canvas drawn with an Extron template's
   design system translates to a spec and builds (`docs/claude-design.md`).
   From prose: one conference-room brief, given to a fresh designer per theme
   with only the design system, built and verified on the TLP1035T and the 525
@@ -61,7 +61,7 @@ opening GUI Designer.**
    took 168 s, and 935 s made again in that mode with other work on the host
    (`docs/from-scratch.md` §7). Measure with the mode off, on a quiet host,
    with and without real-time scanning of the files a build writes, first.
-3. **Claude Design as the front end: every panel.** Afterburn's design system
+3. **A Design canvas as the front end: every panel.** Afterburn's design system
    builds one canvas for every panel a room has, each sized for its physical
    screen - proven on the TLP Pro 1035, 725, 525 and 320 (`docs/claude-design.md`
    §4 and §6). Mach, Shockwave and Turbulence list every panel too - main

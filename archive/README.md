@@ -24,6 +24,7 @@ that name the client or the owner's folders: `tools/public_sync.py`'s
 | `job-9fe2c865/` | `C:\Users\<user>\.claude\jobs\9fe2c865` | Scratch from 2026-09-09/10 (session `9fe2c865`). See below. |
 | `job-2419a20b/` | `C:\Users\<user>\.claude\jobs\2419a20b` | Build evidence from 2026-10-10 and 11 (session `2419a20b`). See below. |
 | `job-e823df9b/` | `out/` of the `gd-128-upgrade` worktree | Build evidence from 2026-10-21 (session `e823df9b`). See below. |
+| `dc-runtime/<sha256 prefix>/` | a Design canvas's `artifact-type/dc-runtime.js`, read with the Artifact tool | Each Design type runtime `gdl/dc_runtime.json` pins, kept so a fresh machine can run the Chrome suite on it (`docs/claude-design.md` §5). Held back from the public copy: it is Anthropic's file. |
 | `desktop/gdl-retarget-proof/` | `C:\Users\<user>\Desktop\gdl-retarget-proof` | The retarget and feedback-state builds, as handed over. |
 | `claude/memory/` | `~\.claude\projects\Z--GitHub-rob-paprocki\memory` | Claude Code's saved notes for this folder: the project goal, the move to native Windows, American spelling. |
 | `claude/sessions/` | `~\.claude\projects\Z--GitHub-rob-paprocki*` | Claude Code transcripts - see below. |
@@ -85,7 +86,7 @@ copy whole for the same reasons as `job-2419a20b/`.
 
 | Path | What it is |
 |---|---|
-| `room-320/` | The round-three conference rooms (`job-2419a20b/prose-in/round3/`) with the TLP320M listed, each translated once and built by `New-GdlPanels.ps1` on the 1035, the 525 and the 320 against one ID map: on the 320 each page under its title strip and over pages of its own (`docs/claude-design.md` §4, §6). Mach's and Shockwave's Help modals are revised to fit the 320's one screen, and Shockwave's and Turbulence's clocks taken off, since their 320 seeds have no date and time control to clone. Each theme's folder holds the canvas as translated, the specs, the ID map, the build log (decoded from UTF-16) and the sign-off images. |
+| `room-320/` | The round-three conference rooms (`job-2419a20b/prose-in/round3/`) with the TLP320M listed, each translated once and built by `New-GdlPanels.ps1` on the 1035, the 525 and the 320 against one ID map: on the 320 each page under its title strip and over pages of its own (`docs/claude-design.md` §4, §6). Mach's and Shockwave's Help modals are revised to fit the 320's one screen, and Shockwave's and Turbulence's clocks taken off, since their 320 seeds have no date and time control to clone. Each theme's folder holds the canvas as translated, the specs, the ID map, the build log (decoded from UTF-16) - the build after #43 - and the sign-off images, each designed page drawn with the published bundle and its theme's photographs. |
 
 ## claude/sessions/
 

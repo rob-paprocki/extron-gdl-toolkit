@@ -1,0 +1,12 @@
+{
+  "_source": "The Design type's runtimes (artifact-type/dc-runtime.js) this toolkit's Chrome suite has passed on, by SHA-256. The translator lays a canvas out with the runtime the canvas serves, saved beside its artboards as support.js, and refuses one not listed here until the suite has passed on it (docs/claude-design.md, section 5). Add one with: python -m gdl.design pin-runtime <dc-runtime.js> --seen <where it came from>",
+  "proven": [
+    {
+      "sha256": "3f160299989dc595cf434dac7b7f3e6fd20ed015a2d99e075c3eac09dffe0f10",
+      "bytes": 187897,
+      "proven": "2026-10-21",
+      "seen": "the round-three Conference Room canvases (Design type version 1792180675-9af0); the type itself at release 1792623486-6ad8 on 2026-10-21",
+      "suite": "tests/test_design.py and its five sibling files, 637 passed (#43)"
+    }
+  ]
+}
