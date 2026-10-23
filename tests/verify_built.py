@@ -86,6 +86,21 @@ def _shares(assets, tid):
     return {tuple(k): v / total for k, v in counts.items()}
 
 
+def _shares_at(assets, tid, alpha):
+    """{(r,g,b): share of all pixels} among those within 3 of `alpha`.
+
+    _shares's opaque-only count reads a translucent fill as nothing at all.
+    """
+    blob = assets.get(tid)
+    if blob is None:
+        return {}
+    raw = Image.open(io.BytesIO(blob)).convert('RGBA').tobytes()
+    n = len(raw) // 4
+    counts = collections.Counter(raw[i:i + 3] for i in range(0, len(raw), 4)
+                                 if abs(raw[i + 3] - alpha) <= 3)
+    return {tuple(k): v / n for k, v in counts.items()} if n else {}
+
+
 def _fill_shares(assets, tid, argb):
     """_shares() for an opaque fill. For a translucent one, {color: share of
     the visible pixels}, every pixel at the fill's own alpha (within 3) and
@@ -868,6 +883,16 @@ def check_popup_background(plan_popups, popups, assets):
                                 f'opaque artwork is {_hex(top)} - it covers the page beneath')
             continue
         want = _rgb(spec['background'])
+        alpha = (spec['background'] >> 24) & 0xFF
+        if alpha <= 250:
+            # A translucent fill (Turbulence's hub Volume Level strip, black
+            # at 166) has no opaque pixel to count: read it at its own alpha.
+            seen = _shares_at(assets, tid, alpha)
+            top, top_share = max(seen.items(), key=lambda kv: kv[1]) if seen else (None, 0)
+            if top != want or top_share < 0.99:
+                problems.append(f'{where}: planned {_hex(want)} at alpha {alpha}, artwork is mostly '
+                                f"{_hex(top) if top else 'something else'} at it ({top_share:.0%})")
+            continue
         top, top_share = max(shares.items(), key=lambda kv: kv[1]) if shares else (None, 0)
         if top != want or top_share < 0.99:
             problems.append(f'{where}: planned {_hex(want)}, artwork is mostly '

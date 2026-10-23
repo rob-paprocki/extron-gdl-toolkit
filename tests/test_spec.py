@@ -1781,6 +1781,23 @@ class TestPalette(unittest.TestCase):
         p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
         self.assertTrue(any('7 distinct colors' in m for m in p.check()), p.check())
 
+    def test_the_templates_own_colors_do_not_count(self):
+        """The owner's call (2026-10-22): colors measured from the theme's
+        own template chrome are exempt from the six - Extron's own Mach page
+        draws more than six - and the cap holds for the colors a designer
+        adds. The translator names the template's in `_template_colors`."""
+        chrome = ('#111111', '#222222', '#333333', '#444444', '#555555')
+        controls = [_label(text='x', fill=f) for f in chrome]
+        p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)],
+                     _template_colors=list(chrome) + ['#000000', '#FFFFFF'])
+        self.assertFalse(any('distinct colors' in m for m in p.check()), p.check())
+        # Seven of the designer's own on top of the template's are still seven.
+        own = ['#AA0000', '#00AA00', '#0000AA', '#AAAA00', '#00AAAA', '#AA00AA', '#AAAAAA']
+        p = _project([dict({'name': 'P', 'controls': controls + [_label(text='x', fill=f) for f in own]},
+                           **self.BG)], _template_colors=list(chrome) + ['#000000', '#FFFFFF'])
+        self.assertTrue(any('7 distinct colors' in m and 'besides the template' in m for m in p.check()),
+                        p.check())
+
     def test_seven_drawn_colors_are_reported(self):
         controls = [_label(text='x', fill=f) for f in
                     ('#111111', '#222222', '#333333', '#444444', '#555555')]

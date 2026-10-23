@@ -539,6 +539,7 @@
       "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
       "backgrounds: the kit's four page backgrounds per size, for the main page (the 520 and 535 split theirs into _start and _main; a working page takes _main). image is the name the template gives its default; the others take the kit file's name. The 1720 draws the 1520's 6830x3840 art, as its template does.",
       "seeds, kinds, borders: each seed in seeds/ by part number and canvas (both 300M seeds are one part, either way up), and one of a model's other way up where no template is drawn so - a turned seed - under its panel (TLP1035M-Portrait) - what control kinds it can clone (the 525, 320 and 300M seeds have levels and no slider; the 320 has no standard popup), and each profile border it lacks mapped to its own of the same thickness and nearest radius.",
+      "frame: the series' working page in its template's own grammar, off its own seed (tests/measure_series.py frame_of; --frame prints each); its keys are docs/claude-design.md section 2's *Frame*. Afterburn's working page is Main SD, with no top or bottom bar: its art draws the centre (main), the source tabs across the centre's top, and the columns either side are the rails. The 520's is its Main, a hub; the 320's its Doc Cam 1 and the 300s' their Computer, each standing around its own page's art.",
       "Measured with tests/measure_series.py Afterburn."
     ],
     "Afterburn 1220 Series": {
@@ -573,7 +574,215 @@
         "grape": {"image": "6400x4000_bg4-grape.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png"}
       },
       "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl", "TLP1035M-Portrait": "seeds/Afterburn 1035 Portrait.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "frame": {
+        "page": "Main SD",
+        "top": null,
+        "left": {
+          "rect": [0, 0, 183, 800],
+          "surfaces": [],
+          "groups": [
+            {
+              "heading": {"rect": [14, 160, 152, 50], "text": "Display"},
+              "buttons": [
+                {
+                  "role": "display-power",
+                  "name": "Display Power",
+                  "kind": "button",
+                  "rect": [0, 208, 178, 50],
+                  "id": 8112
+                },
+                {
+                  "role": "display-mute",
+                  "name": "Display Mute",
+                  "kind": "button",
+                  "rect": [0, 266, 178, 50],
+                  "id": 8114
+                }
+              ],
+              "pitch": 58
+            },
+            {
+              "heading": {"rect": [14, 403, 152, 50], "text": "Settings"},
+              "buttons": [
+                {"role": "screen", "name": "Screen Settings", "kind": "button", "rect": [0, 451, 178, 50], "id": 8115},
+                {
+                  "role": "lighting",
+                  "name": "Lighting Settings",
+                  "kind": "button",
+                  "rect": [0, 509, 178, 50],
+                  "id": 8116
+                },
+                {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 567, 178, 50], "id": 8020}
+              ],
+              "pitch": 58
+            }
+          ],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [20, 706, 144, 64], "id": 8120}
+          ]
+        },
+        "right": {
+          "rect": [1099, 0, 181, 800],
+          "surfaces": [],
+          "items": [
+            {
+              "role": "heading",
+              "name": "Main Volume Label",
+              "kind": "label",
+              "rect": [1109, 160, 168, 50],
+              "id": 4052,
+              "text": "Volume"
+            },
+            {"role": "volume", "name": "Main Volume Slider", "kind": "slider", "rect": [1168, 202, 50, 395], "id": 8024},
+            {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1161, 594, 64, 64], "id": 8021},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1125, 706, 64, 64], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [1197, 706, 64, 64], "id": 8022}
+          ]
+        },
+        "bottom": null,
+        "center": {
+          "rect": [183, 24, 916, 752],
+          "surfaces": [],
+          "tabs": {
+            "first": [342, 37, 110, 110],
+            "pitch": 159,
+            "count": 4,
+            "look": {
+              "off": {"fill": null, "border": null, "art": "756x756_pc_nsel.png", "text": "#FFFFFFFF"},
+              "on": {"fill": "#242634FF", "border": null, "art": "756x756_pc-orange_sel.png", "text": "#FFFFFFFF"}
+            },
+            "items": [
+              {"role": "source", "name": "PC", "kind": "button", "rect": [342, 37, 110, 110], "id": 8052},
+              {"role": "source", "name": "Laptop", "kind": "button", "rect": [501, 37, 110, 110], "id": 8050},
+              {"role": "source", "name": "TV", "kind": "button", "rect": [660, 37, 110, 110], "id": 8059},
+              {"role": "source", "name": "Streaming", "kind": "button", "rect": [819, 37, 110, 110], "id": 8063}
+            ]
+          },
+          "region": [200, 175, 880, 525],
+          "popup": "Laptop",
+          "well": null,
+          "title": [559, 175, 162, 50],
+          "empty": [320, 248, 640, 128],
+          "pt": {"title": 21, "empty": 16},
+          "title_controls": [559, 175, 162, 50],
+          "items": [
+            {"role": "divider", "name": "Divider", "kind": "line", "rect": [260, 137, 760, 20]},
+            {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [568, 701, 144, 64], "id": 8301},
+            {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [200, 710, 208, 60]},
+            {"role": "clock", "name": "Time", "kind": "datetime", "rect": [932, 710, 148, 60]}
+          ]
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": [0, 0, 1280, 800],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1280, 800],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6400x4000_bg1.png"
+              }
+            ],
+            "title": [485, 36, 310, 50],
+            "close": {"role": "close", "name": "Close Help", "kind": "button", "rect": [1026, 25, 64, 64], "id": 9057},
+            "pt": {"title": 21, "message": 16},
+            "message": [290, 140, 700, 100],
+            "lines": 3
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 1280, 800],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1280, 800],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6400x4000_bg1.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 21},
+            "message": [290, 223, 700, 50],
+            "lines": 1,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [462, 325, 154, 64], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [664, 325, 154, 64],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": [0, 0, 1280, 800],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1280, 800],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6400x4000_bg1.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 21},
+            "message": [290, 375, 700, 50],
+            "lines": 1
+          },
+          "settings": [
+            {
+              "popups": [
+                "Video Preview - Multi-Window",
+                "Camera Select",
+                "Video Preview",
+                "Audio Settings",
+                "Screen Settings",
+                "Display Settings",
+                "Lighting Settings",
+                "Window Layout",
+                "Video Preview - Share Source",
+                "TV Channels",
+                "Share Content",
+                "Recording Controls"
+              ],
+              "rect": [0, 0, 1280, 800],
+              "surfaces": [
+                {
+                  "name": "Background",
+                  "rect": [0, 0, 1280, 800],
+                  "kind": "image",
+                  "fill": null,
+                  "border": null,
+                  "art": "6400x4000_bg1.png"
+                }
+              ],
+              "title": [485, 36, 310, 50],
+              "close": {
+                "role": "close",
+                "name": "Close Preview Source",
+                "kind": "button",
+                "rect": [1026, 25, 64, 64],
+                "id": 9034
+              },
+              "pt": {"title": 21}
+            }
+          ]
+        },
+        "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
+        "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot."
+      }
     },
     "Afterburn 1020 Series": {
       "size": [1024, 600],
@@ -603,7 +812,210 @@
         "grape": {"image": "5120x3000_bg4-grape.png", "file": "Afterburn/Backgrounds/5120x3000/TLP 725/5120x3000_bg4-grape.png"}
       },
       "seeds": {"TLP725T": "seeds/Afterburn 725.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "frame": {
+        "page": "Main SD",
+        "top": null,
+        "left": {
+          "rect": [0, 0, 145, 600],
+          "surfaces": [],
+          "groups": [
+            {
+              "heading": {"rect": [11, 100, 114, 37], "text": "Display"},
+              "buttons": [
+                {
+                  "role": "display-power",
+                  "name": "Display Power",
+                  "kind": "button",
+                  "rect": [0, 136, 132, 50],
+                  "id": 8112
+                },
+                {
+                  "role": "display-mute",
+                  "name": "Display Mute",
+                  "kind": "button",
+                  "rect": [0, 196, 132, 50],
+                  "id": 8114
+                }
+              ],
+              "pitch": 60
+            },
+            {
+              "heading": {"rect": [11, 289, 114, 37], "text": "Settings"},
+              "buttons": [
+                {"role": "screen", "name": "Screen Settings", "kind": "button", "rect": [0, 326, 132, 37], "id": 8115},
+                {
+                  "role": "lighting",
+                  "name": "Lighting Settings",
+                  "kind": "button",
+                  "rect": [0, 372, 132, 37],
+                  "id": 8116
+                },
+                {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 418, 132, 37], "id": 8020}
+              ],
+              "pitch": 46
+            }
+          ],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [15, 528, 115, 60], "id": 8120}
+          ]
+        },
+        "right": {
+          "rect": [878, 0, 146, 600],
+          "surfaces": [],
+          "items": [
+            {
+              "role": "heading",
+              "name": "Main Volume Label",
+              "kind": "label",
+              "rect": [883, 100, 138, 37],
+              "id": 4052,
+              "text": "Volume"
+            },
+            {"role": "volume", "name": "Main Volume Slider", "kind": "slider", "rect": [927, 131, 50, 338], "id": 8024},
+            {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [922, 469, 60, 48], "id": 8021},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [899, 528, 48, 60], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [958, 528, 48, 60], "id": 8022}
+          ]
+        },
+        "bottom": null,
+        "center": {
+          "rect": [145, 10, 733, 581],
+          "surfaces": [],
+          "tabs": {
+            "first": [279, 16, 85, 85],
+            "pitch": 127,
+            "count": 4,
+            "look": {
+              "off": {"fill": null, "border": null, "art": "756x756_pc_nsel.png", "text": "#FFFFFFFF"},
+              "on": {"fill": "#242634FF", "border": null, "art": "756x756_pc-orange_sel.png", "text": "#FFFFFFFF"}
+            },
+            "items": [
+              {"role": "source", "name": "PC", "kind": "button", "rect": [279, 16, 85, 85], "id": 8052},
+              {"role": "source", "name": "Laptop", "kind": "button", "rect": [406, 16, 85, 85], "id": 8050},
+              {"role": "source", "name": "TV", "kind": "button", "rect": [533, 16, 85, 85], "id": 8059},
+              {"role": "source", "name": "Streaming", "kind": "button", "rect": [660, 16, 85, 85], "id": 8063}
+            ]
+          },
+          "region": [166, 120, 692, 406],
+          "popup": "Laptop",
+          "well": null,
+          "title": [431, 120, 162, 37],
+          "empty": [272, 193, 480, 96],
+          "pt": {"title": 17.5, "empty": 12.5},
+          "title_controls": [431, 120, 162, 37],
+          "items": [
+            {"role": "divider", "name": "Divider", "kind": "line", "rect": [208, 93, 608, 15]},
+            {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [287, 545, 450, 45]}
+          ]
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": [0, 0, 1024, 600],
+            "surfaces": [
+              {
+                "name": "Modal Background",
+                "rect": [0, 0, 1024, 600],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "5120x3000_bg1-default.png"
+              }
+            ],
+            "title": [357, 24, 310, 37],
+            "close": {"role": "close", "name": "Close Help", "kind": "button", "rect": [813, 9, 60, 60], "id": 9057},
+            "pt": {"title": 17.5, "message": 12.5},
+            "message": [252, 97, 520, 128],
+            "lines": 3
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 1024, 600],
+            "surfaces": [
+              {
+                "name": "Modal Background",
+                "rect": [0, 0, 1024, 600],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "5120x3000_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 17.5},
+            "message": [252, 184, 520, 50],
+            "lines": 1,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [346, 275, 144, 60], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [533, 275, 144, 60],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": [0, 0, 1024, 600],
+            "surfaces": [
+              {
+                "name": "Modal Background",
+                "rect": [0, 0, 1024, 600],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "5120x3000_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 17.5},
+            "message": [212, 275, 600, 50],
+            "lines": 1
+          },
+          "settings": [
+            {
+              "popups": [
+                "Window Layout",
+                "TV Channels",
+                "Recording Controls",
+                "Audio Settings",
+                "Display Settings",
+                "Lighting Settings",
+                "Screen Settings",
+                "Share Content",
+                "Camera Select"
+              ],
+              "rect": [0, 0, 1024, 600],
+              "surfaces": [
+                {
+                  "name": "Modal Background",
+                  "rect": [0, 0, 1024, 600],
+                  "kind": "image",
+                  "fill": null,
+                  "border": null,
+                  "art": "5120x3000_bg1-default.png"
+                }
+              ],
+              "title": [357, 24, 310, 37],
+              "close": {
+                "role": "close",
+                "name": "Close Window Layout",
+                "kind": "button",
+                "rect": [813, 9, 60, 60],
+                "id": 9012
+              },
+              "pt": {"title": 17.5}
+            }
+          ]
+        },
+        "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
+        "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot."
+      }
     },
     "Afterburn 1520 Series": {
       "size": [1366, 768],
@@ -640,7 +1052,237 @@
         "grape": {"image": "6830x3840_bg4-grape.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg4-grape.png"}
       },
       "seeds": {"TLP1535M": "seeds/Afterburn 1535.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "frame": {
+        "page": "Main SD",
+        "top": null,
+        "left": {
+          "rect": [0, 0, 252, 1080],
+          "surfaces": [],
+          "groups": [
+            {
+              "heading": {"rect": [19, 204, 213, 69], "text": "Display"},
+              "buttons": [
+                {
+                  "role": "display-power",
+                  "name": "Display Power",
+                  "kind": "button",
+                  "rect": [0, 271, 249, 69],
+                  "id": 8112
+                },
+                {
+                  "role": "display-mute",
+                  "name": "Display Mute",
+                  "kind": "button",
+                  "rect": [0, 354, 249, 69],
+                  "id": 8114
+                }
+              ],
+              "pitch": 83
+            },
+            {
+              "heading": {"rect": [19, 546, 213, 69], "text": "Settings"},
+              "buttons": [
+                {"role": "screen", "name": "Screen Settings", "kind": "button", "rect": [0, 613, 249, 69], "id": 8115},
+                {
+                  "role": "lighting",
+                  "name": "Lighting Settings",
+                  "kind": "button",
+                  "rect": [0, 696, 249, 69],
+                  "id": 8116
+                },
+                {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 777, 249, 69], "id": 8020}
+              ],
+              "pitch": 83
+            }
+          ],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [27, 961, 201, 90], "id": 8120}
+          ]
+        },
+        "right": {
+          "rect": [1668, 0, 252, 1080],
+          "surfaces": [],
+          "items": [
+            {
+              "role": "heading",
+              "name": "Main Volume Label",
+              "kind": "label",
+              "rect": [1672, 204, 240, 69],
+              "id": 4052,
+              "text": "Volume"
+            },
+            {"role": "volume", "name": "Main Volume Slider", "kind": "slider", "rect": [1756, 264, 69, 555], "id": 8024},
+            {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1746, 814, 88, 90], "id": 8021},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1698, 961, 88, 90], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [1803, 961, 88, 90], "id": 8022}
+          ]
+        },
+        "bottom": null,
+        "center": {
+          "rect": [252, 23, 1416, 1033],
+          "surfaces": [],
+          "tabs": {
+            "first": [540, 39, 154, 154],
+            "pitch": 223,
+            "count": 4,
+            "look": {
+              "off": {"fill": null, "border": null, "art": "756x756_pc_nsel.png", "text": "#FFFFFFFF"},
+              "on": {"fill": "#242634FF", "border": null, "art": "756x756_pc-orange_sel.png", "text": "#FFFFFFFF"}
+            },
+            "items": [
+              {"role": "source", "name": "PC", "kind": "button", "rect": [540, 39, 154, 154], "id": 8052},
+              {"role": "source", "name": "Laptop", "kind": "button", "rect": [763, 39, 154, 154], "id": 8050},
+              {"role": "source", "name": "TV", "kind": "button", "rect": [987, 39, 154, 154], "id": 8059},
+              {"role": "source", "name": "Streaming", "kind": "button", "rect": [1210, 39, 154, 154], "id": 8063}
+            ]
+          },
+          "region": [340, 225, 1236, 726],
+          "popup": "Laptop",
+          "well": null,
+          "title": [844, 225, 226, 69],
+          "empty": [508, 327, 898, 180],
+          "pt": {"title": 30, "empty": 22},
+          "title_controls": [844, 225, 226, 69],
+          "items": [
+            {"role": "divider", "name": "Divider", "kind": "line", "rect": [424, 180, 1068, 27]},
+            {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [858, 954, 201, 90], "id": 8301},
+            {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [285, 967, 291, 84]},
+            {"role": "clock", "name": "Time", "kind": "datetime", "rect": [1426, 967, 207, 84]}
+          ]
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": [0, 0, 1920, 1080],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 1080],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": [741, 39, 435, 69],
+            "close": {"role": "close", "name": "Close Help", "kind": "button", "rect": [1564, 25, 88, 90], "id": 9057},
+            "pt": {"title": 30, "message": 22},
+            "message": [468, 184, 982, 139],
+            "lines": 3
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 1920, 1080],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 1080],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 30},
+            "message": [468, 301, 982, 69],
+            "lines": 1,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [709, 445, 216, 90], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [993, 445, 216, 90],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": [0, 0, 1920, 1080],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 1080],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 30},
+            "message": [468, 504, 982, 69],
+            "lines": 1
+          },
+          "settings": [
+            {
+              "popups": [
+                "Video Preview",
+                "Camera Select",
+                "Audio Settings",
+                "Video Preview - Multi-Window",
+                "Display Settings",
+                "Video Preview - Share Source",
+                "Window Layout",
+                "TV Channels",
+                "Share Content",
+                "Screen Settings",
+                "Lighting Settings"
+              ],
+              "rect": [0, 0, 1920, 1080],
+              "surfaces": [
+                {
+                  "name": "Background",
+                  "rect": [0, 0, 1920, 1080],
+                  "kind": "image",
+                  "fill": null,
+                  "border": null,
+                  "art": "6830x3840_bg1-default.png"
+                }
+              ],
+              "title": [741, 39, 435, 69],
+              "close": {
+                "role": "close",
+                "name": "Close Preview Source",
+                "kind": "button",
+                "rect": [1564, 25, 88, 90],
+                "id": 9034
+              },
+              "pt": {"title": 30}
+            },
+            {
+              "popups": ["Recording Controls"],
+              "rect": [0, 0, 1920, 1080],
+              "surfaces": [
+                {
+                  "name": "Background",
+                  "rect": [0, 0, 1920, 1080],
+                  "kind": "image",
+                  "fill": null,
+                  "border": null,
+                  "art": "6830x3840_bg1-default.png"
+                }
+              ],
+              "title": [742, 39, 435, 70],
+              "close": {
+                "role": "close",
+                "name": "Close Recording Popups",
+                "kind": "button",
+                "rect": [1565, 26, 89, 90],
+                "id": 9218
+              },
+              "pt": {"title": 30}
+            }
+          ]
+        },
+        "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
+        "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot."
+      }
     },
     "Afterburn 1230 Series": {
       "size": [1920, 720],
@@ -659,7 +1301,293 @@
         "grape": {"image": "9600x3600_bg4_grape.png", "file": "Afterburn/Backgrounds/9600x3600/9600x3600_bg4_grape.png"}
       },
       "seeds": {"TLP1230WTG": "seeds/Afterburn 1230W.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true}
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "frame": {
+        "page": "Main SD",
+        "top": null,
+        "left": {
+          "rect": [0, 0, 185, 720],
+          "surfaces": [],
+          "groups": [
+            {
+              "heading": {"rect": [11, 100, 114, 37], "text": "Display"},
+              "buttons": [
+                {
+                  "role": "display-power",
+                  "name": "Display Power",
+                  "kind": "button",
+                  "rect": [0, 136, 160, 60],
+                  "id": 8112
+                },
+                {
+                  "role": "display-mute",
+                  "name": "Display Mute",
+                  "kind": "button",
+                  "rect": [0, 196, 160, 60],
+                  "id": 8114
+                }
+              ],
+              "pitch": 60
+            },
+            {
+              "heading": {"rect": [11, 409, 114, 37], "text": "Settings"},
+              "buttons": [
+                {"role": "screen", "name": "Screen Settings", "kind": "button", "rect": [0, 449, 160, 45], "id": 8115},
+                {
+                  "role": "lighting",
+                  "name": "Lighting Settings",
+                  "kind": "button",
+                  "rect": [0, 498, 160, 45],
+                  "id": 8116
+                },
+                {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 547, 160, 45], "id": 8020}
+              ],
+              "pitch": 49
+            }
+          ],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [15, 635, 140, 73], "id": 8120}
+          ]
+        },
+        "right": {
+          "rect": [1736, 0, 184, 720],
+          "surfaces": [],
+          "items": [
+            {
+              "role": "heading",
+              "name": "Main Volume Label",
+              "kind": "label",
+              "rect": [1762, 110, 138, 37],
+              "id": 4052,
+              "text": "Volume"
+            },
+            {"role": "volume", "name": "Main Volume Slider", "kind": "slider", "rect": [1806, 141, 50, 338], "id": 8024},
+            {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1801, 479, 60, 48], "id": 8021},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1768, 635, 60, 73], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [1837, 635, 60, 73], "id": 8022}
+          ]
+        },
+        "bottom": null,
+        "center": {
+          "rect": [185, 13, 1551, 695],
+          "surfaces": [
+            {
+              "name": "Video Footer Shape",
+              "rect": [248, 574, 644, 45],
+              "kind": "shape",
+              "fill": "#000000FF",
+              "border": null,
+              "art": null
+            }
+          ],
+          "tabs": {
+            "first": [1100, 18, 125, 125],
+            "pitch": 127,
+            "count": 4,
+            "look": {
+              "off": {"fill": null, "border": null, "art": "756x756_pc_nsel.png", "text": "#FFFFFFFF"},
+              "on": {"fill": "#242634FF", "border": null, "art": "756x756_pc-orange_sel.png", "text": "#FFFFFFFF"}
+            },
+            "items": [
+              {"role": "source", "name": "PC", "kind": "button", "rect": [1100, 18, 125, 125], "id": 8052},
+              {"role": "source", "name": "Laptop", "kind": "button", "rect": [1228, 18, 125, 125], "id": 8050},
+              {"role": "source", "name": "TV", "kind": "button", "rect": [1355, 18, 125, 125], "id": 8059},
+              {"role": "source", "name": "Streaming", "kind": "button", "rect": [1482, 18, 125, 125], "id": 8063}
+            ]
+          },
+          "region": [1028, 149, 650, 500],
+          "popup": "Laptop",
+          "well": null,
+          "title": [1272, 169, 162, 37],
+          "empty": [1113, 252, 480, 96],
+          "pt": {"title": 21, "empty": 15},
+          "title_controls": [1272, 169, 162, 37],
+          "items": [
+            {"role": "preview", "name": "Preview PC", "kind": "button", "rect": [326, 19, 125, 125], "id": 8352},
+            {"role": "preview", "name": "Preview Laptop", "kind": "button", "rect": [453, 19, 125, 125], "id": 8350},
+            {"role": "preview", "name": "Preview TV", "kind": "button", "rect": [580, 19, 125, 125], "id": 8359},
+            {"role": "preview", "name": "Preview Streaming", "kind": "button", "rect": [707, 19, 125, 125], "id": 8363},
+            {"role": "divider", "name": "Divider", "kind": "line", "rect": [950, 50, 19, 599]},
+            {"role": "divider", "name": "Divider", "kind": "line", "rect": [274, 137, 608, 15]},
+            {"role": "divider", "name": "Divider", "kind": "line", "rect": [1049, 137, 608, 15]},
+            {
+              "role": "heading",
+              "name": "Preview Source",
+              "kind": "label",
+              "rect": [213, 168, 714, 37],
+              "id": 4019,
+              "text": "Preview Source"
+            },
+            {"role": "video", "name": "Video", "kind": "video", "rect": [248, 212, 644, 362]},
+            {
+              "role": "fullscreen",
+              "name": "Main SD Screen Arrows Full Screen",
+              "kind": "button",
+              "rect": [719, 574, 140, 45],
+              "id": 8301
+            },
+            {
+              "role": "fullscreen",
+              "name": "Main SD Screen Arrows Full Screen",
+              "kind": "button",
+              "rect": [848, 574, 30, 45],
+              "id": 8301
+            },
+            {"role": "display", "name": "Send to Display", "kind": "button", "rect": [473, 635, 194, 64], "id": 8370},
+            {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [760, 655, 400, 45]}
+          ]
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": [0, 0, 1920, 720],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 720],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "9600x3600_bg1_default.png"
+              }
+            ],
+            "title": [805, 34, 310, 37],
+            "close": {"role": "close", "name": "Close Help", "kind": "button", "rect": [1666, 17, 64, 64], "id": 9057},
+            "pt": {"title": 20, "message": 16},
+            "message": [700, 127, 520, 128],
+            "lines": 3
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 1920, 720],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 720],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "9600x3600_bg1_default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 20},
+            "message": [648, 184, 624, 50],
+            "lines": 1,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [764, 275, 174, 72], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [981, 275, 174, 72],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": [0, 0, 1920, 720],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 720],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "9600x3600_bg1_default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 20},
+            "message": [500, 275, 920, 77],
+            "lines": 1
+          },
+          "settings": [
+            {
+              "popups": [
+                "Display Settings",
+                "Camera Select",
+                "Window Layout",
+                "Audio Settings",
+                "Lighting Settings",
+                "TV Channels",
+                "Share Content"
+              ],
+              "rect": [0, 0, 1920, 720],
+              "surfaces": [
+                {
+                  "name": "Background",
+                  "rect": [0, 0, 1920, 720],
+                  "kind": "image",
+                  "fill": null,
+                  "border": null,
+                  "art": "9600x3600_bg1_default.png"
+                }
+              ],
+              "title": [805, 34, 310, 37],
+              "close": {
+                "role": "close",
+                "name": "Close Display Settings",
+                "kind": "button",
+                "rect": [1666, 17, 64, 64],
+                "id": 8209
+              },
+              "pt": {"title": 20}
+            },
+            {
+              "popups": ["Screen Settings"],
+              "rect": [0, 0, 1920, 720],
+              "surfaces": [
+                {
+                  "name": "Background",
+                  "rect": [0, 0, 1920, 720],
+                  "kind": "image",
+                  "fill": null,
+                  "border": null,
+                  "art": "9600x3600_bg1_default.png"
+                }
+              ],
+              "title": [805, 34, 310, 37],
+              "close": {
+                "role": "close",
+                "name": "Close Screen Settings",
+                "kind": "button",
+                "rect": [1674, 9, 64, 64],
+                "id": 8253
+              },
+              "pt": {"title": 20}
+            },
+            {
+              "popups": ["Recording Controls"],
+              "rect": [0, 0, 1920, 720],
+              "surfaces": [
+                {
+                  "name": "Background",
+                  "rect": [0, 0, 1920, 720],
+                  "kind": "image",
+                  "fill": null,
+                  "border": null,
+                  "art": "9600x3600_bg1_default.png"
+                }
+              ],
+              "title": [805, 34, 310, 37],
+              "close": {
+                "role": "close",
+                "name": "Close Recording Popups",
+                "kind": "button",
+                "rect": [1666, 17, 64, 64],
+                "id": 9218
+              },
+              "pt": {"title": 21}
+            }
+          ]
+        },
+        "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
+        "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot. The popup region fills only part of the centre; the page's own controls hold the rest."
+      }
     },
     "Afterburn 520 Series": {
       "size": [800, 480],
@@ -678,7 +1606,165 @@
         "grape": {"image": "4000x2400_bg4-grape_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg4-grape_main.png"}
       },
       "seeds": {"TLP525T": "seeds/Afterburn 525.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
+      "frame": {
+        "page": "Main",
+        "top": null,
+        "left": null,
+        "right": {
+          "rect": [688, 0, 112, 480],
+          "surfaces": [],
+          "items": [
+            {
+              "role": "heading",
+              "name": "Main Volume Label",
+              "kind": "label",
+              "rect": [695, 4, 100, 48],
+              "id": 4052,
+              "text": "Volume"
+            },
+            {"role": "volume-up", "name": "Main Volume Up", "kind": "button", "rect": [712, 49, 66, 66], "id": 8120},
+            {
+              "role": "volume-down",
+              "name": "Main Volume Down",
+              "kind": "button",
+              "rect": [712, 130, 66, 66],
+              "id": 8121
+            },
+            {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [712, 211, 66, 66], "id": 8021},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [712, 292, 66, 50], "id": 8117},
+            {"role": "settings", "name": "Settings", "kind": "button", "rect": [712, 357, 66, 50], "id": 8040},
+            {"role": "power", "name": "Power Down", "kind": "button", "rect": [712, 422, 66, 50], "id": 8022}
+          ]
+        },
+        "bottom": null,
+        "center": {
+          "rect": [0, 0, 686, 480],
+          "surfaces": [],
+          "region": [0, 0, 686, 480],
+          "popup": "Laptop",
+          "well": null,
+          "title": [66, 21, 162, 50],
+          "empty": [68, 147, 550, 80],
+          "pt": {"title": 21, "empty": 16},
+          "close": {"role": "back", "name": "Laptop Back", "kind": "button", "rect": [0, 13, 66, 66], "id": 9102},
+          "title_controls": [66, 21, 284, 50],
+          "items": [{"role": "popup", "name": "Volume Level", "kind": "popup_ref", "rect": [637, 0, 50, 480]}],
+          "level": {
+            "popup": "Volume Level",
+            "fill": "#BABCCEFF",
+            "rect": [17, 40, 15, 400],
+            "track": "#242634FF",
+            "border": "Afterburn - 14 Radius 0 Thick",
+            "bar": "#626ACFFF",
+            "art": null,
+            "labels": []
+          }
+        },
+        "select": {
+          "popup": "Select Source",
+          "title": [199, 21, 290, 50],
+          "text": "Select a Source",
+          "surfaces": [],
+          "help": null,
+          "close": null,
+          "tiles": [
+            {"rect": [57, 147, 110, 100], "label": null},
+            {"rect": [210, 147, 110, 100], "label": null},
+            {"rect": [363, 147, 110, 100], "label": null},
+            {"rect": [518, 147, 110, 100], "label": null}
+          ],
+          "pt": {"title": 21}
+        },
+        "options": {
+          "popup": "Settings",
+          "title": [66, 21, 162, 50],
+          "text": "Settings",
+          "surfaces": [],
+          "help": null,
+          "close": {"role": "back", "name": "Settings Back", "kind": "button", "rect": [0, 13, 66, 66], "id": 6210},
+          "tiles": [
+            {"rect": [52, 83, 178, 50], "label": null},
+            {"rect": [52, 141, 178, 50], "label": null},
+            {"rect": [52, 199, 178, 50], "label": null},
+            {"rect": [52, 257, 178, 50], "label": null},
+            {"rect": [52, 315, 178, 50], "label": null}
+          ],
+          "pt": {"title": 21}
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": [0, 0, 686, 480],
+            "surfaces": [],
+            "title": [66, 21, 83, 50],
+            "close": {"role": "back", "name": "Help Back", "kind": "button", "rect": [0, 13, 66, 66], "id": 9057},
+            "pt": {"title": 21, "message": 16},
+            "message": [68, 147, 550, 80],
+            "lines": 2
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 800, 480],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 800, 480],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "4000x2400_bg1-default_starrt.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 16},
+            "message": [141, 125, 517, 84],
+            "lines": 1,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [222, 222, 154, 66], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [424, 222, 154, 66],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": [0, 0, 800, 480],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 800, 480],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "4000x2400_bg1-default_starrt.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 14},
+            "message": [125, 189, 550, 101],
+            "lines": 1
+          },
+          "settings": [
+            {
+              "popups": ["Settings"],
+              "rect": [0, 0, 686, 480],
+              "surfaces": [],
+              "title": [66, 21, 162, 50],
+              "close": {"role": "back", "name": "Settings Back", "kind": "button", "rect": [0, 13, 66, 66], "id": 6210},
+              "pt": {"title": 21}
+            }
+          ]
+        },
+        "ids": {"help": 8117, "power": 8022, "mute": 8021, "volume-up": 8120, "volume-down": 8121, "settings": 8040},
+        "note": "The popups fill main."
+      }
     },
     "Afterburn 535 Series": {
       "size": [1280, 720],
@@ -716,7 +1802,124 @@
       },
       "seeds": {"TLP320M": "seeds/Afterburn 320.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": false},
-      "borders": {"afterburn": "Afterburn - 7 Radius 2 Thick", "afterburn-flat": "Afterburn - 14 Radius 0 Thick"}
+      "borders": {"afterburn": "Afterburn - 7 Radius 2 Thick", "afterburn-flat": "Afterburn - 14 Radius 0 Thick"},
+      "frame": {
+        "page": "Doc Cam 1",
+        "top": null,
+        "left": null,
+        "right": null,
+        "bottom": {
+          "rect": [0, 190, 320, 50],
+          "surfaces": [],
+          "items": [
+            {"role": "more", "name": "Doc Cam More", "kind": "button", "rect": [270, 190, 50, 50], "id": 8010},
+            {
+              "role": "title",
+              "name": "Doc Cam 1 Label",
+              "kind": "label",
+              "rect": [12, 197, 120, 36],
+              "id": 6008,
+              "text": "Doc Cam"
+            },
+            {
+              "role": "heading",
+              "name": "Doc Cam More Label",
+              "kind": "label",
+              "rect": [202, 197, 68, 36],
+              "id": 6010,
+              "text": "More"
+            }
+          ]
+        },
+        "center": {
+          "rect": [0, 0, 320, 190],
+          "surfaces": [],
+          "row": [[35, 29, 108, 45], [176, 29, 108, 45]],
+          "headings": [[35, 6, 107, 21], [177, 6, 107, 21]],
+          "empty": [35, 44, 250, 102],
+          "empty_page": "Laptop",
+          "items": []
+        },
+        "home": {
+          "page": "Main",
+          "top": null,
+          "left": null,
+          "right": null,
+          "bottom": {
+            "rect": [0, 190, 320, 50],
+            "surfaces": [],
+            "items": [
+              {
+                "role": "heading",
+                "name": "Select Label",
+                "kind": "label",
+                "rect": [12, 197, 269, 36],
+                "id": 6071,
+                "text": "Select Source"
+              }
+            ]
+          },
+          "center": {"rect": [0, 0, 320, 190], "surfaces": [], "items": []}
+        },
+        "second": {
+          "page": "Doc Cam 2",
+          "top": null,
+          "left": null,
+          "right": null,
+          "bottom": {
+            "rect": [0, 190, 320, 50],
+            "surfaces": [],
+            "items": [
+              {"role": "back", "name": "Doc Cam Back", "kind": "button", "rect": [0, 190, 50, 50], "id": 8011},
+              {
+                "role": "title",
+                "name": "Doc Cam 2 Label",
+                "kind": "label",
+                "rect": [50, 197, 135, 36],
+                "id": 6009,
+                "text": "Doc Cam"
+              }
+            ]
+          },
+          "center": {"rect": [0, 0, 320, 190], "surfaces": [], "items": []}
+        },
+        "windows": {
+          "help": null,
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": null,
+            "surfaces": [],
+            "title": null,
+            "close": null,
+            "pt": {"message": 12},
+            "message": [35, 49, 250, 60],
+            "lines": 2,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [38, 127, 107, 50], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [175, 127, 107, 50],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": null,
+            "surfaces": [],
+            "title": null,
+            "close": null,
+            "pt": {"message": 12},
+            "message": [35, 80, 250, 80],
+            "lines": 2
+          },
+          "settings": []
+        },
+        "ids": {},
+        "note": "Each source is a page of its own, its second page from More and back by Back. The title sits in the row along the foot, with More."
+      }
     },
     "Afterburn 300 Portrait Series": {
       "size": [320, 480],
@@ -735,7 +1938,117 @@
         "grape": {"image": "1600x2400_bg4-grape.png", "file": "Afterburn/Backgrounds/1600x2400/TLP 300M/1600x2400_bg4-grape.png"}
       },
       "seeds": {"TLP300M": "seeds/Afterburn 300M Portrait.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true}
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
+      "frame": {
+        "page": "Computer",
+        "top": null,
+        "left": null,
+        "right": null,
+        "bottom": {
+          "rect": [0, 392, 320, 88],
+          "surfaces": [],
+          "items": [
+            {"role": "back", "name": "Page Back", "kind": "button", "rect": [0, 405, 66, 66], "id": 8041},
+            {
+              "role": "title",
+              "name": "Computer Label",
+              "kind": "label",
+              "rect": [66, 413, 231, 50],
+              "id": 6028,
+              "text": "Computer"
+            }
+          ]
+        },
+        "center": {"rect": [0, 0, 320, 392], "surfaces": [], "empty": [0, 79, 320, 138], "items": []},
+        "home": {
+          "page": "Main",
+          "top": null,
+          "left": null,
+          "right": null,
+          "bottom": {
+            "rect": [0, 392, 320, 88],
+            "surfaces": [],
+            "items": [
+              {"role": "settings", "name": "Settings", "kind": "button", "rect": [23, 402, 66, 66], "id": 8040},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [130, 402, 66, 66], "id": 8117},
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [231, 402, 66, 66], "id": 8022}
+            ]
+          },
+          "center": {"rect": [0, 0, 320, 392], "surfaces": [], "items": []}
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": null,
+            "surfaces": [],
+            "title": [66, 413, 231, 50],
+            "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [0, 405, 66, 66], "id": 8041},
+            "pt": {"title": 21, "message": 13},
+            "message": [39, 79, 240, 100],
+            "lines": 3
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 320, 480],
+            "surfaces": [
+              {
+                "name": "Image1",
+                "rect": [0, 0, 320, 480],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "1600x2400_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 14},
+            "message": [14, 100, 292, 84],
+            "lines": 2,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [14, 202, 136, 66], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [171, 202, 136, 66],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": [0, 0, 320, 480],
+            "surfaces": [
+              {
+                "name": "Image1_ID0",
+                "rect": [0, 0, 320, 480],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "1600x2400_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 14},
+            "message": [20, 139, 280, 101],
+            "lines": 2
+          },
+          "settings": [
+            {
+              "popups": ["Settings"],
+              "rect": null,
+              "surfaces": [],
+              "title": [66, 413, 155, 50],
+              "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [0, 405, 66, 66], "id": 8041},
+              "pt": {"title": 21}
+            }
+          ]
+        },
+        "ids": {"help": 8117, "power": 8022, "settings": 8040},
+        "note": "Each source is a page of its own. The title sits in the row along the foot, with Back. Main holds Settings, Help and Power Down in the row along the foot; a source page holds Back there instead."
+      }
     },
     "Afterburn 300 Landscape Series": {
       "size": [480, 320],
@@ -755,7 +2068,117 @@
       },
       "seeds": {"TLP300M": "seeds/Afterburn 300M Landscape.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
-      "borders": {"afterburn-flat": "Afterburn - 14 Radius 0 Thick"}
+      "borders": {"afterburn-flat": "Afterburn - 14 Radius 0 Thick"},
+      "frame": {
+        "page": "Computer",
+        "top": null,
+        "left": {
+          "rect": [0, 0, 88, 320],
+          "surfaces": [],
+          "items": [
+            {"role": "back", "name": "Page Back", "kind": "button", "rect": [10, 18, 66, 66], "id": 8041},
+            {
+              "role": "title",
+              "name": "Computer Label",
+              "kind": "label",
+              "rect": [5, 270, 79, 50],
+              "id": 6028,
+              "text": "Comp."
+            }
+          ]
+        },
+        "right": null,
+        "bottom": null,
+        "center": {"rect": [88, 0, 392, 320], "surfaces": [], "empty": [120, 91, 320, 138], "items": []},
+        "home": {
+          "page": "Main",
+          "top": null,
+          "left": null,
+          "right": {
+            "rect": [392, 0, 88, 320],
+            "surfaces": [],
+            "items": [
+              {"role": "settings", "name": "Settings", "kind": "button", "rect": [402, 18, 66, 66], "id": 8040},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [402, 127, 66, 66], "id": 8117},
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [402, 236, 66, 66], "id": 8022}
+            ]
+          },
+          "bottom": null,
+          "center": {"rect": [0, 0, 392, 320], "surfaces": [], "items": []}
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": null,
+            "surfaces": [],
+            "title": [5, 270, 79, 50],
+            "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [10, 18, 66, 66], "id": 8041},
+            "pt": {"title": 16, "message": 13},
+            "message": [160, 110, 240, 100],
+            "lines": 3
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 480, 320],
+            "surfaces": [
+              {
+                "name": "Image1_ID0",
+                "rect": [0, 0, 480, 320],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "2400x1600_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 14},
+            "message": [53, 76, 292, 84],
+            "lines": 2,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [53, 178, 136, 66], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [210, 178, 136, 66],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": [0, 0, 480, 320],
+            "surfaces": [
+              {
+                "name": "Image1_ID0",
+                "rect": [0, 0, 480, 320],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "2400x1600_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 14},
+            "message": [57, 109, 280, 101],
+            "lines": 2
+          },
+          "settings": [
+            {
+              "popups": ["Settings"],
+              "rect": null,
+              "surfaces": [],
+              "title": [5, 270, 79, 50],
+              "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [10, 18, 66, 66], "id": 8041},
+              "pt": {"title": 14}
+            }
+          ]
+        },
+        "ids": {"help": 8117, "power": 8022, "settings": 8040},
+        "note": "Each source is a page of its own. The title sits in the column at the left, with Back. Main holds Settings, Help and Power Down in the column at the right."
+      }
     }
   }
 }

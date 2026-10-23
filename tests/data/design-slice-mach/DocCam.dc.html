@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Doc Cam</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 995px; height: 549px; position: relative">
+<x-import component-from-global-scope="ExtronMach.Page" name="DocCam" panels="TLP1035T" kind="popup" group="Sources" background="none" style="position: absolute; left: 0px; top: 0px; width: 995px; height: 549px"><x-import component-from-global-scope="ExtronMach.Panel" name="Well Header" fill="shade" border="none" style="position: absolute; left: 110px; top: 48px; width: 778px; height: 58px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Panel" name="Well Body" fill="shade" border="none" style="position: absolute; left: 110px; top: 107px; width: 778px; height: 376px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Well Title" type="heading" align="left" color="text" style="position: absolute; left: 125px; top: 48px; width: 755px; height: 58px">Document Camera</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Inputs Heading" type="body" align="center" color="text" style="position: absolute; left: 190px; top: 120px; width: 103px; height: 30px">Inputs</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Inputs 1" variant="ghost" does="Inputs: 1." style="position: absolute; left: 190px; top: 160px; width: 103px; height: 60px">1</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Inputs 2" variant="ghost" does="Inputs: 2." style="position: absolute; left: 190px; top: 232px; width: 103px; height: 60px">2</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Inputs 3" variant="ghost" does="Inputs: 3." style="position: absolute; left: 190px; top: 304px; width: 103px; height: 60px">3</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Zoom Heading" type="body" align="center" color="text" style="position: absolute; left: 350px; top: 120px; width: 103px; height: 30px">Zoom</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Zoom In" variant="ghost" does="Zoom: In." style="position: absolute; left: 350px; top: 160px; width: 103px; height: 60px">In</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Zoom Out" variant="ghost" does="Zoom: Out." style="position: absolute; left: 350px; top: 232px; width: 103px; height: 60px">Out</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Zoom Freeze" variant="ghost" does="Zoom: Freeze." style="position: absolute; left: 350px; top: 304px; width: 103px; height: 60px">Freeze</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Focus Heading" type="body" align="center" color="text" style="position: absolute; left: 510px; top: 120px; width: 103px; height: 30px">Focus</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Focus Far" variant="ghost" does="Focus: Far." style="position: absolute; left: 510px; top: 160px; width: 103px; height: 60px">Far</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Focus Near" variant="ghost" does="Focus: Near." style="position: absolute; left: 510px; top: 232px; width: 103px; height: 60px">Near</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Focus Auto" variant="ghost" does="Focus: Auto." style="position: absolute; left: 510px; top: 304px; width: 103px; height: 60px">Auto</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Iris Heading" type="body" align="center" color="text" style="position: absolute; left: 670px; top: 120px; width: 103px; height: 30px">Iris</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Iris Open" variant="ghost" does="Iris: Open." style="position: absolute; left: 670px; top: 160px; width: 103px; height: 60px">Open</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Iris Close" variant="ghost" does="Iris: Close." style="position: absolute; left: 670px; top: 232px; width: 103px; height: 60px">Close</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam Iris Normal" variant="ghost" does="Iris: Normal." style="position: absolute; left: 670px; top: 304px; width: 103px; height: 60px">Normal</x-import></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

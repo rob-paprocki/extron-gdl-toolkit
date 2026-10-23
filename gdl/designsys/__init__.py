@@ -32,6 +32,22 @@ COMPONENTS = (
     ('Slider', 'Controls', 120), ('Level', 'Controls', 120), ('Clock', 'Controls', 90),
     ('Panel', 'Layout', 130), ('Line', 'Layout', 70), ('PopupRegion', 'Layout', 130),
 )
+# The region frame's (docs/superpowers/specs/2026-10-22-region-frame-design.md):
+# a working page named by its regions, each drawn from the panel's own
+# series' measured frame. A theme that draws its bars as controls has them
+# (`layout.bars`); Afterburn's chrome is its background art, and its system
+# is unchanged.
+REGION_COMPONENTS = (
+    ('Header', 'Regions', 160), ('LeftRail', 'Regions', 160), ('Section', 'Regions', 160),
+    ('RightRail', 'Regions', 160), ('Footer', 'Regions', 160), ('Center', 'Regions', 160),
+)
+
+
+def components(p):
+    """(component, card group, card height) for the profile's system: the
+    shared ones, and the region frame's where the template draws its bars."""
+    bars = (p.get('layout') or {}).get('bars') == 'controls'
+    return COMPONENTS + REGION_COMPONENTS if bars else COMPONENTS
 
 
 def load(template):
@@ -102,6 +118,57 @@ def tokens(p):
 
 
 # -- the per-panel table -----------------------------------------------------------
+# A frame's bands, turned: what ran across the top runs down the left. The
+# frame's own page and each page record it carries (a 300's or 320's home and
+# second page) name their bands so.
+_FRAME_TURN = {'top': 'left', 'left': 'top', 'bottom': 'right', 'right': 'bottom'}
+_FRAME_PAGES = ('home', 'second')
+_TURNED_NOTE = ("Its series' upright page turned: the upright top band is the left here and the bottom the right. "
+                "Upright: ")
+
+
+def _legal(frame, size, touch, dpi):
+    """`frame` with each touchable slot (gdl.spec.TOUCHABLE: a button or a
+    slider) under the panel's touch minimum given the rect that meets it -
+    grown about its centre, inside its band where the band can hold it, else
+    on the canvas - and the reason. The touch minimum is the panel's own: the
+    1220 series' tabs are 64 deep, legal on a 1035 (53 px) and short on an 835
+    (67 px). Gaps are left to placement: meeting one moves a neighbour, and a
+    tab row or a rail group is a joined set, 1 px apart as Extron draws it.
+    A Shockwave tab's twin is its caption, pressed as the tab."""
+    from .. import spec
+    W, H = size
+
+    def fit(r, room):
+        x, y, w, h = r
+        nw, nh = max(w, touch), max(h, touch)
+        at = []
+        for v, n, lo, span, full in ((x - (nw - w) // 2, nw, room[0], room[2], W),
+                                     (y - (nh - h) // 2, nh, room[1], room[3], H)):
+            at.append(min(max(v, lo), lo + span - n) if n <= span else min(max(v, 0), full - n))
+        return [at[0], at[1], nw, nh]
+
+    def walk(v, room):
+        if isinstance(v, list):
+            return [walk(x, room) for x in v]
+        if not isinstance(v, dict):
+            return v
+        out = {}
+        for k, x in v.items():
+            if k == 'twin':
+                out[k] = x
+                continue
+            # A band's or a window's rect is the room its slots grow in.
+            inner = x.get('rect') if isinstance(x, dict) and 'kind' not in x else None
+            out[k] = walk(x, inner or room)
+        r = v.get('rect')
+        if v.get('kind') in spec.TOUCHABLE and r and (r[2] < touch or r[3] < touch):
+            out['legal'] = fit(r, room)
+            out['reason'] = f'{r[2]}x{r[3]} is under the {touch} px touch minimum (9 mm at {round(dpi, 2):g} DPI)'
+        return out
+    return walk(frame, [0, 0, W, H]) if frame and touch else frame
+
+
 def models(p):
     """{panel: row} - every panel the profile's series serve, for the bundle to
     derive each panel's layout from (docs/claude-design.md section 2). A panel
@@ -110,7 +177,8 @@ def models(p):
 
     A row is the series' own measurements (its `panels` entry: main region,
     rail band, popup region, background art and how it is drawn, the seed per
-    model and what that seed can clone) with the model's own minimums from
+    model and what that seed can clone, and the frame of its working page)
+    with the model's own minimums from
     gdl.spec: touch target and gap (9 mm and 2 mm at its DPI) and type floor -
     or, for a panel turned where no series serves it that way up, its own
     series' row transposed, flagged `turned` (below).
@@ -134,6 +202,15 @@ def models(p):
                 # its panels are refused for want of a seed before that matters.
                 'kinds': s.get('kinds') or {'slider': True, 'level': True, 'datetime': True, 'popup': True},
                 'borders': s.get('borders') or {},
+                # The corners its seed draws where the profile's border is
+                # another's (tests/measure_series.py seed_radii): Shockwave's
+                # hubs and 320 round 2D Rounded Rectangle at 10, its 1035 at 2.
+                'radii': s.get('radii') or {},
+                # The series' working page in its template's grammar, measured
+                # off its seed (tests/measure_series.py frame_of), with this
+                # panel's legal rects (_legal); None for a series no seed
+                # measures.
+                'frame': _legal(s.get('frame'), s['size'], touch, spec.dpi(m)),
             }
     # A panel that runs the other way up from every series that draws it - the
     # 520M, 521M, 535M, 835M and 1035M turned (docs/design-rules.md section 1) -
@@ -145,6 +222,26 @@ def models(p):
     # (New-GdlTurnedSeed.ps1), kept under the panel's name.
     def turn(r):
         return None if r is None else [r[1], r[0], r[3], r[2]]
+
+    # A frame turns as main and rail do: every rect in it transposed - a rect
+    # is the frame's only list of four numbers - and its header becomes its
+    # left band, its footer its right, in the frame and in each page record
+    # it carries. Its note is the series' own page's, said upright.
+    def turn_frame(v, top=True):
+        if isinstance(v, list) and len(v) == 4 and all(type(x) is int for x in v):
+            return turn(v)
+        if isinstance(v, list):
+            return [turn_frame(x, False) for x in v]
+        if isinstance(v, dict):
+            swap = _FRAME_TURN if top else {}
+            return {swap.get(k, k): turn_frame(x, top and k in _FRAME_PAGES) for k, x in v.items()}
+        return v
+
+    def turned_frame(f, size, m):
+        t = turn_frame(f)
+        if t.get('note'):
+            t['note'] = _TURNED_NOTE + t['note']
+        return _legal(t, size, spec.touch_minimums(m)[0], spec.dpi(m))
     for series, s in (p.get('panels') or {}).items():
         if series.startswith('_'):
             continue
@@ -158,7 +255,8 @@ def models(p):
                 row.update(size=list(size), turned=True, main=turn(s['main']), rail=turn(s['rail']),
                            rail_axis={'column': 'row', 'row': 'column'}.get(s['rail_axis']),
                            popup=list(s['popup'])[::-1] if s['popup'] else None, backgrounds={},
-                           seed=(s.get('seeds') or {}).get(pid))
+                           seed=(s.get('seeds') or {}).get(pid),
+                           frame=turned_frame(s['frame'], size, m) if s.get('frame') else None)
                 out[pid] = row
     return out
 
@@ -332,6 +430,23 @@ def kit_index(p, part='root'):
                     looks[base]['off'] = looks[name].pop('off')
                     if not looks[name]:
                         del looks[name]
+    # Families the size prefix misses, by a prefix of their own the profile
+    # names as a size, with its pixels (`size`): Shockwave's whole-device
+    # outlines, white_<device>.png in icons/440x440 White, which its hubs'
+    # Select a Source tiles draw where its tabs draw the 744x456 glyph
+    # <device>_white.
+    for size, fam in (((p.get('kit') or {}).get('prefixed') or {}).items() if part == 'root' else ()):
+        prefix = fam['prefix']
+        for root in kit_roots(p, part):
+            for d, _, names in sorted(os.walk(root)):
+                for f in sorted(names):
+                    if not (f.startswith(prefix) and f.endswith('.png')):
+                        continue
+                    looks = files.setdefault(size, {}).setdefault(f[len(prefix):-4], {})
+                    if 'plain' not in looks:
+                        looks['plain'] = f
+                        rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, '/')
+                        paths.setdefault(f, p['kit'][part] + '/' + rel)
     # Files the size prefix misses, named by the profile - one file, or one
     # per look: Shockwave's modal Close is icons/440x440 Black/black_close.png
     # at rest and icons/440x440 White/white_close.png pressed.
@@ -549,9 +664,34 @@ def thumb_art(p):
     return out
 
 
+def _slim_windows(windows):
+    """A frame's windows as the bundle draws them: each record's rects, its
+    surfaces' shape, fill and border, its Close's and buttons' role and rect,
+    and the sizes its title and message are set in and the lines its message
+    takes - not the seed's names, IDs or art, which are the translator's and
+    the reader's (about 16 KB of Mach's, which took its bundle past 260 KB)."""
+    def item(it):
+        return {'role': it['role'], 'rect': it['rect']} if it else None
+
+    def slim(w):
+        if not w:
+            return w
+        out = {'rect': w.get('rect'), 'title': w.get('title'), 'close': item(w.get('close')),
+               'surfaces': [{k: s.get(k) for k in ('kind', 'rect', 'fill', 'border')} for s in w.get('surfaces') or []]}
+        for k in ('message', 'popups', 'pt', 'lines'):
+            if k in w:
+                out[k] = w[k]
+        if 'buttons' in w:
+            out['buttons'] = [item(b) for b in w['buttons']]
+        return out
+    if not windows:
+        return windows
+    return {k: [slim(w) for w in v] if isinstance(v, list) else slim(v) for k, v in windows.items()}
+
+
 def bundle(p, art=True):
     header = json.dumps({'format': 4, 'namespace': p['namespace'],
-                         'components': [{'name': n} for n, _, _ in COMPONENTS]},
+                         'components': [{'name': n} for n, _, _ in components(p)]},
                         separators=(',', ':'))
     profile = {k: p[k] for k in ('template', 'namespace', 'model', 'size', 'popup', 'pt',
                                  'touch', 'font', 'schemes', 'colors', 'type', 'borders',
@@ -562,7 +702,56 @@ def bundle(p, art=True):
     # Every panel's own regions, minimums and art; empty for a profile with no
     # per-panel table. art=False (the translator's tests) leaves the images out:
     # the probe reads names, never pixels.
-    profile['models'] = models(p)
+    # The measured frame once per series, keyed by series (each row names
+    # its own): repeated on every model row it was 190-320 KB a theme, the
+    # bundle twice its size. The region components draw from it, growing a
+    # slot to the panel's own minimums as they place it, so the rows' legal
+    # rects are not carried. Only where the template draws its bars as
+    # controls - Afterburn's system draws no region - and only the series
+    # the regions draw: a tier A or B series with all five bands, and the
+    # hubs (below). A 320's frame waits for the regions that draw it.
+    # And only what they read of it: the four bars; the center's popup
+    # region and, off a source's popup, its well, title (and a source's with
+    # controls), empty state, status, sizes and surfaces, which a source
+    # popup (role="source") draws; and the windows
+    # a working page opens, which a modal with a role draws. The ids and the
+    # note are the translator's and the reader's.
+    rows = models(p)
+    profile['models'] = {m: {k: v for k, v in row.items() if k != 'frame'} for m, row in rows.items()}
+    bars = (p.get('layout') or {}).get('bars') == 'controls'
+    drawn = {row['series'] for row in rows.values() if row.get('tier') in ('A', 'B')}
+    profile['frames'] = {series: dict({b: s['frame'][b] for b in ('top', 'left', 'right', 'bottom')},
+                                      center={k: s['frame']['center'].get(k)
+                                              for k in ('region', 'well', 'title', 'title_controls', 'empty',
+                                                        'status', 'pt', 'surfaces')},
+                                      windows=_slim_windows(s['frame'].get('windows')))
+                         for series, s in (p.get('panels') or {}).items()
+                         if bars and series in drawn and s.get('frame')
+                         and all(s['frame'].get(b) for b in ('top', 'left', 'right', 'bottom', 'center'))}
+    # A hub's (the 520s and 535s): its right menu bar and the header strip
+    # over main where it draws one, the popup region filling main with what
+    # a source's popup draws and the Volume Level strip beside the bar (its
+    # rect, `strip`, and what it shows, `level`), its Select a Source and
+    # options grids, and its windows - which the region
+    # page, a source popup and a window draw there in the hub's grammar.
+    profile['frames'].update({
+        series: {'hub': True, 'top': s['frame']['top'], 'right': s['frame']['right'],
+                 'center': dict({k: s['frame']['center'].get(k)
+                                 for k in ('region', 'title', 'title_controls', 'empty', 'status', 'pt',
+                                           'surfaces', 'close', 'level')},
+                                strip=next((it['rect'] for it in s['frame']['center'].get('items') or []
+                                            if it['role'] == 'popup'), None)),
+                 'select': s['frame'].get('select'), 'options': s['frame'].get('options'),
+                 'windows': _slim_windows(s['frame'].get('windows'))}
+        for series, s in (p.get('panels') or {}).items()
+        if bars and series in drawn and series not in profile['frames'] and s.get('frame')
+        and s['frame'].get('right') and s['frame'].get('select') and not s['frame'].get('left')
+        and not s['frame'].get('bottom')})
+    # What the regions draw by default - Volume, Mute, Help, Power, the clock -
+    # in the template's own looks and wording.
+    profile['regions'] = {k: v for k, v in (p.get('regions') or {}).items() if not k.startswith('_')}
+    # The template's own words, which the center and the windows draw.
+    profile['writing'] = {k: v for k, v in (p.get('writing') or {}).items() if not k.startswith('_')}
     profile['backdrops'] = backdrops(p) if art else {}
     if p.get('kit'):
         index = kit_index(p)
@@ -659,9 +848,18 @@ def _icons_md(p):
     return '\n'.join(f"- `{k}`: {', '.join(f'`{n}`' for n in v)}" for k, v in names.items())
 
 
-def _ratio(size):
+def _kit_size(p, size):
+    """A kit size's pixels: '1224x344' -> (1224, 344). A family indexed by
+    its prefix (`kit.prefixed`) gives its own: Shockwave's `device`, 440x440."""
+    fam = ((p.get('kit') or {}).get('prefixed') or {}).get(size)
+    if isinstance(fam, dict) and fam.get('size'):
+        return tuple(fam['size'])
+    return tuple(int(n) for n in size.split('x'))
+
+
+def _ratio(p, size):
     """'1224x344' -> '3.6:1'."""
-    w, h = (int(n) for n in size.split('x'))
+    w, h = _kit_size(p, size)
     r = w / h
     return '1:1' if abs(r - 1) < 0.1 else f'{r:.1f}:1'
 
@@ -1106,7 +1304,7 @@ def component_docs(p):
     sub = 'subheading' if 'subheading' in types else 'heading' if 'heading' in types else types[0]
     tokens = [c['name'] for c in p['colors']]
     label_colors = ', '.join(f'`{n}`' for n in ('text', 'text-secondary', 'accent', 'ink') if n in tokens)
-    shapes = ', '.join(f"`{k}` {_ratio(size)}" for k, size, _, _ in _image_buttons(p))
+    shapes = ', '.join(f"`{k}` {_ratio(p, size)}" for k, size, _, _ in _image_buttons(p))
     sl = p['defaults']['slider']
     if str(sl.get('thumb_image', '')).lower().endswith('.png'):
         thumb_words = (f"and the template's own thumb image, `thumb` px across (default {sl['thumb']})"
@@ -1128,7 +1326,7 @@ Props:
 - `reached-by="program"`: the control program shows this page by itself - an incoming call - so no button has to lead to it.
 - `theme`: {', '.join(f'`{th["id"]}`' for th in themes(p))} - {'the background image and accent scheme pairing, ' if p.get('themes') else ''}the same on every artboard. `scheme` swaps the accent scheme alone: {', '.join(f'`{s["id"]}`' for s in p['schemes'])}.
 - `does`: what the page is for, in a sentence, for the programmer.
-{_panels_props(p)}
+{_panels_props(p)}{_roles_props(p)}
 Place controls inside it with absolute positions or with flex and grid containers: containers that paint nothing are fine. Anything that paints and is not one of these components is not built.
 
 ```html
@@ -1249,12 +1447,199 @@ Where a group's standard popups appear on this page. `group` names the popup gro
 {_x(p, 'PopupRegion', ' name="SourceArea" group="Sources"', '', 'width: 880px; height: 525px')}
 ```
 """,
+        **_region_docs(p),
     }
+
+
+def _region_docs(p):
+    """The region components' READMEs, for a system that has them."""
+    if components(p) is COMPONENTS:
+        return {}
+    t = p['template']
+    r = p.get('regions') or {}
+    clock = (r.get('clock') or {}).get('format', 'time')
+
+    def look(key):
+        v = (r.get(key) or {})
+        return f"`{v['variant']}`" + (f" with icon `{v['icon']}`" if v.get('icon') else '') if v.get('variant') else 'the default'
+    common = (f"A region of a working page, as {t}'s own Main SD draws it: it paints nothing and is not a "
+              "control. Put it directly on the Page, with no position: on every panel the region takes its "
+              "band from that panel's own series' template - the 725's from the 725's, not the 1035's "
+              "scaled - and places what it holds by meaning, in the template's own look unless a control "
+              "sets its own, each control grown where that panel's touch minimum or type floor needs it and "
+              "kept in its band. Where the template stands two sets' controls nearer than 2 mm, the page "
+              "opens the seam to that panel's gap. A Page holding any region is a region "
+              "page: one that lacks a Header, LeftRail, RightRail, Footer or Center is named on the canvas "
+              "and in the translate report, and still builds; a Start or other splash page says "
+              "`splash=\"true\"` and is not. On a hub (the 520s and 535s) the same regions are drawn in its "
+              "own grammar: its right menu bar holds the RightRail's volume - Up, Down and Mute, the level a "
+              "popup beside the bar - the settings opener and the Footer's Power; the Header's source tabs are "
+              "the tiles of a Select a Source popup filling main, under its title and the Footer's Help; the "
+              "LeftRail's first Section is the popup its Display Control opens (on Mach a tile in its "
+              "Settings), its later Sections, an Audio Control and the Footer's mode launcher the options its "
+              "settings opener shows; and the clock, which no hub draws, is named. On a 320 or a turned panel "
+              "a region page is refused by name for now: they draw their working page in another grammar.")
+    together = _footer_together(p)
+    def ex(comp, attrs='', body=''):
+        return _x(p, comp, attrs, body)
+
+    def btn(attrs, text):
+        return _x(p, 'Button', attrs, text)
+    return {
+        'Header': f"""# Header
+
+The bar across the top: the source tabs. {common}
+
+Its children say where they go with `slot`:
+- `slot="source"`: a source tab. The tabs stand where the template's do - its first tab's place, then its step - and touch, 1 px apart, as one segmented set: the 2 mm between touch targets is kept between the set and anything else, not inside it. Fewer tabs than the template draws take its first places and the bar closes up after them; more continue its step. A tab takes the template's look and caption alignment unless it sets its own: on {t}, {look('tab')}, its measured fill when off and on where it draws no art, and its caption centred - one indented past its icon takes as many leading spaces as clear the icon on each panel. The row is one size: where one caption needs more room on a panel, every tab grows with it, and the bar with them. Give each a `nav` to its source's popup.
+- `slot="start"` and `slot="end"`: anything at the bar's left or right end, at its own size.
+
+The bar's own surfaces are drawn as Panels named `Header Left`, `Header Right` or `Header Bar`.
+
+```html
+{ex('Header', '', chr(10) + '  ' + btn(f' slot="source" name="Laptop" icon="{_tab_icon(p)}" nav="Laptop"', 'Laptop') + chr(10))}
+```
+""",
+        'LeftRail': f"""# LeftRail
+
+The column left of the center: the room's display controls and the launchers for its settings, in titled Sections. {common}
+
+Its children are Sections, the template's groups in order: the first Section stands where the template's first group does (Display), the second where its second does (Settings). The first Section's buttons take the template's rail look ({look('rail')}), a later one's its launchers' ({look('launcher') if r.get('launcher') else look('rail')}), unless they set their own. A control outside a Section is named.
+
+```html
+{ex('LeftRail', '', chr(10) + '  ' + ex('Section', ' title="Display"', chr(10) + '    ' + btn(' name="Display On"', 'On') + chr(10) + '  ') + chr(10))}
+```
+""",
+        'Section': f"""# Section
+
+A titled group in the LeftRail. `title` is drawn as the group's heading Label (named `<title> Heading`) where the template draws one; its children need no positions - they stand at the template's places for that group, down its step, and touch, 1 px apart, as one segmented set, with 2 mm kept between the set and anything else. The set is one width: where one caption needs more room on a panel, every button of the column grows with it. More than the rail holds is named. A Section anywhere but in a LeftRail is named.
+
+```html
+{ex('Section', ' title="Settings"', chr(10) + '  ' + btn(' name="Lighting Settings" nav="Lighting"', 'Lighting') + chr(10))}
+```
+""",
+        'RightRail': f"""# RightRail
+
+The column right of the center: volume. {common}
+
+Empty, it draws the template's own: the Volume heading, the volume Slider - or, on a panel whose seed has no slider, a Level with Up and Down - and Mute ({look('mute')}), each with the template's own ID, so Volume is one control on every page and every panel. The heading, slider and Mute are the rail's group: one segmented set, as near as the template stands them, with 2 mm kept between it and anything else. A child with a `slot` takes that place instead: `slot="heading"`, `slot="volume"`, `slot="mute"`, or `slot="audio"` for Audio Control where that panel's template stands one in its right rail ({_audio_where(p)}) - on another it is named.
+
+```html
+{ex('RightRail')}
+```
+""",
+        'Footer': f"""# Footer
+
+The bar across the foot: the room's mode, the date and time, Help and Power. {common}
+
+It draws the template's clock (`{clock}`), Help ({look('help')}) and Power ({look('power')}) by default, Help and Power with the template's own IDs. `help` and `power` name the artboards they show - `help="Help" power="ConfirmPower"`. A child with a `slot` takes that place instead: `slot="mode"` (the template's mode launcher - Room Mode, {look('mode')} - which is drawn only when given), `slot="clock"`, `slot="help"`, `slot="power"`. {together} The clock gives way, about its middle, to a cell grown into it; the bar's own surface is a Panel named `Footer Bar`, kept flush with the cells beside it as they grow.
+
+```html
+{ex('Footer', ' help="Help" power="ConfirmPower"', chr(10) + '  ' + btn(' slot="mode" name="Room Mode" nav="Room Mode"', 'Room Mode') + chr(10))}
+```
+""",
+        'Center': f"""# Center
+
+The middle of the working page: the popup region the sources fill, where the template's is - on every panel that panel's own. `group` names the popup group (default `Sources`) - each source's controls are a popup of that group, `kind="popup"` with `role="source"`, which is drawn as the region's size on each panel, in the template's own well and title (the Page README) - and `name` the region (default `Controls`).{_center_well(p)} {common}
+
+```html
+{ex('Center', ' group="Sources"')}
+```
+""",
+    }
+
+
+def _roles_props(p):
+    """The Page's `role`, `topic` and `title` lines, for a system with the
+    region frame: a source's popup and the windows, drawn as the template
+    draws them (docs/claude-design.md section 4)."""
+    if components(p) is COMPONENTS:
+        return ''
+    w = p.get('writing') or {}
+    t = p['template']
+    empty = ' '.join(w.get('empty', '').split()).format(name='Laptop', noun='laptop')
+    question = ' '.join((w.get('confirm') or {}).get('power', '').split())
+    status = f", over its `{w['status']}` status." if w.get('status') else ''
+    helped = w.get('help_title') or 'Help'
+    return (f"- `role=\"source\"` on a `kind=\"popup\"` in the Center's group: a source's controls. On every panel it "
+            f"is that panel's own popup region, and draws {t}'s own chrome for it - {_source_chrome(p)}; `title` names "
+            f"it (default: its `name`). Put the source's controls in it where you want them, clear of its title (one "
+            f"under it is named): they are laid out in the well on every panel, white where {t} writes white, in its "
+            f"in-well look. With none it says {t}'s empty state: '{empty}'{status} Without the role a popup in "
+            f"`Sources` scales with main, and is named where it comes out larger than the region. On a hub it fills "
+            f"main under the hub's own header - its title and a Close back to Select a Source. On a 320 or a turned "
+            f"panel a source popup is refused by name for now.\n"
+            f"- `role` on a `kind=\"modal\"`: a window, drawn as {t} draws its windows. `settings` (or a `title` and "
+            f"no role) draws the window with its `title` and a Close; `help` too, titled '{helped}' unless you give a "
+            f"`title`, and with nothing put in it {t}'s own help message; `confirm` with `topic=\"power\"` asks "
+            f"'{question}' with Power Down - its `does` is the Page's - and Cancel; `wait` with `topic=\"up\"` or "
+            f"`\"down\"` says the wait, with no buttons. Close and Cancel go back to the page that opened the window - "
+            f"the program's to do, so they carry no `nav`. Put a settings window's own controls inside it. A `role` the "
+            f"Page's `kind` does not take is named. On a hub a settings window is a popup filling main, as the hub "
+            f"draws its settings, with its title and a Close back to Select a Source; Help, the question and the wait "
+            f"stay windows in the hub's own style. On a 320 or a turned panel a window is refused by name for "
+            f"now.\n")
+
+
+def _source_chrome(p):
+    t = p['template']
+    return {'Mach': "the framed shade well, its title bar 1 px above its body, titled in white at its left",
+            'Shockwave': "its 40 pt white title across the popup's top, over the well the Center draws on the page",
+            'Turbulence': "its large centred title, with room at the top left for the device picture Extron pins "
+                          "there, which the system cannot draw yet"}.get(t, f"{t}'s own well and title")
+
+
+def _center_well(p):
+    """What the Center draws round its region, where the template draws a
+    well on the page."""
+    wells = any(not s.get('popup') and s.get('kind') == 'shape'
+                for row in (p.get('panels') or {}).values() if isinstance(row, dict)
+                for s in (((row.get('frame') or {}).get('center') or {}).get('surfaces') or []))
+    return (" Where the template draws a well round it on the page, the Center draws it too, as a Panel named "
+            "`Center Well`." if wells else '')
+
+
+def _tab_icon(p):
+    """An icon the template's tab look draws, for the Header's example."""
+    tab = ((p.get('regions') or {}).get('tab') or {}).get('variant')
+    m = re.search(r'variant="([^"]+)" icon="([^"]+)"', ((p.get('examples') or {}).get('source') or {}).get('attrs', ''))
+    return m.group(2) if m and m.group(1) == tab else 'laptop'
+
+
+def _audio_where(p):
+    """Which series stand Audio Control in their right rail."""
+    have = _series_named(p, lambda s: any(i['role'] == 'audio' for i in (
+        ((s.get('frame') or {}).get('right') or {}).get('items') or [])))
+    return f"on {p['template']}, " + _the_series(have) if have else f"{p['template']} draws none"
+
+
+_ROLE_NAMES = {'mode': 'Room Mode', 'help': 'Help', 'power': 'Power'}
+
+
+def _footer_together(p):
+    """The footer's sentence on which cells its template stands together."""
+    F = (models(p).get(p['model']) or {}).get('frame') or {}
+    cells = [i for i in ((F.get('bottom') or {}).get('items') or []) if i['kind'] == 'button']
+    cells += [i for i in ((F.get('right') or {}).get('items') or []) if i['role'] in ('help', 'power')]
+    pairs = []
+    for i, a in enumerate(cells):
+        for b in cells[i + 1:]:
+            ra, rb = a['rect'], b['rect']
+            gx = max(rb[0] - (ra[0] + ra[2]), ra[0] - (rb[0] + rb[2]))
+            gy = max(rb[1] - (ra[1] + ra[3]), ra[1] - (rb[1] + rb[3]))
+            if (0 <= gx <= 2 and gy < 0) or (0 <= gy <= 2 and gx < 0):
+                pairs.append(f"{_ROLE_NAMES.get(a['role'], a['role'])} and {_ROLE_NAMES.get(b['role'], b['role'])}, "
+                             f"{max(gx, gy)} px apart")
+    if not pairs:
+        return (f"{p['template']}'s template stands its footer's cells apart: each keeps 2 mm from the "
+                "others.")
+    return (f"The cells {p['template']}'s template stands together - {'; '.join(pairs)} - touch as it draws "
+            "them, one set; every other keeps 2 mm.")
 
 
 def _preview(p, comp, height, body):
     ns = p['namespace']
-    return (f'<!-- @dsCard group="{dict((n, g) for n, g, _ in COMPONENTS)[comp]}" height={height} -->\n'
+    return (f'<!-- @dsCard group="{dict((n, g) for n, g, _ in components(p))[comp]}" height={height} -->\n'
             '<!doctype html>\n<html>\n<head><meta charset="utf-8">'
             f'<title>{comp} - preview</title>'
             f'<link rel="stylesheet" href="{p["font"]["google"]}"></head>\n'
@@ -1289,7 +1674,7 @@ def _preview_images(p):
         if seed:
             w, ht = seed
         else:
-            w, h = (int(n) for n in size.split('x'))
+            w, h = _kit_size(p, size)
             ht = 110 if caption == 'below' else 64
             w = min(260, round(ht * w / h))
         out.append([k, icon, w, ht, text])
@@ -1324,7 +1709,7 @@ def _button_preview_height(p, width=1100):
 
 
 def previews(p):
-    heights = {n: ht for n, _, ht in COMPONENTS}
+    heights = {n: ht for n, _, ht in components(p)}
     s = p['size']
     scale = 0.12
     fills = _panel_fills(p)
@@ -1368,7 +1753,33 @@ def previews(p):
         'PopupRegion': 'row([box(440, 90, h(N.PopupRegion, { group: "Sources" }))])',
     }
     heights['Button'] = max(heights['Button'], _button_preview_height(p))
-    return {n: _preview(p, n, heights[n], b[n]) for n, _, _ in COMPONENTS}
+    b.update(_region_previews(p))
+    return {n: _preview(p, n, heights[n], b[n]) for n, _, _ in components(p)}
+
+
+def _region_previews(p):
+    """Each region's card: the template's working page at a small scale with
+    that region and those it needs to read - a page with only its own region,
+    marked a splash page so the canvas names nothing missing. The design
+    panel draws it from its own series' frame."""
+    if components(p) is COMPONENTS:
+        return {}
+    s, scale = p['size'], 0.12
+    tab =('h(N.Header, null, ["Laptop", "PC"].map(function (n) { return h("div", { key: n }, '
+           'h(N.Button, { slot: "source", name: n }, n)); }))')
+    rail = ('h(N.LeftRail, null, h("div", null, h(N.Section, { title: "Display" }, ["On", "Off"].map(function (n) { '
+            'return h("div", { key: n }, h(N.Button, { name: "Display " + n }, n)); }))))')
+    body = {
+        'Header': tab,
+        'LeftRail': rail,
+        'Section': rail,
+        'RightRail': 'h(N.RightRail)',
+        'Footer': 'h(N.Footer, { help: "Help", power: "ConfirmPower" })',
+        'Center': 'h(N.Center, { group: "Sources" })',
+    }
+    return {n: ('h("div", { style: { transform: "scale(' + str(scale) + ')", transformOrigin: "0 0", width: "'
+                + str(s[0]) + 'px", margin: "16px" } }, h(N.Page, { name: "Main", splash: "true" }, ' + e + '))')
+            for n, e in body.items()}
 
 
 def cover(p):
@@ -1415,10 +1826,18 @@ def index_dts(p):
     ns = p['namespace']
     states = ("string | Array<string | { name: string; fill?: string; stroke?: string; color?: string; "
               "border?: string; text?: string; look?: 'off' | 'on'; icon?: string }>")
+    regions = _region_dts(p)
+    # A region places a control by its `slot`, and a splash page says it has
+    # none: props of the systems that have regions.
+    slot = ' slot?: string;' if regions[0] else ''
+    splash = ' splash?: boolean | string;' if regions[0] else ''
+    # A source popup and a window say what they are (docs/claude-design.md section 4).
+    role = (" role?: 'source' | 'settings' | 'help' | 'confirm' | 'wait'; topic?: string; title?: string;"
+            if regions[0] else '')
     return f"""import type * as React from 'react';
 /** Colors are token names ({', '.join(c['name'] for c in p['colors'])}) or '#RRGGBB'. Sizes are points. */
 type Token = string;
-export interface PageProps {{ name: string; kind?: 'page' | 'popup' | 'modal'; group?: string; start?: boolean | string; reachedBy?: 'program'; theme?: {' | '.join(repr(t['id']) for t in themes(p))}; scheme?: {' | '.join(repr(s['id']) for s in p['schemes'])}; background?: Token; width?: number; height?: number; does?: string; panels?: string; preview?: string; children?: React.ReactNode }}
+export interface PageProps {{ name: string; kind?: 'page' | 'popup' | 'modal'; group?: string; start?: boolean | string; reachedBy?: 'program'; theme?: {' | '.join(repr(t['id']) for t in themes(p))}; scheme?: {' | '.join(repr(s['id']) for s in p['schemes'])}; background?: Token; width?: number; height?: number; does?: string; panels?: string; preview?: string;{splash}{role} children?: React.ReactNode }}
 export declare function Page(props: PageProps): React.ReactElement;
 export interface MainAreaProps {{ style?: React.CSSProperties; children?: React.ReactNode }}
 export declare function MainArea(props: MainAreaProps): React.ReactElement;
@@ -1426,23 +1845,45 @@ export interface RailProps {{ children?: React.ReactNode }}
 export declare function Rail(props: RailProps): React.ReactElement;
 export interface GroupProps {{ title: string; cap?: number | string; cell?: string; gap?: number | string; joined?: boolean | string; children?: React.ReactNode }}
 export declare function Group(props: GroupProps): React.ReactElement;
-export interface ButtonProps {{ name?: string; id?: number; variant?: {' | '.join(repr(k) for k in p['buttons'])}; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; states?: {states}; press?: string; nav?: string; does?: string; show?: string; fill?: Token; stroke?: Token; color?: Token; border?: {' | '.join(repr(k) for k in p['borders'])}; icon?: string; children?: React.ReactNode }}
+export interface ButtonProps {{ name?: string; id?: number; variant?: {' | '.join(repr(k) for k in p['buttons'])}; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; states?: {states}; press?: string; nav?: string; does?: string; show?: string; fill?: Token; stroke?: Token; color?: Token; border?: {' | '.join(repr(k) for k in p['borders'])}; icon?: string;{slot} children?: React.ReactNode }}
 export declare function Button(props: ButtonProps): React.ReactElement;
-export interface LabelProps {{ name?: string; id?: number; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; color?: Token; does?: string; children?: React.ReactNode }}
+export interface LabelProps {{ name?: string; id?: number; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; color?: Token; does?: string;{slot} children?: React.ReactNode }}
 export declare function Label(props: LabelProps): React.ReactElement;
 export interface PanelProps {{ name?: string; fill?: Token; stroke?: Token; border?: string }}
 export declare function Panel(props: PanelProps): React.ReactElement;
 export interface LineProps {{ name?: string; orientation?: 'horizontal' | 'vertical'; color?: Token; thickness?: number }}
 export declare function Line(props: LineProps): React.ReactElement;
-export interface TrackProps {{ name?: string; id?: number; orientation?: 'right' | 'left' | 'up' | 'down'; fill?: Token; border?: string; value?: number; does?: string }}
+export interface TrackProps {{ name?: string; id?: number; orientation?: 'right' | 'left' | 'up' | 'down'; fill?: Token; border?: string; value?: number; does?: string;{slot} }}
 export declare function Slider(props: TrackProps): React.ReactElement;
 export declare function Level(props: TrackProps): React.ReactElement;
-export interface ClockProps {{ name?: string; format?: 'time' | 'date' | 'datetime' | string; type?: string; size?: number; color?: Token }}
+export interface ClockProps {{ name?: string; format?: 'time' | 'date' | 'datetime' | string; type?: string; size?: number; color?: Token;{slot} }}
 export declare function Clock(props: ClockProps): React.ReactElement;
 export interface PopupRegionProps {{ name?: string; group: string }}
 export declare function PopupRegion(props: PopupRegionProps): React.ReactElement;
-declare global {{ interface Window {{ {ns}: {{ Page: typeof Page; MainArea: typeof MainArea; Rail: typeof Rail; Group: typeof Group; Button: typeof Button; Label: typeof Label; Panel: typeof Panel; Line: typeof Line; Slider: typeof Slider; Level: typeof Level; Clock: typeof Clock; PopupRegion: typeof PopupRegion }} }} }}
+{regions[0]}declare global {{ interface Window {{ {ns}: {{ Page: typeof Page; MainArea: typeof MainArea; Rail: typeof Rail; Group: typeof Group; Button: typeof Button; Label: typeof Label; Panel: typeof Panel; Line: typeof Line; Slider: typeof Slider; Level: typeof Level; Clock: typeof Clock; PopupRegion: typeof PopupRegion{regions[1]} }} }} }}
 """
+
+
+def _region_dts(p):
+    """(declarations, window members) for the region components, or two empty
+    strings for a system without them."""
+    if components(p) is COMPONENTS:
+        return '', ''
+    decls = (
+        'export interface HeaderProps { children?: React.ReactNode }\n'
+        'export declare function Header(props: HeaderProps): React.ReactElement;\n'
+        'export interface LeftRailProps { children?: React.ReactNode }\n'
+        'export declare function LeftRail(props: LeftRailProps): React.ReactElement;\n'
+        'export interface SectionProps { title?: string; children?: React.ReactNode }\n'
+        'export declare function Section(props: SectionProps): React.ReactElement;\n'
+        'export interface RightRailProps { children?: React.ReactNode }\n'
+        'export declare function RightRail(props: RightRailProps): React.ReactElement;\n'
+        'export interface FooterProps { help?: string; power?: string; children?: React.ReactNode }\n'
+        'export declare function Footer(props: FooterProps): React.ReactElement;\n'
+        'export interface CenterProps { name?: string; group?: string }\n'
+        'export declare function Center(props: CenterProps): React.ReactElement;\n')
+    members = ''.join(f'; {n}: typeof {n}' for n, _, _ in REGION_COMPONENTS)
+    return decls, members
 
 
 def readme(p):
@@ -1450,7 +1891,7 @@ def readme(p):
     w, ht = p['size']
     lay = p.get('layout') or {}
     main = lay.get('main')
-    comps = ', '.join(f'`{n}`' for n, _, _ in COMPONENTS if n not in ('Page', 'MainArea'))
+    comps = ', '.join(f'`{n}`' for n, _, _ in components(p) if n not in ('Page', 'MainArea'))
     type_line = ', '.join(f"`{s['name']}` {s['pt']:g}{' bold' if s['weight'] >= 600 else ''}"
                           for s in p['type'])
     border_line = ', '.join(f"`{k}` ({b['usage'].rstrip('.').lower()})" for k, b in p['borders'].items())
@@ -1484,7 +1925,7 @@ def readme(p):
 Start from what the panel has to do - the rooms, sources, calls and settings - and give every job a control.
 
 - **One artboard per page or popup.** Its root is one `{ns}.Page`, at {w}x{ht} for a page or a modal popup and {p['popup'][0]}x{p['popup'][1]} for a popup card. Name the start page's file `Main.dc.html`, as the canvas names its entry, and every other plainly (`Call.dc.html`, `Help.dc.html`); a `nav` names one by that stem (`nav="Main"`). Give each Page a `name` - what the panel calls it - and mark the start page `start="true"`.
-{_panels_readme(p)}- **Only these components are built.** Use {comps} for everything that shows, and `{ns}.MainArea` to place the main task. Flex and grid containers that paint nothing are fine for layout. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
+{_panels_readme(p)}{_regions_readme(p)}- **Only these components are built.** Use {comps} for everything that shows, and `{ns}.MainArea` to place the main task. Flex and grid containers that paint nothing are fine for layout. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
 - **Say what every control does.** A button that shows another page or popup has `nav` - the target artboard's file stem - and becomes a working link in Play; on the panel the program shows it, as the control map tells the programmer to. Anything else it does goes in `does`, a plain sentence for the programmer: "Routes the laptop to the display." Labels the program rewrites, sliders and levels get a `does` too.
 - **Give feedback with `states`.** A button's `states` are what the program switches it between, in order: `"Off, On"`, or `No Signal / Ready / Live` with each its own look. Every state must look different. `press` is the state shown while it is held.
 - **Popups.** A standard popup (`kind="popup"`, with a `group`) appears where a page has a `PopupRegion` for that group. A modal popup (`kind="modal"`) shows the page beneath, dimmed; put its card inside as a `Panel` and its buttons on the card, with a Close: `nav` back to the page that opens it, or, where more than one page opens it, no `nav` and `does="Closes this popup."` - the program hides it and the page beneath shows again. Help, a confirmation, and a set of controls opened from a page - lighting, audio, camera select, presets - are modals, as {p['template']}'s own templates draw them; a page flip is for a mode of the room, such as a call or one source's controls. Whether an action asks for confirmation at all is the designer's choice, not a rule.
@@ -1493,7 +1934,7 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 
 {layout_md}{_panels_section(p)}{themes_md}## Visual foundations
 
-- **Color.** Use the tokens by name, each for what its note says. {p['examples']['color_rule']} Extron caps a project at **six colors** (Design Standards p.49), captions included: pick six and keep to them.
+- **Color.** Use the tokens by name, each for what its note says. {p['examples']['color_rule']} Extron caps a project at **six colors** (Design Standards p.49), captions included. The tokens here are the template's own palette and do not count against the six; any color you add by hex does, so keep to the tokens.
 - **Type** is {p['font']['family']}. Sizes are points, drawn at {p['pt']} px per point as GUI Designer draws them: {type_line}. Nothing under 14 pt.
 - **Shapes** come from the template's border resources only: {border_line}. The panel cannot draw any other corner, a gradient, a shadow or transparency effects.
 - **Size and spacing** follow the panel's physical size: every button and slider at least {p['touch']} px each way (9 mm on a {p['model']}), at least {p['spacing']} px between touchable controls (2 mm), no more than nine buttons in one group, and place things on GUI Designer's 10 px nudge. {t}'s usual button is {p['defaults']['button']['height']} px tall.
@@ -1514,6 +1955,21 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 
 The components are `window.{ns}` - `{ns}.Page`, `{ns}.Button` and the rest - each mounted with `<x-import component-from-global-scope="{ns}.Button">`. Install the system on the canvas, then load in each artboard's `<head>`, after the `support.js` line, `components/bundle.css` and then `components/bundle.js` from the installed copy (`ds/<folder>/components/`). Each component's props, with an example, are in `components/<Name>/README.md`. The type is {p['font']['family']}, from Google Fonts: `<link rel="stylesheet" href="{p['font']['google']}">` in each artboard's `<helmet>`.
 """
+
+
+def _regions_readme(p):
+    """The README's line on the region frame, for a system that has it."""
+    if components(p) is COMPONENTS:
+        return ''
+    ns, t = p['namespace'], p['template']
+    return (f"- **A working page names its regions.** Put `{ns}.Header` (the source tabs, `slot=\"source\"`), "
+            f"`{ns}.LeftRail` (titled `{ns}.Section`s), `{ns}.RightRail` (volume), `{ns}.Footer` (mode, date and "
+            f"time, Help and Power) and `{ns}.Center` (the popup region the sources fill) directly on the Page, "
+            f"with no positions: each is drawn where {t}'s own working page draws it, on every panel from that "
+            "panel's own template; what you put in it takes the template's look unless you give it one, and what "
+            "you do not give it - Volume, Mute, the clock, Help, Power - it draws itself. A working page without "
+            "one of them is named on the canvas; a Start page says "
+            "`splash=\"true\"`. Each component's README says what goes in it.\n")
 
 
 def _example(p):

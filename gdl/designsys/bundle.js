@@ -140,6 +140,14 @@
     });
     return JSON.stringify(o);
   }
+  // A border as this panel's own seed defines it: every project carries
+  // its own copy of the built-ins, and Build draws the panel's - Shockwave's
+  // 520s, 535s and 320 round 2D Rounded Rectangle at 10 px where its 1035
+  // does at 2 (the model row's `radii`, tests/measure_series.py seed_radii).
+  function borderOn(L, name) {
+    var b = P.borders[name], r = L && L.panel && L.panel.radii;
+    return b && r && r[name] != null ? Object.assign({}, b, { radius: r[name] }) : b;
+  }
   function radius(b, w, hgt) {
     if (!b) return '0';
     if (b.radius < 0) return '50%';
@@ -194,6 +202,10 @@
     React.Children.toArray(children).forEach(function (host) {
       if (!React.isValidElement(host)) return;
       var comp = compOf(host);
+      // A region (or a Section) written with no x-import host round it - a
+      // design system's preview card, in React - is its own element.
+      var own = typeof host.type === 'function' && KINDS.get(host.type);
+      if (!comp && own && (REGION_NAMES[own] || own === 'section')) comp = host;
       var kind = comp ? KINDS.get(comp.type) || null : (typeof host.type === 'string' ? 'box' : null);
       var st = host.props && host.props.style;
       var rect = null;
@@ -255,14 +267,16 @@
     if (it.kind === 'button') {
       var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
       var f = font(p, P.defaults.button.type, L);
-      var words_ = [textOf(p.children, p.text)];
+      var words_ = [captionOf(V, p)];
       (list(p.states) || []).forEach(function (s) { if (s && s.text) words_.push(s.text); });
       var img = imageOf(V, p, words_[0]);
       // As drawn: an indented caption carries the spaces that clear its icon.
       var wide = Math.max.apply(null, words_.map(function (t) {
         return textWidth(img && img.caption === 'indent' ? placed(img, t) : t, f.css);
       }));
-      var lines = img && img.caption === 'below' && words_[0] ? (img.breaks || 2) + 1 : 1;
+      var lines = img && img.caption === 'below' && words_[0]
+        ? (belowBreaks(img) ? belowBreaks(img) + 1 : words_[0].split(/\r?\n/).length)
+        : V.lines && words_[0] ? words_[0].split(/\r?\n/).length : 1;
       var tall = words_[0] ? lines * lineHeight(f.size) + 4 : 0;
       // The widest border a look of it strokes (edge(): a stroke on a border
       // with thickness), which its box holds inside it.
@@ -480,9 +494,9 @@
     // Where each control came out, and each Panel's slot, for holds() below.
     var out = [], cards = [];
     items.forEach(function (it, i) {
-      if (!it.rect || it.kind === 'mainarea' || it.kind === 'rail') {
-        els.push(it.kind === 'mainarea' || it.kind === 'rail'
-          ? React.cloneElement(it.host, { key: 'f' + i, style: { display: 'contents' } }) : it.host);
+      var own = it.kind === 'mainarea' || it.kind === 'rail' || REGION_NAMES[it.kind];
+      if (!it.rect || own) {
+        els.push(own ? React.cloneElement(it.host, { key: 'f' + i, style: { display: 'contents' } }) : it.host);
         return;
       }
       var c = cut;
@@ -605,9 +619,9 @@
     var cards = [], flow = [];
     items.forEach(function (it, i) {
       it.i = i;
-      if (!it.rect || it.kind === 'mainarea' || it.kind === 'rail') {
-        els.push(it.kind === 'mainarea' || it.kind === 'rail'
-          ? React.cloneElement(it.host, { key: 'f' + i, style: { display: 'contents' } }) : it.host);
+      var own = it.kind === 'mainarea' || it.kind === 'rail' || REGION_NAMES[it.kind];
+      if (!it.rect || own) {
+        els.push(own ? React.cloneElement(it.host, { key: 'f' + i, style: { display: 'contents' } }) : it.host);
       } else if (it.kind === 'box') {
         probs.push('a plain container in ' + where + ' cannot reflow on a ' + T.model + ' - use a Group');
       } else if (it.kind === 'panel') {
@@ -933,7 +947,12 @@
     var scheme = schemeId(props.scheme || theme.scheme);
     var colors = schemeColors(scheme);
     var listed = words(props.panels);
-    var asked = listed.length || props.preview || forcedPanel();
+    // A region page draws from a panel's frame: listing none, the system's own.
+    // So does a source popup and a window, and a `role` is checked there - with
+    // none listed, a source popup came out at the system's popup size with no
+    // title, and a window with no band, title or Close.
+    var asked = listed.length || props.preview || forcedPanel() || regionsIn(props.children).length
+      || barFrames() && (props.role != null && String(props.role) !== '' || framedRole(props, kind));
     if (asked) {
       var designModel = listed[0] || P.model;
       var model = forcedPanel() || props.preview || designModel;
@@ -994,7 +1013,32 @@
     var dw = Number(props.width) || (full ? D.size[0] : P.popup[0]);
     var dh = Number(props.height) || (full ? D.size[1] : P.popup[1]);
     var tw = T.size[0], th = T.size[1];
-    if (!full) {
+    // A source popup or a window, where the template draws its bars as
+    // controls (framedPart): drawn in the template's own well or window. A
+    // role it does not take is named: designers leave out the Close, the
+    // title and the well a role draws, and a typo drew a window with no way
+    // out.
+    var role = String(props.role || '').toLowerCase(), part = null;
+    var framed = barFrames() && framedRole(props, kind);
+    if (barFrames() && role && !framed) {
+      problems.push((props.name || 'Page') + "'s role=\"" + props.role + '" is not one a kind="' + kind + '" takes - '
+                    + 'say role="source" on a kind="popup", or role="settings", "help", "confirm" or "wait" on a '
+                    + 'kind="modal"');
+    }
+    if (framed) {
+      part = framedPart(props, role, kind, D, T, props.name || 'Page');
+      if (part.problem) {
+        problems.push(part.problem);
+        part = null;
+      } else if (part.dsize) {
+        // A source popup is its own panel's popup region, the 725's from the
+        // 725's template - drawn at the drawn panel's.
+        dw = part.dsize[0]; dh = part.dsize[1];
+      }
+    }
+    if (part && part.size) {
+      tw = part.size[0]; th = part.size[1];
+    } else if (!full) {
       // A popup shows in a region of the main area, so it scales as that does.
       var sm = fit(D.main, T.main).s;
       tw = Math.round(dw * sm); th = Math.round(dh * sm);
@@ -1005,6 +1049,44 @@
     // or popup cannot page as popups: a popup is shown only from a page.
     var L = { scheme: scheme, colors: colors, aware: true, panel: T, design: D, model: model,
               designModel: designModel, tier: T.tier, k: fit([0, 0, dw, dh], [0, 0, tw, th]).s, within: kind };
+    // A region page: its regions draw from this panel's own series' frame.
+    // One missing a region the template always draws is named, never
+    // refused (the owner's call, 2026-10-22); a splash page needs none.
+    var regs = regionsIn(props.children), warnings = [], pname = props.name || 'Page';
+    // A popup in the Center's group (Sources, its default) with no role
+    // scales with main (above), where the Center is each panel's own region:
+    // on another panel it can come out larger than the region it shows in -
+    // Mach's 720 drew a 564x311 Doc Cam in its 554x324 region.
+    var CF = barFrames() && kind === 'popup' && !role ? frameFor(T) : null;
+    if (CF && String(props.group || '').toLowerCase() === 'sources'
+        && (tw > CF.center.region[2] || th > CF.center.region[3])) {
+      warnings.push(pname + ' comes out ' + tw + 'x' + th + ' on a ' + model + ', larger than the '
+                    + CF.center.region[2] + 'x' + CF.center.region[3] + ' popup region its group shows in - say '
+                    + 'role="source" and it is that region on every panel');
+    }
+    if (regs.length) {
+      var F = kind === 'page' ? frameFor(T) : null;
+      // A hub draws the same regions in its own grammar (planHub).
+      var HF = kind === 'page' && !F ? hubFor(T) : null;
+      if (kind !== 'page') {
+        L.regionRefused = true;
+        problems.push(pname + ' is a ' + kind + ' and holds a ' + REGION_NAMES[regs[0].kind]
+                      + " - the regions are a working page's");
+      } else if (!F && !HF) {
+        L.regionRefused = true;
+        problems.push(pname + ' uses the region frame, which the ' + model + ' does not draw yet');
+      } else {
+        L.region = F ? { F: F } : { F: HF, hub: true };
+        if (!truthy(props.splash)) {
+          REGION_ORDER.forEach(function (k) {
+            if (!regs.some(function (it) { return it.kind === k; })) {
+              warnings.push(pname + ' has no ' + REGION_NAMES[k] + ' - the ' + P.template
+                            + ' working page always draws one');
+            }
+          });
+        }
+      }
+    }
     // A page's own children go through both panels' bands where the template
     // draws its bars as controls (`layout.bars`: Mach, Shockwave, Turbulence),
     // on a panel other than the one drawn - there they stay as drawn.
@@ -1061,18 +1143,54 @@
     // A bar theme's page on the 320: under a title strip, over as many pages
     // as its rows need (overPages).
     var over = kind === 'page' && T.tier === 'C' && model !== designModel && P.layout.bars === 'controls' && T.main;
-    var out = over ? overPages(itemsOf(props.children, [dw, dh]), D, T, L, props.name || 'Page')
-                   : layout(itemsOf(props.children, [dw, dh]), [0, 0, dw, dh], [0, 0, tw, th], L, props.name || 'the page',
-                            cut);
+    var kids = itemsOf(props.children, [dw, dh]);
+    var out = part ? framedLayout(kids, part, L)
+      : over ? overPages(kids, D, T, L, props.name || 'Page')
+      : layout(kids, [0, 0, dw, dh], [0, 0, tw, th], L, props.name || 'the page', cut);
     L.k = out.k;
     problems = problems.concat(out.problems);
+    if (part) {
+      // The template's chrome over the page and under what was put in it.
+      var drawn = part.chrome(L, kids.length > 0);
+      // What was put in it clear of the title the template draws at its top:
+      // laid out in Turbulence's whole region, a Doc Cam's headings ran into
+      // the title of an empty source, 40 px lower than one with controls.
+      var tr = drawn.title ? [drawn.title[0] + 1, drawn.title[1] + 1, drawn.title[2] - 2, drawn.title[3] - 2] : null;
+      (tr && out.placed || []).forEach(function (q) {
+        if (overlaps(q.r, tr)) {
+          warnings.push(nameOf(q.it) + ' stands under ' + pname + "'s title on a " + model + ' - keep what is put in '
+                        + (role === 'source' ? 'a source popup' : 'a window') + ' clear of the title its template '
+                        + 'draws at its top');
+        }
+      });
+      out = { els: drawn.els.concat(out.els), problems: [], k: out.k };
+      problems = problems.concat(drawn.problems);
+    }
+    var left = [];
+    if (L.region && L.region.hub) {
+      var hub = planHub(regs, L, pname);
+      out = { els: out.els.concat(hub.els), problems: [], k: out.k };
+      problems = problems.concat(hub.probs);
+      warnings = warnings.concat(hub.warns);
+      left = hub.left;
+    } else if (L.region) {
+      var planned = planRegions(regs, L, pname);
+      L.region.plans = planned.plans;
+      L.region.count = planned.count;
+      problems = problems.concat(planned.probs);
+    }
     var bgArt = kind === 'page' ? (T.backgrounds || {})[theme.id] || null : null;
     var image = bgArt && P.backdrops ? P.backdrops[T.series + '|' + theme.id] : null;
-    var bg = kind === 'modal' ? null : props.background || P.defaults.page.background;
+    // A hub draws a settings window as a popup of main's group (`part.popup`):
+    // its own fill where the template gives it one (Mach's #303030).
+    var asPopup = part && part.popup, shownKind = asPopup ? 'popup' : kind;
+    // A source popup has no fill of its own: the page shows through, as through the template's own.
+    var bg = shownKind === 'modal' ? null : asPopup ? props.background || asPopup.background || 'none'
+      : props.background || (part && role === 'source' ? 'none' : P.defaults.page.background);
     var style = {
       position: 'relative', boxSizing: 'border-box', overflow: 'hidden',
       width: tw + 'px', height: th + 'px',
-      background: kind === 'modal'
+      background: shownKind === 'modal'
         ? 'linear-gradient(' + paint(colors, 'scrim') + ', ' + paint(colors, 'scrim') + '), '
           + paint(colors, P.defaults.page.background)
         : (image ? 'url("' + image + '") 0 0 / 100% 100% no-repeat, ' : '') + paint(colors, bg),
@@ -1085,19 +1203,25 @@
     L.pageLook = { background: bg, theme: theme.id, scheme: scheme,
                    background_image: bgArt ? bgArt.image : null, background_file: bgArt ? bgArt.file : null };
     var data = gdl({
-      kind: kind === 'page' ? 'page' : 'popup', modal: kind === 'modal' || null,
-      name: props.name, group: props.group, start: truthy(props.start) || null,
+      kind: kind === 'page' ? 'page' : 'popup', modal: shownKind === 'modal' || null,
+      name: props.name, group: asPopup ? asPopup.group : props.group || (part && role === 'source' ? 'Sources' : null),
+      start: truthy(props.start) || null, left: left.length ? left : null,
+      // A hub's source popup or settings popup (hubPart): shown from the
+      // Select a Source a region page derives, and in its group.
+      hub: part && part.hub || null, main_group: asPopup && asPopup.main || null,
       reached_by: props.reachedBy, background: bg, scheme: scheme, theme: theme.id,
       background_image: bgArt ? bgArt.image : null, background_file: bgArt ? bgArt.file : null,
       template: P.template, size: [tw, th], does: props.does,
-      panel: model, panels: listed.length ? listed : [designModel], tier: T.tier, seed: T.seed,
+      panel: model, panels: listed.length ? listed
+        : (regs.length || barFrames() && (role || framed)) && !props.preview && !forcedPanel() ? null : [designModel],
+      tier: T.tier, seed: T.seed,
       borders: T.borders && Object.keys(T.borders).length ? T.borders : null,
       derived: true
     });
     return h(Ctx.Provider, { value: L },
       h('div', { 'data-gdl': data, 'data-theme': theme.id, 'data-panel': model, className: 'xgdl-page',
-                 style: outlined(style, problems) },
-        out.els, problems.map(problem)));
+                 style: outlined(style, problems.concat(warnings)) },
+        out.els, problems.map(problem), warnings.map(warning)));
   }
 
   // -- MainArea: the template's own main region, for layout -----------------
@@ -1242,6 +1366,1765 @@
       at += a + gap;
     });
     return { els: els, problems: probs, k: k };
+  }
+
+  // -- Regions: a working page in the template's own grammar ----------------
+  // (docs/superpowers/specs/2026-10-22-region-frame-design.md.) Header,
+  // LeftRail (holding Sections), RightRail, Footer and Center paint nothing
+  // and carry no data-gdl, as MainArea and Rail do. A Page holding any of
+  // them is a region page, and on each panel each region takes its band from
+  // that panel's own series' measured frame (P.frames, once per series) - the
+  // 725's from the 725's template, not the 1035's scaled - and places what it
+  // holds by meaning: a source at the template's tab, a Section at its rail
+  // group, Volume, Help and Power where its own are. What the template draws
+  // and the designer does not override - its bars' surfaces, the Volume
+  // heading, slider and Mute, the clock, Help and Power - the region draws
+  // itself as components, so the translator sees every one (a painting
+  // wrapper is refused as stray), and what it holds takes the template's
+  // look where the designer gives none (the profile's `regions`). A slot
+  // under the panel's touch minimum or type floor grows as needs() says and
+  // keeps to its band.
+  // The page plans its regions together (planRegions), once its own layout
+  // has set the scale its type is drawn at: a seam between two regions'
+  // controls is the page's to keep, not either region's (openSeams).
+  // Hubs (the 520s and 535s) and the 320s draw their working page in another
+  // grammar - a right menu bar and popups in main; a page per source - and a
+  // turned panel's frame turns the header into a left band: a region page is
+  // refused there by name until they are drawn.
+  var FRAMES = P.frames || {};
+  var RD = P.regions || {};
+  var REGION_NAMES = { header: 'Header', leftrail: 'LeftRail', rightrail: 'RightRail', footer: 'Footer',
+                       center: 'Center' };
+  var REGION_ORDER = ['header', 'leftrail', 'rightrail', 'footer', 'center'];
+  function regionsIn(children) {
+    return itemsOf(children).filter(function (it) { return REGION_NAMES[it.kind]; });
+  }
+  // Whether this system draws a working page from its series' frames: a
+  // theme whose bars are controls (Afterburn's are its art).
+  function barFrames() {
+    return P.layout.bars === 'controls' && Object.keys(FRAMES).length > 0;
+  }
+  function frameFor(T) {
+    var F = FRAMES[T.series];
+    if (!F || T.turned || T.tier === 'C') return null;
+    return F.top && F.left && F.right && F.bottom && F.center ? F : null;
+  }
+  function warning(msg, key) {
+    return h('i', { key: 'warning-' + key, 'data-gdl-warning': msg, style: { display: 'none' } });
+  }
+  // A measured #RRGGBBAA as the template's token of that color, if it has one.
+  function hex8(v) {
+    v = String(v || '').toUpperCase();
+    return /^#[0-9A-F]{6}$/.test(v) ? v + 'FF' : v;
+  }
+  function tokenOf(colors, v) {
+    if (!v) return null;
+    var want = hex8(v), names = Object.keys(colors);
+    for (var i = 0; i < names.length; i++) if (hex8(colors[names[i]]) === want) return names[i];
+    return null;
+  }
+  function borderOf(resource) {
+    var names = Object.keys(P.borders);
+    for (var i = 0; i < names.length; i++) if (resource && P.borders[names[i]].resource === resource) return names[i];
+    return 'none';
+  }
+  function sameRect(a, b) { return a && b && a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]; }
+  // A region's sets are named apart from anything a designer titles:
+  // gdl.spec passes over two touch targets with one `joined`, so a Section
+  // called Header must not join the tabs.
+  function setName(region, n) { return 'region:' + region + (n != null ? ':' + n : ''); }
+  // `r` grown to `need`, the extra on the side that is free: an edge on a
+  // seam (`seams`: low and high on x, then on y) stays where it is - Help
+  // grows away from Power, keeping the template's 1 px between them - and an
+  // edge on neither grows about the middle, as models()' legal rect does.
+  // Inside `band` where it holds the size, else on the screen: Build moves a
+  // control that crosses its page's edge.
+  function settle(r, need, band, size, seams) {
+    var out = r.slice();
+    [0, 1].forEach(function (a) {
+      var n = Math.ceil(Math.max(r[a + 2], need[a])), extra = n - r[a + 2];
+      if (extra <= 0) return;
+      var lo = seams[2 * a], hi = seams[2 * a + 1];
+      var at = hi && !lo ? r[a] - extra : lo && !hi ? r[a] : r[a] - Math.floor(extra / 2);
+      at = n <= band[a + 2] ? Math.min(Math.max(at, band[a]), band[a] + band[a + 2] - n)
+                            : Math.min(Math.max(at, 0), size[a] - n);
+      out[a] = at; out[a + 2] = n;
+    });
+    return out;
+  }
+  // Which of `r`'s edges meet another of its set (within 2 px) or its band's.
+  function seamsOf(r, band, mates) {
+    var s = [false, false, false, false];
+    [0, 1].forEach(function (a) {
+      var b = 1 - a;
+      if (Math.abs(r[a] - band[a]) <= 1) s[2 * a] = true;
+      if (Math.abs(r[a] + r[a + 2] - band[a] - band[a + 2]) <= 1) s[2 * a + 1] = true;
+      mates.forEach(function (m) {
+        if (m === r || m[b] >= r[b] + r[b + 2] || r[b] >= m[b] + m[b + 2]) return;
+        if (Math.abs(m[a] + m[a + 2] - r[a]) <= 2) s[2 * a] = true;
+        if (Math.abs(r[a] + r[a + 2] - m[a]) <= 2) s[2 * a + 1] = true;
+      });
+    });
+    return s;
+  }
+  function overlaps(a, b) {
+    return a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] + b[3] && b[1] < a[1] + a[3];
+  }
+  function nameOf(it) {
+    var p = it.props || {};
+    return p.name || textOf(p.children, p.text) || it.kind || 'a child';
+  }
+  function slotName(s) { return s.props.name || s.role || s.kind; }
+  // Props the region gives a control unless the designer set them.
+  function unset(props, dflt) {
+    var o = {};
+    Object.keys(dflt || {}).forEach(function (k) {
+      if (dflt[k] != null && (props || {})[k] == null) o[k] = dflt[k];
+    });
+    return o;
+  }
+  // A designer's control at `r`, with what the region adds.
+  function hostAt(it, r, key, extra) {
+    var comp = it.comp ? React.cloneElement(it.comp, extra || {}) : null;
+    // One with no x-import host round it (a preview card's) takes a box.
+    if (it.comp && it.host === it.comp) return h('div', { key: key, style: cell(r) }, comp);
+    return comp ? React.cloneElement(it.host, { key: key, style: cell(r) }, comp)
+                : React.cloneElement(it.host, { key: key, style: cell(r) });
+  }
+  // One the region draws itself, in a box that paints nothing.
+  function drawnAt(type, props, r, key) {
+    return h('div', { key: key, style: cell(r) }, h(type, props));
+  }
+  // What a control needs on this panel; a region's buttons fill their cell,
+  // so need only their own padding round the caption.
+  function needOf(kind, props, L) {
+    return needs({ kind: kind, props: props }, L, true);
+  }
+  function isTouch(kind) { return kind === 'button' || kind === 'slider'; }
+  // An indented caption centred on kit art whose icon stands at its left
+  // (Mach's 1376x440 tab art): the leading spaces that start the caption 4
+  // px clear of the icon in a `w` x `ht` cell, and the least width from `w`
+  // up at which they and the caption fit, 4 px in from its right. The 4 px
+  // also covers the caption measured before the canvas's Open Sans loads
+  // (in Arial, 5% narrower).
+  // `kit.icon_right` is how far across its art a kit size's icons reach
+  // (Mach's: 319 of 1376, the pc glyph). At the 725's 16 pt type floor four
+  // spaces in a 152 px tab ran Streaming into its glyph; the template's own
+  // tabs take five at their smaller type. Null for any other caption.
+  function indentFit(p, w, ht, L) {
+    var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
+    var caption = textOf(p.children, p.text);
+    var img = imageOf(V, Object.assign({}, p, { __indent: null }), caption);
+    var reach = img && img.caption === 'indent' && KIT && KIT.icon_right ? KIT.icon_right[img.kit] : null;
+    if (!reach || !caption || (p.align || V.align || 'left') !== 'center') return null;
+    var dims = String(img.kit).split('x').map(Number), f = font(p, P.defaults.button.type, L);
+    var tc = textWidth(caption, f.css), sp = textWidth('          ', f.css) / 10, base = img.indent || 0;
+    function spaces(W) {
+      var s = Math.min(W / dims[0], ht / dims[1]), aw = dims[0] * s;
+      var icon = (W - aw) / 2 + reach * aw;
+      // Centred, the caption starts at (W - tc + n sp) / 2.
+      return Math.max(base, Math.ceil((2 * (icon + 4) - W + tc) / sp));
+    }
+    for (var W = Math.ceil(w); W < w + 400; W++) {
+      if (tc + spaces(W) * sp + 8 <= W) return { n: spaces(W), w: W };
+    }
+    return { n: spaces(w), w: Math.ceil(w) };
+  }
+  // A region's set of slots, each grown to what it holds needs, the set's
+  // seams kept. `slots`: [{ r, kind, props, need }]. A set stays one size:
+  // every touchable member grows to the most any of them (and `least`)
+  // needs, so the template's uniform row or column does not come out
+  // ragged - Mach 720's Lighting alone came out 92 wide among 80s. A stack
+  // along `axis` (0 a row of tabs, 1 a rail group) keeps its first slot's
+  // start and stands each after the one before it by the template's seam,
+  // so one grown along the stack moves the rest on rather than into them:
+  // the 835's 67 px touch minimum takes Mach's 60 px rail buttons, 61 apart,
+  // to 68 apart. Shockwave's own Settings launchers overlap by 6 px,
+  // transparent art over each other; at no seam they come out touching. Two
+  // grown into each other across the stack, or a set with no axis, is
+  // named: the template's places do not hold them on this panel.
+  function settleSet(slots, band, L, where, axis, least) {
+    var mates = slots.map(function (s) { return s.r; }), probs = [];
+    var size = L.panel.size, most = (least || [0, 0]).slice();
+    slots.forEach(function (s) {
+      if (!s.need) s.need = needOf(s.kind, s.props, L);
+      if (s.touch) most = [Math.max(most[0], s.need[0]), Math.max(most[1], s.need[1])];
+    });
+    slots.forEach(function (s) {
+      if (s.touch) s.need = [Math.max(s.need[0], most[0]), Math.max(s.need[1], most[1])];
+      s.at = settle(s.r, s.need, band, size, seamsOf(s.r, band, mates));
+    });
+    if (axis === 0 || axis === 1) {
+      var a = axis;
+      slots.slice().sort(function (p, q) { return p.r[a] - q.r[a]; }).forEach(function (s, i, order) {
+        var start = s.r[a];
+        if (i) {
+          var prev = order[i - 1], seam = Math.max(0, s.r[a] - (prev.r[a] + prev.r[a + 2]));
+          start = Math.max(start, prev.at[a] + prev.at[a + 2] + seam);
+        }
+        s.at[a] = start;
+      });
+    }
+    for (var i = 0; i < slots.length; i++) {
+      for (var j = i + 1; j < slots.length; j++) {
+        if (overlaps(slots[i].at, slots[j].at)) {
+          probs.push(where + "'s " + slotName(slots[i]) + ' and ' + slotName(slots[j]) + ' need more room than the '
+                     + L.model + "'s template gives them - shorten their captions");
+        }
+      }
+    }
+    return probs;
+  }
+  // The template's surfaces in a band, as Panels named for the region.
+  // `fit(s, i)` gives each its rect and name on this panel. Art the system
+  // cannot draw (Turbulence's bars) stands as its one measured colour - the
+  // profile's `regions.bar` - until an image kind is added.
+  function surfacesOf(L, list, region, fit) {
+    var els = [], seen = {};
+    (list || []).forEach(function (s, i) {
+      var r = fit ? fit(s, i) : { rect: s.rect.slice(), name: null };
+      if (!r || r.rect[2] <= 0 || r.rect[3] <= 0) return;
+      var fill = tokenOf(L.colors, s.fill) || (s.art && RD.bar) || P.defaults.panel.fill;
+      var name = r.name || region + ' Bar';
+      seen[name] = (seen[name] || 0) + 1;
+      if (seen[name] > 1) name += ' ' + seen[name];
+      els.push(drawnAt(Panel, { name: name, fill: fill, border: borderOf(s.border), stroke: 'none', derived: true },
+                       r.rect, region + 's' + i));
+    });
+    return els;
+  }
+  // A surface kept to what the controls by it became. One that holds a
+  // control (Shockwave's capsule round Room Mode and Help, a rail's art
+  // round its buttons) grows to hold it as it grew. One a control stands
+  // beside across the band, 2 px or less off its edge (Mach's footer strip
+  // between Room Mode and Help, 1 px each side), keeps that seam to it as it
+  // grew or gave way, and is as deep as it: the 725's Room Mode and Help grew
+  // to 60 px and over a 57 px strip, a darker block of doubled shade standing
+  // proud of it, where the template draws one flat band.
+  function fitTo(slots) {
+    return function (s) {
+      var t = s.rect, r = t.slice();
+      slots.forEach(function (c) {
+        if (!c.touch || !c.at) return;
+        var a = c.r, at = c.at;
+        if (a[0] >= t[0] - 2 && a[1] >= t[1] - 2 && a[0] + a[2] <= t[0] + t[2] + 2 && a[1] + a[3] <= t[1] + t[3] + 2) {
+          var x0 = Math.min(r[0], at[0]), y0 = Math.min(r[1], at[1]);
+          r = [x0, y0, Math.max(r[0] + r[2], at[0] + at[2]) - x0, Math.max(r[1] + r[3], at[1] + at[3]) - y0];
+          return;
+        }
+        if (Math.min(a[1] + a[3], t[1] + t[3]) - Math.max(a[1], t[1]) <= 0) return;
+        var before = t[0] - (a[0] + a[2]), after = a[0] - (t[0] + t[2]);
+        if (before >= 0 && before <= 2) {
+          var right = r[0] + r[2];
+          r[0] = at[0] + at[2] + before; r[2] = right - r[0];
+        } else if (after >= 0 && after <= 2) {
+          r[2] = at[0] - after - r[0];
+        } else {
+          return;
+        }
+        var top = Math.min(r[1], at[1]), bottom = Math.max(r[1] + r[3], at[1] + at[3]);
+        r[1] = top; r[3] = bottom - top;
+      });
+      return { rect: r, name: null };
+    };
+  }
+  function regionBox(name, els, probs) {
+    return h('div', { className: 'xgdl-region xgdl-' + name.toLowerCase(), style: { display: 'contents' } },
+             els, (probs || []).map(problem));
+  }
+  // A region with no frame to draw from: on a page refused for its panel it
+  // draws nothing (the page names why); anywhere else it is named.
+  function noFrame(name, L) {
+    if (L && L.regionRefused) return null;
+    return regionBox(name, [], [name + ' is a region of a working page - put it directly on a Page']);
+  }
+  function slotOf(it) { return String((it.props || {}).slot || ''); }
+  function propsOf(it) { return (it.comp ? it.comp.props : it.props) || {}; }
+
+  // Each region's plan: its touchable `slots` - each with `r` the template's
+  // rect, `at` where it stands on this panel, `need` the least it can be
+  // there, `set` its joined set or null - and `render`, which draws it from
+  // where they came out once the page has opened its seams.
+  function planHeader(props, L) {
+    var F = L.region.F.top, band = F.rect, TB = F.tabs, look = (TB && TB.look) || {};
+    var items = itemsOf(props.children), probs = [];
+    var tabs = [], starts = [], ends = [];
+    items.forEach(function (it) {
+      var s = slotOf(it);
+      if (s === 'source') tabs.push(it);
+      else if (s === 'start') starts.push(it);
+      else if (s === 'end') ends.push(it);
+      else probs.push(nameOf(it) + ' in the Header has no slot - say slot="source" for a tab, "start" or "end"');
+    });
+    if (tabs.length && !(TB && TB.items && TB.items.length)) {
+      probs.push('the ' + L.model + "'s template draws no tabs in its header");
+      tabs = [];
+    }
+    // The template's tabs in order: its own places for as many as it draws,
+    // then on at its step.
+    var first = TB && TB.items ? TB.items : [];
+    function tabRect(i) {
+      if (i < first.length) return first[i].rect.slice();
+      var last = first[first.length - 1].rect;
+      return [last[0] + (i - first.length + 1) * TB.pitch, last[1], last[2], last[3]];
+    }
+    var offT = tokenOf(L.colors, look.off && look.off.fill), onT = tokenOf(L.colors, look.on && look.on.fill);
+    var set = setName('header');
+    var slots = tabs.map(function (it, i) {
+      var p = it.props || {}, d = Object.assign({}, RD.tab || {});
+      var V = P.buttons[p.variant || d.variant] || P.buttons[P.defaults.button.variant];
+      // The template's look where the button draws one of its own (not a
+      // kit image, which has its own), unless the designer gave it one.
+      if (!V.kit) {
+        if (offT) d.fill = offT;
+        if (look.off && !look.off.border) d.border = 'none';
+        // Named as its variant names them (Off, On): on a hub the same
+        // control is a Select a Source tile in the hub's own look, and the ID
+        // map numbers a control's states once for every panel.
+        if (onT && onT !== offT) d.states = [{ name: 'Off' }, { name: 'On', fill: onT }];
+      }
+      var extra = Object.assign(unset(p, d), { joined: set });
+      var s = { r: tabRect(i), kind: it.kind, props: Object.assign({}, p, extra), it: it, extra: extra, set: set,
+                touch: isTouch(it.kind), role: 'tab' };
+      s.need = needOf(s.kind, s.props, L);
+      var fit = indentFit(s.props, Math.max(s.r[2], s.need[0]), Math.max(s.r[3], s.need[1]), L);
+      if (fit) s.need[0] = Math.max(s.need[0], fit.w);
+      return s;
+    });
+    probs = probs.concat(settleSet(slots, band, L, 'the Header', 0));
+    // Each caption clears its icon at the width its tab came out.
+    slots.forEach(function (s) {
+      var fit = indentFit(s.props, s.at[2], s.at[3], L);
+      if (fit) s.extra.__indent = s.props.__indent = fit.n;
+    });
+    var lastAt = slots.length ? slots[slots.length - 1].at : null;
+    if (lastAt && lastAt[0] + lastAt[2] > band[0] + band[2]) {
+      probs.push('the Header holds ' + slots.length + ' tabs, more than the ' + L.model + "'s holds across");
+    }
+    // At the bar's ends, each at its own size (or what it needs), in order
+    // from that end, the panel's gap between them.
+    var others = [];
+    function along(list, fromRight) {
+      var x = fromRight ? band[0] + band[2] : band[0];
+      (fromRight ? list.slice().reverse() : list).forEach(function (it, j) {
+        var need = needOf(it.kind, it.props || {}, L);
+        var w = Math.max(it.rect ? it.rect[2] * L.k : 0, need[0], it.kind === 'button' ? L.panel.touch : 0);
+        var ht = Math.min(Math.max(it.rect ? it.rect[3] * L.k : band[3], need[1]), Math.max(band[3], need[1]));
+        if (fromRight) x -= w;
+        var r = [x, Math.max(0, band[1] + (band[3] - ht) / 2), w, ht];
+        if (slots.some(function (s) { return overlaps(r, s.at); })) {
+          probs.push(nameOf(it) + ' at the Header\'s ' + (fromRight ? 'end' : 'start') + ' runs into its tabs on a '
+                     + L.model);
+        }
+        others.push({ r: r, at: r.slice(), kind: it.kind, props: it.props || {}, it: it, set: null, need: need,
+                      touch: isTouch(it.kind), key: (fromRight ? 'end' : 'start') + j });
+        x = fromRight ? x - L.panel.gap : x + w + L.panel.gap;
+      });
+    }
+    along(starts, false);
+    along(ends, true);
+    return { slots: slots.concat(others), render: function () {
+      var lastAt = slots.length ? slots[slots.length - 1].at : null;
+      var tlast = first.length ? first[first.length - 1].rect : null;
+      // The bar is one band: as deep as its tabs came out. At the 725's
+      // type floor Shockwave's caption two breaks under its glyph needs 85
+      // px of its 75 px tab, and the tabs hung below the bar.
+      var top = Math.min.apply(null, slots.map(function (s) { return s.at[1]; }));
+      var foot = Math.max.apply(null, slots.map(function (s) { return s.at[1] + s.at[3]; }));
+      // The bar's own surfaces; the one after the template's last tab starts
+      // after this page's, so fewer tabs close the bar up and more take from it.
+      var els = surfacesOf(L, F.surfaces, 'Header', function (s) {
+        var r = s.rect.slice();
+        var name = (F.start || []).some(function (x) { return sameRect(x.rect, s.rect); }) ? 'Header Left'
+          : (F.end || []).some(function (x) { return sameRect(x.rect, s.rect); }) ? 'Header Right' : null;
+        if (lastAt && tlast && r[0] >= tlast[0] + tlast[2]) {
+          var right = r[0] + r[2];
+          r[0] = lastAt[0] + lastAt[2] + 1; r[2] = right - r[0];
+        }
+        if (slots.length && r[1] < foot && top < r[1] + r[3]) {
+          var y0 = Math.min(r[1], top);
+          r[3] = Math.max(r[1] + r[3], foot) - y0; r[1] = y0;
+        }
+        return { rect: r, name: name };
+      });
+      slots.forEach(function (s, i) { els.push(hostAt(s.it, s.at, 'tab' + i, s.extra)); });
+      others.forEach(function (s) { els.push(hostAt(s.it, s.at, s.key)); });
+      return regionBox('Header', els, probs);
+    } };
+  }
+
+  function planLeftRail(props, L) {
+    var F = L.region.F.left, band = F.rect, probs = [], secs = [];
+    itemsOf(props.children).forEach(function (it) {
+      if (it.kind === 'section') secs.push(it);
+      else probs.push(nameOf(it) + ' in the LeftRail is not in a Section - put the rail\'s controls in titled Sections');
+    });
+    var groups = F.groups || [], heads = [], sets = [];
+    secs.forEach(function (sec, gi) {
+      var G = groups[gi], sp = propsOf(sec);
+      if (!G || !G.buttons || !G.buttons.length) {
+        probs.push('the LeftRail holds ' + secs.length + ' Sections; the ' + L.model + "'s template draws "
+                   + groups.length);
+        return;
+      }
+      var title = sp.title || null, set = setName('left', gi), shown = title || 'Left Rail ' + (gi + 1);
+      // The heading where the template draws one over this group: Shockwave's
+      // and Turbulence's second group has none, and its title only names it.
+      if (title && G.heading) {
+        var hp = Object.assign({ name: title + ' Heading', text: title }, RD.heading || {});
+        heads.push({ props: hp, at: settle(G.heading.rect, needOf('label', hp, L), band, L.panel.size,
+                                           [false, false, false, false]), key: 'lh' + gi });
+      }
+      // The template's look for the group: its first is the display's
+      // (`rail`), the rest launch settings (`launcher`).
+      var d = gi ? RD.launcher || RD.rail : RD.rail;
+      var members = itemsOf(sp.children);
+      var pitch = G.pitch || G.buttons[0].rect[3] + 1;
+      var slots = members.map(function (it, j) {
+        var r = j < G.buttons.length ? G.buttons[j].rect.slice()
+          : (function (last) { return [last[0], last[1] + (j - G.buttons.length + 1) * pitch, last[2], last[3]]; })(
+            G.buttons[G.buttons.length - 1].rect);
+        var touch = it.kind === 'button';
+        var extra = touch ? Object.assign(unset(it.props, d), { joined: set }) : {};
+        var s = { r: r, kind: it.kind, props: Object.assign({}, it.props || {}, extra), it: it, extra: extra,
+                  set: touch ? set : null, touch: touch, key: 'l' + gi + '-' + j };
+        s.need = needOf(s.kind, s.props, L);
+        return s;
+      });
+      sets.push({ G: G, slots: slots, shown: shown });
+    });
+    // A column is one width: groups the template draws as wide (Mach's,
+    // Shockwave's) take the widest any of them needs. Turbulence's rings
+    // and docks are two widths, and keep their own.
+    sets.forEach(function (a) {
+      var w = 0;
+      sets.forEach(function (b) {
+        if (Math.abs(b.G.buttons[0].rect[2] - a.G.buttons[0].rect[2]) > 1) return;
+        b.slots.forEach(function (s) { if (s.touch) w = Math.max(w, s.need[0]); });
+      });
+      probs = probs.concat(settleSet(a.slots, band, L, 'the ' + a.shown + ' Section', 1, [w, 0]));
+      a.slots.forEach(function (s) {
+        if (s.at[1] + s.at[3] > band[1] + band[3]) {
+          probs.push(slotName(s) + ' runs past the foot of the ' + L.model + "'s left rail - the " + a.shown
+                     + ' Section holds ' + a.slots.length + ', more than the template has room for');
+        }
+      });
+    });
+    var all = [].concat.apply([], sets.map(function (a) { return a.slots; }));
+    return { slots: all, render: function () {
+      var els = surfacesOf(L, F.surfaces, 'Left Rail', fitTo(all));
+      heads.forEach(function (x) { els.push(drawnAt(Label, x.props, x.at, x.key)); });
+      all.forEach(function (s) {
+        els.push(s.it.comp ? hostAt(s.it, s.at, s.key, s.extra)
+                           : React.cloneElement(s.it.host, { key: s.key, style: cell(s.at) }));
+      });
+      return regionBox('LeftRail', els, probs);
+    } };
+  }
+  // Drawn by its LeftRail; on its own, named.
+  function Section(props) {
+    var L = useLook();
+    return regionBox('Section', [], [(props.title || 'A Section') + ' is a Section, which goes in a LeftRail']
+      .filter(function () { return !(L && L.regionRefused); }));
+  }
+
+  // The roles a right rail or a footer draws by default, and how.
+  function chrome(role, item, L, nav) {
+    var ids = item.id != null ? { id: item.id } : {};
+    if (role === 'heading') return [Label, Object.assign({ name: (item.text || 'Volume') + ' Heading', text: item.text || 'Volume' }, RD.heading || {}, ids)];
+    if (role === 'volume') return [Slider, Object.assign({ name: 'Volume' }, RD.volume || {}, ids)];
+    if (role === 'mute') return [Button, Object.assign({ name: 'Volume Mute', text: 'Mute' }, RD.mute || {}, ids)];
+    if (role === 'help') return [Button, Object.assign({ name: 'Help', text: 'Help' }, RD.help || {}, ids, nav ? { nav: nav } : {})];
+    if (role === 'power') return [Button, Object.assign({ name: 'Power' }, RD.power || {}, ids, nav ? { nav: nav } : {})];
+    if (role === 'clock') return [Clock, Object.assign({ name: 'Date Time' }, RD.clock || {})];
+    return null;
+  }
+  var KIND_OF = { heading: 'label', volume: 'slider', mute: 'button', help: 'button', power: 'button', clock: 'clock' };
+  // The template's look for a designer's own control in a role's slot,
+  // where the designer gives none: Audio Control is a launcher.
+  function roleLook(role) {
+    return role === 'audio' ? RD.launcher || RD.rail : RD[role];
+  }
+  // Lay out a band's roles: the designer's child in a slot wins; else the
+  // template's own where it is drawn by default. `cells`: [{ item, band }];
+  // `setOf(cell)`: the joined set a touchable cell is one of, or null.
+  function roles(cells, over, L, navs, setOf, where) {
+    var probs = [], slots = [];
+    cells.forEach(function (c, i) {
+      var role = c.item.role, it = over[role], def = it ? null : chrome(role, c.item, L, navs[role]);
+      if (!it && !def) return;
+      var kind = it ? it.kind : KIND_OF[role], touch = isTouch(kind), set = touch ? setOf(c) : null;
+      var extra = Object.assign(it ? unset(it.props, roleLook(role)) : {}, set ? { joined: set } : {});
+      var props = Object.assign({}, it ? it.props || {} : def[1], extra);
+      slots.push({ r: c.item.rect.slice(), band: c.band, kind: kind, props: props, it: it, def: def, extra: extra,
+                   role: role, i: i, touch: touch, set: set, need: needOf(kind, props, L) });
+    });
+    // A set's members grow away from each other's seams: Help from Power.
+    slots.forEach(function (s) {
+      var mates = slots.filter(function (m) { return s.set && m.set === s.set; }).map(function (m) { return m.r; });
+      s.at = settle(s.r, s.need, s.band, L.panel.size, seamsOf(s.r, s.band, mates));
+    });
+    for (var i = 0; i < slots.length; i++) {
+      for (var j = i + 1; j < slots.length; j++) {
+        if (slots[i].touch && slots[j].touch && overlaps(slots[i].at, slots[j].at)) {
+          probs.push(where + "'s " + slotName(slots[i]) + ' and ' + slotName(slots[j])
+                     + ' need more room than the ' + L.model + "'s template gives them");
+        }
+      }
+    }
+    // The clock gives way on its side to a control grown into it, so its
+    // words do not run into it.
+    slots.forEach(function (s) {
+      if (s.kind !== 'clock') return;
+      slots.forEach(function (t) {
+        if (!t.touch || !overlaps(s.at, t.at)) return;
+        if (t.at[0] + t.at[2] / 2 < s.at[0] + s.at[2] / 2) {
+          var right = s.at[0] + s.at[2];
+          s.at = [Math.min(right, t.at[0] + t.at[2] + L.panel.gap), s.at[1], 0, s.at[3]];
+          s.at[2] = right - s.at[0];
+        } else {
+          s.at = [s.at[0], s.at[1], Math.max(0, t.at[0] - L.panel.gap - s.at[0]), s.at[3]];
+        }
+      });
+    });
+    return { slots: slots, probs: probs, els: function () {
+      var els = [];
+      slots.forEach(function (s) {
+        var key = where + s.role + s.i;
+        if (s.it) {
+          els.push(hostAt(s.it, s.at, key, s.extra));
+        } else if (s.role === 'volume' && L.panel.kinds && L.panel.kinds.slider === false) {
+          // A seed with no slider: a level with Up and Down, as Extron's own
+          // hubs and 320s draw volume (asLevel).
+          var lv = asLevel({ props: s.def[1], rect: s.r }, s.at, 'column', L.panel, key,
+                           [s.band[0], s.band[0] + s.band[2]], null, null);
+          els = els.concat(lv.els, lv.problems.map(function (q, n) { return problem(q, key + n); }));
+        } else {
+          els.push(drawnAt(s.def[0], s.props, s.at, key));
+        }
+      });
+      return els;
+    } };
+  }
+  // A region's children by slot. One whose slot the region draws on
+  // another panel but not this one (Shockwave's Audio Control: in the 1035's
+  // right rail, in the 725's left) is named as that.
+  function slotted(children, allowed, where, band, L) {
+    var over = {}, probs = [], known = {};
+    // The slots a designer can fill: a bar series' own. A hub's menu bar
+    // adds the openers its layout derives (settings, Display Control, Up and
+    // Down), which no designer's control fills - read as places a template
+    // draws, slot="settings" was told to list the panels that draw one.
+    Object.keys(FRAMES).forEach(function (series) {
+      if (FRAMES[series].hub) return;
+      ((FRAMES[series][band] || {}).items || []).forEach(function (x) { known[x.role] = true; });
+    });
+    itemsOf(children).forEach(function (it) {
+      var s = slotOf(it);
+      if (allowed.indexOf(s) >= 0) over[s] = it;
+      else if (s && known[s] && KIND_OF[s] == null) {
+        probs.push(nameOf(it) + ' takes the ' + where + "'s " + s + ' place, which the ' + L.model
+                   + "'s template does not draw - list the panels whose template draws one");
+      } else {
+        probs.push(nameOf(it) + ' in the ' + where + ' has no slot it draws - say slot="' + allowed.join('", "') + '"');
+      }
+    });
+    return { over: over, probs: probs };
+  }
+
+  function planRightRail(props, L) {
+    var F = L.region.F.right;
+    // Power and Help are the Footer's, wherever the template stands them.
+    var cells = (F.items || []).filter(function (x) { return x.role !== 'power' && x.role !== 'help'; })
+      .map(function (x) { return { item: x, band: F.rect }; });
+    var allowed = cells.map(function (c) { return c.item.role; });
+    var sl = slotted(props.children, allowed, 'RightRail', 'right', L);
+    // Audio Control and the like are drawn only when given.
+    cells = cells.filter(function (c) { return KIND_OF[c.item.role] || sl.over[c.item.role]; });
+    // The volume - heading, slider and Mute - is the right rail's group: one
+    // set, as a left rail group is (owner's call 2), its controls as near as
+    // the template stands them (Shockwave 725's Mute flush under the slider).
+    var out = roles(cells, sl.over, L, {}, function (c) {
+      return ['heading', 'volume', 'mute'].indexOf(c.item.role) >= 0 ? setName('right') : null;
+    }, 'the RightRail');
+    return { slots: out.slots, render: function () {
+      return regionBox('RightRail', surfacesOf(L, F.surfaces, 'Right Rail', fitTo(out.slots)).concat(out.els()),
+                       sl.probs.concat(out.probs));
+    } };
+  }
+
+  // The footer's sets: the touchable cells the template stands together,
+  // 2 px or less apart and side by side - Mach's Help and Power (1 px),
+  // Turbulence's Help and Room Mode (2 px). Each other cell, Shockwave's
+  // among them, is in none and keeps the panel's gap.
+  function meetingSets(cells, touchy, region) {
+    var parent = cells.map(function (_, i) { return i; });
+    function root(i) { while (parent[i] !== i) i = parent[i]; return i; }
+    cells.forEach(function (a, i) {
+      cells.forEach(function (b, j) {
+        if (j <= i || !touchy(a) || !touchy(b)) return;
+        var p = a.item.rect, q = b.item.rect;
+        var gx = Math.max(q[0] - (p[0] + p[2]), p[0] - (q[0] + q[2]));
+        var gy = Math.max(q[1] - (p[1] + p[3]), p[1] - (q[1] + q[3]));
+        if ((gx >= 0 && gx <= 2 && gy < 0) || (gy >= 0 && gy <= 2 && gx < 0)) parent[root(j)] = root(i);
+      });
+    });
+    var size = {};
+    cells.forEach(function (_, i) { size[root(i)] = (size[root(i)] || 0) + 1; });
+    return function (c) {
+      var r = root(cells.indexOf(c));
+      return size[r] > 1 ? setName(region, r) : null;
+    };
+  }
+
+  function planFooter(props, L) {
+    var R = L.region, F = R.F.bottom;
+    var cells = (F.items || []).map(function (x) { return { item: x, band: F.rect }; });
+    (R.F.right.items || []).forEach(function (x) {
+      if (x.role === 'power' || x.role === 'help') cells.push({ item: x, band: R.F.right.rect });
+    });
+    var sl = slotted(props.children, cells.map(function (c) { return c.item.role; }), 'Footer', 'bottom', L);
+    // The mode launcher is the room's own: drawn only when given.
+    cells = cells.filter(function (c) { return c.item.role !== 'mode' || sl.over.mode; });
+    var sets = meetingSets(cells, function (c) {
+      var it = sl.over[c.item.role];
+      return isTouch(it ? it.kind : c.item.role === 'mode' ? 'button' : KIND_OF[c.item.role]);
+    }, 'footer');
+    var out = roles(cells, sl.over, L, { help: props.help, power: props.power }, sets, 'the Footer');
+    return { slots: out.slots, render: function () {
+      return regionBox('Footer', surfacesOf(L, F.surfaces, 'Footer', fitTo(out.slots)).concat(out.els()),
+                       sl.probs.concat(out.probs));
+    } };
+  }
+
+  function planCenter(props, L) {
+    var R = L.region;
+    var probs = itemsOf(props.children).map(function (it) {
+      return nameOf(it) + ' in the Center: it is the popup region its sources fill - put a source\'s controls in '
+        + 'its popup';
+    });
+    // On every panel the template's own region, which a source popup
+    // (role="source") is sized to there - a popup is its reference's size
+    // (Standards p.70). What the template draws on the page round it - not
+    // in a source's popup - is its surfaces: Shockwave's translucent well.
+    var C = R.F.center, r = C.region.slice();
+    return { slots: [], render: function () {
+      var wells = (C.surfaces || []).filter(function (s) { return !s.popup && s.kind === 'shape'; });
+      var els = chromePanels(L, wells, 'Center Well', 'cw');
+      els.push(drawnAt(PopupRegion, { name: props.name || 'Controls', group: props.group || 'Sources' }, r, 'center'));
+      return regionBox('Center', els, probs);
+    } };
+  }
+
+  var PLANS = { header: planHeader, leftrail: planLeftRail, rightrail: planRightRail, footer: planFooter,
+                center: planCenter };
+  // Two touch targets of different sets nearer than the panel's 2 mm gap
+  // (gdl.spec's spacing rule; owner's call 2: unrelated controls keep it).
+  // The template's own seams between its regions are under it on Shockwave
+  // and Turbulence - Turbulence's last rail launcher 1 px from its footer's
+  // Help, Shockwave 725's Mute 10 px over Power and its last launcher 8 px
+  // from Room Mode - so each opens to the gap. Each side gives what it can
+  // spare above its own need, the side whose giving way moves fewer
+  // controls first - a set's edge moves for every member on it, so a column
+  // stays one width: Turbulence's Help gives way, not its two launchers,
+  // and comes out 12 px in, as the profile's own Layout says - else the two
+  // alike. What the two cannot spare between them is named, as is a
+  // control grown into another region's.
+  function openSeams(plans, L) {
+    var all = [], gap = L.panel.gap, probs = [];
+    REGION_ORDER.forEach(function (k) {
+      ((plans[k] || {}).slots || []).forEach(function (s) {
+        if (s.touch && s.at) { s.region = k; all.push(s); }
+      });
+    });
+    function apart(a, b, ax) {
+      return Math.max(b.at[ax] - (a.at[ax] + a.at[ax + 2]), a.at[ax] - (b.at[ax] + b.at[ax + 2]));
+    }
+    // The pair's axis and gap where they are neighbours under the gap: side
+    // by side on one axis, apart by less on the other.
+    function near(a, b) {
+      if (a.set && a.set === b.set) return null;
+      var gx = apart(a, b, 0), gy = apart(a, b, 1);
+      var ax = gx < 0 && gy >= 0 ? 1 : gy < 0 && gx >= 0 ? 0 : -1;
+      if (ax < 0) return null;
+      var g = ax ? gy : gx;
+      return g < gap ? { ax: ax, g: g } : null;
+    }
+    // `s` and the members of its set whose edge on that side is where its is.
+    function side(s, ax, hi) {
+      function edge(m) { return hi ? m.at[ax] + m.at[ax + 2] : m.at[ax]; }
+      return all.filter(function (m) {
+        return m === s || s.set && m.set === s.set && Math.abs(edge(m) - edge(s)) <= 1;
+      });
+    }
+    function spare(ms, ax) {
+      return Math.max(0, ms.reduce(function (least, m) {
+        return Math.min(least, Math.floor(m.at[ax + 2] - m.need[ax]));
+      }, Infinity));
+    }
+    function give(ms, ax, hi, d) {
+      ms.forEach(function (m) { m.at[ax + 2] -= d; if (!hi) m.at[ax] += d; });
+    }
+    for (var i = 0; i < all.length; i++) {
+      for (var j = i + 1; j < all.length; j++) {
+        var n = near(all[i], all[j]);
+        if (!n) continue;
+        var ax = n.ax, lo = all[i].at[ax] < all[j].at[ax] ? all[i] : all[j], hi = lo === all[i] ? all[j] : all[i];
+        var lm = side(lo, ax, true), hm = side(hi, ax, false);
+        var ls = spare(lm, ax), hs = spare(hm, ax), want = gap - n.g, dl, dh;
+        if (ls + hs < want) continue;
+        if (lm.length < hm.length) { dl = Math.min(ls, want); dh = want - dl; }
+        else if (hm.length < lm.length) { dh = Math.min(hs, want); dl = want - dh; }
+        else { dl = Math.min(ls, Math.ceil(want / 2)); dh = Math.min(hs, want - dl); dl = want - dh; }
+        give(lm, ax, true, dl);
+        give(hm, ax, false, dh);
+      }
+    }
+    for (i = 0; i < all.length; i++) {
+      for (j = i + 1; j < all.length; j++) {
+        var a = all[i], b = all[j], m = near(a, b);
+        if (m) {
+          probs.push(slotName(a) + ' and ' + slotName(b) + ' stand ' + m.g + ' px apart on a ' + L.model
+                     + ", under its 2 mm (" + gap + ' px), and neither can give way - the template\'s places do not '
+                     + 'hold them there');
+        } else if (a.region !== b.region && !(a.set && a.set === b.set) && overlaps(a.at, b.at)) {
+          probs.push(slotName(a) + ' and ' + slotName(b) + ' run into each other on a ' + L.model
+                     + ' - the template\'s places do not hold them there');
+        }
+      }
+    }
+    return probs;
+  }
+  // The page's regions planned together: each its own, then the seams
+  // between them opened. A second of one region is named, and draws nothing.
+  function planRegions(regs, L, pname) {
+    var plans = {}, count = {}, probs = [];
+    regs.forEach(function (it) {
+      count[it.kind] = (count[it.kind] || 0) + 1;
+      if (count[it.kind] === 2) {
+        probs.push(pname + ' holds more than one ' + REGION_NAMES[it.kind] + ' - a working page has one of each');
+      }
+      if (plans[it.kind]) return;
+      var props = propsOf(it);
+      plans[it.kind] = PLANS[it.kind](props, L);
+      plans[it.kind].props = props;
+    });
+    return { plans: plans, count: count, probs: probs.concat(openSeams(plans, L)) };
+  }
+  function drawRegion(kind, props) {
+    var L = React.useContext(Ctx), R = L && L.region;
+    if (!R) return noFrame(REGION_NAMES[kind], L);
+    // A hub's page draws its regions together, in its own grammar (planHub).
+    if (R.hub) return null;
+    var plan = R.plans && R.plans[kind];
+    if (plan && plan.props !== props && R.count[kind] > 1) return null;
+    return (plan || PLANS[kind](props, L)).render();
+  }
+  function Header(props) { return drawRegion('header', props); }
+  function LeftRail(props) { return drawRegion('leftrail', props); }
+  function RightRail(props) { return drawRegion('rightrail', props); }
+  function Footer(props) { return drawRegion('footer', props); }
+  function Center(props) { return drawRegion('center', props); }
+
+  // -- The center and the windows -------------------------------------------
+  // (docs/superpowers/specs/2026-10-22-region-frame-design.md.) A popup with
+  // role="source" is a source's controls, shown in the working page's Center:
+  // on each panel it is that panel's own popup region - the 725's from the
+  // 725's template - and draws the template's chrome for it from the frame
+  // (P.frames' center) and the profile: Mach's framed shade well, titled at
+  // its left; Shockwave's 40 pt title (its well is the page's, a Center
+  // surface); Turbulence's large centred title, with room left at the top
+  // left for the device picture it pins there, which the system has no image
+  // to draw. With nothing in it, it says the template's empty state in the
+  // template's own words (P.writing). A modal with a role - settings, help,
+  // confirm, wait - or with a title and no role is a window, drawn as the
+  // template draws its windows (P.frames' windows): Mach's #303030 band
+  // between the bars, Shockwave's #999999 card, Turbulence's navy one, each
+  // with its title and Close, or its question and buttons, or its wait. What
+  // they draw is derived - in the ID map, with IDs of its own - and Close and
+  // Cancel go back to the page that opened the window, which is the
+  // program's to know: they carry what they do, not a `nav`. What they say is
+  // set at the size that panel's own template sets it (the frame's `pt`), not
+  // the drawn panel's scaled: the 725 titles its sources 20 pt to the 1035's
+  // 24, and scaled they came out 18, no larger than the 16 pt Close.
+  var WD = P.writing || {};
+  var CLOSE_DOES = 'Closes the window - back to the page that opened it.';
+  var WINDOW_ROLES = { settings: true, help: true, confirm: true, wait: true };
+  // Whether a Page is a source popup or a window: role="source" on a popup;
+  // a window's role, or a title and no role, on a modal.
+  function framedRole(props, kind) {
+    var role = String(props.role || '').toLowerCase();
+    return !!(kind === 'popup' && role === 'source'
+              || kind === 'modal' && (WINDOW_ROLES[role] || !role && props.title != null && String(props.title) !== ''));
+  }
+  // A measured fill as the template's token: exactly, else the token of its
+  // colour - Turbulence draws its Lighting window opaque and its others at
+  // alpha 212 (`raised`).
+  function tokenNear(colors, v) {
+    var t = tokenOf(colors, v);
+    if (t || !v) return t;
+    var want = hex8(v).slice(0, 7), names = Object.keys(colors);
+    for (var i = 0; i < names.length; i++) if (hex8(colors[names[i]]).slice(0, 7) === want) return names[i];
+    return null;
+  }
+  // The template's words with the source's name in them: `{name}` as it is
+  // titled, `{noun}` in a sentence's case - Shockwave's 'Please connect your
+  // laptop.', 'your PC.'
+  function said(tpl, name) {
+    var noun = String(name).split(' ').map(function (w) {
+      return w.length > 1 && w.slice(1) === w.slice(1).toLowerCase() ? w.toLowerCase() : w;
+    }).join(' ');
+    return String(tpl).replace(/\{name\}/g, name).replace(/\{noun\}/g, noun);
+  }
+  function inRegion(F, r) {
+    var g = F.center.region;
+    return r ? [r[0] - g[0], r[1] - g[1], r[2], r[3]] : null;
+  }
+  // A source popup's parts on a panel, in the popup's own coordinates: its
+  // title - where the template titles a source with controls (Turbulence's
+  // Doc Cam at the popup's top, its empty Laptop 40 px lower) and one with
+  // none - the shapes its popup draws (Mach's title bar and well body), the
+  // box its controls are laid out in - the well's body where the template
+  // draws one, else the whole region (Shockwave's and Turbulence's keys and
+  // headings reach up beside their titles) - its empty state and status,
+  // and the sizes it sets them in.
+  function sourceParts(F) {
+    var c = F.center, g = c.region;
+    var title = inRegion(F, c.title);
+    var shapes = (c.surfaces || []).filter(function (s) { return s.popup && s.kind === 'shape'; })
+      .map(function (s) { return { s: s, r: inRegion(F, s.rect) }; });
+    var bar = title ? shapes.filter(function (x) { return overlaps(x.r, title); })[0] || null : null;
+    var wells = shapes.filter(function (x) { return x !== bar; });
+    return { size: [g[2], g[3]], title: title, titleControls: inRegion(F, c.title_controls) || title,
+             shapes: shapes, bar: bar, body: wells.length ? wells[0].r.slice() : [0, 0, g[2], g[3]],
+             empty: c.empty ? inRegion(F, c.empty) : [0, 0, g[2], g[3]], status: inRegion(F, c.status),
+             pt: c.pt || {} };
+  }
+  // The window a modal draws on a panel: its role's record, or for a
+  // settings window the one drawn for a window of its name (Shockwave's
+  // Audio Control is wider than its Lighting Control). One named for none
+  // is drawn alike on every panel: the one here that draws most of the
+  // windows the drawn panel's (`from`) draws, else the template's commonest
+  // settings window - titled, with a Close, drawn as shapes, drawing the
+  // most windows. The first measured on Mach's 725 is its Share Content, a
+  // translucent shade over a photo with no title, where its 1035's is the
+  // titled #303030 band.
+  function windowOf(F, role, label, from) {
+    var W = F.windows || {};
+    if (role === 'confirm' || role === 'wait') return W[role] || null;
+    var help = W.help ? Object.assign({}, W.help, { popups: ['Help'], help: true }) : null;
+    if (role === 'help') return help;
+    var first = String(label || '').split(/\s+/)[0].toLowerCase();
+    var named = (W.settings || []).concat(help ? [help] : []).filter(function (r) {
+      return (r.popups || []).some(function (q) { return String(q).split(/\s+/)[0].toLowerCase() === first; });
+    })[0];
+    if (named) return named;
+    var plain = (W.settings || []).filter(function (r) {
+      return r.title && r.close && (r.surfaces || []).length
+        && r.surfaces.every(function (s) { return s.kind === 'shape'; });
+    });
+    function shared(r) {
+      return from ? (r.popups || []).filter(function (q) { return (from.popups || []).indexOf(q) >= 0; }).length : 0;
+    }
+    var best = null;
+    (plain.length ? plain : W.settings || []).forEach(function (r) {
+      var a = shared(r), b = best ? shared(best) : -1;
+      if (a > b || a === b && (r.popups || []).length > (best.popups || []).length) best = r;
+    });
+    return best || help;
+  }
+  // A derived button at the template's rect `r`, grown in `band` to what it
+  // needs on this panel. A look that draws no caption (Shockwave's and
+  // Turbulence's kit Close) is given none: sized for the word it never
+  // draws, Shockwave's 1035 Close came out 57 wide and no longer square for
+  // its X.
+  function chromeButton(L, name, look, caption, does, r, band, key) {
+    var p = Object.assign({ name: name, derived: true }, look || {});
+    var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
+    var img = imageOf(V, p, caption);
+    if (p.text == null && caption != null && !(img && img.caption === 'none')) p.text = caption;
+    if (does) p.does = does;
+    var at = settle(r, needOf('button', p, L), band, L.panel.size, [false, false, false, false]);
+    return drawnAt(Button, p, at, key);
+  }
+  // A derived label at `r`, at `pt` - this panel's own template's size,
+  // never under its floor - where one is measured, else its look's scaled
+  // with the layout (ptOn).
+  function chromeLabel(L, look, name, text, r, key, pt) {
+    var p = Object.assign({}, look || {}, { name: name, text: text, derived: true });
+    if (pt == null) return drawnAt(Label, p, r, key);
+    p.size = pt;
+    return h(Ctx.Provider, { key: key, value: Object.assign({}, L, { k: 1 }) },
+             h('div', { style: cell(r) }, h(Label, p)));
+  }
+  function chromePanels(L, list, name, key) {
+    var n = 0;
+    return (list || []).filter(function (s) { return s.kind === 'shape'; }).map(function (s, i) {
+      n += 1;
+      return drawnAt(Panel, { name: name + (n > 1 ? ' ' + n : ''), fill: tokenNear(L.colors, s.fill) || P.defaults.panel.fill,
+                              border: borderOf(s.border), stroke: 'none', derived: true }, s.r || s.rect, key + i);
+    });
+  }
+  // A message's box: the template's, unless the words take more lines in it
+  // than the template sets them in (`lines`, measured in the template's own
+  // face). The system draws Open Sans, a little wider than the Light most
+  // templates set their messages in, and in Turbulence's 505 px the 1035's
+  // power-down question broke on its last word, where the template's is one
+  // line. Then it widens about its middle, inside the window less the
+  // panel's gap each side. The words are measured 6% wide, for a canvas
+  // measuring them before its Open Sans loads (Arial is 5% narrower).
+  function messageBox(L, look, text, r, win, lines, pt) {
+    if (!lines || !win) return r;
+    var f = font(Object.assign({}, look || {}, { size: pt != null ? pt : (look || {}).size }), P.defaults.label.type,
+                 Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+    if (wrapWords(text, f.css, r[2] / 1.06).length <= lines) return r;
+    var gap = L.panel.gap || 0, w = Math.max(r[2], win[2] - 2 * gap);
+    // Where even that cannot hold them so - the 725 sets Turbulence's Help
+    // at 14 pt, under its 16 pt floor - the template's box.
+    if (wrapWords(text, f.css, w / 1.06).length > lines) return r;
+    var x = Math.min(Math.max(r[0] + (r[2] - w) / 2, win[0] + gap), win[0] + win[2] - gap - w);
+    return [Math.round(x), r[1], Math.round(w), r[3]];
+  }
+  // A source popup or a window on this panel: what it is drawn in (`T`, in
+  // the page's coordinates) and from (`D`, the drawn panel's), its size, and
+  // its chrome - or why the panel does not draw it.
+  function framedPart(props, role, kind, D, T, name) {
+    var FD = frameFor(D), FT = frameFor(T), HT = FT ? null : hubFor(T), what = role === 'source' ? 'a source popup'
+      : 'a ' + (role || 'settings') + ' window';
+    if (!FT && !HT || !FD) {
+      return { problem: name + ' is ' + what + ', which the ' + (FT || HT ? D.model : T.model) + ' does not draw yet' };
+    }
+    var given = props.title != null && String(props.title) !== '';
+    // Help with no title says the template's own: Shockwave's and
+    // Turbulence's HELP.
+    var title = given ? String(props.title) : role === 'help' && WD.help_title || name;
+    if (HT && (role === 'source' || !WINDOW_ROLES[role] || role === 'settings')) {
+      return hubPart(role, FD, HT, name, title, D.model, props.group);
+    }
+    if (HT) FT = HT;
+    if (role === 'source') {
+      var SD = sourceParts(FD), ST = sourceParts(FT);
+      return { D: SD.body, T: ST.body, dsize: SD.size, size: ST.size, looks: RD.source || {},
+               chrome: function (L, content) {
+                 var RS = RD.source || {}, els = [], pt = ST.pt;
+                 // Mach's title bar, then its well's body 1 px under it.
+                 els = els.concat(chromePanels(L, ST.bar ? [{ kind: 'shape', fill: ST.bar.s.fill, border: ST.bar.s.border,
+                                                              r: ST.bar.r }] : [], name + ' Title Bar', 'bar'));
+                 els = els.concat(chromePanels(L, ST.shapes.filter(function (x) { return x !== ST.bar; }).map(function (x) {
+                   return { kind: 'shape', fill: x.s.fill, border: x.s.border, r: x.r };
+                 }), name + ' Well', 'well'));
+                 var at = content ? ST.titleControls : ST.title;
+                 if (at) els.push(chromeLabel(L, RS.title, name + ' Title', title, at, 'title', pt.title));
+                 if (!content && WD.empty) {
+                   var e = ST.empty, s = ST.status;
+                   if (WD.status) {
+                     // Shockwave's: the request in the box's upper half, as
+                     // its 1035 and 725 draw it, over the status the program
+                     // sets where the template stands it - else centred at
+                     // the box's foot, 30% of it each way.
+                     var sw = Math.round(e[2] * 0.3), sh = Math.round(e[3] * 0.3);
+                     s = s || [e[0] + Math.round((e[2] - sw) / 2), e[1] + e[3] - sh, sw, sh];
+                     els.push(chromeLabel(L, RS.empty, name + ' Empty', said(WD.empty, title),
+                                          [e[0], e[1], e[2], Math.round(e[3] / 2)], 'empty', pt.empty));
+                     els.push(chromeLabel(L, RS.status || RS.empty, name + ' Status', WD.status, s, 'status',
+                                          pt.status != null ? pt.status : pt.empty));
+                   } else {
+                     els.push(chromeLabel(L, RS.empty, name + ' Empty', said(WD.empty, title), e, 'empty', pt.empty));
+                   }
+                 }
+                 return { els: els, problems: [], title: at || null };
+               } };
+    }
+    var rd = windowOf(FD, role, title), rt = windowOf(FT, role, title, rd);
+    // Mach's hubs draw no window: Help, the question and the wait stand on
+    // the scrim, over the whole screen.
+    if (HT && rt && !rt.rect) rt = Object.assign({}, rt, { rect: [0, 0, T.size[0], T.size[1]] });
+    if (!rd || !rt || !rd.rect || !rt.rect) {
+      return { problem: name + ' is ' + what + ', which the ' + (rt && rt.rect ? D.model : T.model)
+                        + "'s template does not draw" };
+    }
+    // A hub's windows in its own look where it has one (`regions.hub.window`):
+    // Mach's Help on the scrim centres its title and closes with the back
+    // glyph, where the 1035's titles its window from the left and writes
+    // Close; Shockwave's closes with the hub's white X, not the card's dark one.
+    var RW = Object.assign({}, RD.window || {});
+    if (HT && HD.window) {
+      Object.keys(HD.window).forEach(function (k) { RW[k] = Object.assign({}, RW[k] || {}, HD.window[k]); });
+    }
+    return { D: rd.rect, T: rt.rect, dsize: null, size: null, looks: RW,
+             chrome: function (L, content) {
+               var B = WD.buttons || {}, els = [], probs = [], pt = rt.pt || {};
+               var plain = role !== 'confirm' && role !== 'wait';
+               els = els.concat(chromePanels(L, rt.surfaces, name + ' Window', 'win'));
+               if (plain && rt.title) els.push(chromeLabel(L, RW.title, name + ' Title', title, rt.title, 'title', pt.title));
+               if (plain && rt.close) {
+                 // Where the template stands it: in the window, or - a hub's
+                 // Help - outside it, at the screen's corner (Shockwave's at
+                 // 728,10 over its card at 162,99), so it settles in the page.
+                 var cr = rt.close.rect, inWin = cr[0] >= rt.rect[0] && cr[1] >= rt.rect[1]
+                   && cr[0] + cr[2] <= rt.rect[0] + rt.rect[2] && cr[1] + cr[3] <= rt.rect[1] + rt.rect[3];
+                 els.push(chromeButton(L, name + ' Close', RW.close, B.close, CLOSE_DOES, cr,
+                                       inWin ? rt.rect : [0, 0, T.size[0], T.size[1]], 'close'));
+               }
+               var topic = String(props.topic || ''), words_ = null;
+               if (!plain) {
+                 var said_ = WD[role] || {};
+                 words_ = said_[topic];
+                 if (words_ == null) {
+                   probs.push(name + "'s topic '" + topic + "' is not one the " + P.template + ' template has words for - '
+                              + 'say topic="' + Object.keys(said_).join('" or "') + '"');
+                 }
+               } else if (rt.help && !content) {
+                 words_ = WD.help;
+               }
+               if (words_ != null && rt.message) {
+                 els.push(chromeLabel(L, RW.message, name + ' Message', words_,
+                                      messageBox(L, RW.message, words_, rt.message, rt.rect, rt.lines, pt.message),
+                                      'message', pt.message));
+               }
+               if (role === 'confirm' && words_ != null) {
+                 (rt.buttons || []).forEach(function (b, i) {
+                   var power = b.role === 'power', word = power ? B.power || 'Power Down' : B.cancel || 'Cancel';
+                   els.push(chromeButton(L, name + ' ' + word, RW[power ? 'power' : 'cancel'], word,
+                                         power ? props.does : CLOSE_DOES, b.rect, rt.rect, 'answer' + i));
+                 });
+               }
+               return { els: els, problems: probs, title: plain && rt.title || null };
+             } };
+  }
+  // A source popup or a settings window on a hub: a popup of main's group,
+  // filling main, under the hub's own header - its strip where it draws one,
+  // the title centred across it and a Close back to Select a Source, which
+  // a source's grid tile showed it from - and what it holds laid out under
+  // that, clear of the Volume Level strip. A source with nothing in it says
+  // the hub's empty state; a settings window takes the opaque ground its
+  // template gives it (Mach's #303030).
+  function hubPart(role, FD, F, name, title, drawn, group) {
+    var g = F.center.region, at = [g[0], g[1]], names = hubNames(F), c = F.center;
+    var sel = (F.select || {}).text || 'Select a Source';
+    var titleLook = Object.assign({}, (RD.source || {}).title || {}, HD.title || {});
+    var label = Object.assign({}, (RD.source || {}).label || {}, { color: (HD.label || {}).color || 'text' });
+    var does = 'Closes ' + title + ' - back to ' + sel + '.';
+    if (role === 'source') {
+      var SD = sourceParts(FD);
+      var bars = (c.surfaces || []).filter(function (x) { return x.popup && x.kind === 'shape'; });
+      return { D: SD.body, T: hubHead(F, c.title, c.close && c.close.rect, bars), dsize: SD.size, size: [g[2], g[3]], snug: true,
+               hub: 'source',
+               looks: { label: label, button: HD.button || (RD.source || {}).button },
+               chrome: function (L, content) {
+                 var RS = RD.source || {}, els = [], pt = c.pt || {};
+                 els = els.concat(hubPanels(L, bars, name + ' Title Bar', 'bar', at));
+                 var tr = content ? c.title_controls || c.title : c.title;
+                 var tat = tr ? [tr[0] - at[0], tr[1] - at[1], tr[2], tr[3]] : null;
+                 if (tat) els.push(chromeLabel(L, titleLook, name + ' Title', title, tat, 'title', pt.title));
+                 if (c.close) els.push(hubClose(L, F, name, at, c.close.rect, names.select, does));
+                 var words_ = WD.hub_empty || WD.empty;
+                 if (!content && words_ && c.empty) {
+                   els.push(chromeLabel(L, Object.assign({}, RS.empty || {}, { color: label.color }), name + ' Empty',
+                                        said(words_, title), [c.empty[0] - at[0], c.empty[1] - at[1], c.empty[2], c.empty[3]],
+                                        'empty', pt.empty));
+                 }
+                 return { els: els, problems: [], title: tat };
+               } };
+    }
+    var rec = windowOf(F, 'settings', title) || {}, rd = windowOf(FD, 'settings', title);
+    if (!rd || !rd.rect) return { problem: name + ' is a settings window, which the ' + drawn + "'s template does not draw" };
+    var O = HD.options || {};
+    return { D: rd.rect, T: hubHead(F, rec.title, rec.close && rec.close.rect, rec.surfaces), dsize: null, size: [g[2], g[3]], snug: true,
+             looks: { label: Object.assign({}, label, O.label || {}), button: O.button || (RD.window || {}).button },
+             hub: 'settings',
+             // Main's group: the designer's, else the region page's Center's,
+             // which the translator binds it to (`main_group`) - a settings
+             // window is a modal on the 1035, and names none.
+             popup: { group: group || 'Sources', main: !group, background: O.background || null },
+             chrome: function (L) {
+               var els = hubPanels(L, rec.surfaces, name + ' Header', 'head', at), pt = rec.pt || {};
+               var tat = rec.title ? [rec.title[0] - at[0], rec.title[1] - at[1], rec.title[2], rec.title[3]] : null;
+               if (tat) els.push(chromeLabel(L, Object.assign({}, titleLook, O.title || {}), name + ' Title', title, tat, 'title', pt.title));
+               if (rec.close) els.push(hubClose(L, F, name, at, rec.close.rect, names.select, does, O.close));
+               return { els: els, problems: [], title: tat };
+             } };
+  }
+  // What the designer put in a source popup or a window, laid out in its
+  // box: as drawn on the panel drawn, and on another from the drawn panel's
+  // box into this one's at one scale, centred - the 725's well from the
+  // 1035's - each in the look the template gives what stands there (white
+  // labels on Mach's well, its ghost keys) unless it sets its own. A plain
+  // container, and a child with no rect, is drawn at its own place in a
+  // layer moved by the box's origin, since the layout draws it at its CSS
+  // place in the box and that place is the page's: a flex row drawn at
+  // 420,520 in Mach's Lighting came out 64 px lower, under the band's top.
+  // `placed`: where each child with a rect comes out, in the page's
+  // coordinates, before it grows to its minimum.
+  function framedLayout(items, part, L) {
+    var Dc = part.D, Tc = part.T, looks = part.looks || {};
+    // A hub's main is about half the 1035's band (`snug`): what was put in
+    // the window or the well is mapped from the box round it, a gap clear,
+    // centred in the hub's, and scaled up no more than the hub's touch
+    // minimum is the drawn panel's. Mapped from the whole window, Mach's
+    // Audio came out at half size and its Mic heading, grown back to the
+    // 525's type floor, ran into its Mute; at the 1035's size on the 535,
+    // whose touch minimum is twice the 1035's, its Doc Cam keys grew from 60
+    // to 104 px into each other 100 px apart.
+    if (part.snug) {
+      var bb = null;
+      items.forEach(function (it) {
+        if (!it.rect || it.kind === 'mainarea' || it.kind === 'rail' || REGION_NAMES[it.kind]) return;
+        var r = it.rect;
+        bb = bb ? [Math.min(bb[0], r[0]), Math.min(bb[1], r[1]), Math.max(bb[2], r[0] + r[2]), Math.max(bb[3], r[1] + r[3])]
+                : [r[0], r[1], r[0] + r[2], r[1] + r[3]];
+      });
+      if (bb) {
+        var pad = L.panel.gap;
+        Dc = [bb[0] - pad, bb[1] - pad, bb[2] - bb[0] + 2 * pad, bb[3] - bb[1] + 2 * pad];
+        var up = Math.max(1, L.panel.touch / ((L.design && L.design.touch) || L.panel.touch));
+        var sn = Math.min(up, Tc[2] / Dc[2], Tc[3] / Dc[3]);
+        var sw = Math.round(Dc[2] * sn), sh = Math.round(Dc[3] * sn);
+        Tc = [Tc[0] + Math.round((Tc[2] - sw) / 2), Tc[1] + Math.round((Tc[3] - sh) / 2), sw, sh];
+      }
+    }
+    var f = fit([0, 0, Dc[2], Dc[3]], [0, 0, Tc[2], Tc[3]]), placed = [];
+    var moved = items.map(function (it, i) {
+      var look = it.kind === 'label' ? looks.label : it.kind === 'button' ? looks.button : null;
+      var extra = look && it.comp ? unset(it.props, look) : {};
+      var comp = it.comp && Object.keys(extra).length ? React.cloneElement(it.comp, extra) : it.comp;
+      var host = comp === it.comp ? it.host : it.host === it.comp ? comp : React.cloneElement(it.host, {}, comp);
+      var own = it.kind === 'mainarea' || it.kind === 'rail' || REGION_NAMES[it.kind];
+      if ((it.kind === 'box' || !it.rect) && !own) {
+        host = h('div', { key: 'at' + i, style: { position: 'absolute', left: -Dc[0] + 'px', top: -Dc[1] + 'px',
+                                                  width: 0, height: 0 } }, host);
+      }
+      if (it.rect) {
+        placed.push({ it: it, r: [Tc[0] + f.x + (it.rect[0] - Dc[0]) * f.s, Tc[1] + f.y + (it.rect[1] - Dc[1]) * f.s,
+                                  it.rect[2] * f.s, it.rect[3] * f.s] });
+      }
+      return Object.assign({}, it, { host: host, comp: comp, props: comp ? comp.props : it.props,
+                                     rect: it.rect ? [it.rect[0] - Dc[0], it.rect[1] - Dc[1], it.rect[2], it.rect[3]] : null });
+    });
+    var out = scaleLayout(moved, [0, 0, Dc[2], Dc[3]], L.panel, L, [0, 0, Tc[2], Tc[3]], null);
+    return { els: [h('div', { key: 'framed', style: { position: 'absolute', left: Tc[0] + 'px', top: Tc[1] + 'px',
+                                                       width: Tc[2] + 'px', height: Tc[3] + 'px' } }, out.els)],
+             problems: out.problems, k: out.k, placed: placed };
+  }
+
+  // -- Hubs: the 520s' and 535s' working page --------------------------------
+  // (docs/superpowers/specs/2026-10-22-region-frame-design.md, PR6.) A hub
+  // draws no header bar, footer or left rail: a right menu bar - Volume, Up,
+  // Down, Mute, a settings opener and Power, as its own frame measured them
+  // (P.frames, `hub`) - and one popup region filling main, in which every
+  // popup appears: a Select a Source grid first, each source's popup with
+  // its own header and a Close back to the grid, and its settings. So the
+  // same region page derives to that grammar there, from the hub's own frame,
+  // and nothing on it is dropped: the Header's source tabs are the grid's
+  // tiles, each the same control (its name, so its ID); the RightRail and
+  // the Footer's Power are the menu bar, Help the grid's header; the
+  // LeftRail's first Section is the popup the hub's Display Control opens
+  // (Shockwave's and Turbulence's from the bar, Mach's from a tile in its
+  // Settings), its later Sections' launchers, an Audio Control and the
+  // footer's mode launcher the options its settings opener shows. What the
+  // hub has no place for - the footer's clock, a Header's start and end -
+  // is named on the canvas and in the page's `left`, which the translator
+  // lets be absent there. What the layout adds - the grid's title and
+  // labels, the openers, Up and Down, every Close - is derived; Up, Down and
+  // the openers keep the hub's own seed IDs (gdl.design.pin_ids).
+  var HD = RD.hub || {};
+  function hubFor(T) {
+    var F = FRAMES[T.series];
+    return F && F.hub && !T.turned && T.tier !== 'C' ? F : null;
+  }
+  function byRole(items) {
+    var o = {};
+    (items || []).forEach(function (x) { if (!o[x.role]) o[x.role] = x; });
+    return o;
+  }
+  // The popups a hub's page derives, by the template's own names.
+  function hubNames(F) {
+    var R = byRole(F.right.items);
+    return { select: (F.select || {}).popup || 'Select Source', options: (F.options || {}).popup || 'More Options',
+             display: R.display ? R.display.name : 'Display Settings', level: 'Volume Level' };
+  }
+  // The template's token for a measured colour, else the nearest it has,
+  // alpha weighed most: Shockwave's side bar, #2B2424 at alpha 110, and
+  // Turbulence's, black at 110, draw as their `header`, black at 115 - not
+  // Turbulence's `rail`, black at 38, which tokenNear's colour-only match
+  // gave.
+  function tokenClose(colors, v) {
+    var t = tokenOf(colors, v);
+    if (t || !v) return t;
+    var want = hex8(v), best = null, d0 = Infinity;
+    function ch(s, i) { return parseInt(s.slice(1 + 2 * i, 3 + 2 * i), 16); }
+    Object.keys(colors).forEach(function (n) {
+      var c = hex8(colors[n]);
+      if (!/^#[0-9A-F]{8}$/.test(c)) return;
+      var d = 0;
+      for (var i = 0; i < 4; i++) d += Math.pow(ch(c, i) - ch(want, i), 2) * (i === 3 ? 4 : 1);
+      if (d < d0) { d0 = d; best = n; }
+    });
+    return best;
+  }
+  function hubPanels(L, list, name, key, at) {
+    var n = 0;
+    return (list || []).filter(function (s) { return s.kind === 'shape'; }).map(function (s, i) {
+      n += 1;
+      var r = at ? [s.rect[0] - at[0], s.rect[1] - at[1], s.rect[2], s.rect[3]] : s.rect;
+      return drawnAt(Panel, { name: name + (n > 1 ? ' ' + n : ''), fill: tokenClose(L.colors, s.fill) || P.defaults.panel.fill,
+                              border: borderOf(s.border), stroke: 'none', derived: true }, r, key + i);
+    });
+  }
+  // A look's icon, where its kit draws one at its size, and whether the
+  // button then carries no caption: an icon look on a hub draws its glyph
+  // alone, its name in a label under it or in its `does`.
+  // The region's own default in the hub's look for its role, where the hub
+  // draws one its kit has: Mach's menu bar draws Mute and Power as glyphs.
+  function hubLook(props, look) {
+    if (!look) return props;
+    var out = Object.assign({}, props, look);
+    if (look.icon && !iconHere(out, look.icon)) return props;
+    return out;
+  }
+  function iconHere(look, icon) {
+    var V = P.buttons[look.variant] || P.buttons[P.defaults.button.variant];
+    var size = V.kit || (V.with_icon && V.with_icon.bare);
+    return icon && size && KIT && KIT.files && KIT.files[size] && KIT.files[size][icon] ? icon : null;
+  }
+  // A hub's popup's header: its strip, title and Close, in the popup's own
+  // coordinates, and the box under it that what it holds is laid out in -
+  // centred on the whole popup, as the template centres its sources' keys,
+  // and clear of the Volume Level strip it stands at main's right: as wide
+  // each side of the middle as the strip leaves on its side. Clear of the
+  // strip alone, the box was the 651 px left of it, and Mach 525's Doc Cam
+  // came out 15 px from the screen's edge where the template's is 55.
+  function hubHead(F, title, close, bars) {
+    var g = F.center.region, foot = 0;
+    [title, close].concat((bars || []).map(function (s) { return s.rect; })).forEach(function (r) {
+      if (r) foot = Math.max(foot, r[1] - g[1] + r[3]);
+    });
+    var strip = F.center.strip, right = strip ? Math.min(g[2], strip[0] - g[0]) : g[2];
+    var half = Math.max(0, right - g[2] / 2);
+    return [Math.round(g[2] / 2 - half), foot, Math.round(2 * half), g[3] - foot];
+  }
+  // A popup's Close on a hub: back to the grid its group starts from.
+  function hubClose(L, F, name, at, rect, to, does, own) {
+    var look = Object.assign({}, own || HD.close || RD.window && RD.window.close || {});
+    var icon = iconHere(look, look.icon);
+    var r = [rect[0] - at[0], rect[1] - at[1], rect[2], rect[3]];
+    var p = Object.assign({ name: name + ' Close', derived: true, nav: to, does: does }, look);
+    if (look.icon && !icon) delete p.icon;
+    var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
+    var img = imageOf(V, p, null);
+    if (icon || look.icon) p.text = '';
+    else if (!(img && img.caption === 'none')) p.text = (WD.buttons || {}).close || 'Close';
+    var g = F.center.region;
+    var at2 = settle(r, needOf('button', p, L), [0, 0, g[2], g[3]], [g[2], g[3]], [false, false, false, false]);
+    return drawnAt(Button, p, at2, 'close');
+  }
+  // A designer's control drawn anew at `r` with `extra` props, and with
+  // `children` in place of its own where given (a tile's caption moves to
+  // its label).
+  function hubHost(it, r, key, extra, children) {
+    if (!it.comp) return React.cloneElement(it.host, { key: key, style: cell(r) });
+    var comp = children !== undefined ? React.cloneElement(it.comp, extra || {}, children)
+                                      : React.cloneElement(it.comp, extra || {});
+    if (it.host === it.comp) return h('div', { key: key, style: cell(r) }, comp);
+    return React.cloneElement(it.host, { key: key, style: cell(r) }, comp);
+  }
+  // A grid's places for `n` tiles: the template's tile, its rows and its
+  // pitch, each row centred where its first row is, the label under each
+  // where the template sets one - wider than its tile where the template's
+  // is (Mach's Streaming). Grown to the panel's touch minimum. Where the
+  // template draws one row (an options grid), more tiles than it draws stay
+  // in that row while they fit between `room`'s ends a gap clear, closer
+  // than its pitch but a gap apart, and else wrap into rows centred on it -
+  // Shockwave's More Options draws two in one centred row, and three wrapped
+  // 2+1 from under its header.
+  function gridSpots(G, n, T, H, top, room) {
+    var t = (G && G.tiles) || [];
+    if (!t.length || !n) return [];
+    var first = t[0].rect, rows = [], cols = 0;
+    t.forEach(function (x) {
+      if (Math.abs(x.rect[1] - first[1]) <= 20) cols += 1;
+      if (!rows.some(function (y) { return Math.abs(y - x.rect[1]) <= 20; })) rows.push(x.rect[1]);
+    });
+    var w = Math.max(first[2], T.touch), ht = Math.max(first[3], T.touch);
+    var lab = t[0].label, off = lab ? [lab[1] - first[1], lab[3]] : null;
+    var lw = 0;
+    t.forEach(function (x) { if (x.label) lw = Math.max(lw, x.label[2]); });
+    var px = cols > 1 ? t[1].rect[0] - first[0] : w + T.gap;
+    var py = rows.length > 1 ? rows[1] - rows[0] : (off ? off[0] + off[1] : ht) + T.gap;
+    var row0 = t.slice(0, cols), cx = row0.reduce(function (s, x) { return s + x.rect[0] + x.rect[2] / 2; }, 0) / cols;
+    var R = Math.ceil(n / cols), cellH = off ? Math.max(off[0], ht) + off[1] : ht;
+    var y0 = rows[0], lwide = Math.max(lw, w);
+    if (rows.length === 1 && n > cols && room) {
+      var span = room[1] - room[0] - 2 * T.gap - w, fits = n > 1 ? span / (n - 1) : px;
+      if (fits >= w + T.gap) {
+        cols = n; px = Math.min(px, Math.floor(fits)); R = 1;
+      } else {
+        // Rows a gap apart, centred where the template's one row is.
+        py = Math.min(py, cellH + T.gap);
+        var block = (R - 1) * py + cellH;
+        y0 = Math.round(rows[0] + cellH / 2 - block / 2);
+        y0 = Math.max(top || 0, Math.min(y0, (H || y0 + block + T.gap) - T.gap - block));
+        rows = [];
+      }
+      // The whole row clear of the room's ends, a gap in.
+      var half = ((Math.min(cols, n) - 1) * px + w) / 2;
+      cx = Math.min(Math.max(cx, room[0] + T.gap + half), room[1] - T.gap - half);
+      if (cols > 1 && px < lwide + 2) lwide = Math.max(w, px - 2);
+    }
+    // More rows than the template draws, run past main's foot: they close up
+    // to a gap apart and the grid rises toward its header - Shockwave's More
+    // Options draws two in one row, and a third came out under the screen.
+    if (H && rows.length && R > rows.length && y0 + (R - 1) * py + cellH > H - T.gap) {
+      py = Math.min(py, cellH + T.gap);
+      y0 = Math.max(top || 0, Math.min(y0, H - T.gap - ((R - 1) * py + cellH)));
+      rows = [];
+    }
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      var r = Math.floor(i / cols), c = i % cols, cnt = Math.min(cols, n - r * cols);
+      var x = Math.round(cx - ((cnt - 1) * px) / 2 + c * px - w / 2);
+      var y = r < rows.length ? rows[r] : (rows.length ? rows[0] : y0) + r * py;
+      var tile = [x, y, w, ht];
+      out.push({ tile: tile, label: off ? [Math.round(x + (w - lwide) / 2), y + Math.max(off[0], ht),
+                                           lwide, off[1]] : null });
+    }
+    return out;
+  }
+  // A grid's tiles: each designer control at its place in `look`, its
+  // caption in a label under it where it draws an icon alone - or always,
+  // where the template's tiles are captioned under (`under`: the options).
+  function gridTiles(L, G, list, at, set, labelLook, pt, where, probs) {
+    // The room a row has: centred on main, as wide each side of its middle
+    // as the Volume Level strip leaves on its side (hubHead's box) - kept
+    // clear of the strip alone, Mach 535's four options stood 40 px left of
+    // the middle.
+    var g = L.region.F.center.region, S = L.region.F.center.strip, right = S ? S[0] : g[0] + g[2];
+    var spots = gridSpots(G, list.length, L.panel, g[1] + g[3],
+                          G && G.title ? G.title[1] + G.title[3] + L.panel.gap : 0,
+                          [g[0] + Math.max(0, g[0] + g[2] - right), right]), els = [], placed = [];
+    list.forEach(function (x, i) {
+      var sp = spots[i];
+      if (!sp) return;
+      var tile = [sp.tile[0] - at[0], sp.tile[1] - at[1], sp.tile[2], sp.tile[3]];
+      var p = x.it ? propsOf(x.it) : x.props, caption = x.caption != null ? x.caption : textOf(p.children, p.text);
+      var extra = Object.assign({}, x.look || {});
+      // A header tab's own look is the header's (its type, its fill): as a
+      // tile it takes the hub's. A launcher's is the designer's, and stays.
+      if (x.strip) {
+        ['size', 'align', 'fill', 'border', 'stroke', '__indent'].forEach(function (k) { if (p[k] != null) extra[k] = undefined; });
+      }
+      if (set) extra.joined = set;
+      // A tab's tile that draws another family of the tab's glyph names the
+      // suffix its glyph drops (`glyph`): Shockwave's tab draws the 744x456
+      // laptop_white, its hub's tile the whole device, white_laptop. Not an
+      // option's tile, whose look the hub's tile look underlies.
+      var want = p.icon || extra.icon, glyph = extra.glyph;
+      delete extra.glyph;
+      if (x.strip && want && glyph && String(want).slice(-glyph.length) === glyph) {
+        var dev = String(want).slice(0, -glyph.length);
+        // A device the family lacks (blu-ray-2) keeps its tab's own art.
+        if (iconHere(Object.assign({}, p, extra), dev)) want = extra.icon = dev;
+        else extra.variant = undefined;
+      }
+      var icon = iconHere(Object.assign({}, p, extra), want);
+      var alone = (!!icon || !!x.under) && !!sp.label;
+      if (alone) extra.text = '';
+      if (p.icon && !icon) extra.icon = undefined;
+      var need = needOf('button', Object.assign({}, p, extra, alone ? { children: null } : {}), L);
+      tile = settle(tile, need, [0, 0, g[2], g[3]], [g[2], g[3]], [false, false, false, false]);
+      els.push(x.it ? hubHost(x.it, tile, where + 't' + i, extra, alone ? null : undefined)
+                    : drawnAt(Button, Object.assign({}, x.props, extra, { text: alone ? '' : caption }), tile, where + 't' + i));
+      placed.push(tile);
+      if (alone && caption) {
+        var lr = [sp.label[0] - at[0], Math.max(sp.label[1] - at[1], tile[1] + tile[3]), sp.label[2], sp.label[3]];
+        els.push(chromeLabel(L, labelLook, (p.name || caption) + ' Label', caption, lr, where + 'l' + i, pt));
+      }
+      if (tile[1] + tile[3] > g[3] || (sp.label && sp.label[1] + sp.label[3] - at[1] > g[3])) {
+        probs.push(where + ' holds ' + list.length + ', more than the ' + L.model + "'s template has room for");
+      }
+    });
+    return els;
+  }
+  // The menu bar's buttons down its band: the template's places, each grown
+  // to what it needs, one stack kept in order - its seams closed up where
+  // they no longer fit (Shockwave 535's buttons grow from 81 to its 104 px
+  // minimum), and then a cell taller than it needs (its 136 px Power) gives
+  // way. One joined set, as the template stands its menu 0 to 25 px apart.
+  function stackMenu(slots, band, L, probs) {
+    if (!slots.length) return;
+    var size = slots.map(function (s) { return Math.max(s.r[3], Math.ceil(s.need[1])); });
+    var seams = slots.map(function (s, i) {
+      return i ? Math.max(0, s.r[1] - (slots[i - 1].r[1] + slots[i - 1].r[3])) : 0;
+    });
+    var start = slots[0].r[1], room = band[1] + band[3] - start;
+    function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
+    var n = slots.length;
+    if (sum(size) + sum(seams) > room) {
+      // Each seam the template opens keeps a share of what is left, at least
+      // 1 px; where nothing is left they close, as Turbulence's rings touch.
+      var free = room - sum(size), have = sum(seams);
+      var nz = seams.filter(function (g) { return g > 0; }).length;
+      seams = seams.map(function (g) {
+        if (!g || free < nz) return 0;
+        return have > nz ? 1 + Math.floor((g - 1) * (free - nz) / (have - nz)) : 1;
+      });
+    }
+    var over = sum(size) + sum(seams) - room;
+    var spare = slots.map(function (s, i) { return Math.max(0, size[i] - Math.ceil(s.need[1])); });
+    // A pixel at a time from the cell with the most to spare.
+    while (over > 0) {
+      var most = spare.indexOf(Math.max.apply(null, spare));
+      if (spare[most] <= 0) break;
+      size[most] -= 1; spare[most] -= 1; over -= 1;
+    }
+    if (over > 0) probs.push("the menu bar holds more than the " + L.model + "'s has room for");
+    var y = start;
+    slots.forEach(function (s, i) {
+      y += seams[i];
+      var w = Math.max(s.r[2], Math.ceil(s.need[0]));
+      var x = s.r[0] - Math.floor((w - s.r[2]) / 2);
+      if (w <= band[2]) x = Math.min(Math.max(x, band[0]), band[0] + band[2] - w);
+      s.at = [x, y, w, size[i]];
+      y += size[i];
+    });
+  }
+  // The popups a hub's page derives, over its main region: the program's
+  // first is the grid - shown on the canvas until an opener shows another,
+  // or `window.__GDL_SHOW` names one.
+  function HubParts(props) {
+    var st = React.useState(props.parts.length ? props.parts[0].name : null);
+    props.shown.set = st[1];
+    var forced = typeof window !== 'undefined' && window.__GDL_SHOW ? String(window.__GDL_SHOW) : null;
+    var names = props.parts.map(function (q) { return q.name; });
+    var cur = forced && names.indexOf(forced) >= 0 ? forced : st[0];
+    // The Volume Level strip is a popup of its own the program shows over
+    // main as the volume moves: on the canvas, only when asked for.
+    return props.parts.map(function (q) {
+      var look = { kind: 'popup', name: q.name, group: q.group, size: q.size };
+      if (q.background) look.background = q.background;
+      // The grid main's popup region shows first: the group a hub's settings
+      // popups go in, wherever their boards stand on the canvas.
+      if (q.main) look.main = true;
+      var L = props.L;
+      return h(Ctx.Provider, { key: 'hub-' + q.name, value: Object.assign({}, L, { within: 'popup', pageName: q.name }) },
+        h('div', { 'data-gdl-part': JSON.stringify(look),
+                   style: { position: 'absolute', left: q.at[0] + 'px', top: q.at[1] + 'px', width: q.size[0] + 'px',
+                            height: q.size[1] + 'px', zIndex: 5,
+                            background: q.background ? paint(L.colors, q.background) : 'none',
+                            visibility: (q.alone ? forced === q.name : cur === q.name) ? 'visible' : 'hidden' } },
+          q.els));
+    });
+  }
+  // A Section's controls in a popup's box: its heading over a row of them,
+  // centred, each as wide as the widest needs and at least the panel's touch
+  // minimum, wrapping where the row does not fit; in the template's look for
+  // a rail's display group unless the designer set their own.
+  function sectionIn(L, sec, box, where, labelLook, probs, own) {
+    var sp = propsOf(sec), members = itemsOf(sp.children), els = [];
+    var T = L.panel, g = T.gap, cw = T.touch, ch = T.touch;
+    var looks = members.map(function (it) { return it.kind === 'button' ? unset(it.props, own || RD.rail) : {}; });
+    members.forEach(function (it, i) {
+      var nd = needOf(it.kind, Object.assign({}, it.props || {}, looks[i]), L);
+      if (it.kind === 'button') { cw = Math.max(cw, Math.ceil(nd[0])); ch = Math.max(ch, Math.ceil(nd[1])); }
+    });
+    var headH = sp.title ? Math.ceil(needOf('label', Object.assign({ text: sp.title }, labelLook), L)[1]) : 0;
+    var per = Math.max(1, Math.floor((box[2] - 2 * g + g) / (cw + g)));
+    var rows = Math.ceil(members.length / per), block = headH + (headH ? g : 0) + rows * ch + (rows - 1) * g;
+    var top = box[1] + Math.max(g, Math.round((box[3] - block) / 2));
+    // Its heading is the canvas's, as the LeftRail draws it: one control,
+    // one ID, on every panel.
+    if (sp.title) {
+      els.push(drawnAt(Label, Object.assign({ name: sp.title + ' Heading', text: sp.title }, labelLook),
+                       [box[0] + g, top, box[2] - 2 * g, headH], where + 'h'));
+    }
+    var spots = gridPlace(members.length, per, cw, ch, g, box[2], 0, 0);
+    members.forEach(function (it, i) {
+      var r = [box[0] + spots[i][0], top + headH + (headH ? g : 0) + spots[i][1], cw, ch];
+      els.push(hubHost(it, r, where + i, looks[i]));
+      if (r[1] + r[3] > box[1] + box[3]) {
+        probs.push((sp.title || 'A Section') + ' holds more than the ' + L.model + "'s popup has room for");
+      }
+    });
+    return els;
+  }
+
+  // The hub's working page from the page's regions: the menu bar on the
+  // page, its popup regions, and the popups it derives - `els` - with what
+  // it named (`probs`, `warns`) and the canvas controls it has no place for
+  // (`left`).
+  function planHub(regs, L, pname) {
+    var F = L.region.F, T = L.panel, R = byRole(F.right.items), C = F.center, g = C.region;
+    var names = hubNames(F), at = [g[0], g[1]];
+    var probs = [], warns = [], left = [], els = [], parts = [];
+    var by = {};
+    regs.forEach(function (it) { if (!by[it.kind]) by[it.kind] = propsOf(it); });
+    var group = (by.center && by.center.group) || 'Sources';
+    var shown = {};
+    function opener(name) { return function () { if (shown.set) shown.set(name); }; }
+    var labelLook = Object.assign({}, RD.heading || {}, HD.label || {});
+    var titleLook = Object.assign({}, (RD.source || {}).title || {}, HD.title || {});
+    var O = HD.options || {};
+    var optTitle = Object.assign({}, titleLook, O.title || {}), optLabel = Object.assign({}, labelLook, O.label || {});
+    // What each region holds.
+    var tabs = [];
+    if (by.header) {
+      itemsOf(by.header.children).forEach(function (it) {
+        if (slotOf(it) === 'source') tabs.push(it);
+        else {
+          left.push(nameOf(it));
+          warns.push(pname + "'s " + nameOf(it) + ' is left off the ' + L.model + ' - its template has no header bar '
+                     + 'for the Header\'s ' + (slotOf(it) || 'unslotted') + ' controls');
+        }
+      });
+    }
+    var rr = by.rightrail ? slotted(by.rightrail.children, ['heading', 'volume', 'mute', 'audio'], 'RightRail', 'right', L)
+      : { over: {}, probs: [] };
+    var ft = by.footer ? slotted(by.footer.children, ['mode', 'clock', 'help', 'power'], 'Footer', 'bottom', L)
+      : { over: {}, probs: [] };
+    probs = probs.concat(rr.probs, ft.probs);
+    var secs = [];
+    if (by.leftrail) {
+      itemsOf(by.leftrail.children).forEach(function (it) {
+        if (it.kind === 'section') secs.push(it);
+        else probs.push(nameOf(it) + ' in the LeftRail is not in a Section - put the rail\'s controls in titled Sections');
+      });
+    }
+    if (by.center) {
+      itemsOf(by.center.children).forEach(function (it) {
+        probs.push(nameOf(it) + ' in the Center: it is the popup region its sources fill - put a source\'s controls in '
+                   + 'its popup');
+      });
+    }
+    // The footer's clock: no hub template draws one.
+    if (by.footer) {
+      var clockName = ft.over.clock ? nameOf(ft.over.clock) : 'Date Time';
+      left.push(clockName);
+      warns.push(pname + "'s " + clockName + ' is left off the ' + L.model + ' - its template draws no clock');
+    }
+    // The options its settings opener shows: the display group's popup
+    // (Mach's, from a tile there), the later Sections' launchers, Audio
+    // Control and the mode launcher - each the template's tile, its glyph
+    // the kit's where one names what it opens (`glyphs`: Lighting's bulb,
+    // Audio's speaker) and its caption the label under it, as every tile of
+    // the template's own is; one the kit has no glyph for is its blank tile
+    // (`blank`) - a source tile's look alone drew a laptop on Lighting. On
+    // an opaque popup the tiles take its own look (Mach's Settings: raised
+    // keys on #303030, where the photo's shade read as black holes).
+    var tileLook = Object.assign({}, HD.tile || {}, O.tile || {});
+    var blankLook = Object.assign({}, O.blank || RD.launcher || RD.rail || {});
+    function launcher(it) {
+      var p = propsOf(it), cap = String(textOf(p.children, p.text) || p.name || '').toLowerCase();
+      var mine = p.icon && iconHere(Object.assign({}, p, tileLook), p.icon);
+      var key = Object.keys(O.glyphs || {}).filter(function (k) { return cap.indexOf(k) >= 0; })[0];
+      var glyph = mine || (key && iconHere(tileLook, O.glyphs[key]));
+      return { it: it, under: true, look: glyph ? Object.assign({}, tileLook, { icon: glyph }) : Object.assign({}, blankLook) };
+    }
+    var display = secs[0] || null, displayTitle = display ? (R.display ? R.display.name : names.display) : null;
+    var options = [];
+    if (display && !R.display) {
+      options.push({ it: null, caption: propsOf(display).title || 'Display', under: true,
+                     props: { name: names.display, derived: true, nav: names.display,
+                              does: 'Opens ' + names.display + '.', icon: (HD.display || {}).icon,
+                              onPress: opener(names.display) },
+                     look: Object.assign({}, tileLook) });
+    }
+    // A later Section's heading, which the drawn panel's rail draws over its
+    // group (Mach's Settings), has no place among the options: named.
+    var FDL = (frameFor(L.design) || {}).left;
+    secs.slice(1).forEach(function (sec, i) {
+      var title = propsOf(sec).title, G = FDL && FDL.groups && FDL.groups[i + 1];
+      if (title && G && G.heading) {
+        left.push(title + ' Heading');
+        warns.push(pname + "'s " + title + ' Heading is left off the ' + L.model + " - its template's options "
+                   + 'draw no heading');
+      }
+      itemsOf(propsOf(sec).children).forEach(function (it) { options.push(launcher(it)); });
+    });
+    if (rr.over.audio) options.push(launcher(rr.over.audio));
+    if (ft.over.mode) options.push(launcher(ft.over.mode));
+    options.forEach(function (o) {
+      // A designer's own look stays theirs.
+      if (o.it) Object.keys(o.look).forEach(function (k) { if ((o.it.props || {})[k] != null) delete o.look[k]; });
+    });
+
+    // The menu bar.
+    if (F.right) {
+      els = els.concat(hubPanels(L, F.right.surfaces, 'Menu Bar', 'menu'));
+      var band = F.right.rect, menu = [], level = null, set = setName('menu');
+      var vol = null;
+      if (by.rightrail) {
+        var hd = rr.over.heading, hdef = R.heading ? chrome('heading', R.heading, L) : null;
+        if (hd || hdef) {
+          // In the hub's own look where it has one: Mach's is white on its
+          // bar, where the 1035's rail heading is black on the photo.
+          var hlook = Object.assign({}, RD.heading || {}, HD.heading || {});
+          var hp = hd ? hd.props || {} : Object.assign({}, hdef[1], HD.heading || {});
+          var hr = R.heading ? R.heading.rect : [band[0], band[1], band[2], 40];
+          var hat = settle(hr, needOf('label', hp, L), band, T.size, [false, false, false, false]);
+          els.push(hd ? hubHost(hd, hat, 'menu-heading', unset(hd.props, hlook)) : drawnAt(Label, hp, hat, 'menu-heading'));
+        }
+        vol = rr.over.volume ? Object.assign({}, rr.over.volume.props || {}) : chrome('volume', {}, L)[1];
+      }
+      var steps = P.defaults.level.steps || {}, vname = vol ? vol.name || 'Volume' : 'Volume';
+      // An opener on the bar: the template's glyph alone where its look
+      // draws one, else its name - and both where the look keeps its caption
+      // under its glyph (`caption`: Turbulence's More, its ••• over 'More').
+      // `caption: "over"` sets them over it instead (Turbulence's Display
+      // Control, its words on the template's blank tile).
+      function openerProps(x, ol, to, does) {
+        var keep = ol.caption, oi = iconHere(ol, ol.icon);
+        delete ol.caption;
+        if (keep === 'over') ol.__breaks = 0;
+        var words_ = x.name.split(' ').join('\n');
+        var p = Object.assign({ name: x.name, derived: true, id: x.id, nav: to, does: does }, ol,
+                              oi ? { icon: oi, text: keep ? words_ : '' } : { icon: undefined, text: words_ });
+        p.onPress = opener(to);
+        return p;
+      }
+      F.right.items.forEach(function (x) {
+        var role = x.role, look = Object.assign({}, HD.menu || {}), it = null, props = null;
+        if ((role === 'volume-up' || role === 'volume-down') && vol) {
+          // The hub's own glyph (`up`, `down`): Mach's chevrons, where the
+          // level's steps are its speaker+ and speaker-; Shockwave's a
+          // chevron its Open Sans draws, as its kit has none.
+          var up = role === 'volume-up', ul = Object.assign({}, look, HD[up ? 'up' : 'down'] || {});
+          var icon = iconHere(ul, ul.icon !== undefined ? ul.icon : steps[up ? 'up' : 'down']);
+          var said = ul.text != null ? ul.text : up ? '+' : '-';
+          delete ul.icon; delete ul.text;
+          props = Object.assign({ name: vname + (up ? ' Up' : ' Down'), derived: true, id: x.id,
+                                  does: (up ? 'Raises ' : 'Lowers ') + vname + ' one step.' }, ul,
+                                icon ? { icon: icon, text: '' } : { text: said });
+        } else if (role === 'mute' && by.rightrail) {
+          it = rr.over.mute || null;
+          props = it ? null : hubLook(chrome('mute', x, L)[1], HD.mute);
+        } else if (role === 'display' && display) {
+          props = openerProps(x, Object.assign({}, look, HD.display || {}), names.display, 'Opens ' + names.display + '.');
+        } else if (role === 'settings' && options.length) {
+          props = openerProps(x, Object.assign({}, look, HD.settings || {}), names.options,
+                              'Opens ' + ((F.options || {}).text || names.options) + '.');
+        } else if (role === 'power' && by.footer) {
+          it = ft.over.power || null;
+          props = it ? null : hubLook(chrome('power', x, L, by.footer.power)[1], HD.power);
+        } else {
+          return;
+        }
+        var kind = it ? it.kind : 'button';
+        var rl = HD[role] || roleLook(role);
+        var all = it ? Object.assign({}, it.props || {}, unset(it.props, rl)) : props;
+        var s = { r: (x.legal || x.rect).slice(), it: it, props: all, kind: kind, role: role, touch: isTouch(kind),
+                  extra: it ? Object.assign(unset(it.props, rl), { joined: set }) : null };
+        if (!it) s.props = Object.assign({}, props, { joined: set });
+        s.need = needOf(kind, s.props, L);
+        menu.push(s);
+      });
+      stackMenu(menu, band, L, probs);
+      menu.forEach(function (s, i) {
+        els.push(s.it ? hubHost(s.it, s.at, 'menu' + i, s.extra) : drawnAt(Button, s.props, s.at, 'menu' + i));
+      });
+      // The level, in the Volume Level strip beside the bar: a popup of its
+      // own, as the template shows it over main - its own ground (Mach's
+      // opaque #4B4B4C, Shockwave's #595757, Turbulence's black at 184) and
+      // its level where and as the template draws it (`level`, measured):
+      // Mach's 16 px white bar on its shade track, Shockwave's and
+      // Turbulence's from the kit's art, which the panel's level - a clone
+      // of the seed's own - keeps. The glyphs over and under it are in icon
+      // faces the system does not carry, and are not drawn.
+      if (vol && C.strip) {
+        var S = C.strip, SL = C.level || null, tw = Number(vol.track) || P.defaults.level.track;
+        var inset = Math.round(S[3] * 0.1);
+        var lv = Object.assign({}, vol, { orientation: 'up', fromSlider: true });
+        delete lv.joined;
+        var lr = [Math.round((S[2] - tw) / 2), inset, tw, S[3] - 2 * inset];
+        if (SL && SL.rect) {
+          lr = SL.rect.slice();
+          lv.track = lr[2];
+          lv.border = SL.border ? borderOf(SL.border) : 'none';
+          if (SL.track) lv.fill = tokenClose(L.colors, SL.track) || lv.fill;
+          if (SL.bar) lv.bar = tokenClose(L.colors, SL.bar) || null;
+          if (SL.art) lv.art = SL.art;
+        }
+        parts.push({ name: names.level, group: names.level, size: [S[2], S[3]], at: [S[0], S[1]], alone: true,
+                     background: SL && SL.fill ? tokenClose(L.colors, SL.fill) : null,
+                     els: [drawnAt(Level, lv, lr, 'level')] });
+        els.push(h('div', { key: 'level-ref', style: cell(S),
+                            'data-gdl': gdl({ kind: 'popup_ref', name: 'Volume', group: names.level, derived: true }) }));
+      }
+    }
+    // The popup region every popup of the page appears in.
+    if (by.center) {
+      els.push(drawnAt(PopupRegion, { name: by.center.name || 'Controls', group: group, __quiet: true }, g, 'center'));
+    }
+    // Select a Source: the header's tabs as the template's tiles, its title,
+    // and Help where it stands it - drawn wherever main's popup region is, as
+    // every source popup's and settings popup's Close goes back to it.
+    var S2 = F.select || {};
+    if (by.header || by.footer || by.center) {
+      var sel = [];
+      sel = sel.concat(hubPanels(L, S2.surfaces, names.select + ' Header', 'sh', at));
+      if (S2.title) {
+        sel.push(chromeLabel(L, titleLook, names.select + ' Title', S2.text || 'Select a Source',
+                             [S2.title[0] - at[0], S2.title[1] - at[1], S2.title[2], S2.title[3]], 'st',
+                             (S2.pt || {}).title));
+      }
+      sel = sel.concat(gridTiles(L, S2, tabs.map(function (it) { return { it: it, strip: true, look: Object.assign({}, HD.tile || {}) }; }),
+                                 at, setName('select'), labelLook, (S2.pt || {}).label, names.select, probs));
+      var help = ft.over.help || null, hdef2 = by.footer && !help ? chrome('help', S2.help || {}, L, by.footer.help) : null;
+      if ((help || hdef2) && S2.help) {
+        var hl = Object.assign({}, HD.help || {});
+        var hr2 = [S2.help.rect[0] - at[0], S2.help.rect[1] - at[1], S2.help.rect[2], S2.help.rect[3]];
+        var hprops = help ? null : Object.assign({}, hdef2[1], hl, iconHere(hl, hl.icon) ? { text: '' } : { icon: undefined });
+        var hneed = needOf('button', help ? help.props || {} : hprops, L);
+        var hat2 = settle(hr2, hneed, [0, 0, g[2], g[3]], [g[2], g[3]], [false, false, false, false]);
+        sel.push(help ? hubHost(help, hat2, 'help', unset(help.props, hl)) : drawnAt(Button, hprops, hat2, 'help'));
+      } else if (help || hdef2) {
+        left.push(help ? nameOf(help) : 'Help');
+        warns.push(pname + "'s Help is left off the " + L.model + ' - its template stands no Help on its grid');
+      }
+      parts.push({ name: names.select, group: group, size: [g[2], g[3]], at: at, els: sel, main: true });
+    }
+    // The options its settings opener shows.
+    var O2 = F.options || {};
+    if (options.length) {
+      var opt = hubPanels(L, O2.surfaces, names.options + ' Header', 'oh', at);
+      if (O2.title) {
+        opt.push(chromeLabel(L, optTitle, names.options + ' Title', O2.text || names.options,
+                             [O2.title[0] - at[0], O2.title[1] - at[1], O2.title[2], O2.title[3]], 'ot',
+                             (O2.pt || {}).title));
+      }
+      if (O2.close) {
+        opt.push(hubClose(L, F, names.options, at, O2.close.rect, names.select,
+                          'Closes ' + (O2.text || names.options) + ' - back to ' + (S2.text || 'Select a Source') + '.',
+                          O.close));
+      }
+      opt = opt.concat(gridTiles(L, O2, options, at, null, optLabel, (O2.pt || {}).label, names.options, probs));
+      parts.push({ name: names.options, group: group, size: [g[2], g[3]], at: at, els: opt, background: O.background });
+    }
+    // The display group's popup, as the hub's Display Control or Mach's
+    // Display Settings draws it: the options popup's header and Close.
+    if (display) {
+      var rec = ((F.windows || {}).settings || [])[0] || {};
+      var dsp = hubPanels(L, rec.surfaces, names.display + ' Header', 'dh', at);
+      var dt = rec.title || O2.title;
+      if (dt) {
+        dsp.push(chromeLabel(L, optTitle, names.display + ' Title', displayTitle,
+                             [dt[0] - at[0], dt[1] - at[1], dt[2], dt[3]], 'dt', (O2.pt || {}).title || (rec.pt || {}).title));
+      }
+      var back = R.display ? names.select : names.options;
+      var dc = (rec.close || O2.close || {}).rect;
+      if (dc) {
+        dsp.push(hubClose(L, F, names.display, at, dc, back,
+                          'Closes ' + displayTitle + ' - back to ' + (R.display ? S2.text || 'Select a Source' : O2.text || names.options) + '.',
+                          O.close));
+      }
+      var box = hubHead(F, dt, dc, rec.surfaces);
+      dsp = dsp.concat(sectionIn(L, display, box, names.display, optLabel, probs, O.button));
+      parts.push({ name: names.display, group: group, size: [g[2], g[3]], at: at, els: dsp, background: O.background });
+    }
+    // The program shows the grid first; then its group's others.
+    parts.sort(function (a, b) { return (a.name === names.select ? 0 : a.group === group ? 1 : 2)
+                                      - (b.name === names.select ? 0 : b.group === group ? 1 : 2); });
+    els.push(h(HubParts, { key: 'hub-parts', parts: parts, shown: shown, L: L }));
+    return { els: els, probs: probs, warns: warns, left: left };
   }
 
   // -- Group: a set of like controls, laid out and paged for each panel ------
@@ -1559,16 +3442,24 @@
   }
   // How the variant draws its image, if it has one: the kit size, and where
   // the caption goes - `below` the icon, `indent`ed past it, or `none`.
+  // `__indent`: the leading spaces a region gave an indented caption to
+  // clear its icon in the cell it came out (indentFit).
+  // `__breaks`: the breaks a caption below its icon takes where a region
+  // sets it over the art instead (0: Turbulence's hub Display Control, its
+  // words over the template's blank tile).
   function imageOf(V, props, caption) {
-    if (V.kit) return { kit: V.kit, caption: V.caption, indent: V.indent, breaks: V.breaks,
+    function indent(d) { return props.__indent != null ? Number(props.__indent) : d; }
+    function breaks(d) { return props.__breaks != null ? Number(props.__breaks) : d; }
+    if (V.kit) return { kit: V.kit, caption: V.caption, indent: indent(V.indent), breaks: breaks(V.breaks),
                         icon: props.icon || V.icon };
     if (props.icon && V.with_icon) {
       var W = V.with_icon;
-      return caption ? { kit: W.kit, caption: W.caption, indent: W.indent, breaks: W.breaks, icon: props.icon }
+      return caption ? { kit: W.kit, caption: W.caption, indent: indent(W.indent), breaks: breaks(W.breaks), icon: props.icon }
                      : { kit: W.bare, caption: 'none', icon: props.icon };
     }
     return null;
   }
+  function belowBreaks(img) { return img.breaks === 0 ? 0 : img.breaks || 2; }
   // The caption as the panel draws it: the kit leaves the label room below or
   // beside the icon, and the template's own buttons reach it with line breaks
   // or leading spaces in the caption itself - two breaks unless the variant
@@ -1576,9 +3467,22 @@
   function placed(img, text) {
     if (!img || text == null) return text;
     if (img.caption === 'none') return '';
-    if (img.caption === 'below') return text ? new Array((img.breaks || 2) + 1).join('\r\n') + text : text;
+    if (img.caption === 'below') return text ? new Array(belowBreaks(img) + 1).join('\r\n') + text : text;
     if (img.caption === 'indent') return text ? new Array((img.indent || 0) + 1).join(' ') + text : text;
     return text;
+  }
+
+  // A caption as its variant draws it: Turbulence's dock puts two words on
+  // two lines (`lines`: 2), broken at the space nearest the middle, as the
+  // seed's Screen Control, Lighting Control and Room Mode are - on one line
+  // the 720's Room Mode grew 23 px into the date beside it.
+  function captionOf(V, p) {
+    var c = textOf(p.children, p.text), at = -1;
+    if (V.lines !== 2 || !c || /\n/.test(c)) return c;
+    for (var i = 0; i < c.length; i++) {
+      if (c.charAt(i) === ' ' && (at < 0 || Math.abs(i - c.length / 2) < Math.abs(at - c.length / 2))) at = i;
+    }
+    return at < 0 ? c : c.slice(0, at) + '\r\n' + c.slice(at + 1);
   }
 
   // -- Button ---------------------------------------------------------------
@@ -1586,7 +3490,7 @@
     var L = useLook();
     var variant = P.buttons[props.variant] ? props.variant : P.defaults.button.variant;
     var V = P.buttons[variant];
-    var caption = textOf(props.children, props.text);
+    var caption = captionOf(V, props);
     var img = imageOf(V, props, caption);
     var own = {};
     ['fill', 'stroke', 'color', 'border'].forEach(function (k) { if (props[k] != null) own[k] = props[k]; });
@@ -1614,7 +3518,7 @@
     var shown = held[0] ? pressState : (find(states, props.show) || states[0] || {});
     var now = Object.assign({}, look, shown);
     var f = font(props, P.defaults.button.type, L);
-    var b = P.borders[now.border];
+    var b = borderOn(L, now.border);
     // An indented caption reads from the left unless the variant says
     // otherwise: Shockwave's centers it, pushed right past the icon.
     var align = props.align || V.align || (img && img.caption === 'indent' ? 'left' : null) || 'center';
@@ -1696,7 +3600,7 @@
     var fill = props.fill || P.defaults.panel.fill;
     var border = props.border || P.defaults.panel.border;
     var stroke = props.stroke || P.defaults.panel.stroke;
-    var b = P.borders[border];
+    var b = borderOn(L, border);
     return h('div', {
       className: 'xgdl xgdl-panel',
       style: { boxSizing: 'border-box', width: '100%', height: '100%',
@@ -1745,11 +3649,19 @@
     // Turbulence, Mach), the canvas does too: the empty rail's image, and the
     // filled one showing only as far as the value, anchored at its start.
     var rails = kind === 'slider' && P.kit && P.kit.rail_art ? P.kit.rail_art : {};
+    // A hub's level from the kit's own art (its Volume Level strip's
+    // `level.art`: Shockwave's vol-empty and vol-full, Turbulence's bars).
+    if (kind === 'level' && props.art && KIT && KIT.art) {
+      rails = { track: KIT.art[props.art.track], fill: KIT.art[props.art.fill] };
+    }
     var from = along ? (o === 'up' ? 'bottom' : 'top') : (o === 'right' ? 'left' : 'right');
-    var rail = { position: 'absolute', borderRadius: t / 2 + 'px',
+    // Square where its border is none (a hub's level, as its template's).
+    var round = (props.border || d.border) === 'none' ? 0 : t / 2;
+    var rail = { position: 'absolute', borderRadius: round + 'px',
                  background: rails.track ? 'url("' + rails.track + '") center / 100% 100% no-repeat'
                                          : paint(L.colors, fill) };
-    var bar = { position: 'absolute', borderRadius: t / 2 + 'px', background: paint(L.colors, d.value) };
+    var barColor = kind === 'level' && props.bar ? props.bar : d.value;
+    var bar = { position: 'absolute', borderRadius: round + 'px', background: paint(L.colors, barColor) };
     var span = 'calc(100% - ' + 2 * end + 'px)';
     var reach = 'calc((100% - ' + 2 * end + 'px) * ' + pct / 100 + ')';
     if (rails.fill) {
@@ -1808,9 +3720,12 @@
                         // A level's filled part, which Build takes from the
                         // control - a clone's is its donor's scheme. A slider's
                         // is the template's one color in every scheme.
-                        bar: kind === 'level' ? d.value : null,
+                        bar: kind === 'level' ? barColor : null,
                         thumb_height: s && Number(d.thumb_height) ? Number(d.thumb_height) : null,
-                        does: props.does })
+                        does: props.does,
+                        // One of a set the gap rule passes over: the right
+                        // rail's volume group (a region's).
+                        joined: kind === 'slider' ? props.joined || null : null })
     }, kids);
   }
   function Slider(props) { return track('slider', props); }
@@ -1868,14 +3783,24 @@
                border: '2px dashed ' + paint(L.colors, muted),
                color: paint(L.colors, muted), font: font({}, 'body', L).css },
       'data-gdl': gdl({ kind: 'popup_ref', name: props.name, group: props.group })
-    }, 'Popups in ' + (props.group || '(no group)'));
+    // A hub's region is always filled by a popup of its own the page derives
+    // (Select a Source): its words would only show through it.
+    }, props.__quiet ? null : 'Popups in ' + (props.group || '(no group)'));
   }
 
   KINDS = new Map([[Button, 'button'], [Label, 'label'], [Panel, 'panel'], [Line, 'line'],
                    [Slider, 'slider'], [Level, 'level'], [Clock, 'clock'], [PopupRegion, 'popupregion'],
-                   [MainArea, 'mainarea'], [Rail, 'rail'], [Group, 'group']]);
+                   [MainArea, 'mainarea'], [Rail, 'rail'], [Group, 'group'],
+                   [Header, 'header'], [LeftRail, 'leftrail'], [Section, 'section'], [RightRail, 'rightrail'],
+                   [Footer, 'footer'], [Center, 'center']]);
   var api = { Page: Page, MainArea: MainArea, Rail: Rail, Group: Group, Button: Button, Label: Label, Panel: Panel,
               Line: Line, Slider: Slider, Level: Level, Clock: Clock, PopupRegion: PopupRegion,
               profile: P };
+  // The region frame's, where the template draws its bars (gdl.designsys
+  // components): Afterburn's system has none.
+  if (P.layout && P.layout.bars === 'controls') {
+    Object.assign(api, { Header: Header, LeftRail: LeftRail, Section: Section, RightRail: RightRail, Footer: Footer,
+                         Center: Center });
+  }
   window[P.namespace] = Object.assign(window[P.namespace] || {}, api);
 })();

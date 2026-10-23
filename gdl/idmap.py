@@ -666,7 +666,9 @@ def _tier(model):
 def check_panels(maps):
     """Problems across the panels: each panel's own checks, and one ID meaning
     one control on every panel. A control the canvas drew is on every panel -
-    nothing is dropped; what a layout added is on the panels that added it."""
+    nothing is dropped - but where that panel's layout named it as left off
+    (a page's `left`: a hub's footer clock, which its template has no place
+    for); what a layout added is on the panels that added it."""
     models = list(maps)
     out = []
     for m in models:
@@ -687,9 +689,17 @@ def check_panels(maps):
             if r['name'] != ref['name'] or not same:
                 out.append(f"ID {uid} is {ref['kind']} {ref['name']!r} on the {next(iter(by))} and "
                            f"{r['kind']} {r['name']!r} on the {m} - one ID is one control to the program")
+            # The map numbers a control's states once, for every panel: a
+            # source's tab on the 1035 and its tile in a hub's Select a Source
+            # are one control, and must name their states alike.
+            elif (r['states'] or None) != (ref['states'] or None):
+                out.append(f"ID {uid} ({ref['name']!r}) has states {ref['states']} on the {next(iter(by))} and "
+                           f"{r['states']} on the {m} - the map numbers a control's states once")
         if not derived:
             for m in models:
-                if m not in by:
+                left = {n for it in (maps[m].spec.get('pages') or []) + (maps[m].spec.get('popups') or [])
+                        for n in it.get('left') or ()}
+                if m not in by and ref['name'] not in left:
                     out.append(f"ID {uid} ({ref['name']!r}) is not on the {m} - a control the canvas "
                                'draws is on every panel')
     return out

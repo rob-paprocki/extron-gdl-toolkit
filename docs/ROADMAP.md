@@ -145,10 +145,85 @@ opening GUI Designer.**
   the page's groups share, switched by a rail of group buttons - needs the Page
   to lay its groups out together; a page with several groups shows them all,
   each paged, until then.
-- **A left `Rail`.** A canvas has one Rail, the right one. Side controls on the
-  left are the Page's own - through the left band where the template draws
-  its bars as controls, with the page otherwise - and on a panel with no room
-  beside its main region they are refused, by name.
+- **A left `Rail` on Afterburn.** Mach, Shockwave and Turbulence have a
+  `LeftRail` region (`docs/claude-design.md` §3). Afterburn's canvas has one
+  Rail, the right one: side controls on the left are the Page's own, and on a
+  panel with no room beside its main region they are refused, by name.
+- **The region frame, beyond tier A** (PR sequence in
+  `docs/superpowers/specs/2026-10-22-region-frame-design.md`):
+  - a region page, a source popup (`role="source"`) and a window (a modal
+    with a `role` or a `title`) on a 320 or a turned panel are refused by
+    name: the 320's page per source and its window pages (PR7) and a turned
+    frame's header-as-left-band are not drawn yet;
+  - on a hub the region page derives to the hub's grammar
+    (`docs/claude-design.md` §3) - built and verified on Mach's 525 and
+    535, Shockwave's 525 and 535 and Turbulence's 525
+    (`archive/job-e823df9b/hubs/`) - and what it does not do yet: Shockwave's and
+    Turbulence's hub popups carry the page's photo as their own background,
+    which a spec popup cannot (no popup background image), so theirs are
+    transparent over the page's photo - the same picture, unless the
+    program shows one over another page; Turbulence's device picture in a
+    hub source popup, as in a bar one, waits for the image kind; a hub's
+    Display Control popup lays the LeftRail's first Section out as a row
+    under its heading, where Extron's draws a card per display (Display 1
+    and 2) - a canvas with two displays has no way to say so yet; a later
+    Section's heading has no place among the hub's options and is named, as
+    is the footer's clock; two region pages on one canvas would derive the
+    same popups (Select Source, the options) on a hub, and are refused as a
+    name both have; Mach's Settings popup draws a fourth tile, Recording,
+    whose Main Recording page the regions do not draw. The hubs set their
+    menu glyphs, their Volume Level strip's speaker glyphs and Shockwave's
+    Up and Down in icon faces (Extron-Lift, Extron GUI Configurator,
+    Extron-Shockwave) the design systems do not carry - fonts stay out of
+    them - so the menu draws the kit's art, which fills its key where the
+    template's glyph is about half the key (a kit image builds `Fill`, so a
+    smaller glyph needs art drawn smaller or the face), Shockwave's Up and
+    Down are Open Sans's Λ and V, and the strip's glyphs are not drawn;
+    a Shockwave source whose glyph has no whole-device outline in the kit
+    (blu-ray-2) keeps its tab's art on its Select a Source tile, a pressed
+    tile lightens without the template's white ring, and an
+    option with no glyph (Room Mode) is the kit's grey tile, which the
+    template's options grid has no example of; the template sets its
+    menu words at 12 to 13 pt, under the 525's 18 pt type floor, so Mach's
+    Mute and Shockwave's and Turbulence's Display Control grow their cells
+    inside the bar;
+  - a popup in the Center's group without `role="source"` is still sized
+    from main on another panel, while the Center is that panel's own region:
+    it shows a little smaller or larger than its reference there (Mach 725:
+    710x392 in a 710x405 region). Larger is named as a warning; only a
+    popup in the Center's default group, `Sources`, is checked. A source's
+    popup says `role="source"`;
+  - Turbulence's bars are PBImage art, drawn as `shade`-filled Panels
+    (`regions.bar`, the art's one colour) until an image kind can carry them,
+    and so is its source popups' device picture (1152x1152_<device>.png at
+    the popup's top left): the popup leaves room for it and draws nothing;
+  - a source popup's controls are mapped from the drawn panel's well into
+    each panel's at one scale, each grown about its centre: a column whose
+    captions need more than the scaled width on the 725 comes out ragged
+    (Mach's Doc Cam: Freeze 92 and Normal 101 among 76s), where the region
+    rail grows a column as one; and rows the template keeps at one pitch on
+    every panel overlap there - Mach's Doc Cam keys 70 apart on the 1035 come
+    out 52 apart, under the 725's 60 px keys - so the canvas draws them
+    100 apart, and its headings 20 px over them, where the template's
+    stand 9: at the 725's 16 pt floor a heading's words grow into the key
+    under it;
+  - only the power-down confirmation (`topic="power"`) and the waits
+    (`"up"`, `"down"`) have the template's words; a recording or incoming
+    call confirmation is refused by topic until its words are measured;
+    Shockwave's tab captions (its `twin` buttons) are not drawn - its tabs
+    take their caption on the tab;
+  - Shockwave's and Turbulence's region defaults (the profile's `regions`:
+    their tabs, rail, launchers, Room Mode, Mute, Help and Power) are the
+    looks those profiles measured off the 1035's seed; no GUI Designer build
+    of a Shockwave or Turbulence region page has proven them yet;
+  - Shockwave stands Audio Control in its right rail on the 1035's series
+    only, and in its left rail's second group elsewhere: a RightRail
+    `slot="audio"` is refused by name on a panel whose template does not
+    draw it there, rather than moved to where that template does;
+  - the footer's cells the template stands together (Mach's Help and Power,
+    1 px apart; Turbulence's Help and Room Mode, 2) are a `joined` set, which
+    goes past the owner's call 2 as written (a header tab row and a rail
+    group): the owner's word on it is awaited.
 - **An icon on a group's button.** On a small panel a Group becomes one button
   that opens its pages; it carries the group's title, and no icon yet.
 - **Smaller gaps in translating for every panel**, each found in review and

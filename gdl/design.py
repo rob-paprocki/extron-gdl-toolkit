@@ -50,7 +50,9 @@ FIELDS = {
     'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does', 'derived'),
     'panel': ('fill', 'stroke', 'border', 'derived'),
     'line': ('fill', 'thickness', 'from', 'to'),
-    'slider': ('id', 'fill', 'border', 'orientation', 'track', 'thumb', 'thumb_height', 'does'),
+    # A slider's `joined`: the right rail's volume group, heading, slider and
+    # Mute, is one set as the template stands it (gdl.spec's gap rule).
+    'slider': ('id', 'fill', 'border', 'orientation', 'track', 'thumb', 'thumb_height', 'does', 'joined'),
     'level': ('id', 'fill', 'border', 'orientation', 'track', 'bar', 'does'),
     'datetime': ('color', 'size', 'bold', 'align', 'format'),
     'popup_ref': ('group', 'derived'),
@@ -108,10 +110,13 @@ PROBE = r"""
     var pages = document.querySelectorAll('[data-gdl]');
     var page = null;
     for (var p of pages) { var k = JSON.parse(p.getAttribute('data-gdl')).kind; if (k === 'page' || k === 'popup') { page = p; break; } }
-    var out = { pages: 0, controls: [], stray: [], parts: [], problems: [] };
+    var out = { pages: 0, controls: [], stray: [], parts: [], problems: [], warnings: [] };
     for (var p of pages) { var k = JSON.parse(p.getAttribute('data-gdl')).kind; if (k === 'page' || k === 'popup') out.pages++; }
     // What the components found they could not lay out on this panel.
     for (var q of document.querySelectorAll('[data-gdl-problem]')) out.problems.push(q.getAttribute('data-gdl-problem'));
+    // What they drew but would draw otherwise - a region page missing a
+    // region the template always has: a note, never a refusal.
+    for (var q of document.querySelectorAll('[data-gdl-warning]')) out.warnings.push(q.getAttribute('data-gdl-warning'));
     if (page) {
       var o = page.getBoundingClientRect();
       out.page = { gdl: page.getAttribute('data-gdl'), rect: [0, 0, o.width, o.height] };
@@ -475,6 +480,8 @@ class Canvas:
             pg = json.loads(out['page']['gdl'])
             for q in out.get('problems') or []:
                 problems.append(f'{b}: {q}')
+            for q in out.get('warnings') or []:
+                notes.append(f'{b}: {q}')
             if profile is None:
                 profile = self._profile(pg.get('template'))
                 scheme = pg.get('scheme')
@@ -514,6 +521,18 @@ class Canvas:
                 item['reached_by'] = pg['reached_by']
             if pg.get('does'):
                 item['_does'] = pg['does']
+            # What this panel's template has no place for, which its layout
+            # named rather than drew (a hub's footer clock): pin_ids and the
+            # ID map let it be absent here, and the canvas's warning says why.
+            if pg.get('left'):
+                item['left'] = list(pg['left'])
+            # A hub's source or settings popup (bundle.js hubPart): shown from
+            # the Select a Source a region page derives there, and - a
+            # settings window naming no group - in that page's main group.
+            if pg.get('hub'):
+                item['_hub'] = pg['hub']
+            if pg.get('main_group'):
+                item['_main_group'] = True
             if pg['kind'] == 'popup':
                 item['modal'] = bool(pg.get('modal'))
                 if pg.get('group'):
@@ -541,11 +560,21 @@ class Canvas:
                     # Its cells are drawn over the page, so it has no fill - as
                     # the seed's own group popups have none. Given none, a spec
                     # popup takes black, and Build drew a black box over the page.
-                    sub.update(modal=False, group=d.get('group'), size=d.get('size'), background='none')
-                    # Its group's first: nothing leads to it - it is what the
-                    # region shows when the page comes up, which the program does.
-                    if not any(x.get('group') == d.get('group') for x in popups):
+                    # A hub's settings popups are opaque, as Mach's #303030
+                    # draws them, and carry the fill their layout gives them.
+                    sub.update(modal=False, group=d.get('group'), size=d.get('size'),
+                               background=d.get('background') or 'none')
+                    # Its group's first of what this page derived: nothing
+                    # leads to it - it is what the region shows when the page
+                    # comes up, which the program does. Only this page's parts
+                    # count: a hub's source popups and settings are in its
+                    # Select a Source's group too, and one whose board stood
+                    # before Main's took the flag from it.
+                    if not any(x.get('group') == d.get('group') and x.get('_derived') and x['_host'] == name
+                               for x in popups):
                         sub['reached_by'] = 'program'
+                    if d.get('main'):
+                        sub['_main'] = True
                     popups.append(sub)
                 else:
                     if d.get('background'):
@@ -560,6 +589,14 @@ class Canvas:
             item['_raw'] = mine
         if profile is None:
             return None, problems or ['no artboard has a Page'], notes
+        # A hub's settings popups go in the group main's popup region shows -
+        # the Center's, which the derived Select a Source carries - not a
+        # literal 'Sources': a canvas whose Center says group="Room" was
+        # refused on every hub.
+        mains = [x['group'] for x in popups if x.get('_main') and x.get('group')]
+        for x in popups:
+            if x.pop('_main_group', None) and mains:
+                x['group'] = mains[0]
 
         colors = self._colors(profile, scheme)
         self.template = profile['template']
@@ -617,6 +654,9 @@ class Canvas:
             # Every panel the canvas builds, the one it is drawn on first.
             **({'_panels': listed} if listed else {}),
             'theme': theme,
+            # The template's own palette - every token the theme measured off
+            # it - which the six-color cap exempts (gdl.spec check, p.49).
+            '_template_colors': sorted({v for v in colors.values() if isinstance(v, str) and v.startswith('#')}),
             'pages': pages,
             'popups': popups,
         }
@@ -651,10 +691,20 @@ class Canvas:
             seen[item['name']] = item
         for item in pages + popups:
             item.pop('_derived', None)
+            item.pop('_main', None)
+            hub = item.pop('_hub', None)
             for c in item['controls']:
                 if c.get('derived') and c.get('nav') and c['nav'] not in seen:
-                    problems.append(f"{item['name']!r} {c.get('name')}: nav {c['nav']!r} is not a "
-                                    'page or popup of this panel')
+                    if hub:
+                        # Its Close goes back to the grid a region page derives
+                        # on the hub; with no region page there is none.
+                        what = 'a source popup' if hub == 'source' else 'a settings window'
+                        problems.append(f"{item['name']!r} is {what}, which a {model} shows in main from the "
+                                        f"{c['nav']!r} a region page derives there - draw a working page with a "
+                                        'Center (and its Header) on the canvas')
+                    else:
+                        problems.append(f"{item['name']!r} {c.get('name')}: nav {c['nav']!r} is not a "
+                                        'page or popup of this panel')
         if start:
             spec['start_page'] = start
         elif pages:
@@ -982,7 +1032,13 @@ def pin_ids(specs, order):
     layout put it there. A control is known by its page and its name, so on a
     canvas of several panels an addressable control without a name is refused.
     What a panel's layout added (`derived`) gets an ID from DERIVED_IDS up, by
-    its container and name, the same on every panel it is on.
+    its container and name, the same on every panel it is on - or the ID it
+    carries, where it carries one on every panel it is on and no canvas
+    control has it: a hub's Volume Up and Down and its settings opener are
+    chrome the 1035 does not draw, and keep the hub's own seed IDs.
+    A canvas control a panel's layout left out by name (its page's `left`:
+    a hub's footer clock, which its template has no place for) may be absent
+    there.
     """
     problems = {m: [] for m in specs}
     design = specs[order[0]]
@@ -1028,7 +1084,21 @@ def pin_ids(specs, order):
                       for it in spec['pages'] + spec['popups'] for c in it['controls']
                       if c.get('derived') and c.get('name')})
     did, n = {}, DERIVED_IDS
+    carried = {}
+    for spec in specs.values():
+        for it in spec['pages'] + spec['popups']:
+            for c in it['controls']:
+                if c.get('derived') and c.get('name'):
+                    carried.setdefault((it['name'], c['name']), set()).add(c.get('id'))
+    canvas_ids = set(ids.values())
     for k in derived:
+        own = carried.get(k, set())
+        cid = next(iter(own)) if len(own) == 1 else None
+        if cid is not None and cid not in canvas_ids and cid not in did.values():
+            did[k] = cid
+    for k in derived:
+        if k in did:
+            continue
         while n in taken:
             n += 1
         did[k] = n
@@ -1053,7 +1123,8 @@ def pin_ids(specs, order):
                     continue
                 c['id'] = ids[k]
                 found.add(k)
-        for k in sorted(set(ids) - found):
+        left = {(it['_host'], n) for it in spec['pages'] + spec['popups'] for n in it.get('left') or ()}
+        for k in sorted(set(ids) - found - left):
             problems[model].append(f'{k[1]} on {k[0]!r} is on the {order[0]} and not here - nothing is '
                                    'dropped from a panel')
     return problems

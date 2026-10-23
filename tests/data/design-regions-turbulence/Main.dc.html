@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Main</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Main" panels="TLP1035T TLP725T TLP525T" start="true" theme="sunset" does="The working page: sources across the top, display and settings left, volume right, the selected source's controls in the middle." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px"><x-import component-from-global-scope="ExtronTurbulence.Header">
+<x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" name="PC" icon="input_pc" nav="PC" does="Routes the pc to the display and shows its controls.">PC</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" name="Laptop" icon="input_laptop" nav="Laptop" does="Routes the laptop to the display and shows its controls.">Laptop</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" name="Doc Cam" icon="input_doc-cam" nav="DocCam" does="Routes the doc cam to the display and shows its controls.">Doc Cam</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" name="Streaming" icon="input_ipod" nav="Streaming" does="Routes the streaming to the display and shows its controls.">Streaming</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.LeftRail">
+<x-import component-from-global-scope="ExtronTurbulence.Section" title="Display">
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Display On" does="Turns the display on.">On</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Display Off" does="Turns the display off.">Off</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Display Mute" does="Blanks the picture; On while blanked.">Mute</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Section" title="Settings">
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Lighting Settings" nav="Lighting" does="Opens lighting settings.">Lighting</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Audio Settings" nav="Audio" does="Opens audio settings.">Audio</x-import>
+</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.RightRail"></x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Footer" help="Help" power="ConfirmPower">
+<x-import component-from-global-scope="ExtronTurbulence.Button" slot="mode" name="Room Mode" does="Changes the room mode.">Room Mode</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Center" group="Sources"></x-import></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -137,8 +137,9 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
    and Extron's numeric standards on every page and popup (touch target, 2 mm
    between touch targets and no two overlapping - except the segments of one
    segmented control, which share a `joined` - ≤9 buttons per group, ≤6 colors
-   drawn - a caption's default color and the popups' colors included, each color
-   counted once whatever its transparency - and ≥14pt body text), plus the type
+   drawn besides the template's own (`_template_colors`) - a caption's default
+   color and the popups' colors included, each color counted once whatever its
+   transparency - and ≥14pt body text), plus the type
    floor for the named model (`docs/design-rules.md` §1; a measurement spec turns
    it off with `"type_floor": "off"`).
 5. **Preview it**: `python -m gdl.spec render <spec.json> out/preview.png`, then

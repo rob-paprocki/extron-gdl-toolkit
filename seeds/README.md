@@ -62,7 +62,8 @@ to it is the way (`docs/editing.md`). **Translate
 uses a made seed only once its theme's profile lists it**: it reads
 `gdl/designsys/<theme>.json`, not this folder. Add the seed under its series'
 `seeds` in the profile's `panels`, with the `kinds` and `borders` that `python
-tests/measure_series.py <Theme>` measures for it, and a row to the table below.
+tests/measure_series.py <Theme>` measures for it - and, for a series that had no
+seed, the `frame` its `--frame` measures - and a row to the table below.
 
 | File | Project name | Model(s) by part number | Part | Canvas | Pages | Popups | Controls | Borders | Declared fonts |
 |---|---|---|---|---|---:|---:|---:|---:|---|

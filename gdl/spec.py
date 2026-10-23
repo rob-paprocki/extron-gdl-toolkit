@@ -1314,10 +1314,24 @@ class Panel:
         # "same hue, move the alpha", and its white at 20%, 47% and 100% is one
         # color on the panel. Counting each alpha put Extron's own Mach look
         # over six. The owner's reading of p.49, not Extron's wording.
-        n = len({tuple(kv for kv in c if kv[0] != 'A') for c in self.palette()})
+        drawn = {tuple(kv for kv in c if kv[0] != 'A') for c in self.palette()}
+        # The theme's own template chrome is exempt (the owner's call,
+        # 2026-10-22): Extron's own Mach working page draws more than six -
+        # shade, its pressed tint, white, black, the mute yellow, the
+        # power-down red, the window grey - and a panel that speaks the
+        # template's language draws them too. The cap holds for the colors a
+        # designer adds. The translator names the template's in
+        # `_template_colors`, from the theme's measured palette.
+        own = set()
+        for v in self.spec.get('_template_colors') or ():
+            c = color(v, self.theme)
+            if c:
+                own.add(tuple(kv for kv in sorted(c.items()) if kv[0] != 'A'))
+        n = len(drawn - own)
         if n > MAX_COLORS_PER_PROJECT:
-            out.append(f'project uses {n} distinct colors, above the '
-                       f'{MAX_COLORS_PER_PROJECT}-color maximum '
+            out.append(f'project uses {n} distinct colors'
+                       + (' besides the template\'s own' if own else '')
+                       + f', above the {MAX_COLORS_PER_PROJECT}-color maximum '
                        f'(GUI Design Standards p.49)')
         return out
 

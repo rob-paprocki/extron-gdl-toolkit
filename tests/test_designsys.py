@@ -402,6 +402,473 @@ class TestATurnedPanelWithNoTemplate(unittest.TestCase):
         self.assertIsNone(m['TLP835M-Portrait']['seed'])
 
 
+# A frame's page records: the measured page's five bands, and the pages a
+# 300 or a 320 lends it (home, second), which turn as the frame does.
+_SWAP = {'top': 'left', 'left': 'top', 'bottom': 'right', 'right': 'bottom'}
+_PAGES = ('home', 'second')
+# What models() adds to a frame for its panel: where a slot is under the
+# panel's touch minimum, the rect that meets it and why.
+_DERIVED = ('legal', 'reason')
+
+
+def _turned(v, top=True):
+    """A frame's value the other way up: every rect transposed, as turn()
+    transposes main and rail, and its bands' names swapped where they name
+    bands - in the frame and in each page record it carries."""
+    if isinstance(v, list) and len(v) == 4 and all(type(x) is int for x in v):
+        return [v[1], v[0], v[3], v[2]]
+    if isinstance(v, list):
+        return [_turned(x, False) for x in v]
+    if isinstance(v, dict):
+        return {(_SWAP.get(k, k) if top else k): _turned(x, top and k in _PAGES) for k, x in v.items()}
+    return v
+
+
+def _measured(v):
+    """A model's frame less what models() derives for its panel."""
+    if isinstance(v, list):
+        return [_measured(x) for x in v]
+    if isinstance(v, dict):
+        return {k: _measured(x) for k, x in v.items() if k not in _DERIVED}
+    return v
+
+
+def _items(band, role):
+    return [it for it in (band or {}).get('items', []) if it['role'] == role]
+
+
+def _rects(band, role):
+    return [it['rect'] for it in _items(band, role)]
+
+
+def _inside(a, b, tol=4):
+    return (a[0] >= b[0] - tol and a[1] >= b[1] - tol and a[0] + a[2] <= b[0] + b[2] + tol
+            and a[1] + a[3] <= b[1] + b[3] + tol)
+
+
+class TestTheFrame(unittest.TestCase):
+    """Each series' working page in its template's own grammar, measured off
+    its seed (tests/measure_series.py frame_of; tests/test_measure_series.py
+    checks each profile's against its seed where Git LFS has pulled it). These
+    read the checked-in frames, so they hold with no seed here: the five bands,
+    their surfaces and slots, the windows, and the values the template draws."""
+    THEMES = ('afterburn', 'mach', 'shockwave', 'turbulence')
+    BANDS = ('top', 'left', 'right', 'bottom', 'center')
+
+    def series(self):
+        for t in self.THEMES:
+            p = designsys.load(t)
+            for series, row in p['panels'].items():
+                if not series.startswith('_'):
+                    yield t, p, series, row
+
+    def frame(self, theme, series):
+        return designsys.load(theme)['panels'][series]['frame']
+
+    def records(self, f):
+        """The frame's page records: its own, and those it carries."""
+        return [f] + [f[k] for k in _PAGES if f.get(k)]
+
+    def test_every_series_with_a_seed_has_a_frame(self):
+        for t, p, series, row in self.series():
+            with self.subTest(series=series):
+                if not set(row['models']) & set(row.get('seeds') or {}):
+                    self.assertNotIn('frame', row)
+                    continue
+                f = row['frame']
+                self.assertTrue(set(self.BANDS) | {'page', 'ids', 'note', 'windows'} <= set(f))
+                for rec in self.records(f):
+                    self.assertTrue(rec['page'])
+                    self.assertEqual(len(rec['center']['rect']), 4)
+                    for b in self.BANDS:
+                        if rec[b] is not None:
+                            self.assertEqual(len(rec[b]['rect']), 4, b)
+                            self.assertIsInstance(rec[b]['items'], list, b)
+                            self.assertIsInstance(rec[b]['surfaces'], list, b)
+
+    def test_a_bands_surfaces_and_region_lie_inside_it(self):
+        # The bands are where the template draws its bars, so what draws a
+        # bar - and the centre's popup region - lies inside its band.
+        for t, p, series, row in self.series():
+            for rec in self.records(row.get('frame') or {'page': None}):
+                for b in self.BANDS:
+                    band = rec.get(b)
+                    if not band:
+                        continue
+                    with self.subTest(series=series, page=rec['page'], band=b):
+                        for s in band['surfaces']:
+                            self.assertTrue(_inside(s['rect'], band['rect']), (s['name'], s['rect'], band['rect']))
+                        if band.get('region'):
+                            self.assertTrue(_inside(band['region'], band['rect']), (band['region'], band['rect']))
+                        if band.get('well'):
+                            self.assertTrue(_inside(band['well'], band['rect']), (band['well'], band['rect']))
+
+    def test_no_two_slots_of_a_band_share_a_rect(self):
+        for t, p, series, row in self.series():
+            for rec in self.records(row.get('frame') or {'page': None}):
+                for b in self.BANDS:
+                    if not rec.get(b):
+                        continue
+                    with self.subTest(series=series, page=rec['page'], band=b):
+                        rects = [tuple(it['rect']) for it in rec[b]['items']]
+                        self.assertEqual(len(rects), len(set(rects)), rec[b]['items'])
+
+    def test_a_bar_themes_working_page_has_all_five_bands(self):
+        for t, p, series, row in self.series():
+            if t == 'afterburn' or row['tier'] != 'A':
+                continue
+            with self.subTest(series=series):
+                self.assertTrue(all(row['frame'][b] for b in self.BANDS))
+                self.assertTrue(row['frame']['top']['tabs']['count'] >= 2)
+                self.assertTrue(row['frame']['left']['groups'])
+                self.assertEqual(set(row['frame']['ids']), {'help', 'power', 'volume', 'mute', 'mode'})
+
+    def test_the_tabs_hold_each_tabs_own_rect(self):
+        # Extron's steps are uneven - the Turbulence 1220's run 141, 141, 140,
+        # 142, 141 - so a first rect and a pitch cannot give them back.
+        for t, p, series, row in self.series():
+            f = row.get('frame') or {}
+            for b in ('top', 'center'):
+                tabs = (f.get(b) or {}).get('tabs')
+                if not tabs:
+                    continue
+                with self.subTest(series=series):
+                    self.assertEqual(len(tabs['items']), tabs['count'])
+                    self.assertEqual(tabs['items'][0]['rect'], tabs['first'])
+                    self.assertEqual({tuple(it['rect'][1:]) for it in tabs['items']}, {tuple(tabs['first'][1:])})
+        xs = lambda t, s, b='top': [it['rect'][0] for it in self.frame(t, s)[b]['tabs']['items']]
+        self.assertEqual(xs('turbulence', 'Turbulence 1220 Series'), [141, 282, 423, 563, 705, 846])
+        self.assertEqual(xs('turbulence', 'Turbulence 1520 Series'), [150, 300, 451, 600, 752, 902])
+        self.assertEqual(xs('turbulence', 'Turbulence 1020 Series')[-3:], [451, 564, 677])
+        self.assertEqual(xs('shockwave', 'Shockwave 1020 Series')[-2:], [618, 740])
+        self.assertEqual(xs('afterburn', 'Afterburn 1720 Series', 'center'), [540, 763, 987, 1210])
+        self.assertEqual(xs('afterburn', 'Afterburn 1230 Series', 'center'), [1100, 1228, 1355, 1482])
+
+    def test_machs_1035(self):
+        f = self.frame('mach', 'Mach 1220 Series')
+        self.assertEqual(f['page'], 'Main SD')
+        self.assertEqual(f['top']['rect'], [0, 0, 1280, 64])
+        tabs = f['top']['tabs']
+        self.assertEqual((tabs['first'], tabs['pitch'], tabs['count']), ([258, 0, 190, 64], 191, 4))
+        self.assertEqual([it['rect'][0] for it in tabs['items']], [258, 449, 640, 831])
+        self.assertEqual(tabs['look']['off']['fill'], '#000000B4')
+        self.assertEqual([s['rect'] for s in f['top']['start']], [[0, 0, 257, 64]])
+        self.assertEqual(f['bottom']['rect'], [0, 745, 1280, 55])
+        self.assertEqual(_rects(f['bottom'], 'help'), [[1069, 745, 70, 55]])
+        self.assertEqual(_rects(f['bottom'], 'power'), [[1140, 745, 140, 55]])
+        self.assertEqual(_rects(f['bottom'], 'mode'), [[0, 745, 140, 55]])
+        self.assertEqual(_rects(f['bottom'], 'clock'), [[398, 751, 483, 42]])
+        self.assertEqual(f['left']['rect'], [0, 64, 140, 681])
+        display, settings = f['left']['groups']
+        self.assertEqual((display['heading']['text'], display['heading']['rect'], display['pitch']),
+                         ('Display', [17, 149, 103, 37], 61))
+        self.assertEqual([b['rect'] for b in display['buttons']],
+                         [[17, 186, 103, 60], [17, 247, 103, 60], [17, 308, 103, 60]])
+        self.assertEqual(settings['heading']['text'], 'Settings')
+        self.assertEqual([it['role'] for it in f['right']['items']], ['heading', 'volume', 'mute'])
+        self.assertEqual(f['center']['region'], [140, 137, 995, 549])
+        self.assertEqual(f['center']['well'], [250, 185, 778, 435])
+        self.assertEqual(f['center']['title'], [265, 185, 755, 58])
+        # The well is the Laptop popup's title bar and body, 1 px apart.
+        self.assertEqual([(s['rect'], s['fill'], s['popup']) for s in f['center']['surfaces']],
+                         [([250, 185, 778, 58], '#000000B4', 'Laptop'), ([250, 244, 778, 376], '#000000B4', 'Laptop')])
+        self.assertEqual(f['ids'], {'help': 8117, 'power': 8022, 'volume': 8024, 'mute': 8021, 'mode': 8118})
+
+    def test_shockwaves_1035(self):
+        f = self.frame('shockwave', 'Shockwave 1220 Series')
+        self.assertEqual(f['top']['rect'], [0, 0, 1280, 91])
+        tabs = f['top']['tabs']
+        self.assertEqual((tabs['first'], tabs['pitch'], tabs['count']), ([169, 0, 152, 91], 153, 6))
+        self.assertEqual([it['rect'][0] for it in tabs['items']], [169, 322, 475, 628, 781, 934])
+        # Each tab's name is a caption-only button under it sharing its ID;
+        # the tab draws no caption of its own.
+        twin = tabs['twin']
+        self.assertEqual([it['rect'] for it in twin['items']],
+                         [[x, 55, 152, 36] for x in (169, 322, 475, 628, 781, 934)])
+        self.assertEqual([it['id'] for it in twin['items']], [it['id'] for it in tabs['items']])
+        self.assertEqual(twin['look']['off'], {'fill': None, 'border': None, 'art': None, 'text': '#FFFFFFFF'})
+        self.assertEqual(twin['look']['on'], twin['look']['off'])
+        self.assertEqual((tabs['look']['off']['text'], tabs['look']['on']['text']), (None, None))
+        self.assertNotIn('underline', f['note'])
+        # The well is main: the rails stand outside it and the footer runs
+        # between them, wider than the header's tab span.
+        self.assertEqual(f['center']['rect'], [168, 91, 926, 627])
+        self.assertEqual(f['center']['region'], [172, 124, 921, 574])
+        self.assertEqual(f['center']['well'], [168, 120, 926, 574])
+        self.assertEqual(f['right']['rect'], [1094, 91, 186, 709])
+        self.assertEqual(f['bottom']['rect'], [168, 718, 926, 82])
+        self.assertIn([166, 718, 928, 62], [s['rect'] for s in f['bottom']['surfaces']])
+        self.assertEqual(_rects(f['bottom'], 'help'), [[956, 720, 143, 59]])
+        # Power stands outside the capsule, at the foot of the right rail.
+        self.assertEqual(_rects(f['right'], 'power'), [[1115, 720, 143, 59]])
+        f = self.frame('shockwave', 'Shockwave 1720 Series')
+        self.assertEqual((f['left']['rect'], f['right']['rect']), ([0, 127, 265, 953], [1652, 127, 268, 953]))
+        self.assertEqual(f['bottom']['rect'], [265, 967, 1387, 113])
+        for series, right in (('Shockwave 1020 Series', 872), ('Shockwave 1520 Series', 1177),
+                              ('Shockwave 720 Series', 682)):
+            with self.subTest(series=series):
+                self.assertEqual(self.frame('shockwave', series)['right']['rect'][0], right)
+
+    def test_turbulences_1035(self):
+        f = self.frame('turbulence', 'Turbulence 1220 Series')
+        self.assertEqual(f['top']['rect'], [0, 0, 1280, 133])
+        self.assertEqual(f['bottom']['rect'], [140, 688, 997, 110])
+        self.assertEqual(f['left']['rect'], [0, 133, 140, 666])
+        self.assertEqual([(s['kind'], s['art']) for s in f['top']['surfaces']], [('image', '2047x151_header.png')])
+        self.assertEqual(f['center']['region'], [140, 137, 995, 549])
+
+    def test_the_windows_between_the_bars(self):
+        f = self.frame('mach', 'Mach 1220 Series')
+        w = f['windows']
+        # Mach's window is a #303030 band between the header and the footer.
+        self.assertEqual((w['help']['rect'], w['help']['surfaces'][0]['fill']), ([0, 64, 1280, 681], '#303030FF'))
+        self.assertEqual((w['help']['title'], w['help']['close']['rect'], w['help']['message']),
+                         ([27, 82, 958, 52], [1186, 82, 72, 52], [320, 290, 637, 220]))
+        self.assertEqual(w['confirm']['message'], [357, 280, 565, 106])
+        self.assertEqual([(b['role'], b['rect']) for b in w['confirm']['buttons']],
+                         [('power', [372, 432, 258, 60]), ('cancel', [650, 432, 258, 60])])
+        self.assertEqual(w['wait']['message'], [270, 324, 739, 152])
+        display = next(s for s in w['settings'] if 'Display Settings' in s['popups'])
+        self.assertEqual((display['rect'], display['title'], display['close']['rect']),
+                         ([0, 64, 1280, 681], [27, 82, 958, 52], [1186, 82, 72, 52]))
+        # Shockwave's are #999999 cards, two widths for its settings.
+        w = self.frame('shockwave', 'Shockwave 1220 Series')['windows']
+        self.assertEqual((w['help']['rect'], w['help']['surfaces'][0]['fill'], w['help']['close']['rect']),
+                         ([288, 173, 703, 453], '#999999FF', [933, 180, 50, 50]))
+        self.assertEqual(w['help']['title'], [448, 203, 383, 80])
+        self.assertEqual(w['confirm']['rect'], [288, 205, 703, 389])
+        self.assertEqual([(b['role'], b['rect']) for b in w['confirm']['buttons']],
+                         [('cancel', [348, 449, 272, 110]), ('power', [659, 449, 272, 110])])
+        display = next(s for s in w['settings'] if 'Display Control' in s['popups'])
+        self.assertEqual((display['rect'], display['close']['rect']), ([224, 74, 832, 651], [999, 81, 50, 50]))
+        audio = next(s for s in w['settings'] if 'Audio Control' in s['popups'])
+        self.assertEqual((audio['rect'], audio['close']['rect']), ([126, 74, 1028, 651], [1096, 81, 50, 50]))
+        # Turbulence's settings window fills between its bars.
+        w = self.frame('turbulence', 'Turbulence 1220 Series')['windows']
+        self.assertEqual(w['help']['rect'], [258, 149, 761, 500])
+        lighting = next(s for s in w['settings'] if 'Lighting Control' in s['popups'])
+        self.assertEqual((lighting['rect'], lighting['surfaces'][0]['fill'], lighting['close']['rect']),
+                         ([80, 56, 1120, 684], '#184E80FF', [1133, 61, 60, 60]))
+        # Afterburn's redraws the whole screen with its art.
+        w = self.frame('afterburn', 'Afterburn 1220 Series')['windows']
+        self.assertEqual((w['help']['rect'], w['help']['title'], w['help']['close']['rect']),
+                         ([0, 0, 1280, 800], [485, 36, 310, 50], [1026, 25, 64, 64]))
+        # A hub's settings window is the popup its settings opener names, in
+        # the popup region; Mach's hub modals draw no window of their own.
+        w = self.frame('mach', 'Mach 520 Series')['windows']
+        self.assertEqual((w['help']['rect'], w['help']['title'], w['help']['close']['rect']),
+                         (None, [243, 0, 321, 66], [739, 0, 61, 66]))
+        self.assertEqual([(s['popups'], s['rect'], s['title'], s['close']['rect']) for s in w['settings']],
+                         [(['Settings'], [0, 0, 702, 480], [81, 15, 540, 66], [625, 15, 61, 66])])
+        w = self.frame('shockwave', 'Shockwave 520 Series')['windows']
+        self.assertEqual([(s['popups'], s['title']) for s in w['settings']], [(['More Options'], [80, 0, 541, 72])])
+        # Afterburn's hub opens Help in the region too, and closes it with Back.
+        w = self.frame('afterburn', 'Afterburn 520 Series')['windows']
+        self.assertEqual((w['help']['rect'], w['help']['close']['role'], w['help']['close']['rect']),
+                         ([0, 0, 686, 480], 'back', [0, 13, 66, 66]))
+        self.assertEqual([(s['popups'], s['close']['rect']) for s in w['settings']], [(['Settings'], [0, 13, 66, 66])])
+
+    def test_the_type_the_center_and_the_windows_set(self):
+        """Each panel's own sizes, off its own seed - the 725's from the 725's,
+        not the 1035's scaled: a source's title, its empty state and
+        Shockwave's status; each window's title and message, Help's apart
+        from the confirmation's."""
+        F = lambda t, s: self.frame(t, f'{t.capitalize()} {s} Series')
+        self.assertEqual(F('mach', 1220)['center']['pt'], {'title': 24, 'empty': 16})
+        self.assertEqual(F('mach', 1020)['center']['pt'], {'title': 20, 'empty': 14})
+        self.assertEqual(F('shockwave', 1220)['center']['pt'], {'title': 40, 'empty': 22, 'status': 16})
+        self.assertEqual(F('shockwave', 1020)['center']['pt'], {'title': 30, 'empty': 20, 'status': 14})
+        self.assertEqual(F('turbulence', 1220)['center']['pt'], {'title': 36, 'empty': 16})
+        self.assertEqual(F('turbulence', 1020)['center']['pt'], {'title': 36, 'empty': 16})
+        # Shockwave's status, the program's Disconnected, under its request.
+        self.assertEqual(F('shockwave', 1220)['center']['status'], [536, 516, 192, 102])
+        self.assertEqual(F('shockwave', 1020)['center']['status'], [428, 385, 152, 75])
+        self.assertNotIn('status', F('mach', 1220)['center'])
+        win = lambda t, s, k: F(t, s)['windows'][k]
+        for t, s, help_, confirm in (('mach', 1220, (24, 20), 20), ('mach', 1020, (20, 16), 18),
+                                     ('shockwave', 1220, (40, 20), 26), ('shockwave', 1020, (30, 16), 20),
+                                     ('turbulence', 1220, (36, 16), 20), ('turbulence', 1020, (30, 14), 20)):
+            with self.subTest(theme=t, series=s):
+                self.assertEqual(win(t, s, 'help')['pt'], dict(zip(('title', 'message'), help_)))
+                self.assertEqual(win(t, s, 'confirm')['pt'], {'message': confirm})
+        self.assertEqual([r['pt'] for r in win('mach', 1020, 'settings') if r['title']], [{'title': 20}] * 2)
+
+    def test_a_source_with_controls_is_titled_where_its_template_titles_it(self):
+        """Turbulence titles a source with controls at the popup's top (its
+        Doc Cam at y 0) and an empty one 40 px lower; Mach and Shockwave at
+        one place."""
+        F = lambda t, s: self.frame(t, f'{t.capitalize()} {s} Series')['center']
+        self.assertEqual((F('turbulence', 1220)['title'], F('turbulence', 1220)['title_controls']),
+                         ([250, 177, 770, 96], [250, 137, 770, 96]))
+        self.assertEqual(F('turbulence', 1020)['title_controls'], [200, 103, 616, 72])
+        self.assertEqual(F('mach', 1220)['title_controls'], F('mach', 1220)['title'])
+        self.assertEqual(F('shockwave', 1020)['title_controls'], F('shockwave', 1020)['title'])
+
+    def test_a_message_keeps_the_lines_its_template_sets_it_in(self):
+        """How many lines the template's message takes in its box, in its own
+        face: Turbulence's power-down question one on the 1035, two on the 725."""
+        w = lambda s: self.frame('turbulence', f'Turbulence {s} Series')['windows']
+        self.assertEqual((w(1220)['confirm']['lines'], w(1020)['confirm']['lines']), (1, 2))
+        self.assertEqual(w(1220)['help']['lines'], 1)
+        self.assertEqual(self.frame('mach', 'Mach 1220 Series')['windows']['help']['lines'], 3)
+        self.assertEqual(self.frame('shockwave', 'Shockwave 1220 Series')['windows']['confirm']['lines'], 2)
+
+    def test_the_320s_strip(self):
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                f = self.frame(theme, f'{theme.capitalize()} 320 Series')
+                self.assertEqual((f['page'], f['top']['rect']), ('Doc Cam 1', [0, 0, 320, 36]))
+                self.assertEqual(f['center']['rect'], [0, 36, 320, 204])
+                self.assertTrue(_items(f['top'], 'title'))
+                self.assertEqual(len([it for b in self.BANDS for it in _items(f[b], 'more')]), 1)
+                self.assertFalse([it for b in self.BANDS for it in _items(f[b], 'back')])
+                self.assertEqual(f['second']['page'], 'Doc Cam 2')
+                self.assertEqual(len([it for b in self.BANDS for it in _items(f['second'][b], 'back')]), 1)
+                # Its empty state is a source page's with no controls.
+                self.assertEqual((f['center']['empty'], f['center']['empty_page']), ([0, 80, 320, 102], 'Laptop'))
+        f = self.frame('mach', 'Mach 320 Series')
+        self.assertEqual(f['center']['row'], [[61, 65, 74, 50], [185, 65, 74, 50]])
+        # The second page's strip is a shape short of the edge and Back.
+        self.assertEqual(_rects(f['second']['top'], 'back'), [[263, 0, 57, 36]])
+        self.assertEqual([s['rect'] for s in f['second']['top']['surfaces']], [[0, 0, 262, 36]])
+        self.assertEqual(_rects(self.frame('shockwave', 'Shockwave 320 Series')['second']['center'], 'back'),
+                         [[232, 179, 59, 59]])
+        # Afterburn's 320 titles its pages in the row along the foot.
+        f = self.frame('afterburn', 'Afterburn 320 Series')
+        self.assertEqual((f['top'], f['bottom']['rect']), (None, [0, 190, 320, 50]))
+        self.assertEqual((_rects(f['bottom'], 'more'), _rects(f['bottom'], 'title')),
+                         ([[270, 190, 50, 50]], [[12, 197, 120, 36]]))
+        self.assertEqual((_rects(f['second']['bottom'], 'back'), _rects(f['second']['bottom'], 'title')),
+                         ([[0, 190, 50, 50]], [[50, 197, 135, 36]]))
+        self.assertEqual(f['center']['empty'], [35, 44, 250, 102])
+
+    def test_the_300s_source_page_and_its_home(self):
+        # The source page's bands hold its own controls; the home page's
+        # menu bar is a record of its own.
+        f = self.frame('mach', 'Mach 300 Series')
+        self.assertEqual((f['page'], f['bottom']['rect']), ('Computer', [0, 400, 320, 80]))
+        self.assertEqual([(it['role'], it['rect']) for it in f['bottom']['items']], [('back', [8, 404, 96, 72])])
+        self.assertEqual(_rects(f['center'], 'title'), [[0, 15, 320, 40]])
+        self.assertEqual(f['center']['empty'], [0, 151, 320, 138])
+        self.assertEqual(f['home']['page'], 'Main')
+        self.assertEqual([(it['role'], it['rect']) for it in f['home']['bottom']['items']],
+                         [('settings', [8, 404, 96, 72]), ('help', [112, 404, 96, 72]), ('power', [216, 404, 96, 72])])
+        self.assertEqual(f['ids'], {'help': 9103, 'power': 8022, 'settings': 8040})
+        # Afterburn's Landscape source page draws its own art: the column is
+        # on the left, with Back and the title, and the home page's on the right.
+        f = self.frame('afterburn', 'Afterburn 300 Landscape Series')
+        self.assertEqual((f['left']['rect'], f['center']['rect'], f['right']),
+                         ([0, 0, 88, 320], [88, 0, 392, 320], None))
+        self.assertEqual((_rects(f['left'], 'back'), _rects(f['left'], 'title')),
+                         ([[10, 18, 66, 66]], [[5, 270, 79, 50]]))
+        self.assertEqual(f['center']['empty'], [120, 91, 320, 138])
+        self.assertEqual(f['home']['right']['rect'], [392, 0, 88, 320])
+        self.assertEqual([it['role'] for it in f['home']['right']['items']], ['settings', 'help', 'power'])
+        f = self.frame('afterburn', 'Afterburn 300 Portrait Series')
+        self.assertEqual(f['bottom']['rect'], [0, 392, 320, 88])
+        self.assertEqual([(it['role'], it['rect']) for it in f['bottom']['items']],
+                         [('back', [0, 405, 66, 66]), ('title', [66, 413, 231, 50])])
+        self.assertEqual(f['center']['empty'], [0, 79, 320, 138])
+        self.assertEqual([(it['role'], it['rect']) for it in f['home']['bottom']['items']],
+                         [('settings', [23, 402, 66, 66]), ('help', [130, 402, 66, 66]), ('power', [231, 402, 66, 66])])
+
+    def test_a_hubs_menu_bar(self):
+        f = self.frame('mach', 'Mach 520 Series')
+        self.assertEqual(f['page'], 'Main Page')
+        self.assertEqual(f['right']['rect'], [702, 0, 98, 480])
+        self.assertEqual([it['role'] for it in f['right']['items']],
+                         ['heading', 'volume-up', 'volume-down', 'mute', 'settings', 'power'])
+        self.assertEqual(f['center']['region'], [0, 0, 702, 480])
+        self.assertEqual((f['left'], f['bottom']), (None, None))
+        f = self.frame('shockwave', 'Shockwave 520 Series')
+        self.assertEqual(f['top']['rect'], [0, 0, 700, 72])
+        self.assertEqual(f['right']['rect'], [700, 0, 100, 480])
+        # Every hub's settings opener is 8040, More on Shockwave's and
+        # Turbulence's, which opens their Choose an Option.
+        self.assertEqual([(it['name'], it['id']) for it in _items(f['right'], 'settings')], [('More', 8040)])
+        for t, p, series, row in self.series():
+            if row.get('frame') and row['frame']['page'] in ('Main Page', 'Main') and row['frame']['right']:
+                with self.subTest(series=series):
+                    self.assertEqual(row['frame']['ids'].get('settings'), 8040)
+
+    def test_afterburns_art_draws_no_top_or_bottom_bar(self):
+        for t, p, series, row in self.series():
+            if t != 'afterburn' or row['tier'] != 'A' or 'frame' not in row:
+                continue
+            with self.subTest(series=series):
+                f = row['frame']
+                self.assertEqual((f['top'], f['bottom']), (None, None))
+                self.assertTrue(f['left'] and f['right'])
+                self.assertEqual(f['center']['rect'], row['main'])
+                self.assertTrue(f['note'])
+        f = self.frame('afterburn', 'Afterburn 1220 Series')
+        self.assertEqual(f['center']['region'], [200, 175, 880, 525])
+        self.assertEqual(f['center']['tabs']['first'], [342, 37, 110, 110])
+        # The 1230's Full Screen is the video's, not the projection screen's.
+        f = self.frame('afterburn', 'Afterburn 1230 Series')
+        self.assertEqual(len(_items(f['center'], 'fullscreen')), 2)
+        self.assertFalse(_items(f['center'], 'screen'))
+
+    def test_every_model_carries_its_series_frame(self):
+        for t in self.THEMES:
+            p = designsys.load(t)
+            for pid, row in designsys.models(p).items():
+                if not row.get('turned'):
+                    with self.subTest(panel=pid):
+                        self.assertEqual(_measured(row['frame']), p['panels'][row['series']].get('frame'))
+
+    def test_a_slot_under_a_panels_touch_minimum_has_a_legal_rect(self):
+        # The touch gate is each panel's own: the 1220 series' tabs are legal
+        # on a 1035 (53 px) and short on an 835 (67 px), so models() gives
+        # each panel's frame the rect that meets its own, about the slot's
+        # centre and inside its band where the band can hold it.
+        m = designsys.models(designsys.load('mach'))
+        f = m['TLP1035T']['frame']
+        self.assertNotIn('legal', _items(f['bottom'], 'help')[0])
+        self.assertNotIn('legal', f['top']['tabs']['items'][0])
+        slider = _items(f['right'], 'volume')[0]
+        self.assertEqual((slider['rect'], slider['legal']), ([1198, 178, 30, 363], [1187, 178, 53, 363]))
+        self.assertEqual(slider['reason'], '30x363 is under the 53 px touch minimum (9 mm at 149 DPI)')
+        tab = m['TLP835T']['frame']['top']['tabs']['items'][0]
+        self.assertEqual((tab['legal'], tab['reason']),
+                         ([258, 0, 190, 67], '190x64 is under the 67 px touch minimum (9 mm at 188.68 DPI)'))
+        # The 725's footer is shallower than its touch minimum, so Help grows
+        # out of it, kept on the canvas.
+        hlp = _items(m['TLP725T']['frame']['bottom'], 'help')[0]
+        self.assertEqual((hlp['rect'], hlp['legal']), ([843, 543, 57, 57], [842, 540, 60, 60]))
+        close = m['TLP1035T']['frame']['windows']['help']['close']
+        self.assertEqual((close['rect'], close['legal']), ([1186, 82, 72, 52], [1186, 82, 72, 53]))
+
+    def test_a_turned_panel_has_its_series_frame_transposed(self):
+        turned = 0
+        for t in self.THEMES:
+            p = designsys.load(t)
+            for pid, row in designsys.models(p).items():
+                if not row.get('turned'):
+                    continue
+                own = p['panels'][row['series']].get('frame')
+                turned += own is not None
+                with self.subTest(panel=pid):
+                    if own is None:
+                        self.assertIsNone(row['frame'])
+                        continue
+                    want = _turned(own)
+                    # Its note describes the series' own page, upright.
+                    want['note'] = row['frame']['note']
+                    self.assertEqual(_measured(row['frame']), want)
+                    self.assertTrue(row['frame']['note'].endswith(own['note']), row['frame']['note'])
+                    self.assertIn('upright', row['frame']['note'])
+        self.assertTrue(turned)
+        m = designsys.models(designsys.load('mach'))
+        own = m['TLP1035M']['frame']
+        self.assertEqual(m['TLP1035M-Portrait']['frame']['left']['rect'], [0, 0, 64, 1280])
+        self.assertEqual(m['TLP1035M-Portrait']['frame']['top']['rect'], _turned(own['left']['rect']))
+        self.assertEqual(m['TLP1035M-Portrait']['frame']['center']['region'], _turned(own['center']['region']))
+        # Turned, the slider is wide and short, and grows down to the touch minimum.
+        slider = _items(m['TLP1035M-Portrait']['frame']['bottom'], 'volume')[0]
+        self.assertEqual((slider['rect'], slider['legal']), ([178, 1198, 363, 30], [178, 1187, 363, 53]))
+
+
 class TestWhatTheRailSays(unittest.TestCase):
     """The Rail's README names, from the profile's own table, the series whose
     rail runs below the main region, those whose template draws none, and those
@@ -968,6 +1435,236 @@ class TestBundle(unittest.TestCase):
         self.assertIn('slider', kinds)
         for k in kinds - {'page', 'popup'}:
             self.assertIn(k, KIND_TYPE, k)
+
+
+REGIONS = ('Header', 'LeftRail', 'Section', 'RightRail', 'Footer', 'Center')
+
+
+class TestTheRegionComponents(unittest.TestCase):
+    """The region frame's components (docs/claude-design.md section 3) are a
+    bar theme's: Mach, Shockwave and Turbulence draw their working page in
+    bars; Afterburn's system is unchanged."""
+
+    def test_a_bar_theme_has_them_and_afterburn_does_not(self):
+        for t in ('mach', 'shockwave', 'turbulence'):
+            names = [n for n, _, _ in designsys.components(designsys.load(t))]
+            self.assertEqual(names[:len(designsys.COMPONENTS)], [n for n, _, _ in designsys.COMPONENTS], t)
+            self.assertEqual(names[len(designsys.COMPONENTS):], list(REGIONS), t)
+        self.assertEqual(designsys.components(designsys.load('afterburn')), designsys.COMPONENTS)
+
+    def test_each_has_a_readme_a_preview_and_a_type(self):
+        p = designsys.load('mach')
+        docs, cards, dts = designsys.component_docs(p), designsys.previews(p), designsys.index_dts(p)
+        for n in REGIONS:
+            self.assertIn(f'# {n}\n', docs[n])
+            self.assertIn(f'{p["namespace"]}.{n}', docs[n])
+            self.assertTrue(cards[n].startswith('<!-- @dsCard group="Regions"'), n)
+            self.assertIn(f'N.{n}', cards[n])
+            self.assertIn(f'export declare function {n}(', dts)
+            self.assertIn(f'{n}: typeof {n}', dts)
+        afterburn = designsys.load('afterburn')
+        self.assertFalse(set(REGIONS) & set(designsys.component_docs(afterburn)))
+        self.assertNotIn('Header', designsys.index_dts(afterburn))
+
+    def test_the_types_carry_what_a_region_reads(self):
+        """A region places a control by its `slot`, and a splash page says so:
+        a designer working from the types meets both as props, not unknowns."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            dts = designsys.index_dts(designsys.load(t))
+            for props in ('ButtonProps', 'LabelProps', 'TrackProps', 'ClockProps'):
+                decl = re.search(r'export interface ' + props + r' \{([^\n]*)\}', dts)
+                self.assertIsNotNone(decl, (t, props))
+                self.assertIn('slot?: string', decl.group(1), (t, props))
+            page = re.search(r'export interface PageProps \{([^\n]*)\}', dts).group(1)
+            self.assertIn('splash?: boolean | string', page, t)
+        dts = designsys.index_dts(designsys.load('afterburn'))
+        self.assertNotIn('slot?:', dts)
+        self.assertNotIn('splash?:', dts)
+
+    def test_the_header_names_them(self):
+        js = designsys.bundle(designsys.load('mach'), art=False)
+        head = json.loads(re.match(r'/\* @ds-bundle: (\{.*?\}) \*/', js).group(1))
+        self.assertEqual([c['name'] for c in head['components']][-len(REGIONS):], list(REGIONS))
+
+    def test_the_frame_is_in_the_bundle_once_per_series(self):
+        """Keyed by series, not repeated on every model row (190-320 KB a
+        theme), and only the series the regions draw - the bar series of tier
+        A, with all five bands, and the hubs
+        (test_the_hubs_frames_are_in_the_bundle); a 320's frame waits for
+        the regions that draw it - so the bundle stays small without its art,
+        with the kit's index in it where the kit is here (about 335 KB for
+        Mach, its windows slimmed to their rects and looks, about 1.7 KB a
+        series; a hub's whole frame about 3 KB)."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            p = designsys.load(t)
+            js = designsys.bundle(p, art=False)
+            prof = json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))
+            tiers = {}
+            for row in designsys.models(p).values():
+                tiers.setdefault(row['series'], set()).add(row['tier'])
+            series = {s for s, v in p['panels'].items() if not s.startswith('_') and v.get('frame')
+                      and all(v['frame'].get(b) for b in ('top', 'left', 'right', 'bottom', 'center'))
+                      and 'C' not in tiers.get(s, {'C'})}
+            self.assertTrue(series, t)
+            self.assertEqual({s for s, f in prof['frames'].items() if not f.get('hub')}, series, t)
+            # What the regions read of each: the bars, the center's popup
+            # region, well, titles (an empty source's and one with controls),
+            # empty state, status, type sizes and surfaces, and the windows.
+            for s, f in prof['frames'].items():
+                if f.get('hub'):
+                    continue
+                own = p['panels'][s]['frame']
+                self.assertEqual(sorted(f), ['bottom', 'center', 'left', 'right', 'top', 'windows'], s)
+                self.assertEqual(f['center'], {k: own['center'].get(k) for k in
+                                               ('region', 'well', 'title', 'title_controls', 'empty',
+                                                'status', 'pt', 'surfaces')}, s)
+                # Each window's rects, surfaces and its Close's and buttons' roles.
+                self.assertEqual(f['windows'], designsys._slim_windows(own['windows']), s)
+                self.assertEqual(f['windows']['confirm']['rect'], own['windows']['confirm']['rect'], s)
+                self.assertEqual(f['top'], own['top'], s)
+            self.assertFalse(any('frame' in row for row in prof['models'].values()), t)
+            # A backstop, not a limit of the Design type's: a frame repeated
+            # on every model row doubled the bundle. Mach's is about 335 KB.
+            self.assertLess(len(js.encode('utf-8')), 345_000, t)
+        # Afterburn draws no bars: no frame in its bundle.
+        js = designsys.bundle(designsys.load('afterburn'), art=False)
+        self.assertEqual(json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))['frames'], {})
+
+    def test_the_hubs_frames_are_in_the_bundle(self):
+        """Each hub series' frame, as its region page, source popups and
+        windows draw it (bundle.js planHub): its menu bar and header strip,
+        the popup region with what a source's popup draws and the Volume
+        Level strip, its Select a Source and options grids, and its windows.
+        Not a 320's."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            p = designsys.load(t)
+            js = designsys.bundle(p, art=False)
+            prof = json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))
+            hubs = {s for s, f in prof['frames'].items() if f.get('hub')}
+            want = {s for s, v in p['panels'].items() if not s.startswith('_') and (v.get('frame') or {}).get('select')}
+            self.assertEqual(hubs, want, t)
+            self.assertTrue(hubs, t)
+            for s in hubs:
+                f, own = prof['frames'][s], p['panels'][s]['frame']
+                self.assertEqual(sorted(f), ['center', 'hub', 'options', 'right', 'select', 'top', 'windows'], s)
+                self.assertEqual((f['right'], f['top'], f['select'], f['options']),
+                                 (own['right'], own['top'], own['select'], own['options']), s)
+                strip = next(it['rect'] for it in own['center']['items'] if it['role'] == 'popup')
+                self.assertEqual((f['center']['region'], f['center']['strip'], f['center']['close']),
+                                 (own['center']['region'], strip, own['center']['close']), s)
+                self.assertEqual(f['windows'], designsys._slim_windows(own['windows']), s)
+
+    def test_a_panel_draws_its_own_seeds_corners(self):
+        """Every project carries its own copy of the built-in borders, and
+        Build draws the panel's: Shockwave's hubs and 320 round 2D Rounded
+        Rectangle at 10 px where its 1035 and 725 do at 2, so a hub's cards
+        came out near-square on the canvas and round on the panel. The model
+        row carries the seed's (`radii`), measured where the seeds are."""
+        p = designsys.load('shockwave')
+        rows = designsys.models(p)
+        self.assertEqual([rows[m]['radii'] for m in ('TLP525T', 'TLP535T', 'TLP320M', 'TLP1035T', 'TLP725T')],
+                         [{'rounded': 10}] * 3 + [{}] * 2)
+        js = designsys.bundle(p, art=False)
+        prof = json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))
+        self.assertEqual(prof['models']['TLP525T']['radii'], {'rounded': 10})
+        sys.path.insert(0, os.path.join(REPO, 'tests'))
+        import measure_series
+        from gdl import seeds
+        from gdl.project import Project
+        for series, row in p['panels'].items():
+            if series.startswith('_') or not any(m in ('TLP525T', 'TLP535T', 'TLP320M', 'TLP1035T', 'TLP725T')
+                                                 for m in row['models']):
+                continue
+            seed = measure_series.series_seed(row)
+            if not seeds.usable(seed):
+                continue
+            with self.subTest(series=series):
+                got = measure_series.seed_radii(Project.open(seeds.path(seed)), p['borders'])
+                self.assertEqual(got, row.get('radii') or {})
+
+    def test_the_hubs_looks_exist(self):
+        """`regions.hub` names only the profile's own variants and colors."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            p = designsys.load(t)
+            colors = {c['name'] for c in p['colors']}
+            hub = p['regions']['hub']
+            looks = dict(hub, **{'options ' + k: v for k, v in hub['options'].items() if isinstance(v, dict)})
+            for key, look in looks.items():
+                with self.subTest(theme=t, key=key):
+                    if 'variant' in look:
+                        self.assertIn(look['variant'], p['buttons'])
+                    for k in ('color', 'background'):
+                        if k in look:
+                            self.assertIn(look[k], colors)
+
+    def test_the_writing_is_in_the_bundle(self):
+        """The template's own words, which the center and the windows draw."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            p = designsys.load(t)
+            prof = json.loads(re.search(r'var P = (\{.*?\});\n', designsys.bundle(p, art=False)).group(1))
+            self.assertEqual(prof['writing'], {k: v for k, v in p['writing'].items() if not k.startswith('_')}, t)
+
+    def test_the_page_props_carry_a_role(self):
+        """A source popup and a window say what they are (`role`, `topic`,
+        `title`): a designer working from the types meets them as props."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            page = re.search(r'export interface PageProps \{([^\n]*)\}', designsys.index_dts(designsys.load(t))).group(1)
+            for prop in ("role?: 'source' | 'settings' | 'help' | 'confirm' | 'wait'", 'topic?: string', 'title?: string'):
+                self.assertIn(prop, page, t)
+        page = re.search(r'export interface PageProps \{([^\n]*)\}',
+                         designsys.index_dts(designsys.load('afterburn'))).group(1)
+        self.assertNotIn('role?:', page)
+
+
+class TestTheWriting(unittest.TestCase):
+    """Each bar theme's profile holds its template's own words (`writing`),
+    measured off its seeds' source popups and windows: the empty state of a
+    source with no controls, the power-down question, the waits, the Help
+    message and the buttons' words. The center and the windows draw them."""
+
+    WORDS = {
+        'mach': ('{name} is currently selected.\nThere are no controls for this device.',
+                 'Do you want to power down the system?',
+                 'Please wait while the system is powering down.'),
+        'shockwave': ('Please connect your {noun}.', 'Do you want to\npower down the system?',
+                      'Please wait while the\nsystem is powering down.'),
+        'turbulence': ('{name} is currently selected.\nThere are no controls for this device.',
+                       'Do you want to power down the system?',
+                       'Please wait while the system is\npowering down.'),
+    }
+
+    def test_each_bar_theme_has_its_templates_words(self):
+        for t, (empty, confirm, down) in self.WORDS.items():
+            with self.subTest(theme=t):
+                w = designsys.load(t)['writing']
+                self.assertTrue(w['_source'])
+                self.assertEqual(w['empty'], empty)
+                self.assertEqual(w['confirm'], {'power': confirm})
+                self.assertEqual(w['wait']['down'], down)
+                self.assertIn('starts up.', w['wait']['up'])
+                self.assertEqual(w['buttons'], {'power': 'Power Down', 'cancel': 'Cancel', 'close': 'Close'})
+                self.assertTrue(w['help'].startswith('For assistance, please call the help desk at:'))
+        # Shockwave's empty source also shows a status the program sets.
+        self.assertEqual(designsys.load('shockwave')['writing']['status'], 'Disconnected')
+        self.assertNotIn('writing', designsys.load('afterburn'))
+
+    def test_the_looks_the_center_and_windows_give_exist(self):
+        """`regions.source` and `regions.window` name only the profile's own
+        variants, colors, type and borders."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            p = designsys.load(t)
+            colors = {c['name'] for c in p['colors']}
+            for part in ('source', 'window'):
+                looks = p['regions'][part]
+                self.assertIn('title', looks, (t, part))
+                for key, look in looks.items():
+                    with self.subTest(theme=t, part=part, key=key):
+                        if 'variant' in look:
+                            self.assertIn(look['variant'], p['buttons'])
+                        if 'color' in look:
+                            self.assertIn(look['color'], colors)
+                        if 'size' in look:
+                            self.assertGreaterEqual(look['size'], MIN_BODY_POINT_SIZE)
 
 
 class TestBuild(unittest.TestCase):

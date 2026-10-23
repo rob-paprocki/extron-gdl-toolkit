@@ -37,7 +37,7 @@ together.
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
 | `gdl/edit.py` | change vocabulary for an existing panel: rename, restyle, states, retarget, renumber |
 | `gdl/idmap.py` | the ID map a programmer works from: every addressable control, where it is, what it does |
-| `gdl/designsys/` | an Extron template as a Design System artifact: its profile, and the components every template shares |
+| `gdl/designsys/` | an Extron template as a Design System artifact: its profile, the components every template shares, and the region components (Header, LeftRail, Section, RightRail, Footer, Center) of the templates that draw their bars as controls |
 | `gdl/design.py` | turns a Design canvas into a spec for each panel it lists, laying it out in headless Chrome with the canvas's own runtime, pinned in `gdl/dc_runtime.json` |
 | `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
 | `gdl/templates.py` | Extron's series templates, from GUI Designer's own table: which template a model takes |

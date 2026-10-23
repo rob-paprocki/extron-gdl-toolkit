@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lighting</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronMach.Page" name="Lighting" panels="TLP1035T" kind="modal" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px"><x-import component-from-global-scope="ExtronMach.Panel" name="Window" fill="page" border="none" style="position: absolute; left: 0px; top: 64px; width: 1280px; height: 681px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Window Title" type="heading" align="left" color="text" style="position: absolute; left: 27px; top: 82px; width: 958px; height: 52px">Lighting Settings</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Close" variant="ghost" nav="Main" style="position: absolute; left: 1186px; top: 82px; width: 72px; height: 52px">Close</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Lights Preset 1" variant="ghost" does="Recalls lighting preset 1." style="position: absolute; left: 400px; top: 360px; width: 112px; height: 60px">Preset 1</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Lights Preset 2" variant="ghost" does="Recalls lighting preset 2." style="position: absolute; left: 524px; top: 360px; width: 112px; height: 60px">Preset 2</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Lights Preset 3" variant="ghost" does="Recalls lighting preset 3." style="position: absolute; left: 648px; top: 360px; width: 112px; height: 60px">Preset 3</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Lights Preset 4" variant="ghost" does="Recalls lighting preset 4." style="position: absolute; left: 772px; top: 360px; width: 112px; height: 60px">Preset 4</x-import></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

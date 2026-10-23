@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Doc Cam</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 995px; height: 549px; position: relative">
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="DocCam" panels="TLP1035T TLP725T TLP525T" kind="popup" group="Sources" role="source" title="Document Camera" style="position: absolute; left: 0px; top: 0px; width: 995px; height: 549px">
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Inputs Heading" align="center" style="position: absolute; left: 198px; top: 96px; width: 127px; height: 61px">Inputs</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Inputs 1" does="Inputs: 1." style="position: absolute; left: 201px; top: 160px; width: 120px; height: 100px">1</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Inputs 2" does="Inputs: 2." style="position: absolute; left: 201px; top: 290px; width: 120px; height: 100px">2</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Inputs 3" does="Inputs: 3." style="position: absolute; left: 201px; top: 420px; width: 120px; height: 100px">3</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Zoom Heading" align="center" style="position: absolute; left: 352px; top: 96px; width: 127px; height: 61px">Zoom</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Zoom In" does="Zoom: In." style="position: absolute; left: 355px; top: 160px; width: 120px; height: 100px">In</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Zoom Out" does="Zoom: Out." style="position: absolute; left: 355px; top: 290px; width: 120px; height: 100px">Out</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Zoom Freeze" does="Zoom: Freeze." style="position: absolute; left: 355px; top: 420px; width: 120px; height: 100px">Freeze</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Focus Heading" align="center" style="position: absolute; left: 506px; top: 96px; width: 127px; height: 61px">Focus</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Focus Far" does="Focus: Far." style="position: absolute; left: 509px; top: 160px; width: 120px; height: 100px">Far</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Focus Near" does="Focus: Near." style="position: absolute; left: 509px; top: 290px; width: 120px; height: 100px">Near</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Focus Auto" does="Focus: Auto." style="position: absolute; left: 509px; top: 420px; width: 120px; height: 100px">Auto</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Label" name="Iris Heading" align="center" style="position: absolute; left: 660px; top: 96px; width: 127px; height: 61px">Iris</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Iris Open" does="Iris: Open." style="position: absolute; left: 663px; top: 160px; width: 120px; height: 100px">Open</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Iris Close" does="Iris: Close." style="position: absolute; left: 663px; top: 290px; width: 120px; height: 100px">Close</x-import>
+<x-import component-from-global-scope="ExtronTurbulence.Button" name="Doc Cam Iris Normal" does="Iris: Normal." style="position: absolute; left: 663px; top: 420px; width: 120px; height: 100px">Normal</x-import></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

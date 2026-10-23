@@ -423,6 +423,21 @@ class TestPopupBackground(unittest.TestCase):
         self.assertEqual(self._check(_png((36, 38, 52)), background=0xFF242634), [])
         self.assertEqual(len(self._check(_png((200, 0, 0)), background=0xFF242634)), 1)
 
+    def test_a_translucent_popup_must_be_its_color_and_alpha(self):
+        # Turbulence's hub Volume Level strip: black at 166 over the page.
+        # It has no opaque pixel, and read as built clear before it was read
+        # at its own alpha.
+        def art(rgba):
+            import io
+            from PIL import Image
+            buf = io.BytesIO()
+            Image.new('RGBA', (8, 8), rgba).save(buf, 'PNG')
+            return buf.getvalue()
+        self.assertEqual(self._check(art((0, 0, 0, 166)), background=0xA6000000), [])
+        self.assertEqual(len(self._check(art((0, 0, 0, 0)), background=0xA6000000)), 1)
+        self.assertEqual(len(self._check(art((0, 0, 0, 255)), background=0xA6000000)), 1)
+        self.assertEqual(len(self._check(art((90, 0, 0, 166)), background=0xA6000000)), 1)
+
 
 class TestBackgroundImage(unittest.TestCase):
     """layout.json does not name a page's background image, so the page's

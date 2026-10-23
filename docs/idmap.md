@@ -168,13 +168,36 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   from 50001 up - the same on every panel it is on - and is listed only on those
   panels. The first popup of a derived group has no button leading to it: the
   program shows it as its page comes up, and the page table says so.
+- **So is what a source popup and a window draw** (`role`,
+  `docs/claude-design.md` §4): a source's `<name> Title`, `Empty` and `Status`
+  (Shockwave's Disconnected, which the program sets), a window's `<name>
+  Window`, `Title` and `Message`, and its `Close`, `Cancel` and `Power Down` -
+  derived, with an ID from 50001 up keyed by its popup and name, one ID on
+  every panel. Close and Cancel carry a `does` and no `nav`: only the program
+  knows the page that opened the window, so it hides the window. Power Down's
+  `does` is the confirmation Page's own. On a hub, where a source popup and
+  a settings window are popups of main's group, there is one place back: a
+  source popup's and a settings popup's Close, and the Close of the options
+  and Display Control popups the page derives, carry `nav` to Select Source
+  (Mach's Display Settings' to its Settings), which the map shows as the
+  popup they show.
 - **A slider on a panel that cannot build one** - the 520s', 535s', 320s' and
   300M's seeds have levels and no slider (the profile's `kinds`,
   `docs/claude-design.md` §4) - is a level there, with that derived Up and Down. It
   keeps the slider's ID, and its type reads *Slider; Level on TLP525T, TLP320M*.
-- **Checked across panels:** one ID is one control - the same name and kind -
-  on every panel, and a control the canvas draws is on every panel: nothing is
-  dropped.
+- **A hub's chrome keeps the hub's own IDs** (`docs/claude-design.md` §3): its
+  menu bar's Volume Up and Down (8120, 8121), its settings opener (8040) and
+  Shockwave's and Turbulence's Display Control (8115) are derived - the 1035
+  draws none - and keep the seed's ID where no canvas control has it, rather
+  than one from 50001.
+- **Checked across panels:** one ID is one control - the same name, kind and
+  state names (the map numbers a control's states once, so a source's tab on
+  the 1035 and its Select a Source tile on a hub name theirs alike) - on every
+  panel, and a control the canvas draws is on every panel: nothing is
+  dropped. The one exception is named: what a panel's template has no place
+  for - a hub's footer clock, the heading Mach's rail draws over its Settings
+  group - is listed in its page's `left` and named as a note by translate,
+  and may be absent there.
 - **Verified per build.** A built panel is one panel, so the verifier takes
   that panel's view of the map (`--panel`): its pages, popups, navigation and
   the controls on it, each where it is there.

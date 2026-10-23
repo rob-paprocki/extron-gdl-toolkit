@@ -20,7 +20,8 @@ REPO = os.path.dirname(HERE)
 
 
 def _facts(part, size):
-    return {'part': part, 'size': list(size), 'slider': True, 'level': True, 'popup': True, 'borders': {}}
+    return {'part': part, 'size': list(size), 'slider': True, 'level': True, 'datetime': True, 'popup': True,
+            'borders': {}}
 
 
 class TestASeriesSeeds(unittest.TestCase):
@@ -434,6 +435,81 @@ class TestRegionsOfExtronsOwnTemplates(unittest.TestCase):
                     if fh.read(40).startswith(b'version https://git-lfs'):
                         self.skipTest(f'{theme} 1035.gdl is a Git LFS pointer (git lfs pull)')
                 self.assertEqual(self._measure(seed, tuple(row['size'])), (got, popup))
+
+
+# -- the frame: each series' working page off its own seed ---------------------------
+def _profile(theme):
+    with open(os.path.join(REPO, 'gdl', 'designsys', theme + '.json'), encoding='utf-8') as fh:
+        return json.load(fh)
+
+
+class TestTheFrameOfEachSeries(unittest.TestCase):
+    """frame_of reads a series' working page off its own seed into the five
+    bands, their surfaces and their slots by meaning, and each profile records
+    what it reads. The values themselves are checked on the checked-in frames
+    (tests/test_designsys.py TestTheFrame), which need no seed; these tie the
+    frames to the seeds where Git LFS has pulled them."""
+    _frames = {}
+
+    def frame(self, theme, series):
+        from gdl import seeds
+        try:
+            import PIL  # noqa: F401
+        except ImportError:
+            # frame_of counts a window message's lines with gdl.compose's
+            # wrap, which draws with Pillow; CI runs this file without it.
+            self.skipTest('Pillow is not here: a frame counts its messages\' lines with gdl.compose')
+        key = (theme, series)
+        if key not in self._frames:
+            p = _profile(theme)
+            row = p['panels'][series]
+            seed = measure_series.series_seed(row)
+            if not seeds.usable(seed):
+                self._frames[key] = None
+            else:
+                self._frames[key] = measure_series.frame_of(seeds.path(seed), tuple(row['size']),
+                                                            art=measure_series.frame_art(p, row))
+        if self._frames[key] is None:
+            self.skipTest(f'the {series} seed is not here (git lfs pull)')
+        return self._frames[key]
+
+    def test_each_profile_holds_the_frame_its_seed_measures(self):
+        from gdl import seeds
+        checked = 0
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            p = _profile(theme)
+            for series, row in p['panels'].items():
+                if series.startswith('_') or not seeds.usable(measure_series.series_seed(row)):
+                    continue
+                checked += 1
+                with self.subTest(series=series):
+                    self.assertEqual(self.frame(theme, series), row.get('frame'))
+        if not checked:
+            self.skipTest('no seeds here (git lfs pull)')
+
+    def test_each_tab_is_where_the_seed_draws_it(self):
+        # Read off the seed's own buttons, not through frame_of: the tabs a
+        # frame records are the buttons of their IDs, one size, in a row.
+        from gdl import seeds
+        from gdl.project import Project
+        checked = 0
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            for series, row in _profile(theme)['panels'].items():
+                f = row.get('frame') if not series.startswith('_') else None
+                tabs = [(f[b] or {}).get('tabs') for b in ('top', 'center')] if f else []
+                tabs = next((t for t in tabs if t), None)
+                seed = measure_series.series_seed(row) if tabs else None
+                if not seeds.usable(seed):
+                    continue
+                checked += 1
+                with self.subTest(series=series):
+                    page = next(pg for pg in Project.open(seeds.path(seed)).pages() if pg['name'] == f['page'])
+                    ids = {it['id'] for it in tabs['items']}
+                    drawn = sorted(list(c['rect']) for c in page['controls'] if c['type'] == 'PBButton'
+                                   and c['id'] in ids and tuple(c['rect'][1:]) == tuple(tabs['first'][1:]))
+                    self.assertEqual([it['rect'] for it in tabs['items']], drawn)
+        if not checked:
+            self.skipTest('no seeds here (git lfs pull)')
 
 
 if __name__ == '__main__':

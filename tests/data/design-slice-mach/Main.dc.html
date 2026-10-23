@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Main</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronMach.Page" name="Main" panels="TLP1035T" start="true" theme="sunset" does="The working page: sources across the top, display and settings left, volume right, the selected source's controls in the middle." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px"><x-import component-from-global-scope="ExtronMach.Panel" name="Header Left" fill="shade" border="none" style="position: absolute; left: 0px; top: 0px; width: 257px; height: 64px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Panel" name="Header Right" fill="shade" border="none" style="position: absolute; left: 1022px; top: 0px; width: 258px; height: 64px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="PC" variant="solid" border="none" icon="pc" align="center" size="16" states='[{"name":"Off"},{"name":"Selected","fill":"shade-on"}]' press="Selected" nav="PC" does="Routes the pc to the display and shows its controls." style="position: absolute; left: 258px; top: 0px; width: 182px; height: 64px">PC</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Laptop" variant="solid" border="none" icon="laptop" align="center" size="16" states='[{"name":"Off"},{"name":"Selected","fill":"shade-on"}]' press="Selected" nav="Laptop" does="Routes the laptop to the display and shows its controls." style="position: absolute; left: 452px; top: 0px; width: 182px; height: 64px">Laptop</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Doc Cam" variant="solid" border="none" icon="doc-cam" align="center" size="16" states='[{"name":"Off"},{"name":"Selected","fill":"shade-on"}]' press="Selected" nav="DocCam" does="Routes the doc cam to the display and shows its controls." style="position: absolute; left: 646px; top: 0px; width: 182px; height: 64px">Doc Cam</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Streaming" variant="solid" border="none" icon="media-player_1" align="center" size="16" states='[{"name":"Off"},{"name":"Selected","fill":"shade-on"}]' press="Selected" nav="Streaming" does="Routes the streaming to the display and shows its controls." style="position: absolute; left: 840px; top: 0px; width: 182px; height: 64px">Streaming</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Display Heading" type="body" align="center" style="position: absolute; left: 17px; top: 149px; width: 103px; height: 37px">Display</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Display On" variant="solid" does="Turns the display on." style="position: absolute; left: 17px; top: 186px; width: 103px; height: 60px">On</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Display Off" variant="solid" does="Turns the display off." style="position: absolute; left: 17px; top: 258px; width: 103px; height: 60px">Off</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Display Mute" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' does="Blanks the picture; On while blanked." style="position: absolute; left: 17px; top: 330px; width: 103px; height: 60px">Mute</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Settings Heading" type="body" align="center" style="position: absolute; left: 17px; top: 413px; width: 103px; height: 37px">Settings</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Lighting Settings" variant="solid" nav="Lighting" does="Opens lighting settings." style="position: absolute; left: 17px; top: 450px; width: 103px; height: 60px">Lighting</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Audio Settings" variant="solid" nav="Audio" does="Opens audio settings." style="position: absolute; left: 17px; top: 522px; width: 103px; height: 60px">Audio</x-import>
+<x-import component-from-global-scope="ExtronMach.Label" name="Volume Heading" type="body" align="center" style="position: absolute; left: 1161px; top: 149px; width: 103px; height: 37px">Volume</x-import>
+<x-import component-from-global-scope="ExtronMach.Slider" name="Volume" does="Sets the program volume." style="position: absolute; left: 1186px; top: 190px; width: 54px; height: 351px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Volume Mute" variant="solid" states='[{"name":"Off"},{"name":"On","fill":"accent","color":"page"}]' does="Mutes the program audio; On while muted." style="position: absolute; left: 1161px; top: 560px; width: 103px; height: 60px">Mute</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Room Mode" variant="footer" does="Changes the room mode." style="position: absolute; left: 0px; top: 745px; width: 140px; height: 55px">Room Mode</x-import>
+<x-import component-from-global-scope="ExtronMach.Panel" name="Footer Ground" fill="shade" border="none" style="position: absolute; left: 141px; top: 745px; width: 916px; height: 55px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Clock" name="Date Time" format="MMMM dd, yyyy - h:mm tt" align="center" color="text-secondary" style="position: absolute; left: 398px; top: 751px; width: 483px; height: 42px"></x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Help" variant="footer" nav="Help" style="position: absolute; left: 1058px; top: 745px; width: 70px; height: 55px">Help</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Power" variant="footer" icon="power" nav="ConfirmPower" style="position: absolute; left: 1140px; top: 745px; width: 140px; height: 55px"></x-import>
+<x-import component-from-global-scope="ExtronMach.PopupRegion" name="Controls" group="Sources" style="position: absolute; left: 140px; top: 137px; width: 995px; height: 549px"></x-import></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

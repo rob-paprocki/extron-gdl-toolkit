@@ -161,7 +161,13 @@ touch-target Quick Reference table, which is a different thing.
   them is ours, not Extron's wording: a color counts once whatever its
   transparency. Mach's own rule is "same hue, move the alpha" - its buttons are
   white at 20% and 47%, black at 70% - and counting each transparency would put
-  Extron's own Mach look over six.
+  Extron's own Mach look over six. And the colors of the theme's own template
+  chrome do not count (the owner's call, 2026-10-22): Extron's own working
+  pages draw more than six - Mach's shade, its pressed tint, white, black, the
+  mute yellow, the power-down red and the window grey - and a panel that speaks
+  the template's language draws them too. The cap holds for the colors a
+  designer adds; a Design canvas's translation names the template's in the
+  spec's `_template_colors`.
 
 **Contrast** (p. 43)
 

@@ -413,10 +413,49 @@ class TestPanels(unittest.TestCase):
         probs = check_panels(self.maps(drop=True))
         self.assertTrue(any('1001' in p and 'TLP725T' in p for p in probs), probs)
 
+    def test_a_control_a_panels_layout_left_off_by_name_may_be_absent(self):
+        """A page's `left` names what that panel's layout has no place for (a
+        hub's footer clock) - named on the canvas, so not dropped silently:
+        absent there, it is no problem. Not listed, it still is one."""
+        from gdl.idmap import IdMap as M, check_panels
+        big = panel_spec('TLP1035T', [1280, 800], [page('Home', btn('Clock', id=1001, does='Tells the time.'),
+                                                             btn('Help', x=200, id=1002, does='Helps.'))])
+        for left, clean in ((['Clock'], True), (['Date Time'], False)):
+            with self.subTest(left=left):
+                hub = panel_spec('TLP525T', [800, 480], [page('Home', btn('Help', rect=[200, 300, 100, 80], id=1002,
+                                                                           does='Helps.'), left=left)])
+                probs = check_panels({'TLP1035T': M(Panel(big)), 'TLP525T': M(Panel(hub))})
+                if clean:
+                    self.assertEqual(probs, [])
+                else:
+                    self.assertTrue(any('1001' in p and 'TLP525T' in p for p in probs), probs)
+
     def test_one_id_is_one_control_on_every_panel(self):
         from gdl.idmap import check_panels
         probs = check_panels(self.maps(rename='Notebook'))
         self.assertTrue(any('1001' in p and 'Notebook' in p for p in probs), probs)
+
+    def test_one_control_names_its_states_alike_on_every_panel(self):
+        """The map numbers a control's states once. Mach's PC tab on the
+        1035 called its second state Selected and its Select a Source tile on
+        the 525 called it On: both built, and the ID map's check of the 525's
+        build failed on the names."""
+        from gdl.idmap import IdMap as M, check_panels
+
+        def pc(second, **kw):
+            c = btn('PC', id=1001, does='Shows the PC.',
+                    states=[{'name': 'Off'}, {'name': second, 'fill': '#FFFFFF'}], **kw)
+            del c['on']
+            return c
+        big = panel_spec('TLP1035T', [1280, 800], [page('Home', pc('Selected'))])
+        for second, clean in (('Selected', True), ('On', False)):
+            with self.subTest(second=second):
+                hub = panel_spec('TLP525T', [800, 480], [page('Home', pc(second, rect=[200, 300, 100, 80]))])
+                probs = check_panels({'TLP1035T': M(Panel(big)), 'TLP525T': M(Panel(hub))})
+                if clean:
+                    self.assertEqual(probs, [])
+                else:
+                    self.assertTrue(any('1001' in p and 'states' in p for p in probs), probs)
 
     def test_a_slider_may_be_a_level_on_a_panel_that_cannot_build_one(self):
         """The 525's and 320's seeds have no slider, so volume is a level there
