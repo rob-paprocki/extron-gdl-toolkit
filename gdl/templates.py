@@ -14,6 +14,7 @@ table.
     python -m gdl.templates Afterburn TLP300M [480x320]  # the series a model takes
 """
 import math
+import ntpath
 import os
 import sys
 
@@ -69,7 +70,8 @@ def _read(path):
         res = deref(info['mResolution'])
         soft = res['__class'].endswith('ResolutionPlus')
         key = 'Resolution+' if soft else ''
-        name = os.path.basename(deref(info['mFilePath']))
+        # A Windows path, read anywhere: os.path on Linux keeps the whole of it.
+        name = ntpath.basename(deref(info['mFilePath']))
         rows.append({
             'file': name,
             'theme': deref(info['mTheme']),

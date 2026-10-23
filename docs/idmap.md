@@ -180,7 +180,12 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   source popup's and a settings popup's Close, and the Close of the options
   and Display Control popups the page derives, carry `nav` to Select Source
   (Mach's Display Settings' to its Settings), which the map shows as the
-  popup they show.
+  popup they show. On the 320, where a source, a window and the question are
+  pages, a page's Back and the question's Cancel go back to the one page
+  whose control shows that page - Main for a source, whose key it is; the
+  page whose Power asked, for the question - which translate finds over the
+  whole canvas (`back`) and writes as their `nav`; with no such page, or
+  more than one, they go where the program says, and translate notes it.
 - **A slider on a panel that cannot build one** - the 520s', 535s', 320s' and
   300M's seeds have levels and no slider (the profile's `kinds`,
   `docs/claude-design.md` §4) - is a level there, with that derived Up and Down. It
@@ -189,15 +194,25 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   menu bar's Volume Up and Down (8120, 8121), its settings opener (8040) and
   Shockwave's and Turbulence's Display Control (8115) are derived - the 1035
   draws none - and keep the seed's ID where no canvas control has it, rather
-  than one from 50001.
+  than one from 50001. So does the 320's (`docs/claude-design.md` §3): its
+  title strips (6075 on Main, 6008 on a source's first page, 6009 on a
+  later one), More (8010), Back (8011), the Volume modal's glyphs (7023,
+  7026) and Cancel (8001) and the empty state's lines (6060 to 6062) - each
+  seed ID on the first control that carries it, by page and name, the rest
+  from 50001. What the 1035 draws too (a source's `<name> Title`, the
+  question's Power Down and Cancel) has one ID on every panel, from 50001,
+  not the 320 seed's (the question's 9028 and 9029). The Volume modal's
+  level has the template's glyphs over and under it, not Up and Down: the
+  320's template draws no volume control on a page.
 - **Checked across panels:** one ID is one control - the same name, kind and
   state names (the map numbers a control's states once, so a source's tab on
   the 1035 and its Select a Source tile on a hub name theirs alike) - on every
   panel, and a control the canvas draws is on every panel: nothing is
   dropped. The one exception is named: what a panel's template has no place
   for - a hub's footer clock, the heading Mach's rail draws over its Settings
-  group - is listed in its page's `left` and named as a note by translate,
-  and may be absent there.
+  group, the 320's clock and the Center's popup region (each source is a
+  page of its own there) - is listed in its page's `left` and named as a
+  note by translate, and may be absent there.
 - **Verified per build.** A built panel is one panel, so the verifier takes
   that panel's view of the map (`--panel`): its pages, popups, navigation and
   the controls on it, each where it is there.

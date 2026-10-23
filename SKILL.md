@@ -325,8 +325,9 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   `"border": "none"` since the kit image draws the button; `images` brings any
   the donor lacks. The applier appends it and draws it the way every image
   button in the Afterburn seeds is drawn — `Fill` (fit, keeping the aspect),
-  `MiddleCenter` — so size the button to the image's shape. A button with no
-  `fill` is written transparent, so a state does not keep its donor's. A donor
+  `MiddleCenter` — so size the button to the image's shape. A button or a
+  label with no `fill` is written transparent, so neither keeps its donor's
+  (Turbulence 320's donor label is opaque black). A donor
   image of the same name but other pixels is not reused: the file goes in as
   `<name>_1`. A slider's thumb is a kit image too: `thumb_image`, in the
   scheme's secondary accent (Afterburn: `440x440_thumb-1-<color>_sel.png`),

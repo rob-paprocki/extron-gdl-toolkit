@@ -100,7 +100,11 @@ Then, from the repo root:
    which carries the same Monotype Arial:
    `python -m gdl.fonts "seeds/Afterburn 1035.gdl" gdl/fonts/`.
 4. With GUI Designer installed, repopulate `vendor/`; `vendor/README.md` has
-   the commands.
+   the commands. On a machine without it - a Linux box that translates and
+   runs the tests while the Windows one builds - copy `vendor/` and the
+   install's `Resources/` from the Windows machine, and set
+   `GDL_EXTRON_RESOURCES` to the copy of `Resources/`, kept apart from
+   `vendor/` (`vendor/README.md` says why).
 5. For translating a canvas and the Chrome tests, the Design type's runtime:
    set `GDL_DC_RUNTIME` to a copy of `artifact-type/dc-runtime.js`, read off
    any Design canvas with Claude Code's Artifact tool, or - in the private

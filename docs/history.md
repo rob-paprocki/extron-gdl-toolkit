@@ -251,6 +251,13 @@ statement is in the live docs; this is the record that it changed.
   is a kit image, and nothing set it) and a left-aligned clock built centered
   (the component left `align` out when it was `left`, and the spec's default
   is `center`).
+- **A spec label with no fill kept its donor label's** (until 2026-10-23), as
+  a button state had. Turbulence 320's donor label is opaque black, so the
+  first build of the region canvas on the 320 put black bands behind every
+  strip title, heading and empty state, over the photo the preview drew
+  through them, and verify_built passed it - it read no clear control's
+  artwork. A label with no fill is now written transparent, and the
+  verifier reports a label planned clear whose artwork is mostly opaque.
 - **`Invoke-GdlMenu.ps1` waited a fixed 3 s for the File menu** (until
   2026-09-24). The menu is expanded by a background PowerShell job that has to
   start first; on a busy machine the item was not there yet, the build fell

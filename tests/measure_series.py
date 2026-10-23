@@ -861,7 +861,8 @@ def frame_of(path, size, art=None):
         if refs and _area(max(refs, key=_area)) >= 0.5 * W * H:
             out = _hub_frame(pg, popups, size, art)
             break
-    if out is None:
+    paged = out is None
+    if paged:
         out = _pages_frame(named, size, (lambda pg: page_art(p, pg, size)) if art else (lambda pg: None))
     # The windows, then what the bands do not say, last.
     items = [it for rec in _records(out) for b in BANDS if rec[b] for it in rec[b]['items']]
@@ -869,6 +870,11 @@ def frame_of(path, size, art=None):
     note, ids = out.pop('note'), out.pop('ids')
     out['windows'] = _windows(pages, size, region[:2] if region else (0, 0),
                               [it['name'] for it in items if it['role'] == 'settings'])
+    # A page per source shows its volume in a modal the program shows (the
+    # 320's Volume): where it draws it, what it draws.
+    volume = _volume_modal(pages, size) if paged else None
+    if volume:
+        out['volume'] = volume
     out['ids'], out['note'] = ids, note
     # Each band reads rect, surfaces, its own slots (tabs, groups, the
     # centre's region), then what is left in it.
@@ -1071,6 +1077,34 @@ def _level_strip(popups, strip):
                        if c['type'] == 'PBLabel']}
 
 
+def _volume_modal(pages, size):
+    """The modal a page-per-source series shows its volume in (the 320's
+    Volume, which no control on a page opens): its name, its surfaces (Mach's
+    #4B4B4C strip at the right edge), its level's rect, empty `track` and
+    filled `bar` colours or `art`, and `border`, the glyph `labels` over and
+    under it, and `cancel`, the transparent button over the rest of the screen
+    that puts it away (Shockwave's and Turbulence's; Mach's has none), as an
+    item - in page coordinates."""
+    W, H = size
+    pg = next((pg for pg in pages if pg['kind'] == 'popup' and pg['modal'] and tuple(pg['size']) == (W, H)
+               and any(c['type'] == 'PBLevel' for c in pg['controls'])), None)
+    if not pg:
+        return None
+    cs = _controls(pg, size)
+    lv = next(c for c in cs if c['type'] == 'PBLevel')
+    g = lv.get('gauge') or {}
+    cancel = max((c for c in cs if c['type'] == 'PBButton'), key=lambda c: _area(c['rect']), default=None)
+    return {'popup': pg['name'], 'surfaces': [_surface_of(c) for c in cs if c['type'] in SURFACES],
+            'level': {'rect': list(lv['rect']), 'track': lv['paint'], 'border': (lv['border'] or {}).get('resource'),
+                      'bar': None if g.get('art') else g.get('fill'),
+                      'art': {'track': g.get('track_image'), 'fill': g.get('fill_image')} if g.get('art') else None},
+            # Its glyphs over and under the level (Volume Up Label 7023 and
+            # Volume Down Label 7026), with their seed IDs and sizes.
+            'labels': [{'rect': list(c['rect']), 'id': c['id'], 'pt': c['pt']}
+                       for c in sorted(cs, key=lambda c: c['rect'][1]) if c['type'] == 'PBLabel'],
+            'cancel': dict(_item(cancel), role='cancel') if cancel else None}
+
+
 def _windows_named(popups, opener):
     """The popup a hub's opener shows: its name, or its name and more - More
     opens More Options."""
@@ -1183,11 +1217,17 @@ def _page_record(pg, size, art):
     return rec, bands, title
 
 
+def _said_of(pg, size, art):
+    """A source page's empty state's labels, top down: its labels in the
+    centre, less its title."""
+    bands, title = _page_bands(pg, size, art), _title_of(pg)
+    return sorted((c for c in pg['controls'] if c['type'] == 'PBLabel' and c is not title
+                   and _centre_in(c['rect'], bands['center'])), key=lambda c: (c['rect'][1], c['rect'][0]))
+
+
 def _empty_of(pg, size, art):
     """A source page's empty state: its labels in the centre, less its title."""
-    bands, title = _page_bands(pg, size, art), _title_of(pg)
-    return _bbox([c['rect'] for c in pg['controls'] if c['type'] == 'PBLabel' and c is not title
-                  and _centre_in(c['rect'], bands['center'])])
+    return _bbox([c['rect'] for c in _said_of(pg, size, art)])
 
 
 def _and(words):
@@ -1225,15 +1265,32 @@ def _pages_frame(named, size, art_of):
         y = min(c['rect'][1] for c in inner)
         row = sorted((c for c in inner if c['rect'][1] <= y + TOL), key=lambda c: c['rect'][0])
         out['center']['row'] = [list(c['rect']) for c in row]
-        out['center']['headings'] = [list(c['rect']) for c in sorted(first['controls'], key=lambda c: c['rect'][0])
-                                     if c['type'] == 'PBLabel' and c is not title
-                                     and c['rect'][1] + c['rect'][3] / 2 < y and _centre_in(c['rect'], bands['center'])]
+        heads = [c for c in sorted(first['controls'], key=lambda c: c['rect'][0])
+                 if c['type'] == 'PBLabel' and c is not title
+                 and c['rect'][1] + c['rect'][3] / 2 < y and _centre_in(c['rect'], bands['center'])]
+        out['center']['headings'] = [list(c['rect']) for c in heads]
+        # The steps across the row and down a column (the 320's Doc Cam: 124
+        # and 60 on Mach's, 103 and 61 on Shockwave's and Turbulence's),
+        # which a page per source lays a source's columns out at.
+        col = sorted((c for c in inner if abs(c['rect'][0] - row[0]['rect'][0]) <= TOL), key=lambda c: c['rect'][1])
+        out['center']['pitch'] = [row[1]['rect'][0] - row[0]['rect'][0] if len(row) > 1 else None,
+                                  col[1]['rect'][1] - col[0]['rect'][1] if len(col) > 1 else None]
+        # The sizes it sets its title, its headings and its empty state in.
+        pt = {'title': title['pt'] if title else None, 'heading': heads[0]['pt'] if heads else None}
         # A source with controls has no empty state: a source page with none
         # draws it (the 320's Laptop: 'Laptop is currently selected.').
         empty = next((named[n] for n in EMPTY_SOURCES if n in named), None)
         if empty is not None:
             out['center']['empty'] = _empty_of(empty, size, art_of(empty))
             out['center']['empty_page'] = empty['name']
+            said = _said_of(empty, size, art_of(empty))
+            pt['empty'] = said[0]['pt'] if said else None
+            # Its lines one label each, where the template sets them so (the
+            # 320's Laptop Label 1-3, 6060-6062): the first sentence a
+            # paragraph apart from the other two, which one box loses.
+            if len(said) > 1:
+                out['center']['empty_lines'] = [{'rect': list(c['rect']), 'id': c['id']} for c in said]
+        out['center']['pt'] = pt
     else:
         out['center']['empty'] = _empty_of(first, size, art_of(first))
     if home is not None and home is not first:
@@ -1304,6 +1361,10 @@ def _window(pg, size, at, kind):
         (c for c in buttons if _role(c) == 'back'), None)
     out = {'rect': rect, 'surfaces': [_surface_of(c, at) for c in card],
            'title': _offset(title['rect'], at) if title else None, 'close': _item(close, at) if close else None}
+    # A window that is a page (a 300's, a 320's) on the template's photo, or
+    # on the page's own ground (Mach 320's Confirmation, on #303030).
+    if pg['kind'] == 'page':
+        out['art'] = bool(pg.get('background'))
     # The sizes it sets on this series - Help's message apart from the
     # confirmation's, which every template sets larger - and how many lines
     # the message takes in its box in its own face (_lines).
@@ -1316,6 +1377,11 @@ def _window(pg, size, at, kind):
             out['lines'] = _lines(said[0])
     if kind == 'confirm':
         out['buttons'] = [_item(c, at) for c in sorted(buttons, key=lambda c: c['rect'][0]) if c is not close]
+        # A question that is a page says its own words, where they are not
+        # its series' bigger panels' (Shockwave 320's 'Do you want to power
+        # down the system?' in one run, where its 1035 breaks after 'to').
+        if pg['kind'] == 'page' and said:
+            out['text'] = '\n'.join(c['caption'] for c in said if c['caption'])
     return out
 
 

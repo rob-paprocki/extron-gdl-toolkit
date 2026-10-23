@@ -152,9 +152,38 @@ opening GUI Designer.**
 - **The region frame, beyond tier A** (PR sequence in
   `docs/superpowers/specs/2026-10-22-region-frame-design.md`):
   - a region page, a source popup (`role="source"`) and a window (a modal
-    with a `role` or a `title`) on a 320 or a turned panel are refused by
-    name: the 320's page per source and its window pages (PR7) and a turned
-    frame's header-as-left-band are not drawn yet;
+    with a `role` or a `title`) on a turned panel or a 300 are refused by
+    name: a turned frame's header-as-left-band and the 300's menu bar are not
+    drawn yet;
+  - on the 320 the region page derives to the 320's pages
+    (`docs/claude-design.md` §3), probed on the TLP320C and translated clean
+    on the TLP320M the region canvases list - the 320C has no seed here yet
+    (`seeds/README.md`; `New-GdlSeed.ps1` makes one in GUI Designer) - and
+    built and verified on the TLP320M in all three themes
+    (`archive/job-e823df9b/p320/`). What it does not do yet: the template puts
+    no volume control on a page - Volume is the modal its program shows - so
+    a 320 has no on-screen Up or Down, and Mach's modal has no Cancel, which
+    the program puts away; the strip's chevrons and the volume glyphs are in
+    icon faces the systems do not carry, so Back is the kit's back art
+    (Shockwave's its return glyph, Turbulence's its return key at the strip's
+    end) drawn across its whole key - Mach's about 1.6 times the template's
+    glyph - and the Volume modal's glyphs say + and -; a page's first Back -
+    to Main, which the template has none of on screen, since it chooses
+    sources off it - stands where its second page's Back does, or at the
+    strip's end where More holds the foot's right (Shockwave's and
+    Turbulence's), the strip there as deep as Back's touch minimum, 40 to the
+    template's 36; at the 320's 14 pt floor, where the template sets its
+    headings at 11 to 12, a heading takes some of a column's depth - its
+    words fill its box, so it cannot reach into its keys' clear tops as the
+    template's does (Shockwave's keys 57 deep to its 60, Turbulence's 57 to
+    its 65) - its digit keys' captions are 14 pt to the template's 18 to 22,
+    and Turbulence's square key, whose wider art is too shallow to take,
+    holds no word longer than about five letters - a longer one ('Normal',
+    'Streaming') runs past the key's art, where the template sets its own
+    words in the art or at 11 pt (whether a 320 key's caption may take the
+    template's own size is the owner's call); a column heading says the
+    designer's words as written, where Mach's and Shockwave's 320 templates
+    capitalise theirs (ZOOM, INPUTS);
   - on a hub the region page derives to the hub's grammar
     (`docs/claude-design.md` §3) - built and verified on Mach's 525 and
     535, Shockwave's 525 and 535 and Turbulence's 525
@@ -214,8 +243,10 @@ opening GUI Designer.**
     take their caption on the tab;
   - Shockwave's and Turbulence's region defaults (the profile's `regions`:
     their tabs, rail, launchers, Room Mode, Mute, Help and Power) are the
-    looks those profiles measured off the 1035's seed; no GUI Designer build
-    of a Shockwave or Turbulence region page has proven them yet;
+    looks those profiles measured off the 1035's seed, built and verified on
+    every panel the region canvases list (`archive/job-e823df9b/center/`,
+    `hubs/`, `p320/`) and set beside each template by eye, not scored
+    against it;
   - Shockwave stands Audio Control in its right rail on the 1035's series
     only, and in its left rail's second group elsewhere: a RightRail
     `slot="audio"` is refused by name on a panel whose template does not

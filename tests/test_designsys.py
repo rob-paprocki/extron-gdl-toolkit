@@ -742,6 +742,48 @@ class TestTheFrame(unittest.TestCase):
                          ([[0, 190, 50, 50]], [[50, 197, 135, 36]]))
         self.assertEqual(f['center']['empty'], [35, 44, 250, 102])
 
+    def test_the_320s_columns_sizes_volume_and_window_grounds(self):
+        """The 320's page per source: the steps its columns stand at, the
+        sizes it sets its title, headings and empty state in, the Volume modal
+        the program shows - its strip, level and Cancel where the template
+        draws them (Mach's has no Cancel) - and whether the question and the
+        wait stand on the photo (Mach's on the page's own #303030)."""
+        want = {'mach': ([124, 60], {'title': 16, 'heading': 11, 'empty': 14}, [[278, 0, 42, 240]], [292, 32, 15, 175],
+                         None, False),
+                'shockwave': ([103, 61], {'title': 14.25, 'heading': 12, 'empty': 12}, [], [292, 32, 15, 175],
+                              ([0, 0, 277, 240], 8001), True),
+                'turbulence': ([103, 61], {'title': 14.25, 'heading': 12, 'empty': 12}, [], [292, 32, 12, 179],
+                               ([0, 0, 277, 240], 8001), True)}
+        for theme, (pitch, pt, strips, level, cancel, art) in want.items():
+            with self.subTest(theme=theme):
+                f = self.frame(theme, f'{theme.capitalize()} 320 Series')
+                self.assertEqual((f['center']['pitch'], f['center']['pt']), (pitch, pt))
+                V = f['volume']
+                self.assertEqual((V['popup'], [s['rect'] for s in V['surfaces']], V['level']['rect']),
+                                 ('Volume', strips, level))
+                self.assertEqual(V['cancel'] and (V['cancel']['rect'], V['cancel']['id']), cancel)
+                self.assertEqual((f['windows']['confirm']['art'], f['windows']['wait']['art']), (art, art))
+                self.assertEqual([b['id'] for b in f['windows']['confirm']['buttons']].count(9028), 1)
+
+    def test_the_320s_volume_glyphs_empty_lines_and_question(self):
+        """What the 320 draws apart from its bigger panels: the Volume
+        modal's glyphs over and under its level, each with its seed ID and
+        size; the empty state one label a line (Laptop Label 1-3), the first
+        sentence a paragraph apart from the other two; and the question's own
+        words, in one run on every 320 (Shockwave's 1035 breaks its line)."""
+        glyphs = {'mach': ([[283, 0, 36, 32], [283, 211, 36, 29]], 18),
+                  'shockwave': ([[277, 0, 43, 32], [277, 211, 43, 29]], 16),
+                  'turbulence': ([[277, 0, 43, 32], [277, 211, 43, 29]], 16)}
+        for theme, (rects, pt) in glyphs.items():
+            with self.subTest(theme=theme):
+                f = self.frame(theme, f'{theme.capitalize()} 320 Series')
+                self.assertEqual(f['volume']['labels'], [{'rect': rects[0], 'id': 7023, 'pt': pt},
+                                                         {'rect': rects[1], 'id': 7026, 'pt': pt}])
+                self.assertEqual(f['center']['empty_lines'],
+                                 [{'rect': [0, 80, 320, 29], 'id': 6060}, {'rect': [0, 123, 320, 35], 'id': 6061},
+                                  {'rect': [0, 153, 320, 29], 'id': 6062}])
+                self.assertEqual(f['windows']['confirm']['text'], 'Do you want to power down the system?')
+
     def test_the_300s_source_page_and_its_home(self):
         # The source page's bands hold its own controls; the home page's
         # menu bar is a record of its own.
@@ -1489,12 +1531,12 @@ class TestTheRegionComponents(unittest.TestCase):
     def test_the_frame_is_in_the_bundle_once_per_series(self):
         """Keyed by series, not repeated on every model row (190-320 KB a
         theme), and only the series the regions draw - the bar series of tier
-        A, with all five bands, and the hubs
-        (test_the_hubs_frames_are_in_the_bundle); a 320's frame waits for
-        the regions that draw it - so the bundle stays small without its art,
-        with the kit's index in it where the kit is here (about 335 KB for
-        Mach, its windows slimmed to their rects and looks, about 1.7 KB a
-        series; a hub's whole frame about 3 KB)."""
+        A, with all five bands, the hubs
+        (test_the_hubs_frames_are_in_the_bundle) and the 320s
+        (test_the_320s_frames_are_in_the_bundle) - so the bundle stays small
+        without its art, with the kit's index in it where the kit is here
+        (about 390 KB for Mach, its windows slimmed to their rects and looks,
+        about 1.7 KB a series; a hub's whole frame about 3 KB)."""
         for t in ('mach', 'shockwave', 'turbulence'):
             p = designsys.load(t)
             js = designsys.bundle(p, art=False)
@@ -1506,12 +1548,13 @@ class TestTheRegionComponents(unittest.TestCase):
                       and all(v['frame'].get(b) for b in ('top', 'left', 'right', 'bottom', 'center'))
                       and 'C' not in tiers.get(s, {'C'})}
             self.assertTrue(series, t)
-            self.assertEqual({s for s, f in prof['frames'].items() if not f.get('hub')}, series, t)
+            self.assertEqual({s for s, f in prof['frames'].items() if not f.get('hub') and not f.get('pages')},
+                             series, t)
             # What the regions read of each: the bars, the center's popup
             # region, well, titles (an empty source's and one with controls),
             # empty state, status, type sizes and surfaces, and the windows.
             for s, f in prof['frames'].items():
-                if f.get('hub'):
+                if f.get('hub') or f.get('pages'):
                     continue
                 own = p['panels'][s]['frame']
                 self.assertEqual(sorted(f), ['bottom', 'center', 'left', 'right', 'top', 'windows'], s)
@@ -1524,8 +1567,9 @@ class TestTheRegionComponents(unittest.TestCase):
                 self.assertEqual(f['top'], own['top'], s)
             self.assertFalse(any('frame' in row for row in prof['models'].values()), t)
             # A backstop, not a limit of the Design type's: a frame repeated
-            # on every model row doubled the bundle. Mach's is about 335 KB.
-            self.assertLess(len(js.encode('utf-8')), 345_000, t)
+            # on every model row doubled the bundle. Mach's is about 390 KB
+            # with the 320's pages (PR7).
+            self.assertLess(len(js.encode('utf-8')), 405_000, t)
         # Afterburn draws no bars: no frame in its bundle.
         js = designsys.bundle(designsys.load('afterburn'), art=False)
         self.assertEqual(json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))['frames'], {})
@@ -1553,6 +1597,54 @@ class TestTheRegionComponents(unittest.TestCase):
                 self.assertEqual((f['center']['region'], f['center']['strip'], f['center']['close']),
                                  (own['center']['region'], strip, own['center']['close']), s)
                 self.assertEqual(f['windows'], designsys._slim_windows(own['windows']), s)
+
+    def test_the_320s_frames_are_in_the_bundle(self):
+        """Each 320 series' frame, as its region page, source pages and
+        windows draw it (bundle.js planPages, pagePart): its strip, its home's
+        and its second page's, the centre's row, headings, steps, sizes,
+        empty state and More, its windows with their buttons' seed IDs, and
+        its Volume modal. Not a 300's, whose menu bar is not drawn yet."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            p = designsys.load(t)
+            prof = json.loads(re.search(r'var P = (\{.*?\});\n', designsys.bundle(p, art=False)).group(1))
+            pages = {s for s, f in prof['frames'].items() if f.get('pages')}
+            self.assertEqual(pages, {f'{t.title()} 320 Series'}, t)
+            for s in pages:
+                f, own = prof['frames'][s], p['panels'][s]['frame']
+                self.assertEqual(sorted(f), ['center', 'home', 'pages', 'second', 'top', 'volume', 'windows'], s)
+                self.assertEqual((f['top'], f['home']['top'], f['second']['top'], f['volume']),
+                                 (own['top'], own['home']['top'], own['second']['top'], own['volume']), s)
+                self.assertEqual(f['center'], {k: own['center'].get(k) for k in
+                                               ('rect', 'row', 'headings', 'pitch', 'pt', 'empty', 'empty_lines',
+                                                'items')}, s)
+                # The question's own words, and the empty state's lines.
+                self.assertEqual(f['windows']['confirm']['text'], own['windows']['confirm']['text'], s)
+                self.assertEqual(len(f['center']['empty_lines']), 3, s)
+                self.assertEqual(f['windows'], designsys._slim_windows(own['windows'], ids=True), s)
+                self.assertEqual([b['id'] for b in f['windows']['confirm']['buttons']],
+                                 [b['id'] for b in own['windows']['confirm']['buttons']], s)
+
+    def test_the_320s_page_looks_exist(self):
+        """`regions.page` names only the profile's own variants, colors and
+        kit icons, and widens a key only to a variant with art."""
+        for t in ('mach', 'shockwave', 'turbulence'):
+            p = designsys.load(t)
+            colors, page = {c['name'] for c in p['colors']}, p['regions']['page']
+            files = designsys.kit_index(p)['files']
+            for key, look in page.items():
+                if key.startswith('_') or not isinstance(look, dict):
+                    continue
+                with self.subTest(theme=t, key=key):
+                    if 'variant' in look:
+                        self.assertIn(look['variant'], p['buttons'])
+                    if 'color' in look:
+                        self.assertIn(look['color'], colors)
+                    if look.get('icon') and files:
+                        V = p['buttons'][look['variant']]
+                        size = V.get('kit') or (V.get('with_icon') or {}).get('bare')
+                        self.assertIn(look['icon'], files[size])
+            for v in page.get('wider', []):
+                self.assertTrue(p['buttons'][v].get('kit'), (t, v))
 
     def test_a_panel_draws_its_own_seeds_corners(self):
         """Every project carries its own copy of the built-in borders, and
@@ -1644,6 +1736,10 @@ class TestTheWriting(unittest.TestCase):
                 self.assertIn('starts up.', w['wait']['up'])
                 self.assertEqual(w['buttons'], {'power': 'Power Down', 'cancel': 'Cancel', 'close': 'Close'})
                 self.assertTrue(w['help'].startswith('For assistance, please call the help desk at:'))
+        # The 320 breaks the empty state over three lines.
+        for t in self.WORDS:
+            self.assertEqual(designsys.load(t)['writing']['page_empty'],
+                             '{name} is currently selected.\nThere are no controls\nfor this device.', t)
         # Shockwave's empty source also shows a status the program sets.
         self.assertEqual(designsys.load('shockwave')['writing']['status'], 'Disconnected')
         self.assertNotIn('writing', designsys.load('afterburn'))

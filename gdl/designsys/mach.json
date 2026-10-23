@@ -464,16 +464,27 @@
     "source": {"title": {"size": 24, "align": "left", "color": "text"}, "empty": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "ghost"}},
     "window": {"title": {"size": 24, "align": "left", "color": "text"}, "message": {"size": 20, "align": "center", "color": "text"}, "label": {"color": "text"}, "close": {"variant": "ghost"}, "power": {"variant": "alert"}, "cancel": {"variant": "ghost"}},
     "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Select Source, Laptop, Settings, Display Settings, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 (the frame's pt), black over the photo and white (`text`) on the Settings popup's opaque #303030 (`page`); a tile's name 14 pt under it; the Volume heading white (TextColor #FFFFFFFF) on the bar's black at 180; the menu bar's keys and every key on Settings, Display Settings and a settings window the raised white at alpha 50 (`ghost`: the Settings tiles, Close More Option and Close Help, the Display Settings keys and Lighting Settings' Close all (254,254,254,50)), and Select a Source's tiles and a source's Close over the photo black at 180 (`solid`); Mute its word (Open Sans 13 'Mute'); Help's title centred (TextAlignment 3) and its Close the back glyph; the options' glyphs the kit's `lighting` and `speaker` where Lighting/Blinds and Audio draw a bulb and a speaker. Chosen by eye from the renders: Up and Down the kit's `up` and `down` chevrons for the template's Extron-Lift ones, Settings, Power and Help the kit's glyphs for its Extron-Lift ones. Known differences: the template sets its menu glyphs in Extron-Lift at 20 to 24 pt and the kit's art fills its key, drawn Fill on the panel too, so ours are about twice the template's; Mute, set at 13 pt under the 525's 18 pt type floor, grows from 66 to 81 px; the Volume Level strip's speaker glyphs are Extron-Lift characters and are not drawn.",
-    "hub": {"heading": {"color": "text"}, "title": {"size": 30, "align": "center", "color": "ink"}, "label": {"size": 14, "align": "center", "color": "ink"}, "tile": {"variant": "solid"}, "button": {"variant": "solid"}, "menu": {"variant": "ghost"}, "up": {"icon": "up"}, "down": {"icon": "down"}, "mute": {"variant": "ghost"}, "power": {"variant": "ghost", "icon": "power", "text": ""}, "settings": {"variant": "ghost", "icon": "settings"}, "display": {"variant": "ghost", "icon": "display"}, "close": {"variant": "solid", "icon": "back"}, "help": {"variant": "solid", "icon": "help"}, "window": {"title": {"align": "center"}, "close": {"variant": "ghost", "icon": "back", "text": ""}}, "options": {"background": "page", "title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "ghost"}, "blank": {"variant": "ghost"}, "button": {"variant": "ghost"}, "close": {"variant": "ghost", "icon": "back"}, "glyphs": {"light": "lighting", "audio": "speaker"}}}
+    "hub": {"heading": {"color": "text"}, "title": {"size": 30, "align": "center", "color": "ink"}, "label": {"size": 14, "align": "center", "color": "ink"}, "tile": {"variant": "solid"}, "button": {"variant": "solid"}, "menu": {"variant": "ghost"}, "up": {"icon": "up"}, "down": {"icon": "down"}, "mute": {"variant": "ghost"}, "power": {"variant": "ghost", "icon": "power", "text": ""}, "settings": {"variant": "ghost", "icon": "settings"}, "display": {"variant": "ghost", "icon": "display"}, "close": {"variant": "solid", "icon": "back"}, "help": {"variant": "solid", "icon": "help"}, "window": {"title": {"align": "center"}, "close": {"variant": "ghost", "icon": "back", "text": ""}}, "options": {"background": "page", "title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "ghost"}, "blank": {"variant": "ghost"}, "button": {"variant": "ghost"}, "close": {"variant": "ghost", "icon": "back"}, "glyphs": {"light": "lighting", "audio": "speaker"}}},
+    "page": {
+      "_source": "The 320's pages (seeds/Mach 320.gdl): its strip's white words on black at 70%, its headings and empty state black on the photo, its shade keys (`solid`), More the kit's ••• (more-options) and Back its back glyph on the shade, Back with no border where it ends the strip. The question and the waits say theirs white (`message`).",
+      "strip": {"align": "center", "color": "text"},
+      "heading": {"align": "center", "color": "ink"},
+      "empty": {"align": "center", "color": "ink"},
+      "button": {"variant": "solid"},
+      "more": {"variant": "solid", "icon": "more-options", "text": ""},
+      "back": {"variant": "solid", "icon": "back", "text": "", "border": "none"},
+      "message": {"align": "center", "color": "text"}
+    }
   },
   "writing": {
-    "_source": "The template's own words, off the 1035's and 725's seeds (their Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help) and the grammar digest of every Mach page: the empty state of a source with no controls ({name} the popup's title), the power-down question, the waits, Help's message and the buttons' words. The 320 breaks the empty state over three lines; the bar series draw it in two. Help's title is its Help label's (`help_title`).",
+    "_source": "The template's own words, off the 1035's and 725's seeds (their Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help) and the grammar digest of every Mach page: the empty state of a source with no controls ({name} the popup's title), the power-down question, the waits, Help's message and the buttons' words. The 320 breaks the empty state over three lines; the bar series draw it in two. Help's title is its Help label's (`help_title`). A source page on the 320 says it over the three lines its template breaks it into (`page_empty`).",
     "empty": "{name} is currently selected.\nThere are no controls for this device.",
     "confirm": {"power": "Do you want to power down the system?"},
     "wait": {"up": "Please wait while the system starts up.", "down": "Please wait while the system is powering down."},
     "help": "For assistance, please call the help desk at:\n\nX.XXX.XXX.XXXX",
     "help_title": "Help",
-    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"}
+    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
+    "page_empty": "{name} is currently selected.\nThere are no controls\nfor this device."
   },
   "kit": {
     "root": "Mach",
@@ -2573,8 +2584,15 @@
           "surfaces": [],
           "row": [[61, 65, 74, 50], [185, 65, 74, 50]],
           "headings": [[61, 38, 74, 25], [185, 38, 74, 25]],
+          "pitch": [124, 60],
           "empty": [0, 80, 320, 102],
           "empty_page": "Laptop",
+          "empty_lines": [
+            {"rect": [0, 80, 320, 29], "id": 6060},
+            {"rect": [0, 123, 320, 35], "id": 6061},
+            {"rect": [0, 153, 320, 29], "id": 6062}
+          ],
+          "pt": {"title": 16, "heading": 11, "empty": 14},
           "items": [{"role": "more", "name": "Doc Cam More", "kind": "button", "rect": [280, 200, 40, 40], "id": 8010}]
         },
         "home": {
@@ -2655,6 +2673,7 @@
             ],
             "title": null,
             "close": null,
+            "art": false,
             "pt": {"message": 15},
             "message": [30, 39, 260, 60],
             "lines": 2,
@@ -2667,7 +2686,8 @@
                 "rect": [175, 130, 103, 60],
                 "id": 9029
               }
-            ]
+            ],
+            "text": "Do you want to power down the system?"
           },
           "wait": {
             "popup": "Powering Down",
@@ -2684,11 +2704,31 @@
             ],
             "title": null,
             "close": null,
+            "art": false,
             "pt": {"message": 14},
             "message": [33, 60, 254, 119],
             "lines": 2
           },
           "settings": []
+        },
+        "volume": {
+          "popup": "Volume",
+          "surfaces": [
+            {
+              "name": "BG Shape",
+              "rect": [278, 0, 42, 240],
+              "kind": "shape",
+              "fill": "#4B4B4CFF",
+              "border": null,
+              "art": null
+            }
+          ],
+          "level": {"rect": [292, 32, 15, 175], "track": "#000000FF", "border": null, "bar": "#E4EDF5FF", "art": null},
+          "labels": [
+            {"rect": [283, 0, 36, 32], "id": 7023, "pt": 18},
+            {"rect": [283, 211, 36, 29], "id": 7026, "pt": 18}
+          ],
+          "cancel": null
         },
         "ids": {},
         "note": "Each source is a page of its own, its second page from More and back by Back. More sits on the page, not in a bar."
@@ -2789,6 +2829,7 @@
             ],
             "title": [0, 15, 320, 40],
             "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [8, 404, 96, 72], "id": 8041},
+            "art": true,
             "pt": {"title": 22, "message": 15},
             "message": [40, 113, 240, 183],
             "lines": 3
@@ -2839,6 +2880,7 @@
               ],
               "title": [0, 15, 320, 40],
               "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [8, 404, 96, 72], "id": 8041},
+              "art": true,
               "pt": {"title": 22}
             }
           ]

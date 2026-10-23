@@ -229,6 +229,26 @@ def check_fills(plan_items, table, assets, kind):
                 problems.append(f"{kind} {item['name']!r} {name!r}: planned fill "
                                 f'{label} is {mine:.0%} of the built artwork; '
                                 f'it is mostly {_hexa(top)} ({top_share:.0%})')
+        # A label planned clear (the spec writes no fill as alpha 0) is its
+        # words alone: artwork mostly opaque is a donor label's fill that came
+        # through - Turbulence 320's empty state built on black bands.
+        for op in item['controls']:
+            if op.get('donor_type') != 'PBLabel' or op.get('fill') is None or _painted(op['fill']):
+                continue
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            tid = c.get('TLPImageID') if c else None
+            if tid is None or tid < 0 or tid not in assets:
+                continue
+            checked += 1
+            raw = Image.open(io.BytesIO(assets[tid])).convert('RGBA').tobytes()
+            solid = sum(1 for i in range(3, len(raw), 4) if raw[i] > 250) / max(1, len(raw) // 4)
+            if solid > 0.5:
+                shares = _shares(assets, tid)
+                top = max(shares.items(), key=lambda kv: kv[1])[0]
+                problems.append(f"{kind} {item['name']!r} {name!r}: planned clear, but "
+                                f'{solid:.0%} of its artwork is opaque, mostly {_hex(top)} - '
+                                "a donor label's fill")
     return problems, notes, checked
 
 

@@ -1066,17 +1066,19 @@
     }
     if (regs.length) {
       var F = kind === 'page' ? frameFor(T) : null;
-      // A hub draws the same regions in its own grammar (planHub).
+      // A hub draws the same regions in its own grammar (planHub), and the
+      // 320 in its own (planPages).
       var HF = kind === 'page' && !F ? hubFor(T) : null;
+      var PF = kind === 'page' && !F && !HF ? pagesFor(T) : null;
       if (kind !== 'page') {
         L.regionRefused = true;
         problems.push(pname + ' is a ' + kind + ' and holds a ' + REGION_NAMES[regs[0].kind]
                       + " - the regions are a working page's");
-      } else if (!F && !HF) {
+      } else if (!F && !HF && !PF) {
         L.regionRefused = true;
         problems.push(pname + ' uses the region frame, which the ' + model + ' does not draw yet');
       } else {
-        L.region = F ? { F: F } : { F: HF, hub: true };
+        L.region = F ? { F: F } : HF ? { F: HF, hub: true } : { F: PF, pages: true };
         if (!truthy(props.splash)) {
           REGION_ORDER.forEach(function (k) {
             if (!regs.some(function (it) { return it.kind === k; })) {
@@ -1142,14 +1144,21 @@
     }
     // A bar theme's page on the 320: under a title strip, over as many pages
     // as its rows need (overPages).
-    var over = kind === 'page' && T.tier === 'C' && model !== designModel && P.layout.bars === 'controls' && T.main;
+    var over = kind === 'page' && T.tier === 'C' && model !== designModel && P.layout.bars === 'controls' && T.main
+      && !L.region;
     var kids = itemsOf(props.children, [dw, dh]);
-    var out = part ? framedLayout(kids, part, L)
+    // A page the 320 draws a window or a source as: the strip and its
+    // columns (pagePart), its Groups paging as a page's do.
+    if (part && part.lay) L.within = 'page';
+    var out = part && part.lay ? part.lay(kids, L)
+      : part ? framedLayout(kids, part, L)
       : over ? overPages(kids, D, T, L, props.name || 'Page')
       : layout(kids, [0, 0, dw, dh], [0, 0, tw, th], L, props.name || 'the page', cut);
     L.k = out.k;
     problems = problems.concat(out.problems);
-    if (part) {
+    if (out.warnings) warnings = warnings.concat(out.warnings);
+    var left = (out.left || []).slice();
+    if (part && !part.lay) {
       // The template's chrome over the page and under what was put in it.
       var drawn = part.chrome(L, kids.length > 0);
       // What was put in it clear of the title the template draws at its top:
@@ -1166,27 +1175,37 @@
       out = { els: drawn.els.concat(out.els), problems: [], k: out.k };
       problems = problems.concat(drawn.problems);
     }
-    var left = [];
-    if (L.region && L.region.hub) {
-      var hub = planHub(regs, L, pname);
+    // What a hub's or a 320's template has no place for (its clock, the
+    // Center's popup region, the Header's ends) is named - a warning, and
+    // the page's `left` - but is the template's grammar, not the designer's
+    // to change: it does not outline the page as a problem (`quiet`), or
+    // every correct region page there looked broken.
+    var quiet = [];
+    if (L.region && (L.region.hub || L.region.pages)) {
+      var hub = (L.region.hub ? planHub : planPages)(regs, L, pname);
       out = { els: out.els.concat(hub.els), problems: [], k: out.k };
       problems = problems.concat(hub.probs);
       warnings = warnings.concat(hub.warns);
-      left = hub.left;
+      quiet = hub.warns;
+      left = left.concat(hub.left);
     } else if (L.region) {
       var planned = planRegions(regs, L, pname);
       L.region.plans = planned.plans;
       L.region.count = planned.count;
       problems = problems.concat(planned.probs);
     }
-    var bgArt = kind === 'page' ? (T.backgrounds || {})[theme.id] || null : null;
-    var image = bgArt && P.backdrops ? P.backdrops[T.series + '|' + theme.id] : null;
     // A hub draws a settings window as a popup of main's group (`part.popup`):
-    // its own fill where the template gives it one (Mach's #303030).
-    var asPopup = part && part.popup, shownKind = asPopup ? 'popup' : kind;
+    // its own fill where the template gives it one (Mach's #303030). The
+    // 320 draws a source or a window as a page (`part.page`), on the photo
+    // or, where its template's is on the page's own ground (Mach's
+    // question, on #303030), on that.
+    var asPage = part && part.page;
+    var asPopup = part && part.popup, shownKind = asPage ? 'page' : asPopup ? 'popup' : kind;
+    var bgArt = shownKind === 'page' && !(asPage && !part.art) ? (T.backgrounds || {})[theme.id] || null : null;
+    var image = bgArt && P.backdrops ? P.backdrops[T.series + '|' + theme.id] : null;
     // A source popup has no fill of its own: the page shows through, as through the template's own.
     var bg = shownKind === 'modal' ? null : asPopup ? props.background || asPopup.background || 'none'
-      : props.background || (part && role === 'source' ? 'none' : P.defaults.page.background);
+      : props.background || (part && role === 'source' && !asPage ? 'none' : P.defaults.page.background);
     var style = {
       position: 'relative', boxSizing: 'border-box', overflow: 'hidden',
       width: tw + 'px', height: th + 'px',
@@ -1203,8 +1222,8 @@
     L.pageLook = { background: bg, theme: theme.id, scheme: scheme,
                    background_image: bgArt ? bgArt.image : null, background_file: bgArt ? bgArt.file : null };
     var data = gdl({
-      kind: kind === 'page' ? 'page' : 'popup', modal: shownKind === 'modal' || null,
-      name: props.name, group: asPopup ? asPopup.group : props.group || (part && role === 'source' ? 'Sources' : null),
+      kind: shownKind === 'page' ? 'page' : 'popup', modal: shownKind === 'modal' || null,
+      name: props.name, group: asPage ? null : asPopup ? asPopup.group : props.group || (part && role === 'source' ? 'Sources' : null),
       start: truthy(props.start) || null, left: left.length ? left : null,
       // A hub's source popup or settings popup (hubPart): shown from the
       // Select a Source a region page derives, and in its group.
@@ -1220,7 +1239,7 @@
     });
     return h(Ctx.Provider, { value: L },
       h('div', { 'data-gdl': data, 'data-theme': theme.id, 'data-panel': model, className: 'xgdl-page',
-                 style: outlined(style, problems.concat(warnings)) },
+                 style: outlined(style, problems.concat(warnings.filter(function (w) { return quiet.indexOf(w) < 0; }))) },
         out.els, problems.map(problem), warnings.map(warning)));
   }
 
@@ -1388,9 +1407,9 @@
   // has set the scale its type is drawn at: a seam between two regions'
   // controls is the page's to keep, not either region's (openSeams).
   // Hubs (the 520s and 535s) and the 320s draw their working page in another
-  // grammar - a right menu bar and popups in main; a page per source - and a
-  // turned panel's frame turns the header into a left band: a region page is
-  // refused there by name until they are drawn.
+  // grammar - a right menu bar and popups in main (planHub); a page per
+  // source (planPages) - and a turned panel's frame turns the header into a
+  // left band: a region page is refused there by name until it is drawn.
   var FRAMES = P.frames || {};
   var RD = P.regions || {};
   var REGION_NAMES = { header: 'Header', leftrail: 'LeftRail', rightrail: 'RightRail', footer: 'Footer',
@@ -2114,8 +2133,9 @@
   function drawRegion(kind, props) {
     var L = React.useContext(Ctx), R = L && L.region;
     if (!R) return noFrame(REGION_NAMES[kind], L);
-    // A hub's page draws its regions together, in its own grammar (planHub).
-    if (R.hub) return null;
+    // A hub's page draws its regions together, in its own grammar (planHub),
+    // and the 320's (planPages).
+    if (R.hub || R.pages) return null;
     var plan = R.plans && R.plans[kind];
     if (plan && plan.props !== props && R.count[kind] > 1) return null;
     return (plan || PLANS[kind](props, L)).render();
@@ -2291,6 +2311,13 @@
   function framedPart(props, role, kind, D, T, name) {
     var FD = frameFor(D), FT = frameFor(T), HT = FT ? null : hubFor(T), what = role === 'source' ? 'a source popup'
       : 'a ' + (role || 'settings') + ' window';
+    // The 320 draws each as a page of its own (pagePart).
+    var PT = !FT && !HT ? pagesFor(T) : null;
+    if (PT) {
+      var named = props.title != null && String(props.title) !== '';
+      return pagePart(props, role, name, named ? String(props.title) : role === 'help' && WD.help_title || name,
+                      PT, D, T);
+    }
     if (!FT && !HT || !FD) {
       return { problem: name + ' is ' + what + ', which the ' + (FT || HT ? D.model : T.model) + ' does not draw yet' };
     }
@@ -2561,6 +2588,16 @@
       if (d < d0) { d0 = d; best = n; }
     });
     return best;
+  }
+  // A measured colour as the template draws it: its token where one is
+  // exactly it, else - opaque - itself, as #RRGGBB (the spec reads eight
+  // digits alpha first, CSS alpha last; six read alike), else the nearest
+  // token. Template chrome, which the six-colour cap exempts.
+  function asMeasured(colors, v) {
+    var t = tokenOf(colors, v);
+    if (t || !v) return t;
+    var c = hex8(v);
+    return /^#[0-9A-F]{6}FF$/.test(c) ? c.slice(0, 7) : tokenClose(colors, v);
   }
   function hubPanels(L, list, name, key, at) {
     var n = 0;
@@ -3127,6 +3164,829 @@
     return { els: els, probs: probs, warns: warns, left: left };
   }
 
+  // -- The 320: a page per source --------------------------------------------
+  // (docs/superpowers/specs/2026-10-22-region-frame-design.md, PR7.) The 320
+  // draws no bar, rail or footer: every page under a 36 px title strip, each
+  // source a page of its own - its controls in the template's columns, under
+  // their headings, or its three-line empty state - going on over a second
+  // page joined by More (the foot's right) and Back (the strip's end on
+  // Mach's, the foot's right on Shockwave's and Turbulence's); the question
+  // and the waits pages on the template's rounded box; the volume a modal the
+  // program shows, a level at the screen's right edge. So the same region
+  // page derives to it there, from the 320's own frame (P.frames, `pages`),
+  // and nothing on it is dropped: Main is the template's Select a Source,
+  // its strip titled as the template's, holding the Header's tabs under it as
+  // the 320's keys - the same controls, so the same IDs - and going on by More
+  // to pages of Main's own with what the template keeps off its pages (the
+  // LeftRail's Sections, the volume's heading and Mute, Room Mode, Help and
+  // Power), each Section a column under its heading; the slider is the
+  // level in the Volume modal; what has no place at all - the clock, the
+  // Center's popup region - is named and listed in the page's `left`. A
+  // source popup, a settings window and Help are pages under the strip; a
+  // window's Close is Back. The template has no way back from a source on
+  // screen - it chooses sources off it - so a page's first Back stands where
+  // its second page's stands, and goes back to the page that shows it, which
+  // the translator finds (`back`): only the canvas as a whole knows it. What
+  // the layout adds is derived, and keeps the template's seed ID where the
+  // frame has one (More 8010, Back 8011, the title strips', the question's).
+  var PD = RD.page || {};
+  function pagesFor(T) {
+    var F = FRAMES[T.series];
+    return F && F.pages && !T.turned ? F : null;
+  }
+  function roleIn(rec, role) {
+    var out = null;
+    ['top', 'bottom', 'left', 'right', 'center'].forEach(function (b) {
+      ((rec && rec[b] || {}).items || []).forEach(function (x) { if (!out && x.role === role) out = x; });
+    });
+    return out;
+  }
+  // Where a page's More and Back stand: More where the template's first
+  // page stands it; Back where its second page does - and where More stands
+  // there too (Shockwave's and Turbulence's foot's right), at the strip's
+  // end, as Mach's template stands it, a square the strip's depth: at the
+  // foot's left, as far in, it took the third key of the first column, and
+  // a column of three went on over two.
+  function navPlaces(L, F, more, back) {
+    var M = roleIn(F, 'more'), B = roleIn(F.second, 'back'), W = L.panel.size[0];
+    var out = { more: more && M ? M : null, back: null, strip: false };
+    if (back && B) {
+      var r = B.rect.slice(), sh = F.top.rect[3];
+      out.strip = r[1] + r[3] <= F.center.rect[1] + 1;
+      if (!out.strip && out.more && overlaps(r, out.more.rect)) {
+        r = [W - sh, 0, sh, sh];
+        out.strip = true;
+      }
+      out.back = { rect: r, id: B.id };
+    }
+    return out;
+  }
+  // The strip across a page's top: the record's surfaces as derived Panels
+  // (the 320's black label ground; on a page with Back at the strip's end,
+  // Mach's shape short of it), its title over them at the template's size.
+  // Where Back ends it (`back`, its rect there), the strip and its title are
+  // as deep as Back: the touch minimum took Mach's 57x36 Back to 40, and it
+  // hung 4 px under the 36 px strip. Its title stays clear of Back: centred
+  // on the strip where it fits the span Back leaves either side of the
+  // middle, else centred on what Back leaves of the strip; `title` is the
+  // words, or the words to try in turn (Main's later pages: their Sections'
+  // titles joined, then the first's), and words that fit neither way are
+  // named in `probs` - the label drawn the full 320 across ran 'Display and
+  // Room Settings' under Back unremarked.
+  function stripEls(L, F, rec, name, title, id, back, probs) {
+    var els = [], gap = L.panel.gap;
+    var deep = back && back[1] === 0 ? back[3] : 0;
+    function taller(r) { return deep > r[3] && r[1] === 0 ? [r[0], r[1], r[2], deep] : r; }
+    (rec.top.surfaces || []).forEach(function (s, i) {
+      els.push(drawnAt(Panel, { name: name + ' Strip' + (i ? ' ' + (i + 1) : ''),
+                                fill: tokenClose(L.colors, s.fill) || 'none', border: borderOf(s.border),
+                                stroke: 'none', derived: true }, taller(s.rect), 'strip' + i));
+    });
+    var t = roleIn(rec, 'title') || roleIn(rec, 'heading');
+    var p = Object.assign({}, PD.strip || {}, id != null ? { id: id } : {});
+    var pt = (F.center.pt || {}).title, r = taller(t ? t.rect : rec.top.rect), tries = [].concat(title);
+    var words_ = tries[0], at = r;
+    if (deep && overlaps(back, r)) {
+      var f = font(Object.assign({}, p, pt != null ? { size: pt } : {}), P.defaults.label.type,
+                   Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+      // Measured 6% wide, as messageBox does: before the canvas's Open Sans
+      // loads it measures Arial, 5% narrower.
+      var wide = function (s) { return textWidth(s, f.css) * 1.06; };
+      var right = back[0] + back[2] / 2 >= r[0] + r[2] / 2, mid = r[0] + r[2] / 2;
+      var span = right ? 2 * (back[0] - mid) : 2 * (mid - back[0] - back[2]);
+      var lean = right ? [r[0], r[1], back[0] - r[0], r[3]] : [back[0] + back[2], r[1], r[0] + r[2] - back[0] - back[2], r[3]];
+      var got = null;
+      tries.forEach(function (s) {
+        if (got) return;
+        if (wide(s) <= span) got = { s: s, r: r };
+        else if (wide(s) <= lean[2] - 2 * gap) got = { s: s, r: lean };
+      });
+      if (got) { words_ = got.s; at = got.r; }
+      else {
+        at = lean;
+        if (probs) {
+          probs.push(name + "'s title '" + words_ + "' runs under its Back on the " + L.model + ' - its strip holds '
+                     + Math.floor(lean[2] - 2 * gap) + ' px beside Back: shorten it');
+        }
+      }
+    }
+    els.push(chromeLabel(L, p, name + ' Title', words_, at, 'title', pt));
+    return els;
+  }
+  function navButton(L, look, name, r, id, extra, key) {
+    var p = Object.assign({ name: name, derived: true }, look || {}, id != null ? { id: id } : {}, extra || {});
+    var at = settle(r, needOf('button', p, L), [0, 0, L.panel.size[0], L.panel.size[1]], L.panel.size,
+                    [false, false, false, false]);
+    return drawnAt(Button, p, at, key);
+  }
+  // A control the 320's page draws in its own look: a designer's in the
+  // page's key look unless they set their own - the icon a header tab draws
+  // its header's own, not a key's - and a region default (Mute, Help, Power)
+  // in the key look with its own words, keeping its icon where the key's kit
+  // draws it, its states by name.
+  function pageMember(it, props, kind, tab) {
+    var look = Object.assign({}, PD.button || {});
+    if (it) {
+      var p = it.props || {}, extra = kind === 'button' ? unset(p, look) : {};
+      if (tab) {
+        ['size', 'align', 'fill', 'border', 'stroke', '__indent', 'icon', 'variant'].forEach(function (k) {
+          if (p[k] != null && look[k] == null) extra[k] = undefined;
+        });
+        if (look.variant) extra.variant = look.variant;
+      }
+      if (kind === 'label') extra = unset(p, PD.heading);
+      // `auto`: in the page's key look, which a wider caption widens (paginate).
+      return { it: it, kind: kind, props: Object.assign({}, p, extra), extra: extra,
+               auto: kind === 'button' && (tab || p.variant == null) };
+    }
+    var q = Object.assign({}, props);
+    if (kind === 'button') {
+      var keep = q.icon && iconHere(Object.assign({}, q, look), q.icon);
+      q = Object.assign(q, look, { icon: keep || undefined });
+      if (!keep && !q.text) q.text = q.name === 'Volume Mute' ? 'Mute' : q.name;
+      if (q.states) q.states = list(q.states).map(function (s) { return { name: s.name }; });
+    }
+    return { it: null, kind: kind, props: q, extra: null, auto: kind === 'button' };
+  }
+  // A slider where the panel's seed has none to clone (the 320's: its
+  // profile's `kinds`): a level there, with the derived Up and Down every
+  // level a slider becomes has (asLevel), a column of its own (`level`).
+  // Drawn as the designer's slider in one key's cell, it was a 50 px slider
+  // the 320's seed could not build, refused only at the donor check.
+  function asLevelHere(it, L) {
+    return it.kind === 'slider' && (L.panel.kinds || {}).slider === false;
+  }
+  // A Group on a 320's page: its members the page's own, in its columns -
+  // a tier C Group's opener has no place among a page's keys, and laid out
+  // in one key's cell its six buttons ran off the screen unremarked. A
+  // Group in a Group, or what is not a component, cannot page so, and is
+  // named.
+  function groupMembers(it, where, probs) {
+    var out = [];
+    itemsOf(propsOf(it).children).forEach(function (c) {
+      if (c.kind === 'group' || !c.comp) {
+        probs.push(nameOf(c) + ' in ' + nameOf(it) + ' in ' + where + ' cannot page on a 320 - put its controls in '
+                   + nameOf(it) + ' directly');
+        return;
+      }
+      out.push(c);
+    });
+    return out;
+  }
+  // A designer's controls in a source popup or a window as the 320's
+  // columns: what stands one over another, by where it was drawn, a label
+  // at a column's top its heading; a Group a column of its own under its
+  // title, and a slider the panel cannot build one of its own, a level.
+  // Unplaced children are drawn as they are; a plain container cannot
+  // reflow, and a card has no place on a page.
+  function columnsOf(kids, where, probs, warns, left, L) {
+    var cols = [], loose = [];
+    kids.forEach(function (it) {
+      if (!it.rect || REGION_NAMES[it.kind] || it.kind === 'mainarea' || it.kind === 'rail') { loose.push(it); return; }
+      if (it.kind === 'box') {
+        probs.push('a plain container in ' + where + ' cannot reflow on a 320 - put its controls in ' + where
+                   + ' directly, or in a Group');
+        return;
+      }
+      if (it.kind === 'panel' || it.kind === 'line') {
+        var n = nameOf(it);
+        if ((it.props || {}).name) left.push(n);
+        warns.push(where + "'s " + n + ' is left off the 320 - its pages draw no cards or lines');
+        return;
+      }
+      var r = it.rect, c = null;
+      // A Group and a level stand in columns of their own.
+      if (it.kind === 'group' || asLevelHere(it, L)) {
+        cols.push({ lo: r[0], hi: r[0] + r[2], items: [it], own: true });
+        return;
+      }
+      cols.forEach(function (x) { if (!c && !x.own && r[0] < x.hi && x.lo < r[0] + r[2]) c = x; });
+      if (c) { c.items.push(it); c.lo = Math.min(c.lo, r[0]); c.hi = Math.max(c.hi, r[0] + r[2]); }
+      else cols.push({ lo: r[0], hi: r[0] + r[2], items: [it] });
+    });
+    // Columns that came to overlap as they grew are one.
+    for (var i = 0; i < cols.length; i++) {
+      for (var j = i + 1; j < cols.length; j++) {
+        if (cols[i].own || cols[j].own) continue;
+        if (cols[j].lo < cols[i].hi && cols[i].lo < cols[j].hi) {
+          cols[i].items = cols[i].items.concat(cols[j].items);
+          cols[i].lo = Math.min(cols[i].lo, cols[j].lo); cols[i].hi = Math.max(cols[i].hi, cols[j].hi);
+          cols.splice(j, 1); j = i;
+        }
+      }
+    }
+    cols.sort(function (a, b) { return a.lo - b.lo; });
+    var blocks = cols.map(function (c) {
+      var g = c.items[0];
+      if (c.own && g.kind === 'group') {
+        // Its title a heading the 320 adds (no other panel draws one).
+        var gt = propsOf(g).title || propsOf(g).name || null;
+        return { head: gt ? pageMember(null, Object.assign({ name: gt + ' Heading', text: gt, derived: true }, RD.heading || {},
+                                                           PD.heading || {}), 'label') : null,
+                 title: gt, members: groupMembers(g, where, probs).map(function (it) {
+                   return pageMember(it, null, it.kind);
+                 }) };
+      }
+      if (c.own) return { head: null, title: null, level: true, members: [pageMember(g, null, 'slider')] };
+      var items = c.items.sort(function (a, b) { return a.rect[1] - b.rect[1] || a.rect[0] - b.rect[0]; });
+      var head = items.length > 1 && items[0].kind === 'label' ? items.shift() : null;
+      return { head: head ? pageMember(head, null, 'label') : null,
+               title: head ? textOf((head.props || {}).children, (head.props || {}).text) : null,
+               members: items.map(function (it) { return pageMember(it, null, it.kind); }) };
+    });
+    return { blocks: blocks, loose: loose };
+  }
+  // The template's grid on a page: its slots across - its first row's, on at
+  // its step - and its rows down from the first, under the headings where
+  // the page draws them, as many as its column holds, each as deep as the
+  // template's and no less than what is in it needs.
+  function pageGrid(L, F, heads, needH, headNeed) {
+    var C = F.center, row = C.row, T = L.panel, H = T.size[1];
+    var rowH = row[0][3], py = (C.pitch || [])[1] || rowH + T.gap, seam = Math.max(1, py - rowH);
+    var n = 0;
+    while (row[0][1] + n * py + rowH <= H) n += 1;
+    n = Math.max(1, n);
+    // A heading starts under the strip (Turbulence's boxes reach 7 px up
+    // into it) and ends where the template's does, or as deep as its words,
+    // its keys under it. The template's own 12 pt heading reaches 14 px into
+    // Turbulence's keys' clear tops, but at the 320's 14 pt floor its words
+    // fill its box, and reaching as far ran them into the keys' touch areas
+    // (the translator's words check): Turbulence's rows stay 57 deep to the
+    // template's 65 (docs/ROADMAP.md).
+    var hd = (C.headings || [])[0] || null, top = row[0][1], ht = hd ? Math.max(hd[1], C.rect[1]) : 0;
+    var head = hd ? [hd[0], ht, hd[2], Math.max(hd[1] + hd[3] - ht, Math.ceil(headNeed))] : null;
+    if (heads && head) top = Math.max(top, head[1] + head[3] + 1);
+    var hgt = Math.max(Math.ceil(needH), T.touch, Math.min(rowH, Math.floor((H - 1 - top - (n - 1) * seam) / n)));
+    return { xs: row.map(function (r) { return r[0] + r[2] / 2; }), w: row[0][2], top: top, h: hgt, seam: seam,
+             rows: n, head: head, H: H, W: T.size[0] };
+  }
+  // `blocks` over as many pages as they need: each a column of its own
+  // (`grid`: one block row by row across the slots), a heading over its
+  // first, the rest of a long one on in the next slot; More on every page
+  // but the last (`tail`: the last's too, on to pages after these), Back on
+  // every page but the first (`back`: the first's too).
+  // Each page: its slots' places and members, and its More and Back.
+  function paginate(L, F, blocks, grid, back, tail) {
+    var T = L.panel, gap = T.gap, needH = 0, headNeed = 0, heads = false;
+    blocks.forEach(function (b) {
+      b.w = 0;
+      b.members.forEach(function (m) {
+        m.need = needOf(m.kind, m.props, L);
+        if (m.kind !== 'label') needH = Math.max(needH, m.need[1]);
+        b.w = Math.max(b.w, m.need[0]);
+      });
+      if (b.head) { heads = true; b.head.need = needOf('label', b.head.props, L); headNeed = Math.max(headNeed, b.head.need[1]); }
+    });
+    var G = pageGrid(L, F, heads, needH, headNeed);
+    // A column of keys whose art is narrower at the row's depth than a
+    // caption needs takes the theme's next wider art (`regions.page.wider`),
+    // the whole column one art, as wide as that art is at the row's depth
+    // while two columns still stand a gap apart: Shockwave's 504x440 tile is
+    // 65 px wide at its 57, and 'Lighting' and 'Streaming' ran off it. Only
+    // an art that, that wide, is still the touch minimum deep and holds the
+    // caption: Turbulence's 720x180 bar came out 94x23, its caption over its
+    // edges. With none (Turbulence's: it has no wider key), the key keeps
+    // its own art at the row's depth, and a caption of two words or more
+    // goes on two lines where that holds it on the art ('Doc' over 'Cam'),
+    // as the theme's own two-word keys do (captionOf); one that still does
+    // not fit runs past the art's sides, its cell as wide as it is - grown
+    // in the art's own shape, 'Streaming' took Turbulence's keys to 100 px
+    // and Main's four sources over two pages.
+    function aspect(v) {
+      var k = (P.buttons[v] || {}).kit, d = k ? String(k).split('x').map(Number) : null;
+      return d && d[1] ? d[0] / d[1] : 0;
+    }
+    var pitchX = G.xs.length > 1 ? G.xs[1] - G.xs[0] : G.W;
+    blocks.forEach(function (b) {
+      var auto = b.members.filter(function (m) { return m.auto; });
+      var a0 = auto.length ? aspect(auto[0].props.variant || P.defaults.button.variant) : 0;
+      if (!a0) return;
+      var want = Math.max.apply(null, auto.map(function (m) { return m.need[0]; }));
+      if (G.h * a0 >= want) return;
+      function across(v) { return Math.min(Math.floor(G.h * aspect(v)), pitchX - gap); }
+      // The art as drawn - to fit its cell, as wide as the caption or the
+      // art at the row's depth, to the column's step: [width, depth].
+      function drawn(v) {
+        var w = Math.max(want, across(v));
+        return [Math.min(w, G.h * aspect(v)), Math.min(G.h, w / aspect(v))];
+      }
+      var pick = null;
+      (PD.wider || []).forEach(function (v) {
+        if (!pick && drawn(v)[0] >= want && drawn(v)[1] >= T.touch) pick = v;
+      });
+      if (!pick) {
+        var artW = Math.floor(G.h * a0);
+        auto.forEach(function (m) {
+          var c = textOf(m.props.children, m.props.text);
+          if (m.need[0] <= artW || !c || c.indexOf(' ') < 0 || /\n/.test(c)) return;
+          var at = -1;
+          for (var i = 0; i < c.length; i++) {
+            if (c.charAt(i) === ' ' && (at < 0 || Math.abs(i - c.length / 2) < Math.abs(at - c.length / 2))) at = i;
+          }
+          var two = c.slice(0, at) + '\n' + c.slice(at + 1);
+          var q = Object.assign({}, m.props, { children: two, text: two });
+          var n2 = needOf(m.kind, q, L), f = font(q, P.defaults.button.type, L);
+          if (n2[0] <= artW && 2 * lineHeight(f.size) + 4 <= G.h) { m.caption = two; m.need = n2; }
+        });
+        b.w = Math.max.apply(null, b.members.map(function (m) { return m.need[0]; }));
+        return;
+      }
+      auto.forEach(function (m) {
+        var q = Object.assign({}, m.props, { variant: pick });
+        if (q.icon && !iconHere(q, q.icon)) return;
+        m.props = q;
+        if (m.extra) m.extra.variant = pick;
+        m.need = needOf(m.kind, m.props, L);
+      });
+      b.w = Math.max.apply(null, b.members.map(function (m) { return m.need[0]; }).concat([across(pick)]));
+    });
+    var queue = [];
+    blocks.forEach(function (b, bi) { b.members.forEach(function (m, mi) { queue.push({ b: bi, m: mi }); }); });
+    // More and Back, which a key keeps the panel's 2 mm from where the two
+    // stand side by side (gdl.spec's rule; diagonal neighbours are clear).
+    function keepOut(nav) {
+      return [nav.more && nav.more.rect, nav.back && !nav.strip && nav.back.rect].filter(Boolean);
+    }
+    function near(r, o) {
+      var gx = Math.max(o[0] - (r[0] + r[2]), r[0] - (o[0] + o[2])), gy = Math.max(o[1] - (r[1] + r[3]), r[1] - (o[1] + o[3]));
+      return gx < 0 && gy < gap || gy < 0 && gx < gap;
+    }
+    function clear(r, outs) { return r[1] + r[3] <= G.H - 1 && !outs.some(function (o) { return near(r, o); }); }
+    // One page from the head of `q`: its slots and what each holds.
+    function pack(q, nav) {
+      var outs = keepOut(nav), slots = [], k = 0;
+      function wOf(bi) { return Math.max(G.w, Math.ceil(blocks[bi].w)); }
+      if (grid) {
+        for (var j = 0; j < G.rows && k < q.length; j++) {
+          for (var i = 0; i < G.xs.length && k < q.length; i++) {
+            var w = wOf(q[k].b), y = G.top + j * (G.h + G.seam);
+            var r = [Math.round(G.xs[i] - w / 2), y, w, G.h];
+            if (!clear(r, outs)) continue;
+            slots[i] = slots[i] || { i: i, w: w, cells: [] };
+            slots[i].cells.push({ c: q[k], r: r });
+            k += 1;
+          }
+        }
+      } else {
+        var minX = gap;
+        for (var si = 0; si < G.xs.length && k < q.length; si++) {
+          var bi = q[k].b, w2 = wOf(bi), s = { i: si, w: w2, b: bi, cells: [], head: q[k].m === 0 && blocks[bi].head };
+          // At its slot - or, where More or Back stands in the way, moved
+          // left clear of it, while that holds more of the column.
+          var rows = function (x) {
+            var n = 0;
+            for (var j = 0; j < G.rows; j++) if (clear([x, G.top + j * (G.h + G.seam), w2, G.h], outs)) n += 1;
+            return n;
+          };
+          // A level stands the column's depth, the touch minimum across,
+          // clear of More and Back (asLevel's Up and Down at its ends).
+          if (blocks[bi].level) {
+            w2 = T.touch;
+            var lx = Math.max(minX, Math.round(G.xs[si] - w2 / 2)), bot = G.H - 1;
+            outs.forEach(function (o) { if (o[0] - gap < lx + w2 && lx < o[0] + o[2] + gap) bot = Math.min(bot, o[1] - gap); });
+            if (bot - G.top >= 2 * T.touch + 2 * gap + 24) {
+              s.w = w2;
+              s.cells.push({ c: q[k], r: [lx, G.top, w2, bot - G.top] });
+              k += 1;
+              slots.push(s);
+              minX = lx + w2 + gap;
+            }
+            continue;
+          }
+          var x0 = Math.max(minX, Math.round(G.xs[si] - w2 / 2)), x1 = x0;
+          outs.forEach(function (o) { if (o[0] - gap < x0 + w2 && x0 < o[0] + o[2]) x1 = Math.min(x1, o[0] - gap - w2); });
+          // As far as the columns before it can give way, to the screen's gap.
+          var lead = slots.length ? Math.min.apply(null, slots.map(function (t) {
+            return Math.min.apply(null, t.cells.map(function (c) { return c.r[0]; }));
+          })) - gap : 0;
+          var give = Math.max(0, minX - x1);
+          var x = x0;
+          if (x1 < x0 && give <= lead && rows(x1) > rows(x0)) {
+            slots.forEach(function (t) { t.cells.forEach(function (c) { c.r[0] -= give; }); });
+            x = x1;
+          }
+          for (var j2 = 0; j2 < G.rows && k < q.length && q[k].b === bi; j2++) {
+            var r2 = [x, G.top + j2 * (G.h + G.seam), w2, G.h];
+            if (!clear(r2, outs)) continue;
+            s.cells.push({ c: q[k], r: r2 });
+            k += 1;
+          }
+          if (s.cells.length) { slots.push(s); minX = x + w2 + gap; }
+        }
+      }
+      return { slots: slots.filter(Boolean), used: k, outs: outs };
+    }
+    var pages = [], probs = [];
+    while (queue.length || !pages.length) {
+      var p = pages.length, hasBack = p > 0 || !!back;
+      var navA = navPlaces(L, F, !!tail, hasBack), got = pack(queue, navA);
+      if (got.used < queue.length && !tail) {
+        navA = navPlaces(L, F, true, hasBack);
+        got = pack(queue, navA);
+      }
+      if (!got.used && queue.length) {
+        probs.push('what ' + (pages.length ? 'is left' : 'it holds') + ' needs more room than a page of the '
+                   + L.model + ' has');
+        break;
+      }
+      got.nav = navA;
+      got.cells = queue.slice(0, got.used);
+      queue = queue.slice(got.used);
+      pages.push(got);
+    }
+    // Across: fewer columns than the template's centre as a group, where that
+    // keeps them clear of More and Back; columns grown wide stand a gap apart
+    // and inside the screen.
+    pages.forEach(function (pg) {
+      var S = pg.slots.slice().sort(function (a, b) { return a.i - b.i; });
+      if (S.length && S.length < G.xs.length) {
+        var lo = Math.min.apply(null, S.map(function (s) { return G.xs[s.i] - s.w / 2; }));
+        var hi = Math.max.apply(null, S.map(function (s) { return G.xs[s.i] + s.w / 2; }));
+        var dx = Math.round(G.W / 2 - (lo + hi) / 2);
+        var ok = S.every(function (s) {
+          return s.cells.every(function (c) { return clear([c.r[0] + dx, c.r[1], c.r[2], c.r[3]], pg.outs); });
+        });
+        if (ok) S.forEach(function (s) { s.cells.forEach(function (c) { c.r[0] += dx; }); s.dx = dx; });
+      }
+      var right = -Infinity;
+      S.forEach(function (s) {
+        var x0 = Math.min.apply(null, s.cells.map(function (c) { return c.r[0]; }));
+        var shift = Math.max(0, right + gap - x0);
+        if (shift) s.cells.forEach(function (c) { c.r[0] += shift; });
+        s.dx = (s.dx || 0) + shift;
+        right = Math.max.apply(null, s.cells.map(function (c) { return c.r[0] + c.r[2]; }));
+      });
+      if (right > G.W) probs.push('its columns need more than the ' + G.W + ' px across a ' + L.model + ' has');
+    });
+    return { pages: pages, G: G, probs: probs };
+  }
+  // A page's Back where it stands: at the strip's end, as deep as the strip
+  // and in the look the strip's end takes (`strip_back`: Turbulence's kit
+  // return key - its Back key has the word in its art, 5 px tall at 40).
+  function backAt(L, nav) {
+    var look = nav.strip ? PD.strip_back || PD.back : PD.back;
+    return { look: look, rect: settle(nav.back.rect, needOf('button', Object.assign({}, look || {}), L),
+                                      [0, 0, L.panel.size[0], L.panel.size[1]], L.panel.size,
+                                      [false, false, false, false]) };
+  }
+  // What `paginate` placed, drawn: each page's strip, headings, members,
+  // More and Back. `title(p)` the strip's words on page p (or the words to
+  // try in turn, stripEls), `back0` the first page's Back (null for none),
+  // `ids` the strip's seed IDs; what does not fit is named in `probs`. Its
+  // later pages go over it as pages of their own (PageParts).
+  function drawPages(L, F, blocks, laid, name, title, back0, firstRec, probs) {
+    var G = laid.G, shown = { set: null }, gap = L.panel.gap;
+    function partName(p) { return p ? name + ' ' + (p + 1) : name; }
+    function shower(p) { return function () { if (shown.set) shown.set(p); }; }
+    var homeT = roleIn(firstRec, 'heading') || roleIn(firstRec, 'title'), secondT = roleIn(F.second, 'title');
+    var pages = laid.pages.map(function (pg, p) {
+      var els = [], nav = pg.nav;
+      var rec = nav.back && nav.strip ? F.second : p === 0 ? firstRec : F;
+      var tid = p === 0 ? (homeT || {}).id : (secondT || {}).id;
+      var bk = nav.back && (p || back0) ? backAt(L, nav) : null;
+      els = els.concat(stripEls(L, F, rec, partName(p), title(p, pg), tid, bk && nav.strip ? bk.rect : null, probs));
+      pg.slots.forEach(function (s, si) {
+        var b = blocks[s.b != null ? s.b : s.cells[0].c.b];
+        if (s.head && b.head && G.head) {
+          var cx = s.cells.length ? s.cells[0].r[0] + s.cells[0].r[2] / 2 : G.xs[s.i] + (s.dx || 0);
+          var hw = Math.max(G.head[2], s.w), hr = [Math.round(cx - hw / 2), G.head[1], hw, G.head[3]];
+          var hp = b.head.props;
+          els.push(b.head.it ? hubHost(b.head.it, hr, 'h' + p + '-' + si, b.head.extra)
+                             : drawnAt(Label, hp, hr, 'h' + p + '-' + si));
+        }
+        s.cells.forEach(function (c, ci) {
+          var m = blocks[c.c.b].members[c.c.m], key = 'm' + p + '-' + si + '-' + ci;
+          var set = m.kind === 'button' ? setName('page', c.c.b) : null;
+          if (blocks[c.c.b].level) {
+            var lvl = asLevel(m.it, c.r, 'column', L.panel, key, null, null, (PD.button || {}).variant);
+            els = els.concat(lvl.els);
+            if (probs) lvl.problems.forEach(function (q) { probs.push(q); });
+          } else if (m.it) {
+            // `caption`: its words on two lines (paginate).
+            var extra = Object.assign({}, m.extra || {}, set ? { joined: set } : {});
+            els.push(m.caption != null ? hubHost(m.it, c.r, key, extra, m.caption) : hubHost(m.it, c.r, key, extra));
+          } else {
+            els.push(drawnAt(m.kind === 'label' ? Label : Button,
+                             Object.assign({}, m.props, set ? { joined: set } : {}, m.caption != null ? { text: m.caption } : {}),
+                             c.r, key));
+          }
+        });
+      });
+      if (nav.more) {
+        els.push(navButton(L, PD.more, partName(p) + ' More', nav.more.rect, nav.more.id,
+                           { nav: partName(p + 1), does: 'Shows ' + partName(p + 1) + '.', onPress: shower(p + 1) },
+                           'more' + p));
+      }
+      if (bk) {
+        var bx = p ? { nav: partName(p - 1), does: 'Goes back to ' + partName(p - 1) + '.', onPress: shower(p - 1) }
+                   : back0;
+        els.push(navButton(L, bk.look, partName(p) + ' Back', bk.rect, nav.back.id, bx, 'back' + p));
+      }
+      return { name: partName(p), els: els };
+    });
+    var els = pages[0].els;
+    if (pages.length > 1) els = els.concat([h(PageParts, { key: 'pages', parts: pages.slice(1), shown: shown })]);
+    return els;
+  }
+  // The pages a 320's page goes on over, and the Volume modal, each over it
+  // as a page or a modal of its own: a later page in the page's own look, the
+  // program's modal only when asked for (`window.__GDL_SHOW`).
+  function PageParts(props) {
+    var L = React.useContext(Ctx);
+    var st = React.useState(0);
+    props.shown.set = st[1];
+    var forced = typeof window !== 'undefined' && window.__GDL_SHOW ? String(window.__GDL_SHOW) : null;
+    return props.parts.map(function (q, j) {
+      var look = q.modal ? { kind: 'popup', name: q.name, modal: true, reached_by: 'program', size: L.panel.size }
+        : Object.assign({ kind: 'page', name: q.name, host: L.pageName || 'Page', size: L.panel.size }, L.pageLook || {});
+      var on = q.modal ? forced === q.name : forced ? forced === q.name : st[0] === j + 1;
+      return h(Ctx.Provider, { key: 'pp' + j, value: Object.assign({}, L, { pageName: q.name,
+                                                                          within: q.modal ? 'modal' : 'page' }) },
+        h('div', { 'data-gdl-part': JSON.stringify(look),
+                   style: Object.assign({ position: 'fixed', left: 0, top: 0, width: L.panel.size[0] + 'px',
+                                          height: L.panel.size[1] + 'px', zIndex: 5, visibility: on ? 'visible' : 'hidden' },
+                                        q.modal ? { background: paint(L.colors, 'scrim') } : L.pageStyle || {}) }, q.els));
+    });
+  }
+  // The region page on the 320 (see above): Main, the pages it goes on over
+  // and the Volume modal - `els` - with what it named (`probs`, `warns`) and
+  // what it has no place for (`left`).
+  function planPages(regs, L, pname) {
+    var F = L.region.F, probs = [], warns = [], left = [], by = {};
+    regs.forEach(function (it) { if (!by[it.kind]) by[it.kind] = propsOf(it); });
+    // What the drawn panel's own regions draw by default, by role.
+    var FD = frameFor(L.design), RR = byRole(FD ? FD.right.items : []), RB = byRole(FD ? FD.bottom.items : []);
+    function drawn(role, band) { return !FD || !!band[role]; }
+    var tabs = [], ends = [];
+    if (by.header) {
+      itemsOf(by.header.children).forEach(function (it) { (slotOf(it) === 'source' ? tabs : ends).push(it); });
+    }
+    var rr = by.rightrail ? slotted(by.rightrail.children, ['heading', 'volume', 'mute', 'audio'], 'RightRail', 'right', L)
+      : { over: {}, probs: [] };
+    var ft = by.footer ? slotted(by.footer.children, ['mode', 'clock', 'help', 'power'], 'Footer', 'bottom', L)
+      : { over: {}, probs: [] };
+    probs = probs.concat(rr.probs, ft.probs);
+    var blocks = [];
+    // The LeftRail's Sections: a column each, under its heading where the
+    // drawn panel's rail draws one (Shockwave's and Turbulence's second
+    // group has none).
+    if (by.leftrail) {
+      var FDL = FD ? FD.left : null, secs = [];
+      itemsOf(by.leftrail.children).forEach(function (sec) {
+        if (sec.kind !== 'section') {
+          probs.push(nameOf(sec) + ' in the LeftRail is not in a Section - put the rail\'s controls in titled Sections');
+          return;
+        }
+        // The Section's place among the rail's (a level a Section holds is a
+        // block of its own, so not blocks.length).
+        var sp = propsOf(sec), gi = secs.length, G = FDL && FDL.groups ? FDL.groups[gi] : null;
+        secs.push(sec);
+        var head = sp.title && (!FDL || G && G.heading)
+          ? pageMember(null, Object.assign({ name: sp.title + ' Heading', text: sp.title }, RD.heading || {}, PD.heading || {}), 'label')
+          : null;
+        var mem = [], lv = [];
+        itemsOf(sp.children).forEach(function (it) {
+          (it.kind === 'group' ? groupMembers(it, sp.title || 'the LeftRail', probs) : [it]).forEach(function (x) {
+            if (asLevelHere(x, L)) lv.push({ head: null, title: null, level: true, members: [pageMember(x, null, 'slider')] });
+            else mem.push(pageMember(x, null, x.kind));
+          });
+        });
+        blocks.push({ head: head, title: sp.title || null, members: mem });
+        blocks = blocks.concat(lv);
+      });
+    }
+    // The volume: its heading over Mute (and an Audio Control), its level
+    // the Volume modal's.
+    var vol = null;
+    if (by.rightrail) {
+      var hd = rr.over.heading, hdef = !hd && RR.heading ? chrome('heading', RR.heading, L) : null;
+      var vm = [];
+      if (rr.over.mute) vm.push(pageMember(rr.over.mute, null, rr.over.mute.kind));
+      else if (drawn('mute', RR)) vm.push(pageMember(null, chrome('mute', RR.mute || {}, L)[1], 'button'));
+      if (rr.over.audio) vm.push(pageMember(rr.over.audio, null, rr.over.audio.kind));
+      var head2 = hd ? pageMember(hd, null, 'label')
+        : hdef ? pageMember(null, Object.assign({}, hdef[1], PD.heading || {}), 'label') : null;
+      if (vm.length) blocks.push({ head: head2, title: head2 ? head2.props.text || textOf(head2.props.children) : null, members: vm });
+      else if (head2) blocks.push({ head: null, title: null, members: [head2] });
+      if (rr.over.volume) vol = Object.assign({}, rr.over.volume.props || {});
+      else if (drawn('volume', RR)) vol = chrome('volume', RR.volume || {}, L)[1];
+    }
+    // The footer: Room Mode, Help and Power in a column; its clock has no
+    // place on a 320.
+    if (by.footer) {
+      var fm = [];
+      if (ft.over.mode) fm.push(pageMember(ft.over.mode, null, ft.over.mode.kind));
+      ['help', 'power'].forEach(function (role) {
+        var it = ft.over[role], x = RB[role] || RR[role];
+        if (it) fm.push(pageMember(it, null, it.kind));
+        else if (!FD || x) fm.push(pageMember(null, chrome(role, x || {}, L, by.footer[role])[1], 'button'));
+      });
+      if (fm.length) blocks.push({ head: null, title: null, members: fm });
+      if (ft.over.clock || drawn('clock', RB)) {
+        var cn = ft.over.clock ? nameOf(ft.over.clock) : 'Date Time';
+        left.push(cn);
+        warns.push(pname + "'s " + cn + ' is left off the ' + L.model + ' - its template draws no clock');
+      }
+    }
+    // A Header's start and end controls: on with the rest.
+    if (ends.length) blocks.push({ head: null, title: null, members: ends.map(function (it) { return pageMember(it, null, it.kind); }) });
+    if (by.center) {
+      itemsOf(by.center.children).forEach(function (it) {
+        probs.push(nameOf(it) + ' in the Center: it is the popup region its sources fill - put a source\'s controls in '
+                   + 'its popup');
+      });
+      var cname = by.center.name || 'Controls';
+      left.push(cname);
+      warns.push(pname + "'s " + cname + ' is left off the ' + L.model + ' - its template shows each source as a page '
+                 + 'of its own');
+    }
+    // Main: the template's Select a Source, the tabs its keys; the rest on
+    // pages of Main's own from its More.
+    var homeT = roleIn(F.home, 'heading') || roleIn(F.home, 'title');
+    var sel = { head: null, title: null, members: tabs.map(function (it) { return pageMember(it, null, it.kind, true); }) };
+    var rest = blocks.filter(function (b) { return b.members.length; });
+    var first = paginate(L, F, [sel], true, false, rest.length > 0);
+    var later = rest.length ? paginate(L, F, rest, false, true, false) : { pages: [], probs: [] };
+    probs = probs.concat(first.probs, later.probs);
+    // One run of pages: the sources', then the rest's, each More on to the next.
+    var all = { G: first.G, pages: [] };
+    var nb = [sel].concat(rest);
+    first.pages.forEach(function (pg) { all.pages.push(pg); });
+    later.pages.forEach(function (pg) {
+      pg.slots.forEach(function (s) {
+        if (s.b != null) s.b += 1;
+        s.cells.forEach(function (c) { c.c = { b: c.c.b + 1, m: c.c.m }; });
+      });
+      all.pages.push(pg);
+    });
+    // Each later page titled with the Sections it holds - or, where they
+    // would run under its Back, with the first's, else the page's own name
+    // (each Section's heading still names it on the page).
+    function title(p, pg) {
+      if (!p) return (homeT || {}).text || 'Select a Source';
+      var words_ = [];
+      pg.slots.forEach(function (s) {
+        var t = nb[s.b != null ? s.b : s.cells[0].c.b].title;
+        if (t && words_.indexOf(t) < 0) words_.push(t);
+      });
+      return (words_.length > 1 ? [words_.join(' and ')] : []).concat(words_.slice(0, 1), [pname]);
+    }
+    var els = drawPages(L, F, nb, all, pname, title, null, F.home, probs);
+    // The Volume modal: the template's, the slider its level.
+    var V = F.volume;
+    if (vol && V) {
+      // Its colours as the template draws them (Mach's #4B4B4C strip and
+      // #E4EDF5 level): template chrome, which the six-colour cap exempts
+      // (the translator's `_template_colors`) - the nearest token drew the
+      // strip #303030 and the level white.
+      var vels = (V.surfaces || []).map(function (s, i) {
+        return drawnAt(Panel, { name: V.popup + ' Strip' + (i ? ' ' + (i + 1) : ''), fill: asMeasured(L.colors, s.fill) || 'none',
+                                border: borderOf(s.border), stroke: 'none', derived: true }, s.rect, 'vs' + i);
+      });
+      var lv = Object.assign({}, vol, { orientation: 'up', fromSlider: true }), SL = V.level;
+      delete lv.joined;
+      lv.track = SL.rect[2];
+      lv.border = SL.border ? borderOf(SL.border) : 'none';
+      if (SL.track) lv.fill = asMeasured(L.colors, SL.track) || lv.fill;
+      if (SL.bar) lv.bar = asMeasured(L.colors, SL.bar) || null;
+      if (SL.art) lv.art = SL.art;
+      vels.push(drawnAt(Level, lv, SL.rect, 'vlevel'));
+      // Its glyphs over and under the level - Volume Up Label and Volume
+      // Down Label, labels with the template's seed IDs, white at its size.
+      // The template sets them in an icon face the system does not carry
+      // (Extron-Lift, Extron GUI Configurator), so they say + and - (an en
+      // dash: Windows-1252 has it, so every theme's face draws it).
+      // Grown about its middle to a line at that size, on the screen: Mach's
+      // 29 px Down glyph at 18 pt ran 3 px off its foot.
+      (V.labels || []).forEach(function (x, i) {
+        if (!x || !x.rect) return;
+        var up = i === 0, lk = Object.assign({}, PD.glyph || PD.message || {});
+        var line = x.pt != null ? lineHeight(ptOn(x.pt, Object.assign({}, L, { k: 1 }))) + 2 : 0;
+        var gr = settle(x.rect, [0, line], [0, 0, L.panel.size[0], L.panel.size[1]], L.panel.size,
+                        [false, false, false, false]);
+        vels.push(chromeLabel(L, Object.assign(lk, { id: x.id }), 'Volume ' + (up ? 'Up' : 'Down') + ' Label',
+                              up ? '+' : '\u2013', gr, 'vglyph' + i, x.pt));
+      });
+      if (V.cancel) {
+        vels.push(drawnAt(Button, Object.assign({ name: V.popup + ' Cancel', derived: true, id: V.cancel.id,
+                                                  does: 'Puts ' + V.popup + ' away.' }, PD.cancel || {}),
+                          V.cancel.rect, 'vcancel'));
+      }
+      els.push(h(PageParts, { key: 'volume', parts: [{ name: V.popup, modal: true, els: vels }], shown: {} }));
+    } else if (vol) {
+      left.push(vol.name || 'Volume');
+      warns.push(pname + "'s " + (vol.name || 'Volume') + ' is left off the ' + L.model + ' - its template draws no volume');
+    }
+    return { els: els, probs: probs, warns: warns, left: left };
+  }
+  // `word` as a button in `look` at `r` says it: on one line where that fits
+  // r across, else broken at the space nearest its middle where two lines fit
+  // r both ways, else as it is (the button then grows to it).
+  function twoLines(L, look, word, r) {
+    var p = Object.assign({}, look || {}, { text: word });
+    if (needOf('button', p, L)[0] <= r[2] || String(word).indexOf(' ') < 0) return word;
+    var at = -1, mid = word.length / 2;
+    for (var i = 0; i < word.length; i++) if (word[i] === ' ' && (at < 0 || Math.abs(i - mid) < Math.abs(at - mid))) at = i;
+    var two = word.slice(0, at) + '\n' + word.slice(at + 1);
+    var f = font(p, P.defaults.button.type, L);
+    var fits = needOf('button', Object.assign({}, p, { text: two }), L)[0] <= r[2] && 2 * lineHeight(f.size) + 4 <= r[3];
+    return fits ? two : word;
+  }
+  // A source popup, a settings window, Help, the question or a wait on the
+  // 320: a page of its own (see above). `lay(kids, L)` draws it whole.
+  function pagePart(props, role, name, title, F, D, T) {
+    var FD = frameFor(D);
+    var dsize = role === 'source' && FD ? sourceParts(FD).size : null;
+    if (role === 'confirm' || role === 'wait') {
+      var W = (F.windows || {})[role];
+      if (!W || !W.rect) return { problem: name + ' is a ' + role + ' window, which the ' + T.model + "'s template does not draw" };
+      return { page: true, art: !!W.art, size: T.size.slice(), dsize: null, lay: function (kids, L) {
+        var B = WD.buttons || {}, els = [], probs = [], RW = RD.window || {};
+        (W.surfaces || []).forEach(function (s, i) {
+          els.push(drawnAt(Panel, { name: name + ' Window' + (i ? ' ' + (i + 1) : ''),
+                                    fill: s.fill ? tokenNear(L.colors, s.fill) || 'none' : 'none',
+                                    border: borderOf(s.border), derived: true }, s.rect, 'win' + i));
+        });
+        var topic = String(props.topic || ''), said_ = WD[role] || {}, words_ = said_[topic];
+        // The 320's own words for its question, where it has them: the 1035's
+        // breaks Shockwave's after 'to', where its 320 runs them on.
+        if (words_ != null && W.text && topic === 'power') words_ = W.text;
+        if (words_ == null) {
+          probs.push(name + "'s topic '" + topic + "' is not one the " + P.template + ' template has words for - '
+                     + 'say topic="' + Object.keys(said_).join('" or "') + '"');
+        } else if (W.message) {
+          var look = Object.assign({}, RW.message || {}, PD.message || {});
+          els.push(chromeLabel(L, look, name + ' Message', words_,
+                               messageBox(L, look, words_, W.message, W.rect, W.lines, (W.pt || {}).message),
+                               'message', (W.pt || {}).message));
+        }
+        if (role === 'confirm' && words_ != null) {
+          (W.buttons || []).forEach(function (b, i) {
+            var power = b.role === 'power', word = power ? B.power || 'Power Down' : B.cancel || 'Cancel';
+            var lk = RW[power ? 'power' : 'cancel'] || {}, V = P.buttons[lk.variant] || P.buttons[P.defaults.button.variant];
+            var img = imageOf(V, lk, word);
+            var extra = power ? { does: props.does } : { does: 'Goes back to the page that asked.', back: true };
+            // Its word where its look draws one (not Turbulence's, whose art
+            // carries it) - on two lines where one does not fit the template's
+            // button, as Turbulence's own Power Down: at the 14 pt floor
+            // Mach's grew from the template's 103 to 135, unlike its Cancel.
+            if (lk.text == null && !(img && img.caption === 'none')) extra.text = twoLines(L, lk, word, b.rect);
+            els.push(navButton(L, lk, name + ' ' + word, b.rect, b.id, extra, 'answer' + i));
+          });
+        }
+        if (kids.length) probs.push(name + ' is a ' + role + ' window: the template draws its words and its buttons');
+        return { els: els, problems: probs, k: L.k };
+      } };
+    }
+    return { page: true, art: true, size: T.size.slice(), dsize: dsize, lay: function (kids, L) {
+      var probs = [], warns = [], left = [];
+      var cols = columnsOf(kids, name, probs, warns, left, L), els = [];
+      var back0 = { does: 'Goes back to the page that shows ' + title + '.', back: true };
+      var C = F.center;
+      if (cols.blocks.length) {
+        var laid = paginate(L, F, cols.blocks, false, true, false);
+        probs = probs.concat(laid.probs);
+        // A title too long beside Back is named once, not on every page.
+        var said_t = [], titled = false;
+        els = drawPages(L, F, cols.blocks, laid, name, function () { return title; }, back0, F, said_t);
+        said_t.forEach(function (q) {
+          var t = q.indexOf("'s title '") >= 0;
+          if (!(t && titled)) probs.push(q);
+          titled = titled || t;
+        });
+      } else {
+        var nav = navPlaces(L, F, false, true), bk = nav.back ? backAt(L, nav) : null;
+        els = stripEls(L, F, nav.strip ? F.second : F, name, title, (roleIn(F, 'title') || {}).id,
+                       bk && nav.strip ? bk.rect : null, probs);
+        var said_ = role === 'source' ? WD.page_empty || WD.hub_empty || WD.empty : role === 'help' ? WD.help : null;
+        var lines_ = said_ != null ? said(said_, title).split('\n') : [], EL = C.empty_lines || [];
+        if (role === 'source' && EL.length > 1 && lines_.length === EL.length) {
+          // A label a line, where the template sets its empty state so (the
+          // 320's Laptop Label 1-3): its first sentence a paragraph apart
+          // from the other two, which one box drawing three lines evenly lost.
+          lines_.forEach(function (line, i) {
+            els.push(chromeLabel(L, Object.assign({}, PD.empty || {}, EL[i].id != null ? { id: EL[i].id } : {}),
+                                 name + ' Empty' + (i ? ' ' + (i + 1) : ''), line, EL[i].rect, 'empty' + i,
+                                 (C.pt || {}).empty));
+          });
+        } else if (said_ != null) {
+          var e = C.empty;
+          if (role === 'help') {
+            // Help's message under the strip, clear of Back.
+            var top = C.rect[1] + L.panel.gap, foot = nav.back && !nav.strip ? nav.back.rect[1] - L.panel.gap
+              : L.panel.size[1] - L.panel.gap;
+            e = [L.panel.gap, top, L.panel.size[0] - 2 * L.panel.gap, foot - top];
+          }
+          els.push(chromeLabel(L, PD.empty, name + (role === 'help' ? ' Message' : ' Empty'), said(said_, title), e,
+                               'empty', (C.pt || {}).empty));
+        }
+        if (bk) els.push(navButton(L, bk.look, name + ' Back', bk.rect, nav.back.id, back0, 'back0'));
+      }
+      return { els: cols.loose.map(function (it, i) { return React.cloneElement(it.host, { key: 'loose' + i }); }).concat(els),
+               problems: probs, warnings: warns, left: left, k: L.k };
+    } };
+  }
+
   // -- Group: a set of like controls, laid out and paged for each panel ------
   // A wrapping grid of equal cells, `cap` to a row, in the Group's own box.
   // On each panel every cell is as big as its largest member needs (touch
@@ -3554,6 +4414,9 @@
         // A segment of one segmented control (a joined Group): it may touch
         // its neighbours in that control, and no others.
         joined: props.joined || null,
+        // A derived Back that goes back to the page that shows its page,
+        // which the translator finds (the 320's: pagePart).
+        back: truthy(props.back) || null,
         missing_icon: missing.length ? missing : null
       })
     };

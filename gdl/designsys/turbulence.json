@@ -157,6 +157,11 @@
       "caption": "none",
       "look": {"border": "none", "color": "text"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on"}]
+    },
+    "clear": {
+      "usage": "A transparent area with no art: the 320's Cancel Volume, over the screen beside its level, which puts the volume away. A dark wash while pressed.",
+      "look": {"fill": "none", "border": "none", "color": "text"},
+      "states": [{"name": "Off"}, {"name": "On", "fill": "rail"}]
     }
   },
   "defaults": {
@@ -247,16 +252,30 @@
     "source": {"title": {"size": 36, "align": "center", "color": "text"}, "empty": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "button"}},
     "window": {"title": {"size": 36, "align": "center", "color": "text"}, "message": {"size": 20, "align": "center", "color": "text"}, "label": {"color": "text"}, "close": {"variant": "close"}, "power": {"variant": "button", "icon": "vc_power-dn", "text": "", "states": [{"name": "Off", "look": "green"}, {"name": "On", "look": "on"}]}, "cancel": {"variant": "button", "icon": "cancel", "text": ""}},
     "_hub": "What a hub's region page, source popups and windows draw (the 525's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Volume Up, Down and Mute the kit's rings (images 18, 20, 22: volume_up, volume_down, volume_mute); More the kit's transparent ••• tile with its word under it (image 34: sm-input_elipses_transp, `source`); the options' pictures the kit's 900x648 input_lightbulb and input_audio (`scene`, images 150 and 152); Close the kit's sphere X; Help its blank ? (`help_blank`). Display Control the kit's 504x504 transparent blank (image 32), its two words over it (`caption` over). Chosen by eye: an option the kit has no picture for the source tab's blank tile. Known differences: Display Control and More, which the template captions at 12 pt, take the 525's 18 pt floor and grow their cells inside the bar; the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn.",
-    "hub": {"title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "source"}, "menu": {"variant": "ring"}, "settings": {"variant": "source", "icon": "elipses", "caption": true}, "display": {"variant": "source", "icon": "blank", "caption": "over"}, "close": {"variant": "close"}, "help": {"variant": "source", "icon": "help_blank"}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "scene"}, "blank": {"variant": "source", "icon": "blank"}, "glyphs": {"light": "input_lightbulb", "audio": "input_audio"}}}
+    "hub": {"title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "source"}, "menu": {"variant": "ring"}, "settings": {"variant": "source", "icon": "elipses", "caption": true}, "display": {"variant": "source", "icon": "blank", "caption": "over"}, "close": {"variant": "close"}, "help": {"variant": "source", "icon": "help_blank"}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "scene"}, "blank": {"variant": "source", "icon": "blank"}, "glyphs": {"light": "input_lightbulb", "audio": "input_audio"}}},
+    "page": {
+      "_source": "The 320's pages (seeds/Turbulence 320.gdl): its strip's white words, its headings and empty state white on the photo, its square gray keys (`button`), More and Back the kit's own keys - Back where it ends the strip the kit's return key (`strip_back`), since its Back key's word is 5 px tall at 40, and the transparent Cancel over its Volume (`clear`). The question and the waits say theirs white (`message`). A caption wider than a key's art at the row's depth takes the next wider art (`wider`).",
+      "strip": {"align": "center", "color": "text"},
+      "heading": {"align": "center", "color": "text"},
+      "empty": {"align": "center", "color": "text"},
+      "button": {"variant": "button"},
+      "more": {"variant": "button", "icon": "more"},
+      "back": {"variant": "button", "icon": "back"},
+      "strip_back": {"variant": "button", "icon": "vc_return"},
+      "message": {"align": "center", "color": "text"},
+      "wider": ["wide"],
+      "cancel": {"variant": "clear", "text": ""}
+    }
   },
   "writing": {
-    "_source": "The template's own words, off the 1035's and 725's seeds (their Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help) and the grammar digest of every Turbulence page. Its Power Down and Cancel carry their words in the kit's art, so its buttons' words name them and are not drawn. Help's title is its Help label's, HELP (`help_title`).",
+    "_source": "The template's own words, off the 1035's and 725's seeds (their Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help) and the grammar digest of every Turbulence page. Its Power Down and Cancel carry their words in the kit's art, so its buttons' words name them and are not drawn. Help's title is its Help label's, HELP (`help_title`). A source page on the 320 says it over the three lines its template breaks it into (`page_empty`).",
     "empty": "{name} is currently selected.\nThere are no controls for this device.",
     "confirm": {"power": "Do you want to power down the system?"},
     "wait": {"up": "Please wait while the system starts up.", "down": "Please wait while the system is\npowering down."},
     "help": "For assistance, please call the help desk at: X.XXX.XXX.XXXX",
     "help_title": "HELP",
-    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"}
+    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
+    "page_empty": "{name} is currently selected.\nThere are no controls\nfor this device."
   },
   "kit": {
     "root": "Turbulence",
@@ -2025,8 +2044,15 @@
           "surfaces": [],
           "row": [[30, 49, 65, 65], [133, 49, 65, 65]],
           "headings": [[18, 29, 88, 34], [122, 29, 88, 34]],
+          "pitch": [103, 61],
           "empty": [0, 80, 320, 102],
           "empty_page": "Laptop",
+          "empty_lines": [
+            {"rect": [0, 80, 320, 29], "id": 6060},
+            {"rect": [0, 123, 320, 35], "id": 6061},
+            {"rect": [0, 153, 320, 29], "id": 6062}
+          ],
+          "pt": {"title": 14.25, "heading": 12, "empty": 12},
           "items": [{"role": "more", "name": "Doc Cam More", "kind": "button", "rect": [237, 171, 65, 65], "id": 8010}]
         },
         "home": {
@@ -2112,6 +2138,7 @@
             ],
             "title": null,
             "close": null,
+            "art": true,
             "pt": {"message": 15},
             "message": [30, 39, 260, 60],
             "lines": 2,
@@ -2124,7 +2151,8 @@
                 "rect": [172, 105, 102, 102],
                 "id": 9029
               }
-            ]
+            ],
+            "text": "Do you want to power down the system?"
           },
           "wait": {
             "popup": "Powering Down",
@@ -2141,11 +2169,28 @@
             ],
             "title": null,
             "close": null,
+            "art": true,
             "pt": {"message": 12},
             "message": [21, 81, 277, 77],
             "lines": 2
           },
           "settings": []
+        },
+        "volume": {
+          "popup": "Volume",
+          "surfaces": [],
+          "level": {
+            "rect": [292, 32, 12, 179],
+            "track": null,
+            "border": null,
+            "bar": null,
+            "art": {"track": "24x535_vert_vol-bars_empty.png", "fill": "24x535_vert_vol-bars_full.png"}
+          },
+          "labels": [
+            {"rect": [277, 0, 43, 32], "id": 7023, "pt": 16},
+            {"rect": [277, 211, 43, 29], "id": 7026, "pt": 16}
+          ],
+          "cancel": {"role": "cancel", "name": "Cancel Volume", "kind": "button", "rect": [0, 0, 277, 240], "id": 8001}
         },
         "ids": {},
         "note": "Each source is a page of its own, its second page from More and back by Back. More and Back sit on the page, not in a bar."

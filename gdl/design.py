@@ -46,7 +46,7 @@ CHROME = (r'C:\Program Files\Google\Chrome\Application\chrome.exe',
 # What each kind carries into the spec, beyond kind, name and rect.
 FIELDS = {
     'button': ('id', 'text', 'fill', 'stroke', 'color', 'border', 'size', 'bold', 'align',
-               'states', 'press', 'nav', 'does', 'derived', 'joined'),
+               'states', 'press', 'nav', 'does', 'derived', 'joined', 'back'),
     'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does', 'derived'),
     'panel': ('fill', 'stroke', 'border', 'derived'),
     'line': ('fill', 'thickness', 'from', 'to'),
@@ -119,7 +119,11 @@ PROBE = r"""
     for (var q of document.querySelectorAll('[data-gdl-warning]')) out.warnings.push(q.getAttribute('data-gdl-warning'));
     if (page) {
       var o = page.getBoundingClientRect();
-      out.page = { gdl: page.getAttribute('data-gdl'), rect: [0, 0, o.width, o.height] };
+      // `outlined`: drawn with the canvas's problem outline (bundle.js
+      // outlined()), which a warning the template's own grammar makes does
+      // not draw.
+      out.page = { gdl: page.getAttribute('data-gdl'), rect: [0, 0, o.width, o.height],
+                   outlined: getComputedStyle(page).outlineStyle !== 'none' };
       // Derived containers - a Group's pages on this panel - and each one's box.
       var parts = Array.prototype.slice.call(page.querySelectorAll('[data-gdl-part]'));
       var pr = parts.map(function (e) { return e.getBoundingClientRect(); });
@@ -556,7 +560,14 @@ class Canvas:
                 d = json.loads(prt['gdl'])
                 sub = {'name': d['name'], 'controls': [], '_board': b, '_derived': True, '_host': name,
                        '_raw': [c for c in out['controls'] if c.get('part') == i]}
-                if d.get('kind') == 'popup':
+                if d.get('kind') == 'popup' and d.get('modal'):
+                    # A modal the panel's layout derived - the 320's Volume,
+                    # which the program shows - over the whole screen.
+                    sub.update(modal=True)
+                    if d.get('reached_by'):
+                        sub['reached_by'] = d['reached_by']
+                    popups.append(sub)
+                elif d.get('kind') == 'popup':
                     # Its cells are drawn over the page, so it has no fill - as
                     # the seed's own group popups have none. Given none, a spec
                     # popup takes black, and Build drew a black box over the page.
@@ -655,8 +666,13 @@ class Canvas:
             **({'_panels': listed} if listed else {}),
             'theme': theme,
             # The template's own palette - every token the theme measured off
-            # it - which the six-color cap exempts (gdl.spec check, p.49).
-            '_template_colors': sorted({v for v in colors.values() if isinstance(v, str) and v.startswith('#')}),
+            # it - which the six-color cap exempts (gdl.spec check, p.49); and
+            # the colours this panel's own template draws its chrome in, as
+            # measured (its frame: the 320's #4B4B4C Volume strip and #E4EDF5
+            # level, which no token is).
+            '_template_colors': sorted({v for v in colors.values() if isinstance(v, str) and v.startswith('#')}
+                                       | _frame_colors(designsys.models(profile).get(first.get('panel') or '',
+                                                                                     {}).get('frame'))),
             'pages': pages,
             'popups': popups,
         }
@@ -683,6 +699,31 @@ class Canvas:
         used |= buttons
         if used:
             spec['images'] = {n: files[n] for n in sorted(used) if n in files}
+        # A derived Back with no `nav` of its own (`back`: the 320's, from a
+        # source, a window or the question, which is a page there) goes back
+        # to the page that shows its page - the one page with a control that
+        # leads to it. Only the canvas as a whole knows it; with none, or more
+        # than one, it is the program's, as a window's Close is. A page's own
+        # later pages lead back to it but do not show it: counted, Doc Cam's
+        # 'DocCam 2' made two pages show DocCam, and its first Back went
+        # nowhere - no way back to Main on screen.
+        openers = {}
+        for item in pages:
+            for c in item['controls']:
+                if c.get('nav') and c['nav'] not in (item['name'], item.get('_host')):
+                    openers.setdefault(c['nav'], set()).add(item['name'])
+        for item in pages + popups:
+            for c in item['controls']:
+                if not c.pop('back', None) or c.get('nav'):
+                    continue
+                whose = sorted(openers.get(item['name'], ()))
+                if len(whose) == 1:
+                    c['nav'] = whose[0]
+                else:
+                    notes.append(f"{item['name']!r} {c.get('name')}: "
+                                 + (f"{', '.join(whose)} all show {item['name']!r}" if whose
+                                    else f"nothing on this panel shows {item['name']!r}")
+                                 + ' - it goes back where the program says')
         seen = {}
         for item in pages + popups:
             if item['name'] in seen:
@@ -929,7 +970,8 @@ def _collisions(drawn, laid):
     region (a part of kind popup), reported in the popup's own coordinates:
     they are held against the page's in the page's, and two popups of one
     group, which never show together, against each other not at all. A part
-    of kind page is a page of its own."""
+    of kind page is a page of its own, and one that is a modal is over the
+    page, not beside what is on it."""
     def met(o):
         parts = [dict(json.loads(p['gdl']), rect=p['rect']) for p in o.get('parts') or []]
         cs, unnamed = [], {}
@@ -951,6 +993,10 @@ def _collisions(drawn, laid):
         def together(p1, d1, p2, d2):
             if p1 == p2:
                 return True
+            # A modal a layout derived (the 320's Volume) shows over the page
+            # under Build's scrim: nothing under it is read beside it.
+            if (d1 is not None and d1.get('modal')) or (d2 is not None and d2.get('modal')):
+                return False
             if (d1 is not None and d1.get('kind') != 'popup') or (d2 is not None and d2.get('kind') != 'popup'):
                 return False
             return d1 is None or d2 is None or d1.get('group') != d2.get('group')
@@ -977,6 +1023,25 @@ def _collisions(drawn, laid):
     return [f'{page!r} {a}: its words {how} {b} on this panel - give them room'
             for (a, b), (how, deep) in met(laid).items()
             if (a, b) not in drawn_met or deep > drawn_met[(a, b)][1] + _DRAWN_SLACK]
+
+
+def _frame_colors(frame):
+    """Every colour a series' measured frame draws its chrome in - its
+    surfaces' fills, a level's track and bar - as the spec reads them."""
+    out = set()
+
+    def walk(v):
+        if isinstance(v, dict):
+            for k, x in v.items():
+                if k in ('fill', 'track', 'bar') and isinstance(x, str) and x.startswith('#'):
+                    out.add(css_to_argb(x))
+                else:
+                    walk(x)
+        elif isinstance(v, list):
+            for x in v:
+                walk(x)
+    walk(frame)
+    return out
 
 
 def css_to_argb(v):

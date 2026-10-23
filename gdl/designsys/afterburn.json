@@ -1836,8 +1836,10 @@
           "surfaces": [],
           "row": [[35, 29, 108, 45], [176, 29, 108, 45]],
           "headings": [[35, 6, 107, 21], [177, 6, 107, 21]],
+          "pitch": [141, 54],
           "empty": [35, 44, 250, 102],
           "empty_page": "Laptop",
+          "pt": {"title": 17.5, "heading": 10, "empty": 12},
           "items": []
         },
         "home": {
@@ -1891,6 +1893,7 @@
             "surfaces": [],
             "title": null,
             "close": null,
+            "art": false,
             "pt": {"message": 12},
             "message": [35, 49, 250, 60],
             "lines": 2,
@@ -1903,7 +1906,8 @@
                 "rect": [175, 127, 107, 50],
                 "id": 9029
               }
-            ]
+            ],
+            "text": "Do you want to power down the system?"
           },
           "wait": {
             "popup": "Powering Down",
@@ -1911,11 +1915,34 @@
             "surfaces": [],
             "title": null,
             "close": null,
+            "art": false,
             "pt": {"message": 12},
             "message": [35, 80, 250, 80],
             "lines": 2
           },
           "settings": []
+        },
+        "volume": {
+          "popup": "Volume Level",
+          "surfaces": [
+            {
+              "name": "Level Background",
+              "rect": [270, 0, 50, 240],
+              "kind": "shape",
+              "fill": "#BABCCEFF",
+              "border": null,
+              "art": null
+            }
+          ],
+          "level": {
+            "rect": [288, 25, 15, 190],
+            "track": "#242634FF",
+            "border": "Afterburn - 14 Radius 0 Thick",
+            "bar": "#626ACFFF",
+            "art": null
+          },
+          "labels": [],
+          "cancel": null
         },
         "ids": {},
         "note": "Each source is a page of its own, its second page from More and back by Back. The title sits in the row along the foot, with More."
@@ -1983,6 +2010,7 @@
             "surfaces": [],
             "title": [66, 413, 231, 50],
             "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [0, 405, 66, 66], "id": 8041},
+            "art": true,
             "pt": {"title": 21, "message": 13},
             "message": [39, 79, 240, 100],
             "lines": 3
@@ -2042,6 +2070,7 @@
               "surfaces": [],
               "title": [66, 413, 155, 50],
               "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [0, 405, 66, 66], "id": 8041},
+              "art": true,
               "pt": {"title": 21}
             }
           ]
@@ -2113,6 +2142,7 @@
             "surfaces": [],
             "title": [5, 270, 79, 50],
             "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [10, 18, 66, 66], "id": 8041},
+            "art": true,
             "pt": {"title": 16, "message": 13},
             "message": [160, 110, 240, 100],
             "lines": 3
@@ -2172,6 +2202,7 @@
               "surfaces": [],
               "title": [5, 270, 79, 50],
               "close": {"role": "back", "name": "Page Back", "kind": "button", "rect": [10, 18, 66, 66], "id": 8041},
+              "art": true,
               "pt": {"title": 14}
             }
           ]

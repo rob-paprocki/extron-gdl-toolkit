@@ -677,6 +677,29 @@ class TestStateImage(unittest.TestCase):
             self.assertEqual(bool(problems), bad, (hex(fill), built, problems))
             self.assertFalse(any('not checked' in x for x in notes), notes)
 
+    def test_a_label_planned_clear_built_on_a_fill_is_reported(self):
+        """Turbulence 320's empty state: labels planned with no fill built on
+        their donor label's opaque black, bands across the photo - and no
+        check read a clear label's artwork. Its words alone are fine."""
+        import io
+        from PIL import Image
+
+        def art(band):
+            im = Image.new('RGBA', (40, 10), (0, 0, 0, 255) if band else (0, 0, 0, 0))
+            im.paste((255, 255, 255, 255), (10, 3, 30, 7))      # the words
+            buf = io.BytesIO()
+            im.save(buf, 'PNG')
+            return buf.getvalue()
+
+        table = {'Laptop': {'Name': 'Laptop', 'Controls': [
+            {'ID': 1, 'Name': 'Laptop Empty', 'Type': 11, 'TLPImageID': 7}]}}
+        op = {'op': 'clone-control', 'donor_type': 'PBLabel',
+              'fields': {'nameField': 'Laptop Empty'}, 'fill': 0}
+        for band, bad in ((True, True), (False, False)):
+            problems, _, _ = self.vb.check_fills([{'name': 'Laptop', 'controls': [op]}],
+                                                 table, {7: art(band)}, 'page')
+            self.assertEqual(bool(problems), bad, (band, problems))
+
     def test_an_opaque_fill_built_translucent_says_so(self):
         """Not 'missing or fully transparent' - the panel draws it, see-through."""
         import io

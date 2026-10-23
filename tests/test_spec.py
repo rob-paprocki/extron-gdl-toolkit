@@ -115,6 +115,32 @@ def _spec(controls, **kw):
     return Panel(base)
 
 
+class TestResourceRoots(unittest.TestCase):
+    """Extron's Resources come from vendor/ first, then the install - or, on a
+    machine without GUI Designer, a copy GDL_EXTRON_RESOURCES names, so a
+    Linux box translates with the precedence the Windows one builds with
+    (vendor's Mach/Extracted before the kit's Mach/Buttons)."""
+
+    def roots(self, env):
+        import subprocess
+        e = {k: v for k, v in os.environ.items() if k != 'GDL_EXTRON_RESOURCES'}
+        e.update(env)
+        out = subprocess.run([sys.executable, '-c', 'import json; from gdl import spec; '
+                              'print(json.dumps(spec.RESOURCE_ROOTS))'],
+                             cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             env=e, capture_output=True, text=True)
+        return json.loads(out.stdout)
+
+    def test_the_install_by_default(self):
+        r = self.roots({})
+        self.assertEqual(os.path.basename(os.path.dirname(r[0])), 'extron')
+        self.assertEqual(r[1], r'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources')
+
+    def test_a_copy_where_the_variable_names_one(self):
+        self.assertEqual(self.roots({'GDL_EXTRON_RESOURCES': '/home/<user>/extron-resources'})[1],
+                         '/home/<user>/extron-resources')
+
+
 class TestLevel(unittest.TestCase):
     """Build draws a Level across its whole box - it has no track width - and
     every Afterburn seed's Level is its rail, 15 px across. So a Level's
@@ -1761,6 +1787,15 @@ class TestPalette(unittest.TestCase):
              'border': 'rect'}]}, **self.BG)])
         op = p.plan()['pages'][0]['controls'][0]
         self.assertEqual(op['stroke'], 0)
+        self.assertNotIn((('A', 0), ('B', 0), ('G', 0), ('R', 0)), p.palette())
+
+    def test_a_label_with_no_fill_is_written_transparent(self):
+        """The applier skips a fill it is not given, so a label left without
+        one kept its donor label's: Turbulence 320's empty state built on
+        opaque black bands while the preview drew the photo through it."""
+        p = _project([dict({'name': 'P', 'controls': [_label(text='x')]}, **self.BG)])
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual(op['fill'], 0)
         self.assertNotIn((('A', 0), ('B', 0), ('G', 0), ('R', 0)), p.palette())
 
     def test_transparencies_of_one_color_count_once(self):

@@ -664,21 +664,29 @@ def thumb_art(p):
     return out
 
 
-def _slim_windows(windows):
+def _slim_windows(windows, ids=False):
     """A frame's windows as the bundle draws them: each record's rects, its
     surfaces' shape, fill and border, its Close's and buttons' role and rect,
-    and the sizes its title and message are set in and the lines its message
-    takes - not the seed's names, IDs or art, which are the translator's and
-    the reader's (about 16 KB of Mach's, which took its bundle past 260 KB)."""
+    the sizes its title and message are set in and the lines its message
+    takes, whether a window that is a page stands on the photo (`art`) and
+    the words a question that is a page says (`text`, the 320's own) -
+    not the seed's names, IDs or art, which are the translator's and the
+    reader's (about 16 KB of Mach's, which took its bundle past 260 KB). With
+    `ids`, its Close's and buttons' seed IDs, which a 320's pages keep."""
     def item(it):
-        return {'role': it['role'], 'rect': it['rect']} if it else None
+        if not it:
+            return None
+        out = {'role': it['role'], 'rect': it['rect']}
+        if ids and it.get('id') is not None:
+            out['id'] = it['id']
+        return out
 
     def slim(w):
         if not w:
             return w
         out = {'rect': w.get('rect'), 'title': w.get('title'), 'close': item(w.get('close')),
                'surfaces': [{k: s.get(k) for k in ('kind', 'rect', 'fill', 'border')} for s in w.get('surfaces') or []]}
-        for k in ('message', 'popups', 'pt', 'lines'):
+        for k in ('message', 'popups', 'pt', 'lines', 'art', 'text'):
             if k in w:
                 out[k] = w[k]
         if 'buttons' in w:
@@ -709,7 +717,7 @@ def bundle(p, art=True):
     # rects are not carried. Only where the template draws its bars as
     # controls - Afterburn's system draws no region - and only the series
     # the regions draw: a tier A or B series with all five bands, and the
-    # hubs (below). A 320's frame waits for the regions that draw it.
+    # hubs and the 320s (below).
     # And only what they read of it: the four bars; the center's popup
     # region and, off a source's popup, its well, title (and a source's with
     # controls), empty state, status, sizes and surfaces, which a source
@@ -747,6 +755,25 @@ def bundle(p, art=True):
         if bars and series in drawn and series not in profile['frames'] and s.get('frame')
         and s['frame'].get('right') and s['frame'].get('select') and not s['frame'].get('left')
         and not s['frame'].get('bottom')})
+    # A 320's (tier C, a page per source, with a strip and no bar, rail or
+    # footer): its strip and what stands in it, its home's and its second
+    # page's (Back), the centre's first row, headings and steps (`pitch`),
+    # the sizes it sets its title, headings and empty state in, the empty
+    # state - one label a line where the template sets it so - and More; its
+    # windows, which are pages, with the seed IDs of their buttons; and its
+    # Volume modal - which the region page, a source popup and a window draw
+    # there as pages of their own.
+    paged = {row['series'] for row in rows.values() if row.get('tier') == 'C' and not row.get('turned')}
+    profile['frames'].update({
+        series: {'pages': True, 'top': f['top'], 'home': {'top': f['home']['top']},
+                 'second': {'top': f['second']['top'], 'center': {'items': f['second']['center']['items']}},
+                 'center': {k: f['center'].get(k) for k in ('rect', 'row', 'headings', 'pitch', 'pt', 'empty',
+                                                            'empty_lines', 'items')},
+                 'windows': _slim_windows(f.get('windows'), ids=True), 'volume': f.get('volume')}
+        for series, f in ((s, v.get('frame')) for s, v in (p.get('panels') or {}).items() if not s.startswith('_'))
+        if bars and f and series in paged and series not in profile['frames'] and f.get('top')
+        and f.get('home') and f.get('second') and (f.get('center') or {}).get('row')
+        and not any(f.get(b) for b in ('left', 'right', 'bottom'))})
     # What the regions draw by default - Volume, Mute, Help, Power, the clock -
     # in the template's own looks and wording.
     profile['regions'] = {k: v for k, v in (p.get('regions') or {}).items() if not k.startswith('_')}
@@ -1477,8 +1504,12 @@ def _region_docs(p):
               "the tiles of a Select a Source popup filling main, under its title and the Footer's Help; the "
               "LeftRail's first Section is the popup its Display Control opens (on Mach a tile in its "
               "Settings), its later Sections, an Audio Control and the Footer's mode launcher the options its "
-              "settings opener shows; and the clock, which no hub draws, is named. On a 320 or a turned panel "
-              "a region page is refused by name for now: they draw their working page in another grammar.")
+              "settings opener shows; and the clock, which no hub draws, is named. On a 320 they are drawn as "
+              "its pages: Main under the template's Select a Source strip holds the Header's source tabs as "
+              "keys, its More goes on to pages of Main's own with the Sections (a column under each heading), "
+              "the volume's heading and Mute, the mode launcher, Help and Power; the volume slider is the "
+              "level in the Volume modal the program shows; the clock and the Center's popup region are named. "
+              "On a turned panel a region page is refused by name for now.")
     together = _footer_together(p)
     def ex(comp, attrs='', body=''):
         return _x(p, comp, attrs, body)
@@ -1567,8 +1598,12 @@ def _roles_props(p):
             f"under it is named): they are laid out in the well on every panel, white where {t} writes white, in its "
             f"in-well look. With none it says {t}'s empty state: '{empty}'{status} Without the role a popup in "
             f"`Sources` scales with main, and is named where it comes out larger than the region. On a hub it fills "
-            f"main under the hub's own header - its title and a Close back to Select a Source. On a 320 or a turned "
-            f"panel a source popup is refused by name for now.\n"
+            f"main under the hub's own header - its title and a Close back to Select a Source. On a 320 it is a page "
+            f"of its own under the strip titled with it, what you put in it in columns - a label at a column's top its "
+            f"heading, a Group a column of its own under its title, a slider a level with Up and Down - two to a "
+            f"page, the rest on a second page by More and Back; with nothing in it, the 320's "
+            f"three-line empty state; its Back goes back to the page whose key shows it. On a turned panel a source "
+            f"popup is refused by name for now.\n"
             f"- `role` on a `kind=\"modal\"`: a window, drawn as {t} draws its windows. `settings` (or a `title` and "
             f"no role) draws the window with its `title` and a Close; `help` too, titled '{helped}' unless you give a "
             f"`title`, and with nothing put in it {t}'s own help message; `confirm` with `topic=\"power\"` asks "
@@ -1577,8 +1612,9 @@ def _roles_props(p):
             f"the program's to do, so they carry no `nav`. Put a settings window's own controls inside it. A `role` the "
             f"Page's `kind` does not take is named. On a hub a settings window is a popup filling main, as the hub "
             f"draws its settings, with its title and a Close back to Select a Source; Help, the question and the wait "
-            f"stay windows in the hub's own style. On a 320 or a turned panel a window is refused by name for "
-            f"now.\n")
+            f"stay windows in the hub's own style. On a 320 each is a page: the question and the wait on the "
+            f"template's rounded box, a settings window and Help under the strip with Back to the page that opened "
+            f"it. On a turned panel a window is refused by name for now.\n")
 
 
 def _source_chrome(p):

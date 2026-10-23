@@ -92,6 +92,71 @@ class TestTranslate(unittest.TestCase):
         self.assertIsNotNone(spec)
         self.assertIn(f'Home.dc.html: {said}', notes)
 
+    def _backs(self):
+        """A 320's pages as its layout derives them (bundle.js planPages,
+        pagePart): Main's keys lead to Laptop, DocCam and Help, Other's to
+        Help too; DocCam goes on over 'DocCam 2', whose Back leads back to
+        it; Orphan nothing leads to. Each page's own Back says only `back`."""
+        def back(name, **g):
+            return ctl([263, 0, 57, 40], kind='button', name=name, text='', derived=True, back=True, **g)
+
+        def key(name, to):
+            return ctl([20, 60, 100, 50], kind='button', name=name, text=name, nav=to)
+        doccam = out(page('DocCam'), back('DocCam Back'),
+                     ctl([280, 200, 40, 40], kind='button', name='DocCam More', text='', derived=True,
+                         nav='DocCam 2'),
+                     dict(back('DocCam 2 Back', nav='DocCam'), part=0))
+        doccam['parts'] = [{'gdl': json.dumps({'kind': 'page', 'name': 'DocCam 2', 'host': 'DocCam',
+                                               'size': [320, 240]}), 'rect': [0, 0, 320, 240]}]
+        return translate({
+            'Main.dc.html': out(page('Main', start=True), key('Laptop', 'Laptop'), key('Doc Cam', 'DocCam'),
+                                key('Help', 'Help')),
+            'Other.dc.html': out(page('Other'), key('Other Help', 'Help')),
+            'Laptop.dc.html': out(page('Laptop'), back('Laptop Back')),
+            'DocCam.dc.html': doccam,
+            'Help.dc.html': out(page('Help'), back('Help Back')),
+            'Orphan.dc.html': out(page('Orphan'), back('Orphan Back')),
+        })
+
+    def test_the_templates_measured_chrome_colours_are_its_own(self):
+        """The colours a series' frame measured its chrome in - the 320's
+        #4B4B4C Volume strip, its #E4EDF5 level - are the template's, which
+        the six-colour cap exempts, as the spec reads them (#AARRGGBB)."""
+        frame = {'volume': {'surfaces': [{'fill': '#4B4B4CFF', 'rect': [278, 0, 42, 240]}],
+                            'level': {'track': '#000000FF', 'bar': '#E4EDF5FF', 'art': None}},
+                 'top': {'surfaces': [{'fill': '#000000B4'}, {'fill': None}]}}
+        self.assertEqual(design._frame_colors(frame), {'#FF4B4B4C', '#FF000000', '#FFE4EDF5', '#B4000000'})
+        self.assertEqual(design._frame_colors(None), set())
+
+    def test_a_derived_back_goes_to_the_one_page_that_shows_its_page(self):
+        """The 320's Back says only `back`: translate gives it the nav of the
+        one page with a control leading to its page - and no `back` stays in
+        the spec."""
+        spec, _, _ = self._backs()
+        on = {c['name']: c for q in spec['pages'] for c in q['controls']}
+        self.assertEqual(on['Laptop Back']['nav'], 'Main')
+        self.assertFalse([c for c in on.values() if 'back' in c])
+
+    def test_a_pages_own_later_page_does_not_show_it(self):
+        """'DocCam 2' leads back to DocCam but does not show it: DocCam's own
+        Back still goes back to Main, the one page that shows DocCam (a page
+        that runs over two had none, and no way back to Main on screen)."""
+        spec, _, notes = self._backs()
+        on = {c['name']: c for q in spec['pages'] for c in q['controls']}
+        self.assertEqual((on['DocCam Back']['nav'], on['DocCam 2 Back']['nav']), ('Main', 'DocCam'))
+        self.assertFalse([n for n in notes if 'DocCam' in n], notes)
+
+    def test_a_back_with_no_page_or_two_showing_its_page_is_the_programs(self):
+        """With two pages that show Help, or none that shows Orphan, its Back
+        has no `nav` - it goes where the program says - and the note says why."""
+        spec, _, notes = self._backs()
+        on = {c['name']: c for q in spec['pages'] for c in q['controls']}
+        self.assertNotIn('nav', on['Help Back'])
+        self.assertNotIn('nav', on['Orphan Back'])
+        self.assertIn("'Help' Help Back: Main, Other all show 'Help' - it goes back where the program says", notes)
+        self.assertIn("'Orphan' Orphan Back: nothing on this panel shows 'Orphan' - it goes back where the "
+                      'program says', notes)
+
     def test_nav_names_the_artboard_and_becomes_its_page_name(self):
         spec, problems, _ = translate({
             'Home.dc.html': out(HOME, ctl([0, 0, 100, 64], **dict(BTN, nav='HelpPage'))),
@@ -1458,9 +1523,12 @@ class TestInChrome(unittest.TestCase):
                 self.assertFalse([n for ns in notes.values() for n in ns if 'has no' in n])
                 rows = designsys.models(p)
                 self._the_hubs_derive(theme, specs, notes)
+                self._the_320_derives(theme, specs, notes)
                 ids = {}
                 for m, spec in specs.items():
                     self.assertEqual(Panel(spec).check(), [], m)
+                    if rows[m]['tier'] == 'C':
+                        continue
                     pops = {q['name']: q for q in spec['popups']}
                     region = rows[m]['frame']['center']['region']
                     for name in ('Laptop', 'PC', 'Streaming', 'DocCam'):
@@ -1530,6 +1598,59 @@ class TestInChrome(unittest.TestCase):
         # names as left off (its `left`), one ID one control.
         from gdl.idmap import IdMap, check_panels
         self.assertEqual(check_panels({m: IdMap(Panel(s)) for m, s in specs.items()}), [])
+
+    def _the_320_derives(self, theme, specs, notes):
+        """The region canvas on the 320, as its template draws its pages: Main
+        the template's Select a Source, its source buttons the 1035's tabs -
+        their IDs - and More on to pages of Main's own; each source, the
+        question, Help and the settings a page; the volume's level in the
+        template's modal, the 1035's Volume's ID; every Back back to the page
+        that shows its page; nothing dropped but the clock and the Center's
+        popup region, which are named."""
+        rows = designsys.models(designsys.load(theme))
+        M320 = 'TLP320M'
+        self.assertIn(M320, specs)
+        big = specs['TLP1035T']
+        main1035 = {c['name']: c for c in big['pages'][0]['controls']}
+        spec, F = specs[M320], rows[M320]['frame']
+        pages = {q['name']: q for q in spec['pages']}
+        pops = {q['name']: q for q in spec['popups']}
+        for n in ('Main', 'Main 2', 'Laptop', 'PC', 'Streaming', 'DocCam', 'DocCam 2', 'Lighting', 'Audio', 'Help',
+                  'ConfirmPower'):
+            self.assertIn(n, pages, n)
+        self.assertEqual(spec['start_page'], 'Main')
+        self.assertEqual(sorted(pages['Main']['left']), ['Controls', 'Date Time'])
+        main = {c['name']: c for c in pages['Main']['controls']}
+        for n in ('PC', 'Laptop', 'Doc Cam', 'Streaming'):
+            self.assertEqual((main[n]['id'], main[n]['nav']), (main1035[n]['id'], main1035[n]['nav']), n)
+        on = {c['name']: (q['name'], c) for q in spec['pages'] + spec['popups'] for c in q['controls']}
+        for n in ('Help', 'Power', 'Volume Mute', 'Volume', 'Display On', 'Lighting Settings', 'Room Mode'):
+            self.assertEqual(on[n][1]['id'], main1035[n]['id'], n)
+        V = F['volume']
+        vol = pops[V['popup']]
+        self.assertEqual((vol['modal'], vol.get('reached_by')), (True, 'program'))
+        self.assertEqual(on['Volume'][1]['kind'], 'level')
+        # Every Back goes back to the page that shows its page - a source's
+        # first page's too where it runs over two: its later page leads back
+        # to it but does not show it.
+        self.assertEqual(on['Laptop Back'][1]['nav'], 'Main')
+        self.assertEqual(on['DocCam Back'][1]['nav'], 'Main')
+        self.assertEqual(on['DocCam 2 Back'][1]['nav'], 'DocCam')
+        self.assertFalse([n for n in notes[M320] if 'goes back where the program says' in n], notes[M320])
+        # The Volume modal's glyphs keep the template's seed IDs; its strip's
+        # measured #4B4B4C (Mach) is the template's, exempt from the cap.
+        vol_on = {c['name']: c for c in vol['controls']}
+        self.assertEqual([vol_on[n]['id'] for n in ('Volume Up Label', 'Volume Down Label')], [7023, 7026])
+        # The empty state a label a line: the first source page's carries the
+        # template's seed IDs, the rest from 50001.
+        self.assertEqual([on[f'Laptop Empty{s}'][1]['kind'] for s in ('', ' 2', ' 3')], ['label'] * 3)
+        self.assertEqual(on['Help Back'][1]['nav'], on['Help'][0])
+        self.assertEqual(on['Lighting Back'][1]['nav'], on['Lighting Settings'][0])
+        self.assertEqual(on['ConfirmPower Cancel'][1]['nav'], on['Power'][0])
+        for q in spec['pages'] + spec['popups']:
+            for c in q['controls']:
+                self.assertNotIn('back', c, (q['name'], c.get('name')))
+        self.assertTrue(any(f'Date Time is left off the {M320}' in n for n in notes[M320]), notes[M320])
 
     def test_a_hub_takes_the_centers_group_and_shows_its_grid_first(self):
         """A canvas whose Center and source popups say group="Room", its
@@ -2441,13 +2562,14 @@ class TestARegionPage(_Probe, unittest.TestCase):
         _, _, out = self.probe('Main.dc.html', edit=(NO_RIGHT_RAIL, (page, page + ' splash="true"')))
         self.assertEqual((out['problems'], out['warnings']), ([], []))
 
-    def test_the_320_is_refused_by_name_for_now(self):
-        """A hub draws the region page in its own grammar (_HubProbe); the
-        320's page per source is PR7's."""
-        _, _, out = self.probe('Main.dc.html', 'TLP320M')
-        self.assertIn('Main uses the region frame, which the TLP320M does not draw yet', out['problems'])
-        _, _, out = self.probe('Main.dc.html', 'TLP525T')
-        self.assertEqual(out['problems'], [])
+    def test_the_300_is_refused_by_name_for_now(self):
+        """A hub draws the region page in its own grammar (_HubProbe), and the
+        320 in its own (_PagesProbe); the 300's menu bar is not drawn yet."""
+        _, _, out = self.probe('Main.dc.html', 'TLP300M')
+        self.assertIn('Main uses the region frame, which the TLP300M does not draw yet', out['problems'])
+        for m in ('TLP525T', 'TLP320M'):
+            _, _, out = self.probe('Main.dc.html', m)
+            self.assertEqual(out['problems'], [], m)
 
     def test_a_second_of_one_region_is_named(self):
         """A working page has one of each region: a second is named, and draws
@@ -3090,13 +3212,15 @@ class _CenterProbe(_Probe):
                 for r in (a, b):
                     self.assertTrue(_inside(r, frame), (board, model, r, frame))
 
-    def test_a_source_popup_on_the_320_is_refused_by_name_for_now(self):
-        _, _, out = self.probe('Laptop.dc.html', 'TLP320M')
-        self.assertIn('Laptop is a source popup, which the TLP320M does not draw yet', out['problems'])
+    def test_a_source_popup_on_a_turned_panel_is_refused_by_name_for_now(self):
+        """The 320 draws a source as a page of its own (_PagesProbe); a turned
+        panel's frame is not drawn yet."""
+        _, _, out = self.probe('Laptop.dc.html', 'TLP1035M-Portrait')
+        self.assertIn('Laptop is a source popup, which the TLP1035M-Portrait does not draw yet', out['problems'])
 
-    def test_a_window_on_the_320_is_refused_by_name_for_now(self):
-        _, _, out = self.probe('Lighting.dc.html', 'TLP320M')
-        self.assertIn('Lighting is a settings window, which the TLP320M does not draw yet', out['problems'])
+    def test_a_window_on_a_turned_panel_is_refused_by_name_for_now(self):
+        _, _, out = self.probe('Lighting.dc.html', 'TLP1035M-Portrait')
+        self.assertIn('Lighting is a settings window, which the TLP1035M-Portrait does not draw yet', out['problems'])
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -4633,6 +4757,508 @@ class TestTurbulenceOnThe320(TestABarThemeOnThe320):
     # The 320's seed has no date and time control to clone.
     CLOCK = ["Clock is a date and time, which the TLP320M's seed cannot build"]
     REFUSED = {'Main.dc.html': CLOCK, 'Call.dc.html': CLOCK}
+
+
+class _PagesProbe(_Probe):
+    """A bar theme's region canvas (tests/data/design-regions-<theme>) on the
+    320, drawn as its own template draws its pages
+    (docs/superpowers/specs/2026-10-22-region-frame-design.md, PR7): no bar,
+    rail or footer; every page under a 36 px title strip; Main the template's
+    Select a Source, holding the Header's tabs as the 320's buttons; each
+    source a page of its own, going on over a second joined by More and Back;
+    what the template has no place for on pages Main's More leads to; the
+    question and the waits pages on the template's rounded box; the volume
+    the template's program-shown modal."""
+
+    PANEL = 'TLP320C'
+
+    @classmethod
+    def setUpClass(cls):
+        cls.CANVAS = os.path.join(HERE, 'data', f'design-regions-{cls.THEME}')
+        super().setUpClass()
+
+    def profile(self):
+        return designsys.load(self.THEME)
+
+    def row(self):
+        return designsys.models(self.profile())[self.PANEL]
+
+    def frame(self):
+        return self.row()['frame']
+
+    def item(self, rec, role):
+        """A page record's item of `role`, in whichever band it stands."""
+        return next(it for b in ('top', 'bottom', 'left', 'right', 'center') if rec.get(b)
+                    for it in rec[b]['items'] if it['role'] == role)
+
+    def split(self, board, edit=None):
+        """The page, its derived parts by name, and {part or None: {name:
+        (data-gdl, rect, overflow)}} - the page's own under None."""
+        page, _, out = self.probe(board, self.PANEL, edit)
+        parts = [json.loads(p['gdl']) for p in out['parts']]
+        on = {None: {}}
+        for c in out['controls']:
+            g = json.loads(c['gdl'])
+            where = parts[c['part']]['name'] if c.get('part') is not None else None
+            on.setdefault(where, {})[g.get('name')] = (g, [round(v) for v in c['rect']], c.get('overflow'))
+        return page, {p['name']: p for p in parts}, on, out
+
+    def assertAt(self, got, want, msg=None):
+        """At the template's rect, or grown about it to what it needs here."""
+        self.assertTrue(got == want or _inside(want, got), (got, want, msg))
+
+    def mine(self, on):
+        """Every canvas control the page and its parts draw: {name: (where, data-gdl, rect)}."""
+        return {n: (w, g, r) for w, ctl in on.items() for n, (g, r, _) in ctl.items() if not g.get('derived')}
+
+    def test_main_is_the_templates_select_a_source(self):
+        """Main under the template's own strip - its ground, its words, its
+        seed ID - and the Header's tabs under it as the 320's buttons: the
+        same controls as the 1035's, by name, nav and does, at least the
+        touch minimum, one set, clear of each other; what the 320 has no
+        place for (the clock, the Center's popup region) named and left."""
+        page, parts, on, out = self.split('Main.dc.html')
+        self.assertEqual(out['problems'], [])
+        F, main = self.frame(), on[None]
+        self.assertEqual(out['warnings'],
+                         [f"Main's Date Time is left off the {self.PANEL} - its template draws no clock",
+                          f"Main's Controls is left off the {self.PANEL} - its template shows each source as a "
+                          'page of its own'])
+        self.assertEqual(page['left'], ['Date Time', 'Controls'])
+        self.assertEqual((page['kind'], page['size']), ('page', [320, 240]))
+        head = self.item(F['home'], 'heading')
+        g, r, _ = main['Main Title']
+        self.assertEqual((g['kind'], g['text'], g['id'], g['derived'], r),
+                         ('label', head['text'], head['id'], True, head['rect']))
+        g, r, _ = main['Main Strip']
+        self.assertEqual((g['kind'], g['derived'], r), ('panel', True, F['home']['top']['surfaces'][0]['rect']))
+        _, ctl1035, _ = self.probe('Main.dc.html', 'TLP1035T')
+        touch, joined = self.row()['touch'], set()
+        tiles = []
+        for n in ('PC', 'Laptop', 'Doc Cam', 'Streaming'):
+            g, r, over = main[n]
+            self.assertFalse(g.get('derived'), n)
+            self.assertEqual((g['nav'], g['does']), (ctl1035[n][0]['nav'], ctl1035[n][0]['does']), n)
+            self.assertGreaterEqual(min(r[2], r[3]), touch, (n, r))
+            self.assertTrue(_inside(r, F['center']['rect'], 0), (n, r))
+            self.assertFalse(over, n)
+            joined.add(g.get('joined'))
+            tiles.append(r)
+        self.assertEqual(len(joined), 1)
+        self.assertFalse([(a, b) for i, a in enumerate(tiles) for b in tiles[i + 1:] if _overlaps(a, b)])
+        self.assertEqual(_gaps(main, self.PANEL), [])
+
+    def test_mains_more_leads_to_what_the_320_keeps_off_its_pages(self):
+        """The template keeps no display, settings, mute, help or power on
+        its pages: Main's More - the template's, at its place with its seed
+        ID - leads on to pages of Main's own, each under the strip, back by
+        the second page's Back with its seed ID, more by More; the Sections,
+        the volume's heading and Mute, Room Mode, Help and Power on them,
+        each the same control as the 1035's."""
+        _, parts, on, out = self.split('Main.dc.html')
+        F = self.frame()
+        more, back = self.item(F, 'more'), self.item(F['second'], 'back')
+        g, r, _ = on[None]['Main More']
+        self.assertEqual((g['kind'], g['derived'], g['id'], g['nav']), ('button', True, more['id'], 'Main 2'))
+        self.assertAt(r, more['rect'])
+        later = sorted((p for p in parts.values() if p['kind'] == 'page'), key=lambda p: p['name'])
+        self.assertTrue(later)
+        self.assertEqual([p['name'] for p in later], [f'Main {i}' for i in range(2, len(later) + 2)])
+        for i, p in enumerate(later):
+            ctl = on[p['name']]
+            self.assertEqual((p['size'], p['host']), ([320, 240], 'Main'), p)
+            g, r, _ = ctl[p['name'] + ' Back']
+            self.assertEqual((g['derived'], g['nav']), (True, 'Main' if i == 0 else later[i - 1]['name']))
+            if i == len(later) - 1 or self.THEME == 'mach':
+                self.assertAt(r, back['rect'])
+            self.assertEqual(g['id'], back['id'])
+            self.assertTrue(ctl[p['name'] + ' Title'][0]['text'], p)
+            self.assertEqual(ctl[p['name'] + ' Title'][1][1], 0)
+            self.assertEqual((p['name'] + ' More') in ctl, i < len(later) - 1, p)
+            self.assertEqual(_gaps(ctl, self.PANEL), [], p)
+            for n, (g, r, _) in ctl.items():
+                self.assertTrue(_inside(r, [0, 0, 320, 240], 0), (p['name'], n, r))
+        here = self.mine(on)
+        for n in ('Display Heading', 'Display On', 'Display Off', 'Display Mute', 'Lighting Settings',
+                  'Audio Settings', 'Volume Heading', 'Volume Mute', 'Room Mode', 'Help', 'Power'):
+            self.assertIn(here.get(n, (None,))[0], [p['name'] for p in later], n)
+        self.assertEqual(here['Help'][1]['nav'], 'Help')
+        self.assertEqual(here['Power'][1]['nav'], 'ConfirmPower')
+        self.assertEqual(here['Lighting Settings'][1]['nav'], 'Lighting')
+
+    def test_nothing_on_the_canvas_is_dropped(self):
+        """Every control the 1035 draws from the canvas is on the 320 - on
+        Main, a page it goes on over or the volume's modal - but what its
+        page names as left off."""
+        _, ctl1035, _ = self.probe('Main.dc.html', 'TLP1035T')
+        mine = {n for n, (g, _, _) in ctl1035.items() if not g.get('derived')}
+        page, _, on, _ = self.split('Main.dc.html')
+        self.assertEqual(mine - set(self.mine(on)), set(page['left']))
+
+    def test_the_volume_is_the_templates_modal(self):
+        """The volume slider is the level in the template's Volume modal - a
+        full-screen modal the program shows, its strip and level where the
+        template draws them, put away by its transparent Cancel where the
+        template has one (its seed ID)."""
+        _, parts, on, _ = self.split('Main.dc.html')
+        V = self.frame()['volume']
+        part = parts[V['popup']]
+        self.assertEqual((part['kind'], part['modal'], part.get('reached_by')), ('popup', True, 'program'))
+        ctl = on[V['popup']]
+        g, r, _ = ctl['Volume']
+        self.assertEqual((g['kind'], r), ('level', V['level']['rect']))
+        self.assertNotIn('derived', g)
+        self.assertEqual([ctl[V['popup'] + ' Strip' + (f' {i + 1}' if i else '')][1] for i in range(len(V['surfaces']))],
+                         [s['rect'] for s in V['surfaces']])
+        if V['cancel']:
+            g, r, _ = ctl[V['popup'] + ' Cancel']
+            self.assertEqual((g['derived'], g['id'], r), (True, V['cancel']['id'], V['cancel']['rect']))
+        else:
+            self.assertNotIn(V['popup'] + ' Cancel', ctl)
+        # The template's colours as it measures them (Mach's #4B4B4C strip and
+        # #E4EDF5 bar), not the nearest token: its chrome is exempt from the
+        # six-colour cap.
+        def rgba(v):
+            return (v + 'FF' if len(v) == 7 else v).upper()
+        for i, s in enumerate(V['surfaces']):
+            g = ctl[V['popup'] + ' Strip' + (f' {i + 1}' if i else '')][0]
+            self.assertEqual(rgba(g['fill']), rgba(s['fill']))
+        if V['level']['bar']:
+            self.assertEqual(rgba(ctl['Volume'][0]['bar']), rgba(V['level']['bar']))
+
+    def test_the_volume_modal_draws_its_glyphs_over_and_under_the_level(self):
+        """The template's Volume Up and Down glyphs - labels with its seed IDs,
+        white, at its rects - one over the level and one under it."""
+        _, _, on, _ = self.split('Main.dc.html')
+        V = self.frame()['volume']
+        ctl = on[V['popup']]
+        for n, x in zip(('Volume Up Label', 'Volume Down Label'), V['labels']):
+            g, r, over = ctl[n]
+            self.assertEqual((g['kind'], g['derived'], g['id']), ('label', True, x['id']), n)
+            self.assertAt(r, x['rect'], n)
+            self.assertTrue(_inside(r, [0, 0, 320, 240], 0), (n, r))
+            self.assertEqual(g['color'], 'text', n)
+            self.assertTrue(g['text'], n)
+            self.assertFalse(over, n)
+        lv = ctl['Volume'][1]
+        self.assertLessEqual(ctl['Volume Up Label'][1][1] + ctl['Volume Up Label'][1][3], lv[1])
+        self.assertGreaterEqual(ctl['Volume Down Label'][1][1], lv[1] + lv[3])
+
+    def test_a_source_with_nothing_says_the_templates_empty_state(self):
+        """A role="source" popup is a page of its own, under the strip titled
+        with the source, saying the template's three-line empty state where
+        it does, with Back to the page that shows it - which the translator
+        finds (`back`)."""
+        F, w = self.frame(), self.profile()['writing']
+        page, parts, on, out = self.split('Laptop.dc.html')
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        self.assertEqual((page['kind'], page.get('group'), page['size']), ('page', None, [320, 240]))
+        self.assertTrue(page.get('background_image'))
+        ctl = on[None]
+        # At the template's rect - as deep as Back where Back ends the strip.
+        g, r, _ = ctl['Laptop Title']
+        self.assertEqual(g['text'], 'Laptop')
+        self.assertAt(r, self.item(F, 'title')['rect'])
+        # A label a line at the template's own rects and seed IDs: its first
+        # sentence a paragraph apart from the other two.
+        lines = w['page_empty'].format(name='Laptop').split('\n')
+        self.assertEqual(len(lines), 3)
+        for i, (text, x) in enumerate(zip(lines, F['center']['empty_lines'])):
+            n = 'Laptop Empty' + (f' {i + 1}' if i else '')
+            g, r, over = ctl[n]
+            self.assertEqual((g['text'], g['derived'], g['id'], r), (text, True, x['id'], x['rect']), n)
+            self.assertFalse(over, n)
+        g, r, _ = ctl['Laptop Back']
+        self.assertEqual((g['derived'], g['back'], g.get('nav')), (True, True, None))
+        self.assertNotIn('Laptop More', ctl)
+        self.assertEqual(parts, {})
+
+    def test_a_source_with_more_than_a_page_goes_on_over_a_second(self):
+        """Doc Cam's four columns: its headings over their controls as the
+        template's columns stand, the designer's words as written, two to a
+        page; the rest on 'DocCam 2', joined by the template's More and Back
+        at their places with their seed IDs, each page under the strip."""
+        F = self.frame()
+        page, parts, on, out = self.split('DocCam.dc.html')
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        self.assertEqual(list(parts), ['DocCam 2'])
+        self.assertEqual((parts['DocCam 2']['kind'], parts['DocCam 2']['host']), ('page', 'DocCam'))
+        more, back = self.item(F, 'more'), self.item(F['second'], 'back')
+        g, r, _ = on[None]['DocCam More']
+        self.assertEqual((g['nav'], g['id']), ('DocCam 2', more['id']))
+        self.assertAt(r, more['rect'])
+        g, r, _ = on['DocCam 2']['DocCam 2 Back']
+        self.assertEqual((g['nav'], g['id']), ('DocCam', back['id']))
+        self.assertAt(r, back['rect'])
+        self.assertEqual(on['DocCam 2']['DocCam 2 Title'][0]['text'], 'Document Camera')
+        here = self.mine(on)
+        heads = {'Inputs Heading': 'Inputs', 'Zoom Heading': 'Zoom', 'Focus Heading': 'Focus', 'Iris Heading': 'Iris'}
+        for n, text in heads.items():
+            self.assertEqual(here[n][1]['text'], text)
+        self.assertEqual(len(here), 16, sorted(here))
+        self.assertEqual({w for w, _, _ in here.values()}, {None, 'DocCam 2'})
+        row = F['center']['row']
+        for where in (None, 'DocCam 2'):
+            ctl = on[where]
+            self.assertEqual(_gaps(ctl, self.PANEL), [], where)
+            mine = {n: r for n, (g, r, _) in ctl.items() if not g.get('derived')}
+            self.assertTrue(mine)
+            for n, r in mine.items():
+                self.assertTrue(_inside(r, F['center']['rect'], 0), (where, n, r))
+            # Each column under its heading.
+            for hn in [h for h in heads if h in mine]:
+                col = hn.split()[0]
+                keys = [n for n in mine if n.startswith('Doc Cam ' + col)]
+                self.assertTrue(keys, hn)
+                hr = mine[hn]
+                for k in keys:
+                    self.assertGreaterEqual(mine[k][1], hr[1] + hr[3], (hn, k))
+                    self.assertLess(abs((mine[k][0] + mine[k][2] / 2) - (hr[0] + hr[2] / 2)), 2, (hn, k))
+        # The first page's first column where the template's first column is.
+        x0 = min(r[0] for n, (g, r, _) in on[None].items() if not g.get('derived') and g['kind'] == 'button')
+        self.assertLessEqual(abs(x0 - row[0][0]), 12, (x0, row))
+
+    def test_the_question_is_a_page_on_the_templates_box(self):
+        """The power-down question is a page as the template draws it: its
+        rounded box, its question, Power Down and Cancel at its places with
+        their seed IDs - Cancel back to the page that asked (`back`)."""
+        W, w = self.frame()['windows']['confirm'], self.profile()['writing']
+        page, parts, on, out = self.split('ConfirmPower.dc.html')
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        self.assertEqual((page['kind'], page.get('modal'), page['size']), ('page', None, [320, 240]))
+        self.assertEqual(bool(page.get('background_image')), W['art'])
+        ctl = on[None]
+        self.assertEqual(ctl['ConfirmPower Window'][1], W['rect'])
+        # The 320's own words (Shockwave's in one run, where its 1035 breaks).
+        self.assertEqual(ctl['ConfirmPower Message'][0]['text'], W.get('text') or w['confirm']['power'])
+        # Each at the template's rect, the two alike: a caption that does
+        # not fit one line there goes on two, as Turbulence's own Power Down.
+        for b in W['buttons']:
+            n = 'ConfirmPower ' + ('Power Down' if b['role'] == 'power' else 'Cancel')
+            g, r, over = ctl[n]
+            self.assertEqual(r, b['rect'], n)
+            self.assertEqual(g['id'], b['id'], n)
+            self.assertFalse(over, n)
+        self.assertEqual(ctl['ConfirmPower Power Down'][0]['does'], 'Powers the room down.')
+        self.assertTrue(ctl['ConfirmPower Cancel'][0]['back'])
+
+    def test_help_and_the_settings_are_pages_under_the_strip(self):
+        """The 320 draws no Help or settings window: each is a page under the
+        strip, titled as on the 1035, what it holds under the strip, with
+        Back to the page that opened it."""
+        w = self.profile()['writing']
+        page, _, on, out = self.split('Help.dc.html')
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        self.assertEqual(page['kind'], 'page')
+        ctl = on[None]
+        self.assertEqual(ctl['Help Title'][0]['text'], w['help_title'])
+        self.assertEqual(ctl['Help Message'][0]['text'], w['help'])
+        self.assertFalse(ctl['Help Message'][2])
+        self.assertTrue(ctl['Help Back'][0]['back'])
+        page, _, on, out = self.split('Lighting.dc.html')
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        ctl = on[None]
+        self.assertEqual(ctl['Lighting Title'][0]['text'], 'Lighting Settings')
+        for n in ('Lights Preset 1', 'Lights Preset 2'):
+            self.assertTrue(_inside(ctl[n][1], self.frame()['center']['rect'], 0), n)
+        self.assertEqual(_gaps(ctl, self.PANEL), [])
+
+    def strips(self, on):
+        """Each page whose Back ends its strip: {page: (Back's rect, its
+        strip's rects, its title's rect, its title's data-gdl, overflow)}."""
+        out = {}
+        for where, ctl in on.items():
+            for n, (g, r, _) in ctl.items():
+                if not (n.endswith(' Back') and g.get('derived') and r[1] == 0):
+                    continue
+                page = n[:-len(' Back')]
+                strips = [rr for nn, (gg, rr, _) in ctl.items() if nn.startswith(page + ' Strip')]
+                tg, tr, over = ctl[page + ' Title']
+                out[page] = (r, strips, tr, tg, over)
+        return out
+
+    def test_back_at_the_strips_end_is_flush_with_the_strip(self):
+        """Where Back ends the strip, the strip and its title are as deep as
+        Back (the touch minimum): Back does not hang under it."""
+        seen = 0
+        for board in ('Main.dc.html', 'DocCam.dc.html', 'Laptop.dc.html'):
+            _, _, on, _ = self.split(board)
+            for page, (back, strips, title, _, _) in self.strips(on).items():
+                seen += 1
+                self.assertTrue(strips, page)
+                for r in strips:
+                    self.assertEqual(r[3], back[3], (page, r, back))
+                self.assertEqual(title[3], back[3], page)
+        self.assertTrue(seen)
+
+    def test_a_strips_title_stays_clear_of_back(self):
+        """A title the strip shares with Back stands clear of it: centred on
+        the strip where it fits beside Back, else on what Back leaves of it.
+        Main's later pages' titles join their Sections' - and say only the
+        first where the rest would not fit. A designer's own title too long
+        for it is named."""
+        def check(on, out):
+            said = {json.loads(c['gdl']).get('name'): c.get('text_rect') for c in out['controls']}
+            for page, (back, _, title, _, over) in self.strips(on).items():
+                self.assertFalse(over, page)
+                t = said[page + ' Title']
+                self.assertLessEqual(t[0] + t[2], back[0] + 0.5, (page, t, back))
+        _, _, on, out = self.split('Main.dc.html')
+        check(on, out)
+        _, _, on, out = self.split('Main.dc.html', (' title="Settings"', ' title="Room Settings and Scheduling"'))
+        self.assertEqual(out['problems'], [])
+        check(on, out)
+        titles = [ctl[p + ' Title'][0]['text'] for p, ctl in on.items() if p and p.startswith('Main ')]
+        self.assertIn('Display', titles)
+        self.assertNotIn('Display and Room Settings and Scheduling', titles)
+        _, _, on, out = self.split('DocCam.dc.html', ('title="Document Camera"',
+                                                      'title="Document Camera and Visualizer Controls"'))
+        self.assertTrue([p for p in out['problems'] if "DocCam's title" in p and 'Back' in p], out['problems'])
+
+    def test_every_keys_art_is_at_least_the_touch_minimum_deep(self):
+        """A key's kit art, drawn to fit its box, is never a sliver: a caption
+        wider than the theme's key takes a wider art only where that art,
+        as wide as its column, is still the touch minimum deep - else the
+        key's own art, grown in its own shape to hold it."""
+        touch = self.row()['touch']
+        for board in ('Main.dc.html', 'DocCam.dc.html'):
+            _, _, on, _ = self.split(board)
+            for where, ctl in on.items():
+                for n, (g, r, _) in ctl.items():
+                    imgs = [s.get('image') for s in g.get('states') or [] if isinstance(s, dict) and s.get('image')]
+                    if g.get('kind') != 'button' or not imgs or not re.match(r'\d+x\d+_', imgs[0]):
+                        continue
+                    kw, kh = (int(v) for v in imgs[0].split('_')[0].split('x'))
+                    s = min(r[2] / kw, r[3] / kh)
+                    self.assertGreaterEqual(round(kh * s), touch, (where, n, r, imgs[0]))
+
+    def test_mains_template_left_offs_do_not_mark_it(self):
+        """The clock and the Center's popup region are left off the 320 by
+        its template's grammar, not by anything the designer can change: they
+        are named (`left`, a warning) but do not outline Main as a problem."""
+        page, _, _, out = self.split('Main.dc.html')
+        self.assertEqual(page['left'], ['Date Time', 'Controls'])
+        self.assertEqual(len(out['warnings']), 2)
+        self.assertFalse(out['page'].get('outlined'))
+
+    def window_with(self, board, old_name, new):
+        """(old, new): the control named `old_name` on `board`, and `new` in
+        the theme's namespace (`{ns}`)."""
+        with open(os.path.join(self.CANVAS, board), encoding='utf-8') as fh:
+            src = fh.read()
+        m = re.search(r'<x-import [^>]*name="' + re.escape(old_name) + r'"[^>]*>[^<]*</x-import>', src)
+        self.assertTrue(m, old_name)
+        return (m.group(0), new.replace('{ns}', self.profile()['namespace']))
+
+    def test_a_group_in_a_window_pages_as_its_columns(self):
+        """A Group in a settings window: its title a heading, its members in
+        the 320's columns over as many pages as they need - each on the
+        screen, clear of the strip and of each other - not one cell's worth
+        spilling off the screen."""
+        grp = ('<x-import component-from-global-scope="{ns}.Group" title="Scenes" cell="140x60" gap="20" cap="2" '
+               'style="position: absolute; left: 380px; top: 360px; width: 300px; height: 300px">'
+               + ''.join(f'<x-import component-from-global-scope="{{ns}}.Button" name="Scene {i}" '
+                         f'does="Recalls scene {i}." style="width: 140px; height: 60px">Scene {i}</x-import>'
+                         for i in range(1, 7)) + '</x-import>')
+        _, _, on, out = self.split('Lighting.dc.html', self.window_with('Lighting.dc.html', 'Lights Preset 1', grp))
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        here = self.mine(on)
+        for i in range(1, 7):
+            w, g, r = here[f'Scene {i}']
+            self.assertEqual(g['kind'], 'button')
+            self.assertTrue(_inside(r, self.frame()['center']['rect'], 0), (f'Scene {i}', r))
+        heads = [g['text'] for ctl in on.values() for n, (g, r, _) in ctl.items() if g.get('kind') == 'label'
+                 and g.get('derived') and n.endswith(' Heading')]
+        self.assertIn('Scenes', heads)
+        for where, ctl in on.items():
+            self.assertEqual(_gaps(ctl, self.PANEL), [], where)
+            for n, (g, r, _) in ctl.items():
+                self.assertTrue(_inside(r, [0, 0, 320, 240], 0), (where, n, r))
+
+    def test_a_slider_in_a_window_is_a_level_with_up_and_down(self):
+        """The 320's seed has no slider to clone: a slider in a settings
+        window is a level there, a column of its own, with the derived Up and
+        Down every level a slider becomes has - not a slider in a key's cell."""
+        sl = ('<x-import component-from-global-scope="{ns}.Slider" name="Lights Level" orientation="up" '
+              'does="Sets the lights." style="position: absolute; left: 760px; top: 300px; width: 40px; '
+              'height: 300px"></x-import>')
+        old = self.window_with('Lighting.dc.html', 'Lights Preset 2', '')[0]
+        _, _, on, out = self.split('Lighting.dc.html', (old, old + sl.replace('{ns}', self.profile()['namespace'])))
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        here = {n: (w, g, r) for w, ctl in on.items() for n, (g, r, _) in ctl.items()}
+        w, g, r = here['Lights Level']
+        self.assertEqual(g['kind'], 'level')
+        up, down = here['Lights Level Up'], here['Lights Level Down']
+        self.assertEqual((up[0], down[0]), (w, w))
+        self.assertTrue(up[1]['derived'] and down[1]['derived'])
+        self.assertLessEqual(up[2][1] + up[2][3], r[1])
+        self.assertGreaterEqual(down[2][1], r[1] + r[3])
+        for x in (up[2], down[2], r):
+            self.assertTrue(_inside(x, self.frame()['center']['rect'], 0), x)
+        self.assertEqual(_gaps(on[w], self.PANEL), [])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestMachsPages(_PagesProbe, unittest.TestCase):
+    """Mach's 320: a black 70% strip, shade keys on the photo, More at the
+    foot's right and Back at the strip's right end; the question on #303030."""
+
+    THEME = 'mach'
+
+    def test_back_ends_the_strip_and_the_question_is_on_its_ground(self):
+        """On a page with Back the strip is the template's second page's: a
+        shape short of the edge, Back at its end. The question stands on the
+        page's own #303030, not the photo."""
+        F = self.frame()
+        _, _, on, _ = self.split('DocCam.dc.html')
+        strip, back = on['DocCam 2']['DocCam 2 Strip'][1], on['DocCam 2']['DocCam 2 Back'][1]
+        want = F['second']['top']['surfaces'][0]['rect']
+        self.assertEqual((strip[:3], strip[3]), (want[:3], back[3]))
+        self.assertEqual(back[0], want[0] + want[2] + 1)
+        page, _, _, _ = self.split('ConfirmPower.dc.html')
+        self.assertEqual((page['background'], page.get('background_image')), ('page', None))
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestShockwavesPages(_PagesProbe, unittest.TestCase):
+    """Shockwave's 320: its gray keys, More and Back at the foot's right."""
+
+    THEME = 'shockwave'
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestTurbulencesPages(_PagesProbe, unittest.TestCase):
+    """Turbulence's 320: its square keys, More and Back the kit's own."""
+
+    THEME = 'turbulence'
+
+    def test_its_keys_are_its_square_keys_and_its_strip_back_is_a_glyph(self):
+        """No key is the 720x180 bar, 23 px deep as wide as a column may be:
+        Doc Cam's and Main's are the template's square key, a two-word
+        caption on two lines ('Doc' over 'Cam'). Back where it ends the strip
+        is the kit's return key, not its 'Back' key, whose word is 5 px tall
+        at 40."""
+        _, _, on, _ = self.split('DocCam.dc.html')
+        for where, ctl in on.items():
+            for n, (g, r, _) in ctl.items():
+                if g.get('kind') == 'button' and not g.get('derived'):
+                    self.assertNotEqual(g.get('variant'), 'wide', (where, n))
+        _, _, on, _ = self.split('Main.dc.html')
+        for n in ('PC', 'Laptop', 'Doc Cam', 'Streaming'):
+            self.assertNotEqual(on[None][n][0].get('variant'), 'wide', n)
+        self.assertEqual(on[None]['Doc Cam'][0]['text'], 'Doc' + chr(10) + 'Cam')
+        seen = 0
+        for board in ('Main.dc.html', 'DocCam.dc.html'):
+            _, _, on, _ = self.split(board)
+            for page in self.strips(on):
+                g = next(ctl[page + ' Back'][0] for ctl in on.values() if page + ' Back' in ctl)
+                imgs = [s['image'] for s in g['states'] if s.get('image')]
+                self.assertTrue(imgs and all('vc_return' in i for i in imgs), (page, imgs))
+                seen += 1
+        self.assertTrue(seen)
 
 
 if __name__ == '__main__':

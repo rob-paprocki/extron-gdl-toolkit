@@ -125,6 +125,11 @@
       "caption": "none",
       "look": {"border": "none", "color": "text"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "border": "rounded-3d-selected"}]
+    },
+    "clear": {
+      "usage": "A transparent area with no art: the 320's Cancel Volume, over the screen beside its level, which puts the volume away. A white wash while pressed.",
+      "look": {"fill": "none", "border": "none", "color": "text"},
+      "states": [{"name": "Off"}, {"name": "On", "fill": "pressed"}]
     }
   },
   "defaults": {
@@ -209,10 +214,22 @@
     "source": {"title": {"size": 40, "align": "center", "color": "text"}, "empty": {"size": 22, "align": "center", "color": "text"}, "status": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "tile"}},
     "window": {"title": {"size": 40, "align": "center", "color": "text-secondary"}, "message": {"size": 26, "align": "center", "color": "text-secondary"}, "label": {"color": "text-secondary"}, "close": {"variant": "close"}, "power": {"variant": "wide", "icon": "green_round", "size": 18}, "cancel": {"variant": "wide", "icon": "red_round", "size": 18}},
     "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Up, Down, Mute, Display Control and More on one art, the kit's 712x440 gray (`button`: the seed's image 15, 92x54, lit 712x440 gray sel), Mute lit red (the seed's image 17, 712x440 red sel); Power the kit's 440x440 power_red, a square power glyph in a crimson ring (image 18); every hub Close the white X at rest and the dark one pressed (images 44 and 45: white_close, black_close), where the card's Close is the other way about; Help the kit's help_yellow (image 34); the options' glyphs the kit's lightbulb_white and speaker_white. Chosen by eye: Up and Down Open Sans's Λ and V for the template's Extron-Shockwave chevrons, which its kit has no art for; a tile the source tab's glyph art on the `well` wash in a rounded `pressed` ring, for the template's own translucent rounded tile. Known differences: its tile's glyph is the tab art's, about a third the size of the template's line art; the menu's words, set at 12 pt under the 525's 18 pt floor, grow their cells; the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn.",
-    "hub": {"title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "device", "fill": "well", "border": "rounded", "stroke": "pressed", "glyph": "_white"}, "menu": {"variant": "button"}, "up": {"icon": null, "text": "Λ"}, "down": {"icon": null, "text": "V"}, "mute": {"variant": "button", "icon": "gray", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "icon": "red"}]}, "power": {"variant": "square", "icon": "power_red", "text": ""}, "settings": {"variant": "button"}, "display": {"variant": "button"}, "close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}, "help": {"variant": "square", "icon": "help_yellow"}, "window": {"close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "source", "fill": "well", "border": "rounded", "stroke": "pressed"}, "blank": {"variant": "tile"}, "glyphs": {"light": "lightbulb_white", "audio": "speaker_white"}}}
+    "hub": {"title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "device", "fill": "well", "border": "rounded", "stroke": "pressed", "glyph": "_white"}, "menu": {"variant": "button"}, "up": {"icon": null, "text": "Λ"}, "down": {"icon": null, "text": "V"}, "mute": {"variant": "button", "icon": "gray", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "icon": "red"}]}, "power": {"variant": "square", "icon": "power_red", "text": ""}, "settings": {"variant": "button"}, "display": {"variant": "button"}, "close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}, "help": {"variant": "square", "icon": "help_yellow"}, "window": {"close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "source", "fill": "well", "border": "rounded", "stroke": "pressed"}, "blank": {"variant": "tile"}, "glyphs": {"light": "lightbulb_white", "audio": "speaker_white"}}},
+    "page": {
+      "_source": "The 320's pages (seeds/Shockwave 320.gdl): its strip's white words, its headings and empty state white on the photo, its gray keys (504x440, `tile`), More the kit's ••• key and Back its gray key - the kit's return glyph, where the template sets a chevron in an icon face the system does not carry - and the transparent Cancel over its Volume (`clear`). The question and the waits say theirs white (`message`). A caption wider than a key's art at the row's depth takes the next wider art (`wider`).",
+      "strip": {"align": "center", "color": "text"},
+      "heading": {"align": "center", "color": "text"},
+      "empty": {"align": "center", "color": "text"},
+      "button": {"variant": "tile"},
+      "more": {"variant": "square", "icon": "more"},
+      "back": {"variant": "square", "icon": "return_gray"},
+      "message": {"align": "center", "color": "text"},
+      "wider": ["button", "pill", "wide"],
+      "cancel": {"variant": "clear", "text": ""}
+    }
   },
   "writing": {
-    "_source": "The template's own words, off the 1035's and 725's seeds (their Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help) and the grammar digest of every Shockwave page: a bar series' source with no controls asks for it to be connected ({noun} the popup's title in sentence case: 'laptop', 'PC') over a status the program sets, Disconnected; the hubs and the 320 say '<X> is currently selected.' instead (`hub_empty`, which a source popup on a hub says). The question and the waits keep the seed's line breaks. Help's title is its Help label's, HELP (`help_title`).",
+    "_source": "The template's own words, off the 1035's and 725's seeds (their Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help) and the grammar digest of every Shockwave page: a bar series' source with no controls asks for it to be connected ({noun} the popup's title in sentence case: 'laptop', 'PC') over a status the program sets, Disconnected; the hubs and the 320 say '<X> is currently selected.' instead (`hub_empty`, which a source popup on a hub says). The question and the waits keep the seed's line breaks. Help's title is its Help label's, HELP (`help_title`). A source page on the 320 says it over the three lines its template breaks it into (`page_empty`).",
     "empty": "Please connect your {noun}.",
     "status": "Disconnected",
     "hub_empty": "{name} is currently selected.\nThere are no controls for this device.",
@@ -220,7 +237,8 @@
     "wait": {"up": "Please wait\nwhile the system starts up.", "down": "Please wait while the\nsystem is powering down."},
     "help": "For assistance, please call the help desk at:\nX.XXX.XXX.XXXX",
     "help_title": "HELP",
-    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"}
+    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
+    "page_empty": "{name} is currently selected.\nThere are no controls\nfor this device."
   },
   "kit": {
     "root": "Shockwave",
@@ -2646,8 +2664,15 @@
           "surfaces": [],
           "row": [[27, 57, 70, 60], [130, 57, 70, 60]],
           "headings": [[19, 38, 88, 20], [121, 38, 88, 20]],
+          "pitch": [103, 61],
           "empty": [0, 80, 320, 102],
           "empty_page": "Laptop",
+          "empty_lines": [
+            {"rect": [0, 80, 320, 29], "id": 6060},
+            {"rect": [0, 123, 320, 35], "id": 6061},
+            {"rect": [0, 153, 320, 29], "id": 6062}
+          ],
+          "pt": {"title": 14.25, "heading": 12, "empty": 12},
           "items": [{"role": "more", "name": "Doc Cam More", "kind": "button", "rect": [232, 179, 60, 60], "id": 8010}]
         },
         "home": {
@@ -2733,6 +2758,7 @@
             ],
             "title": null,
             "close": null,
+            "art": true,
             "pt": {"message": 15},
             "message": [30, 39, 260, 60],
             "lines": 2,
@@ -2745,7 +2771,8 @@
                 "id": 9029
               },
               {"role": "power", "name": "Power Down", "kind": "button", "rect": [168, 105, 135, 114], "id": 9028}
-            ]
+            ],
+            "text": "Do you want to power down the system?"
           },
           "wait": {
             "popup": "Powering Down",
@@ -2762,11 +2789,28 @@
             ],
             "title": null,
             "close": null,
+            "art": true,
             "pt": {"message": 12},
             "message": [21, 81, 277, 77],
             "lines": 2
           },
           "settings": []
+        },
+        "volume": {
+          "popup": "Volume",
+          "surfaces": [],
+          "level": {
+            "rect": [292, 32, 15, 175],
+            "track": null,
+            "border": null,
+            "bar": null,
+            "art": {"track": "19x259_vol-empty.png", "fill": "19x259_vol-full.png"}
+          },
+          "labels": [
+            {"rect": [277, 0, 43, 32], "id": 7023, "pt": 16},
+            {"rect": [277, 211, 43, 29], "id": 7026, "pt": 16}
+          ],
+          "cancel": {"role": "cancel", "name": "Cancel Volume", "kind": "button", "rect": [0, 0, 277, 240], "id": 8001}
         },
         "ids": {},
         "note": "Each source is a page of its own, its second page from More and back by Back. More and Back sit on the page, not in a bar."

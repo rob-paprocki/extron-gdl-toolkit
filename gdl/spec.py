@@ -643,11 +643,16 @@ def _argb(c):
 
 
 # Where a spec's `images` paths resolve when relative: Extron's theme resource
-# kits, from vendor/ (vendor/README.md) or the install.
+# kits, from vendor/ (vendor/README.md) or the install - or, on a machine
+# without GUI Designer, a copy of the install's Resources that
+# GDL_EXTRON_RESOURCES names. A copy merged into vendor/ instead changes which
+# file wins where both have one (vendor's Mach/Extracted against the kit's
+# Mach/Buttons), and so the spec a translate writes.
 RESOURCE_ROOTS = (
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                  'vendor', 'extron', 'Resources'),
-    r'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources',
+    os.environ.get('GDL_EXTRON_RESOURCES')
+    or r'C:\Users\Public\Documents\Extron\GUI Designer Templates\Resources',
 )
 
 
@@ -1513,7 +1518,9 @@ class Panel:
         by state: a state the spec gives no fill kept its donor state's, and
         the Afterburn seed's On state is #37394E - so a kit image button's
         Ready, On and Muted states built on a raised slab, found by
-        verify_built's image check.
+        verify_built's image check. So is a label: Turbulence 320's donor
+        label is opaque black, and a region page's empty state built on
+        black bands over the photo the preview drew through it.
         """
         fill = color(c.get('fill'), self.theme) if c.get('fill') != 'none' else None
         stroke = color(c.get('stroke'), self.theme) or dict(TRANSPARENT)
@@ -1523,7 +1530,7 @@ class Panel:
         border = BORDERS.get(border, border)
         if border is None and fill is not None:
             border = BORDERS['rounded']
-        if fill is None and c.get('kind') == 'button':
+        if fill is None and c.get('kind') in ('button', 'label'):
             fill = dict(TRANSPARENT)
         if c.get('kind') == 'slider' and c.get('track_image'):
             # Build draws a slider's bordered fill IN PLACE of its rail art: a

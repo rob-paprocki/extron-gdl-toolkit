@@ -21,6 +21,15 @@ class TestTable(unittest.TestCase):
     def row(self, stem):
         return next(r for r in TABLE if r['series'] == stem)
 
+    def test_a_series_is_its_file_name_on_any_machine(self):
+        """The table holds each template's Windows path. Read on Linux - the
+        translator and the tests on a box without GUI Designer - os.path took
+        the whole path for the file name, and every series failed to match."""
+        self.assertTrue(TABLE)
+        for r in TABLE:
+            self.assertNotIn('\\', r['file'], r)
+            self.assertTrue(r['file'].endswith('.glt') and r['series'] + '.glt' == r['file'], r)
+
     def test_the_1230w_row(self):
         """The row Phase 0 corrected the model table from: the 1230WTG's
         platform falls through to 800x480 at 0 DPI, its template does not."""

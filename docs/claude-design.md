@@ -214,7 +214,7 @@ Claude Code publishes the result with the Artifact tool.
 | **Modals** | As Build draws them: the page beneath under black at alpha 166, whatever background the popup has. So a modal carries no background of its own. |
 | **Spacing and sizes** | The panel's touch minimum and spacing for its model (`touch_minimums`), and GUI Designer's 10 px nudge. The tokens state the design panel; every other panel's comes from the profile's per-panel table. |
 | **Panels** | A per-panel table (`panels`), one entry per Extron series: the models it serves (`gdl/templates.py`), its main region - measured off its background art where the art draws it (Afterburn's squircle), else off its template's own controls (Mach's bars, Shockwave's well, Turbulence's side bars) - the rail band beside or below it, or none where the template keeps nothing on screen from page to page (those three themes' 320s), its popup region, a background per theme and how its pages draw them (Fill or Stretch), and per seed, what the seed can clone, which of the profile's borders it lacks, and the corner it rounds a profile border at where that is not the profile's (`radii`: every project carries its own copy of the built-in borders and Build draws the panel's, so Shockwave's 520s, 535s and 320 round 2D Rounded Rectangle at 10 px where its 1035 does at 2, and the canvas draws each panel's). `gdl.designsys.models()` adds each model's own touch minimum, gap and type floor (`docs/design-rules.md` §1); the bundle carries it so a Page can draw any of them. Measured with `tests/measure_series.py`. |
-| **Frame** | Each series' working page in its template's own grammar (`docs/superpowers/specs/2026-10-22-region-frame-design.md`), as its `panels` entry's `frame`, measured off the series' own seed by `tests/measure_series.py` (`frame_of`; `--frame` prints each). `page` names the seed page measured: Main SD on the bar series, Afterburn's among them; a hub's Main Page (Afterburn's 520: Main); a 320's first source page (Doc Cam 1) and a 300's (Computer). The five bands `top`, `left`, `right`, `bottom` and `center` are each `null` where the template draws no such band - Afterburn's top and bottom, a hub's left and bottom - or a `rect` with its `surfaces` (`name`, `rect`, `kind` shape, image or label, `fill` as `#RRGGBBAA` after the control's transparency, `border` resource, `art` file, and `popup` where a source's popup draws it, as it draws Mach's well) and its `items` by role (`role`, `name`, `kind` in `gdl.spec`'s words, `rect`, the seed `id`, a label's `text`). The source `tabs` - in `top`, or in Afterburn's `center` - give the `first` tab's rect, the commonest step `pitch`, the `count`, their `look` off and on (`fill`, `border`, `art`, the caption's `text` color, `null` where it is not drawn), every tab as an item, since Extron's steps are uneven, and on Shockwave's 1035 and 1535 a `twin`: each tab's name, a caption-only button under it sharing its ID, with its own `look`. `top` adds what stands at its `start` and `end`; `left` its `groups` (`heading` rect and text, `buttons` as items, `pitch`); `center` the popup `region` and, off a source's popup (`popup`), its `well`, `title`, `empty` state, `status` (a line under the empty state the program sets: Shockwave's Disconnected) and `close`, in page coordinates, `pt` the sizes it sets its title, empty state and status in, and `title_controls` the title of a source with controls (its Doc Cam's: Turbulence titles one at the popup's top, an empty one 40 px lower), and on a hub its `level`: the Volume Level popup its strip reference shows (`popup`), its own `fill`, its level's `rect`, empty `track` and filled `bar` colours (`null` where it fills from art), `border` resource, `art` (its `track` and `fill` images, where it fills from the kit's: Shockwave's and Turbulence's) and the rects of the glyph `labels` over and under it - or on a 320 or a 300 its first control `row`, the `headings` over it and the `empty` state of a source with no controls (`empty_page` where another page draws it). A 320's or 300's frame carries each page a source page does not draw as a record of its own in the same five bands: `home` (the 300's menu bar of Settings, Help and Power; the 320's Select a Source title) and `second` (a source's second page, with its Back). `windows` holds what a page opens, in page coordinates: `help`, `confirm` and `wait` (the Help, Confirmation and Powering Down popups, or on a 320 or a 300 the pages so named), and `settings`, every modal with a Close and the popup or page a settings opener names (a hub's More Options), those drawn alike in one record naming its `popups`. Each has its `rect` - the card or band it draws (Mach's #303030 band, Shockwave's #999999 card, Afterburn's art over the whole screen), `null` where a modal draws none, a popup in the region its own - its `surfaces`, `title`, `close` as an item, `pt` the sizes it sets its title and message in, a help, confirm or wait window its `message` and the `lines` that takes in its box in the template's own face (`gdl.compose.wrap` at 1.375 px a point), and a confirm its `buttons`; settings windows drawn alike at one title size are one record. `ids` holds the seed IDs of the fixed chrome the frame holds: on the bar series help, power, volume, mute and mode; on a hub help, power, mute, volume-up, volume-down and settings (8040 on every hub, captioned More on Shockwave's and Turbulence's); on a 300 help, power and settings; on a 320 none. A hub's frame adds the grids it draws in main: `select`, its Select a Source (Mach's popup of its own; Shockwave's and Turbulence's the page's own grid under their popups), and `options`, the popup its settings opener shows (Mach's Settings, the others' More Options). Each has its `popup` (`null` for a page's own grid), its `title` and its `text`, its header strip's `surfaces`, its `help` and `close` as items, its `tiles` in rows - each tile's `rect` and the `label` rect under it - and `pt`, the sizes it sets its title and its tiles' labels in. `note` says what the bands do not. `models()` gives every panel its series' frame, each button or slider under that panel's own touch minimum with a `legal` rect - grown about its centre, inside its band where the band can hold it - and its `reason`; gaps are left to placement, since meeting one moves a neighbour. A turned panel's frame is its series' transposed, in each page record too, the header becoming its left band and the footer its right, with its note said upright. A series with no seed has none. The bundle of a theme that draws its bars as controls carries it once per series (`frames`, keyed by series, not on each model's row), and the region components draw from it (§3, §4), growing a slot to the panel's own minimums as they place it - only the series they draw, a tier A or B series with all five bands and a hub series, and only what they read of it: of a bar series the four bars, the center's popup `region`, `well`, `title`, `title_controls`, `empty`, `status`, `pt` and `surfaces`, and the `windows`; of a hub (flagged `hub`) its `top` and `right` bars, the center's `region`, `title`, `title_controls`, `empty`, `status`, `pt`, `surfaces`, `close` and `level` and its `strip` (the Volume Level reference's rect), its `select` and `options` grids and its `windows`; the profile's `regions` holds what they draw by default and the looks they give what they hold - the clock's pattern off the seed's own Main SD; the looks of the tabs (`tab`), a rail's first group (`rail`) and later ones (`launcher`), the mode slot (`mode`), the Volume heading, Mute, Help and Power; the fill of a surface drawn without its art (`bar`); and the looks a source's popup (`source`: its title, empty state and status, and the labels and buttons put in it) and a window (`window`: its title, message, labels, Close, Power Down and Cancel) give what they draw, and `hub` the looks a hub's region page, source popups and windows give theirs (§3: its titles, tile labels and tiles - a tile's `glyph` the suffix it drops from its tab's icon to name its own family's, Shockwave's `_white`, so laptop_white's tile is the whole device `white_laptop` - the menu bar's keys, Volume heading, Up and Down, Mute, Power, settings and Display Control openers, Close and Help, its windows' (`window`), and its opaque or options popups' (`options`: their ground, titles, labels, tiles, a blank tile, keys, Close, and the kit `glyphs` an option's caption names)). Shockwave and Turbulence carry a `header` token, black at 45%, their hubs' header strip. The profile's `writing` holds the template's own words, which they say: the empty state (`{name}` the source's title, `{noun}` it in a sentence's case) and Shockwave's hubs' own (`hub_empty`), Shockwave's `status`, the power-down question (`confirm.power`), the waits (`wait.up`, `wait.down`), Help's message and title (`help_title`) and the buttons' words. Mach's are from the hand-laid slice that built and verified; all three themes' have built and verified as region pages on the 1035 and the 725 (`archive/job-e823df9b/center/`) and on their hubs (`archive/job-e823df9b/hubs/`). |
+| **Frame** | Each series' working page in its template's own grammar (`docs/superpowers/specs/2026-10-22-region-frame-design.md`), as its `panels` entry's `frame`, measured off the series' own seed by `tests/measure_series.py` (`frame_of`; `--frame` prints each). `page` names the seed page measured: Main SD on the bar series, Afterburn's among them; a hub's Main Page (Afterburn's 520: Main); a 320's first source page (Doc Cam 1) and a 300's (Computer). The five bands `top`, `left`, `right`, `bottom` and `center` are each `null` where the template draws no such band - Afterburn's top and bottom, a hub's left and bottom - or a `rect` with its `surfaces` (`name`, `rect`, `kind` shape, image or label, `fill` as `#RRGGBBAA` after the control's transparency, `border` resource, `art` file, and `popup` where a source's popup draws it, as it draws Mach's well) and its `items` by role (`role`, `name`, `kind` in `gdl.spec`'s words, `rect`, the seed `id`, a label's `text`). The source `tabs` - in `top`, or in Afterburn's `center` - give the `first` tab's rect, the commonest step `pitch`, the `count`, their `look` off and on (`fill`, `border`, `art`, the caption's `text` color, `null` where it is not drawn), every tab as an item, since Extron's steps are uneven, and on Shockwave's 1035 and 1535 a `twin`: each tab's name, a caption-only button under it sharing its ID, with its own `look`. `top` adds what stands at its `start` and `end`; `left` its `groups` (`heading` rect and text, `buttons` as items, `pitch`); `center` the popup `region` and, off a source's popup (`popup`), its `well`, `title`, `empty` state, `status` (a line under the empty state the program sets: Shockwave's Disconnected) and `close`, in page coordinates, `pt` the sizes it sets its title, empty state and status in, and `title_controls` the title of a source with controls (its Doc Cam's: Turbulence titles one at the popup's top, an empty one 40 px lower), and on a hub its `level`: the Volume Level popup its strip reference shows (`popup`), its own `fill`, its level's `rect`, empty `track` and filled `bar` colours (`null` where it fills from art), `border` resource, `art` (its `track` and `fill` images, where it fills from the kit's: Shockwave's and Turbulence's) and the rects of the glyph `labels` over and under it - or on a 320 or a 300 its first control `row`, the `headings` over it, the steps across that row and down its first column (`pitch`: the 320's Doc Cam's, 124 and 60 on Mach's), the sizes it sets its title, its headings and its empty state in (`pt`) and the `empty` state of a source with no controls (`empty_page` where another page draws it), with its lines one label each where the template sets them so (`empty_lines`, each `rect` and seed `id`: the 320's Laptop Label 1-3, 6060-6062). A 320's or 300's frame carries each page a source page does not draw as a record of its own in the same five bands: `home` (the 300's menu bar of Settings, Help and Power; the 320's Select a Source title) and `second` (a source's second page, with its Back), and its `volume`: the modal its program shows the volume in (`popup`, the 320's Volume), its `surfaces` (Mach's #4B4B4C strip at the right edge), its `level` (`rect`, empty `track` and filled `bar` colours or `art`, `border`), the glyph `labels` over and under it (each `rect`, seed `id` and `pt`: Volume Up Label 7023 and Volume Down Label 7026) and its `cancel`, the transparent button over the rest of the screen that puts it away, as an item (Shockwave's and Turbulence's; Mach's has none). `windows` holds what a page opens, in page coordinates: `help`, `confirm` and `wait` (the Help, Confirmation and Powering Down popups, or on a 320 or a 300 the pages so named), and `settings`, every modal with a Close and the popup or page a settings opener names (a hub's More Options), those drawn alike in one record naming its `popups`. Each has its `rect` - the card or band it draws (Mach's #303030 band, Shockwave's #999999 card, Afterburn's art over the whole screen), `null` where a modal draws none, a popup in the region its own - its `surfaces`, `title`, `close` as an item, `pt` the sizes it sets its title and message in, a help, confirm or wait window its `message` and the `lines` that takes in its box in the template's own face (`gdl.compose.wrap` at 1.375 px a point), and a confirm its `buttons`; a window that is a page (a 320's, a 300's) says whether it stands on the photo (`art`: Mach 320's question and wait stand on the page's own #303030), and a question that is a page its own words (`text`: every 320's runs on in one line); settings windows drawn alike at one title size are one record. `ids` holds the seed IDs of the fixed chrome the frame holds: on the bar series help, power, volume, mute and mode; on a hub help, power, mute, volume-up, volume-down and settings (8040 on every hub, captioned More on Shockwave's and Turbulence's); on a 300 help, power and settings; on a 320 none. A hub's frame adds the grids it draws in main: `select`, its Select a Source (Mach's popup of its own; Shockwave's and Turbulence's the page's own grid under their popups), and `options`, the popup its settings opener shows (Mach's Settings, the others' More Options). Each has its `popup` (`null` for a page's own grid), its `title` and its `text`, its header strip's `surfaces`, its `help` and `close` as items, its `tiles` in rows - each tile's `rect` and the `label` rect under it - and `pt`, the sizes it sets its title and its tiles' labels in. `note` says what the bands do not. `models()` gives every panel its series' frame, each button or slider under that panel's own touch minimum with a `legal` rect - grown about its centre, inside its band where the band can hold it - and its `reason`; gaps are left to placement, since meeting one moves a neighbour. A turned panel's frame is its series' transposed, in each page record too, the header becoming its left band and the footer its right, with its note said upright. A series with no seed has none. The bundle of a theme that draws its bars as controls carries it once per series (`frames`, keyed by series, not on each model's row), and the region components draw from it (§3, §4), growing a slot to the panel's own minimums as they place it - only the series they draw, a tier A or B series with all five bands, a hub series and a 320 series, and only what they read of it: of a bar series the four bars, the center's popup `region`, `well`, `title`, `title_controls`, `empty`, `status`, `pt` and `surfaces`, and the `windows`; of a hub (flagged `hub`) its `top` and `right` bars, the center's `region`, `title`, `title_controls`, `empty`, `status`, `pt`, `surfaces`, `close` and `level` and its `strip` (the Volume Level reference's rect), its `select` and `options` grids and its `windows`; of a 320 (flagged `pages`) its strip `top`, its `home`'s and `second`'s strips (and the second's Back), the centre's `rect`, `row`, `headings`, `pitch`, `pt`, `empty`, `empty_lines` and More, its `windows` with their buttons' seed IDs and the question's words, and its `volume`; the profile's `regions` holds what they draw by default and the looks they give what they hold - the clock's pattern off the seed's own Main SD; the looks of the tabs (`tab`), a rail's first group (`rail`) and later ones (`launcher`), the mode slot (`mode`), the Volume heading, Mute, Help and Power; the fill of a surface drawn without its art (`bar`); and the looks a source's popup (`source`: its title, empty state and status, and the labels and buttons put in it) and a window (`window`: its title, message, labels, Close, Power Down and Cancel) give what they draw, and `hub` the looks a hub's region page, source popups and windows give theirs (§3: its titles, tile labels and tiles - a tile's `glyph` the suffix it drops from its tab's icon to name its own family's, Shockwave's `_white`, so laptop_white's tile is the whole device `white_laptop` - the menu bar's keys, Volume heading, Up and Down, Mute, Power, settings and Display Control openers, Close and Help, its windows' (`window`), and its opaque or options popups' (`options`: their ground, titles, labels, tiles, a blank tile, keys, Close, and the kit `glyphs` an option's caption names)), and `page` the looks the 320's pages give theirs (§3: the strip's words, a column's heading, the empty state, the question's and the waits' words (`message`), the keys, More, Back and Back where it ends the strip (`strip_back`), the Volume modal's Cancel - Shockwave's and Turbulence's a transparent `clear` key - and the wider art a key takes where its caption needs more than its art at the row's depth (`wider`)). Shockwave and Turbulence carry a `header` token, black at 45%, their hubs' header strip. The profile's `writing` holds the template's own words, which they say: the empty state (`{name}` the source's title, `{noun}` it in a sentence's case) and Shockwave's hubs' own (`hub_empty`), Shockwave's `status`, the 320's three-line empty state (`page_empty`), the power-down question (`confirm.power`), the waits (`wait.up`, `wait.down`), Help's message and title (`help_title`) and the buttons' words. Mach's are from the hand-laid slice that built and verified; all three themes' have built and verified as region pages on the 1035 and the 725 (`archive/job-e823df9b/center/`) and on their hubs (`archive/job-e823df9b/hubs/`). |
 | **README** | The panel's rules and its function vocabulary: what the designer reads first. Its iconography, its example page and the components' own READMEs and previews are drawn from the profile (`iconography`, `examples.source` and `examples.help`, its variants, type styles and tokens), so each names only what its template has. *Every panel the room has* tabulates, for each panel the system serves, the room a design leaves for it on the canvas - that panel's touch minimum and gap measured here, how much wider than its words a box must be, what a hub's rail holds - from the scale, touch minimum and type floor that panel's layout applies; four fresh designers of a two-panel room, without it, drew the 1035 snug and saw the 525 refused. Where a template's own geometry breaks a gate - Shockwave's flush tabs, Mach's sliders 30 px wide - the Layout says what to draw instead. It answers what each of those designers asked: a modal opened from several pages closes with `does`, not `nav`, since a `nav` is what the programmer is told to show; a control on several pages is one control only with one `id`. It ends with *Consuming this system*: the global, the bundle and the font link. |
 | **Donor** | The seed the panel is built on. The canvas's design system therefore also chooses the donor. |
 
@@ -329,9 +329,9 @@ tokens used, resolved for the canvas's accent scheme.
   region page lacking a region the template always draws is
   outlined on the canvas and named as a note in the translate report, and
   still builds; a Start or other splash page says `splash="true"` and is not.
-  On a 320 or a turned panel a region page is refused by name - those draw
-  their working page in another grammar - and so is a region on a popup or
-  modal. The Center is that panel's own template's popup region on every
+  On a turned panel a region page is refused by name - its header becomes a
+  left band, which is not drawn yet - and so is a region on a popup or
+  modal; the hubs and the 320 draw it in their own grammar (below). The Center is that panel's own template's popup region on every
   panel. A Page holding no region is laid out exactly as before.
 - **On a hub (the 520s and 535s) the same region page is drawn in the hub's
   grammar**, from the hub's own frame (its `right`, `top`, `center`, and the
@@ -378,6 +378,73 @@ tokens used, resolved for the canvas's accent scheme.
   else on the canvas is on the hub, with its 1035 ID. The look of what a
   hub draws is the profile's `regions.hub`; a launcher's own look stays its
   own there.
+- **On the 320 the same region page is drawn as the 320's pages**, from the
+  320's own frame (its strip `top`, `home` and `second` records, the centre's
+  first `row`, `headings` and steps `pitch`, the sizes it sets its title,
+  headings and empty state in, `pt`, its `empty` rect, More, its windows and
+  its `volume`): no bar, rail or footer, every page under the 36 px title
+  strip (derived: `<page> Strip`, the strip's ground, and `<page> Title`, its
+  words at the template's size and seed ID). `Main` is the template's Select
+  a Source - its strip says the home page's words - and, since a region
+  page's Header tabs are controls with IDs and the 320's template chooses
+  sources off screen, holds the Header's tabs under the strip as the 320's
+  keys, two to a row at the template's columns, at least its touch minimum:
+  the same controls (name, so ID, `nav`, `does`), in the page's key look
+  (`regions.page.button`: Mach's shade `solid`, Shockwave's 504x440 `tile`,
+  Turbulence's square `button`), a tab's own icon and type left to its
+  header. What the template keeps off its pages - the LeftRail's Sections,
+  the volume's heading and Mute (and an Audio Control), Room Mode, Help and
+  Power, a Header's start and end - goes on over pages of Main's own (`Main
+  2`, `Main 3`), each a column under its heading where the drawn panel's rail
+  draws one, two columns to a page at the template's places, the rows as deep
+  as the template's and its columns hold under the headings at the 320's 14
+  pt floor - a heading reaching into its keys' clear tops as far as the
+  template's does (Turbulence's 14 px); each page's strip titled with the
+  Sections it holds, or the first's where they would not stand clear of Back,
+  or `Main`. A Group in a Section gives the Section its members; a slider
+  there is a level (below). More (derived, `<page> More`) stands where the
+  template's first page stands it, at the foot's right; Back (`<page> Back`)
+  where its second page does - Mach's at the strip's end, the strip then the
+  template's shape short of it; Shockwave's and Turbulence's at the foot's
+  right, and at the strip's end where More stands there (Turbulence's there
+  the kit's return key, `regions.page.strip_back`: its Back key's word is 5
+  px tall at 40). Where Back ends the strip, the strip and its title are as
+  deep as Back, the touch minimum: the template's 57x36 Back is under it. A
+  title the strip shares with Back is centred where it fits the span Back
+  leaves, else centred on what Back leaves of the strip; a designer's title
+  that fits neither is named. A key keeps the panel's 2 mm from More and Back
+  where they stand side by side, a column moving left clear of them while the
+  columns before it can give way. A column of keys whose art is narrower at
+  the row's depth than a caption needs takes the theme's next wider art
+  (`regions.page.wider`: Shockwave's 712x440 and pill) - only an art that, as
+  wide as its column may be, is still the touch minimum deep and holds the
+  caption. With none (Turbulence's: its only wider art, the 720x180 bar, is
+  23 px deep at a column's 94), the key keeps its own art at the row's depth
+  and a caption of two words or more goes on two lines where that holds it
+  ('Doc' over 'Cam'); one longer still runs past the art's sides
+  (`docs/ROADMAP.md`). The volume slider is the level in the template's
+  `Volume` modal, which the program shows (`reached_by: program`): its strip
+  where the template draws one (Mach's, `Volume Strip`) and its level where
+  and as the template draws it, in the template's own colours (Mach's #4B4B4C
+  and #E4EDF5: template chrome, which the six-colour cap exempts - the
+  translator adds the frame's colours to `_template_colors`), its glyphs over
+  and under the level (`Volume Up Label`, `Volume Down Label`, saying + and
+  -, since the template's icon faces are not the system's), and its
+  transparent Cancel over the rest of the screen where the template has one
+  (`Volume Cancel`, the `clear` variant: Shockwave's and Turbulence's; Mach's
+  has none, and the program puts it away). What the 320 has no place for -
+  the clock, the Center's popup region (`Controls`), since each source is a
+  page of its own - is named as a note and listed in the page's `left`; being
+  the template's grammar, not the designer's to change, it does not outline
+  the page (nor does what a hub leaves off). What the layout adds keeps a
+  seed ID the frame has - the strips' (6075 on Main, 6008 on a source's first
+  page, 6009 on a later one), More's 8010, Back's 8011, the Volume modal's
+  glyphs (7023, 7026) and Cancel (8001), the empty state's lines (6060 to
+  6062) - on the first control that carries it, by page and name
+  (`gdl.design.pin_ids`); the rest take IDs from 50001, and what the 1035
+  draws too (a source's `<name> Title`, the question's Power Down and Cancel)
+  has one ID on every panel, from 50001 (`docs/idmap.md`). The look of what
+  the 320 draws is the profile's `regions.page`.
 - **A source's controls are a popup with `role="source"`** in the Center's
   group (default `Sources`). On each panel it is that panel's own popup
   region - the 725's from the 725's template, not the 1035's scaled, where a
@@ -406,66 +473,95 @@ tokens used, resolved for the canvas's accent scheme.
   white labels, Mach's `ghost` keys, Shockwave's `tile`s, Turbulence's
   `button`s (the profile's `regions.source`); a plain flex or grid container
   among them keeps its own layout there. One that stands under the title is
-  named as a warning. On a hub it fills main under the hub's own header -
-  its strip where it draws one, its title, a Close back to Select Source
-  (`nav`, the one Close that knows where back is; Shockwave's the white X
-  its hub draws, not the card's dark one) - says the hub's empty state
-  (Shockwave's hubs, like Mach's and Turbulence's: "Laptop is currently
-  selected...", `writing.hub_empty`), and what it holds is mapped under the
-  header - from the box round it, a gap clear, centred on the whole popup
-  as the template centres its keys, as wide each side of the middle as the
-  Volume Level strip leaves on its side, and scaled up no more than the
-  hub's touch minimum is the drawn panel's (a hub's main is about half the
-  1035's band, and mapped from the whole well or window Mach's Audio came
-  out half size, its heading grown back into its Mute; settings windows
-  alike). With no working page on the canvas a hub has no Select a Source
-  to show it from, and it is refused, saying so. On a 320 or a turned
-  panel it is refused by name for now.
-- **A window is a modal with a `role`**: `settings` (or a `title` and no
-  role) and `help`, `confirm` and `wait`. It is drawn as the panel's own
-  template draws that window (the frame's `windows`): Mach's opaque #303030
-  band between the bars, Shockwave's #999999 card, Turbulence's navy one - a
+  named as a warning. On a hub it fills main under the hub's own header - its
+  strip where it draws one, its title, a Close back to Select Source (`nav`,
+  the one Close that knows where back is; Shockwave's the white X its hub
+  draws, not the card's dark one) - says the hub's empty state (Shockwave's
+  hubs, like Mach's and Turbulence's: "Laptop is currently selected...",
+  `writing.hub_empty`), and what it holds is mapped under the header - from
+  the box round it, a gap clear, centred on the whole popup as the template
+  centres its keys, as wide each side of the middle as the Volume Level strip
+  leaves on its side, and scaled up no more than the hub's touch minimum is
+  the drawn panel's (a hub's main is about half the 1035's band, and mapped
+  from the whole well or window Mach's Audio came out half size, its heading
+  grown back into its Mute; settings windows alike). With no working page on
+  the canvas a hub has no Select a Source to show it from, and it is refused,
+  saying so. On the 320 it is a page of its own, named the popup's name,
+  under the strip titled with the source: what is put in it is the 320's
+  columns - what stands one over another as drawn, a label at a column's top
+  its heading, the designer's words as written - two to a page at the
+  template's places, the rest on over `<name> 2` by More and Back; with
+  nothing in it, the template's three-line empty state
+  (`writing.page_empty`), a label a line at the template's own rects (the
+  frame's `empty_lines`: `<name> Empty`, `<name> Empty 2` and `<name> Empty
+  3`), its first sentence a paragraph apart from the other two as the
+  template sets it. A Group put in it is a column of its own under its title
+  (a derived `<title> Heading`), its members the page's keys, paging as any
+  column does; a slider, which the 320's seed cannot clone, is a level there,
+  a column of its own with the derived Up and Down every level a slider
+  becomes has. The template has no way back from a source on screen - it
+  chooses sources off it - so the page's first Back (`<name> Back`) stands
+  where its second page stands one, and says `back`: the translator points it
+  at the one page whose control shows it (Main, whose key it is) - a page's
+  own later pages lead back to it but do not show it. A card or a line put in
+  it is named and left. On a turned panel it is refused by name for now.
+- **A window is a modal with a `role`**: `settings` (or a `title` and no role)
+  and `help`, `confirm` and `wait`. It is drawn as the panel's own template
+  draws that window (the frame's `windows`): Mach's opaque #303030 band
+  between the bars, Shockwave's #999999 card, Turbulence's navy one - a
   settings window the one the template draws for a window of its name, as
   Shockwave's Audio Control is wider than its Lighting Control, and one whose
-  name the template has no window for the same on every panel: on the
-  drawn panel its commonest settings window (titled, with a Close, drawn as
-  shapes, drawing the most windows) and on another the one there drawing
-  most of the same windows - as a derived Panel (`<name> Window`); a
-  settings or help window with its title (`<name> Title`) and a Close
-  (`<name> Close`: the word in a ghost cell on Mach, the kit's Close
-  elsewhere, square, at the template's rect or the legal one about it);
-  `help` with nothing put in it the template's message (`<name> Message`)
-  and, with no `title`, the template's own title (`writing.help_title`:
-  Shockwave's and Turbulence's HELP); `confirm` with `topic="power"` the
-  template's question (`<name> Message`) and Power Down and Cancel at its
-  rects (`<name> Power Down`, whose `does` is the Page's; `<name> Cancel`);
-  `wait` with `topic="up"` or `"down"` the wait, with no buttons. Wording is
-  the profile's `writing`; a topic it has no words for is named, and so is a
-  `role` the Page's kind does not take (a typo drew a window with no way
-  out). Its title and message are set at that panel's own template's sizes
-  (the frame's `pt`: Help's message apart from the confirmation's), and a
-  message keeps the lines the template sets it in (the frame's `lines`):
-  where the system's Open Sans, wider than the Light the templates set
-  their messages in, would take more, its box widens about its middle inside
-  the window - Turbulence's 1035 power-down question is one line. Close and
-  Cancel go back to the page that opened the window, which only the program
-  knows: they carry what they do and no `nav`. What the designer puts in a
-  window stays where drawn on the panel drawn and is mapped from its window
-  into each panel's, in the template's window look where it sets none
-  (`regions.window`). On a hub a settings window is a popup of main's group
-  (the Center's, which the translator binds it to) filling main, as the hub
-  draws its settings (Mach's opaque #303030, its keys raised), with the
-  hub's header, its title (`<name> Title`) and a Close back to Select
+  name the template has no window for the same on every panel: on the drawn
+  panel its commonest settings window (titled, with a Close, drawn as shapes,
+  drawing the most windows) and on another the one there drawing most of the
+  same windows - as a derived Panel (`<name> Window`); a settings or help
+  window with its title (`<name> Title`) and a Close (`<name> Close`: the word
+  in a ghost cell on Mach, the kit's Close elsewhere, square, at the
+  template's rect or the legal one about it); `help` with nothing put in it
+  the template's message (`<name> Message`) and, with no `title`, the
+  template's own title (`writing.help_title`: Shockwave's and Turbulence's
+  HELP); `confirm` with `topic="power"` the template's question (`<name>
+  Message`) and Power Down and Cancel at its rects (`<name> Power Down`, whose
+  `does` is the Page's; `<name> Cancel`); `wait` with `topic="up"` or `"down"`
+  the wait, with no buttons. Wording is the profile's `writing`; a topic it
+  has no words for is named, and so is a `role` the Page's kind does not take
+  (a typo drew a window with no way out). Its title and message are set at
+  that panel's own template's sizes (the frame's `pt`: Help's message apart
+  from the confirmation's), and a message keeps the lines the template sets it
+  in (the frame's `lines`): where the system's Open Sans, wider than the Light
+  the templates set their messages in, would take more, its box widens about
+  its middle inside the window - Turbulence's 1035 power-down question is one
+  line. Close and Cancel go back to the page that opened the window, which
+  only the program knows: they carry what they do and no `nav`. What the
+  designer puts in a window stays where drawn on the panel drawn and is mapped
+  from its window into each panel's, in the template's window look where it
+  sets none (`regions.window`). On a hub a settings window is a popup of
+  main's group (the Center's, which the translator binds it to) filling main,
+  as the hub draws its settings (Mach's opaque #303030, its keys raised), with
+  the hub's header, its title (`<name> Title`) and a Close back to Select
   Source; Help, the question and the wait stay modals in the hub's style
   (`regions.hub.window`) - Mach's on the scrim with no window, Help's title
   centred and its Close the back glyph; Shockwave's and Turbulence's cards,
   rounded as each panel's seed rounds them, Help's Close at the screen's
-  corner where the template stands it, off the card. On a 320 or a turned
-  panel a window is refused by name for now. A source popup or a window on a canvas that lists no
-  panels is drawn on the system's own panel, as a region page is. What a
-  source popup or a window draws is derived navigation and chrome - in the
-  ID map, with IDs from 50001 up keyed by its popup and name, the same on
-  every panel (`docs/idmap.md` §7).
+  corner where the template stands it, off the card. On the 320 the template
+  draws its question and its waits as pages (`confirm`, `wait`): the page, on
+  the photo or, where the template's stands on the page's own ground, on that
+  (the frame's window `art`: Mach's #303030), its rounded box (`<name>
+  Window`), its words in white (`regions.page.message`) - the 320's own
+  question where it says its own (the frame's confirm `text`: Shockwave's runs
+  on where its 1035 breaks the line) - and, for the question, Power Down and
+  Cancel at the template's places and sizes, a caption that does not fit one
+  line there on two, as Turbulence's own Power Down - Cancel back (`back`) to
+  the page whose Power asked. The 1035 draws the same question, so its buttons
+  have one ID on every panel, from 50001, not the 320 seed's 9028 and 9029. It
+  draws no settings or Help window: each is a page under the strip, titled as
+  on the 1035, what is put in it the 320's columns, Help's message under the
+  strip, and Back (`back`) to the page whose launcher opened it. On a turned
+  panel a window is refused by name for now. A source popup or a window on a
+  canvas that lists no panels is drawn on the system's own panel, as a region
+  page is. What a source popup or a window draws is derived navigation and
+  chrome - in the ID map, with IDs from 50001 up keyed by its popup and name,
+  the same on every panel (`docs/idmap.md` §7).
 - **A Page's `panels` are the room's panels**, the first the one it is drawn on,
   and every Page lists the same. Each panel is built from the canvas as the
   design system lays it out for that panel (§3, `docs/design-rules.md` §1):
@@ -775,8 +871,8 @@ sign-off lays the canvas out on it too.
 - On a mid-size panel each Group pages in its own box; the spec's hub - one
   region every group shares, switched by a rail of group buttons - is backlog,
   as are a left `Rail` on Afterburn and an icon on a group's button.
-- The region frame's own gaps - region pages on the 320s and turned panels,
-  popups sized to the frame's center, Turbulence's bar art - are in
-  `docs/ROADMAP.md`.
+- The region frame's own gaps - region pages on the 300s and turned panels,
+  popups sized to the frame's center, Turbulence's bar art, the 320's
+  captions too long for its key - are in `docs/ROADMAP.md`.
 - A Page's `does` reaches the spec as `_does` and goes no further: the ID map
   has nowhere to say what a page is for yet.

@@ -59,4 +59,7 @@ The rest of the install's `Resources/` (about 2.5 GB of icons and images for
 every theme) was not copied. The design systems read Afterburn's, Mach's and
 Shockwave's kits from it where GUI Designer is installed (`RESOURCE_ROOTS` in
 `gdl/spec.py`), so a machine without the install builds them with no icons -
-and says so.
+and says so - unless `GDL_EXTRON_RESOURCES` names a copy of the install's
+`Resources/` there. Keep that copy out of `vendor/`: merged in, the kit's own
+file wins where `vendor/` holds an extracted one of the same name (Mach's),
+and a translate there writes a different spec from the Windows machine's.

@@ -219,7 +219,50 @@ build at a time.
    control's states are one set of names on every panel, which the ID map's
    check across panels now holds (a source's tab named its lit state
    Selected, its hub tile On).
-7. **The 320.**
+7. **The 320.** Decided in the making (2026-10-23): the 320's frame gains
+   the steps its columns stand at (`center.pitch`), the sizes it sets its
+   strip, headings and empty state in (`center.pt`), its program-shown
+   Volume modal (`volume`: strip, level, its glyphs with their seed IDs,
+   the transparent Cancel where the template has one), its empty state's
+   lines (`center.empty_lines`), the question's own words (`windows.confirm.text`)
+   and whether a window that is a page stands on the photo (`art`). The region page draws Main as the template's Select a Source -
+   and, since a region page's Header tabs are controls with IDs and nothing
+   is dropped, holds the tabs under the strip as the 320's keys, the same
+   controls - going on by More to pages of Main's own with what the
+   template keeps off its pages (the Sections as columns under their
+   headings, the volume's heading and Mute, Room Mode, Help and Power), each
+   strip titled with the Sections it holds; the slider is the Volume modal's
+   level; the clock and the Center's popup region are named and left. A
+   source popup, a settings window and Help are pages under the strip, what
+   is put in them the template's columns (a Group a column of its own
+   under its title, a slider a level with Up and Down), two to a page, going
+   on over a second by More and Back at the template's places with its seed
+   IDs (More 8010, Back 8011, on the first that carries each); the question
+   and the waits pages on the template's rounded box, Power Down and Cancel
+   at its places and sizes (a caption on two lines where one does not fit).
+   Where Back ends the strip, the strip is as deep as Back's touch minimum,
+   and a strip's title stands clear of Back. The template has no way
+   back from a source on screen - it chooses sources off it - so a page's
+   first Back stands where its second page stands Back (at the strip's end
+   where More holds the foot) and says `back`: the translator points it at
+   the one page whose control shows that page (a page's own later pages
+   lead back to it but do not show it). Looks are the profile's
+   `regions.page`; a key whose caption needs more than its art at the row's
+   depth takes the theme's next wider art where that art is still the touch
+   minimum deep (Shockwave's 712x440 and pill), else keeps its own, a
+   two-word caption on two lines; Shockwave and Turbulence gain a
+   transparent `clear` variant for the Volume modal's Cancel, and
+   Turbulence's strip-end Back is its kit's return key (`strip_back`);
+   `writing.page_empty` is the 320's three-line empty state, a label a line
+   at the template's rects. The Volume modal draws the template's own
+   colours (Mach's #4B4B4C and #E4EDF5), which the translator adds to the
+   template colours the six-colour cap exempts; what the template's grammar
+   leaves off (the clock, the Center's popup region) is named but does not
+   outline the page. The region canvases list the TLP320M, the
+   320 with a seed; the probes draw the 320C too. Turned panels still refuse. Built in GUI Designer on the TLP320M in all three themes and set beside
+   each seed's 320 pages: Turbulence's labels built on its donor label's
+   opaque black, so a label with no fill is now written transparent, as a
+   button is, and verify_built reports a label planned clear that is not.
 8. **The README rewritten around the grammar** and the design systems
    republished, with the template renders.
 9. **Seed clone** (optional): an image kind and a verbatim clone op for art
