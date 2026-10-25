@@ -1,14 +1,15 @@
 {
   "_source": [
-    "Colors: Extron's Afterburn theme guide, transcribed in docs/design-rules.md section 4; `alert` from the seed's own record icon.",
-    "Type, borders, button archetypes and sizes: surveyed off seeds/Afterburn 1035.gdl (its fonts, border resources and every button's per-state fill, stroke and text color).",
+    "Colors: Extron's Afterburn theme guide, transcribed in docs/design-rules.md section 4, checked control by control against seeds/Afterburn 1035.gdl (the grammar measurement of 2026-10-22: every page and popup read with gdl.project): its 13 distinct fills, strokes and captions are #FFFFFF, #242634, #BABCCE, #37394E, #767789, #D69B61, #6A6E89, #D32A2A, #D32929, #191919, #000000, #AFB0BE and #242633. `accent` captions a selected text-only button on Main Multi-Window (Window 1, Window 2), Doc Cam (its inputs) and VTC Search Results (its rows); `shape` outlines VTC Search Results' list card and rings the d-pads on Streaming and Camera Settings; `alert` is the red of Main Recording's record icon, and the #D32A2A stroke of Main VC's Start Sharing when it is On.",
+    "Type: seeds/Afterburn 1035.gdl's labels and captions on every page and popup, by size and weight (the grammar measurement of 2026-10-22): 38 pt for Start's room name; 23.5 bold for the entry readouts on VTC Keyboard and TV; 21 for the 28 titles, questions and waits (Select a Source on Main Select Source, PC, Blu-ray, Camera Select, Confirmation); 20 bold for the 62 keyboard and keypad keys on VTC Keyboard; 16 regular white for the rail headings (Display, Settings, Lights, Volume); 16 bold #BABCCE capitals for the group labels in popups (INPUTS, ZOOM on Doc Cam; MIC, PROGRAM on Audio Settings); and the buttons at 13 pt (94: the sources, Preview, Video Conference) and 17 (Press to begin, Doc Cam's inputs).",
+    "Borders: the border resources of seeds/Afterburn 1035.gdl's controls - 'Afterburn - 10 Radius 2 Thick' on the outlined buttons and VTC Search Results' list card, 'Afterburn - 10 Radius 0 Thick' on Camera Settings' zoom keys, 'Afterburn - Elipse 0 Thick' on the keypad keys' pressed circles and Power's On fill, 'Afterburn - 14 Radius 0 Thick' on the slider, and '2D Rectangle' only on Video Preview's video.",
     "Point sizes draw at 1.375 px per point, GUI Designer's 99 DPI (gdl/compose.py PT).",
     "A level: every Afterburn seed's Level (300M, 320, 525) is 15 px across, its fill gaugeFillColorField in accent-2 - Build draws a Level over its whole box, so the box is the rail.",
     "Slider and level: the seed's built sliders (Audio Settings) - a 10 px rail (SliderTrackWidth) in a 50 x 395 control, the empty rail the control's fill (#242634, TLPMinValueImageID), the filled rail #BABCCE (TLPMaxValueImageID), a 50 px #626ACF thumb (SliderIndicatorImageID) - matching the guide's track, slider-fill and secondary-accent rows.",
-    "Panel: the seed's filled container - raised fill, #6A6E89 stroke, Afterburn - 10 Radius 2 Thick - and the guide's 'shapes #6A6E89' row.",
+    "Panel: the one container seeds/Afterburn 1035.gdl draws as a control, VTC Search Results' list card (156,75 345x385) - raised fill, #6A6E89 stroke, Afterburn - 10 Radius 2 Thick - and the guide's 'shapes #6A6E89' row. The squircle behind every page, and a modal's card, are art.",
     "Themes: the guide's four background images and Extron's recommended accent scheme for each (Default + 1, Anthracite + 3, Blue Slate + 2, Grape + 4; guide pp.8-9), from the resource kit's Backgrounds/6400x4000/TLP 1025 & 1220 files - the variant the seed's own 6400x4000_bg1.png was made from (its recorded filename and byte size match). The image is the raised card that elevates the page's main area, transparent around it so the page color shows.",
-    "Layout: the seed's own pages (Start, Main Select Source, Main VC, Main SD), rendered from their built artwork: every page puts its task in the background image's squircle and the same few controls in the rails either side.",
-    "Image buttons and the kit: every image button in the Afterburn 1035 and 1535 seeds - the kit file on each state (buttonImageField), drawn Fill and MiddleCenter, with no border resource; the fill, caption and indent each archetype uses; and the kit's own naming (Resources/Afterburn/Buttons/PNG: <size>_<icon>_nsel for unselected, <size>_<icon>-<accent>_sel per accent). Icon anatomy: the guide's p.4.",
+    "Layout: each series' working page, measured into its `panels` entry's `frame` off its seed by tests/measure_series.py frame_of - Main SD on the 1020 to 1720 Series, with seeds/Afterburn 1035.gdl's Main Select Source, Start, Main VC, Main Multi-Window, Main Recording and Help read beside it - from which the README's Layout is written. Every page puts its task in the background image's squircle (art, not a control) between a left rail and a right rail.",
+    "Buttons: seeds/Afterburn 1035.gdl's Main SD, Main Select Source, Main Multi-Window, Main VC, Main Recording, Start, VTC Dialer, VTC Search Results, Doc Cam, Help and Confirmation, every button state read with gdl.project: the sources 110x110 (the tabs across Main SD, the row on Main Select Source), the rail's list and toggle rows 178x50 every 58 px, Help and Power 64x64, the outlined buttons 144x64 or 154x64, the keypad keys 64x64 pressing to a circle. Image buttons and the kit: every image button in the Afterburn 1035 and 1535 seeds - the kit file on each state (buttonImageField), drawn Fill and MiddleCenter, with no border resource; the fill, caption and indent each archetype uses; and the kit's own naming (Resources/Afterburn/Buttons/PNG: <size>_<icon>_nsel for unselected, <size>_<icon>-<accent>_sel per accent). Icon anatomy: the guide's p.4. The Close, Back, More, arrow, d-pad, transport and zoom glyphs are characters of the Extron-Afterburn font on the seed's buttons (Close Help, Search Result Scroll Up), not kit images there; the kit draws most of them as images in Resources/Afterburn/Icons/PNG (close, Chevron, Carets, minus, plus, more - the same drawings, rendered from Extron - Afterburn 1a.ttf beside them), which the kit root here, Buttons/PNG, does not read.",
     "Slider thumb: the kit's 440x440_thumb-1 draws its circle across 286 of 440 px (65%), and the seed's built 50 px thumb shows a circle 31-32 px across - so the canvas draws the kit's own thumb, not a circle the size of the box."
   ],
   "template": "Afterburn",
@@ -64,7 +65,7 @@
     {
       "name": "raised",
       "value": "#37394E",
-      "usage": "Button fill when idle; panels and cards; a slider or level's empty track over a color."
+      "usage": "Button fill when idle; the list card (VTC Search Results'), outlined in `shape`; a slider or level's empty track over a color. The squircle every page sits on is not a panel: it is the background image's art."
     },
     {
       "name": "pressed",
@@ -74,12 +75,12 @@
     {
       "name": "text",
       "value": "#FFFFFF",
-      "usage": "Headings, button captions, paragraphs; the border of a pressed outlined button. On page, raised and pressed."
+      "usage": "Titles (a popup's or modal's, a confirmation's question), rail headings, button captions, paragraphs, the Start page's clock; the border of a pressed outlined button. On page, raised and pressed."
     },
     {
       "name": "text-secondary",
       "value": "#BABCCE",
-      "usage": "Subheadings, date and time, divider lines, the border of an idle outlined button, the filled part of a slider, single-color icons. On page and raised."
+      "usage": "The date and time on a working page, divider lines, the border of an idle outlined button, the filled part of a slider, the group labels in a popup (INPUTS, ZOOM), single-color icons. On page and raised."
     },
     {
       "name": "text-subtle",
@@ -94,7 +95,7 @@
     {
       "name": "shape",
       "value": "#6A6E89",
-      "usage": "Container shapes: the outline of a panel or card (over a raised fill, as the seed's own container draws it) and of the seed's round indicators; a toggle's thumb when off."
+      "usage": "Container shapes: the outline of a list card (over a raised fill) and the ring round a d-pad; a toggle's thumb when off."
     },
     {
       "name": "accent",
@@ -104,7 +105,7 @@
         "gold": "#D6B961",
         "medium-blue": "#4695D6"
       },
-      "usage": "Selection lines and selected icons - the kit's `_sel` images draw both, in the scheme's accent - and the caption of a selected text-only button (a numbered preset, a search result), as the seed's are. Not a fill: Afterburn never fills a button with it. One scheme per project."
+      "usage": "Selection lines and selected icons - the kit's `_sel` images draw both, in the scheme's accent - and the caption of a selected text-only button (Window 1 and Window 2, Doc Cam's inputs, a search result). Not a fill: Afterburn never fills a button with it. One scheme per project."
     },
     {
       "name": "accent-2",
@@ -119,7 +120,7 @@
     {
       "name": "alert",
       "value": "#D32929",
-      "usage": "An alert: a red fill with a white caption, for a condition someone has to act on - a fault, a warning. Not for an ordinary action such as shutting down. Never a caption color - Afterburn shows state with icons in the accent colors, not with colored text. The red is the seed's own record icon's."
+      "usage": "A live state: the stroke of a sharing button while it is live (Start Sharing and Stop Share draw #D32A2A when On) and the kit's red record icon (#D32929). Afterburn never fills a button red and never colors a caption red - it shows state with icons and strokes. The red is the seed's own record icon's."
     },
     {
       "name": "scrim",
@@ -132,37 +133,37 @@
       "name": "title",
       "pt": 38,
       "weight": 400,
-      "usage": "A page's title - the seed's largest label."
+      "usage": "The room's name on the Start page: Open Sans 38, the largest label. The working pages have no title of their own."
     },
     {
       "name": "heading",
       "pt": 23.5,
       "weight": 700,
-      "usage": "A popup's or a section's heading."
+      "usage": "An entry readout - the TV popup's channel, the keyboard's address: 23.5 pt bold. A popup's or a modal's title is the `subheading`."
     },
     {
       "name": "subheading",
       "pt": 21,
       "weight": 400,
-      "usage": "A secondary heading, in text-secondary."
+      "usage": "A popup's or a modal's title, a confirmation's question, a wait's sentence and the hub's Select a Source: 21 pt regular, in `text` (the Label's default)."
     },
     {
       "name": "button-large",
       "pt": 20,
       "weight": 700,
-      "usage": "The caption of a large button: a source, a main action."
+      "usage": "The caption of a keypad or keyboard key: 20 pt bold. Sources and actions caption smaller in the template (13 pt; Press to begin 17 pt, so set its `size`)."
     },
     {
       "name": "body",
       "pt": 16,
       "weight": 400,
-      "usage": "Labels, status and paragraphs; the clock."
+      "usage": "Labels, status and paragraphs; the clock; a rail group's heading (Display, Settings, Lights, Volume) in Title case and `text`."
     },
     {
       "name": "body-strong",
       "pt": 16,
       "weight": 700,
-      "usage": "A label that names a group of controls."
+      "usage": "A group label inside a popup or a modal: capitals in `text-secondary` (INPUTS, ZOOM, PAN / TILT, MIC) - set the color, since a Label's default is `text` - or a field label that ends in a colon (TITLE:)."
     },
     {
       "name": "button",
@@ -182,7 +183,7 @@
       "resource": "Afterburn - 10 Radius 0 Thick",
       "radius": 10,
       "thickness": 0,
-      "usage": "A rounded fill with no stroke: ghost buttons, panels, cards."
+      "usage": "A rounded fill with no stroke: ghost buttons (the zoom keys) and a hairline divider (the search list's). A card is `afterburn`, with its stroke."
     },
     "afterburn-14": {
       "resource": "Afterburn - 14 Radius 0 Thick",
@@ -194,7 +195,7 @@
       "resource": "2D Rectangle",
       "radius": 0,
       "thickness": 3,
-      "usage": "A square-cornered fill: a full-width bar."
+      "usage": "A square-cornered fill: the template draws it only on its video window."
     },
     "capsule": {
       "resource": "2D Capsule",
@@ -223,7 +224,7 @@
   },
   "buttons": {
     "outlined": {
-      "usage": "The default button: a raised fill and a text-secondary border, pressed fill and a white border when On. The seed's most common look. With an `icon` the icon sits at its left and the caption after it (Swap, Contacts, End Call); with an icon and no caption, the icon is centered (a keyboard key).",
+      "usage": "The default button: a raised fill and a text-secondary border, pressed fill and a white border when On. The seed's most common look. With an `icon` the icon sits at its left and the caption after it (Make Call, Swap, Contacts); with an icon and no caption, the icon is centered (a keyboard key). A selected text-only one can show its caption in `accent` (Window 1, Doc Cam's inputs).",
       "look": {
         "fill": "raised",
         "stroke": "text-secondary",
@@ -248,7 +249,7 @@
       }
     },
     "ghost": {
-      "usage": "No fill until pressed or selected: list rows, tabs, icon buttons.",
+      "usage": "No fill until pressed or selected: the dialer's and the TV keypad's keys, the zoom - and + and the search-result rows. The template's tabs and rail rows are `source` and `list` image buttons, not ghost; its keys press to a circle, so give such a key an On `border` of `afterburn-ellipse`.",
       "look": {
         "border": "afterburn-flat",
         "color": "text"
@@ -281,7 +282,7 @@
       ]
     },
     "source": {
-      "usage": "A horizontal list button: a large icon with its label under it, for choosing a source or a camera. Selected, it takes the pressed fill and the kit draws the icon in the accent with an accent line along the bottom. The seed's are 110x110 in a row.",
+      "usage": "A horizontal list button: a large icon with its label under it, for choosing a source or a camera. Selected, it takes the pressed fill and the kit draws the icon in the accent with an accent line along the bottom. The tabs across a working page and the hub's sources are these, 110x110 in a row.",
       "kit": "756x756",
       "caption": "below",
       "look": {
@@ -301,7 +302,7 @@
       ]
     },
     "list": {
-      "usage": "A vertical list button: an icon, then its label, for a set of options down the left rail (Display, Lighting, Make Call). Selected, it takes the raised fill and the kit draws the icon in the accent with an accent line down the left. The seed's are 178x50.",
+      "usage": "A vertical list button: an icon, then its label, for a set of options down the left rail (Display, Lighting, Make Call, End Call). Selected, it takes the raised fill and the kit draws the icon in the accent with an accent line down the left. The rail's rows are these, 178x50 every 58 px.",
       "kit": "1224x344",
       "caption": "indent",
       "indent": 15,
@@ -323,7 +324,7 @@
       ]
     },
     "icon": {
-      "usage": "An icon button: the icon alone, no outline, for a stand-alone control (Help, Power, Close, mute under the volume slider). Pressed, a round fill behind it, and the icon in the accent where the kit has a selected one. The seed's are 64x64.",
+      "usage": "An icon button: the icon alone, no outline, for a stand-alone control (Help, Power, the mute under the volume slider). Pressed, the icon in the accent where the kit has a selected one (Help's), and a round fill behind it: pressed, as the guide's Fig. 7 draws it, where the template's own are Power's raised and Help's none. A mute that shows the volume has four states - Muted, then Level 1 to 3 - not Off and On. The seed's are 64x64.",
       "kit": "440x440",
       "caption": "none",
       "look": {
@@ -367,10 +368,11 @@
       ]
     },
     "alert": {
-      "usage": "An alert: a red fill and a white caption, for a condition someone has to act on - a fault, a warning, an alarm. Not for an ordinary action, even a final one like shutting the room down: a confirmation is an outlined button. A designer can still choose red where they want it.",
+      "usage": "A live action: an outlined button whose On state draws its stroke red, as Start Sharing and Stop Share do while sharing is live. Only the stroke is red - Afterburn never fills a button red or colors a caption red.",
       "look": {
-        "fill": "alert",
-        "border": "afterburn-flat",
+        "fill": "raised",
+        "stroke": "text-secondary",
+        "border": "afterburn",
         "color": "text"
       },
       "states": [
@@ -379,9 +381,7 @@
         },
         {
           "name": "On",
-          "fill": "pressed",
-          "stroke": "alert",
-          "border": "afterburn"
+          "stroke": "alert"
         }
       ]
     }
@@ -466,21 +466,28 @@
   },
   "iconography": {
     "icon_prop": "The kit draws each icon unselected and selected in every accent, with the selection line where the variant has one, so the button's states show themselves: state 0 unselected, the rest selected in the page's accent.",
-    "intro": "Afterburn shows state with icons, not with colored text. Every icon comes from Afterburn's own resource kit through a Button's `icon` - never draw one, and never color a caption red.",
+    "intro": "Afterburn shows state with icons, not with colored text. Every icon the kit has comes from Afterburn's own resource kit through a Button's `icon` - never draw one, and never color a caption red. The template's Close, Back, More, d-pad, transport, zoom, scroll and screen arrows are glyphs in its Extron-Afterburn icon font, which the design system does not carry. The kit draws most of them as images too, in Afterburn/Icons/PNG - Close's X, Back's and More's chevrons, the scroll and volume triangles (Carets), minus, plus, the More dots and most of the transport keys - but this system's `icon` list is read from Afterburn/Buttons/PNG and does not name them yet, so a button for one of those says what it does in words.",
     "rules": [
       "**Anatomy** (the guide's p.4): a `text-secondary` (#BABCCE) stroke and primary elements, `text-subtle` (#767789) secondary elements, an `icon-ground` (#414459) background inside the icon, and - selected - the supporting element in the accent. The kit already draws all of this, for every accent scheme.",
-      "**Which button**: a stand-alone control (help, power, close, mute) is `variant=\"icon\"`, 64x64. Sources and cameras are `source`, a row of squares with the label under the icon. Options down the left rail are `list`, a selection line at the left when chosen. On and off is `toggle`. An important action with a label is `outlined` with an `icon` (End Call, Swap).",
+      "**Which button**: a stand-alone control (Help, Power, mute) is `variant=\"icon\"`, 64x64. Sources and cameras are `source`, a row of squares with the label under the icon. Options down the left rail are `list`, a selection line at the left when chosen - Make Call, End Call and Privacy among them. On and off is `toggle`. An important action with a label is `outlined` with an `icon` (Make Call, Swap).",
       "**Feedback**: state 0 draws the icon unselected, the others selected - in the accent, with the variant's selection line and fill. A single-image icon (`power`, `call_connected`) still shows it is pressed.",
-      "**Alerts** are `variant=\"alert\"`: a red fill with a white caption, for a condition someone has to act on - a fault, a warning - and one per screen at most. An ordinary action, even a final one like shutting the room down, is an outlined button unless the designer asks for red."
+      "**Red** is a live state, not a fill: a sharing button goes red-stroked while it is live (`variant=\"alert\"`), and the record icon is red. Afterburn never fills a button red; an ordinary action, even a final one like shutting the room down, is an outlined button."
     ]
   },
   "examples": {
-    "source": {"attrs": "variant=\"source\" icon=\"laptop\"", "rect": [403, 320, 110, 110]}, "help": {"attrs": "variant=\"icon\" icon=\"help\"", "rect": [1157, 706, 64, 64]},
+    "source": {"attrs": "variant=\"source\" icon=\"laptop\"", "rect": [505, 315, 110, 110]}, "help": {"attrs": "variant=\"icon\" icon=\"help\"", "rect": [1125, 706, 64, 64]},
+    "group": {"cell": "110x110", "gap": 49},
+    "panel": {"name": "Results", "fill": "raised", "border": "afterburn", "size": [345, 385]},
+    "start": [
+      {"component": "Label", "attrs": "name=\"RoomName\" type=\"title\" align=\"center\"", "text": "Huddle Room", "rect": [440, 131, 400, 60]},
+      {"component": "Button", "attrs": "name=\"Start\" size=\"17\" nav=\"Main SD\" does=\"Starts the room and shows the sources.\"", "text": "Press to begin", "rect": [527, 384, 228, 64]},
+      {"component": "Clock", "attrs": "name=\"DateTime\" format=\"datetime\" align=\"center\" color=\"text\"", "text": "", "rect": [415, 714, 450, 60]}
+    ],
     "states": "[{\"name\":\"No Signal\",\"look\":\"off\",\"color\":\"text-secondary\"},{\"name\":\"Ready\",\"look\":\"off\"},{\"name\":\"Live\",\"look\":\"on\",\"fill\":\"pressed\"}]",
     "states_note": "In Afterburn a state shows itself with its icon: the kit's selected image draws the icon in the accent, with the selection line for a list button, and the button takes the pressed fill. A text-only button that is selected shows its caption in `accent`. Never color a caption red.",
     "on_off": "[\"Off\",{\"name\":\"On\",\"color\":\"accent\"}]",
-    "group_note": "Both defaults are Afterburn's own source row: four 110x110 buttons, 49 px apart.",
-    "color_rule": "`page` behind everything; `raised` for idle buttons and panels, with `shape` outlining a card; `pressed` and a `text` border for On; `text` and `text-secondary` for type; `accent` only through the kit's selected icons and selection lines, and the caption of a selected text-only button; `alert` only as an alert's fill, with a `text` caption; `accent-2` is the slider thumb, a level's fill and a toggle's thumb."
+    "group_note": "Both defaults are Afterburn's own source row: four 110x110 buttons, 49 px apart. Extron's own paged list, VTC Search Results, scrolls with up and down triangles beside it, and its 320 pages a device with More and a Back chevron in the footer - glyphs of its icon font, which the kit draws as images too (Afterburn/Icons/PNG's Carets and Chevron) and this system's `icon` list does not name yet; a Group's Previous and Next are the toolkit's own.",
+    "color_rule": "`page` behind everything; `raised` for idle buttons and the one list card the template draws, with `shape` outlining it (the squircle itself is the background image); `pressed` and a `text` border for On; `text` for titles, headings and captions and `text-secondary` for the date and time and a popup's group labels; `accent` only through the kit's selected icons and selection lines, and the caption of a selected text-only button; `alert` only as the red stroke of a live action, never a fill or a caption; `accent-2` is the slider thumb, a level's fill and a toggle's thumb."
   },
   "themes": [
     {
@@ -523,21 +530,47 @@
       916,
       752
     ],
-    "main_note": "The central squircle: the raised card the background image draws, 183-1099 across and 24-776 down on a 1280x800 page (the image's opaque body, measured).",
+    "main_note": "The central squircle: the card the background image draws - a vertical gradient from #4F4C6B to #3A364D with a drop shadow, art rather than a panel - 183-1099 across and 24-776 down on a 1280x800 page (the image's opaque body, measured).",
     "regions": [
-      "**The squircle holds the page's main task.** A centered title (`title` for a room name on the start page, `subheading` for a section), the sources or the selected device's controls in the middle, and one outlined action centered at its foot (Preview, Press to begin). The date sits bottom-left inside it and the time bottom-right, in `text-secondary` - or both together, bottom-center, on the start page.",
-      "**The left rail (x 0-183) holds grouped secondary controls:** a `body` heading per group (Display, Settings, Lights, VTC) at x 14, and under it a column of list buttons - ghost, left-aligned, about 160x58 - or toggles. Its foot holds the one outlined button that switches mode (Presentation, Video Conference), about 144x64 at 20,706.",
-      "**The right rail (x 1099-1280) holds volume and the system controls:** a `Volume` heading, the vertical slider (Afterburn draws it 50x395 at 1168,202; make it 54 wide at 1166, since 50 is under the 53 px touch minimum the toolkit checks) with mute under it, an outlined action at the top (Start Sharing, 144x64 at 1121,30), and help and power at the foot.",
-      "Nothing else goes outside the squircle. A full-page grid of controls is a working panel but not an Afterburn one."
-    ]
+      "**A working page is the squircle between two rails.** Across the top of the squircle runs the row of sources (`source` buttons, 110x110) over a `Line` divider. Under it the `PopupRegion` shows the selected source's controls, each source a standard popup of its own group. At the foot are the date at the left, the one outlined Preview in the middle and the time at the right, in `text-secondary`; Preview opens the room's video preview, so draw it only where the room has one. The page has no title of its own: each popup carries its source's name as a centred `subheading` Label at its top, and a source with no controls says `PC is currently selected.` and `There are no controls for this device.` The 1020 Series draws no Preview and one combined date-and-time Clock at its foot.",
+      "**Start and Main Select Source are not working pages.** Start is the page the panel boots into, so name it `Start` and mark it `start=\"true\"` (its file is still `Main.dc.html`, as the canvas names its entry): the room's name (`title`) above the squircle's middle, `Press to begin` in its vertical middle (an outlined button, 17 pt), lighting presets under a `Lights` heading in the left rail and the Volume heading, slider and Mute in the right rail (no Help or Power), and one combined date-and-time Clock, in `text`, at its foot. Main Select Source, the hub that follows it, puts the four sources in the middle of the squircle under a centred `subheading`, `Select a Source`. On the 520 and 535 the template's Start draws its squircle too, between a Lights rail and a Volume rail; the system builds every page of those panels on their Main art, so there a Start page is laid out in the hub's main region.",
+      "**The left rail (x 0-183) holds groups:** a `body` Label heading per group in Title case (Display, Settings, Lights, VTC, Screen, Recording) at x 14, and under it `list` and `toggle` buttons 178x50 at x 0, one every 58 px - the kit's art fills each button, so the rail has no ghost button. Its foot holds the page's own outlined button, 144x64 at 20,706, only where the room has a mode or a window for it: Video Conference and Presentation switch the room's mode; Window Layout (Multi-Window) and Recording Controls (Recording) open a window; Start has none. Main Recording also keeps its record status, the record icon and the elapsed time, in the rail's top-left corner.",
+      "**The right rail (x 1099-1280) holds the volume and the system controls**, its column centred on x 1193: a `Volume` heading level with the left rail's first heading, the vertical slider (Afterburn draws it 50x395 at 1168,202; a Rail draws it 54 wide, since 50 is under the 53 px touch minimum the toolkit checks) with Mute at its foot, and Help and Power side by side below, Help at 1125,706 and Power at 1197,706 (Start has neither). The slot at the top, y 30, is the page's own: Start Sharing (outlined, 144x64 at 1121,30) on a video-conference page, Window 1 and Window 2 (82x64) on a multi-window page, empty on the others.",
+      "The 1230 Series splits its squircle with a vertical divider: a Preview half at the left (the preview tabs, the video and Send to Display) and, at the right, the source tabs and the popup region the Layout gives. A full-page grid of controls is a working panel but not an Afterburn one."
+    ],
+    "popups": "On Afterburn's working page one source's controls are a standard popup of its own group in that region (the template's group 1; `Sources` here, the `PopupRegion`'s `group`), swapped in by the source buttons while the page stays; a page flip is for a mode of the room (a call) and for Start to the hub. A modal popup (`kind=\"modal\"`) shows the page beneath, dimmed: Help, the confirmations and a set of settings opened from a page - Screen, Lighting, Audio and Display Settings, Camera Select, Window Layout, Recording Controls, presets - are modals on the 1020, 1220, 1230, 1520 and 1720 Series, as the templates draw them there; the 520 and 535 draw them as standard popups filling main, each with a Back chevron, and the 300M as pages. A modal's own card is the template's squircle art, a full-canvas image under its title that a Page cannot place, so put a `Panel` inside as the nearest card the system draws - the squircle's own 916x752 at 183,24, in the Panel's default look - and its words and buttons on it, where the Layout's windows give them. A card with a title (Help, a set of settings) has a Close at its top right: `nav` back to the page that opens it, or, where more than one page opens it, no `nav` and `does=\"Closes this popup.\"` - the program hides it and the page beneath shows again; the template's Close is a glyph of its icon font, which the design system does not carry, and the kit draws it as an image too (Afterburn/Icons/PNG's close), which this system's `icon` list does not name yet, so the Close says Close. A confirmation has neither title nor Close, only its question and two outlined buttons, the affirmative first (Power Down, Cancel; Accept, Decline), and a wait (Starting Up, Powering Down) is one sentence with no buttons.",
+    "rail_note": "Afterburn's own right column is not one stack, which a Rail is: its Volume heading stands level with the left rail's first heading, the slider runs under it, Mute overlaps the slider's foot, an empty band follows, and Help and Power sit side by side in one row. A Rail stacks them on every panel, the one the canvas is drawn on too: put the column's controls in it in the template's order - the Volume heading, the Slider, Mute, Help and Power - with no positions, and it stands them down the right rail, Help and Power one over the other where the template sets them side by side (the README's Differences). Where a panel's seed has no slider, Extron arranges the volume its own way: the 520 and 535 stand Up and Down together at the top of a column with Mute at its foot, beside a full-height level (on Main the level is a separate Volume Level popup, 50x480 at 637,0), with triangle glyphs from its icon font, which the design system does not carry - the kit draws those triangles as images too (Afterburn/Icons/PNG's Carets), which this system's `icon` list does not name yet; only the 300M uses minus and plus, in a row with Mute under a horizontal level. A Rail builds the level between Down and Up buttons that say `-` and `+`. The 320 draws no volume, Help or Power on screen: its footer is the page's name with More and a Back chevron, and its volume a modal Volume Level; the 300 Portrait's footer holds Settings, Help and Power with the volume in the main region, and the 300 Landscape's right column holds Settings, Help and Power. A Rail across the 320's foot is the toolkit's, not the template's."
+  },
+  "writing": {
+    "_source": "The template's own words, off seeds/Afterburn 1035.gdl's Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help, and the grammar digest of every Afterburn page: the empty state of a source with no controls ({name} the popup's title), the power-down question, the waits, Help's message and title and the buttons' words. Its system draws no region, so these are the words a designer writes.",
+    "empty": "{name} is currently selected.\nThere are no controls for this device.",
+    "confirm": {"power": "Do you want to power down the system?"},
+    "wait": {"up": "Please wait while the system starts up.", "down": "Please wait while the system is powering down."},
+    "help": "For assistance, please call the help desk at:\n\nX.XXX.XXX.XXXX",
+    "help_title": "Help",
+    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
+    "voice": {
+      "_source": "Off seeds/Afterburn 1035.gdl's working pages, popups and windows - Main SD, Main VC, Main Recording, the Laptop and PC popups, Lighting Settings, Camera Settings, Confirmation, Starting Up, Powering Down and Help - and the grammar digest of every Afterburn page: its captions, rail headings, titles and messages. Press to begin is its one sentence-case button; the group labels inside its popups and windows are capitals, 16 pt bold Labels, not captions.",
+      "rules": [
+        "A caption is Title Case: Video Conference, Presentation, Start Sharing, Make Call, End Call, Privacy, Power Down, Cancel, Accept, Decline, Record. Press to begin is the one sentence-case button.",
+        "A rail heading is one noun: Display, Settings, Lights, VTC, Screen, Recording, Volume; the rows under it short nouns or verbs: Power, Mute, Screen, Lighting, Audio.",
+        "A window's title is the thing and Settings (Lighting Settings, Display Settings) or the device's name (Blu-ray, Doc Cam, Laptop).",
+        "The labels over a group inside a popup or a window are capitals: MIC, PROGRAM, LIGHTS, DISPLAY 1.",
+        "A question names the action on its first button and Cancel on the second: Power Down, Cancel; Accept, Decline."
+      ],
+      "launchers": ["Lighting", "Audio"],
+      "caps": ["MIC", "PROGRAM", "MAIN", "LIGHTS", "BLINDS", "INPUTS", "ZOOM", "FOCUS", "IRIS", "CAMERA", "PRESETS", "NAVIGATION", "CHANNEL", "LAST"],
+      "sentence": ["Press to begin"],
+      "instead": {"Lighting Settings": "Lighting", "Audio Settings": "Audio", "Screen Settings": "Screen", "Display Settings": "Display", "Power Off": "Power Down", "Shut Down": "Power Down", "Shutdown": "Power Down", "System Off": "Power Down", "Join Call": "Make Call", "Start Call": "Make Call", "Hang Up": "End Call", "Exit": "Close", "Dismiss": "Close"}
+    }
   },
   "panels": {
     "_source": [
       "Series, sizes, DPI and tier: GUI Designer's own TemplateInfoTable.config, through gdl/templates.py; each series' models are the MODELS_FULL models gdl.templates.template_for gives it (by model, never by resolution alone: Afterburn has no 720 template, so no TLP720T row).",
       "main: the opaque body (alpha 255) of the series' main-page background art, mapped onto the canvas the way the template's page draws it (fit: Fill or Stretch). No control draws the squircle; the image does. The 1220's is the profile's own earlier measurement (183, not 182 - both end at 1099).",
       "rail: what the canvas leaves beside the main region - right of it on every series that has room, below it (a footer, running across) on the 320 and the portrait 300.",
-      "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
-      "backgrounds: the kit's four page backgrounds per size, for the main page (the 520 and 535 split theirs into _start and _main; a working page takes _main). image is the name the template gives its default; the others take the kit file's name. The 1720 draws the 1520's 6830x3840 art, as its template does.",
+      "popup: the template's standard popup region, where it fills a quarter of the canvas or more. It is null where the largest popup fills under a quarter of the canvas: the 1230's 650x500 fills 94% of one, and is held by its frame's `center.region`, the Layout's Popup region.",
+      "backgrounds: the kit's four page backgrounds per size, for the main page (the 520 and 535 split theirs into _start and _main; a working page takes _main). image is the name the template gives its default; the others take the kit file's name. The 1720 draws the 1520's 6830x3840 art, as its template does. A 520's or 535's Start page draws its squircle on the `_start` art, between a Lights rail and a Volume rail; the table's `main` is the Main page's, which every page of those panels is built on.",
       "seeds, kinds, borders: each seed in seeds/ by part number and canvas (both 300M seeds are one part, either way up), and one of a model's other way up where no template is drawn so - a turned seed - under its panel (TLP1035M-Portrait) - what control kinds it can clone (the 525, 320 and 300M seeds have levels and no slider; the 320 has no standard popup), and each profile border it lacks mapped to its own of the same thickness and nearest radius.",
       "frame: the series' working page in its template's own grammar, off its own seed (tests/measure_series.py frame_of; --frame prints each); its keys are docs/claude-design.md section 2's *Frame*. Afterburn's working page is Main SD, with no top or bottom bar: its art draws the centre (main), the source tabs across the centre's top, and the columns either side are the rails. The 520's is its Main, a hub; the 320's its Doc Cam 1 and the 300s' their Computer, each standing around its own page's art.",
       "Measured with tests/measure_series.py Afterburn."
@@ -574,7 +607,7 @@
         "grape": {"image": "6400x4000_bg4-grape.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png"}
       },
       "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl", "TLP1035M-Portrait": "seeds/Afterburn 1035 Portrait.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
         "top": null,
@@ -812,7 +845,7 @@
         "grape": {"image": "5120x3000_bg4-grape.png", "file": "Afterburn/Backgrounds/5120x3000/TLP 725/5120x3000_bg4-grape.png"}
       },
       "seeds": {"TLP725T": "seeds/Afterburn 725.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
         "top": null,
@@ -1052,7 +1085,7 @@
         "grape": {"image": "6830x3840_bg4-grape.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg4-grape.png"}
       },
       "seeds": {"TLP1535M": "seeds/Afterburn 1535.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
         "top": null,
@@ -1301,7 +1334,7 @@
         "grape": {"image": "9600x3600_bg4_grape.png", "file": "Afterburn/Backgrounds/9600x3600/9600x3600_bg4_grape.png"}
       },
       "seeds": {"TLP1230WTG": "seeds/Afterburn 1230W.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
         "top": null,
@@ -1606,7 +1639,7 @@
         "grape": {"image": "4000x2400_bg4-grape_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg4-grape_main.png"}
       },
       "seeds": {"TLP525T": "seeds/Afterburn 525.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main",
         "top": null,
@@ -1801,7 +1834,7 @@
         "grape": {"image": "1600x1200_bg4-grape.png", "file": "Afterburn/Backgrounds/1600x1200/1600x1200_bg4-grape.png"}
       },
       "seeds": {"TLP320M": "seeds/Afterburn 320.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": false},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": false, "image": true},
       "borders": {"afterburn": "Afterburn - 7 Radius 2 Thick", "afterburn-flat": "Afterburn - 14 Radius 0 Thick"},
       "frame": {
         "page": "Doc Cam 1",
@@ -1965,7 +1998,7 @@
         "grape": {"image": "1600x2400_bg4-grape.png", "file": "Afterburn/Backgrounds/1600x2400/TLP 300M/1600x2400_bg4-grape.png"}
       },
       "seeds": {"TLP300M": "seeds/Afterburn 300M Portrait.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Computer",
         "top": null,
@@ -2096,7 +2129,7 @@
         "grape": {"image": "2400x1600_bg4-grape.png", "file": "Afterburn/Backgrounds/2400x1600/TLP 300M Landscape/2400x1600_bg4-grape.png"}
       },
       "seeds": {"TLP300M": "seeds/Afterburn 300M Landscape.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
       "borders": {"afterburn-flat": "Afterburn - 14 Radius 0 Thick"},
       "frame": {
         "page": "Computer",

@@ -424,6 +424,32 @@ A generator should assert all four agree rather than trusting the writes.
   off that asset. An image the project lacks is appended by cloning an existing
   `PBImageResource` and setting its bitmap, name and size
   (`Add-GdlImageResource`).
+- **An image control draws its art from `backgroundImageField`.** A
+  `PBImage` has no states; every one in the Turbulence seeds names its art
+  there, by a `PBResourceReferenceImage`, and lays it out by
+  `backgroundImageLayoutField` at MiddleCenter with no offset: the header
+  and footer bars (`2047x151_header.png`, `1648x134_footer.png`) Stretch over
+  their box, a source popup's device picture (`1152x1152_<device>.png`) Fill
+  in its own. Build's artwork of each, its `TLPImageID`, is the file so laid
+  out - 0% off on every bar and device picture of the 1035, 725 and 525
+  seeds, and the nearest other picture 10% off (`check_images` in
+  `tests/verify_built.py`). The side bars are `PBImage`s with no art: a black
+  fill at 85% transparency. A spec `image` control is one (`image`, `layout`
+  `fill` or `stretch`); the applier sets its art after clearing the clone's,
+  since the Turbulence seeds' first `PBImage`, a clone's donor, is a side bar
+  laid out Native (3) - and black, which the applier's opaque clone would
+  build under the art, so an image given no `fill` is written transparent
+  and with no border, as every `PBImage` in the seeds has none. Only a seed with a `PBImage` can author one
+  (`gdl.spec donors`): every Afterburn seed, Mach's tier A ones and
+  Turbulence's but its 320 - no Shockwave seed, and none of Mach's hubs,
+  320 or 300M.
+- **A standard popup can carry a background image**, as a page does, in its
+  own `backgroundImageField`. Shockwave's and Turbulence's hubs draw every
+  standard popup on the page's photo, stretched to the popup:
+  `seeds/Turbulence 525.gdl`'s 12 on `bkgd_swoop_plain.png`, Shockwave 525's
+  and 535's 12 each on `800x480 bkgd.png`, each 702x480 - so a popup's photo
+  is the page's squeezed, not the page's showing through. Build rasterizes it
+  into the popup's asset with its fill, as a page's.
 - **A donor's image of a kit file's name need not be that file.** The Shockwave
   1035 seed carries `960x440_yellow_sel.png` and `960x440_red_sel.png` whose
   pixels differ from the kit's files of those names in 67% of their pixels -

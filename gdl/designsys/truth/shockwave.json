@@ -1,0 +1,1105 @@
+{
+ "theme": "shockwave",
+ "_source": "Each entry is a claim our profile (gdl/designsys/shockwave.json) or its README made that Shockwave's own pages contradict, found by the grammar measurement of 2026-10-22: every page and popup of seeds/Shockwave 1035.gdl, 725, 720, 1525, 1535, 525, 535 and 320, read with gdl.project (each control's rect, look, caption and font) beside its renders, and read again for this ledger - the seed's button art compared with the kit's files pixel for pixel, its fonts over every state. `template` is what those pages do, off the seed and pages named; the region frame (panels[series].frame) is the same seeds measured by tests/measure_series.py frame_of. `python -m gdl.designsys audit shockwave` checks every resolution against the profile, the README and the frame as they stand.",
+ "entries": [
+  {
+   "id": "shockwave-00",
+   "claim": "The header (1280x91 at 0,0) is a `page` Panel with the source tabs across it.",
+   "where": [
+    "layout.regions.0",
+    "_source (Layout)",
+    "README Layout"
+   ],
+   "template": {
+    "does": "There is no 1280x91 shape. The bar is two #3B2F2A 2D Rectangle shapes, Shape1_1 at 0,0 168x91 and Shape1_1_ID0 at 1087,0 193x91 (Main VC Share Content's right block, Shape2, is 781,0 499x91); between them the tabs supply their own #3B2F2A Off fill.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main VC Share Content"
+    ]
+   },
+   "status": "frame",
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "top.surfaces"
+    },
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "top.tabs"
+    }
+   ],
+   "gone": [
+    "is a `page` Panel with the source tabs across it"
+   ],
+   "evidence": "Main SD's Shape1_1 (0,0 168x91) and Shape1_1_ID0 (1087,0 193x91), both #3B2F2AFF on 2D Rectangle; Main VC Share Content's Shape2 (781,0 499x91). The README's Layout lists both as the Header's surfaces."
+  },
+  {
+   "id": "shockwave-01",
+   "claim": "The source tabs are 'flush as the seed draws them' (layout.regions), and the Group README says its source row is 'six 152x91 tabs across the header, butted'.",
+   "where": [
+    "layout.regions.0",
+    "examples.group_note",
+    "Group README"
+   ],
+   "template": {
+    "does": "The tabs are 1 px apart: x 169, 322, 475, 628, 781 and 934, a stride of 153, and the first is 1 px from the left block, which ends at 168. The photo shows through each gap as a hairline.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main VC"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "examples.group_note",
+     "says": "1 px apart"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "top.tabs.pitch"
+    },
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "top.tabs.first"
+    }
+   ],
+   "gone": [
+    "flush as the seed draws them",
+    "tabs across the header, butted"
+   ],
+   "evidence": "Main SD's SD PC, SD Laptop, SD Blu-ray, SD Doc Cam, SD Tuner and SD AUX (IDs 8052, 8050, 8054, 8058, 8060, 8062) at y 0, 152x91. The owner's call of 2026-10-22 keeps a header tab row a joined set, 1 px apart."
+  },
+  {
+   "id": "shockwave-02",
+   "claim": "The tab row is 'centered on the page ... fewer than that reads lopsided', and examples.source puts a lone tab at x 564, where the README Example drew it.",
+   "where": [
+    "layout.regions.0",
+    "examples.source",
+    "README Example"
+   ],
+   "template": {
+    "does": "The template never centers its tabs: they always start at x 169, over the well's left edge. With four tabs (Main VC Share Content) they run from 169 to 780 and the right bar block widens to 781-1280.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main VC Share Content",
+     "Main SD"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "examples.source.rect",
+     "says": "169 0 152 91"
+    },
+    {
+     "readme": "Fewer tabs than the template draws take its first places and the bar closes up after them"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "top.tabs.first"
+    }
+   ],
+   "gone": [
+    "the row centered on the page",
+    "fewer than that reads lopsided",
+    "564, 0, 152, 91"
+   ],
+   "evidence": "Main VC Share Content's PC, Laptop, AUX and Doc Cam (IDs 8053, 8051, 8063, 8059) at 169, 322, 475 and 628, and its Shape2 at 781,0 499x91."
+  },
+  {
+   "id": "shockwave-03",
+   "claim": "The `source` variant says 'their names below their glyphs', which suggests the tab draws its own caption.",
+   "where": [
+    "buttons.source.usage",
+    "layout.regions.0"
+   ],
+   "template": {
+    "does": "On the 1035, 1535 and ECP seeds the tab's own caption is invisible (TextColor alpha 0); its name is a second, image-less 152x36 button at y 55 with the tab's ID, white Open Sans 12 in both states. Only the 1525, 725 and 720 tabs draw their own white caption.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main VC"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "buttons.source.usage",
+     "says": "draws the twin too, a caption under the glyph sharing the tab's ID"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "top.tabs.twin"
+    },
+    {
+     "series": "Shockwave 1720 Series",
+     "key": "top.tabs.twin"
+    }
+   ],
+   "gone": [
+    "lit white when chosen, with its name below",
+    "This system draws the name on the tab, below the glyph"
+   ],
+   "evidence": "Main SD's SD PC (8052) at 169,0 152x91 has no caption colour in either state; a second SD PC (8052) at 169,55 152x36 has no art or fill and white Open Sans 12. The 1535's twins are 226x52 at y 75; the 725's, 1525's and 720's tabs carry white captions of their own.",
+   "builds": "On the 1035's and 1535's series the Header's tab draws no caption, and a derived, caption-only '<name> Caption' across its foot at the twin's depth, white in both states, says it with the tab's ID, nav, does and state names; the tab drew its own caption below the glyph before. Other panels are unchanged."
+  },
+  {
+   "id": "shockwave-04",
+   "claim": "buttons.source.icon lists glyphs 'laptop_white, pc_white, sharelink_white, hdmi_white, doc-cam_white, blu-ray-2_white, apple-tv_white'.",
+   "where": [
+    "buttons.source.usage"
+   ],
+   "template": {
+    "does": "The seed's tabs name 744x456_pc_nsel, laptop_nsel, iphone_nsel (AUX), tuner_nsel, doc-cam_nsel and polycom_nsel (Codec); only Blu-ray names a _white file. No ShareLink, HDMI or Apple TV tab exists. Each _nsel picture is the kit's `<glyph>_white` file pixel for pixel.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main VC"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "buttons.source.usage",
+     "says": "the template's tabs name pc, laptop, iphone (AUX), tuner, doc-cam, polycom (Codec) and blu-ray-2"
+    }
+   ],
+   "gone": [
+    "sharelink_white, hdmi_white, doc-cam_white, blu-ray-2_white, apple-tv_white"
+   ],
+   "evidence": "The seed's 744x456_pc_nsel, laptop_nsel, iphone_nsel, tuner_nsel, doc-cam_nsel and polycom_nsel images compared with the kit's buttons/744x456 Inputs/744x456_<glyph>_white.png: identical pixels, as is blu-ray-2_white."
+  },
+  {
+   "id": "shockwave-05",
+   "claim": "layout.hub_header: the tabs carry 'captions the length of the seed's (PC, Laptop, Blu-ray, ShareLink, HDMI, Doc Cam)'.",
+   "where": [
+    "layout.hub_header._source"
+   ],
+   "template": {
+    "does": "The seed's six are PC, Laptop, Blu-ray, Doc Cam, Tuner and AUX (Main VC: PC, Laptop, Codec, Blu-ray, Tuner, AUX).",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main VC"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "layout.hub_header._source",
+     "says": "(PC, Laptop, Blu-ray, Doc Cam, Tuner, AUX)"
+    }
+   ],
+   "gone": [
+    "ShareLink, HDMI, Doc Cam)"
+   ],
+   "evidence": "Main SD's six tabs and Main VC's six. The probe canvas tests/data/design-hub-shockwave/Tabs.dc.html has the seed's six, and TestShockwavesHubHeader measures the same depths with them: 94 px on the 520s and 525s, 145 on the 535s."
+  },
+  {
+   "id": "shockwave-06",
+   "claim": "hub_header and the README's Hubs paragraph give the 520/535 hubs a header band holding the Layout's source tabs.",
+   "where": [
+    "layout.hub_header._source",
+    "README Every panel the room has"
+   ],
+   "template": {
+    "does": "Extron's 525 and 535 Main Page has no tab header. It has a 'Select a Source' title on a #000000 transparency-55 header (700x72 on the 525, 1120x108 on the 535), and under it a 3x2 grid of white-glyph source buttons with labels (190x135 on the 525, 304x202 on the 535). Each source opens a popup (702x480 on the 525, 1123x720 on the 535) with its own header, title and Close, covering main.",
+    "seed": "seeds/Shockwave 525.gdl",
+    "pages": [
+     "Main Page",
+     "Laptop"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "A region page is drawn in the hub's own grammar instead, its header the template's title strip (the Header's README)."
+    },
+    {
+     "key": "layout.hub_header._source",
+     "says": "for a plain Page that heads itself with the Layout's own source tabs"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 520 Series",
+     "key": "top.items"
+    },
+    {
+     "series": "Shockwave 535 Series",
+     "key": "top.items"
+    },
+    {
+     "series": "Shockwave 520 Series",
+     "key": "select.tiles"
+    }
+   ],
+   "gone": [
+    "How deep the header comes out on each hub holding the Layout's own source tabs"
+   ],
+   "evidence": "The 525 Main Page's Main Header (0,0 700x72, #00000073), its Select Source Label (Open Sans 30), Help 9103 at 636,5 60x60 and the six tiles Main Laptop, PC, Aux, Doc Cam, Blu-ray and Apple TV, each with a label under it; the 535's Main Header is 1120x108 and its Help 1017,7 96x90. A plain Page's header band is the toolkit's rule for a Page of bars; a region page's is the frame's `top`."
+  },
+  {
+   "id": "shockwave-07",
+   "claim": "The left rail 'holds the display': a Display label, buttons 120x80, and tiles 120x110 (Screen Control, Lighting Control).",
+   "where": [
+    "layout.regions.1",
+    "README Layout"
+   ],
+   "template": {
+    "does": "That holds only on Main SD and Main Multi-Window. On Main VC and Main VC Share Content the rail is headed 'VTC': Call, End Call and Privacy pills (120x60 at 29,170, 240 and 310), then Display Control, Screen Control and Lighting Control tiles at 29,469, 573 and 678; Lighting reaches y 788, below the footer's top at 718. On Main SD Screen Arrows a second heading, 'Screen' at 29,434, sits over Up and Down arrows (120x80 at 29,488 and 29,573) in place of both tiles. Tiles stand 104 apart, so their boxes overlap by 6 px.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main Multi-Window",
+     "Main VC",
+     "Main VC Share Content",
+     "Main SD Screen Arrows"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "layout.regions.0",
+     "says": "The left rail is the room mode's column, not always Display."
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "left.groups"
+    }
+   ],
+   "gone": [
+    "The left rail (x 29, 120 wide) holds the display",
+    "below for anything with a two-line name"
+   ],
+   "evidence": "Main VC's VTC Label, Initiate Call (5014), End Call (5215), VC Privacy (5217), Display Control (8214), Screen Control (8115) and Lighting Control (8116); Main SD Screen Arrows' Screen Label, Screen Up (8076) and Screen Down (8077); Main Multi-Window's Window 1 Display 1 On, Off and Mute (8109-8111)."
+  },
+  {
+   "id": "shockwave-08",
+   "claim": "The right rail's Mute is a `square` Mute 80x80 '(icon red)'.",
+   "where": [
+    "layout.regions.2",
+    "regions.mute"
+   ],
+   "template": {
+    "does": "Every template Mute rests gray: Volume Mute uses 440x440_gray_nsel, Display Mute 712x440_gray_nsel, and the mic and program mutes 440x440_gray_nsel. Each lights red only when On, with a #75063C caption. A red icon would rest with a red ring, which no template Mute does.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Display Control"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "regions.mute.icon",
+     "says": "gray"
+    },
+    {
+     "key": "regions.mute.states.On.icon",
+     "says": "red"
+    },
+    {
+     "key": "regions.mute.states.On.color",
+     "says": "alert"
+    },
+    {
+     "key": "regions.hub.mute.states.On.color",
+     "says": "alert"
+    }
+   ],
+   "gone": [
+    "a `square` Mute 80x80 below (icon red)"
+   ],
+   "builds": "The RightRail's Mute rests gray (440x440_gray_nsel) where it rested with a red ring, and lights red with an #75063C caption where its lit caption was #000000; a hub menu bar's Mute lights with #75063C too.",
+   "evidence": "Main SD's Volume Mute (8021): Off 440x440_gray_nsel, #F5F5F5; On 440x440_red_sel.png_1, #75063C. Display Mute (8114): Off 712x440_gray_nsel, On 712x440_red_sel-2, #75063C; the same on Display Control's Display 1 Mute and Display 2 Mute. The _1 and -2 images are the kit's red_sel pixel for pixel."
+  },
+  {
+   "id": "shockwave-09",
+   "claim": "The right rail holds an Audio Control tile.",
+   "where": [
+    "layout.regions.2",
+    "_source (Layout)"
+   ],
+   "template": {
+    "does": "Only the 1035/1220 and ECP 16-10 seeds do. The 725, 1525, 1535, ECP 16-9 and 720 put Audio Control in the left rail's second group and keep only the Volume label, slider and Mute on the right.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD"
+    ]
+   },
+   "status": "frame",
+   "fix": [
+    {
+     "readme": "for Audio Control where that panel's template stands one in its right rail (on Shockwave, the 1220 Series)"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "right.items"
+    },
+    {
+     "series": "Shockwave 1020 Series",
+     "key": "left.groups"
+    },
+    {
+     "series": "Shockwave 1520 Series",
+     "key": "left.groups"
+    },
+    {
+     "series": "Shockwave 720 Series",
+     "key": "left.groups"
+    }
+   ],
+   "gone": [
+    "and an Audio Control `tile`"
+   ],
+   "evidence": "Audio Control (8020) at 1127,573 120x110 on the 1035 and ECP 16-10; at 15,393 (725), 33,652 (1525), 45,916 (1535 and ECP 16-9) and 11,315 (720) in the left rail."
+  },
+  {
+   "id": "shockwave-10",
+   "claim": "The Rail README says 'volume, mute, help, power ... as Shockwave's own pages put them on the right', and its example stacks a Help pill in the Rail.",
+   "where": [
+    "Rail README"
+   ],
+   "template": {
+    "does": "Shockwave never puts Help in that rail. On the working pages Help is in the footer capsule at 956,720, and Power ('Off') beside it at 1115,720; on the hubs Help is a '?' in the main header (636,5 on the 525, 1017,7 on the 535) and Power an icon at the foot of the side bar.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "On Shockwave's working page the right column holds its heading, the volume, Mute, Audio Control and Power, as its frame measures it"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "right.items"
+    },
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "bottom.items"
+    }
+   ],
+   "gone": [
+    "volume, mute, help, power - beside the main region, as Shockwave's own pages put them on the right"
+   ],
+   "evidence": "Main SD's Help (8117) at 956,720 143x59 and Power Down (8022) captioned Off at 1115,720 143x59; the 525 Main Page's Help (9103) and Power Down (8022) at 705,384 94x91."
+  },
+  {
+   "id": "shockwave-11",
+   "claim": "The panels table and the README model only one Rail (1220: [1094,91,186,627]).",
+   "where": [
+    "panels",
+    "README Layout"
+   ],
+   "template": {
+    "does": "Shockwave's working pages have two side columns. The left one, x 29-149 in a band 0-168, carries the room mode's device controls on every main page and was not measured or modelled.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main VC"
+    ]
+   },
+   "status": "frame",
+   "fix": [
+    {
+     "readme": "**LeftRail** 168x709 at 0,91"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "left.rect"
+    },
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "left.groups"
+    }
+   ],
+   "evidence": "Main SD's Display Label (29,109) and Display On, Off and Mute (29,170, 254, 338), Screen Control (29,469) and Lighting Control (29,573)."
+  },
+  {
+   "id": "shockwave-12",
+   "claim": "The footer's Room Mode is 'a `wide` Room Mode (gray_round)'.",
+   "where": [
+    "layout.regions.3",
+    "regions.mode"
+   ],
+   "template": {
+    "does": "The template's is 169x59, not wide's 272x110, and names 1248x440_r_gray_nsel and _sel, which are the kit's gray_round_nsel and gray_round_sel pixel for pixel (the kit does have it). On Main Multi-Window the same slot is 'Preset Selection' (8119).",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main Multi-Window"
+    ]
+   },
+   "status": "frame",
+   "fix": [
+    {
+     "key": "layout.regions.1",
+     "says": "the kit's gray_round art at the frame's size, 169x59"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "bottom.items"
+    }
+   ],
+   "gone": [
+    "a `wide` Room Mode (gray_round) at its left"
+   ],
+   "evidence": "Main SD's Room Mode (8118) at 168,720 169x59: Off 1248x440_r_gray_nsel #F5F5F5, On 1248x440_r_gray_sel #000000; the probe of the region page draws 1248x440_gray_round_nsel at 168,720 169x59."
+  },
+  {
+   "id": "shockwave-13",
+   "claim": "The footer's date and time is 'centered in `raised`' (#999999): colors.raised, defaults.clock and the Colors source say the clock takes raised's gray.",
+   "where": [
+    "layout.regions.3",
+    "colors.raised",
+    "defaults.clock",
+    "_source (Colors)"
+   ],
+   "template": {
+    "does": "The footer Date/Time is #C0C0C0 (Silver) on the 1035, ECP 16-10, 1525 and 1535, #D3D3D3 on the 725 and #F5F5F5 on the 720, never #999999; in Open Sans 14 on the 1035 (12 on the 1525, 18 on the 1535). Its text is centred in its own 475x49 box at 402-877 (centre 639.5), which is not the capsule's centre at 630. The Start clock is Roboto 72 #A9A9A9.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Start"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "defaults.clock.color",
+     "says": "clock"
+    },
+    {
+     "key": "defaults.clock.type",
+     "says": "button"
+    },
+    {
+     "key": "colors.clock.value",
+     "says": "#C0C0C0"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "bottom.items"
+    }
+   ],
+   "gone": [
+    "Also the clock's color on the footer",
+    "The clock takes raised's gray",
+    "the date and time centered in `raised`"
+   ],
+   "builds": "A Clock's default colour, the Footer's included, is #C0C0C0 where it was #999999, and its type is `button` (14 pt) where it was `body` (16 pt).",
+   "evidence": "Main SD's Date/Time at 402,725 475x49, textAlignment centre (3), Open Sans 14, text colour 192,192,192; the Footer's clock is the frame's bottom item `clock`. Start's Date/Time1 at 364,207 549x242, Roboto 72, 169,169,169."
+  },
+  {
+   "id": "shockwave-14",
+   "claim": "colors.scrim is '#3B2F2AA6 ... page at alpha 166', and the Modals source says 'no seed popup carries a scrim'.",
+   "where": [
+    "colors.scrim",
+    "_source (Modals)"
+   ],
+   "template": {
+    "does": "Every seed modal carries one: Help, Confirmation, Display, Lighting, Audio and Screen Control, Camera Select, Incoming Call, Tuner Presets, Presets Selection, Starting Up, Powering Down and Offline Page are all authored #000000 at transparencyField 35, which builds to a uniform #000000 at alpha 166. The template's scrim is black, not #3B2F2A.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Help",
+     "Confirmation",
+     "Offline Page"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "colors.scrim.value",
+     "says": "#000000A6"
+    }
+   ],
+   "gone": [
+    "#3B2F2AA6",
+    "no seed popup carries a scrim",
+    "Behind a modal's card: page at alpha 166"
+   ],
+   "builds": "`scrim` is black at alpha 166 where it was #3B2F2A at alpha 166: the preview's modal dim and the spec's theme scrim change, and what Build draws under a modal does not (it draws every modal under black).",
+   "evidence": "Each modal popup's page paint reads #000000A6 (Project pages: Help, Confirmation, Camera Select, Display Control, Lighting Control, Audio Control, Screen Control, Incoming Call, Starting Up, Powering Down, Tuner Presets, Presets Selection, Offline Page)."
+  },
+  {
+   "id": "shockwave-15",
+   "claim": "buttons.close: 'About 40x40, at the card's top right.'",
+   "where": [
+    "buttons.close.usage"
+   ],
+   "template": {
+    "does": "The template's Close is 50x50, 7-8 px in from the card's top-right corner (999,81 on the 224,74 card; 933,180 on the 288,173 card); its rest art is the kit's black_close (the seed's SW_close.png_1). On the 525 and 535 the Close is 60x60 or 96x90 and inverted: white_close at rest, black_close when pressed.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Help",
+     "Camera Select"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "buttons.close.usage",
+     "says": "50x50, 7 px in from the card's top-right corner"
+    }
+   ],
+   "gone": [
+    "About 40x40, at the card's top right"
+   ],
+   "evidence": "Close Camera Select (9119) at 999,81 50x50 on the card 224,74 832x651; Close Help (9057) at 933,180 on the card 288,173 703x453. SW_close.png_1 equals the kit's icons/440x440 Black/black_close.png pixel for pixel. The 525's Close Help is 728,10 60x60 and the 535's Close Audio Control 1012,9 96x90."
+  },
+  {
+   "id": "shockwave-16",
+   "claim": "README Popups says a modal has its card 'with a Close'.",
+   "where": [
+    "README Popups"
+   ],
+   "template": {
+    "does": "Confirmation, Incoming Call, Starting Up, Powering Down and Offline Page have no Close: their choices or the program dismiss them.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Confirmation",
+     "Incoming Call",
+     "Starting Up",
+     "Powering Down",
+     "Offline Page"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "A modal the program hides, or whose own answers close it, needs no Close."
+    }
+   ],
+   "evidence": "Confirmation's Power Down (9028) and Cancel (9029); Incoming Call's Accept Call (9032) and Ignore Call (9033); Starting Up, Powering Down and Offline Page hold a card and a label only."
+  },
+  {
+   "id": "shockwave-17",
+   "claim": "README Popups says 'a page flip is for a mode of the room, such as a call or one source's controls'.",
+   "where": [
+    "README Popups"
+   ],
+   "template": {
+    "does": "Shockwave never page-flips for one source's controls. Blu-ray, Tuner, Doc Cam, Apple TV, Camera Control and VTC Dialer, Keyboard and Search Result are standard popups in the well's 'inputs' group, and the call dialer is the Codec tab's popup. Page flips are only Room Mode (Main SD or Main VC through Room Mode VC) and Share Content. Only the 320 uses a page per source.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Room Mode VC",
+     "Blu-ray",
+     "VTC Dialer"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "On Shockwave's working page one source's controls are a popup in the Center (`role=\"source\"`), swapped in by its Header tab while the page stays"
+    }
+   ],
+   "gone": [
+    "such as a call or one source's controls"
+   ],
+   "evidence": "The seed's popups of 921x574 (Aux, Blu-ray, Camera Control, Doc Cam, Laptop, PC, Tuner, VTC Dialer, Keyboard, Search Result, Apple TV) are non-modal. The seed carries no navigation data, so its page flips are read off the names and IDs: Room Mode (8118) to Room Mode VC, Presentation (8254) and Video Conference (8255) to Main SD and Main VC, and Share Content (8090)."
+  },
+  {
+   "id": "shockwave-18",
+   "claim": "README: 'A page the program opens by itself, like an incoming call, has reached-by=program'.",
+   "where": [
+    "README Designing a panel"
+   ],
+   "template": {
+    "does": "The template's incoming call is a modal popup (Incoming Call, card 703x453 at 288,173), not a page.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Incoming Call"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "**A page or popup the program opens by itself**, like an incoming call"
+    }
+   ],
+   "gone": [
+    "**A page the program opens by itself**"
+   ],
+   "evidence": "Incoming Call is a modal popup (id 21) with Accept Call (9032) and Ignore Call (9033); the control program shows it."
+  },
+  {
+   "id": "shockwave-19",
+   "claim": "README describes popups as '921x574 for a popup card', and the popup-width token is 'The Shockwave template's popup card'.",
+   "where": [
+    "README Designing a panel",
+    "tokens size.popup-width"
+   ],
+   "template": {
+    "does": "The template's 921x574 popups are not cards. They are fully transparent (no fill, built art all alpha 0), with white text drawn over the page's well. Only modals have a #999999 card.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Laptop",
+     "Blu-ray",
+     "Main SD"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "921x574 for a standard popup"
+    }
+   ],
+   "gone": [
+    "921x574 for a popup card"
+   ],
+   "evidence": "The Laptop popup (921x574) holds three labels and no shape, and its page paint is empty; Blu-ray's holds buttons. Main SD stands the one well, Shape1 at 168,120 926x574, behind them."
+  },
+  {
+   "id": "shockwave-20",
+   "claim": "iconography.intro says 'lit, it fills with that color and its caption turns ink', color_rule says 'ink for a lit button's caption', and the Colors source leaves yellow's and green's out 'on purpose'.",
+   "where": [
+    "iconography.intro",
+    "examples.color_rule",
+    "_source (Colors)"
+   ],
+   "template": {
+    "does": "Lit kit images are pale tints (centre pixels: gray #E6E6E6, yellow #EDE0C5, red #E5C6C6, green #CAE0CA). Their captions take the family's dark: #946E06 for yellow (Help, Privacy, Start), #75063C for red (Off, Mute, End Call, Cancel, Ignore Call, Stop), #355424 for green (Call, Power Down on the confirmation, Accept Call). Gray lights #000000 on a working page, in the footer and in a modal's keys, and #474747 in a source popup, on Room Mode VC and on the 320's pages.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main VC",
+     "Confirmation",
+     "Blu-ray",
+     "Room Mode VC"
+    ]
+   },
+   "status": "deviation",
+   "fix": [
+    {
+     "key": "iconography.intro",
+     "says": "its caption takes that color's dark"
+    },
+    {
+     "key": "colors.caution.value",
+     "says": "#946E06"
+    },
+    {
+     "key": "colors.go.value",
+     "says": "#355424"
+    },
+    {
+     "key": "regions.help.states.On.color",
+     "says": "caution"
+    },
+    {
+     "key": "regions.power.states.On.color",
+     "says": "alert"
+    },
+    {
+     "key": "regions.window.power.states.On.color",
+     "says": "go"
+    },
+    {
+     "key": "regions.window.cancel.states.On.color",
+     "says": "alert"
+    },
+    {
+     "key": "buttons.key.states.On.color",
+     "says": "text-secondary"
+    }
+   ],
+   "reason": "A variant has one lit caption. `key` carries the source popups' and the 320's #474747 and the colour tokens carry the family darks the regions draw, but `action` (Room Mode VC's Presentation and Video Conference) and a blue Flash light with `ink`, where the template's are #474747: a state's `color` sets the other.",
+   "here": "A lit caption is its colour's dark on the region chrome and in a source popup (`key`); an `action` button and a blue one light their captions `ink`, where the template's are #474747 - a state's `color` gives the other.",
+   "gone": [
+    "its caption turns `ink`",
+    "yellow's and green's are left out",
+    "`ink` for a lit button's caption"
+   ],
+   "builds": "Help's lit caption is #946E06 and Power's (Off) #75063C, where both were #000000; the confirmation's Power Down is #355424 and Cancel #75063C; a source popup's and a 320 page's lit keys are #474747 (the new `key` variant) where the `tile` they were lit #000000.",
+   "evidence": "Lit gray captions over the seed's button states: #000000 on Main SD, Main VC, Start and the Camera Select, Display, Lighting and Screen Control modals; #474747 on Apple TV, Blu-ray, Camera Control, Doc Cam, Tuner and the VTC popups and on Room Mode VC; yellow #946E06 on 8 states, red #75063C on 27, green #355424 on 7; blue (VC Flash) #474747."
+  },
+  {
+   "id": "shockwave-21",
+   "claim": "iconography.rules says `red` 'for power and mute'.",
+   "where": [
+    "iconography.rules",
+    "examples.color_rule"
+   ],
+   "template": {
+    "does": "Mute rests gray (see above). In the Confirmation the confirming 'Power Down' is green (1248x440_green_round_outline_nsel) and 'Cancel' is red.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Confirmation"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "iconography.rules.0",
+     "says": "Mute rests gray and lights red"
+    }
+   ],
+   "gone": [
+    "`red` for power and mute",
+    "red for power and mute"
+   ],
+   "evidence": "Confirmation's Power Down (9028): Off 1248x440_green_round_outline_nsel, On 1248x440_green_round_sel #355424; Cancel (9029): red_round_outline_nsel, red_round_sel #75063C."
+  },
+  {
+   "id": "shockwave-22",
+   "claim": "color_rule and iconography.rules say `blue` 'to share'.",
+   "where": [
+    "iconography.rules",
+    "examples.color_rule"
+   ],
+   "template": {
+    "does": "The template's Share Content is a 120x75 image of its own with the words baked in: teal 'Share Content' (712x440_share-content_nsel) lighting to pink 'Stop Sharing' (712x440_stop-sharing_sel). The one blue family the 1035 uses is VTC Dialer's Flash (960x440_flash_blue).",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main VC",
+     "Main VC Share Content",
+     "VTC Dialer"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "iconography.rules.0",
+     "says": "`blue` for Flash on a call"
+    }
+   ],
+   "gone": [
+    "blue to share",
+    "`blue` to share"
+   ],
+   "evidence": "Main VC's Share Content (8090) at 1123,7 120x75; neither image matches a kit file; VTC Dialer's VC Flash (5216): Off 960x440_flash_outline_blue_nsel, On 960x440_flash_blue_sel #474747."
+  },
+  {
+   "id": "shockwave-23",
+   "claim": "README Visual foundations says 'The panel cannot draw ... transparency effects'.",
+   "where": [
+    "README Visual foundations"
+   ],
+   "template": {
+    "does": "The template's own frame relies on translucent fills: the well is #FFFFFF at transparency 85, a source tab On is #FFFFFF at alpha 60, the modal scrim is #000000 at 35, the hub header #000000 at 55, the hub side bar #2B2424 at 57 and the 320 title strip #000000 at 58.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Help"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "a fill's transparency is its alpha (a token's `#RRGGBBAA`)"
+    }
+   ],
+   "gone": [
+    "a gradient, a shadow or transparency effects"
+   ],
+   "evidence": "Main SD's Shape1 #FFFFFF26 and tab On fill #FFFFFF3C; every modal #000000A6; the 525's Main Header #00000073 and Side Bar #2B24246E; the 320's Doc Cam 2 Label #0000006B."
+  },
+  {
+   "id": "shockwave-24",
+   "claim": "README Layout says 'Shockwave pages are composed the same way' and gives one header, rails and footer composition.",
+   "where": [
+    "README Layout"
+   ],
+   "template": {
+    "does": "Start uses the Saturn photo with Lighting Presets at the left, Main Volume at the right, a 72 pt clock and a Start pill, and no bars or well. Room Mode VC is a page drawn as a #999999 card (260,154 759x492) on 1024x600_bkgd.png with no bars.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Start",
+     "Room Mode VC"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "layout.start",
+     "says": "a splash page with no bars or well"
+    },
+    {
+     "readme": "Shockwave's working pages are composed the same way"
+    }
+   ],
+   "gone": [
+    "Shockwave pages are composed the same way"
+   ],
+   "evidence": "Start (DefaultPage) background SW_start_bkgd_01_mockup.png: Main Volume Label, Lighting Presets Label, Date/Time1 (Roboto 72), Light Preset 1-4, Start (8000), Volume Mute and Main Volume Slider (8024); Room Mode VC's Modal Window and its two choices, Presentation Mode (8254) and VC Mode (8255)."
+  },
+  {
+   "id": "shockwave-25",
+   "claim": "README Themes says to set one theme on every Page and that 'The image is drawn on every page'.",
+   "where": [
+    "README Themes",
+    "Page README"
+   ],
+   "template": {
+    "does": "The template mixes backgrounds by page: Start uses Saturn (SW_start_bkgd_01_mockup.png), the working pages SW_bkgd_01.png, and Room Mode VC 1024x600_bkgd.png.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Start",
+     "Main SD",
+     "Room Mode VC"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "themes_note",
+     "says": "set per page"
+    },
+    {
+     "readme": "Set per page: the working pages on `haze`, the Start page on `saturn`."
+    }
+   ],
+   "gone": [
+    "The image is drawn on every page"
+   ],
+   "evidence": "The pages' backgroundImage and layout (stretch) off the seed; the toolkit carries each page's own background_image (gdl/design.py)."
+  },
+  {
+   "id": "shockwave-26",
+   "claim": "The README says 'ExtronShockwave.MainArea is that main region ...: put the main task inside it'; its example is a 'Select a Source' heading and the Example puts a 'Huddle Room' title and a Clock in MainArea.",
+   "where": [
+    "README Layout",
+    "MainArea README",
+    "README Example"
+   ],
+   "template": {
+    "does": "On the working pages the template puts nothing in the well but the well shape and the inputs popup region (921x574 at 172,124): all content is the selected source's popup. 'Select a Source' exists only on the 525, 535 and 320. The clock lives in the footer.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Start"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "examples.main.name",
+     "says": "Start"
+    },
+    {
+     "readme": "a working page's Center draws it, so put in it the main task of a page that has none"
+    },
+    {
+     "readme": "<!-- The page the panel boots to: Main.dc.html, the canvas's entry. -->"
+    }
+   ],
+   "gone": [
+    "type=\"title\" align=\"center\">Huddle Room",
+    "align=\"center\">Select a Source</x-import>"
+   ],
+   "evidence": "Main SD's Shape1 and Popup Page Reference1 (172,124 921x574) are the only controls in the well; Start's Start pill (8000) at 550,407 179x80 and clock at 364,207 stand inside the same rectangle."
+  },
+  {
+   "id": "shockwave-27",
+   "claim": "The small-panel paragraph says rows overflow onto 'Home 2, Home 3 ... with Previous and Next at its foot', and the README does not say the 320 draws Confirmation, Starting Up and Powering Down as pages.",
+   "where": [
+    "Page README"
+   ],
+   "template": {
+    "does": "The 320 splits a device over 'DVD 1'/'DVD 2' and 'Doc Cam 1'/'Doc Cam 2'. Page 1 has a single More button (440x440_more) at the bottom right and page 2 a Back (glyph µ) in the same place; there is no Previous or Next pair. On the 320, Confirmation, Starting Up and Powering Down are pages, not modals.",
+    "seed": "seeds/Shockwave 320.gdl",
+    "pages": [
+     "Doc Cam 1",
+     "Doc Cam 2",
+     "DVD 1",
+     "DVD 2",
+     "Confirmation"
+    ]
+   },
+   "status": "frame",
+   "fix": [
+    {
+     "readme": "come back by Back where More stood"
+    },
+    {
+     "readme": "On a 320 each is a page: the question and the wait on the template's rounded box"
+    }
+   ],
+   "frame": [
+    {
+     "series": "Shockwave 320 Series",
+     "key": "center.items"
+    },
+    {
+     "series": "Shockwave 320 Series",
+     "key": "second.center.items"
+    },
+    {
+     "series": "Shockwave 320 Series",
+     "key": "windows.confirm"
+    }
+   ],
+   "evidence": "Doc Cam More (8010) at 232,179 60x60 and Doc Cam Back (8011) at 232,179 59x59."
+  },
+  {
+   "id": "shockwave-28",
+   "claim": "colors.raised says '#999999 is every modal's card'.",
+   "where": [
+    "colors.raised",
+    "_source (Colors)"
+   ],
+   "template": {
+    "does": "The 1035's Offline Page card is #FFFFFF at transparency 25 (#FFFFFFBF, 322,237 635x325). The 525's, 535's and 320's Offline cards are #999999.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Offline Page",
+     "Help"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "colors.raised.usage",
+     "says": "every one but the 1035's Offline Page"
+    }
+   ],
+   "gone": [
+    "is every modal's card"
+   ],
+   "evidence": "Offline Page's Offline Window on the 1035 and the 725 reads #FFFFFFBF; the 525's (120,76 560x327), 535's (192,114 896x490) and 320's (20,13 281x213) read #999999FF."
+  },
+  {
+   "id": "shockwave-29",
+   "claim": "type._source says 'no seed label or button authors bold'.",
+   "where": [
+    "_source (Type)"
+   ],
+   "template": {
+    "does": "Display Control's Display 1 and Display 2 Mute On state is Open Sans 14 bold. The seed also uses sizes outside the scale: 12 pt captions (lifted on purpose), 13 (Window), 20 (Help message, Start labels), 22 and 24 (empty states), 30 (the room-mode prompt), plus Extron-Shockwave 22 glyphs and Roboto digits.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Display Control",
+     "Help",
+     "Main Multi-Window"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "_source",
+     "says": "except Display Control's Display 1 and Display 2 Mute, whose On state is Open Sans 14 bold"
+    }
+   ],
+   "gone": [
+    "no seed label or button authors bold"
+   ],
+   "evidence": "Every font over every control and state of the seed: Open Sans 14 bold once, Display Control's Display 1 Mute On; Open Sans 12 on 232, 14 on 58, 16 on 25, 18 on 48, 20 on 61, 22 on 4, 24 on 3, 26 on 4, 28, 30 and 36 once each, 40 on 16; Roboto 16 to 72; Extron-Shockwave 18 to 24."
+  },
+  {
+   "id": "shockwave-30",
+   "claim": "The profile's deviations 'still differ from the template': 12 px between touchable controls against the template's 4 px between Display buttons, 1 px between tabs and 120x110 tiles overlapping by 6 px; a 54-wide slider against the template's 52x315.",
+   "where": [
+    "layout.regions",
+    "README Layout"
+   ],
+   "template": {
+    "does": "The template stands its Display buttons 4 px apart, its tabs 1 px apart, its Screen and Lighting tiles 104 px apart (110 deep, so overlapping by 6 px) and its volume slider 52x315.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD"
+    ]
+   },
+   "status": "deviation",
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "top.tabs.pitch"
+    },
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "left.groups"
+    }
+   ],
+   "reason": "The 53 px touch minimum (9 mm on the 1035): the frame's legal rect (gdl.designsys.models) grows the template's 52 px slider about its centre, so it draws 53x315; and two controls may not overlap, so the tiles the template stands 104 apart (110 deep) stand 110 apart. The tabs, the Display buttons and the rest stand as the template stands them.",
+   "here": "The volume slider is drawn 53 px wide where the template's is 52, the 1035's touch minimum, and the Screen and Lighting tiles stand 110 apart where the template overlaps them by 6 px. The rest of the rails stand as the template stands them.",
+   "fix": [
+    {
+     "key": "layout.regions.2",
+     "says": "is 52 wide in the Layout and is drawn 53 on the 1035"
+    },
+    {
+     "key": "layout.regions.2",
+     "says": "are drawn touching, at 469 and 579 on the 1035"
+    }
+   ],
+   "gone": [
+    "make it 54 wide"
+   ],
+   "evidence": "Main SD's Display On, Off and Mute at y 170, 254 and 338 (80 deep); Screen Control and Lighting Control at 469 and 573 (110 deep); SD Volume Slider at 1163,163 52x315. The region page's probe on the 1035 draws the tabs 1 px apart, the Display buttons 4 apart, the tiles at 469 and 579 and the slider 53x315."
+  },
+  {
+   "id": "shockwave-31",
+   "claim": "The README's Differences listed the lit captions, the slider and the tiles, then 'Everything else follows the template', while Visual foundations holds every caption to 14 pt.",
+   "where": [
+    "README Differences",
+    "README Visual foundations",
+    "type.button"
+   ],
+   "template": {
+    "does": "Main SD's tab, rail and footer captions are Open Sans 12: the six tabs, Display On, Off and Mute, Screen Control, Lighting Control, Audio Control, Volume Mute, Room Mode, Help and Power Down; only its rail headings (Display, Volume) are 18 and its date and time 14.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD"
+    ]
+   },
+   "status": "deviation",
+   "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 12 pt captions to 14, as type.button says.",
+   "here": "Nothing is under 14 pt, the toolkit's floor: the template's tab, rail and footer captions are 12 pt, and here they are 14.",
+   "fix": [
+    {
+     "key": "type.button.usage",
+     "says": "the seed's 12 pt lifted to the 14 pt floor"
+    }
+   ],
+   "evidence": "Main SD's buttons: PointSize 12 on SD PC to SD AUX, Display On/Off/Mute, Screen Control, Lighting Control, Audio Control, Volume Mute, Room Mode, Help and Power Down; Display Label and Volume Label 18; Date/Time 14."
+  },
+  {
+   "id": "shockwave-32",
+   "claim": "README Visual foundations: at least 12 px between touchable controls, no more than nine buttons in one group, place things on GUI Designer's 10 px nudge.",
+   "where": [
+    "README Visual foundations"
+   ],
+   "template": {
+    "does": "The template stands its source tabs 1 px apart (152 wide from x 169, one every 153 px) and its Display buttons 4 px apart (80 deep at y 170, 254 and 338), and places them off the 10 px grid: tabs at 169, 322 and 475, rail keys at x 29.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD"
+    ]
+   },
+   "status": "deviation",
+   "reason": "The 2 mm gap the toolkit checks between touch targets and Extron's documented nine-button and spacing standards (docs/design-rules.md section 2), which a designer's own controls keep; the template's own sets are the owner's exception (2026-10-22), kept as one set at the step the frame measures by the region components.",
+   "here": "Your own controls keep 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards. The template's own sets stand as it draws them - its tabs 1 px apart, its Display buttons 4 - and the region components draw them so.",
+   "fix": [
+    {
+     "readme": "Extron's Design Standards, which its own templates do not always keep"
+    }
+   ],
+   "evidence": "Main SD's SD PC, SD Laptop and SD Blu-ray at x 169, 322 and 475 (152 wide); Display On, Off and Mute at 29,170, 29,254 and 29,338 (120x80)."
+  }
+ ]
+}

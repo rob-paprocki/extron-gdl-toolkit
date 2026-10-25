@@ -62,9 +62,15 @@ named, so none are listed.
 
 **Mirrors.** Controls that pin the same `id` are one control to the program.
 Real projects do this on purpose: the client project mirrors its shutdown
-confirm and cancel buttons (81, 82) across two popups. The map lists a mirror
-once, with every place it appears. Each copy has to be the same kind doing the
-same thing.
+confirm and cancel buttons (81, 82) across two popups, and Extron's Shockwave
+1035 and 1535 templates draw each source tab's name as a second, caption-only
+button under the tab's glyph with the tab's ID. The map lists a mirror once,
+with every place it appears. Each copy has to be the same kind doing the same
+thing, with the same state names. A copy a panel's layout added where a canvas
+control holds the ID - the region page's tab twin (§7) - is that control's
+mirror: the row is the control's, not derived, and the copy's place is marked
+(`"mirror": true` in `idmap.json`, *Main (mirror: PC Caption)* in the panel
+columns).
 
 ## 3. The checks
 
@@ -204,6 +210,21 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   not the 320 seed's (the question's 9028 and 9029). The Volume modal's
   level has the template's glyphs over and under it, not Up and Down: the
   320's template draws no volume control on a page.
+- **A region page's fixed chrome keeps the template's seed IDs**
+  (`docs/claude-design.md` §3): the Footer's Help (8117), Power (8022) and
+  mode launcher (8118), the RightRail's Volume
+  (8024) and Mute (8021) - the frame's `ids` - where the designer gave the
+  control no `id` and no other canvas control has that ID, the same on every
+  page that draws them and every panel; each page's band steps over them. A designer's `id` always wins, and
+  where a seed ID is taken the chrome takes one of its band.
+- **A region page's mirrors share their control's ID.** Where a template draws
+  one function twice and the program addresses it as one control - the
+  Shockwave 1035's tab name under the tab's glyph (its frame's `twin`) - the
+  region page draws the copy too: a derived `<name> Caption`, the tab's ID,
+  `nav`, `does` and state names, on the panels whose template draws one, and
+  listed as the tab's mirror (§2). Where another panel's problem stops the IDs
+  being pinned, translate's spec check still holds the copy as its tab's, not
+  as a control of its own.
 - **Checked across panels:** one ID is one control - the same name, kind and
   state names (the map numbers a control's states once, so a source's tab on
   the 1035 and its Select a Source tile on a hub name theirs alike) - on every
@@ -212,7 +233,9 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   for - a hub's footer clock, the heading Mach's rail draws over its Settings
   group, the 320's clock and the Center's popup region (each source is a
   page of its own there) - is listed in its page's `left` and named as a
-  note by translate, and may be absent there.
+  note by translate, and may be absent there. A mirror a layout derived does
+  not excuse its control: the tab is held to every panel, the twin only to
+  the panels that draw it.
 - **Verified per build.** A built panel is one panel, so the verifier takes
   that panel's view of the map (`--panel`): its pages, popups, navigation and
   the controls on it, each where it is there.

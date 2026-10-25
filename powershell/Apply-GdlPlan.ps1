@@ -110,6 +110,21 @@ function Add-GdlControls {
             if ($op.fill_image) {
                 Set-GdlImage $c 'sliderFillImageField' $imageRef (Get-PlanImageName $op.fill_image.name)
             }
+            # An image control draws its art from its backgroundImageField, as
+            # every PBImage in the Turbulence seeds does - cleared above with
+            # every clone's, so a clone of the seed's first, its Left Side bar,
+            # would build as that bar's fill alone. buttonImageField is a
+            # button's. Laid out as the plan says - Stretch (1) as the seeds'
+            # header and footer bars, Fill (0) as their device pictures - at
+            # MiddleCenter with no offset, set rather than kept: the side bar
+            # a clone starts from is Native (3).
+            if ($op.donor_type -eq 'PBImage' -and $op.image) {
+                Set-GdlImage $c 'backgroundImageField' $imageRef (Get-PlanImageName $op.image.name)
+                Set-GdlFieldIfPresent $c 'backgroundImageLayoutField' ([int]$op.image_layout) | Out-Null
+                Set-GdlFieldIfPresent $c 'backgroundImageAlignmentField' ([int]$op.image_align) | Out-Null
+                Set-GdlFieldIfPresent $c 'backgroundImageLeftField' 0 | Out-Null
+                Set-GdlFieldIfPresent $c 'backgroundImageTopField' 0 | Out-Null
+            }
             # A level's filled part. A clone keeps its donor's - Afterburn's
             # scheme-1 #626ACF under every scheme.
             if ($null -ne $op.gauge_fill) {
@@ -408,6 +423,14 @@ if (@($spec.popups).Count) {
         }
         Set-GdlFieldIfPresent $popup '<TLPImageID>k__BackingField' -1 | Out-Null
         Set-GdlFieldIfPresent $popup 'backgroundImageField' $null | Out-Null
+        # ...and then the photo the plan names, as a page's: Shockwave's and
+        # Turbulence's hubs draw every standard popup on the page's photo,
+        # stretched to the popup (seeds/Turbulence 525.gdl).
+        if ($pu.background_image) {
+            Set-GdlImage $popup 'backgroundImageField' $imageRef (Get-PlanImageName $pu.background_image.name)
+            Set-GdlFieldIfPresent $popup 'backgroundImageLayoutField' ([int]$pu.background_layout) | Out-Null
+            Set-GdlFieldIfPresent $popup 'backgroundImageAlignmentField' 3 | Out-Null
+        }
         Set-GdlColor $project $popup 'backgroundFillColorField' $pu.background
         # A member stores the group's NAME as well as its id; one without the
         # other is one of the four silent-failure sites. A modal is group 0

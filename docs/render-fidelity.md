@@ -99,6 +99,16 @@ Measured over 3,296 partial-alpha pixels: straight alpha is off by a mean of
 **97 levels** per channel; binary alpha by **2.15**. This affects every page
 with an antialiased asset edge, which is all of them.
 
+`gdl.compose.paste` keeps that rule by default. `compose.BINARY = False` blends
+instead, and two callers turn it off, for a picture of the panel rather than of
+its snapshot: the design systems' template renders
+(`gdl.designsys.render_templates`) and the critique loop's template side
+(`gdl.design compare --template`). The panel shows a translucent bar or well
+over its photo - Mach's #000000B4 header, Shockwave's white well at 15% - with
+the photo through it, where the snapshot rule paints it solid. Each puts the
+rule back as it found it. The preview, the sign-off and the baseline keep the
+snapshot rule.
+
 ## 3. Group-form popup references paint
 
 A reference bound to a single popup (`IsPopupPageIdValid`) paints nothing. A

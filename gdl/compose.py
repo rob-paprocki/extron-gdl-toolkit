@@ -231,7 +231,15 @@ def draw_text(img, box, text, fnt, color, alignv):
             tx += adv.advance(ch, fnt.size)
 
 
-def paste(canvas, assets, img_id, x, y, clip=None, binary=True):
+# Whether paste() composites as GUI Designer's own snapshots do (below). The
+# design systems' template renders (gdl.designsys.render_templates) turn it
+# off for a picture of the panel a designer reads: there a translucent bar or
+# well over the photo - Mach's #000000B4, Shockwave's white at 15% - shows the
+# photo through, where the snapshot rule paints it solid.
+BINARY = True
+
+
+def paste(canvas, assets, img_id, x, y, clip=None, binary=None):
     """Blit an asset.
 
     GUI Designer composites a control with a BINARY alpha test rather than
@@ -239,6 +247,7 @@ def paste(canvas, assets, img_id, x, y, clip=None, binary=True):
     strength, alpha == 0 is skipped. Measured over 3,296 partial-alpha pixels,
     straight alpha is off by a mean of 97 levels per channel; binary by 2.15.
     """
+    binary = BINARY if binary is None else binary
     if img_id is None or img_id not in assets:
         return
     im = Image.open(io.BytesIO(assets[img_id])).convert('RGBA')
@@ -278,7 +287,9 @@ def fill_index(path):
 def draw_fill(canvas, box, spec):
     """Paint the rounded rectangle Build would have baked into a PNG - and,
     for a spec's image button, its image fitted over it (ImageLayoutEnum
-    Fill, MiddleCenter, as every image button in Extron's templates has it)."""
+    Fill, MiddleCenter, as every image button in Extron's templates has it),
+    or for an image control its art as it lies (`image_layout` 1: stretched,
+    as the Turbulence seeds' header and footer bars are)."""
     fill = rgba(spec['fill'])
     stroke = rgba(spec.get('stroke'))
     if not fill or not fill[3]:
@@ -288,7 +299,14 @@ def draw_fill(canvas, box, spec):
     if fill or stroke:
         _draw_box(canvas, box, spec, fill, stroke)
     if spec.get('image'):
-        draw_fitted(canvas, box, spec['image'])
+        (draw_stretched if spec.get('image_layout') == 1 else draw_fitted)(canvas, box, spec['image'])
+
+
+def draw_stretched(canvas, box, path):
+    """`path` stretched over `box`, as Build draws an image laid out
+    Stretch."""
+    art = Image.open(path).convert('RGBA').resize((max(1, box[2]), max(1, box[3])), Image.LANCZOS)
+    canvas.alpha_composite(art, (box[0], box[1]))
 
 
 def draw_fitted(canvas, box, path):

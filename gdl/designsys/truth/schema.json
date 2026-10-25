@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A theme's truth ledger",
+  "description": "One entry per claim our profile (gdl/designsys/<theme>.json) or its generated README made that the template's own pages contradict, and how it is resolved. gdl/designsys/audit.py loads it and checks it against this schema with the subset of JSON Schema it implements (type, required, properties, additionalProperties, enum, items, minItems, minLength, pattern); `python -m gdl.designsys audit <theme>` reports what is unresolved.",
+  "type": "object",
+  "required": ["theme", "_source", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "theme": {"type": "string", "pattern": "^[a-z]+$"},
+    "_source": {"type": "string", "minLength": 1},
+    "entries": {"type": "array", "items": {"$ref": "#/definitions/entry"}}
+  },
+  "definitions": {
+    "entry": {
+      "type": "object",
+      "required": ["id", "claim", "where", "template", "status", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z]+-[0-9]{2}$"},
+        "claim": {"type": "string", "minLength": 1, "description": "What our profile or README said."},
+        "where": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1},
+                  "description": "Where it was: a profile key (dotted, a list item by its index or its name) or a README section ('README Layout', 'Page README')."},
+        "template": {
+          "type": "object",
+          "required": ["does", "seed", "pages"],
+          "additionalProperties": false,
+          "properties": {
+            "does": {"type": "string", "minLength": 1},
+            "seed": {"type": "string", "pattern": "^seeds/.+\\.gdl$"},
+            "pages": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+          },
+          "description": "What the template does, with the seed and the pages it was read off."
+        },
+        "status": {"type": "string", "enum": ["fixed", "frame", "deviation"]},
+        "fix": {"type": "array", "items": {"$ref": "#/definitions/fix"},
+                "description": "Where the profile or README now says what the template does. Required for `fixed`; checked on any status that names one."},
+        "frame": {"type": "array", "items": {"$ref": "#/definitions/frame"},
+                  "description": "What the region frame draws it from. Required for `frame`."},
+        "reason": {"type": "string", "minLength": 1,
+                   "description": "Why we differ: a gate, or a capability the panel or the system lacks. Required for `deviation`."},
+        "here": {"type": "string", "minLength": 1,
+                 "description": "What the system does instead, in the designer's words: the README's Differences says it. Required for `deviation`."},
+        "gone": {"type": "array", "items": {"type": "string", "minLength": 1},
+                 "description": "Words of the old claim that must no longer appear in the profile or the README."},
+        "builds": {"type": "string", "minLength": 1, "description": "What the fix changes in what builds, where it does."},
+        "evidence": {"type": "string", "minLength": 1}
+      }
+    },
+    "fix": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key": {"type": "string", "minLength": 1, "description": "A profile key, dotted; a list item by its index or its `name`."},
+        "says": {"type": "string", "minLength": 1, "description": "Words the value at `key` holds."},
+        "readme": {"type": "string", "minLength": 1, "description": "Words the generated README or a component's README holds."}
+      }
+    },
+    "frame": {
+      "type": "object",
+      "required": ["key"],
+      "additionalProperties": false,
+      "properties": {
+        "series": {"type": "string", "minLength": 1, "description": "The `panels` series whose frame holds it; any series' when absent."},
+        "key": {"type": "string", "minLength": 1, "description": "A key in the frame, dotted."}
+      }
+    }
+  }
+}

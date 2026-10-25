@@ -1,0 +1,1200 @@
+{
+  "theme": "turbulence",
+  "_source": "Each entry is a claim our profile (gdl/designsys/turbulence.json) or its README made that Turbulence's own pages contradict, found by the grammar measurement of 2026-10-22: every page and popup of seeds/Turbulence 1035.gdl, 725, 1525, 720, 525 and 320, read with gdl.project (each control's rect, look, caption and font) beside its renders; and turbulence-35 by measuring every source popup's picture in the same seeds (tests/measure_series.py _pictures). `template` is what those pages do, off the seed and pages named; the region frame (panels[series].frame) is the same seeds measured by tests/measure_series.py frame_of. `python -m gdl.designsys audit turbulence` checks every resolution against the profile, the README and the frame as they stand.",
+  "entries": [
+    {
+      "id": "turbulence-00",
+      "claim": "layout.regions[0] and the README Layout: the header's source-tab row is centered on the page; nothing is said of the header's right end.",
+      "where": [
+        "layout.regions.0",
+        "README Layout"
+      ],
+      "template": {
+        "does": "The six 127x133 tabs run left-aligned from x 141, 1 px past the left rail, to x 973: the row's centre is 557, not the page's 640. The header's right end (973-1280) holds the page's mode control - Share Content [1097,24,140,89] on Main VC and VC Share Content, and a 'Window' label (14 pt) [1088,2,146,37] over Window 1 and 2 keys, 80x80 at [1076,38] and [1168,38], on Main Multi-Window - and is empty on the SD pages.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC",
+          "Main VC Share Content",
+          "Main Multi-Window"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "layout.regions.0",
+          "says": "left-aligned - the Layout's own first place, not centred on the page"
+        },
+        {
+          "key": "layout.regions.0",
+          "says": "Share Content (`call`, share-content) on the call pages"
+        }
+      ],
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "top.tabs"
+        }
+      ],
+      "gone": [
+        "the row centered on the page"
+      ],
+      "evidence": "SD PC, SD Laptop, SD Blu-ray, SD AUX, SD Tuner and SD Doc Cam (IDs 8052, 8050, 8054, 8062, 8060, 8058) at x 141, 282, 423, 563, 705 and 846; Main VC's Share Content (8090); Main Multi-Window's Window Label (9060) and Window 1 and 2 (8008, 8007)."
+    },
+    {
+      "id": "turbulence-01",
+      "claim": "examples.source.rect [577,0,127,133], which the README Example used for the Laptop tab.",
+      "where": [
+        "examples.source.rect"
+      ],
+      "template": {
+        "does": "No tab sits at x 577: SD Laptop is at [282,0,127,133] and SD AUX at [563,0,127,133].",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "examples.source.rect",
+          "says": "282 0 127 133"
+        }
+      ],
+      "gone": [
+        "577 0 127 133"
+      ],
+      "evidence": "Main SD's SD Laptop (ID 8050) at 282,0 and SD AUX (8062) at 563,0."
+    },
+    {
+      "id": "turbulence-02",
+      "claim": "layout.regions[0] and [3] call the header and footer a `shade` Panel; borders.rect is for 'the header and footer'; colors.shade and _source say the art is one color.",
+      "where": [
+        "layout.regions.0",
+        "layout.regions.3",
+        "borders.rect.usage",
+        "colors.shade.usage",
+        "_source"
+      ],
+      "template": {
+        "does": "The 1035's header and footer are PBImage controls drawing the kit art 2047x151_header.png and 1648x134_footer.png, with no fill and no border resource; 2D Rectangle is only on the 12 states of the 6 VTC Search Result rows (and, on the 525, its header Shape and side-bar Shape). The art is #020D1A at alpha 128 with a #A4A4A5 alpha-61 rule 3 rows deep on the edge facing main - the header's foot, the footer's top, which has one more row at its foot: 302956 of the header's 309097 pixels are the body.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "VTC Search Result"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {"series": "Turbulence 1220 Series", "key": "top.surfaces"},
+        {"series": "Turbulence 1220 Series", "key": "bottom.surfaces"}
+      ],
+      "fix": [
+        {
+          "key": "colors.shade.usage",
+          "says": "with a 3-row light rule"
+        },
+        {
+          "key": "borders.rect.usage",
+          "says": "the 1035's header and footer are art, with no border"
+        },
+        {
+          "key": "regions._source",
+          "says": "apart from a 3-row light rule"
+        }
+      ],
+      "gone": [
+        "is a `shade` Panel with the source tabs across it",
+        "The footer (997x110 at 140,688) is a `shade` Panel",
+        "A square-cornered bar: the header and footer",
+        "the seed draws them as images of this one color",
+        "draw each bar flat in this"
+      ],
+      "builds": "The header and footer build as PBImages drawing 2047x151_header.png and 1648x134_footer.png stretched over their bands, as the seed's Top bar and Bottom bar, where they built as flat `shade` shapes; where the art is not extracted on the machine that built the system, still `shade` (regions.bar).",
+      "evidence": "Main SD's Top bar, Bottom bar and two side bars are PBImage (Project.pages(): 28 PBImage, none with a border); the two PNGs' pixel counts in vendor/extron/Resources/Turbulence; seeds/Turbulence 525.gdl's Main Page Main Header and Side Bar on 2D Rectangle."
+    },
+    {
+      "id": "turbulence-03",
+      "claim": "layout.regions[1]: the left rail is a `rail` Panel holding the display.",
+      "where": [
+        "layout.regions.1"
+      ],
+      "template": {
+        "does": "True only on Main SD, Screen Arrows, Select Source and Multi-Window. On Main VC and VC Share Content the rail is headed 'VTC' and holds the Initiate Call, End Call and Privacy call tiles (140x89, stacked flush at y 173, 262 and 351) and a Display Control dock at [0,470,140,108]; on Screen Arrows a 'Screen' label [0,524,140,61] and Screen Up and Down rings at [22,580] and [22,688] replace both docks.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC",
+          "Main SD Screen Arrows"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "layout.regions.1",
+          "says": "`VTC` over the Initiate Call, End Call and Privacy `call` tiles"
+        }
+      ],
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "left.groups"
+        }
+      ],
+      "gone": [
+        "is a `rail` Panel holding the display"
+      ],
+      "evidence": "Main VC's VTC Label (7012), Initiate Call (5014), End Call (5215), VC Privacy (5217) and Display Control (8214); Main SD Screen Arrows' Screen Label (8075), Screen Up (8076) and Screen Down (8077)."
+    },
+    {
+      "id": "turbulence-04",
+      "claim": "layout.regions[1] spaces the rings '112 apart'.",
+      "where": [
+        "layout.regions.1"
+      ],
+      "template": {
+        "does": "The On, Off and Mute rings are at y 186, 294 and 402: 108 apart, 8 px between (the 725's 81 apart and touching, the 720's 65, touching).",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "left.groups.0.pitch"
+        }
+      ],
+      "gone": [
+        "112 apart"
+      ],
+      "evidence": "Main SD's Display On, Display Off and Display Mute (8112-8114) at y 186, 294 and 402."
+    },
+    {
+      "id": "turbulence-05",
+      "claim": "layout.regions[1] puts the dock launchers '12 px apart', in a band between the header and the footer.",
+      "where": [
+        "layout.regions.1"
+      ],
+      "template": {
+        "does": "The docks are 2 px apart (Display Control 470, Screen Control 580, Lighting Control 690, each 108 deep). Lighting Control stands at y 690-798, beside the footer, because the left rail runs to the foot of the screen.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC"
+        ]
+      },
+      "status": "frame",
+      "fix": [
+        {
+          "key": "layout.regions.1",
+          "says": "the last beside the footer, since the rail runs to the foot of the screen"
+        }
+      ],
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "left.groups.1.pitch"
+        }
+      ],
+      "gone": [
+        "12 px apart (Screen Control, Lighting Control)"
+      ],
+      "evidence": "Main SD's Screen Control (8115) at y 580 and Lighting Control (8116) at 690; Main VC's Display Control (8214) at 470."
+    },
+    {
+      "id": "turbulence-06",
+      "claim": "layout.regions[2] says to make the volume slider 54 wide.",
+      "where": [
+        "layout.regions.2"
+      ],
+      "template": {
+        "does": "The volume slider is 52x391 at [1183,184] on every Main page (366 tall on Select Source).",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main Select Source"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The 53 px touch minimum the toolkit checks on the 1035 (gdl.spec): the frame's legal rect (gdl.designsys.models) grows the 52 px slider about its centre to 53, so the Layout lists the template's 52 and a built 1035 draws 53. A designer does not size it: the RightRail draws the slider itself.",
+      "here": "The volume slider is drawn 53 px wide where the template's is 52, the 1035's touch minimum; the RightRail draws it so by itself.",
+      "fix": [
+        {
+          "key": "layout.regions.2",
+          "says": "is drawn 53 on the 1035, since 52 is under the 53 px touch minimum"
+        }
+      ],
+      "gone": [
+        "make it 54, since 52 is under the 53 px touch minimum"
+      ],
+      "evidence": "Window 1 Volume Slider (8024) 52x391 at 1183,184 on Main SD and Main Multi-Window; Volume Slider 52x366 on Main Select Source; models()['TLP1035T'] puts the slider's legal rect at [1183,184,53,391]."
+    },
+    {
+      "id": "turbulence-07",
+      "claim": "layout.regions[3] places Help '12 px in from its end (x 152)' and names Room Mode as the footer's dock.",
+      "where": [
+        "layout.regions.3"
+      ],
+      "template": {
+        "does": "Help is at x 141 (140 on Select Source), 1 px from the left rail and 2 px from Room Mode; Multi-Window puts Preset Selection at [246,690,140,108] where the other pages have Room Mode.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main Select Source",
+          "Main Multi-Window"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The 2 mm gap gdl.spec checks between touch targets of different sets: the template's Help is 1 px from the left rail's last launcher (Lighting Control, 0-140), so the Footer opens that seam to the panel's gap, Help giving way to x 152 on the 1035 and the launcher column keeping its width. The old text gave the built place as the template's; it now gives both.",
+      "here": "Help stands at x 152 on the 1035, where the template's is 1 px from the left rail's last launcher: the Footer opens that seam to the panel's 2 mm gap.",
+      "fix": [
+        {
+          "key": "layout.regions.3",
+          "says": "Help stands 1 px from the left rail's last launcher"
+        },
+        {
+          "key": "layout.regions.3",
+          "says": "Room Mode, or Preset Selection on Multi-Window"
+        }
+      ],
+      "gone": [
+        "Help 12 px in from its end (x 152) to clear the left rail's dock beside it"
+      ],
+      "evidence": "Main SD's Help (8117) at 141,690, Room Mode (8118) at 246,690 and Lighting Control (8116) at 0,690; Main Select Source's Help at 140,690; Main Multi-Window's Preset Selection (8119) at 246,690; tests/test_design.py's test_help_gives_way_to_the_rail_launcher_beside_it."
+    },
+    {
+      "id": "turbulence-08",
+      "claim": "layout.regions[4], iconography.rules and the README Popups bullet give every modal a 36 pt title and a `close` 60x60, 5 px inside the top right.",
+      "where": [
+        "layout.regions.4",
+        "iconography.rules.0",
+        "buttons.close.usage",
+        "README Designing a panel"
+      ],
+      "template": {
+        "does": "Only Help and the 1120x684 settings windows have a title and a Close. Confirmation (800x448) has a 20 pt question and Power Down and Cancel art keys 146x153; Incoming Call Label (648x400) a 20 pt question and Accept and Ignore keys 240x129; Starting Up and Powering Down (648x400) only a 20 pt message; Offline Page two 22 pt Open Sans lines. None of these has a title or a Close. Help's title is the capitals 'HELP'. Close is 5 px in from Help's right edge and 6 to 7 px in from the settings windows' (x 1133 or 1134 in a window ending at 1200).",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Help",
+          "Confirmation",
+          "Incoming Call Label",
+          "Starting Up",
+          "Powering Down",
+          "Offline Page",
+          "Camera Select",
+          "Preset Selection"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "layout.regions.4",
+          "says": "only some have a title and a Close"
+        },
+        {
+          "key": "iconography.rules.0",
+          "says": "Help and a settings window close with `close`"
+        },
+        {
+          "key": "buttons.close.usage",
+          "says": "6 to 7 px inside a settings window's"
+        },
+        {
+          "readme": "each drawn from the frame's windows (Layout) - the window, its title, its Close or its answers"
+        }
+      ],
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "windows.help.close"
+        },
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "windows.confirm.buttons"
+        }
+      ],
+      "gone": [
+        "a modal closes with `close`",
+        "60x60 5 px inside the top right",
+        "5 px inside the card's top right"
+      ],
+      "evidence": "Close Help (9057) at 954,154 in Help Shape 258,149 761x500; Close Camera Select (9119), Close Tuner Preset (9031) at 1133,61 and Preset Selection's at 1134,61 in the windows at 80,56 1120x684; Confirmation's Power Down (9028) and Cancel (9029); Accept Call (9032); the messages 4056, 4060, 4067 and 4068 at 20 pt."
+    },
+    {
+      "id": "turbulence-09",
+      "claim": "buttons.dock calls the dock, and buttons.source Help, 'invisible at rest'; iconography.intro says a button is 'at rest ... nothing at all'.",
+      "where": [
+        "buttons.dock.usage",
+        "buttons.source.usage",
+        "iconography.intro"
+      ],
+      "template": {
+        "does": "712x440_transp_blank_nsel.png and 504x504_input_help_transp_text_nsel.png draw a clear tile with an inset shadow at its top left and a blue bevel at its right and foot, visible on every render; the Help art also bakes in a white ?. Lit, the dock is a teal tile with a green edge.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "buttons.dock.usage",
+          "says": "a clear tile at rest - the art draws an inset shadow at its top left and a blue bevel at its right and foot"
+        },
+        {
+          "key": "buttons.source.usage",
+          "says": "is a clear beveled tile with a white ? in the art at rest"
+        },
+        {
+          "key": "iconography.intro",
+          "says": "or, a dock or Help, a clear tile with an inset shadow and a blue bevel"
+        }
+      ],
+      "gone": [
+        "invisible at rest",
+        "or nothing at all"
+      ],
+      "evidence": "The two PNGs composited over the page's photograph (rendered for this entry): the shadow and bevel draw, the centre is clear; Main SD's Screen Control, Lighting Control, Audio Control, Room Mode and Help use them."
+    },
+    {
+      "id": "turbulence-10",
+      "claim": "buttons.dock calls it 'A launcher on a rail'.",
+      "where": [
+        "buttons.dock.usage"
+      ],
+      "template": {
+        "does": "Room Mode and Preset Selection stand in the footer at [246,690,140,108], not on a rail; Audio Control is in the right rail.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main Multi-Window"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "buttons.dock.usage",
+          "says": "It stands on the left rail (Screen Control, Lighting Control, Display Control), in the right rail (Audio Control) and in the footer (Room Mode, Preset Selection)"
+        }
+      ],
+      "gone": [
+        "A launcher on a rail"
+      ],
+      "evidence": "Main SD's Room Mode (8118) and Main Multi-Window's Preset Selection (8119) at 246,690."
+    },
+    {
+      "id": "turbulence-11",
+      "claim": "examples.group_note: the source page's 266x209 tiles 'run two and three to a row'.",
+      "where": [
+        "examples.group_note"
+      ],
+      "template": {
+        "does": "Main Select Source has three and three: x 210, 486 and 781 at y 124-126 and x 210, 495 and 780 at y 400, 10 to 29 px apart.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main Select Source"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "examples.group_note",
+          "says": "run three and three to a row"
+        }
+      ],
+      "gone": [
+        "run two and three to a row"
+      ],
+      "evidence": "Main Select Source's Laptop, PC, Aux, Doc Cam, Bluray and Tuner (8050, 8052, 8062, 8058, 8054, 8060)."
+    },
+    {
+      "id": "turbulence-12",
+      "claim": "The Group doc's defaults (gap 49, cap 4) and its example (cell 110x110, gap 55, a source tab in a Group in main) are nothing Turbulence draws.",
+      "where": [
+        "Group README",
+        "examples.group_note"
+      ],
+      "template": {
+        "does": "Its sets are one row of 127x133 tabs, 14 px apart, in the header (six; four on Share Content) and 266x209 scene tiles three to a row on Select Source (212x155 on the 525's Main Page).",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC Share Content",
+          "Main Select Source"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "examples.group.cell",
+          "says": "127x133"
+        },
+        {
+          "key": "examples.group.gap",
+          "says": "14"
+        },
+        {
+          "key": "examples.group_note",
+          "says": "its source row is six 127x133 tabs across the header, 14 px apart"
+        },
+        {
+          "readme": "title=\"Sources\" cell=\"127x133\" gap=\"14\""
+        },
+        {
+          "readme": "(default 49, the toolkit's)"
+        }
+      ],
+      "gone": [
+        "cell=\"110x110\" gap=\"55\""
+      ],
+      "evidence": "Main SD's six tabs at a 141 step; Main VC Share Content's four (8053, 8051, 8059, 8063); Main Select Source's tiles; seeds/Turbulence 525.gdl's Main Page tiles 212x155."
+    },
+    {
+      "id": "turbulence-13",
+      "claim": "Rail doc: the page's column of system controls - volume, mute, help, power - as Turbulence's own pages put them on the right; its example stacks a Help source tab in the Rail.",
+      "where": [
+        "Rail README"
+      ],
+      "template": {
+        "does": "Turbulence's right rail holds only the Volume label, the slider, the mute ring and Audio Control. Help and Power Down are footer cells on the 1035, 725, 1525 and 720; on the 520 template Help is a 60x60 key in the header at [636,5] and only Power Down is in its right bar.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "On Turbulence's working page the right column holds its heading, the volume, Mute and Audio Control, as its frame measures it"
+        }
+      ],
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "right.items"
+        }
+      ],
+      "gone": [
+        "as Turbulence's own pages put them on the right"
+      ],
+      "evidence": "Main SD's Volume Label (7035), Volume Slider (8024), Volume Mute (8021) and Audio Control (8020) in 1138-1280; Help (8117) and Power Down (8022) in the footer; seeds/Turbulence 525.gdl's Main Page Help (9103) at 636,5."
+    },
+    {
+      "id": "turbulence-14",
+      "claim": "MainArea doc example: a 'Select a Source' heading inside MainArea at top 190 (then a source tab at top -137).",
+      "where": [
+        "MainArea README"
+      ],
+      "template": {
+        "does": "Main Select Source puts 'Select a Source' (34 pt) in the header band at [306,0,660,96], on the one page with no popup region; every other Main page puts nothing of its own in main, only the source popup region.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main Select Source",
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "examples.main.rect",
+          "says": "210 400 266 209"
+        },
+        {
+          "readme": "name=\"Laptop\" variant=\"scene\" icon=\"input_laptop\" style=\"position: absolute; left: 70px; top: 263px; width: 266px; height: 209px\""
+        }
+      ],
+      "gone": [
+        "left: 437px; top: -137px"
+      ],
+      "evidence": "Main Select Source's Select Source Label (6072) at 306,0; Main SD's Popup Page Reference1 at 140,137 995x549; the tile at 210,400 266x209 is 70,263 in main."
+    },
+    {
+      "id": "turbulence-15",
+      "claim": "The README Example (a start page): a header source tab at 577, a RoomName title and a date Clock inside MainArea, and Help.",
+      "where": [
+        "README Example"
+      ],
+      "template": {
+        "does": "The template's Start page has no header, rails, footer, tabs, Help or main region: Room Title [308,116,660,114] at 36 pt, the Start disc [503,257,271,282], 'Press to Begin', 'Room Text Here', the date and time [293,654,688,73] at 14.25 pt, Lighting Preset rings 1-6 on the left and a Main Volume slider and mute on the right, in 293-wide columns painted into bkgd_start.png. On the working pages the clock is centred in the footer [398,694,483,101], never in main.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Start",
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "layout.start",
+          "says": "Turbulence's panel boots to Start, its seed's DefaultPage"
+        },
+        {
+          "readme": "Turbulence's panel boots to Start, its seed's DefaultPage"
+        },
+        {
+          "readme": "<!-- The page the panel boots to: Main.dc.html, the canvas's entry. -->"
+        }
+      ],
+      "gone": [
+        "name=\"Date\" format=\"date\""
+      ],
+      "evidence": "Start's Title Text (7001), Start (8000), Press Here Label (7000), Room Text Label (10000), Date/Time1, Lighting Preset 1-6 (8231-8236), Main Volume Slider (8024); Main SD's Date/Time1."
+    },
+    {
+      "id": "turbulence-16",
+      "claim": "The Clock doc defaults to `time` ('h:mm tt'), with `date` as 'MMMM d'.",
+      "where": [
+        "Clock README",
+        "regions.clock.format"
+      ],
+      "template": {
+        "does": "Every template clock shows date and time together: 'MMMM dd, yyyy - h:mm tt' at 16 pt on the Main pages, 'MMMM dd, yyyy - hh:mm tt' at 14.25 pt on Start; the footer's is centred at [398,694,483,101].",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Start"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "regions.clock.format",
+          "says": "MMMM dd, yyyy - h:mm tt"
+        },
+        {
+          "key": "defaults.clock.type",
+          "says": "body"
+        },
+        {
+          "readme": "The default `time` is this component's: Turbulence's footer draws the date and time, `MMMM dd, yyyy - h:mm tt`, which the `Footer` draws by itself."
+        }
+      ],
+      "evidence": "Main SD's Date/Time1 (PBDateTime): pattern 'MMMM dd, yyyy - h:mm tt', Open Sans Light 16, #FFFFFF; Start's: 'MMMM dd, yyyy - hh:mm tt', 14.25."
+    },
+    {
+      "id": "turbulence-17",
+      "claim": "Panel doc example: a TopBar with fill=\"raised\" border=\"rect\" at 1280x112 (later page, rounded, 1280x133).",
+      "where": [
+        "Panel README"
+      ],
+      "template": {
+        "does": "The template's top bar is 1280x133 header art with no border, not a Panel; `raised` (#184E80) is only on the 1120x684 settings windows and Offline's 648x400 card. What it draws with a Panel is a card: Power Down Shape [240,174,800,448], #021E38 on 2D Rounded Rectangle.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Confirmation"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "examples.panel.fill",
+          "says": "page"
+        },
+        {
+          "readme": "name=\"Card\" fill=\"page\" border=\"rounded\" style=\"width: 800px; height: 448px\""
+        }
+      ],
+      "gone": [
+        "name=\"TopBar\" fill=\"page\" border=\"rounded\"",
+        "fill=\"raised\" border=\"rect\""
+      ],
+      "evidence": "Main SD's Top bar (PBImage, 2047x151_header.png); Confirmation's Power Down Shape."
+    },
+    {
+      "id": "turbulence-18",
+      "claim": "The README ('995x549 for a popup card') and the Page doc ('`popup` (a card ...)') call standard popups cards.",
+      "where": [
+        "README Designing a panel",
+        "Page README"
+      ],
+      "template": {
+        "does": "Standard popups have no card: fill None and no shape. The device picture, title and keys are drawn straight on the page photo.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Laptop",
+          "Aux",
+          "Doc Cam"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "and 995x549 for a standard popup"
+        },
+        {
+          "readme": "`popup` (a standard popup, 995x549 unless `width` and `height` say otherwise: it draws nothing of its own"
+        }
+      ],
+      "gone": [
+        "for a popup card",
+        "`popup` (a card, 995x549"
+      ],
+      "evidence": "The Laptop, Aux and PC popups (fill None): a 1152x1152 picture at 0,0, a 36 pt title and the empty-state label, no Shape."
+    },
+    {
+      "id": "turbulence-19",
+      "claim": "The README Popups bullet: a page flip is for a mode of the room, such as a call or one source's controls.",
+      "where": [
+        "README Designing a panel"
+      ],
+      "template": {
+        "does": "One source's controls are a standard popup in group 'Transport1' (11 members), shown in the 995x549 region by the header's tab; pages are only room modes: Start, Room Mode VC, Select Source, SD, SD Screen Arrows, Multi-Window, VC and VC Share Content.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Laptop",
+          "Doc Cam"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "On Turbulence's working page one source's controls are a popup in the Center"
+        }
+      ],
+      "gone": [
+        "a page flip is for a mode of the room, such as a call or one source's controls"
+      ],
+      "evidence": "Main SD's Popup Page Reference1 -> popup group 2 'Transport1'; the 11 popups of that group."
+    },
+    {
+      "id": "turbulence-20",
+      "claim": "The README Popups bullet: lighting, audio, camera select and presets are modals, as Turbulence's own templates draw them.",
+      "where": [
+        "README Designing a panel"
+      ],
+      "template": {
+        "does": "That holds for the 1220, 1020, 1520 and 720 templates. The 520 template draws Lighting Control, Audio Control, Display Control, More Options and Dual Display Select as standard 702x480 popups in its 'Transport 1' group, each with its own 72 px header and Close.",
+        "seed": "seeds/Turbulence 525.gdl",
+        "pages": [
+          "Audio Control",
+          "Main Page"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "On a hub the settings are popups filling main"
+        }
+      ],
+      "gone": [
+        "as Turbulence's own templates draw them"
+      ],
+      "evidence": "seeds/Turbulence 525.gdl's Audio Control popup (702x480, modal False): Audio Control Header 0,0 700x72 and Close Audio Control (9027) at 629,6."
+    },
+    {
+      "id": "turbulence-21",
+      "claim": "The README Layout intro says 'Turbulence pages are composed the same way', and layout.bars says 'controls'.",
+      "where": [
+        "README Layout",
+        "layout.bars_note"
+      ],
+      "template": {
+        "does": "That holds for five of the eight pages. Main Select Source paints its header, footer and rails into bkgd_home.png, with a title instead of tabs and no Screen Control; Start paints 293-wide side columns into bkgd_start.png and has no header or footer; Room Mode VC has no bars - a 648x400 black card at transparency 47 on bkgd_home_plain.png.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main Select Source",
+          "Start",
+          "Room Mode VC",
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "Turbulence's working pages are composed the same way"
+        },
+        {
+          "key": "layout.regions.5",
+          "says": "**Its other pages are not composed so**"
+        },
+        {
+          "key": "layout.bars_note",
+          "says": "Select a Source and Start paint theirs into the photograph"
+        }
+      ],
+      "gone": [
+        "Turbulence pages are composed the same way"
+      ],
+      "evidence": "Main Select Source has Labels and Buttons but no PBImage bars; Start has none; Room Mode VC's only shape is Room selection shape (315,200 648x400, #000000, transparency 47)."
+    },
+    {
+      "id": "turbulence-22",
+      "claim": "The Page doc says `theme` is 'the same on every artboard', and the README Themes section says the image is drawn on every page.",
+      "where": [
+        "Page README",
+        "README Themes"
+      ],
+      "template": {
+        "does": "The template varies its photo by page role: bkgd_start (Start), bkgd_home (Select Source, bars painted in), bkgd_home_plain (Room Mode), bkgd_pc (device pages), bkgd_lighting behind the 1525's and 720's Main SD.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Start",
+          "Main Select Source",
+          "Room Mode VC",
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "themes_note",
+          "says": "set on each Page to the photograph Turbulence draws for its role"
+        },
+        {
+          "readme": "The image is drawn on the page it is set on, under the controls"
+        }
+      ],
+      "gone": [
+        "the same on every artboard",
+        "The image is drawn on every page"
+      ],
+      "evidence": "Project.pages() backgrounds of seeds/Turbulence 1035.gdl, 725, 1525 and 720."
+    },
+    {
+      "id": "turbulence-23",
+      "claim": "themes.corridor: 'the seed's own, behind every device page'.",
+      "where": [
+        "themes.0.usage"
+      ],
+      "template": {
+        "does": "That is true on the 1035 and 725. The 1525 and 720 templates draw bkgd_lighting.png (themes.office) behind Main SD.",
+        "seed": "seeds/Turbulence 1525.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "themes.0.usage",
+          "says": "the 1525's and 720's Main SD draw `office` instead"
+        },
+        {
+          "key": "themes.2.usage",
+          "says": "behind Main SD on the 1525 and the 720"
+        }
+      ],
+      "gone": [
+        "the seed's own, behind every device page"
+      ],
+      "evidence": "seeds/Turbulence 1525.gdl's and 720.gdl's Main SD backgrounds: bkgd_lighting.png; the other device pages bkgd_pc.png."
+    },
+    {
+      "id": "turbulence-24",
+      "claim": "README Visual foundations, Shapes: the panel cannot draw ... transparency effects.",
+      "where": [
+        "README Visual foundations"
+      ],
+      "template": {
+        "does": "The template uses transparencyField throughout: side rails 85, settings windows 17 (6 of 8), Room Mode's card 47, every modal's scrim 35, the keyboard key states 30, the Camera Control picture 45; on the 525 the header 55, side bar 57 and cards 50.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Room Mode VC",
+          "VTC Keyboard",
+          "Camera Control",
+          "Camera Select"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "a fill's transparency is its alpha (a token's `#RRGGBBAA`)"
+        }
+      ],
+      "gone": [
+        "a gradient, a shadow or transparency effects"
+      ],
+      "evidence": "Counted over every shape and image of seeds/Turbulence 1035.gdl: 10 side bars at 85, 6 windows at 17, Room selection shape at 47, the 13 modal popups' backgrounds at 35, Camera Image at 45."
+    },
+    {
+      "id": "turbulence-25",
+      "claim": "README Size and spacing: at least 12 px between touchable controls, and place things on GUI Designer's 10 px nudge.",
+      "where": [
+        "README Visual foundations"
+      ],
+      "template": {
+        "does": "The template packs controls 0 to 8 px apart - the call tiles 0, docks 2, Help and Room Mode 2, rings 8 (touching on the 725 and 720; on the 525 Display Control, More and Power Down overlap by 3 to 5 px) - and places them off the 10 px grid: tabs at 141, 282, 423, 563, 705 and 846; rings at x 19 and y 186, 294 and 402; Power Down at 1035; Mute at 1159; the slider at 1183.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The 2 mm gap the toolkit checks between touch targets and Extron's documented nine-button and spacing standards (docs/design-rules.md section 2), which a designer's own controls keep; the template's own sets are the owner's exception (2026-10-22), kept as one set at the step the frame measures by the region components. The README now says the template does not always keep them.",
+      "here": "Your own controls keep 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards. The template's own sets stand as it draws them, 0 to 8 px apart, and the region components draw them so.",
+      "fix": [
+        {
+          "readme": "Extron's Design Standards, which its own templates do not always keep"
+        },
+        {
+          "readme": "the region components keep a set the template stands together (a Header tab row, a Section) as one set, at the step the frame measures"
+        }
+      ],
+      "gone": [
+        "a set the template stands 1 px apart"
+      ],
+      "evidence": "Main SD's tabs, rings, docks and Help; Main VC's call tiles at y 173, 262 and 351."
+    },
+    {
+      "id": "turbulence-26",
+      "claim": "README Color: Extron caps a project at six colors, captions included.",
+      "where": [
+        "README Visual foundations",
+        "_source"
+      ],
+      "template": {
+        "does": "The seed's captions alone use White, LimeGreen #32CD32, Lime #00FF00, Red #FF0000 (Privacy lit) and Black (the search rows); its fills add #021E38, #184E80, #DCDCDC and black at several transparencies.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC",
+          "Room Mode VC",
+          "VTC Search Result"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "The tokens here are the template's own palette and do not count against the six"
+        },
+        {
+          "key": "colors.lime.value",
+          "says": "#00FF00"
+        },
+        {
+          "key": "colors.alert.value",
+          "says": "#FF0000"
+        },
+        {
+          "key": "colors.veil.value",
+          "says": "#00000087"
+        }
+      ],
+      "gone": [
+        "is left out to keep six colors"
+      ],
+      "builds": "New tokens lime, alert and veil change nothing that built before; every token is exempt from the six-color cap.",
+      "evidence": "Lit captions counted over every button state: #32CD32 86, #00FF00 33, #FF0000 2; shapes #021E38 19, #184E80 8, #000000 at 47 once."
+    },
+    {
+      "id": "turbulence-27",
+      "claim": "iconography.rules: a caption is `text` at rest and `accent` lit, never another color.",
+      "where": [
+        "iconography.rules.3"
+      ],
+      "template": {
+        "does": "Privacy's lit caption is #FF0000 on red-edged art, and the docks', Help's and the Initiate Call and End Call tiles' lit captions are Lime #00FF00, not the LimeGreen #32CD32 of the tabs, keys, rings and wide bars.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "iconography.rules.3",
+          "says": "`lime` on a dock, Help and the Initiate Call and End Call tiles, and `alert` on Privacy"
+        },
+        {
+          "key": "buttons.dock.states.1.color",
+          "says": "lime"
+        },
+        {
+          "key": "buttons.call.states.1.color",
+          "says": "lime"
+        },
+        {
+          "key": "regions.help.states.1.color",
+          "says": "lime"
+        }
+      ],
+      "gone": [
+        "never another color"
+      ],
+      "builds": "A dock's, a call tile's and the Footer Help's lit caption is #00FF00 where it was #32CD32 (a new token, lime); Privacy's stays `accent` unless its On state sets `alert`.",
+      "evidence": "Main VC's VC Privacy (5217) On #FF0000, Initiate Call (5014) and End Call (5215) On #00FF00; Main SD's Screen Control, Audio Control, Room Mode, Lighting Control and Help On #00FF00; the tabs On #32CD32."
+    },
+    {
+      "id": "turbulence-28",
+      "claim": "The type scale tags `body` 16 for 'status and messages'; the README says 'Type is Open Sans'.",
+      "where": [
+        "type.body.usage",
+        "README Visual foundations"
+      ],
+      "template": {
+        "does": "The window messages are 20 pt (the power-down question, Incoming Call's question, the waits); Room Mode's question is 28, Select a Source 34 and the VTC popups' titles 30; Offline's two lines are 22 in Open Sans regular. Every 1035 label and caption is Open Sans Light.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Confirmation",
+          "Incoming Call Label",
+          "Powering Down",
+          "Room Mode VC",
+          "Main Select Source",
+          "VTC Dialer",
+          "Offline Page"
+        ]
+      },
+      "status": "deviation",
+      "reason": "No profile offers Open Sans Light (docs/claude-design.md section 2, Type): the canvas loads Open Sans at 400 and the panel is authored in Open Sans, so a Light label draws regular. The README now says so; the type scale says which size each message is.",
+      "here": "Every label draws in Open Sans: the template's are Open Sans Light, which no design system here offers, so a label reads a little heavier than Extron's.",
+      "fix": [
+        {
+          "key": "type.body.usage",
+          "says": "Labels and the clock"
+        },
+        {
+          "key": "type.heading.usage",
+          "says": "and a window's message"
+        },
+        {
+          "key": "type.title.usage",
+          "says": "Room Mode's question is 28, Select a Source 34 and the VTC popups' titles 30"
+        },
+        {
+          "key": "font.note",
+          "says": "Open Sans Light"
+        },
+        {
+          "readme": "Its own labels and captions are Open Sans Light, a little lighter than the Open Sans this canvas draws"
+        }
+      ],
+      "gone": [
+        "Labels, status and messages, and the clock"
+      ],
+      "evidence": "Confirmation's Power Down Confirmation (4056), Incoming Call (4060), Powering Down Label (4067) at 20 pt; Room Mode Label (7036) 28; Select Source Label (6072) 34; VTC Dialer Label (4018) 30; Offline Page's two Labels 22."
+    },
+    {
+      "id": "turbulence-29",
+      "claim": "colors.page and colors.raised: a modal's card is `page`, a modal window `raised`.",
+      "where": [
+        "colors.page.usage",
+        "colors.raised.usage"
+      ],
+      "template": {
+        "does": "Room Mode VC's card is #000000 at transparency 47, not #021E38; Offline Page's 648x400 card is opaque #184E80, `raised` as a card, not a 1120x684 window; Lighting Control's window is opaque too.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Room Mode VC",
+          "Offline Page",
+          "Lighting Control"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "colors.raised.usage",
+          "says": "Offline's 648x400 card is this color too, opaque"
+        },
+        {
+          "key": "colors.veil.usage",
+          "says": "Room Mode's card, 648x400"
+        },
+        {
+          "key": "colors.page.usage",
+          "says": "Incoming Call and the waits 648x400"
+        }
+      ],
+      "gone": [
+        "A modal window, 1120x684 at 80,56: #184E80 at alpha 212, with `page` cards inside it.",
+        "A modal's card - Help, the confirmation, the cards inside a modal window"
+      ],
+      "evidence": "Room selection shape (#000000, transparency 47); Offline Window (312,200 648x400, #184E80, no transparency); Lighting Control's Modal Window (#184E80, no transparency)."
+    },
+    {
+      "id": "turbulence-30",
+      "claim": "layout.hub_header and the README Hubs bullet size a hub header for six source tabs.",
+      "where": [
+        "layout.hub_header",
+        "README Every panel the room has"
+      ],
+      "template": {
+        "does": "The 520 and 525 template's header is a 72 px title strip: a Shape [0,0,700,72] in black at transparency 55, 'Select a Source' at 30 pt and Help 60x60 at [636,5]. Its sources are 212x155 scene tiles three to a row in the body; there are no source tabs.",
+        "seed": "seeds/Turbulence 525.gdl",
+        "pages": [
+          "Main Page"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The table's room for a Page that draws its own header, not a region page: it assumes the Layout's own source tabs, since a designer drawing the 1035's page puts them there, and a hub carves that header from main at the depth they need (layout.hub_header, measured by tests/test_design.py). The template's hub header, the title strip over Select a Source's tiles, is what a region page draws.",
+      "here": "*Every panel the room has* sizes a hub's header for a Page that draws its own source tabs; a region page draws the template's own title strip over Select a Source's tiles instead.",
+      "fix": [
+        {
+          "key": "layout.hub_header._source",
+          "says": "the template's hub header is a 72 px title strip"
+        }
+      ],
+      "frame": [
+        {
+          "series": "Turbulence 520 Series",
+          "key": "select"
+        }
+      ],
+      "evidence": "seeds/Turbulence 525.gdl's Main Header (Shape 0,0 700x72), Select Source Label (6072), Help (9103) and Main Laptop...Main Apple TV (8064-8070) at 212x155."
+    },
+    {
+      "id": "turbulence-31",
+      "claim": "The Page doc's 320 overflow: rows go on over pages of their own - Home 2, Home 3 - with Previous and Next at the foot.",
+      "where": [
+        "Page README"
+      ],
+      "template": {
+        "does": "The 320 splits a device across pages - 'DVD 1' and 'DVD 2', 'Doc Cam 1' and 'Doc Cam 2' - flipped by a kit More (440x440_more) or Back (440x440_back) 65x65 key at the bottom right, [219,169] and [237,171]. It has no Previous or Next.",
+        "seed": "seeds/Turbulence 320.gdl",
+        "pages": [
+          "DVD 1",
+          "DVD 2",
+          "Doc Cam 1",
+          "Doc Cam 2"
+        ]
+      },
+      "status": "frame",
+      "fix": [
+        {
+          "readme": "That reflow is the toolkit's: Extron's own small pages go on by More at the foot and come back by Back"
+        }
+      ],
+      "frame": [
+        {
+          "series": "Turbulence 320 Series",
+          "key": "center.items"
+        },
+        {
+          "series": "Turbulence 320 Series",
+          "key": "second.center.items"
+        }
+      ],
+      "evidence": "seeds/Turbulence 320.gdl's DVD More (8012) and DVD Back (8013) at 219,169; Doc Cam More (8010) at 237,171 and Doc Cam Back (8011)."
+    },
+    {
+      "id": "turbulence-32",
+      "claim": "The Slider doc: a rounded rail `track` px wide with its filled part in `text`.",
+      "where": [
+        "Slider README"
+      ],
+      "template": {
+        "does": "The rail is the kit's segmented 52x535 ladder - 52x535_turb_slider_bg.png (dark segments) under 52x535_turb_slider_fill.png (white segments) - with the square 102x102_thumb_turb_sq.png thumb at 52x52: no rounded rail and no color fill.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "its kit's rail art - `52x535_turb_slider_bg.png` for the empty rail"
+        },
+        {
+          "key": "defaults.slider.track_image",
+          "says": "52x535_turb_slider_bg.png"
+        }
+      ],
+      "gone": [
+        "a rounded rail `track` px wide (default 44)"
+      ],
+      "builds": "None: the canvas and the build already drew the kit's rail art; the README said otherwise. Mach's and Shockwave's Slider READMEs, whose rails are art too, now say it the same way.",
+      "evidence": "Main SD's Window 1 Volume Slider (8024): sliderTrackWidth 44, thumb 52x52, track and fill images from the kit."
+    },
+    {
+      "id": "turbulence-33",
+      "claim": "panels._source: the rail is the right bar's band between the header and footer.",
+      "where": [
+        "panels._source"
+      ],
+      "template": {
+        "does": "The right bar [1138,130,140,666] starts 3 px into the header band and runs to y 796 beside the footer (which stops at x 1137), with Audio Control at y 690 in it.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "panels._source.1",
+          "says": "starts 3 px into the header band and runs to y 796 beside the footer"
+        }
+      ],
+      "evidence": "Main SD's Right side bar (1138,130 140x666), Bottom bar (140,688 997x110) and Audio Control (8020) at 1138,690."
+    },
+    {
+      "id": "turbulence-34",
+      "claim": "The README's Differences said 'Everything else follows the template', while the Center says a source popup leaves room at its top left for the device picture Extron pins there.",
+      "where": [
+        "README Differences",
+        "README The center"
+      ],
+      "template": {
+        "does": "Each source popup pins a picture of its device at its top left, under the title: the Laptop popup's Laptop Image at 0,0 293x257, the Doc Cam popup's Doc Cam Image at 0,0 326x288.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Laptop",
+          "Doc Cam"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {"series": "Turbulence 1220 Series", "key": "center.surfaces"}
+      ],
+      "fix": [
+        {
+          "readme": "over the device picture Extron pins at its top left, fitted - the source's `device`"
+        }
+      ],
+      "gone": [
+        "which the system cannot draw yet"
+      ],
+      "builds": "A source's popup builds its device picture, `<name> Image` drawing 1152x1152_<device>.png fitted behind its words, by the Page's `device`, else its name or title, else the seed's own pairings (regions.source.devices), where it built none and left that corner clear.",
+      "evidence": "seeds/Turbulence 1035.gdl's Laptop popup: Laptop Image (PBImage) 0,0 293x257 under Laptop Label 110,40 770x96; Doc Cam: Doc Cam Image 0,0 326x288."
+    },
+    {
+      "id": "turbulence-35",
+      "claim": "regions._center: a source's device picture is pinned at the popup's top left, fitted (every source popup's `<name> Image`) - one place, the measured Laptop Image's, where the Center drew every device.",
+      "where": [
+        "regions._center"
+      ],
+      "template": {
+        "does": "Each device's picture is a size of its own, at the popup's 0,0: Laptop, PC, Aux and AppleTV 293x257, Doc Cam 326x288, BluRay 352x310, Camera Control 200x209, Tuner 526x329 (the 725's, 1525's and 720's in proportion). The 525 stands each under its title at its own rect: Laptop 196,45 310x241, PC 219,38 264x260, Doc Cam 212,57 278x252, Aux 218,58 265x202.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Laptop",
+          "PC",
+          "Aux",
+          "AppleTV",
+          "Doc Cam",
+          "BluRay",
+          "Camera Control",
+          "Tuner"
+        ]
+      },
+      "status": "frame",
+      "fix": [
+        {
+          "key": "regions._center",
+          "says": "each device at a size of its own"
+        }
+      ],
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "center.pictures.doc-cam"
+        },
+        {
+          "series": "Turbulence 520 Series",
+          "key": "center.pictures.pc"
+        }
+      ],
+      "gone": [
+        "a PBImage), which the Center draws by the source's `device`"
+      ],
+      "builds": "A source's `<name> Image` is put where the panel's seed draws its device: the 1035's Doc Cam 326x288, not the Laptop's 293x257, and the 525's PC at 219,38 264x260, not 241 px square in the Laptop's 310x241.",
+      "evidence": "Each source popup's `<name> Image` (PBImage, 1152x1152_<device>.png) in seeds/Turbulence 1035.gdl, 725, 1525, 720 and 525; the 525's Display Control, Dual Display Select, Audio Control and Lighting Control picture a monitor, a speaker and a lightbulb for no source (tests/measure_series.py _pictures)."
+    }
+  ]
+}

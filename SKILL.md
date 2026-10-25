@@ -36,6 +36,11 @@ on applies to each, with one difference: the panels share one ID map, so they
 are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
 `-IdMap`. `docs/claude-design.md`.
 
+Before a canvas is built, run its **critique loop** - translate, `python -m
+gdl.design compare <canvas dir> --template <out dir>`, fix on the canvas, and
+again until nothing differs that the README's *Differences* does not list
+(`docs/claude-design.md` §1, step 3).
+
 ### A. Generate a panel from a description
 
 1. **Pick the panel model first**, and put it in the spec as `"model"`.
@@ -99,8 +104,12 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
    it defaults to the second, and naming the first - the state the button rests
    in - is a problem, since holding it would show nothing. Two states that look
    identical are a problem, whether `states` or `on` made them, as is a mirror
-   (a shared `id`) with different states. In a state, `none` turns its fill or
-   outline off; leaving the key out keeps the button's own.
+   (a shared `id`) with different states. A mirror inside the touch target
+   whose `id` it shares - Shockwave 1035's tab name, a caption-only button
+   under the tab's glyph - is pressed as that target and shows its states, so
+   its own touch size, gaps and alike states are not held against it, nor its
+   shared `id` on the page. In a state, `none` turns its fill or outline off;
+   leaving the key out keeps the button's own.
 
    **Say where the panel boots.** `"start_page": "<page name>"` - the first page
    when omitted - is written into the project, because otherwise the built panel
@@ -111,7 +120,17 @@ are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
    aspect, over the page's `background`; `"background_layout": "stretch"` stretches
    it instead, as Mach's pages lay out their photo. One the donor lacks needs `"images": {"<name>": "<path>"}`,
    the path relative to the theme resource kits (`vendor/extron/Resources`, or
-   the install), and the applier appends it. A button's icon is an `image` the
+   the install), and the applier appends it. A standard popup takes a
+   `background_image` and `background_layout` too - Shockwave's and
+   Turbulence's hubs draw their popups on the page's photo, stretched; a
+   modal takes none, since Build draws it under its scrim. Art that is
+   neither a page's nor a button's is an `image` control:
+   `{"kind": "image", "name": "Top bar", "rect": [0, 0, 1280, 133], "image":
+   "2047x151_header.png", "layout": "stretch"}` - `layout` `fill` (the
+   default: fitted, keeping the aspect) or `stretch`, an optional `fill`
+   under it (none is written clear, and no border), and no states; one with neither `image` nor `fill` draws
+   nothing and is a problem. Only a donor with a `PBImage` can clone one
+   (`docs/gdl-format.md` §7 says which seeds have one). A button's icon is an `image` the
    same way, on the button or on each state (*Icons* below). A `datetime` control's `format` is
    `time` (the default), `date`, `datetime` or any .NET date pattern
    (`"MMMM d, yyyy"`). Both are written explicitly, because a clone keeps the

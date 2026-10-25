@@ -336,15 +336,20 @@ class IdMap:
         controls = []
         for uid, recs in self.addressed().items():
             r = recs[0]
+            # A copy a layout derived where another holds the ID (Shockwave's
+            # tab twin, the caption under the 1035's tab) is the control's
+            # mirror: one of its places, marked, and the row is the control's.
+            own = any(not x['derived'] for x in recs)
             row = {
                 'id': uid, 'type': CLASS_OF[r['kind']],
-                'at': [{'container': x['container'], 'name': x['name'], 'caption': x['text']}
+                'at': [dict({'container': x['container'], 'name': x['name'], 'caption': x['text']},
+                            **({'mirror': True} if own and x['derived'] else {}))
                        for x in recs],
                 'nav': {'kind': r['nav'][0], 'target': r['nav'][1]} if r['nav'] else None,
                 'does': r['does'],
                 'function': self.function(r),
             }
-            if any(x['derived'] for x in recs):
+            if not own:
                 row['derived'] = True
             if r['kind'] == 'button':
                 # Index = position = the number the program sets. `press` is
@@ -678,10 +683,15 @@ def check_panels(maps):
         for uid, recs in maps[m].addressed().items():
             seen.setdefault(uid, {})[m] = recs
     for uid, by in seen.items():
-        derived = any(r['derived'] for recs in by.values() for r in recs)
-        ref = next(iter(by.values()))[0]
+        # What a layout added is on the panels that added it - but a mirror it
+        # drew of a canvas control (docs/idmap.md Mirrors) does not make the
+        # control one: the control is held to every panel, and is the ID's
+        # name on each.
+        derived = all(r['derived'] for recs in by.values() for r in recs)
+        first = {m: next((r for r in recs if not r['derived']), recs[0]) for m, recs in by.items()}
+        ref = next(iter(first.values()))
         for m, recs in by.items():
-            r = recs[0]
+            r = first[m]
             # A slider is a level on a panel whose seed cannot clone a slider
             # (its series' `kinds` in the profile say which): one control to the
             # program, which sets its level the same way on both.
@@ -754,7 +764,8 @@ def _type(c):
 
 def _where(c, model):
     at = c['panels'].get(model)
-    return '; '.join(a['container'] for a in at) if at else '-'
+    return '; '.join(a['container'] + (f" (mirror: {a['name']})" if a.get('mirror') else '')
+                     for a in at) if at else '-'
 
 
 def _panels_csv(d, models):

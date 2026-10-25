@@ -471,6 +471,50 @@ class TestPanels(unittest.TestCase):
         row = next(c for c in combine(maps)['controls'] if c['id'] == 1010)
         self.assertEqual(row['types'], {'TLP1035T': 'Slider', 'TLP525T': 'Level'})
 
+    def mirrored(self, on_725=True):
+        """Shockwave's tab and the caption mirror the 1035's layout draws
+        under its glyph with its ID (its frame's `twin`); the 725 draws the
+        tab alone."""
+        from gdl.idmap import IdMap as M
+
+        def tab(**kw):
+            c = btn('PC', id=1001, nav='Home', does='Routes the PC.',
+                    states=[{'name': 'Off'}, {'name': 'On', 'fill': '#FFFFFF'}], **kw)
+            del c['on']
+            return c
+        twin = btn('PC Caption', rect=[0, 755, 100, 25], id=1001, nav='Home', does='Routes the PC.',
+                   derived=True, states=[{'name': 'Off', 'fill': 'none'}, {'name': 'On', 'fill': 'none'}])
+        del twin['on']
+        helpb = btn('Help', rect=[200, 500, 100, 80], id=1002, does='Helps.')
+        big = panel_spec('TLP1035T', [1280, 800], [page('Home', tab(), twin, helpb)])
+        small = panel_spec('TLP725T', [1024, 600], [page('Home', *([tab(rect=[0, 500, 100, 80])] if on_725 else []),
+                                                         helpb)])
+        return {'TLP1035T': M(Panel(big)), 'TLP725T': M(Panel(small))}
+
+    def test_a_mirror_is_listed_with_its_control(self):
+        """One row, the control's: not derived, where the 725 has only the
+        tab; the mirror one of its places on the 1035, marked a mirror."""
+        from gdl.idmap import check_panels, combine, write_panels
+        maps = self.mirrored()
+        self.assertEqual(check_panels(maps), [])
+        row = next(c for c in combine(maps)['controls'] if c['id'] == 1001)
+        self.assertNotIn('derived', row)
+        self.assertEqual([(a['name'], a.get('mirror', False)) for a in row['panels']['TLP1035T']],
+                         [('PC', False), ('PC Caption', True)])
+        self.assertEqual([a['name'] for a in row['panels']['TLP725T']], ['PC'])
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        write_panels(maps, d)
+        with open(os.path.join(d, 'idmap.md'), encoding='utf-8') as fh:
+            self.assertIn('Home (mirror: PC Caption)', fh.read())
+
+    def test_a_control_with_a_mirror_is_still_on_every_panel(self):
+        """A mirror the layout derived does not make its control one: the tab
+        missing on the 725 is still named."""
+        from gdl.idmap import check_panels
+        probs = check_panels(self.mirrored(on_725=False))
+        self.assertTrue(any('1001' in p and 'TLP725T' in p for p in probs), probs)
+
     def test_the_maps_agree_and_check_clean(self):
         from gdl.idmap import check_panels
         self.assertEqual(check_panels(self.maps()), [])

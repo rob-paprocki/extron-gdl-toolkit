@@ -1,13 +1,13 @@
 {
   "_source": [
     "Surveyed off seeds/Shockwave 1035.gdl (every page's controls and per-state looks via gdl.project.Project), cross-checked against seeds/Shockwave 1535.gdl and seeds/Shockwave ECP 16-10.gdl, which share its palette byte for byte. The template's own defaults (`python -m gdl.themes \"Shockwave 1020 Series.glt\"`: fills #3B2F2A, #999999, #FFFFFF; borders 2D Rounded Rectangle, 2D Rectangle, 2D Capsule) corroborate it.",
-    "Shockwave draws its buttons as kit images, not fills: every seed button state names an image and none authors a fill, except the header's source tabs, whose glyphs sit on #3B2F2A and light to white at alpha 60 when On. A button's color is which image family it names - gray, red, yellow, green, blue - and each family rests dark with a ring in its color (`<color>_outline_nsel`) and lights up when selected (`<color>_sel`); kit.outline_off reads the kit so. The seed's pressed captions: black on gray, #75063C on red, #946E06 on yellow, #355424 on green.",
-    "Colors: page #3B2F2A is the header and footer bars and a source tab at rest; raised #999999 is every modal's card (Help, Confirmation, Camera Select, Incoming Call...); text-secondary #474747 is the text on it; ink #000000 is a lit button's caption; well is the video well, white at 15% over the photo - the seed authors it opaque white at transparencyField 85 (docs/gdl-format.md section 7), which the spec says as the fill's alpha. The clock takes raised's gray, as the seed's footer draws it. `alert` is the seed's pressed caption on red (Power, Mute), and yellow's and green's are left out: with them the palette is eight colors against Extron's six (docs/design-rules.md section 2), and ink reads on every lit image.",
-    "Layout, from Main SD: a #3B2F2A header 1280x91 holding the source tabs (152x91 each from x 169); the video well 926x574 at 168,120 (Shape1, 2D Rounded Rectangle, white at 85% transparency, where the chosen source's popup shows); the left rail at x 29 (Display On/Off/Mute 120x80, Screen/Lighting Control 120x110) and the right at x 1127-1163 (Volume slider 52x315, Mute 80x80, Audio Control 120x110), each under a white 18 pt label; and a #3B2F2A 2D Capsule footer 928x62 at 166,718 holding Room Mode, the date and time and Help, with Power outside it at 1115,720.",
-    "Modals: no seed popup carries a scrim, so `scrim` is page at alpha 166, the modal dim the toolkit draws for every template. Help's card is 703x453 at 288,173, its title 40 pt and its Close a dark X (icons/440x440 Black/black_close.png, named in kit.named) that turns white (white_close.png) inside a 3D Rounded Rectangle Selected ring when pressed.",
+    "Buttons: seeds/Shockwave 1035.gdl's Main SD, Main VC, Start, Help, Confirmation, Incoming Call and VTC Dialer, every PBButton state read with gdl.project.Project. Shockwave draws its buttons as kit images, not fills, and the seed's art is the kit's pixel for pixel - its `1248x440_r_gray_nsel.png` is the kit's `gray_round_nsel`, Help's rest art `960x440_yellow_sel.png` the kit's `yellow_outline_nsel`, its tabs' `744x456_pc_nsel.png` the kit's `pc_white` - except its presets, Share Content and Stop Sharing, dot and NBC images. None authors a fill but the header's source tabs, whose glyphs sit on #3B2F2A and light to white at alpha 60 when On. A button's color is which image family it names - gray, red, yellow, green, blue - and each family rests dark with a ring in its color (`<color>_outline_nsel`) and lights up when selected (`<color>_sel`); kit.outline_off reads the kit so. A lit caption is the family's dark: #946E06 on yellow (Help, Privacy, Start), #75063C on red (Off, Mute, End Call, Cancel, Ignore Call, Stop) and #355424 on green (Call, the confirmation's Power Down, Accept Call). Gray lights #000000 on a working page, in the footer and in a modal's keys, and #474747 in a source popup, on Room Mode VC and on the 320's pages. Blue is used once, by VTC Dialer's Flash; Share Content is the template's own image, teal and lighting pink.",
+    "Colors: seeds/Shockwave 1035.gdl's Main SD, Help, Confirmation and Offline Page. page #3B2F2A is the header and footer bars and a source tab at rest; raised #999999 is a modal's card (Help, Confirmation, Camera Select, Incoming Call... - every one but the 1035's Offline Page, white at alpha 191); text-secondary #474747 is the text on it; ink #000000 is a lit gray button's caption; well is the video well, white at 15% over the photo - the seed authors it opaque white at transparencyField 85 (docs/gdl-format.md section 7), which the spec says as the fill's alpha. `clock` #C0C0C0 is the footer's date and time on the 1035's Main SD (the 725's draws #D3D3D3 and the 720's #F5F5F5). `alert`, `caution` and `go` are the lit captions of red, yellow and green. Every token is the template's own palette, which the six-colour cap exempts (docs/superpowers/specs/2026-10-22-region-frame-design.md, the owner's calls).",
+    "Layout: seeds/Shockwave 1035.gdl's Main SD, Main VC, Main SD Screen Arrows, Room Mode VC and Start, and each series' own seed for its `panels` frame (tests/measure_series.py frame_of), from which the README's Layout is written. `main` is the video well, 926x574 at 168,120 (Shape1, 2D Rounded Rectangle, white at 85% transparency), where the chosen source's popup shows; Main SD stands a #3B2F2A header and a 2D Capsule footer as controls over the photograph. The left rail is the room mode's column: Main SD heads it Display, Main VC heads it VTC (Call, End Call and Privacy as 120x60 pills at 29,170, 29,240 and 29,310, then the Display, Screen and Lighting Control tiles at 29,469, 29,573 and 29,678, the last reaching y 788, below the footer's top), and Main SD Screen Arrows adds a second heading, Screen, at 29,434 over Up and Down 120x80 where Main SD stands its two tiles. Tiles stand 104 apart, so their boxes overlap by 6. Start has no bars or well - the Saturn photo with Lighting Presets at the left, Main Volume at the right, a 72 pt clock and a Start pill - and Room Mode VC is a #999999 card, 759x492 at 260,154, on 1024x600_bkgd.png with no bars.",
+    "Modals: seeds/Shockwave 1035.gdl's Help, Confirmation, Camera Select, Incoming Call, Starting Up, Powering Down and Offline Page. Every modal is authored #000000 at transparencyField 35 - black at alpha 166, the dim Build draws under every modal whatever its fill - over a #999999 card (the Offline Page's is white at alpha 191). Help's card is 703x453 at 288,173, its title 40 pt and its Close 50x50, 7 px in from the card's corner: a dark X (icons/440x440 Black/black_close.png, the seed's SW_close.png_1, named in kit.named) that turns white (white_close.png) inside a 3D Rounded Rectangle Selected ring when pressed. The Confirmation, Incoming Call, Starting Up, Powering Down and Offline Page have no Close: their answers or the program dismiss them. A hub's Close is the white X at rest and the dark one pressed.",
     "Slider: every seed slider is image-drawn - track 52 wide, thumb 52x34, Slider/156x1026_sw_track_bg.png under 156x1026_sw_fill.png and 156x102_sw_thumb.png - with no fill or thumb color at all. The seed has no level; `level` is assumed.",
-    "Type is Open Sans regular throughout (no seed label or button authors bold) at 1.375 px per point (docs/gdl-format.md section 2). The seed's 12 pt button captions are lifted to the 14 pt floor gdl.spec checks. The Start page's Roboto light-preset captions are left out: the system carries one family.",
-    "Backgrounds: the seed stretches SW_bkgd_01.png (1366x768) over every work page (backgroundImageLayoutField 1); the kit's own 1280x800 copy of it is `haze`, and its Saturn photo, the Start page's, is `saturn`."
+    "Type: seeds/Shockwave 1035.gdl's labels and button states on every page, every font read. Open Sans regular at 1.375 px per point (docs/gdl-format.md section 2), except Display Control's Display 1 and Display 2 Mute, whose On state is Open Sans 14 bold. The sizes in use are 12 (the captions, lifted here to the 14 pt floor gdl.spec checks), 13 (Window), 14 (the footer's date and time), 16, 18, 20 (Help's message and Start's labels), 22 and 24 (empty states), 26, 28, 30 (Room Mode VC's prompt), 36 and 40 (titles), with Extron-Shockwave glyphs at 18 to 24, Roboto digits, and Start's 72 pt clock and light-preset captions, which the system's one family leaves out.",
+    "Backgrounds: the seed stretches SW_bkgd_01.png (1366x768) over every work page (backgroundImageLayoutField 1); the kit's own 1280x800 copy of it is `haze`, and its Saturn photo, the Start page's, is `saturn`. Room Mode VC stands on 1024x600_bkgd.png, haze at another size."
   ],
   "template": "Shockwave",
   "namespace": "ExtronShockwave",
@@ -32,24 +32,27 @@
   "colors": [
     {"name": "page", "value": "#3B2F2A", "usage": "The header and footer bars, and a source tab at rest. Behind them, the theme's photo."},
     {"name": "pressed", "value": "#FFFFFF3C", "usage": "A source tab when On: white at alpha 60 over its glyph."},
-    {"name": "raised", "value": "#999999", "usage": "A modal's card. Also the clock's color on the footer."},
+    {"name": "raised", "value": "#999999", "usage": "A modal's card: Help's, the confirmation's, Camera Select's and the rest - every one but the 1035's Offline Page, which is white at alpha 191."},
     {"name": "text", "value": "#FFFFFF", "usage": "Captions on a button at rest, labels on the photo or a bar."},
     {"name": "text-secondary", "value": "#474747", "usage": "Text on a modal's card: its title and message."},
-    {"name": "ink", "value": "#000000", "usage": "A lit button's caption - the kit's selected images are light."},
+    {"name": "ink", "value": "#000000", "usage": "A lit gray button's caption on a working page, in the footer and in a modal's keys - the kit's selected images are light. A key in a source popup lights with `text-secondary`; a yellow, red or green button, with `caution`, `alert` or `go`."},
     {"name": "well", "value": "#FFFFFF26", "usage": "The video well, where the chosen source's page shows: white at 15% over the photo."},
-    {"name": "alert", "value": "#75063C", "usage": "A red button's caption when lit: Power and Mute, as the seed draws them."},
-    {"name": "scrim", "value": "#3B2F2AA6", "usage": "Behind a modal's card: page at alpha 166."},
+    {"name": "alert", "value": "#75063C", "usage": "A red button's caption when lit: Off, Mute, End Call, Cancel and Ignore Call, as the seed draws them."},
+    {"name": "caution", "value": "#946E06", "usage": "A yellow button's caption when lit: Help, Privacy and Start. Not one of the panel's core six."},
+    {"name": "go", "value": "#355424", "usage": "A green button's caption when lit: Call, the confirmation's Power Down and Accept Call. Not one of the panel's core six."},
+    {"name": "clock", "value": "#C0C0C0", "usage": "The footer's date and time: #C0C0C0, as Main SD's Date/Time draws it (the 725's is #D3D3D3, the 720's #F5F5F5). Not one of the panel's core six."},
+    {"name": "scrim", "value": "#000000A6", "usage": "Behind a modal's card: black at alpha 166 - every modal is authored #000000 at transparency 35, and Build draws it so."},
     {"name": "header", "value": "#00000073", "usage": "A hub's header strip across the top of main (the 525's and 535's Select a Source, and each popup over it): black at alpha 115. Its menu bar draws near it, and the region page draws it in this."}
   ],
   "type": [
-    {"name": "title", "pt": 40, "weight": 400, "usage": "A modal's title (HELP) - the seed's largest label."},
+    {"name": "title", "pt": 40, "weight": 400, "usage": "A window's title (HELP, Camera Select) and a source popup's: Open Sans 40, the largest label on a working page. Start's clock is larger still, in Roboto 72."},
     {"name": "heading", "pt": 26, "weight": 400, "usage": "A modal's message: the power-down question, an incoming call."},
     {"name": "body-strong", "pt": 18, "weight": 400, "usage": "A rail's label over its controls (Display, Volume), and a large button's caption."},
-    {"name": "body", "pt": 16, "weight": 400, "usage": "Status text and a call button's caption; the clock."},
-    {"name": "button", "pt": 14, "weight": 400, "usage": "A button's caption - the seed's 12 pt lifted to the 14 pt floor - and a source tab's name."}
+    {"name": "body", "pt": 16, "weight": 400, "usage": "Status text (a source's Disconnected) and a call button's caption."},
+    {"name": "button", "pt": 14, "weight": 400, "usage": "A button's caption - the seed's 12 pt lifted to the 14 pt floor - a source tab's name, and the footer's date and time, Open Sans 14."}
   ],
   "borders": {
-    "rect": {"resource": "2D Rectangle", "radius": 0, "thickness": 0, "usage": "A square-cornered bar: the header. In seeds/Shockwave 1035.gdl it draws no stroke."},
+    "rect": {"resource": "2D Rectangle", "radius": 0, "thickness": 0, "usage": "A square-cornered bar with no stroke: the header's two end blocks, and a hub's header strip and side bar."},
     "rounded": {"resource": "2D Rounded Rectangle", "radius": 2, "thickness": 1, "usage": "A modal's card and the video well."},
     "capsule": {"resource": "2D Capsule", "radius": 9999, "thickness": 3, "usage": "The footer bar."},
     "rounded-3d-selected": {"resource": "3D Rounded Rectangle Selected", "radius": 10, "thickness": 1, "usage": "The ring a modal's Close gains when pressed."},
@@ -71,7 +74,7 @@
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
     "square": {
-      "usage": "A square button - the seed's volume Mute, 80x80. `icon` names its color, or a kit icon drawn in it (mic-mute-1_yellow), which takes no caption.",
+      "usage": "A square button - the seed's volume Mute, 80x80: gray at rest, lighting red. `icon` names its color, or a kit icon drawn in it (mic-mute-1_yellow), which takes no caption.",
       "kit": "440x440",
       "icon": "gray",
       "look": {"border": "none", "color": "text"},
@@ -85,7 +88,7 @@
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
     "wide": {
-      "usage": "A wide button with its caption centered - a modal's choices, 272x110. `icon` names its color; add `_round` for a pill (green_round, red_round, gray_round).",
+      "usage": "A wide button with its caption centered - a modal's choices, 272x110, and the footer's Room Mode, which the frame stands at 169x59. `icon` names its color; add `_round` for a pill (green_round, red_round, gray_round).",
       "kit": "1248x440",
       "icon": "gray_round",
       "look": {"border": "none", "color": "text"},
@@ -101,8 +104,15 @@
       "look": {"border": "none", "color": "text"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
+    "key": {
+      "usage": "A key in a source's popup or on a 320 page: the 504x440 gray tile that lights with `text-secondary`, as the template's Blu-ray, Doc Cam, Tuner, Camera Control and VTC keys do (a rail's `tile` lights with `ink`). `icon` names its color as `button`'s does.",
+      "kit": "504x440",
+      "icon": "gray",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "text-secondary"}]
+    },
     "source": {
-      "usage": "A source tab in the header: the kit's white glyph on the bar, lit white when chosen, with its name below - the seed's PC, Laptop, Blu-ray, 152x91. `icon` is a glyph: laptop_white, pc_white, sharelink_white, hdmi_white, doc-cam_white, blu-ray-2_white, apple-tv_white.",
+      "usage": "A source tab in the header: the kit's white glyph on the bar's own #3B2F2A, white at alpha 60 behind it when chosen - Main SD's PC, Laptop, Blu-ray, Doc Cam, Tuner and AUX, 152x91. The 1035's tab draws no caption of its own: its name is a second, art-less button under the glyph that shares the tab's ID (the frame's `twin`), where the 725's, 1525's and 720's tabs draw it themselves. The Header draws it so: on the panels whose template has the twin it draws the twin too, a caption under the glyph sharing the tab's ID, and the tab no caption; elsewhere the tab draws its name below the glyph. `icon` is a glyph from the kit's inputs: the template's tabs name pc, laptop, iphone (AUX), tuner, doc-cam, polycom (Codec) and blu-ray-2, the same pictures as the kit's `<glyph>_white` files; the kit offers sharelink_white, hdmi_white, apple-tv_white and more for a source the template does not tab.",
       "kit": "744x456",
       "icon": "laptop_white",
       "caption": "below",
@@ -118,7 +128,7 @@
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "fill": "pressed"}]
     },
     "close": {
-      "usage": "A modal's Close: the kit's dark X, white inside a ring when pressed. About 40x40, at the card's top right.",
+      "usage": "A window's Close: the kit's dark X (black_close), white inside a ring when pressed (white_close). 50x50, 7 px in from the card's top-right corner. A hub's Close is the other way about - the white X at rest, the dark one pressed - 60x60 on the 525 and 96x90 on the 535.",
       "icons": "close",
       "kit": "440x440",
       "icon": "close",
@@ -152,7 +162,7 @@
       "fill_image": "156x1026_sw_fill.png"
     },
     "level": {"fill": "ink", "border": "rounded", "orientation": "up", "track": 20, "value": "text"},
-    "clock": {"type": "body", "color": "raised"}
+    "clock": {"type": "button", "color": "clock"}
   },
   "cover": {
     "blocks": ["page", "raised", "alert", "text-secondary"],
@@ -161,23 +171,34 @@
   },
   "iconography": {
     "icon_prop": "Each image is the whole button, at rest and lit: state 0 draws it at rest, the others lit.",
-    "intro": "Shockwave draws every button from its kit: one image per state, which carries the button's shape, color and any icon. At rest a button is dark with a ring in its color; lit, it fills with that color and its caption turns `ink`. Name the image with a Button's `icon` - never draw a button's shape or an icon yourself.",
+    "intro": "Shockwave draws every button from its kit: one image per state, which carries the button's shape, color and any icon. At rest a button is dark with a ring in its color; lit, it fills with that color's pale tint and its caption takes that color's dark - `ink` on gray, `caution` on yellow, `alert` on red, `go` on green (a gray key in a source popup takes `text-secondary`). Name the image with a Button's `icon` - never draw a button's shape or an icon yourself.",
     "rules": [
-      "**Color is the image family**: `gray` for most buttons, `yellow` for help, `red` for power and mute, `green` to confirm or answer a call, `blue` to share. Add `_round` on a `wide` button for a pill.",
-      "**Which button**: rail buttons are `button` (120x80); a two-line name is a `tile` (120x110); a square control is `square` (80x80); the footer's Help and Power are `pill`s (143x59); a modal's choices are `wide` (272x110), or `action` with the kit's icon at the left (r_call_green, r_end-call_red). Sources are `source` tabs in the header: a white glyph (laptop_white, pc_white) on the bar, lit white when chosen. A modal closes with `close`, the kit's X.",
-      "**Feedback**: state 0 draws the image at rest, the others lit. A state can name its own `icon` to change color - a yellow Ready, a green Live."
+      "**Color is the image family**: `gray` for most buttons, `yellow` for help, privacy and start, `red` for power (Off), end and cancel - Mute rests gray and lights red - `green` to confirm or answer a call, `blue` for Flash on a call (the kit's share keys are blue too; the 1035's Share Content is its own image, teal and lighting pink). Add `_round` on a `wide` button for a pill.",
+      "**Which button**: rail buttons are `button` (120x80); a two-line name is a `tile` (120x110); a square control is `square` (80x80); the footer's Help and Power are `pill`s (143x59); a modal's choices are `wide` (272x110), or `action` with the kit's icon at the left (r_call_green, r_end-call_red); the footer's Room Mode is a `wide` gray_round; a key in a source's popup is a `key`. Sources are `source` tabs in the header: a white glyph (laptop_white, pc_white) on the bar, lit white when chosen. A modal closes with `close`, the kit's X.",
+      "**Feedback**: state 0 draws the image at rest, the others lit. A state can name its own `icon` to change color - a yellow Ready, a green Live - and its `color` for the caption that color lights with."
     ]
   },
   "examples": {
-    "source": {"attrs": "variant=\"source\" icon=\"laptop_white\"", "rect": [564, 0, 152, 91], "in_main": false}, "help": {"attrs": "variant=\"pill\" icon=\"yellow\"", "text": "Help", "rect": [956, 720, 143, 59]},
-    "states": "[{\"name\":\"No Signal\",\"look\":\"off\"},{\"name\":\"Ready\",\"look\":\"off\",\"icon\":\"yellow\"},{\"name\":\"Live\",\"look\":\"on\",\"icon\":\"green\",\"color\":\"ink\"}]",
-    "states_note": "In Shockwave a state shows itself through the kit's image: a state can name its own `icon` (color) and `look` (off rests dark with a ring, on lights up), and a lit image takes an `ink` caption.",
+    "source": {"attrs": "variant=\"source\" icon=\"laptop_white\"", "rect": [169, 0, 152, 91], "in_main": false}, "main": {"name": "Start", "attrs": "variant=\"pill\" icon=\"yellow\"", "text": "Start", "rect": [550, 407, 179, 80]}, "help": {"attrs": "variant=\"pill\" icon=\"yellow\"", "text": "Help", "rect": [956, 720, 143, 59]},
+    "start": [
+      {"component": "Label", "attrs": "name=\"Lighting Presets Label\" type=\"body-strong\"", "text": "Lighting Presets", "rect": [20, 110, 320, 80]},
+      {"component": "Group", "attrs": "title=\"Lighting Presets\" cell=\"90x80\" gap=\"20\" cap=\"1\"", "rect": [40, 200, 120, 420], "members": [
+        {"attrs": "name=\"Light Preset 1\" variant=\"key\" does=\"Recalls lighting preset 1.\"", "text": "1"},
+        {"attrs": "name=\"Light Preset 2\" variant=\"key\" does=\"Recalls lighting preset 2.\"", "text": "2"},
+        {"attrs": "name=\"Light Preset 3\" variant=\"key\" does=\"Recalls lighting preset 3.\"", "text": "3"}
+      ]},
+      {"component": "Button", "attrs": "name=\"Start\" variant=\"pill\" icon=\"yellow\" nav=\"Main SD\"", "text": "Start", "rect": [550, 410, 180, 80]}
+    ],
+    "camera": {"heading": [320, 130, 110, 60], "key": [330, 200, 90, 80], "step": 120, "box": [330, 200, 90, 240], "icons": null},
+    "states": "[{\"name\":\"No Signal\",\"look\":\"off\"},{\"name\":\"Ready\",\"look\":\"off\",\"icon\":\"yellow\"},{\"name\":\"Live\",\"look\":\"on\",\"icon\":\"green\",\"color\":\"go\"}]",
+    "states_note": "In Shockwave a state shows itself through the kit's image: a state can name its own `icon` (color) and `look` (off rests dark with a ring, on lights up), and a lit image takes its color's caption - `ink` on gray, `caution` on yellow, `alert` on red, `go` on green. A Mute lights red: its lit state is `{\"name\":\"On\",\"icon\":\"red\",\"color\":\"alert\"}`.",
     "on_off": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"ink\"}]",
-    "group_note": "Neither is Shockwave's: its source row is six 152x91 tabs across the header, butted. Set `cap`, `cell` and `gap` for the group you mean.",
-    "color_rule": "A theme's photo behind everything; `page` for the header and footer bars and the source tabs; `well` for the video well, with `text` on it; `ink` for a lit button's caption; `raised` for a modal's card with `text-secondary` on it; a button's color from its kit family - gray for most, yellow for help, red for power and mute, green to confirm or call, blue to share; `alert` only as a lit red button's caption."
+    "group_note": "Neither is Shockwave's: its source row is the Header's six 152x91 tabs, 1 px apart, which a Group keeps with `joined`. Set `cap`, `cell` and `gap` for the group you mean.",
+    "color_rule": "A theme's photo behind everything; `page` for the header and footer bars and the source tabs; `well` for the video well, with `text` on it; `ink` for a lit gray button's caption; `raised` for a modal's card with `text-secondary` on it; `clock` for the footer's date and time; a button's color from its kit family - gray for most, yellow for help, red for power, end and cancel, green to confirm or call, blue for Flash - with the caption it lights with: `alert` on red, `caution` on yellow, `go` on green."
   },
+  "themes_note": "set per page: the working pages on `haze`, the Start page on `saturn`",
   "themes": [
-    {"id": "haze", "name": "Haze", "scheme": "default", "image": "1280x800 bkgd.png", "file": "Shockwave/backgrounds/1280x800 bkgd.png", "usage": "A soft blur of warm grays - the seed's own, behind every work page."},
+    {"id": "haze", "name": "Haze", "scheme": "default", "image": "1280x800 bkgd.png", "file": "Shockwave/backgrounds/1280x800 bkgd.png", "usage": "A soft blur of warm grays - the seed's own, behind its working pages and its Room Mode VC page."},
     {"id": "saturn", "name": "Saturn", "scheme": "default", "image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png", "usage": "Saturn and its rings on black - the seed's Start page."}
   ],
   "layout": {
@@ -187,40 +208,41 @@
       "depth": {"TLC521M": 94, "TLC521M-Portrait": 94, "TLC526M": 94, "TLP520M": 94, "TLP520M-Portrait": 94,
                 "TLP525C": 94, "TLP525M": 94, "TLP525T": 94, "TLP535M": 145, "TLP535M-Portrait": 145,
                 "TLP535T": 145},
-      "_source": "How deep the header comes out on each hub holding the Layout's own source tabs - six 152x91 `source` tabs in a joined Group from x 169, with captions the length of the seed's (PC, Laptop, Blu-ray, ShareLink, HDMI, Doc Cam): a band beside main is as deep as a Group it holds (bundle.js touchIn), and the tabs grow to their captions at the hub's type floor; longer captions are deeper. Measured by the bundle in headless Chrome, and re-measured by tests/test_design.py. The README's room for a hub reads it, where it assumed a button."
+      "_source": "How deep the header comes out on each hub for a plain Page that heads itself with the Layout's own source tabs - six 152x91 `source` tabs in a joined Group from x 169, with captions the length of the seed's (PC, Laptop, Blu-ray, Doc Cam, Tuner, AUX): a band beside main is as deep as a Group it holds (bundle.js touchIn), and the tabs grow to their captions at the hub's type floor; longer captions are deeper. Measured by the bundle in headless Chrome, and re-measured by tests/test_design.py. The README's room for a hub reads it, where it assumed a button. A region page's hub header is the template's own title strip instead (the 520 and 535 frames' `top`)."
     },
     "main": [168, 120, 926, 574],
-    "main_note": "The video well: a `well` Panel with the `rounded` border, where the chosen source shows, or its name and status in white while nothing is connected.",
+    "main_note": "The video well: a `well` Panel with the `rounded` border, where the chosen source's popup shows, or its name and status in white while nothing is connected; the template puts nothing else in it. A working page's `Center` draws it, so this container is for a page that has none: a Start page, whose Start pill and clock stand in it.",
+    "main_task": "a working page's Center draws it, so put in it the main task of a page that has none - a Start page's Start button.",
+    "start": "Shockwave's panel boots to Start, its seed's DefaultPage: a splash page with no bars or well - the Saturn photo with Lighting Presets at the left, Main Volume at the right, the clock in 72 pt and a Start button between them - from which its working pages are reached. Room Mode VC, the room-mode chooser (Presentation or Video Conference), is a #999999 card on the haze photograph and has no bars either.",
     "regions": [
-      "**The header (1280x91 at 0,0) is a `page` Panel with the source tabs across it**: `source` buttons 152x91 in a `Group joined=\"true\"`, flush as the seed draws them - a joined row is one control strip, which the 12 px the toolkit checks between touchable controls does not split, and it stays a row on every panel - their names below their glyphs, the row centered on the page (the seed starts its six at x 169, over the well's left edge; fewer than that reads lopsided there).",
-      "**The left rail (x 29, 120 wide) holds the display**: a `Display` label in `body-strong`, then `button`s 120x80, 12 px apart (the seed's are 4 apart, under the 12 px the toolkit checks between two touchable controls), and `tile`s 120x110 below for anything with a two-line name (Screen Control, Lighting Control).",
-      "**The right rail (x 1127, 120 wide) holds volume**: a `Volume` label, a slider centered under it (the seed's is 52x315; make it 54 wide, since 52 is under the 53 px touch minimum the toolkit checks), a `square` Mute 80x80 below (icon red), and an Audio Control `tile`.",
-      "**The footer is a `page` Panel with the `capsule` border, 928x62 at 166,718**: a `wide` Room Mode (gray_round) at its left, the date and time centered in `raised`, and a `pill` Help (yellow) at its right. Power, a red `pill` 143x59, sits outside it at 1115,720."
+      "**The left rail is the room mode's column, not always Display.** Main SD and Main Multi-Window head it Display, over On, Off and Mute and then two tiles, Screen Control and Lighting Control; Main VC and Main VC Share Content head it VTC, over Call, End Call and Privacy as 120x60 pills, then the Display, Screen and Lighting Control tiles; Main SD Screen Arrows follows Display with a second heading, Screen, over Up and Down arrows where the two tiles stand. The frame above is Main SD's: a `LeftRail` stands each `Section` at its groups' places.",
+      "**The footer's left cell is the room's mode launcher**: Room Mode on the working pages and Preset Selection on Main Multi-Window, the kit's gray_round art at the frame's size, 169x59 - not a `wide` button's 272x110.",
+      "**Where it is drawn otherwise**: the volume slider is 52 wide in the Layout and is drawn 53 on the 1035, since 52 is under the 53 px touch minimum the toolkit checks; and Screen Control and Lighting Control, which the Layout stands one every 104 px, 110 deep and so 6 px over one another, are drawn touching, at 469 and 579 on the 1035, since the toolkit refuses two controls that overlap."
     ]
   },
   "regions": {
-    "_source": "What the region components draw by default (docs/claude-design.md section 3): the clock's pattern off the seed's own Main SD (the 1035's Date/Time draws 9/28/1960 12:00 AM), and each control in the look this profile measured for it off the 1035's seed (layout.regions and the variants' usage): the source tabs `source`; the rail's Display buttons `button`, its launchers `tile`; a `wide` gray_round Room Mode; a red `square` Mute; a yellow `pill` Help; Power a red `pill` captioned Off, as the seed's Power Down Text. Not yet verified by a GUI Designer build of a region page. `rail` is a LeftRail's first group's, `launcher` its later groups' and Audio Control's, `mode` the Footer's mode slot's.",
+    "_source": "What the region components draw by default (docs/claude-design.md section 3): the clock's pattern off the seed's own Main SD (the 1035's Date/Time draws 9/28/1960 12:00 AM) in `clock`, Open Sans 14, and each control in the look this profile measured for it off the 1035's seed (the variants' usage): the source tabs `source`; the rail's Display buttons `button`, its launchers `tile`; Room Mode the kit's `wide` gray_round, which is the template's r_gray art; Mute a gray `square` that lights red with an `alert` caption; a yellow `pill` Help and Power a red `pill` captioned Off, as the seed's Power Down Text, each lighting with its family's caption (`caution`, `alert`). `rail` is a LeftRail's first group's, `launcher` its later groups' and Audio Control's, `mode` the Footer's mode slot's.",
     "heading": {"type": "body", "align": "center"},
     "tab": {"variant": "source", "align": "center"},
     "rail": {"variant": "button"},
     "launcher": {"variant": "tile"},
     "mode": {"variant": "wide", "icon": "gray_round"},
     "volume": {"does": "Sets the program volume."},
-    "mute": {"variant": "square", "icon": "red", "text": "Mute", "states": [{"name": "Off"}, {"name": "On"}], "does": "Mutes the program audio; On while muted."},
-    "help": {"variant": "pill", "icon": "yellow", "text": "Help"},
-    "power": {"variant": "pill", "icon": "red", "text": "Off"},
+    "mute": {"variant": "square", "icon": "gray", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "icon": "red", "color": "alert"}], "does": "Mutes the program audio; On while muted."},
+    "help": {"variant": "pill", "icon": "yellow", "text": "Help", "states": [{"name": "Off"}, {"name": "On", "color": "caution"}]},
+    "power": {"variant": "pill", "icon": "red", "text": "Off", "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]},
     "clock": {"format": "M/d/yyyy h:mm tt", "align": "center"},
-    "_center": "What a source popup (role=\"source\") and a window draw (docs/claude-design.md section 4), off the 1035's and 725's seeds' Laptop, Doc Cam, Help, Confirmation, Powering Down and Lighting Control: the source's title Open Sans 40 white, centred across the popup's top; 'Please connect your laptop.' 22 pt white in the upper half of the empty state's box over a 16 pt Disconnected status centred at its foot, 30% of it each way; the popup's headings 18 pt white and its keys the 504x440 gray `tile`; a window's title 40 pt #474747 (`text-secondary`) centred, its message 26 pt #474747, Close the kit's dark X (`close`), Power Down a green_round `wide` pill and Cancel a red_round one, captioned 18 pt. Those sizes are the 1035's: a source popup and a window set what they say at each panel's own template's size, its frame's `pt` (Help's message 20 pt, the 725's titles 30).",
-    "source": {"title": {"size": 40, "align": "center", "color": "text"}, "empty": {"size": 22, "align": "center", "color": "text"}, "status": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "tile"}},
-    "window": {"title": {"size": 40, "align": "center", "color": "text-secondary"}, "message": {"size": 26, "align": "center", "color": "text-secondary"}, "label": {"color": "text-secondary"}, "close": {"variant": "close"}, "power": {"variant": "wide", "icon": "green_round", "size": 18}, "cancel": {"variant": "wide", "icon": "red_round", "size": 18}},
-    "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Up, Down, Mute, Display Control and More on one art, the kit's 712x440 gray (`button`: the seed's image 15, 92x54, lit 712x440 gray sel), Mute lit red (the seed's image 17, 712x440 red sel); Power the kit's 440x440 power_red, a square power glyph in a crimson ring (image 18); every hub Close the white X at rest and the dark one pressed (images 44 and 45: white_close, black_close), where the card's Close is the other way about; Help the kit's help_yellow (image 34); the options' glyphs the kit's lightbulb_white and speaker_white. Chosen by eye: Up and Down Open Sans's Λ and V for the template's Extron-Shockwave chevrons, which its kit has no art for; a tile the source tab's glyph art on the `well` wash in a rounded `pressed` ring, for the template's own translucent rounded tile. Known differences: its tile's glyph is the tab art's, about a third the size of the template's line art; the menu's words, set at 12 pt under the 525's 18 pt floor, grow their cells; the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn.",
-    "hub": {"title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "device", "fill": "well", "border": "rounded", "stroke": "pressed", "glyph": "_white"}, "menu": {"variant": "button"}, "up": {"icon": null, "text": "Λ"}, "down": {"icon": null, "text": "V"}, "mute": {"variant": "button", "icon": "gray", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "icon": "red"}]}, "power": {"variant": "square", "icon": "power_red", "text": ""}, "settings": {"variant": "button"}, "display": {"variant": "button"}, "close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}, "help": {"variant": "square", "icon": "help_yellow"}, "window": {"close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "source", "fill": "well", "border": "rounded", "stroke": "pressed"}, "blank": {"variant": "tile"}, "glyphs": {"light": "lightbulb_white", "audio": "speaker_white"}}},
+    "_center": "What a source popup (role=\"source\") and a window draw (docs/claude-design.md section 4), off the 1035's and 725's seeds' Laptop, Doc Cam, Help, Confirmation, Powering Down and Lighting Control: the source's title Open Sans 40 white, centred across the popup's top; 'Please connect your laptop.' 22 pt white in the upper half of the empty state's box over a 16 pt Disconnected status centred at its foot, 30% of it each way; the popup's headings 18 pt white and its keys the 504x440 gray `key`; a window's title 40 pt #474747 (`text-secondary`) centred, its message 26 pt #474747, Close the kit's dark X (`close`), Power Down a green_round `wide` pill lighting in `go` and Cancel a red_round one lighting in `alert`, captioned 18 pt. Those sizes are the 1035's: a source popup and a window set what they say at each panel's own template's size, its frame's `pt` (Help's message 20 pt, the 725's titles 30).",
+    "source": {"title": {"size": 40, "align": "center", "color": "text"}, "empty": {"size": 22, "align": "center", "color": "text"}, "status": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "key"}},
+    "window": {"title": {"size": 40, "align": "center", "color": "text-secondary"}, "message": {"size": 26, "align": "center", "color": "text-secondary"}, "label": {"color": "text-secondary"}, "close": {"variant": "close"}, "power": {"variant": "wide", "icon": "green_round", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "cancel": {"variant": "wide", "icon": "red_round", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}},
+    "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Up, Down, Mute, Display Control and More on one art, the kit's 712x440 gray (`button`: the seed's image 15, 92x54, lit 712x440 gray sel), Mute lit red (the seed's image 17, 712x440 red sel); Power the kit's 440x440 power_red, a square power glyph in a crimson ring (image 18); every hub Close the white X at rest and the dark one pressed (images 44 and 45: white_close, black_close), where the card's Close is the other way about; Help the kit's help_yellow (image 34); the options' glyphs the kit's lightbulb_white and speaker_white. Chosen by eye: Up and Down Open Sans's Λ and V for the template's Extron-Shockwave chevrons, which its kit has no art for; a tile the source tab's glyph art on the `well` wash in a rounded `pressed` ring, for the template's own translucent rounded tile. Every standard popup stands on the page's photo, stretched to its 702x480 (`popup.photo`: the 525's 12 and the 535's, on '800x480 bkgd.png'). Known differences: its tile's glyph is the tab art's, about a third the size of the template's line art; the menu's words, set at 12 pt under the 525's 18 pt floor, grow their cells; the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn.",
+    "hub": {"popup": {"photo": true}, "title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "device", "fill": "well", "border": "rounded", "stroke": "pressed", "glyph": "_white"}, "menu": {"variant": "button"}, "up": {"icon": null, "text": "Λ"}, "down": {"icon": null, "text": "V"}, "mute": {"variant": "button", "icon": "gray", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "icon": "red", "color": "alert"}]}, "power": {"variant": "square", "icon": "power_red", "text": ""}, "settings": {"variant": "button"}, "display": {"variant": "button"}, "close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}, "help": {"variant": "square", "icon": "help_yellow"}, "window": {"close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "source", "fill": "well", "border": "rounded", "stroke": "pressed"}, "blank": {"variant": "tile"}, "glyphs": {"light": "lightbulb_white", "audio": "speaker_white"}}},
     "page": {
-      "_source": "The 320's pages (seeds/Shockwave 320.gdl): its strip's white words, its headings and empty state white on the photo, its gray keys (504x440, `tile`), More the kit's ••• key and Back its gray key - the kit's return glyph, where the template sets a chevron in an icon face the system does not carry - and the transparent Cancel over its Volume (`clear`). The question and the waits say theirs white (`message`). A caption wider than a key's art at the row's depth takes the next wider art (`wider`).",
+      "_source": "The 320's pages (seeds/Shockwave 320.gdl): its strip's white words, its headings and empty state white on the photo, its gray keys (504x440, `key`), More the kit's ••• key and Back its gray key - the kit's return glyph, where the template sets a chevron in an icon face the system does not carry - and the transparent Cancel over its Volume (`clear`). The question and the waits say theirs white (`message`). A caption wider than a key's art at the row's depth takes the next wider art (`wider`).",
       "strip": {"align": "center", "color": "text"},
       "heading": {"align": "center", "color": "text"},
       "empty": {"align": "center", "color": "text"},
-      "button": {"variant": "tile"},
+      "button": {"variant": "key"},
       "more": {"variant": "square", "icon": "more"},
       "back": {"variant": "square", "icon": "return_gray"},
       "message": {"align": "center", "color": "text"},
@@ -239,6 +261,21 @@
     "help_title": "HELP",
     "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
     "page_empty": "{name} is currently selected.\nThere are no controls\nfor this device."
+,
+    "voice": {
+      "_source": "Off seeds/Shockwave 1035.gdl's working pages, popups and windows - Main SD, Main VC, the Laptop, PC, Blu-ray, Doc Cam and VTC popups, Camera Select, Display Control, Confirmation, Starting Up, Powering Down and Help - and the grammar digest of every Shockwave page: its captions, rail headings, titles and messages. Its launchers say Screen Control, Lighting Control and Audio Control on two lines; Help's title alone is in capitals, HELP, with the AUX and VTC acronyms and the 320's column labels.",
+      "rules": [
+        "A caption is a short Title Case word or two: On, Off, Mute, Call, End Call, Privacy, Room Mode, Power Down. A tile's two-word caption breaks onto two lines: Lighting / Control.",
+        "A rail launcher says what it controls: Screen Control, Lighting Control, Audio Control, Display Control.",
+        "A rail heading is one word: Display, Volume, VTC, Screen.",
+        "A popup's title is its device's name (Laptop, Blu-ray, Document Camera, Apple TV); a window's is what it holds (Camera Select, Display Control). Help's alone is in capitals: HELP.",
+        "A message is polite, in sentence case, with a period: Please connect your laptop. A question asks yes or no, and its buttons name the action: Power Down and Cancel."
+      ],
+      "launchers": ["Screen Control", "Lighting Control"],
+      "caps": ["HELP", "AUX", "VTC", "LAST", "ZOOM", "FOCUS", "INPUTS", "IRIS"],
+      "sentence": [],
+      "instead": {"Lighting Settings": "Lighting Control", "Audio Settings": "Audio Control", "Screen Settings": "Screen Control", "Display Settings": "Display Control", "Power Off": "Power Down", "Shut Down": "Power Down", "Shutdown": "Power Down", "System Off": "Power Down", "Make Call": "Call", "Join Call": "Call", "Start Call": "Call", "Hang Up": "End Call", "Exit": "Close", "Dismiss": "Close"}
+    }
   },
   "kit": {
     "root": "Shockwave",
@@ -298,7 +335,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP1035M": "seeds/Shockwave 1035.gdl", "TLP1035T": "seeds/Shockwave 1035.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -613,7 +650,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP725T": "seeds/Shockwave 725.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -1000,7 +1037,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP1525TG": "seeds/Shockwave 1525.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -1296,7 +1333,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP1535M": "seeds/Shockwave 1535.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -1612,7 +1649,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP720T": "seeds/Shockwave 720.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -1999,7 +2036,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP535T": "seeds/Shockwave 535.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": false},
       "radii": {"rounded": 10},
       "frame": {
         "page": "Main Page",
@@ -2314,7 +2351,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP525T": "seeds/Shockwave 525.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": false},
       "radii": {"rounded": 10},
       "frame": {
         "page": "Main Page",
@@ -2629,7 +2666,7 @@
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
       "seeds": {"TLP320M": "seeds/Shockwave 320.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": false, "popup": false},
+      "kinds": {"slider": false, "level": true, "datetime": false, "popup": false, "image": false},
       "radii": {"rounded": 10},
       "frame": {
         "page": "Doc Cam 1",

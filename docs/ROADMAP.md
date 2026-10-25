@@ -102,6 +102,8 @@ opening GUI Designer.**
   80), and so do the Turbulence seed's side bars, modal windows and room shape.
   Blending any of them moves the preview off the snapshots the baseline is
   scored against, so score a change before and after (`docs/gdl-format.md` §7).
+  The template renders and the critique loop blend instead
+  (`docs/render-fidelity.md` §2).
 - `renumber` is planned and checked but has never been through a build. Build
   one and run `tests/verify_built.py` against it - which, until the behavior
   work, never compared a built control's ID at all (it looked up `UserID`;
@@ -149,6 +151,12 @@ opening GUI Designer.**
   `LeftRail` region (`docs/claude-design.md` §3). Afterburn's canvas has one
   Rail, the right one: side controls on the left are the Page's own, and on a
   panel with no room beside its main region they are refused, by name.
+- **Afterburn's working page on the room's other panels.** Drawn at the
+  template's own spacing, it does not carry to a 725, a hub or the 320: its
+  `list` and `toggle` buttons are kit art, which keeps its shape as it grows
+  to the touch minimum, wider than the band beside main there, and its
+  popups' words stand where the 320's rows have no room - so the README's
+  Afterburn example room is the 1035 alone.
 - **The region frame, beyond tier A** (PR sequence in
   `docs/superpowers/specs/2026-10-22-region-frame-design.md`):
   - a region page, a source popup (`role="source"`) and a window (a modal
@@ -187,12 +195,12 @@ opening GUI Designer.**
   - on a hub the region page derives to the hub's grammar
     (`docs/claude-design.md` §3) - built and verified on Mach's 525 and
     535, Shockwave's 525 and 535 and Turbulence's 525
-    (`archive/job-e823df9b/hubs/`) - and what it does not do yet: Shockwave's and
-    Turbulence's hub popups carry the page's photo as their own background,
-    which a spec popup cannot (no popup background image), so theirs are
-    transparent over the page's photo - the same picture, unless the
-    program shows one over another page; Turbulence's device picture in a
-    hub source popup, as in a bar one, waits for the image kind; a hub's
+    (`archive/job-e823df9b/hubs/`) - and what it does not do yet: the
+    popups' photo and Turbulence's device pictures (below) are not yet
+    built; Turbulence's settings windows' own pictures (the 525's Lighting
+    Control lightbulb, Audio Control speaker and Display Control monitor)
+    are an Image the designer places, which the window does not draw by
+    itself; a hub's
     Display Control popup lays the LeftRail's first Section out as a row
     under its heading, where Extron's draws a card per display (Display 1
     and 2) - a canvas with two displays has no way to say so yet; a later
@@ -222,10 +230,29 @@ opening GUI Designer.**
     710x392 in a 710x405 region). Larger is named as a warning; only a
     popup in the Center's default group, `Sources`, is checked. A source's
     popup says `role="source"`;
-  - Turbulence's bars are PBImage art, drawn as `shade`-filled Panels
-    (`regions.bar`, the art's one colour) until an image kind can carry them,
-    and so is its source popups' device picture (1152x1152_<device>.png at
-    the popup's top left): the popup leaves room for it and draws nothing;
+  - the template's own art - Turbulence's header and footer bars (a
+    stretched `image`), its source popups' device pictures (a fitted one,
+    by the source's `device`) and Shockwave's and Turbulence's hub popups
+    on the page's photo (a popup's `background_image`) - translates and
+    checks clean on every panel the region canvases list, and is not yet
+    built in GUI Designer: what the applier does with an `image` control's
+    art and a popup's photo (`Apply-GdlPlan.ps1`) is pinned by text tests
+    only, so a build of the Turbulence region canvas on the 1035 and the
+    525 and of Shockwave's on the 525, each through `verify_built` (its
+    `check_images` and the popup's photo), is the proof. A source naming no
+    device the kit pictures (the region canvas's Streaming) leaves the place
+    empty until it says `device`, and a device the panel's seed pictures
+    for no source (a `monitor`, which only the 525's settings popups draw)
+    stands at the Laptop's rect, since the frame's `center.pictures`
+    measures only what the seed's own source popups picture;
+  - Shockwave's own art: its seeds have no `PBImage`, so whatever art is
+    its template's own is a button's. Its round art (1248x440_r_gray) is
+    the kit's gray_round pixel for pixel, which the system draws; its Share
+    Content is the seed's own 120x75 art with the words baked in
+    (712x440_share-content_nsel, lit 712x440_stop-sharing_sel), in no kit:
+    drawing it needs the two extracted from the seed - `kit.extract` takes
+    every image a seed names, and the 1035 names 34 its kit does not, so a
+    filter first - and a variant that draws them;
   - a source popup's controls are mapped from the drawn panel's well into
     each panel's at one scale, each grown about its centre: a column whose
     captions need more than the scaled width on the 725 comes out ragged
@@ -239,8 +266,12 @@ opening GUI Designer.**
   - only the power-down confirmation (`topic="power"`) and the waits
     (`"up"`, `"down"`) have the template's words; a recording or incoming
     call confirmation is refused by topic until its words are measured;
-    Shockwave's tab captions (its `twin` buttons) are not drawn - its tabs
-    take their caption on the tab;
+  - the region page's seed IDs and mirrors (`docs/idmap.md` §7) translate
+    and check clean on every panel the region canvases list, and are not yet
+    built in GUI Designer: Shockwave's 1035 tab twins - a caption-only
+    button inside the tab with the tab's ID, as the template draws it, the
+    first spec mirror on one page - wait for a build and `verify_built` on
+    the 1035, and the 1535's, which no region canvas lists, for a probe;
   - Shockwave's and Turbulence's region defaults (the profile's `regions`:
     their tabs, rail, launchers, Room Mode, Mute, Help and Power) are the
     looks those profiles measured off the 1035's seed, built and verified on
@@ -251,6 +282,51 @@ opening GUI Designer.**
     only, and in its left rail's second group elsewhere: a RightRail
     `slot="audio"` is refused by name on a panel whose template does not
     draw it there, rather than moved to where that template does;
+  - the truth ledger (`gdl/designsys/truth/`, `docs/claude-design.md` §2
+    *Truth*) covers a theme once its file is there: `python -m gdl.designsys
+    audit <theme>` names a theme with none, and every entry or claim not yet
+    resolved. What Mach's records the system cannot draw: Open Sans Light
+    (its titles, the footer clock and Main Select Source's header title are
+    drawn in Open Sans at the template's size), the Extron-Lift glyph
+    captions on its arrows, transport and back keys (the kit's images stand
+    in), and its whole-button image presets (Window Layout, TV Channels, the
+    recording layouts), which no Mach variant offers; and where it differs
+    for a gate, its 30 px volume slider is drawn 53, the touch minimum.
+    Where Shockwave's differs: its
+    tab captions stay on the tab (above); its 52 px volume slider is drawn
+    53, the touch minimum, and the Screen and Lighting tiles its template
+    stands 104 apart (110 deep) stand 110 apart, since two controls may not
+    overlap; and the lit caption of Room Mode VC's two choices (`action`)
+    and of a blue Flash is `ink` where the template's is #474747, which a
+    state's `color` sets. What Turbulence's
+    records the system cannot draw: Open Sans Light (every label and
+    caption, drawn in Open Sans); and
+    where it differs for a gate: the 1035's 52 px volume slider is drawn 53
+    (the touch minimum) and its Help 12 px in, at x 152 where the template
+    has 141 (the footer opens its seam to the left rail's last launcher to
+    the 2 mm gap). Privacy's red lit caption is `alert`, which a designer
+    sets on its On state;
+  - what Afterburn's ledger records the system does not draw: the glyphs of
+    Extron's Afterburn icon font (its Close, Back, More, arrows, d-pad,
+    transport and zoom keys, and the 520's and 535's triangle Up and Down),
+    a font it carries none of. The kit draws most of them as images in
+    Afterburn/Icons/PNG - Close's X, the chevrons, the triangles (Carets),
+    minus, plus, the More dots and most of the transport keys - beside the
+    Buttons/PNG the profile's kit root reads, so the `icon` list does not
+    name them: wired in, as Mach's kit images stand in for its glyphs, they
+    would draw a Close, a level's steps and a Group's paging as the
+    template does. Until then a Close says Close, a level's steps say `-`
+    and `+` and a Group pages with Previous and Next; the squircle
+    card under a modal, a full-canvas `PBImage` (Help's Background), which
+    the spec's `image` kind could now carry - every Afterburn seed has a
+    `PBImage` - but Afterburn's system offers no Image and its modal draws
+    none, so a Panel stands in; the 520's and 535's Start page on its own `_start` art, since
+    every page of those panels is built on the Main art; and the 320's page
+    per source, title footer and Volume modal, which only the bar themes'
+    region pages build, so Afterburn's small panels re-lay a Page's controls
+    in rows over a Rail. Where it differs for a gate: its 50 px volume
+    slider grows to the touch minimum, and the 14 pt floor lifts its 13 pt
+    captions;
   - the footer's cells the template stands together (Mach's Help and Power,
     1 px apart; Turbulence's Help and Room Mode, 2) are a `joined` set, which
     goes past the owner's call 2 as written (a header tab row and a rail

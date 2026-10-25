@@ -439,6 +439,133 @@ class TestNameUniqueness(unittest.TestCase):
         self.assertTrue(any('unique' in m for m in p.check()))
 
 
+class TestImageKind(unittest.TestCase):
+    """An `image` is a PBImage drawing its art from its backgroundImageField,
+    as every PBImage in the Turbulence seeds does - the header and footer
+    bars stretched over their box, a source's device picture fitted in its
+    own - and Build's artwork of each is its file laid out so."""
+
+    def _op(self, c):
+        return _spec([c]).plan()['pages'][0]['controls'][0]
+
+    def test_its_art_and_its_layout_reach_the_plan(self):
+        op = self._op({'kind': 'image', 'name': 'Top bar', 'rect': [0, 0, 1280, 133],
+                       'image': '2047x151_header.png', 'layout': 'stretch'})
+        self.assertEqual(op['donor_type'], 'PBImage')
+        self.assertEqual(op['image']['name'], '2047x151_header.png')
+        self.assertEqual((op['image_layout'], op['image_align']), (1, 3))
+
+    def test_it_is_fitted_unless_told(self):
+        op = self._op({'kind': 'image', 'name': 'Laptop Image', 'rect': [0, 0, 293, 257],
+                       'image': '1152x1152_laptop.png'})
+        self.assertEqual(op['image_layout'], 0)
+
+    def test_one_with_no_fill_or_border_is_written_with_none(self):
+        """A clone keeps its donor's: the Turbulence seeds' first PBImage is
+        a side bar, black at 85% transparency, and the applier writes every
+        clone opaque - so an image given no fill must be written transparent,
+        and no border, as every PBImage in the seeds has none."""
+        op = self._op({'kind': 'image', 'name': 'Top bar', 'rect': [0, 0, 1280, 133],
+                       'image': '2047x151_header.png', 'layout': 'stretch'})
+        self.assertEqual((op['fill'], op['border']), (0, ''))
+
+    def test_a_fill_alone_draws_a_ground(self):
+        """Turbulence's side bars are PBImages with no art: black at 85%
+        transparency."""
+        p = _spec([{'kind': 'image', 'name': 'Left Side bar', 'rect': [0, 133, 140, 666],
+                    'fill': '#26000000'}])
+        self.assertEqual(p.check(), [])
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertIsNone(op['image'])
+        self.assertEqual(op['fill'], 0x26000000)
+
+    def test_one_that_draws_nothing_is_named(self):
+        p = _spec([{'kind': 'image', 'name': 'Blank', 'rect': [0, 0, 10, 10]}])
+        self.assertTrue(any('Blank' in m and 'draws nothing' in m for m in p.check()), p.check())
+
+    def test_a_layout_the_panel_has_no_word_for_is_named(self):
+        p = _spec([{'kind': 'image', 'name': 'Bar', 'rect': [0, 0, 10, 10], 'image': 'x.png',
+                    'layout': 'tile'}])
+        self.assertTrue(any('Bar' in m and "'tile'" in m for m in p.check()), p.check())
+
+    def test_layout_is_an_images_alone(self):
+        """A button lays its image out Fill, as every image button in the
+        templates does: a `layout` on one would be silently ignored."""
+        p = _spec([{'kind': 'button', 'name': 'B', 'rect': [0, 0, 100, 100], 'text': 'B',
+                    'layout': 'stretch'}])
+        self.assertTrue(any("'layout'" in m and 'B' in m for m in p.check()), p.check())
+
+    def test_the_preview_lays_it_out_as_planned(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed')
+        d = tempfile.mkdtemp()
+        art = os.path.join(d, 'bar.png')
+        im = Image.new('RGBA', (20, 10), (255, 0, 0, 255))
+        im.paste((0, 0, 255, 255), (10, 0, 20, 10))
+        im.save(art)
+        for layout, left in (('stretch', (255, 0, 0)), ('fill', (0, 0, 0))):
+            p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+                       'images': {'bar.png': art},
+                       'pages': [{'name': 'P', 'number': 1000, 'background': '#000000', 'controls': [
+                           {'kind': 'image', 'name': 'Bar', 'rect': [0, 0, 80, 10], 'image': 'bar.png',
+                            'layout': layout}]}]})
+            px = p.render().getpixel((5, 5))[:3]
+            self.assertEqual(px, left, layout)
+
+    def test_the_donor_must_have_one_to_clone(self):
+        """Clone, never construct: no Shockwave seed has a PBImage."""
+        spec = {'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+                'pages': [{'name': 'Image Probe', 'controls': [
+                    {'kind': 'image', 'name': 'Ground', 'rect': [0, 0, 10, 10], 'fill': '#FF000000'}]}]}
+        for name, lacks in (('Shockwave 1035.gdl', True), ('Afterburn 1035.gdl', False)):
+            donor = seed(name)
+            if not usable(donor):
+                self.skipTest(f'seeds/{name} is not pulled from Git LFS here')
+            problems = Panel(spec).check_donor(donor)
+            self.assertEqual(any('PBImage' in m for m in problems), lacks, (name, problems))
+
+
+class TestPopupPhoto(unittest.TestCase):
+    """Shockwave's and Turbulence's hub popups carry the page's photo as
+    their own ground: every standard popup of seeds/Turbulence 525.gdl on
+    bkgd_swoop_plain.png, of Shockwave's 525 and 535 on '800x480 bkgd.png',
+    each stretched to its 702x480."""
+
+    def _panel(self, **popup):
+        return Panel({'name': 'T', 'size': [800, 480], 'theme': {'text': '#FFFFFF'},
+                      'images': {'bkgd.png': 'Turbulence/bkgd_swoop_plain.png'},
+                      'pages': [{'name': 'Main', 'controls': [
+                          {'kind': 'popup_ref', 'name': 'Region', 'rect': [0, 0, 702, 480],
+                           'group': 'Sources'}]}],
+                      'popups': [dict({'name': 'Laptop', 'group': 'Sources', 'size': [702, 480],
+                                       'controls': []}, **popup)]})
+
+    def test_its_photo_and_layout_reach_the_plan(self):
+        op = self._panel(background_image='bkgd.png', background_layout='stretch').plan()['popups'][0]
+        self.assertEqual(op['background_image']['name'], 'bkgd.png')
+        self.assertEqual(op['background_layout'], 1)
+
+    def test_one_with_none_is_planned_none(self):
+        op = self._panel().plan()['popups'][0]
+        self.assertIsNone(op['background_image'])
+
+    def test_a_modal_takes_none(self):
+        """Build draws a modal as the page beneath under its scrim and
+        ignores its background."""
+        p = self._panel(background_image='bkgd.png', modal=True)
+        self.assertTrue(any('Laptop' in m and 'modal' in m and 'background_image' in m for m in p.check()),
+                        p.check())
+
+    def test_the_donor_must_have_one_the_spec_does_not_bring(self):
+        donor = seed('Afterburn 1035.gdl')
+        if not usable(donor):
+            self.skipTest('seeds/Afterburn 1035.gdl is not pulled from Git LFS here')
+        problems = self._panel(background_image='nowhere.png').check_donor(donor)
+        self.assertTrue(any("popup 'Laptop'" in m and 'nowhere.png' in m for m in problems), problems)
+
+
 class TestBuildPlan(unittest.TestCase):
     """The plan is what the Windows applier consumes, so it needs its own tests.
 
@@ -649,6 +776,27 @@ class TestExtronRules(unittest.TestCase):
             {'kind': 'button', 'name': 'One', 'rect': [100, 100, 80, 60]},
             {'kind': 'button', 'name': 'Two', 'rect': [170, 110, 80, 60]}])
         self.assertTrue(any('overlap' in m for m in p.check()), p.check())
+
+    def test_a_caption_mirror_inside_its_control_is_that_control(self):
+        """Shockwave 1035's tab names are a second button under each tab's
+        glyph sharing its ID, 152x36, white in both states (its frame's
+        `twin`): pressed as the tab and showing the tab's states, so its
+        touch size, gaps, alike states and shared ID are the tab's, not its
+        own. The same button anywhere but inside its control is held to all
+        of them."""
+        def tab(name, x, i):
+            return {'kind': 'button', 'name': name, 'id': i, 'rect': [x, 0, 152, 91], 'joined': 'Tabs',
+                    'states': [{'name': 'Off', 'fill': '#3B2F2A'}, {'name': 'On', 'fill': '#FFFFFF3C'}]}
+
+        def twin(rect):
+            return {'kind': 'button', 'name': 'PC Caption', 'id': 1001, 'rect': rect, 'text': 'PC',
+                    'states': [{'name': 'Off', 'fill': 'none'}, {'name': 'On', 'fill': 'none'}]}
+        p = self._model('TLP1035T', [tab('PC', 169, 1001), twin([169, 55, 152, 36]), tab('Laptop', 322, 1002)])
+        self.assertEqual(p.check(), [])
+        p = self._model('TLP1035T', [tab('PC', 169, 1001), twin([169, 200, 152, 36]), tab('Laptop', 322, 1002)])
+        msgs = p.check()
+        for words in ('touch', 'already used', 'identical'):
+            self.assertTrue(any(words in m and 'PC Caption' in m for m in msgs), (words, msgs))
 
     def test_a_14pt_caption_on_a_535_fails(self):
         p = self._model('TLP535M', [{'kind': 'button', 'name': 'B', 'rect': [100, 100, 200, 120],

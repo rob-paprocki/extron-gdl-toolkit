@@ -173,11 +173,12 @@ class TestEveryProfile(unittest.TestCase):
 
     def test_the_example_puts_a_header_source_on_the_page(self):
         """Shockwave's sources are tabs in the header, not in its video well:
-        placed inside MainArea, its example tab landed 168,120 down and right."""
-        text = designsys.readme(designsys.load('shockwave'))
-        main = re.search(r'ExtronShockwave\.MainArea">(.*?)</x-import>\n  </x-import>', text, re.S)
-        self.assertNotIn('name="Laptop"', main.group(1))
-        self.assertIn('name="Laptop"', text)
+        placed inside MainArea, its example tab landed 168,120 down and right.
+        Its README's working page is drawn in regions: the tab is the Header's."""
+        text = _section(designsys.readme(designsys.load('shockwave')), 'The working page')
+        header = re.search(r'ExtronShockwave\.Header">(.*?)</x-import>\n  </x-import>', text, re.S)
+        self.assertIn('slot="source" name="Laptop"', header.group(1))
+        self.assertNotIn('MainArea', text)
 
     def test_every_profile_builds_a_system(self):
         def check(p):
@@ -617,6 +618,32 @@ class TestTheFrame(unittest.TestCase):
         self.assertEqual([(s['kind'], s['art']) for s in f['top']['surfaces']], [('image', '2047x151_header.png')])
         self.assertEqual(f['center']['region'], [140, 137, 995, 549])
 
+    def test_turbulences_device_pictures(self):
+        """Each source's popup pins its device's picture at a size of its
+        own, so the frame records one per device - the kit family its art
+        names - in page coordinates: on the 1035 every one at the popup's
+        top left, the Doc Cam's 326x288 where the Laptop's is 293x257; on the
+        525 each under the title where that device's own picture stands.
+        The 525's settings popups (Audio, Display and Lighting Control, and
+        Dual Display Select) picture a speaker, a monitor and a lightbulb
+        for no source, and are not among them."""
+        f = self.frame('turbulence', 'Turbulence 1220 Series')
+        self.assertEqual(f['center']['pictures'], {
+            'apple-tv': [140, 137, 293, 257], 'bluray': [140, 137, 352, 310], 'doc-cam': [140, 137, 326, 288],
+            'ipod': [140, 137, 293, 257], 'laptop': [140, 137, 293, 257], 'pc': [140, 137, 293, 257],
+            'tuner': [140, 137, 526, 329], 'vc-1': [140, 137, 200, 209]})
+        f = self.frame('turbulence', 'Turbulence 520 Series')
+        self.assertEqual(f['center']['pictures'], {
+            'apple-tv': [217, 40, 268, 250], 'bluray': [234, 59, 233, 219], 'doc-cam': [212, 57, 278, 252],
+            'ipod': [218, 58, 265, 202], 'laptop': [196, 45, 310, 241], 'pc': [219, 38, 264, 260],
+            'tuner': [182, 35, 338, 265]})
+        # The Laptop's, which a device no source pictures takes, is still
+        # the measured popup's own surface.
+        laptop = next(s for s in f['center']['surfaces'] if s['kind'] == 'image')
+        self.assertEqual(laptop['rect'], f['center']['pictures']['laptop'])
+        # A template that pins no picture records none.
+        self.assertNotIn('pictures', self.frame('mach', 'Mach 1220 Series')['center'])
+
     def test_the_windows_between_the_bars(self):
         f = self.frame('mach', 'Mach 1220 Series')
         w = f['windows']
@@ -968,20 +995,73 @@ class TestWhatTheLevelSays(unittest.TestCase):
         self.assertEqual(designsys._level_where(p), '')
 
 
+def _section(text, heading):
+    """A README section's body: from `## heading` to the next `## `."""
+    marker = f'\n## {heading}\n'
+    if marker not in text:
+        return ''
+    return text.split(marker, 1)[1].split('\n## ', 1)[0]
+
+
 class TestWhatThePageSays(unittest.TestCase):
-    """The Page README says how a Page's own bars carry to other panels only
-    for a system that draws them as controls; Afterburn's chrome is its
-    background art."""
+    """What the README's grammar says a page becomes on each family of the
+    room's panels - the bar panels, the hubs and the 320 - read off each
+    theme's own table and frames; and the Page README's word on a Page that
+    draws its own bars, which only a system whose bars are controls has
+    (Afterburn's chrome is its background art)."""
+
+    def test_the_grammar_names_each_family_off_its_own_table(self):
+        """Read off each table: Turbulence has a 520 hub and no 535."""
+        for theme, hubs in (('mach', 'the 520 and 535 Series'), ('shockwave', 'the 520 and 535 Series'),
+                            ('turbulence', 'the 520 Series')):
+            with self.subTest(theme=theme):
+                grammar = _section(designsys.readme(designsys.load(theme)), "The template's grammar")
+                self.assertIn(f'### The hubs ({hubs})', grammar)
+                self.assertIn('### The 320 (the 320 Series)', grammar)
+                self.assertIn('### The bar panels (the ', grammar)
+
+    def test_a_hub_and_the_320_say_what_they_do_with_the_page(self):
+        """Round three's designers drew one page and asked what the 525 and
+        320 would make of it: the hub's menu bar, Select a Source and its
+        options, the 320's pages under the strip with More and Back - each
+        in the template's own words, off its frame."""
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                grammar = _section(designsys.readme(p), "The template's grammar")
+                hub = designsys.models(p)['TLP525T']['frame']
+                self.assertIn(f"'{hub['select']['text']}'", grammar)
+                self.assertIn(f"'{hub['options']['text']}'", grammar)
+                self.assertIn('menu bar', grammar)
+                small = designsys.models(p)['TLP320M']['frame']
+                self.assertIn(f"'{small['home']['top']['items'][0]['text']}'", grammar)
+                self.assertIn('More', grammar)
+                self.assertIn('Back', grammar)
+
+    def test_the_bar_panels_regions_are_the_frames(self):
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                ns = p['namespace']
+                grammar = _section(designsys.readme(p), "The template's grammar")
+                for comp in ('Header', 'LeftRail', 'RightRail', 'Footer', 'Center'):
+                    self.assertIn(f'**{comp}**', grammar)
+                F = designsys._design_frame(p)
+                self.assertIn(f"{F['top']['tabs']['count']} source tabs", grammar)
+                for g in F['left']['groups']:
+                    if (g.get('heading') or {}).get('text'):
+                        self.assertIn(f"'{g['heading']['text']}'", grammar)
+                self.assertIn(f'`{ns}.Header`', grammar)
+
+    def test_afterburns_grammar_is_its_art(self):
+        grammar = _section(designsys.readme(designsys.load('afterburn')), "The template's grammar")
+        self.assertIn('background art', grammar)
+        self.assertNotIn('Header`', grammar)
 
     def test_a_system_whose_bars_are_controls(self):
         text = designsys._panels_props(designsys.load('mach'))
         self.assertIn('On a large or mid-size panel other than the one drawn', text)
         self.assertIn('get bands of their own carved from main', text)
-
-    def test_each_names_its_own_hubs(self):
-        """Read off each table: Turbulence has a 520 hub and no 535."""
-        self.assertIn('(the 520 and 535 Series)', designsys._panels_props(designsys.load('mach')))
-        self.assertIn('(the 520 Series)', designsys._panels_props(designsys.load('turbulence')))
 
     def test_afterburns_says_nothing_of_bars(self):
         self.assertNotIn('edge to edge', designsys._panels_props(designsys.load('afterburn')))
@@ -1482,6 +1562,76 @@ class TestBundle(unittest.TestCase):
 REGIONS = ('Header', 'LeftRail', 'Section', 'RightRail', 'Footer', 'Center')
 
 
+class TestTheImageComponent(unittest.TestCase):
+    """The template's own art as an Image (a PBImage): offered where the
+    profile says what its template draws with one and the design panel's
+    seed can clone a PBImage - Turbulence's. No Shockwave seed has one."""
+
+    def test_only_turbulence_offers_it(self):
+        for t in designsys.TEMPLATES:
+            p = designsys.load(t)
+            names = [n for n, _, _ in designsys.components(p)]
+            self.assertEqual('Image' in names, t == 'turbulence', t)
+            self.assertEqual('Image' in designsys.index_dts(p), t == 'turbulence', t)
+            self.assertEqual('"image_kind":true' in designsys.bundle(p, art=False), t == 'turbulence', t)
+
+    def test_every_series_says_whether_its_seed_can_build_one(self):
+        """The bundle names an Image on a panel whose seed has no PBImage,
+        as it does a Level: measured off each seed (measure_series)."""
+        for t in designsys.TEMPLATES:
+            p = designsys.load(t)
+            for series, row in p['panels'].items():
+                if not series.startswith('_') and row.get('kinds'):
+                    self.assertIn('image', row['kinds'], (t, series))
+                    if t == 'shockwave':
+                        self.assertFalse(row['kinds']['image'], series)
+
+    def test_its_readme_names_the_templates_art_and_the_device(self):
+        p = designsys.load('turbulence')
+        doc = designsys.component_docs(p)['Image']
+        self.assertIn('`stretch`', doc)
+        self.assertIn('1152x1152_lightbulb.png', doc)
+        self.assertIn('h(N.Image, ', designsys.previews(p)['Image'])
+        page = designsys.component_docs(p)['Page']
+        if designsys.kit_index(p)['files'].get('1152x1152'):
+            self.assertIn('`device`', page)
+            self.assertIn('`laptop`', page)
+        self.assertNotIn('`device`', designsys.component_docs(designsys.load('mach'))['Page'])
+
+    def test_the_readme_tells_a_designer_where_the_art_is(self):
+        """The README's own sections, not only the Page's and the Image's
+        READMEs, say what the region components draw as the template's art
+        and where the designer places it: the bars, a source's picture and
+        `device`, a hub's popups on the photo and a settings window's
+        Image. Without the kit the bars and pictures are drawn flat or not
+        at all, and the README says no more than the canvas draws."""
+        p = designsys.load('turbulence')
+        text = designsys.readme(p)
+        grammar, center, windows = (_section(text, h) for h in ("The template's grammar", 'The center', 'Windows'))
+        self.assertIn("the page's photo, stretched to the popup", grammar)
+        self.assertIn("On a hub** it fills main under the hub's own title, with a Close back to Select a Source, on "
+                      "the page's photo", center)
+        self.assertIn('`ExtronTurbulence.Image`', windows)
+        self.assertIn("Select a Source, on the page's photo", windows)
+        docs = designsys.component_docs(p)
+        if designsys.kit_index(p)['paths'].get('2047x151_header.png'):
+            self.assertIn('`2047x151_header.png` and `1648x134_footer.png`', grammar)
+            self.assertIn('`2047x151_header.png`), an Image of it stretched', docs['Header'])
+            self.assertIn('`1648x134_footer.png`), an Image of it stretched', docs['Footer'])
+        if designsys.kit_index(p)['files'].get('1152x1152'):
+            self.assertIn('**Its picture**', center)
+            self.assertIn('`device` names the device it pictures', center)
+        # Mach draws its bars flat and pins no picture; Shockwave's hubs
+        # stand their popups on the photo too, and it offers no Image.
+        mach = designsys.readme(designsys.load('mach'))
+        self.assertNotIn('its own art -', _section(mach, "The template's grammar"))
+        self.assertNotIn('**Its picture**', _section(mach, 'The center'))
+        self.assertNotIn("the page's photo", _section(mach, 'Windows'))
+        shock = designsys.readme(designsys.load('shockwave'))
+        self.assertIn("Select a Source, on the page's photo", _section(shock, 'Windows'))
+        self.assertNotIn('.Image`', _section(shock, 'Windows'))
+
+
 class TestTheRegionComponents(unittest.TestCase):
     """The region frame's components (docs/claude-design.md section 3) are a
     bar theme's: Mach, Shockwave and Turbulence draw their working page in
@@ -1491,7 +1641,7 @@ class TestTheRegionComponents(unittest.TestCase):
         for t in ('mach', 'shockwave', 'turbulence'):
             names = [n for n, _, _ in designsys.components(designsys.load(t))]
             self.assertEqual(names[:len(designsys.COMPONENTS)], [n for n, _, _ in designsys.COMPONENTS], t)
-            self.assertEqual(names[len(designsys.COMPONENTS):], list(REGIONS), t)
+            self.assertEqual([n for n in names[len(designsys.COMPONENTS):] if n != 'Image'], list(REGIONS), t)
         self.assertEqual(designsys.components(designsys.load('afterburn')), designsys.COMPONENTS)
 
     def test_each_has_a_readme_a_preview_and_a_type(self):
@@ -1552,7 +1702,8 @@ class TestTheRegionComponents(unittest.TestCase):
                              series, t)
             # What the regions read of each: the bars, the center's popup
             # region, well, titles (an empty source's and one with controls),
-            # empty state, status, type sizes and surfaces, and the windows.
+            # empty state, status, type sizes, surfaces and each device's
+            # picture, and the windows.
             for s, f in prof['frames'].items():
                 if f.get('hub') or f.get('pages'):
                     continue
@@ -1560,7 +1711,7 @@ class TestTheRegionComponents(unittest.TestCase):
                 self.assertEqual(sorted(f), ['bottom', 'center', 'left', 'right', 'top', 'windows'], s)
                 self.assertEqual(f['center'], {k: own['center'].get(k) for k in
                                                ('region', 'well', 'title', 'title_controls', 'empty',
-                                                'status', 'pt', 'surfaces')}, s)
+                                                'status', 'pt', 'surfaces', 'pictures')}, s)
                 # Each window's rects, surfaces and its Close's and buttons' roles.
                 self.assertEqual(f['windows'], designsys._slim_windows(own['windows']), s)
                 self.assertEqual(f['windows']['confirm']['rect'], own['windows']['confirm']['rect'], s)
@@ -1594,8 +1745,10 @@ class TestTheRegionComponents(unittest.TestCase):
                 self.assertEqual((f['right'], f['top'], f['select'], f['options']),
                                  (own['right'], own['top'], own['select'], own['options']), s)
                 strip = next(it['rect'] for it in own['center']['items'] if it['role'] == 'popup')
-                self.assertEqual((f['center']['region'], f['center']['strip'], f['center']['close']),
-                                 (own['center']['region'], strip, own['center']['close']), s)
+                self.assertEqual((f['center']['region'], f['center']['strip'], f['center']['close'],
+                                  f['center']['pictures']),
+                                 (own['center']['region'], strip, own['center']['close'],
+                                  own['center'].get('pictures')), s)
                 self.assertEqual(f['windows'], designsys._slim_windows(own['windows']), s)
 
     def test_the_320s_frames_are_in_the_bundle(self):
@@ -1694,7 +1847,9 @@ class TestTheRegionComponents(unittest.TestCase):
         for t in ('mach', 'shockwave', 'turbulence'):
             p = designsys.load(t)
             prof = json.loads(re.search(r'var P = (\{.*?\});\n', designsys.bundle(p, art=False)).group(1))
-            self.assertEqual(prof['writing'], {k: v for k, v in p['writing'].items() if not k.startswith('_')}, t)
+            # Not its voice, which is the README's and the caption lint's, not the canvas's.
+            self.assertEqual(prof['writing'], {k: v for k, v in p['writing'].items()
+                                               if not k.startswith('_') and k != 'voice'}, t)
 
     def test_the_page_props_carry_a_role(self):
         """A source popup and a window say what they are (`role`, `topic`,
@@ -1742,7 +1897,21 @@ class TestTheWriting(unittest.TestCase):
                              '{name} is currently selected.\nThere are no controls\nfor this device.', t)
         # Shockwave's empty source also shows a status the program sets.
         self.assertEqual(designsys.load('shockwave')['writing']['status'], 'Disconnected')
-        self.assertNotIn('writing', designsys.load('afterburn'))
+        # Afterburn's are the words a designer writes: its system draws no region to say them.
+        w = designsys.load('afterburn')['writing']
+        self.assertEqual(w['confirm'], {'power': 'Do you want to power down the system?'})
+        self.assertNotIn('page_empty', w)
+
+    def test_every_theme_has_its_voice(self):
+        """How the template words a caption (`writing.voice`), which the
+        README's Writing says and the caption lint holds it to."""
+        for t in designsys.TEMPLATES:
+            with self.subTest(theme=t):
+                v = designsys.load(t)['writing']['voice']
+                self.assertIn('seeds/', v['_source'])
+                self.assertTrue(v['rules'] and v['launchers'] and v['instead'])
+                for ours, theirs in v['instead'].items():
+                    self.assertNotIn(theirs, v['instead'], (ours, theirs))
 
     def test_the_looks_the_center_and_windows_give_exist(self):
         """`regions.source` and `regions.window` name only the profile's own
@@ -1779,16 +1948,159 @@ class TestBuild(unittest.TestCase):
                           encoding='utf-8') as fh:
                     self.assertTrue(fh.readline().startswith('<!-- @dsCard'), n)
 
-    def test_the_readme_says_help_is_a_modal(self):
-        """Extron's own templates draw Help, confirmations and a room's control
-        subsets as full-screen modals over the page; a page flip is for a mode
-        of the room. Left unsaid, the designer drew Help as a page."""
-        text = designsys.readme(designsys.load('afterburn'))
-        popups = next(line for line in text.splitlines() if line.startswith('- **Popups.**'))
-        self.assertIn('Help', popups)
-        self.assertIn('modal', popups)
-        # The owner's rule, unchanged: nothing forces a confirmation.
-        self.assertIn('not a rule', popups)
+    SECTIONS = ('Designing a panel', "The template's grammar", 'The working page', 'The center', 'Windows',
+                'Writing', 'Before you hand it over', 'Pages without regions', 'Differences', 'Layout',
+                'Every panel the room has', 'Themes', 'Visual foundations', 'Iconography',
+                'Consuming this system')
+
+    def test_the_readme_is_written_around_the_templates_grammar(self):
+        """What a designer reads first is the template's grammar - its five
+        regions, the working page drawn in them, its center, its windows and
+        its words - then what to check before handing over, the pages that
+        are not working pages, and where we differ; the measured Layout and
+        each panel's room follow. Afterburn draws its chrome as art and has
+        no regions, so no section on pages without them."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                heads = re.findall(r'^## (.+)$', designsys.readme(p), re.M)
+                want = [s for s in self.SECTIONS if not (theme == 'afterburn' and s == 'Pages without regions')]
+                self.assertEqual(heads, want)
+
+    def test_the_grammar_shows_the_templates_own_working_page(self):
+        """A render of each family's working page off its seed - the bar
+        panel's, the hub's and the 320's - is a file of the system, shown
+        beside the grammar (the owner's call 3: private only)."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                grammar = _section(designsys.readme(p), "The template's grammar")
+                plan = designsys.template_renders(p)
+                pages = [r for r in plan if not r.get('window')]
+                self.assertEqual([r['family'] for r in pages], ['bar', 'hub', 'pages'])
+                for r in pages:
+                    self.assertIn(f"]({r['file']})", grammar)
+                    self.assertIn(r['page'], grammar)
+                # And the bar panel's question and a settings window, over its
+                # working page, beside the Windows they show.
+                wins = _section(designsys.readme(p), 'Windows')
+                shown = [r for r in plan if r.get('window')]
+                self.assertEqual([r['window'] for r in shown], ['confirm', 'settings'])
+                for r in shown:
+                    self.assertIn(f"]({r['file']})", wins)
+                    self.assertEqual(r['base'], pages[0]['page'])
+                # Only what a build wrote is shown.
+                none = designsys.readme(p, renders=[])
+                self.assertNotIn('](templates/', none)
+
+    def test_the_working_page_is_a_complete_example(self):
+        """The working page in its regions, and every artboard it leads to: a
+        source with no controls and one with them, a settings window, Help,
+        the power-down question and its wait - each a Page whose `nav` names
+        an artboard the example draws."""
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                ns = p['namespace']
+                section = _section(designsys.readme(p), 'The working page')
+                blocks = re.findall(r'```html\n(.*?)```', section, re.S)
+                self.assertGreaterEqual(len(blocks), 6)
+                code = '\n'.join(blocks)
+                # Start, then the working page in its regions.
+                self.assertIn('start="true"', blocks[0])
+                main = next(b for b in blocks if f'"{ns}.Header"' in b)
+                for comp in ('Header', 'LeftRail', 'Section', 'RightRail', 'Footer', 'Center'):
+                    self.assertIn(f'"{ns}.{comp}"', main)
+                self.assertNotIn('MainArea', main)
+                for role in ('role="source"', 'role="settings"', 'role="help"', 'role="confirm" topic="power"',
+                             'role="wait" topic="down"'):
+                    self.assertIn(role, code)
+                names = set(re.findall(r'\.Page" name="([^"]+)"', code))
+                for target in re.findall(r'(?:nav|help|power)="([^"]+)"', code):
+                    self.assertIn(target, names)
+                first = designsys._design_frame(p)['left']['groups'][0]
+                self.assertIn(f'title="{first["heading"]["text"]}"', main)
+                # The launchers say what the template's say.
+                for word in p['writing']['voice']['launchers']:
+                    self.assertIn(f'>{word}</x-import>', main)
+        section = _section(designsys.readme(designsys.load('afterburn')), 'The working page')
+        self.assertIn('MainArea"', section)
+        self.assertIn('PopupRegion"', section)
+
+    def test_the_center_says_how_a_source_shows_its_controls(self):
+        """Round three's designers asked where a source's controls go: in a
+        popup of the Center's group, `role="source"`, which draws the
+        template's well, title and empty state in the template's words."""
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                center = _section(designsys.readme(p), 'The center')
+                self.assertIn('role="source"', center)
+                self.assertIn('kind="popup"', center)
+                w = p['writing']
+                self.assertIn(' '.join(w['empty'].split()).format(name='Laptop', noun='laptop'), center)
+                if w.get('status'):
+                    self.assertIn(w['status'], center)
+                self.assertIn('On a hub', center)
+                self.assertIn('On a 320', center)
+        center = _section(designsys.readme(designsys.load('afterburn')), 'The center')
+        self.assertIn('PopupRegion', center)
+        self.assertIn('PC is currently selected.', center)
+
+    def test_the_windows_are_drawn_by_role(self):
+        """Help, the question, the waits and settings are the template's
+        windows, drawn from the frame - the owner's rule unchanged: nothing
+        forces a confirmation."""
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                wins = _section(designsys.readme(p), 'Windows')
+                for role in ('settings', 'help', 'confirm', 'wait'):
+                    self.assertIn(f'`role="{role}"`', wins)
+                w = p['writing']
+                self.assertIn(' '.join(w['confirm']['power'].split()), wins)
+                self.assertIn(' '.join(w['wait']['down'].split()), wins)
+                self.assertIn(w['buttons']['power'], wins)
+                self.assertIn('not a rule', wins)
+        wins = _section(designsys.readme(designsys.load('afterburn')), 'Windows')
+        self.assertIn('kind="modal"', wins)
+        self.assertIn('Help', wins)
+        self.assertIn('not a rule', wins)
+
+    def test_the_writing_is_the_templates_own(self):
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                writing = _section(designsys.readme(p), 'Writing')
+                w = p['writing']
+                for said in (w['confirm']['power'], w['wait']['up'], w['wait']['down'], w['help']):
+                    self.assertIn(' '.join(said.split()), writing)
+                for rule in w['voice']['rules']:
+                    self.assertIn(rule, writing)
+                for ours, theirs in w['voice']['instead'].items():
+                    self.assertRegex(writing, re.escape(theirs) + r', not [^;]*?\b' + re.escape(ours) + r'\b')
+
+    def test_before_you_hand_it_over_is_a_checklist(self):
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                section = _section(designsys.readme(designsys.load(theme)), 'Before you hand it over')
+                items = [ln for ln in section.splitlines() if ln.startswith('- [ ] ')]
+                self.assertGreaterEqual(len(items), 6)
+                for want in ('`panels`', 'translate', 'compare', '--template', '`id`', 'Writing'):
+                    self.assertIn(want, section)
+
+    def test_the_differences_are_the_ledgers_deviations(self):
+        """Written from the ledger's `deviation` entries, so they cannot
+        drift from it."""
+        from gdl.designsys import audit
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                section = _section(designsys.readme(designsys.load(theme)), 'Differences')
+                devs = [e for e in audit.load_ledger(theme)['entries'] if e['status'] == 'deviation']
+                self.assertTrue(devs)
+                for e in devs:
+                    self.assertIn(e['here'], section)
+                self.assertEqual(len([ln for ln in section.splitlines() if ln.startswith('- ')]), len(devs))
 
     def test_the_readme_says_to_list_every_panel_the_room_has(self):
         """A designer reads the README first, and it called every artboard one
@@ -1920,36 +2232,59 @@ class TestBuild(unittest.TestCase):
                     self.assertIn(want, names, comp)
                     self.assertIn(f'(default `{want}`)', docs[comp])
 
-    def test_the_example_keeps_inside_its_main_region(self):
-        """The Example's Clock sat 696 px down its MainArea - inside
-        Afterburn's 752, below Mach's 681, Shockwave's 574 and Turbulence's
-        549."""
-        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
-            with self.subTest(theme=theme):
-                p = designsys.load(theme)
-                main = p['layout']['main']
-                example = designsys.readme(p).split('## Example', 1)[1]
-                inside = example.split('MainArea"', 1)[1].split('\n  </x-import>', 1)[0]
-                for top, h in re.findall(r'top: (\d+)px; width: [\d%]+(?:px)?; height: (\d+)px', inside):
-                    self.assertLessEqual(int(top) + int(h), main[3])
+    def test_afterburns_example_keeps_inside_its_main_region(self):
+        """Afterburn's Example is its Start page, placed in the squircle; its
+        Clock sat 696 px down a MainArea 752 deep and below every bar
+        theme's. The bar themes show their working page in regions instead,
+        with no MainArea (test_the_working_page_is_a_complete_example)."""
+        p = designsys.load('afterburn')
+        section = _section(designsys.readme(p), 'The working page')
+        inside = section.split('MainArea"', 1)[1].split('\n  </x-import>', 1)[0]
+        tops = re.findall(r'top: (\d+)px; width: [\d%]+(?:px)?; height: (\d+)px', inside)
+        self.assertTrue(tops)
+        for top, h in tops:
+            self.assertLessEqual(int(top) + int(h), p['layout']['main'][3])
 
     def test_the_readme_answers_what_every_designer_asked(self):
-        """Four fresh designers asked the same three things. A `nav` reaches
-        the programmer, not the panel - the ID map says "Shows page 'Main'" -
-        so a modal opened from two pages and closed with nav="Main" sent the
-        call page home. A program page may also be led to. And a control on
-        two pages is two controls unless it shares an `id`."""
-        text = designsys.readme(designsys.load('mach'))
-        popups = next(ln for ln in text.splitlines() if ln.startswith('- **Popups.**'))
-        self.assertIn('does="Closes this popup."', popups)
-        self.assertIn('more than one page', popups)
-        program = next(ln for ln in text.splitlines() if ln.startswith('- **A page the program opens'))
-        self.assertIn('may lead to it as well', program)
-        several = next(ln for ln in text.splitlines() if ln.startswith('- **A control on several pages**'))
-        self.assertIn('the same `id`', several)
-        # A JoinCall that opens the call page on Home and joins on Call shared
-        # an id, and the ID map refused it: a mirror is one function.
-        self.assertIn('`nav`', several)
+        """What the fresh designers asked, round by round. Rounds one to
+        three (archive/job-2419a20b/prose-in/README.md): a `nav` reaches the
+        programmer, not the panel - the ID map says "Shows page 'Main'" - so
+        a modal opened from two pages and closed with nav="Main" sent the
+        call page home; a program page may also be led to; a control on two
+        pages is two controls unless it shares an `id`. And what the owner
+        found the round-three rooms lacked, which their designers had to
+        guess: where Help goes, how a source shows its controls, what a
+        window looks like, which words the template uses, and what a hub
+        and the 320 make of the page."""
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                text = designsys.readme(p)
+                wins = _section(text, 'Windows')
+                self.assertIn('does="Closes this popup."', wins)
+                self.assertIn('more than one page', wins)
+                program = next(ln for ln in text.splitlines() if ln.startswith('- **A page or popup the program opens'))
+                self.assertIn('may lead to it as well', program)
+                several = next(ln for ln in text.splitlines() if ln.startswith('- **A control on several pages**'))
+                self.assertIn('the same `id`', several)
+                self.assertIn('`nav`', several)
+                # Where does Help go? The footer's, on a hub Select a Source's, on the 320 a page of Main's own.
+                grammar = _section(text, "The template's grammar")
+                self.assertIn('Help', next(ln for ln in grammar.splitlines() if ln.startswith('- **Footer**')
+                                           or ln.startswith('- **RightRail**') and 'Help' in ln))
+                self.assertIn('**Where Help goes.**', text)
+                # How does a source show its controls?
+                self.assertIn('**How a source shows its controls.**', _section(text, 'The center'))
+                # What does a window look like? Its band or card, off the frame, in the template's colour.
+                look = next(ln for ln in wins.splitlines() if ln.startswith('- **What a window looks like.**'))
+                F = designsys._design_frame(p)
+                fill = next(s['fill'] for s in F['windows']['confirm']['surfaces'] if s.get('fill'))
+                self.assertIn(fill[:7], look)
+                # Which words? The template's own, and how it says them.
+                self.assertIn(' '.join(p['writing']['confirm']['power'].split()), _section(text, 'Writing'))
+                # What does a hub or the 320 do with my page?
+                self.assertIn('**What a hub makes of your page.**', text)
+                self.assertIn('**What the 320 makes of your page.**', text)
 
     def test_the_layout_keeps_to_the_gates(self):
         """Each Layout described its seed's geometry, and a designer who
@@ -1964,9 +2299,12 @@ class TestBuild(unittest.TestCase):
                              'about 108 apart,', 'slider 52 wide centered', 'slider 52x315 centered',
                              'flush with the bottom'):
                     self.assertNotIn(gone, layout)
-        shockwave = designsys.readme(designsys.load('shockwave')).splitlines()
-        header = next(ln for ln in shockwave if ln.startswith('- **The header'))
-        self.assertIn('`Group joined="true"`', header)
+        # Shockwave's tabs are a set the template stands 1 px apart, which the
+        # Layout says as the frame measures it - not flush, and no hand-written
+        # header line to drift from it (the truth ledger, shockwave-00).
+        layout = designsys.readme(designsys.load('shockwave')).split('## Layout', 1)[1].split('\n## ', 1)[0]
+        self.assertIn('one every 153 px (1 px apart)', layout)
+        self.assertNotIn('flush', layout)
 
     def test_machs_buttons_take_the_border_its_seed_draws_them_on(self):
         """Mach's buttons are on the border most of its seed's button states
@@ -2025,6 +2363,339 @@ class TestBuild(unittest.TestCase):
             self.assertEqual(idx['lastChange']['at'], 'now')
 
 
+def _boards(section):
+    """{file stem: markup} of a README section's artboards, each given as
+    `` `<stem>.dc.html`: `` over its code block."""
+    return dict(re.findall(r'`([^`]+)\.dc\.html`:\n\n```html\n(.*?)```', section, re.S))
+
+
+def _bullet(section, name):
+    return next((ln for ln in section.splitlines() if ln.startswith(f'- **{name}**')), '')
+
+
+BAR = ('mach', 'shockwave', 'turbulence')
+
+
+class TestWhatAFreshDesignerFound(unittest.TestCase):
+    """What a designer who read only the built READMEs found contradictory or
+    missing (the PR8 review): each README says one thing once, its examples
+    are what it tells a designer to draw, and every artboard they lead to is
+    shown."""
+
+    def test_the_rightrail_names_nothing_the_footer_takes(self):
+        """planRightRail leaves Power and Help to the Footer wherever the
+        template stands them; Shockwave's grammar put Power in the RightRail's
+        bullet and its working page in the Footer's."""
+        for theme in BAR:
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                grammar = _section(designsys.readme(p), "The template's grammar")
+                right, footer = _bullet(grammar, 'RightRail'), _bullet(grammar, 'Footer')
+                self.assertNotIn('Power', right)
+                self.assertNotIn('Help', right)
+                for word in ('Help', 'Power', 'the date and time', 'only where you give it one'):
+                    self.assertIn(word, footer)
+        footer = _bullet(_section(designsys.readme(designsys.load('shockwave')), "The template's grammar"), 'Footer')
+        self.assertIn('at the foot of the right rail', footer)
+
+    def test_the_power_key_says_what_the_template_captions_it(self):
+        """Shockwave's power key says Off, Mach's and Turbulence's are their
+        icon alone; the question they open answers Power Down."""
+        for theme, said in (('shockwave', "captioned 'Off'"), ('mach', 'its icon alone'),
+                            ('turbulence', 'its icon alone')):
+            with self.subTest(theme=theme):
+                footer = _bullet(_section(designsys.readme(designsys.load(theme)), "The template's grammar"),
+                                 'Footer')
+                self.assertIn(said, footer)
+                self.assertIn('answers Power Down', footer)
+
+    def test_help_is_a_window_on_its_own_artboard_and_a_page_on_the_320(self):
+        for theme in designsys.TEMPLATES:
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                text = designsys.readme(p)
+                self.assertNotIn('never a page', text)
+                where = next(ln for ln in text.splitlines() if ln.startswith('**Where Help goes.**'))
+                self.assertIn('320', where)
+                hub = designsys.models(p)['TLP525T']['frame']
+                if (hub.get('select') or {}).get('help'):
+                    self.assertIn("at the top of 'Select a Source'", where)
+                else:
+                    self.assertNotIn("on 'Select a Source'", where)
+                    self.assertIn('in its rail', where)
+                if theme != 'afterburn':
+                    self.assertIn('`role="help"`', where)
+                    self.assertIn('page under the strip', where)
+
+    def test_the_example_boots_to_main_dc_html(self):
+        """The README names the start page's file Main.dc.html, and its
+        complete example was a working page of that name with no `start`,
+        leading from a Start it never showed. Every Page carries `panels`
+        and, where the system has themes, `theme`."""
+        for theme in designsys.TEMPLATES:
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                boards = _boards(_section(designsys.readme(p), 'The working page'))
+                start = boards.get('Main', '')
+                self.assertIn('start="true"', start)
+                if theme != 'afterburn':
+                    self.assertIn('splash="true"', start)
+                led = re.findall(r'nav="([^"]+)"', start)
+                self.assertTrue(led)
+                self.assertTrue(all(n in boards for n in led), led)
+                self.assertEqual(sum('start="true"' in b for b in boards.values()), 1)
+                for name, code in boards.items():
+                    page = re.search(r'\.Page"([^>]*)>', code).group(1)
+                    self.assertIn('panels="', page, name)
+                    if p.get('themes'):
+                        self.assertIn('theme="', page, name)
+
+    def test_every_example_tab_draws_its_own_glyph(self):
+        """Shockwave's PC and Doc Cam tabs named no icon, so the source look
+        drew its default laptop on them."""
+        for theme in BAR:
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                names = designsys.icon_names(p).get(p['regions']['tab']['variant']) or []
+                if not names:
+                    self.skipTest('the kit is not here')
+                section = _section(designsys.readme(p), 'The working page')
+                tabs = re.findall(r'<x-import [^>]*slot="source"[^>]*>', section)
+                self.assertGreaterEqual(len(tabs), 3)
+                for tab in tabs:
+                    icon = re.search(r'icon="([^"]+)"', tab)
+                    self.assertTrue(icon, tab)
+                    self.assertIn(icon.group(1), names)
+                self.assertIn('Streaming', section)
+
+    def test_the_word_rules_are_for_buttons_and_window_titles_keep_theirs(self):
+        """'Lighting, not Lighting Settings' was unscoped, against the
+        README's own rule and example that title the window Lighting
+        Settings; the caption lint applies it to captions alone."""
+        for theme in designsys.TEMPLATES:
+            with self.subTest(theme=theme):
+                writing = _section(designsys.readme(designsys.load(theme)), 'Writing')
+                line = next(ln for ln in writing.splitlines() if 'not Power Off' in ln)
+                self.assertTrue(line.startswith('- On a button, say what'), line)
+                self.assertIn("A window's title", line)
+
+    def test_machs_capitals_are_its_seeds(self):
+        """Mach's 320 heads its camera keys ZOOM and FOCUS, its 525 DISPLAYS
+        and SCREENS; the README said Mach sets none in capitals."""
+        p = designsys.load('mach')
+        for word in ('ZOOM', 'FOCUS', 'INPUTS', 'IRIS', 'DISPLAYS', 'SCREENS', 'TITLE'):
+            self.assertIn(word, p['writing']['voice']['caps'])
+        for theme in designsys.TEMPLATES:
+            self.assertNotIn('sets none in capitals', designsys.readme(designsys.load(theme)))
+        # An empty list says nothing of capitals, rather than that there are none.
+        q = json.loads(json.dumps(p))
+        q['writing']['voice']['caps'] = []
+        line = next(ln for ln in _section(designsys.readme(q), 'Writing').splitlines() if 'Title Case' in ln
+                    and ln.startswith('- Captions'))
+        self.assertNotIn('capitals', line)
+
+    def test_the_section_and_leftrail_examples_are_in_the_themes_words(self):
+        """Shockwave's and Turbulence's Section README showed Mach's Settings
+        heading over a Lighting Settings launcher captioned Lighting."""
+        for theme in BAR:
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                docs = designsys.component_docs(p)
+                voice = p['writing']['voice']
+                groups = designsys._design_frame(p)['left']['groups']
+                second = (groups[1].get('heading') or {}).get('text') if len(groups) > 1 else None
+                launcher = voice['launchers'][-1]
+                self.assertIn(f'>{launcher}</x-import>', docs['Section'])
+                self.assertIn(f'name="{launcher}"', docs['Section'])
+                if second:
+                    self.assertIn(f'title="{second}"', docs['Section'])
+                    self.assertIn(f'({second})', docs['LeftRail'])
+                else:
+                    self.assertNotIn('title="Settings"', docs['Section'])
+                    self.assertNotIn('(Settings)', docs['LeftRail'])
+                from gdl.designsys import audit
+                self.assertEqual([c for c in audit.caption_lint(p, docs['Section']) if c[0] == 'README'], [])
+
+    def test_the_empty_state_names_its_source(self):
+        """Shockwave's empty state takes the source's name ('Please connect
+        your PC.') over a status the program sets."""
+        center = _section(designsys.readme(designsys.load('shockwave')), 'The center')
+        self.assertIn("'Please connect your PC.'", center)
+        self.assertIn('the program sets', center)
+
+    def test_a_window_says_which_frame_and_which_answer_where(self):
+        """Shockwave draws its Screen and Audio Control windows wider than the
+        rest, and its question puts Cancel at the left; Turbulence's Power
+        Down rests green there."""
+        wins = _section(designsys.readme(designsys.load('shockwave')), 'Windows')
+        look = _bullet(wins, 'What a window looks like.')
+        self.assertIn('832x651 at 224,74', look)
+        self.assertIn('1028x651 at 126,74', look)
+        self.assertIn('Screen Control', look)
+        self.assertIn('Cancel at the left and Power Down at the right', look)
+        look = _bullet(_section(designsys.readme(designsys.load('turbulence')), 'Windows'), 'What a window looks like.')
+        self.assertIn('Power Down at the left and Cancel at the right', look)
+        self.assertIn('`green`', look)
+
+    def test_the_example_keys_keep_their_looks_shape_and_the_grid(self):
+        """Shockwave's 103x80 keys stood against `key`'s 1.1:1 art, and the
+        examples' own places were off GUI Designer's 10 px nudge."""
+        for theme in BAR:
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                section = _section(designsys.readme(p), 'The working page')
+                for left, top, w, h in re.findall(
+                        r'left: (-?\d+)px; top: (-?\d+)px; width: (\d+)px; height: (\d+)px', section):
+                    for v in (left, top, w, h):
+                        self.assertEqual(int(v) % 10, 0, (left, top, w, h))
+        # The keys are a Group's cells, at the in-well look's own shape.
+        p = designsys.load('shockwave')
+        doc = _boards(_section(designsys.readme(p), 'The working page'))['Doc Cam']
+        w, h = map(int, re.search(r'Group" title="Zoom" cell="(\d+)x(\d+)"', doc).groups())
+        self.assertAlmostEqual(w / h, 504 / 440, delta=0.1)
+
+    def test_a_camera_is_drawn_as_the_template_draws_one(self):
+        """A heading over its keys, the kit's glyph on them where the in-well
+        look has one; the 1035's own headings are Title Case."""
+        for theme, icon in (('mach', 'plus'), ('turbulence', 'vc_plus'), ('shockwave', None)):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                doc = _boards(_section(designsys.readme(p), 'The working page'))['Doc Cam']
+                self.assertIn('>Zoom</x-import>', doc)
+                if icon and designsys.kit_root(p):
+                    self.assertIn(f'icon="{icon}"', doc)
+
+    def test_the_hubs_settings_opener_is_named_as_it_is_captioned(self):
+        text = designsys.readme(designsys.load('shockwave'))
+        hub = next(ln for ln in text.splitlines() if ln.startswith('**What a hub makes of your page.**'))
+        self.assertIn("More", hub)
+        self.assertIn("not the 320's", hub)
+
+    def test_the_differences_list_the_floor_and_the_gap(self):
+        diffs = _section(designsys.readme(designsys.load('shockwave')), 'Differences')
+        self.assertIn('14 pt', diffs)
+        self.assertIn('2 mm apart', diffs)
+        # Turbulence's device pictures and bars are drawn as its art now
+        # (turbulence-34 and -02 are the frame's), so they are no difference.
+        diffs = _section(designsys.readme(designsys.load('turbulence')), 'Differences')
+        self.assertNotIn('device picture', diffs)
+        self.assertNotIn('drawn flat', diffs)
+
+    def test_the_handover_says_who_checks_what(self):
+        """The designer cannot run translate or compare: those are Claude
+        Code's, after the handover."""
+        for theme in designsys.TEMPLATES:
+            with self.subTest(theme=theme):
+                section = _section(designsys.readme(designsys.load(theme)), 'Before you hand it over')
+                mine, theirs = section.split('**Claude Code checks after the handover:**', 1)
+                self.assertIn('`panels`', mine)
+                self.assertNotIn('translate', mine)
+                self.assertNotIn('compare', mine)
+                self.assertIn('translate', theirs)
+                self.assertIn('--template', theirs)
+
+    def test_the_doc_cam_title_says_what_each_panel_says(self):
+        for theme in BAR:
+            with self.subTest(theme=theme):
+                center = _section(designsys.readme(designsys.load(theme)), 'The center')
+                self.assertIn('Document Camera', center)
+                self.assertIn("320's own Doc Cam page", center)
+
+
+class TestAfterburnsReadme(unittest.TestCase):
+    """Afterburn has no region components, so its README says how to place
+    a working page's controls itself - one rule for the right column - and
+    shows every artboard of the room, its windows drawn on a Panel card."""
+
+    def setUp(self):
+        self.p = designsys.load('afterburn')
+        self.text = designsys.readme(self.p)
+        self.working = _section(self.text, 'The working page')
+        self.boards = _boards(self.working)
+
+    def test_the_right_column_is_a_rail_said_once(self):
+        main = self.boards['Main SD']
+        rail = main.split('ExtronAfterburn.Rail">', 1)[1]
+        for name in ('Volume', 'Mute', 'Help', 'Power'):
+            self.assertIn(f'name="{name}"', rail)
+        self.assertIn('ExtronAfterburn.Slider', rail)
+        # Its children need no positions, and nothing else says to place them by hand.
+        self.assertNotIn('left:', rail.split('</x-import>\n</x-import>', 1)[0])
+        for gone in ('place the column as the Layout gives it', 'place those controls as the Layout gives them',
+                     'make it 54 wide at 1166'):
+            self.assertNotIn(gone, self.text + designsys.component_docs(self.p)['Rail'])
+        self.assertIn('the drawn one too', self.working)
+
+    def test_the_working_page_is_the_templates(self):
+        main = self.boards['Main SD']
+        F = designsys._design_frame(self.p)
+        # Four sources in a Group where the frame stands its row, each its own
+        # glyph - a Doc Cam where the template's TV stands, to show a source
+        # with controls.
+        tabs = F['center']['tabs']
+        group = re.search(r'ExtronAfterburn\.Group"([^>]*)>', main).group(1)
+        self.assertIn(f'cell="110x110" gap="{tabs["pitch"] - tabs["first"][2]}"', group)
+        main_r = self.p['layout']['main']
+        self.assertIn(f'left: {tabs["first"][0] - main_r[0]}px; top: {tabs["first"][1] - main_r[1]}px', group)
+        self.assertEqual(len(re.findall(r'variant="source"', main)), len(tabs['items']))
+        if designsys.kit_root(self.p):
+            for icon in ('pc', 'laptop', 'doc-cam', 'streaming'):
+                self.assertIn(f'icon="{icon}"', main)
+        # The left rail's groups under their headings, in list and toggle buttons.
+        for g in F['left']['groups']:
+            self.assertIn(f'>{g["heading"]["text"]}</x-import>', main)
+        self.assertIn('variant="toggle"', main)
+        self.assertIn('variant="list"', main)
+        # The divider as the frame draws it, the date and the time at the foot.
+        self.assertIn('width: 760px', main)
+        self.assertIn('format="date"', main)
+        self.assertIn('format="time"', main)
+        for nav in re.findall(r'nav="([^"]+)"', main):
+            self.assertIn(nav, self.boards)
+
+    def test_every_window_and_source_popup_is_shown(self):
+        for name in ('PC', 'Doc Cam', 'Help', 'Power Down', 'Powering Down', 'Lighting Settings'):
+            self.assertIn(name, self.boards)
+        empty = self.boards['PC']
+        self.assertIn('PC is currently selected.', empty)
+        self.assertIn('kind="popup" group="Sources"', empty)
+        for name in ('Help', 'Power Down', 'Powering Down', 'Lighting Settings'):
+            code = self.boards[name]
+            self.assertIn('kind="modal"', code)
+            # The card: a Panel the squircle's size, where it stands.
+            self.assertIn('ExtronAfterburn.Panel" name="Card"', code)
+            self.assertIn('left: 183px; top: 24px; width: 916px; height: 752px', code)
+        self.assertIn('Do you want to power down the system?', self.boards['Power Down'])
+        self.assertIn('>Close</x-import>', self.boards['Help'])
+        self.assertIn('reached-by="program"', self.boards['Powering Down'])
+        q = self.boards['Power Down']
+        self.assertLess(q.index('>Power Down</x-import>'), q.index('>Cancel</x-import>'))
+
+    def test_it_says_what_the_designer_writes(self):
+        writing = _section(self.text, 'Writing')
+        self.assertNotIn('say them for you', writing)
+        self.assertIn('you write', writing)
+        wins = _section(self.text, 'Windows')
+        self.assertIn('916x752 at 183,24', wins)
+        center = _section(self.text, 'The center')
+        self.assertIn('write it', center)
+
+    def test_the_320_strip_is_at_the_foot(self):
+        grammar = _section(self.text, "The template's grammar")
+        small = next(ln for ln in grammar.splitlines() if ln.startswith('**What the 320 makes of your page.**'))
+        self.assertIn('foot', small)
+        self.assertNotIn('under a title strip', small)
+
+    def test_preview_and_the_mode_button_are_the_rooms_own(self):
+        regions = ' '.join(self.p['layout']['regions'])
+        self.assertIn('only where the room has', regions)
+
+    def test_a_source_popup_is_of_the_sources_group(self):
+        wins = _section(self.text, 'Windows')
+        self.assertNotIn('a standard popup of group 1 in', wins)
+        self.assertIn('`Sources`', wins)
+
+
 class TestPreviews(unittest.TestCase):
     """What the published system shows a designer, for every template."""
 
@@ -2058,6 +2729,623 @@ class TestPreviews(unittest.TestCase):
         self.assertEqual((sizes['button'], sizes['ring'], sizes['source']),
                          ((87, 90), (100, 100), (127, 133)))
         self.assertIn('The seed draws it 87x90.', designsys.component_docs(p)['Button'])
+
+
+class TestTheLedger(unittest.TestCase):
+    """The truth ledger (gdl/designsys/truth/<theme>.json): every claim our
+    profile or README made that the template's own pages contradict, with
+    what the template does and how it is resolved. The audit reports what is
+    not, so a theme at zero is done (the region frame spec's *Truth*)."""
+
+    def setUp(self):
+        from gdl.designsys import audit
+        self.audit = audit
+        self.p = designsys.load('mach')
+        self.ledger = audit.load_ledger('mach')
+
+    def _entry(self, **kw):
+        e = {'id': 'mach-99', 'claim': 'A claim.', 'where': ['type.header.usage'],
+             'template': {'does': 'What it does.', 'seed': 'seeds/Mach 1035.gdl', 'pages': ['Main SD']},
+             'status': 'fixed', 'fix': [{'key': 'type.header.usage', 'says': 'Main Select Source'}],
+             'evidence': 'Read off the page.'}
+        e.update(kw)
+        return {k: v for k, v in e.items() if v is not None}
+
+    def _findings(self, *entries):
+        ledger = dict(self.ledger, entries=list(entries))
+        return self.audit.audit_ledger(self.p, ledger)
+
+    def test_a_differences_number_is_its_entrys_own(self):
+        """Differences is each deviation's `here`, which the claim lint
+        leaves to its entry: a number there the entry's template, reason and
+        evidence never say is a drift no other check sees (PR8 review)."""
+        dev = dict(status='deviation', fix=None, reason='The 53 px touch minimum.',
+                   template={'does': 'The slider is 30 wide.', 'seed': 'seeds/Mach 1035.gdl', 'pages': ['Main SD']})
+        ok = self._entry(here='The slider is drawn 53 px wide where the template draws 30.', **dev)
+        self.assertEqual(self._findings(ok), [])
+        drift = self._entry(here='The slider is drawn 54 px wide where the template draws 30.', **dev)
+        self.assertEqual(self._findings(drift), ["mach-99: its `here` says 54, which its template, reason and "
+                                                 "evidence do not"])
+        # A number inside a word or a name is not one of its claims.
+        named = self._entry(here='The slider is drawn 53 px wide on the TLP1035T, past its 2D border.', **dev)
+        self.assertEqual(self._findings(named), [])
+
+    def test_every_ledger_is_one_its_schema_takes(self):
+        for name in sorted(os.listdir(self.audit.TRUTH)):
+            if name.endswith('.json') and name != 'schema.json':
+                with self.subTest(ledger=name):
+                    led = self.audit.load_ledger(name[:-5])
+                    self.assertEqual(self.audit.validate(led), [])
+                    self.assertEqual(led['theme'], name[:-5])
+
+    def test_machs_ledger_has_an_entry_per_disagreement(self):
+        """The grammar measurement found 43 claims of Mach's profile and README
+        that its pages contradict: one entry each, in its order."""
+        ids = [e['id'] for e in self.ledger['entries']]
+        self.assertEqual(ids, [f'mach-{i:02d}' for i in range(43)])
+
+    def test_mach_is_done(self):
+        self.assertEqual(self.audit.audit('mach'), [])
+        self.assertEqual(designsys.main(['gdl.designsys', 'audit', 'mach']), 0)
+
+    def test_a_resolved_entry_passes(self):
+        self.assertEqual(self._findings(self._entry()), [])
+
+    def test_an_entry_with_no_status_is_unresolved(self):
+        out = self._findings(self._entry(status=None))
+        self.assertTrue(any('has no `status`' in f for f in out), out)
+
+    def test_a_fix_must_name_a_key_the_profile_has_and_say_what_it_says(self):
+        out = self._findings(self._entry(fix=[{'key': 'type.nothing.usage', 'says': 'x'}]))
+        self.assertTrue(any('which the profile does not have' in f for f in out), out)
+        out = self._findings(self._entry(fix=[{'key': 'type.header.usage', 'says': 'every Mach 1035 page'}]))
+        self.assertTrue(any('does not say' in f for f in out), out)
+        out = self._findings(self._entry(fix=[{'readme': 'Words no README holds.'}]))
+        self.assertTrue(any('the README does not say' in f for f in out), out)
+        out = self._findings(self._entry(fix=[]))
+        self.assertTrue(any('names no key or README words' in f for f in out), out)
+
+    def test_a_deviation_needs_its_reason(self):
+        out = self._findings(self._entry(status='deviation', fix=None, here='Nothing under 14 pt.'))
+        self.assertTrue(any('without a reason' in f for f in out), out)
+        self.assertEqual(self._findings(self._entry(status='deviation', fix=None, here='Nothing under 14 pt.',
+                                                    reason='The 14 pt floor.')), [])
+
+    def test_a_deviation_says_what_we_do_instead(self):
+        """The README's Differences is written from each deviation's `here`:
+        one without it would leave a difference unsaid to the designer."""
+        out = self._findings(self._entry(status='deviation', fix=None, reason='The 14 pt floor.'))
+        self.assertTrue(any('says nothing to the designer' in f for f in out), out)
+
+    def test_a_frame_entry_names_a_frame_key_that_is_there(self):
+        ok = self._entry(status='frame', fix=None, frame=[{'series': 'Mach 1220 Series', 'key': 'top.tabs'}])
+        self.assertEqual(self._findings(ok), [])
+        out = self._findings(dict(ok, frame=[{'series': 'Mach 1220 Series', 'key': 'top.nothing'}]))
+        self.assertTrue(any('frame has `top.nothing`' in f for f in out), out)
+        out = self._findings(dict(ok, frame=[{'key': 'left.groups'}]))
+        self.assertEqual(out, [])
+
+    def test_a_claim_said_to_be_gone_must_be(self):
+        out = self._findings(self._entry(gone=['Every artboard on a canvas']))
+        self.assertTrue(any('still says' in f for f in out), out)
+
+    def test_evidence_names_a_seed_and_its_pages(self):
+        bad = self._entry()
+        bad['template'] = dict(bad['template'], seed='Mach 1035', pages=[])
+        out = self._findings(bad)
+        self.assertTrue(any('does not match' in f for f in out), out)
+        self.assertTrue(any('needs at least 1' in f for f in out), out)
+
+    def test_a_theme_with_no_ledger_is_not_done(self):
+        out = self.audit.audit_ledger(designsys.load('afterburn'), None)
+        self.assertTrue(out and 'no ledger' in out[0], out)
+        import contextlib
+        import io
+        from unittest import mock
+        with mock.patch.object(self.audit, 'load_ledger', return_value=None), \
+                contextlib.redirect_stdout(io.StringIO()) as said:
+            self.assertEqual(designsys.main(['gdl.designsys', 'audit', 'mach']), 1)
+        self.assertIn('no ledger', said.getvalue())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(designsys.main(['gdl.designsys', 'audit', 'nothing']), 2)
+
+
+class TestMachsWordsAgainstTheSeed(unittest.TestCase):
+    """What Mach's profile counts and names off seeds/Mach 1035.gdl, read off
+    the seed again: the claim lint reads phrasing, not numbers, so a count or
+    a page a usage states is checked here (mach-10, -11, -15, -31)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from _corpus import seed
+        path = seed('Mach 1035.gdl')
+        if not usable(path):
+            raise unittest.SkipTest('seeds/Mach 1035.gdl is not here (git lfs pull)')
+        import measure_series
+        from gdl.project import Project
+        cls.pages = measure_series.seed_pages(Project.open(path))
+        cls.p = designsys.load('mach')
+        cls.colors = {c['name']: c['usage'] for c in cls.p['colors']}
+
+    def ctl(self, name, cid):
+        return next(c for pg in self.pages for c in pg['controls'] if c['name'] == name and c['id'] == cid)
+
+    def test_the_button_looks_are_counted_as_the_seed_has_them(self):
+        pairs = [tuple(lk['fill'] for lk in c['looks'][:2]) for pg in self.pages for c in pg['controls']
+                 if c['type'] == 'PBButton' and len(c['looks']) >= 2]
+        ghost = pairs.count(('#FFFFFF32', '#FFFFFF78'))
+        shade = pairs.count(('#000000B4', '#1F292EA0'))
+        self.assertIn(f"({ghost} of Mach 1035's {len(pairs)} authored button-state pairs)",
+                      self.p['buttons']['ghost']['usage'])
+        self.assertIn(f"({ghost} of Mach 1035's {len(pairs)} authored button-state pairs)",
+                      self.colors['raised'])
+        self.assertIn(f'the same {ghost} button-state pairs', self.colors['pressed'])
+        self.assertIn(f'({shade} of {len(pairs)} pairs)', self.p['buttons']['solid']['usage'])
+        self.assertIn(f'the same {shade} button-state pairs', self.colors['shade-on'])
+
+    def test_the_rounded_border_is_on_the_shapes_the_seed_draws_it_on(self):
+        shapes = [c for pg in self.pages for c in pg['controls']
+                  if c['type'] == 'PBShape' and (c['border'] or {}).get('resource') == '2D Rounded Rectangle']
+        self.assertIn(f'on {len(shapes)} shapes', self.p['borders']['rounded']['usage'])
+
+    def test_the_grey_labels_are_the_recording_controls_windows(self):
+        held = {pg['name'] for pg in self.pages for c in pg['controls']
+                if c['type'] == 'PBLabel' and c['text_color'] == {'A': 255, 'R': 145, 'G': 145, 'B': 145}}
+        self.assertEqual(held, {'Recording Controls'})
+        self.assertIn("the Recording Controls window's ALL CAPS status labels", self.colors['text-secondary'])
+        self.assertNotIn("Main Recording's", self.colors['text-secondary'])
+
+    def test_red_is_a_consequential_action_and_share_content_is_never_solid(self):
+        """Record starts a recording, and its confirmation says so; Share
+        Content's live state is the dim red on no border."""
+        record = self.ctl('Record', 9244)
+        self.assertEqual([lk['fill'] for lk in record['looks']], ['#A829258C', '#E23636FF'])
+        share = self.ctl('Share Content', 8090)
+        self.assertEqual([(lk['fill'], lk['border']) for lk in share['looks']],
+                         [('#000000B4', None), ('#A82925DC', None)])
+        for usage in (self.colors['alert'], self.p['buttons']['alert']['usage']):
+            self.assertIn('starts what attendees must be told of', usage)
+            self.assertNotIn('Share Content', usage)
+        self.assertIn("Share Content's On", self.colors['alert-dim'])
+        self.assertIn('no border', self.colors['alert-dim'])
+
+
+class TestTheClaimLint(unittest.TestCase):
+    """A sentence in a profile or its README that says what the template
+    does must be backed - by the ledger, by the frame (the README's Layout)
+    or by a `_source` over it that names the seed and a page."""
+
+    def setUp(self):
+        from gdl.designsys import audit
+        self.audit = audit
+
+    def test_what_reads_as_a_claim(self):
+        for s in ("Help and Power, as the seed draws them.",
+                  "Lighting and audio are modals, as Mach's own templates draw them.",
+                  "The volume on the right, as Mach's own pages put it.",
+                  "26 pt, as every Mach 1035 page's own header label.",
+                  "The template's tabs stand 1 px apart.",
+                  "The seed's are 110x110 in a row."):
+            with self.subTest(s=s):
+                self.assertIsNotNone(self.audit.claim(s))
+        for s in ("Every other page must be reachable by `nav` from the start page.",
+                  "Built into the panel as the page's background image.",
+                  "Nothing under 14 pt.",
+                  "The tabs stand at the frame's places, 1 px apart."):
+            with self.subTest(s=s):
+                self.assertIsNone(self.audit.claim(s))
+
+    def _profile(self, usage, source=None):
+        p = designsys.load('mach')
+        p = json.loads(json.dumps(p))
+        p['type'][0]['usage'] = usage
+        p['_source'] = [x for x in p['_source'] if not x.startswith('Type:')] + (
+            [source] if source else [])
+        return p
+
+    def _flagged(self, p, ledger=None):
+        return [w for w, _, _ in self.audit.lint(p, ledger) if w == 'type.title.usage']
+
+    def test_an_unbacked_claim_is_flagged(self):
+        p = self._profile("A title, as every Mach 1035 page's own title label.")
+        self.assertEqual(self._flagged(p), ['type.title.usage'])
+
+    def test_a_source_naming_the_seed_and_a_page_backs_it(self):
+        p = self._profile("A title, as every Mach 1035 page's own title label.",
+                          "Type: seeds/Mach 1035.gdl's Main SD, read with gdl.project.")
+        self.assertEqual(self._flagged(p), [])
+        # The seed alone, or a page alone, does not.
+        p = self._profile("A title, as every Mach 1035 page's own title label.",
+                          "Type: seeds/Mach 1035.gdl's labels.")
+        self.assertEqual(self._flagged(p), ['type.title.usage'])
+
+    def test_a_function_named_pages_is_no_survey_of_every_page(self):
+        """`pages()` in a source names the function it was read with, not a
+        page of the seed, so it backs no claim; a source that read every page
+        says so in words."""
+        claim = "A title, as every Mach 1035 page's own title label."
+        p = self._profile(claim, "Type: seeds/Mach 1035.gdl's labels, read with Project.pages() "
+                                 'from gdl/project.py.')
+        self.assertEqual(self._flagged(p), ['type.title.usage'])
+        p = self._profile(claim, "Type: seeds/Mach 1035.gdl's labels on every page.")
+        self.assertEqual(self._flagged(p), [])
+
+    def test_a_ledger_fix_backs_its_own_words(self):
+        p = self._profile("A title, as every Mach 1035 page's own title label.")
+        ledger = {'entries': [{'fix': [{'key': 'type.title.usage', 'says': "every Mach 1035 page's own title"}]}]}
+        self.assertEqual(self._flagged(p, ledger), [])
+
+    def test_the_layout_is_the_frames(self):
+        """Every number in the README's Layout is a frame value, so none of
+        its sentences is a claim to back."""
+        p = designsys.load('shockwave')
+        layout = designsys.frame_layout(p)
+        self.assertTrue(layout)
+        flagged = [s for w, s, _ in self.audit.lint(p) if w == 'README']
+        self.assertFalse([s for s in flagged if s in layout], flagged)
+
+
+class TestTheCaptionLint(unittest.TestCase):
+    """The README's and the profile's caption examples say what the template
+    says, in its case and voice (`writing.voice`): Title Case, no capitals
+    where it writes none, no generic verb where it names the action, and its
+    own word where it has one ("Lighting", not "Lighting Settings", on Mach's
+    rail)."""
+
+    def setUp(self):
+        from gdl.designsys import audit
+        self.audit = audit
+
+    def _readme(self, theme, *buttons, title=None):
+        p = designsys.load(theme)
+        ns = p['namespace']
+        code = ''.join(f'<x-import component-from-global-scope="{ns}.Button" name="B{i}">{b}</x-import>\n'
+                       for i, b in enumerate(buttons))
+        if title:
+            code += f'<x-import component-from-global-scope="{ns}.Section" title="{title}"></x-import>\n'
+        return p, f'## Example\n\n```html\n{code}```\n'
+
+    def _why(self, theme, *buttons, title=None):
+        p, text = self._readme(theme, *buttons, title=title)
+        return [(c, why) for _, c, why in self.audit.caption_lint(p, text)]
+
+    def test_a_generic_verb_is_flagged(self):
+        for word in ('Submit', 'OK', 'Yes'):
+            with self.subTest(word=word):
+                out = self._why('mach', word)
+                self.assertEqual([c for c, _ in out], [word])
+                self.assertIn('names the action', out[0][1])
+
+    def test_capitals_where_the_template_writes_title_case(self):
+        out = self._why('mach', 'LIGHTING', 'HELP')
+        self.assertEqual([c for c, _ in out], ['LIGHTING', 'HELP'])
+        self.assertIn('Title Case', out[0][1])
+        # Shockwave sets its Help's title in capitals itself; an acronym is no shout.
+        self.assertEqual(self._why('shockwave', 'HELP', 'PC', 'AUX'), [])
+
+    def test_a_caption_the_template_words_otherwise(self):
+        out = self._why('mach', 'Lighting Settings')
+        self.assertEqual(out[0][0], 'Lighting Settings')
+        self.assertIn("Mach says 'Lighting'", out[0][1])
+        out = self._why('shockwave', 'Make Call', 'Lighting Control')
+        self.assertEqual([c for c, _ in out], ['Make Call'])
+        self.assertIn("Shockwave says 'Call'", out[0][1])
+
+    def test_a_caption_not_in_title_case(self):
+        out = self._why('mach', 'Room mode', 'Press to begin', 'Select a Source')
+        self.assertEqual([c for c, _ in out], ['Room mode'])
+        out = self._why('mach', title='display controls')
+        self.assertEqual([c for c, _ in out], ['display controls'])
+
+    def test_the_profiles_caption_examples_are_linted_too(self):
+        p = json.loads(json.dumps(designsys.load('mach')))
+        p['writing']['buttons']['power'] = 'Shut Down'
+        out = self.audit.caption_lint(p, '')
+        self.assertEqual([(w, c) for w, c, _ in out], [('writing.buttons.power', 'Shut Down')])
+
+    def test_every_system_says_its_captions_in_its_templates_voice(self):
+        for theme in designsys.TEMPLATES:
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                self.assertEqual(self.audit.caption_lint(p), [])
+
+    def test_the_audit_reports_it(self):
+        p, text = self._readme('mach', 'Submit')
+        out = self.audit.audit('mach', profile=p, text=text)
+        self.assertTrue(any(f.startswith("caption 'Submit'") for f in out), out)
+
+
+class TestTheTemplateRenders(unittest.TestCase):
+    """Each theme's own working page, rendered off its seed (gdl.compose) and
+    downscaled: the bar panel's, the hub's and the 320's, a file of the
+    private design system the README shows beside its grammar (the owner's
+    call 3 of 2026-10-22: private only, never the public copy)."""
+
+    def test_the_plan_is_each_familys_frame_page_off_its_own_seed(self):
+        for theme in designsys.TEMPLATES:
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                ms = designsys.models(p)
+                plan = [r for r in designsys.template_renders(p) if not r.get('window')]
+                for r, model in zip(plan, (p['model'], 'TLP525T', 'TLP320M')):
+                    self.assertEqual(r['seed'], ms[model]['seed'])
+                    self.assertEqual(r['page'], ms[model]['frame']['page'])
+                    self.assertTrue(r['file'].startswith('templates/') and r['file'].endswith('.webp'), r)
+                    self.assertLessEqual(r['size'][0], 640)
+
+    def test_the_panels_rule_blends_where_the_snapshots_does_not(self):
+        """compose.BINARY: GUI Designer's snapshots write any pixel with alpha
+        at full strength, and that stays paste()'s default; off, paste()
+        blends it, as the panel shows a translucent bar over its photo."""
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed')
+        import io
+        from gdl import compose
+        buf = io.BytesIO()
+        Image.new('RGBA', (4, 4), (0, 0, 0, 128)).save(buf, 'PNG')
+        assets = {1: buf.getvalue()}
+
+        def pixel(rule):
+            c = Image.new('RGBA', (4, 4), (200, 200, 200, 255))
+            was, compose.BINARY = compose.BINARY, rule
+            try:
+                compose.paste(c, assets, 1, 0, 0)
+            finally:
+                compose.BINARY = was
+            return c.getpixel((1, 1))[:3]
+        self.assertIs(compose.BINARY, True)
+        self.assertEqual(pixel(True), (0, 0, 0))
+        for v in pixel(False):
+            self.assertAlmostEqual(v, 200 * (255 - 128) / 255, delta=2)
+
+    def test_a_render_shows_the_photo_through_translucent_chrome(self):
+        """Mach's header is #000000B4 over its photo: the render shows the
+        photo through it, where the snapshot rule paints it black."""
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed')
+        import io
+        from gdl import seeds
+        p = designsys.load('mach')
+        plan = [r for r in designsys.template_renders(p) if r['family'] == 'bar' and not r.get('window')]
+        if not seeds.usable(plan[0]['seed']):
+            self.skipTest(f"{plan[0]['seed']} is not here (git lfs pull)")
+        got = designsys.render_templates(p, plan)
+        im = Image.open(io.BytesIO(got[plan[0]['file']])).convert('RGB')
+        k = plan[0]['size'][0] / plan[0]['screen'][0]
+        # The header band left of its tabs (Mach's 1280x64 at 0,0, tabs from 258).
+        self.assertGreater(max(im.getpixel((int(100 * k), int(32 * k)))), 30)
+
+    def test_rendering_puts_the_compositing_rule_back(self):
+        """render_templates blends, then puts compose.BINARY back as the
+        caller had it - after a page that does not draw, and after one that
+        raises - where it was written True whatever the caller had."""
+        try:
+            import PIL  # noqa: F401
+        except ImportError:
+            self.skipTest('Pillow is not here: renders need gdl.compose')
+        import contextlib
+        import io
+        from gdl import compose, seeds
+        p = designsys.load('mach')
+        plan = [r for r in designsys.template_renders(p) if r['family'] == 'bar' and not r.get('window')]
+        if not seeds.usable(plan[0]['seed']):
+            self.skipTest(f"{plan[0]['seed']} is not here (git lfs pull)")
+        seen = []
+        saved = compose.render_snapshot, compose.BINARY
+
+        def fails(err):
+            def render(*a, **k):
+                seen.append(compose.BINARY)
+                raise err
+            return render
+        try:
+            compose.BINARY = 'the callers'
+            compose.render_snapshot = fails(ValueError('no page'))
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(designsys.render_templates(p, plan), {})
+            self.assertEqual(compose.BINARY, 'the callers')
+            compose.render_snapshot = fails(RuntimeError('boom'))
+            with self.assertRaises(RuntimeError):
+                designsys.render_templates(p, plan)
+            self.assertEqual(compose.BINARY, 'the callers')
+        finally:
+            compose.render_snapshot, compose.BINARY = saved
+        self.assertEqual(seen, [False, False])
+
+    def test_a_build_without_the_seeds_says_so(self):
+        try:
+            import PIL  # noqa: F401
+        except ImportError:
+            self.skipTest('Pillow is not here: renders need gdl.compose')
+        import contextlib
+        import io
+        from gdl import seeds
+        saved = seeds.usable
+        seeds.usable = lambda path: False
+        out = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(out):
+                got = designsys.render_templates(designsys.load('mach'))
+        finally:
+            seeds.usable = saved
+        self.assertEqual(got, {})
+        self.assertIn('git lfs pull', out.getvalue())
+        self.assertIn('seeds/Mach 1035.gdl', out.getvalue())
+
+    def test_a_build_writes_them_and_shows_them(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow not installed')
+        from gdl import seeds
+        p = designsys.load('mach')
+        plan = designsys.template_renders(p)
+        if not all(seeds.usable(r['seed']) for r in plan):
+            self.skipTest("Mach's seeds are not here (git lfs pull)")
+        with tempfile.TemporaryDirectory() as d:
+            written = designsys.build('mach', d, '2026-10-24T00:00:00Z')
+            with open(os.path.join(d, 'project', 'README.md'), encoding='utf-8') as fh:
+                readme = fh.read()
+            for r in plan:
+                self.assertIn('project/' + r['file'], written)
+                path = os.path.join(d, 'project', *r['file'].split('/'))
+                with Image.open(path) as im:
+                    self.assertEqual(im.size, tuple(r['size']))
+                self.assertLess(os.path.getsize(path), 150_000)
+                self.assertIn(f"]({r['file']})", readme)
+            self.assertIn('project/components/Template/preview.html', written)
+            with open(os.path.join(d, 'project', 'components', 'Template', 'preview.html'), encoding='utf-8') as fh:
+                card = fh.read()
+            self.assertTrue(card.startswith('<!-- @dsCard'))
+            self.assertEqual(card.count('data:image/webp;base64,'), len(plan))
+
+
+class TestTheLayoutIsTheFrames(unittest.TestCase):
+    """The README's Layout states each series' bands and the design panel's
+    regions, sets and rects from `panels[series].frame`: hand-written, it
+    told designers Mach's header held a title and its rail buttons stood
+    12 px apart, neither of which its working page does."""
+
+    def _layout(self, p):
+        return designsys.readme(p).split('## Layout', 1)[1].split('\n## ', 1)[0]
+
+    def test_every_series_bands_are_its_frames(self):
+        for theme in designsys.TEMPLATES:
+            p = designsys.load(theme)
+            layout = self._layout(p)
+            for name, s in p['panels'].items():
+                f = s.get('frame') if isinstance(s, dict) else None
+                if name.startswith('_') or not f:
+                    continue
+                row = next(ln for ln in layout.splitlines()
+                           if ln.startswith(f"| {name[len(p['template']):].strip().removesuffix(' Series')} |"))
+                for k in ('top', 'left', 'right', 'bottom', 'center'):
+                    with self.subTest(theme=theme, series=name, band=k):
+                        b = f.get(k)
+                        want = designsys._rect(b['rect']) if isinstance(b, dict) else '-'
+                        self.assertIn(f' {want} |', row)
+
+    def test_the_design_panels_regions_are_drawn_from_its_frame(self):
+        p = designsys.load('mach')
+        layout = self._layout(p)
+        for want in ('**Header** 1280x64 at 0,0', '190x64 from 258,0, one every 191 px (1 px apart)',
+                     "'Display' heading 103x37 at 17,149", '103x60 from 17,186, one every 61 px (1 px apart)',
+                     '`SD Volume Slider` 30x363 at 1198,178', '`Help` 70x55 at 1069,745',
+                     'the popup region the sources fill 995x549 at 140,137'):
+            self.assertIn(want, layout)
+        for gone in ('with the page\'s title centered on it', '12 px apart', 'Lighting Preset',
+                     'Sources sit in the middle of the photo'):
+            self.assertNotIn(gone, layout)
+
+    def test_it_cannot_drift_from_the_frame(self):
+        p = json.loads(json.dumps(designsys.load('mach')))
+        p['panels']['Mach 1220 Series']['frame']['top']['tabs']['items'][0]['rect'] = [300, 0, 180, 64]
+        p['panels']['Mach 1020 Series']['frame']['bottom']['rect'] = [0, 540, 1024, 60]
+        layout = self._layout(p)
+        self.assertIn('180x64 from 300,0', layout)
+        self.assertIn('| 1024x60 at 0,540 |', layout)
+
+
+class TestTurbulencesTruth(unittest.TestCase):
+    """Turbulence's ledger (gdl/designsys/truth/turbulence.json): the claims
+    its profile and README made that its own pages contradict, resolved - and
+    what that changed in the shared READMEs and in what builds."""
+
+    def setUp(self):
+        from gdl.designsys import audit
+        self.audit = audit
+        self.p = designsys.load('turbulence')
+        self.docs = designsys.component_docs(self.p)
+
+    def test_it_has_an_entry_per_disagreement(self):
+        """The grammar measurement found 34, the PR8 review one more (the
+        device picture, missing from Differences), and measuring every source
+        popup's picture one more (turbulence-35: each device is its own size):
+        one entry each, in order."""
+        ids = [e['id'] for e in self.audit.load_ledger('turbulence')['entries']]
+        self.assertEqual(ids, [f'turbulence-{i:02d}' for i in range(36)])
+
+    def test_turbulence_is_done(self):
+        self.assertEqual(self.audit.audit('turbulence'), [])
+        self.assertEqual(designsys.main(['gdl.designsys', 'audit', 'turbulence']), 0)
+
+    def test_a_lit_dock_call_tile_and_help_are_lime(self):
+        """The seed's lit captions are LimeGreen on the tabs, keys, rings and
+        wide bars and Lime on the docks, Help and the Initiate Call and End
+        Call tiles; the profile said `accent` for every one."""
+        on = lambda states: next(s for s in states if s['name'] == 'On')['color']
+        for variant in ('dock', 'call'):
+            self.assertEqual(on(self.p['buttons'][variant]['states']), 'lime', variant)
+        self.assertEqual(on(self.p['regions']['help']['states']), 'lime')
+        for variant in ('button', 'ring', 'source', 'wide'):
+            self.assertEqual(on(self.p['buttons'][variant]['states']), 'accent', variant)
+        tokens = {c['name']: c['value'] for c in self.p['colors']}
+        self.assertEqual((tokens['lime'], tokens['alert'], tokens['veil']), ('#00FF00', '#FF0000', '#00000087'))
+        # Room Mode's card is black at transparencyField 47: alpha 135.
+        self.assertEqual(int(tokens['veil'][-2:], 16), round(255 * (100 - 47) / 100))
+
+    def test_the_header_and_footer_are_art_not_a_panel(self):
+        text = designsys.readme(self.p)
+        for gone in ('`shade` Panel', 'invisible at rest', 'centered on the page', '112 apart'):
+            self.assertNotIn(gone, text + self.docs['Button'])
+        self.assertIn('with a 3-row light rule', next(c for c in self.p['colors'] if c['name'] == 'shade')['usage'])
+
+    def test_a_set_is_not_said_to_touch_where_its_template_leaves_a_gap(self):
+        """Turbulence's tabs stand 14 px apart, its rings 8 and its docks 2:
+        the Header and Section READMEs said 'touch, 1 px apart', which only
+        Mach's and Shockwave's sets do."""
+        tabs = self.p['panels']['Turbulence 1220 Series']['frame']['top']['tabs']
+        self.assertEqual(tabs['pitch'] - tabs['first'][2], 14)
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            docs = designsys.component_docs(designsys.load(theme))
+            for name in ('Header', 'Section', 'RightRail', 'Footer'):
+                with self.subTest(theme=theme, doc=name):
+                    self.assertNotIn('touch, 1 px apart', docs[name])
+                    self.assertNotIn('touch as it draws', docs[name])
+        self.assertIn('one every 141 px (14 px apart)', designsys.frame_layout(self.p))
+
+    def test_a_slider_drawn_from_art_is_not_called_a_rounded_rail(self):
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                doc = designsys.component_docs(designsys.load(theme))['Slider']
+                self.assertIn("its kit's rail art", doc)
+                self.assertNotIn('a rounded rail', doc)
+        doc = designsys.component_docs(designsys.load('turbulence'))['Slider']
+        self.assertIn('`52x535_turb_slider_bg.png` for the empty rail', doc)
+        self.assertIn('`52x535_turb_slider_fill.png` over it as far as the value', doc)
+        # Afterburn's is two colors.
+        self.assertIn('a rounded rail', designsys.component_docs(designsys.load('afterburn'))['Slider'])
+
+    def test_the_examples_are_what_the_template_draws(self):
+        """The Group example is the tab row (127x133, 14 apart), the MainArea
+        example a Select a Source tile inside main, the Panel example a card,
+        and the working page's PC tab draws its own glyph."""
+        group = self.docs['Group']
+        self.assertIn('cell="127x133" gap="14"', group)
+        self.assertNotIn('cell="110x110"', group)
+        m = re.search(r'left: (-?\d+)px; top: (-?\d+)px; width: (\d+)px; height: (\d+)px', self.docs['MainArea'])
+        x, y, w, h = map(int, m.groups())
+        main = self.p['layout']['main']
+        self.assertTrue(0 <= x and 0 <= y and x + w <= main[2] and y + h <= main[3], (x, y, w, h))
+        self.assertIn('name="Card" fill="page" border="rounded"', self.docs['Panel'])
+        self.assertNotIn('name="TopBar"', self.docs['Panel'])
+        # The example names an icon only where Extron's kit lists it, so the
+        # glyph is checked where the kit is; the rest holds without it.
+        if designsys.kit_root(self.p):
+            self.assertIn('name="PC" icon="input_pc"', designsys.readme(self.p))
+        self.assertEqual(self.p['examples']['source']['rect'][:2], [282, 0])
+
+    def test_the_themes_are_set_by_page_role(self):
+        text = designsys.readme(self.p)
+        self.assertNotIn('The image is drawn on every page', text)
+        self.assertIn('Set on each Page to the photograph Turbulence draws for its role', text)
+        self.assertNotIn('the same on every artboard', self.docs['Page'])
+        self.assertIn("Turbulence's working pages are composed the same way", text)
+        self.assertIn('Its other pages are not composed so', text)
 
 
 if __name__ == '__main__':

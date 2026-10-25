@@ -147,8 +147,8 @@ touch-target Quick Reference table, which is a different thing.
 - Leave at least **2 mm (1/16″)** between touchable elements. How the toolkit
   applies it is ours: between every pair of touch targets on a page or popup -
   buttons and sliders - and two that overlap fail outright; the segments of one
-  segmented control touch on purpose (Shockwave's Display On/Off/Mute is butted
-  in every series), so two buttons sharing a `joined` value are exempt.
+  segmented control touch on purpose (Shockwave's header tabs stand 1 px apart and its
+  Display On/Off/Mute 4 apart on the 1035, butted on the 725), so two buttons sharing a `joined` value are exempt.
 - "As a general rule for small buttons of **72 pixels or less**, there should be at
   least **5 to 10 pixels** between them." (p. 56)
 - GUI Designer 1.7+ nudges by **10 px** per arrow key press — a de facto grid unit.

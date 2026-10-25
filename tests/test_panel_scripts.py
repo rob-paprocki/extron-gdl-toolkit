@@ -107,5 +107,36 @@ class TestALevelKeepsItsArt(unittest.TestCase):
                                  r"'backgroundImageField' \$null")
 
 
+class TestAnImageDrawsItsArt(unittest.TestCase):
+    """A PBImage draws its art from its backgroundImageField - every one in
+    the Turbulence seeds - which a clone is cleared of with every control's;
+    buttonImageField is a button's. Laid out Stretch (1) as the seeds' bars
+    are, Fill (0) as their device pictures are."""
+
+    def _block(self, script, test):
+        m = re.search(r"if \(" + re.escape(test) + r"\) \{(.*?)\n\s*\}", script, re.S)
+        self.assertIsNotNone(m, test)
+        return m
+
+    def test_an_image_is_given_the_plans_art_after_the_clones_is_cleared(self):
+        script = _read('Apply-GdlPlan.ps1')
+        m = self._block(script, "$op.donor_type -eq 'PBImage' -and $op.image")
+        self.assertLess(script.index("Set-GdlFieldIfPresent $c 'backgroundImageField' $null"), m.start())
+        body = m.group(1)
+        self.assertIn("Set-GdlImage $c 'backgroundImageField' $imageRef (Get-PlanImageName $op.image.name)", body)
+        self.assertIn("'backgroundImageLayoutField' ([int]$op.image_layout)", body)
+        self.assertIn("'backgroundImageAlignmentField' ([int]$op.image_align)", body)
+        self.assertNotIn('buttonImageField', body)
+
+    def test_a_popup_is_given_its_photo_after_the_donors_is_cleared(self):
+        script = _read('Apply-GdlPlan.ps1')
+        m = self._block(script, '$pu.background_image')
+        self.assertLess(script.index("Set-GdlFieldIfPresent $popup 'backgroundImageField' $null"), m.start())
+        body = m.group(1)
+        self.assertIn("Set-GdlImage $popup 'backgroundImageField' $imageRef "
+                      "(Get-PlanImageName $pu.background_image.name)", body)
+        self.assertIn("'backgroundImageLayoutField' ([int]$pu.background_layout)", body)
+
+
 if __name__ == '__main__':
     unittest.main()

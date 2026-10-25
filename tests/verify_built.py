@@ -329,6 +329,11 @@ def check_states(plan_items, table, assets, kind):
             want = op.get('states')
             if not want and not op.get('image'):
                 continue
+            # An image control's art is check_images's, laid out as planned:
+            # fitted here as an icon is, the Turbulence 1035's stretched header
+            # - its seed's own art - read as 26% off.
+            if op.get('donor_type') == 'PBImage':
+                continue
             name = (op.get('fields') or {}).get('nameField')
             c = by_name.get(name)
             if c is None:
@@ -574,6 +579,51 @@ def check_rails(plan_items, table, assets, kind):
     return problems, checked
 
 
+def check_images(plan_items, table, assets, kind):
+    """An image control's artwork must be the art the plan gave it, laid out
+    as planned: stretched (1), as the Turbulence seeds' header and footer
+    bars are, or fitted (0), as their device pictures are.
+
+    layout.json names no image, and a clone's backgroundImageField - where a
+    PBImage keeps its art - is cleared with every control's, so an image the
+    applier never set builds as its fill alone and every field reads right.
+    On the 1035 seed's own bars and device pictures, each against its file
+    so laid out is 0% off, and against another's 10% and up
+    (tests/test_verify_built.py) - the laptop and the PC are 10% apart, under
+    the 25% a kit image on a button may be off, so an image is held to
+    IMAGE_ART_OFF.
+    """
+    problems, checked = [], 0
+    for item in plan_items:
+        got = table.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item['controls']:
+            img = op.get('image')
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if op.get('donor_type') != 'PBImage' or not img or c is None:
+                continue
+            checked += 1
+            where = f"{kind} {item['name']!r} {name!r}"
+            tid = c.get('TLPImageID')
+            if tid is None or tid < 0 or tid not in assets:
+                problems.append(f'{where}: planned {img["name"]!r}, but it built with no artwork '
+                                f'(TLPImageID {tid})')
+                continue
+            if not img.get('file') or not os.path.exists(img['file']):
+                problems += _gone(where, img)
+                continue
+            draw = stretch_image if op.get('image_layout') == 1 else fit_image
+            off = image_mismatch(img['file'], assets[tid], c['Width'], c['Height'], op.get('fill'), draw=draw)
+            if off > IMAGE_ART_OFF:
+                problems.append(f"{where}: {off:.0%} of its artwork differs from the planned "
+                                f"{img['name']!r} {'stretched' if draw is stretch_image else 'fitted'} - "
+                                f'it is not that image laid out so')
+    return problems, checked
+
+
 def check_fonts(plan_items, table, kind):
     """Typography must reach the panel, not just the preview.
 
@@ -697,6 +747,11 @@ def fit_image(file, w, h):
 # wave at 64 px. So each state is also held against its button's other states'
 # images, and nearer one of those than its own is a failure (_state_image).
 IMAGE_PIXEL, IMAGE_OFF, IMAGE_INSET = 60, 0.25, 4
+# An image control has no border, ring or caption to be off by: every bar and
+# device picture of the Turbulence 1035, 725 and 525 seeds is 0% off its own
+# file laid out as the seed lays it, and the nearest other - the laptop's
+# against the PC's - 10% (check_images).
+IMAGE_ART_OFF = 0.05
 
 
 def _max_channel(im):
@@ -806,8 +861,10 @@ def _state_image(where, i, bs, c, image, fill, assets, others=()):
     return []
 
 
-def _check_background_image(spec, pg, assets):
-    """The page's artwork must be its planned image, fitted over its fill.
+def _check_background_image(spec, pg, assets, kind='page'):
+    """The page's artwork must be its planned image, fitted over its fill -
+    or a popup's, which Shockwave's and Turbulence's hubs draw on the page's
+    photo.
 
     layout.json does not name a page's background image, so the artwork is
     the only witness. With the image's file at hand, composite it the way the
@@ -816,9 +873,9 @@ def _check_background_image(spec, pg, assets):
     """
     img = spec['background_image']
     tid = pg.get('TLPImageID')
-    where = f"page {spec['name']!r} background image {img['name']!r}"
+    where = f"{kind} {spec['name']!r} background image {img['name']!r}"
     if tid is None or tid < 0 or tid not in assets:
-        return [f'{where}: the page built with no artwork (TLPImageID {tid})']
+        return [f'{where}: the {kind} built with no artwork (TLPImageID {tid})']
     art = Image.open(io.BytesIO(assets[tid])).convert('RGB')
     if img.get('file') and os.path.exists(img['file']):
         fill = spec['background']
@@ -831,12 +888,12 @@ def _check_background_image(spec, pg, assets):
         hist = ImageChops.difference(art, want).convert('L').histogram()
         mean = sum(i * n for i, n in enumerate(hist)) / max(1, sum(hist))
         if mean > IMAGE_TOLERANCE:
-            return [f'{where}: the page artwork differs from the image over its fill by '
+            return [f'{where}: the {kind} artwork differs from the image over its fill by '
                     f'{mean:.0f} levels on average - it is not the planned image']
         return []
     shares = _shares(assets, tid)
     if shares and max(shares.values()) >= 0.99:
-        return [f'{where}: the page artwork is a single flat color, so the image did not '
+        return [f'{where}: the {kind} artwork is a single flat color, so the image did not '
                 f'reach it']
     return []
 
@@ -890,6 +947,11 @@ def check_popup_background(plan_popups, popups, assets):
     for spec in plan_popups:
         pu = popups.get(spec['name'])
         if pu is None or spec.get('modal') or spec.get('background') is None:
+            continue
+        if spec.get('background_image'):
+            # On the page's photo, as Shockwave's and Turbulence's hubs draw
+            # their popups: checked as a page's image is.
+            problems += _check_background_image(spec, pu, assets, 'popup')
             continue
         tid = pu.get('TLPImageID')
         if tid is None or tid < 0 or tid not in assets:
@@ -1382,6 +1444,9 @@ def check(plan_path, built_path):
         problems += probs
         checked += n
         probs, n = check_level_bars(spec, table, assets, kind)
+        problems += probs
+        checked += n
+        probs, n = check_images(spec, table, assets, kind)
         problems += probs
         checked += n
         for note in notes:

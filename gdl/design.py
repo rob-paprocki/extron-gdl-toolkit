@@ -56,8 +56,13 @@ FIELDS = {
     'level': ('id', 'fill', 'border', 'orientation', 'track', 'bar', 'does'),
     'datetime': ('color', 'size', 'bold', 'align', 'format'),
     'popup_ref': ('group', 'derived'),
+    # The template's own art (bundle.js's Image, and the art a region draws:
+    # Turbulence's bars, a source's device picture), by its kit file.
+    'image': ('image', 'layout', 'fill', 'derived'),
 }
 COLOR_KEYS = ('fill', 'stroke', 'color', 'bar')
+# The kinds a program addresses by ID (gdl.idmap): those a seed ID is kept on.
+ID_KINDS = ('button', 'label', 'slider', 'level')
 STATE_LOOK = ('fill', 'stroke', 'color', 'text', 'border', 'image')
 
 # Runs inside each artboard once it has rendered. It reports every component
@@ -321,6 +326,11 @@ class Canvas:
         if spec is not None:
             if not self._seed_has_line(spec):
                 notes = notes + lines_as_shapes(spec)
+            # A region page's chrome keeps its seed IDs and a mirror its
+            # control's, as on a canvas of panels; nothing else is pinned here.
+            if any('_seed_id' in c or '_mirror' in c for it in spec['pages'] + spec['popups']
+                   for c in it['controls']):
+                problems = problems + pin_ids({'': spec}, [''])['']
             problems = problems + _spec_check(spec, self._seed_geometry(spec), problems)
         for item in (spec or {}).get('pages', []) + (spec or {}).get('popups', []):
             item.pop('_host', None)
@@ -513,7 +523,9 @@ class Canvas:
             # and ignores its background, so a modal carries none.
             if pg.get('background') and not pg.get('modal'):
                 item['background'] = pg['background']
-            if pg.get('background_image') and pg['kind'] == 'page':
+            # A page's photo - and a hub popup's, which Shockwave's and
+            # Turbulence's draw on the page's own (bundle.js, regions.hub.popup.photo).
+            if pg.get('background_image') and (pg['kind'] == 'page' or not pg.get('modal')):
                 item['background_image'] = pg['background_image']
                 if pg.get('background_file'):
                     art[pg['background_image']] = pg['background_file']
@@ -575,6 +587,14 @@ class Canvas:
                     # draws them, and carry the fill their layout gives them.
                     sub.update(modal=False, group=d.get('group'), size=d.get('size'),
                                background=d.get('background') or 'none')
+                    # A hub's options and display popups on the page's photo,
+                    # as Shockwave's and Turbulence's own are.
+                    if d.get('background_image'):
+                        sub['background_image'] = d['background_image']
+                        if d.get('background_file'):
+                            art[d['background_image']] = d['background_file']
+                        if profile.get('background_layout'):
+                            sub['background_layout'] = profile['background_layout']
                     # Its group's first of what this page derived: nothing
                     # leads to it - it is what the region shows when the page
                     # comes up, which the program does. Only this page's parts
@@ -683,9 +703,11 @@ class Canvas:
                  if th.get('image') and th.get('file')}
         # A panel's own background art, named by its Page.
         files.update(art)
-        used = {pg['background_image'] for pg in pages if pg.get('background_image')}
+        used = {pg['background_image'] for pg in pages + popups if pg.get('background_image')}
         buttons = {s['image'] for item in pages + popups for c in item['controls']
                    for s in c.get('states') or [] if isinstance(s, dict) and s.get('image')}
+        buttons |= {c['image'] for item in pages + popups for c in item['controls']
+                    if c['kind'] == 'image' and c.get('image')}
         buttons |= {c[k] for item in pages + popups for c in item['controls']
                     for k in ('thumb_image', 'track_image', 'fill_image') if c.get(k)}
         if buttons:
@@ -798,6 +820,15 @@ class Canvas:
             # border of `none` is a value - no border - and is kept.
             if k in g and (g[k] != 'none' or k == 'border'):
                 c[k] = g[k]
+        # The translator's own, which pin_ids reads and takes off: the
+        # template's seed ID a region's fixed chrome keeps where it is free
+        # (`seed_id`: Help 8117 on the bar themes), and the control a copy
+        # the layout drew mirrors under its ID (`mirror`: Shockwave's tab
+        # twin, the caption under the 1035's tab).
+        if kind in ID_KINDS and isinstance(g.get('seed_id'), int):
+            c['_seed_id'] = g['seed_id']
+        if kind == 'button' and g.get('mirror'):
+            c['_mirror'] = str(g['mirror'])
         if kind == 'button':
             for m in g.get('missing_icon') or []:
                 size, icon = m.split(' ', 1)
@@ -805,7 +836,7 @@ class Canvas:
                                      f'{size} kit')
             if 'states' in c:
                 c['states'] = [_state(s) for s in c['states']]
-            if 'nav' in c and g.get('derived'):
+            if 'nav' in c and g.get('derived') and not g.get('mirror'):
                 pass  # a page or popup this panel's layout derived: checked once all are known
             elif 'nav' in c:
                 target = stems.get(re.sub(r'\.dc\.html$', '', str(c['nav'])))
@@ -944,8 +975,25 @@ def _spec_check(spec, geometry=None, known=()):
     it has not, the failure is one."""
     from copy import deepcopy
     probe = deepcopy(spec)
+    used = {c['id'] for item in probe['pages'] + probe['popups'] for c in item['controls'] if c.get('id')}
+    stand = 60000
     for item in probe['pages'] + probe['popups']:
         item.pop('_host', None)
+        # A mirror pin_ids has not given its control's ID - another panel's
+        # problem stops the pinning - is still its control's (gdl.spec
+        # mirrors): sharing a stand-in ID here, it is not reported as a
+        # control of its own, under the touch minimum and over its tab.
+        named = {c.get('name'): c for c in item['controls'] if c.get('name') and not c.get('_mirror')}
+        for c in item['controls']:
+            host = named.get(c.pop('_mirror', None))
+            if host is None:
+                continue
+            if not host.get('id'):
+                while stand in used:
+                    stand += 1
+                host['id'] = stand
+                used.add(stand)
+            c['id'] = host['id']
     try:
         panel = gdlspec.Panel(probe)
         out = list(panel.check())
@@ -1101,7 +1149,12 @@ def pin_ids(specs, order):
     carries, where it carries one on every panel it is on and no canvas
     control has it: a hub's Volume Up and Down and its settings opener are
     chrome the 1035 does not draw, and keep the hub's own seed IDs.
-    A canvas control a panel's layout left out by name (its page's `left`:
+    A region page's fixed chrome (`_seed_id`: the Footer's Help, Power and
+    mode launcher, the RightRail's Volume and Mute) keeps the template's seed
+    ID on every page that draws it, where it has no ID of its own and no
+    canvas control has it, pinned before the bands, which step over it. A copy a layout drew of a canvas
+    control (`_mirror`: Shockwave 1035's tab twin) takes that control's ID on
+    its page. A canvas control a panel's layout left out by name (its page's `left`:
     a hub's footer clock, which its template has no place for) may be absent
     there.
     """
@@ -1118,6 +1171,28 @@ def pin_ids(specs, order):
             popups_seen += 1
     taken = {c['id'] for spec in specs.values() for it in spec['pages'] + spec['popups']
              for c in it['controls'] if c.get('id')}
+    # A region page's fixed chrome - the Footer's Help and Power, the
+    # RightRail's Volume and Mute, the mode launcher - keeps the template's
+    # seed ID (`_seed_id`, off its frame's `ids`) where the designer gave it
+    # none and no canvas control has it: a program written against Extron's
+    # template finds Help at 8117 on every panel. Pinned before the bands,
+    # which step over it. Keyed by name, not page: every working page draws
+    # the chrome, and it is one control a program drives from any of them, so
+    # Help is 8117 on the second page as on the first. A seed ID goes to the
+    # first name that carries it; another name that claims it takes its band.
+    explicit = {c['id'] for spec in specs.values() for it in spec['pages'] + spec['popups']
+                for c in it['controls'] if c.get('id') and not c.get('derived')}
+    seeded, holder = {}, {}
+    for it in design['pages'] + design['popups']:
+        for c in it['controls']:
+            sid = c.get('_seed_id')
+            if (c.get('derived') or c.get('id') or not c.get('name') or sid is None
+                    or sid in explicit):
+                continue
+            if seeded.get(c['name'], sid) != sid or holder.get(sid, c['name']) != c['name']:
+                continue
+            seeded[c['name']], holder[sid] = sid, c['name']
+    taken |= set(seeded.values())
 
     def key(it, c, seen):
         if c.get('name'):
@@ -1139,21 +1214,26 @@ def pin_ids(specs, order):
             if c.get('id'):
                 ids[k] = c['id']
                 continue
+            if c.get('_seed_id') is not None and seeded.get(c.get('name')) == c['_seed_id']:
+                ids[k] = c['_seed_id']
+                continue
             n = nxt.get(it['_host'], 1)
             while n in taken:
                 n += 1
             ids[k] = n
             taken.add(n)
             nxt[it['_host']] = n + 1
+    # A mirror the layout drew (`_mirror`: Shockwave's tab twin) has its
+    # control's ID, not one of its own.
     derived = sorted({(it['name'], c['name']) for spec in specs.values()
                       for it in spec['pages'] + spec['popups'] for c in it['controls']
-                      if c.get('derived') and c.get('name')})
+                      if c.get('derived') and c.get('name') and not c.get('_mirror')})
     did, n = {}, DERIVED_IDS
     carried = {}
     for spec in specs.values():
         for it in spec['pages'] + spec['popups']:
             for c in it['controls']:
-                if c.get('derived') and c.get('name'):
+                if c.get('derived') and c.get('name') and not c.get('_mirror'):
                     carried.setdefault((it['name'], c['name']), set()).add(c.get('id'))
     canvas_ids = set(ids.values())
     for k in derived:
@@ -1173,6 +1253,18 @@ def pin_ids(specs, order):
         found, seen = set(), {}
         for it in spec['pages'] + spec['popups']:
             for c in it['controls']:
+                c.pop('_seed_id', None)
+                mirror = c.pop('_mirror', None)
+                if mirror:
+                    # Where the template draws one function twice and the
+                    # program addresses it as one control (docs/idmap.md
+                    # Mirrors): the copy takes the control's ID on this page.
+                    if (it['_host'], mirror) in ids:
+                        c['id'] = ids[(it['_host'], mirror)]
+                    else:
+                        problems[model].append(f"{it['name']!r} {c.get('name')}: mirrors {mirror!r}, which "
+                                               'is not on this page')
+                    continue
                 if c.get('derived'):
                     # A derived copy of an unnamed card has nothing to key an
                     # ID by, and a shape needs none.
@@ -1271,10 +1363,10 @@ class _Built:
         self.fills = fill_index(built)
         self.by_name = {p['Name']: p for p in self.j['Pages'] + self.j['PopupPages']}
 
-    def image(self, name, size, host=None):
+    def image(self, name, size, host=None, base=None):
         """The page or popup `name` as the panel shows it: a modal over the
-        start page under Build's scrim; a group's popup in its host page's
-        region; anything else on its own."""
+        start page - or `base` - under Build's scrim; a group's popup in its
+        host page's region; anything else on its own."""
         from .compose import render_page, render_snapshot
         from PIL import Image
         import io
@@ -1284,7 +1376,8 @@ class _Built:
         psize = (pg.get('Width') or size[0], pg.get('Height') or size[1])
         j, assets, fills = self.j, self.assets, self.fills
         if pg.get('Modal'):
-            start = j.get('DefaultPage') or j['Pages'][0]['ID']
+            start = (self.by_name[base]['ID'] if base in self.by_name
+                     else j.get('DefaultPage') or j['Pages'][0]['ID'])
             img = render_snapshot(j, start, assets, psize, fills=fills).convert('RGBA')
             if pg.get('TLPImageID', -1) in assets:
                 scrim = Image.open(io.BytesIO(assets[pg['TLPImageID']])).convert('RGBA')
@@ -1435,6 +1528,199 @@ def compare_panels(folder, built_dir, out_dir, chrome=None):
     return scores
 
 
+_PAGE_TAG = re.compile(r'<x-import component-from-global-scope="[\w.]+\.Page"([^>]*)>')
+_REGION_TAG = re.compile(r'component-from-global-scope="[\w.]+\.(?:Header|LeftRail|RightRail|Footer|Center)"')
+
+
+def board_role(src):
+    """What an artboard is, by its root Page: 'page' for a working page (one
+    holding a region), its `role` for a source's popup or a window, else None
+    - a free page, which the template's grammar has no counterpart for."""
+    m = _PAGE_TAG.search(src)
+    if not m:
+        return None
+    role = dict(re.findall(r'([\w-]+)="([^"]*)"', m.group(1))).get('role')
+    if role:
+        return role.lower()
+    return 'page' if _REGION_TAG.search(src) else None
+
+
+def template_counterparts(frame):
+    """{role: (seed page or popup, the page it shows over or in)}: what the
+    template seed whose frame this is draws for a working page ('page'), a
+    source's popup and each window - its frame's own page and popups. On a
+    bar panel or a hub a source's popup shows in the working page's region
+    and a window over it; a 320's are pages of their own, and its working
+    page is Main, the home its frame records."""
+    page = frame.get('page')
+    pages = bool(frame.get('home'))
+    host = None if pages else page
+    out = {'page': ((frame.get('home') or {}).get('page') or page, None)}
+    src = (frame.get('center') or {}).get('popup')
+    out['source'] = (src, host) if src and not pages else (page, None)
+    wins = frame.get('windows') or {}
+    for k in ('help', 'confirm', 'wait'):
+        w = wins.get(k)
+        if isinstance(w, dict) and (w.get('popup') or w.get('page')):
+            out[k] = (w.get('popup') or w.get('page'), host)
+    sett = wins.get('settings') or []
+    if sett and (sett[0].get('popups') or [None])[0]:
+        out['settings'] = (sett[0]['popups'][0], host)
+    return out
+
+
+def _same_name(built, *names):
+    """The built file's page or popup named as one of `names`, letters and
+    digits alone and in any case: exactly ('DocCam' is 'Doc Cam'), or as its
+    first page ('Doc Cam 1') or with a word after ('Lighting Settings')."""
+    def norm(s):
+        return re.sub(r'[^a-z0-9]', '', (s or '').lower())
+    have = {}
+    for n in built.by_name:
+        have.setdefault(norm(n), n)
+    for want in filter(None, (norm(x) for x in names)):
+        for key in (want, want + '1'):
+            if key in have:
+                return have[key]
+        hit = sorted(k for k in have if k.startswith(want))
+        if hit:
+            return have[hit[0]]
+    return None
+
+
+def _sheet(sections, path, width=480):
+    """One PNG of every pair, panel by panel, for a designer to read at a
+    glance: each artboard as drawn beside the template's page, labelled."""
+    from PIL import Image, ImageDraw
+    rows = []
+    for title, pairs in sections:
+        rows.append(('title', title))
+        rows += [('pair', p) for p in pairs]
+    pad, head = 12, 22
+    cells = []
+    for kind, v in rows:
+        if kind == 'title':
+            cells.append((head + pad, kind, v))
+            continue
+        name, design_png, template_png, label = v
+        imgs = []
+        for f in (design_png, template_png):
+            if f and os.path.exists(f):
+                im = Image.open(f).convert('RGB')
+                imgs.append(im.resize((width, max(1, round(width * im.height / im.width)))))
+            else:
+                imgs.append(None)
+        h = max([im.height for im in imgs if im] + [60])
+        cells.append((h + head + pad, kind, (name, imgs, label)))
+    sheet = Image.new('RGB', (2 * width + 3 * pad, sum(c[0] for c in cells) + pad), (22, 23, 29))
+    d = ImageDraw.Draw(sheet)
+    y = pad
+    for h, kind, v in cells:
+        if kind == 'title':
+            d.text((pad, y + 4), v, fill=(232, 232, 238))
+        else:
+            name, imgs, label = v
+            d.text((pad, y + 4), f'{name} - as drawn', fill=(169, 170, 184))
+            d.text((2 * pad + width, y + 4), f"template: {label}" if label else 'no counterpart in the template',
+                   fill=(169, 170, 184))
+            for i, im in enumerate(imgs):
+                if im:
+                    sheet.paste(im, (pad + i * (width + pad), y + head))
+        y += h
+    sheet.save(path)
+
+
+def compare_template(folder, out_dir, chrome=None):
+    """Each artboard of a canvas, as drawn for each panel it lists, beside the
+    page of that panel's own template seed it stands for - the working page
+    beside the seed's working page (Main SD, a hub's Main Page, the 320's
+    Main), a source beside the seed's source popup, a window beside its window
+    of that role (template_counterparts) - for the designer's critique loop
+    (SKILL.md): region by region, what differs from the template that the
+    README's Differences does not list is a fix. A free page has no
+    counterpart and stands alone. Writes <out_dir>/index.html, a PNG pair per
+    artboard and panel, and sheet.png, every pair on one sheet; returns
+    [(panel, page, the seed page beside it or None)]."""
+    canvas = Canvas(folder, chrome)
+    if not canvas.chrome:
+        raise RuntimeError('no Chrome found - pass --chrome or set CHROME')
+    boards = canvas.boards()
+    first = render(os.path.join(folder, *boards[0].split('/')), canvas.chrome, canvas._size(boards[0]))
+    profile = canvas._profile(json.loads(first['page']['gdl']).get('template') if first.get('page') else None)
+    listed = Canvas._panels_of({'b': first}) or [profile['model']]
+    ms = designsys.models(profile)
+    os.makedirs(out_dir, exist_ok=True)
+    pairs, sections, sheet = [], [], []
+    for m in listed:
+        T = ms.get(m) or {}
+        frame, seed = T.get('frame'), T.get('seed')
+        built = _Built(seeds.path(seed)) if frame and seed and seeds.usable(seed) else None
+        counter = template_counterparts(frame) if frame else {}
+        sub = os.path.join(out_dir, m)
+        os.makedirs(sub, exist_ok=True)
+        rows = []
+        for b in boards:
+            path = os.path.join(folder, *b.split('/'))
+            with open(path, encoding='utf-8') as fh:
+                role = board_role(fh.read())
+            out = render(path, canvas.chrome, canvas._size(b), panel=m)
+            pg = json.loads(out['page']['gdl']) if out.get('page') else {}
+            name = pg.get('name') or b
+            psize = tuple(pg.get('size') or T.get('size') or canvas._size(b))
+            stem = re.sub(r'[^A-Za-z0-9_.-]', '_', b.rsplit('.dc.html', 1)[0])
+            design_png = os.path.join(sub, f'{stem}-design.png')
+            copy = _as_panel(path, m)
+            try:
+                screenshot(copy, canvas.chrome, psize, design_png)
+            finally:
+                if os.path.exists(copy):
+                    os.remove(copy)
+            target = counter.get(role) if role else None
+            if target and built and role in ('source', 'settings'):
+                # The seed's own of the same name where it has one - its PC
+                # beside the canvas's PC, its Lighting Settings beside a
+                # Lighting window - else the frame's.
+                target = (_same_name(built, name, pg.get('title')) or target[0], target[1])
+            template_png = None
+            if target and built:
+                # Translucent chrome over the photo as the panel shows it, as
+                # the design system's template renders draw it (compose.BINARY).
+                # The rule goes back as it was, so a caller's outlives the pair.
+                from . import compose
+                was, compose.BINARY = compose.BINARY, False
+                try:
+                    img = built.image(target[0], tuple(T['size']), host=target[1], base=target[1])
+                finally:
+                    compose.BINARY = was
+                if img is not None:
+                    template_png = os.path.join(sub, f'{stem}-template.png')
+                    img.save(template_png)
+            label = f"{seed}'s {target[0]}" if target else None
+            pairs.append((m, name, target[0] if target else None))
+            rows.append((name, design_png, template_png, label))
+        size = T.get('size') or canvas._size(boards[0])
+        sections.append(
+            f'<section class="panel"><h2>{html.escape(m)} &middot; {size[0]}x{size[1]}</h2>'
+            f'<p class="note">Beside {html.escape(seed or "no seed")}'
+            + ('' if built else ' - not here (git lfs pull), so the template side is empty') + '</p>'
+            + ''.join(
+                f'<div class="pairbox"><h3>{html.escape(n)}</h3><div class="pair">'
+                f'<figure><img src="{html.escape(m)}/{os.path.basename(d)}" alt="{html.escape(n)} as drawn">'
+                f'<figcaption>As drawn for the {html.escape(m)}</figcaption></figure>'
+                + (f'<figure><img src="{html.escape(m)}/{os.path.basename(t)}" alt="{html.escape(lab)}">'
+                   f'<figcaption>The template: {html.escape(lab)}</figcaption></figure>' if t else
+                   f'<figure><figcaption>{"The template: " + html.escape(lab) + " (not drawn)" if lab else "The template has no page of its kind"}'
+                   f'</figcaption></figure>')
+                + '</div></div>' for n, d, t, lab in rows)
+            + '</section>')
+        sheet.append((f'{m} - beside {seed}', rows))
+    with open(os.path.join(out_dir, 'index.html'), 'w', encoding='utf-8') as fh:
+        fh.write(_page((canvas.index.get('title') or 'Panel') + ', beside its template', ''.join(sections))
+                 .replace(' - designed and built</title>', ' - beside its template</title>'))
+    _sheet(sheet, os.path.join(out_dir, 'sheet.png'))
+    return pairs
+
+
 def main(argv):
     if len(argv) >= 2 and argv[1] == 'pin-runtime':
         def flag(name):
@@ -1448,6 +1734,17 @@ def main(argv):
             return 2
         e = pin_runtime(argv[2], seen, suite)
         print(f"proven: {e['sha256']} ({e['bytes']:,} bytes) -> {RUNTIMES}")
+        return 0
+    if len(argv) >= 5 and argv[1] == 'compare' and argv[3] == '--template':
+        # The critique loop: each artboard beside its template's own page.
+        chrome = argv[argv.index('--chrome') + 1] if '--chrome' in argv else None
+        unproven = runtime_problem(argv[2])
+        if unproven and '--new-runtime' not in argv:
+            print('  PROBLEM ' + unproven)
+            return 1
+        for m, name, seed_page in compare_template(argv[2], argv[4], chrome):
+            print(f"  {m}: {name}" + (f" beside {seed_page}" if seed_page else ' (the template has no page of its kind)'))
+        print(f"-> {os.path.join(argv[4], 'index.html')} and sheet.png")
         return 0
     if len(argv) >= 5 and argv[1] == 'compare':
         chrome = argv[argv.index('--chrome') + 1] if '--chrome' in argv else None
@@ -1467,6 +1764,7 @@ def main(argv):
               ' [--lenient]'
               '\n      [--chrome PATH] [--new-runtime]'
               '\n  python -m gdl.design compare <canvas dir> <built.gdl> <out dir>'
+              '\n  python -m gdl.design compare <canvas dir> --template <out dir>   beside the template'
               '\n  python -m gdl.design pin-runtime <dc-runtime.js> --seen <where it came from>')
         return 2
     chrome = argv[argv.index('--chrome') + 1] if '--chrome' in argv else None

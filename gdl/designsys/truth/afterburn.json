@@ -1,0 +1,604 @@
+{
+  "theme": "afterburn",
+  "_source": "Each entry is a claim our profile (gdl/designsys/afterburn.json) or its README made that Afterburn's own pages contradict, found by the grammar measurement of 2026-10-22: every page and popup of seeds/Afterburn 1035.gdl, 725, 525, 320, 1230W, 1535 and the 300M pair, read with gdl.project (each control's rect, look, caption and font) beside its renders and beside the 1220, 1020, 1520, 520, 535 and 320 Series templates. `template` is what those pages do, off the seed and pages named; the region frame (panels[series].frame) is the same seeds measured by tests/measure_series.py frame_of. `python -m gdl.designsys audit afterburn` checks every resolution against the profile, the README and the frame as they stand.",
+  "entries": [
+    {
+      "id": "afterburn-00",
+      "claim": "layout.regions[0] says the squircle holds 'the sources or the selected device's controls in the middle'.",
+      "where": ["layout.regions.0", "README Layout"],
+      "template": {
+        "does": "Only Main Select Source puts sources in the middle (a row at y 315 under 'Select a Source' at 515,223). On the other five working pages the sources are a tab row at the top of the squircle (342, 501, 660 and 819 at y 37, 110x110) over a 760 px divider (260,137). The middle is the group-1 popup region 200,175, 880x525.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main Select Source", "Main SD", "Main SD Screen Arrows", "Main Multi-Window", "Main VC", "Main Recording"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.0", "says": "Across the top of the squircle runs the row of sources"}
+      ],
+      "gone": ["the sources or the selected device's controls in the middle"],
+      "evidence": "Main Select Source's four sources (IDs 8100-8103) at y 315 under the Select Source Label (6072); Main SD's PC, Laptop, TV and Streaming (8052, 8050, 8059, 8063) at y 37, its Divider PBLine 260,137 760x20 and its Controls popup reference 200,175 880x525 (group 1)."
+    },
+    {
+      "id": "afterburn-01",
+      "claim": "layout.regions[0] promises 'a centered title (... subheading for a section)'.",
+      "where": ["layout.regions.0", "README Layout"],
+      "template": {
+        "does": "The working pages have no section title of their own. The only title in the center is the shown popup's own 21 pt label ('PC', 'Blu-ray', 'VTC Dialer') at popup 359,0 (page 559,175).",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD", "PC", "BluRay", "VTC Dialer"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.0", "says": "each popup carries its source's name as a centred `subheading` Label"},
+        {"key": "type.subheading.usage", "says": "A popup's or a modal's title"}
+      ],
+      "gone": ["A centered title (`title` for a room name on the start page, `subheading` for a section)"],
+      "evidence": "The PC, BluRay and VTC Dialer popups' own title Labels, Open Sans 21 white; no PBLabel on Main SD but the rail headings."
+    },
+    {
+      "id": "afterburn-02",
+      "claim": "layout.regions[0] says the squircle has 'one outlined action centered at its foot (Preview, Press to begin)'.",
+      "where": ["layout.regions.0", "README Layout"],
+      "template": {
+        "does": "'Press to begin' sits in the squircle's vertical middle (527,384, 228x64, 17 pt); Start's foot holds the date and time. Preview is the foot of the working pages (568,701, 144x64). The 1020 Series (725) template has no Preview on any page.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Start", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.1", "says": "`Press to begin` in its vertical middle"},
+        {"key": "layout.regions.0", "says": "The 1020 Series draws no Preview"}
+      ],
+      "gone": ["one outlined action centered at its foot (Preview, Press to begin)"],
+      "evidence": "Start's button 8000 at 527,384 (Open Sans 17) and Current Date & Time at 415,714; Main SD's Preview Source (8301) at 568,701; seeds/Afterburn 725.gdl has no Preview button on any of its 33 pages."
+    },
+    {
+      "id": "afterburn-03",
+      "claim": "layout.regions[0] puts the date bottom-left and the time bottom-right in text-secondary, 'or both together, bottom-center, on the start page'.",
+      "where": ["layout.regions.0", "Clock README"],
+      "template": {
+        "does": "The Start clock is #FFFFFF (`text`), not `text-secondary`. Every 725 main page also uses one combined bottom-centre clock (287,545, 450x45, 'September 28, 1960 12:00:00 AM'), not a split date and time.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Start", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.1", "says": "one combined date-and-time Clock, in `text`, at its foot"},
+        {"key": "layout.regions.0", "says": "one combined date-and-time Clock at its foot"},
+        {"key": "examples.start.2.attrs", "says": "format=\"datetime\" align=\"center\" color=\"text\""}
+      ],
+      "gone": ["or both together, bottom-center, on the start page"],
+      "evidence": "Start's PBDateTime 'September 28, 12:00 AM' at 415,714 450x60, Open Sans 16 #FFFFFF; Main SD's Current Date and Time, 16 #BABCCE (12 of 13 clocks); seeds/Afterburn 725.gdl's Main SD Current Date & Time at 287,545."
+    },
+    {
+      "id": "afterburn-04",
+      "claim": "layout.regions[1] calls the left rail 'a column of list buttons - ghost, left-aligned, about 160x58'.",
+      "where": ["layout.regions.1", "buttons.ghost.usage", "README Layout"],
+      "template": {
+        "does": "The rail's buttons are kit-image `list` and `toggle` buttons (1224x344 art, no border resource), 178x50 at x 0 on a 58 px pitch (8 px apart). None is a ghost (afterburn-flat) button and none is 160 wide.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD", "Main VC", "Start"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.2", "says": "`list` and `toggle` buttons 178x50 at x 0, one every 58 px"},
+        {"key": "buttons.list.usage", "says": "The rail's rows are these, 178x50 every 58 px"}
+      ],
+      "gone": ["a column of list buttons - ghost, left-aligned, about 160x58"],
+      "evidence": "Display Power and Display Mute (8112, 8114) 0,208 and 0,266 178x50 on 1224x344_toggle-1 art; Screen, Lighting, Audio Settings 0,451 / 509 / 567 on 1224x344 list art; no border on any."
+    },
+    {
+      "id": "afterburn-05",
+      "claim": "layout.regions[1] says the left-rail foot 'holds the one outlined button that switches mode (Presentation, Video Conference)'.",
+      "where": ["layout.regions.1", "README Layout"],
+      "template": {
+        "does": "On Main Multi-Window the foot button is 'Window Layout' and on Main Recording 'Recording Controls'; both open a modal and do not switch mode. Start has no foot button.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD", "Main VC", "Main Multi-Window", "Main Recording", "Start"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.2", "says": "Window Layout (Multi-Window) and Recording Controls (Recording) open a window; Start has none"}
+      ],
+      "gone": ["Its foot holds the one outlined button that switches mode"],
+      "evidence": "Video Conference (8120) and Presentation (8118), Window Layout (8119) and Recording Controls (8130), all 144x64 at 20,706 outlined; Start has no button at 20,706."
+    },
+    {
+      "id": "afterburn-06",
+      "claim": "layout.regions[2] says the right rail has 'an outlined action at the top (Start Sharing, 144x64 at 1121,30)' and 'help and power at the foot'.",
+      "where": ["layout.regions.3", "README Layout"],
+      "template": {
+        "does": "Only Main VC has Start Sharing there. Main Multi-Window has two 82x64 text buttons, Window 1 and Window 2, at 1104,30 and 1193,30; the other four main pages and Start have nothing there. Help and power are absent on Start.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main VC", "Main Multi-Window", "Main SD", "Start"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.3", "says": "The slot at the top, y 30, is the page's own"}
+      ],
+      "gone": ["an outlined action at the top (Start Sharing, 144x64 at 1121,30), and help and power at the foot"],
+      "evidence": "Main VC's Share Content (8090) 1121,30 144x64; Main Multi-Window's Window 1 (8008) and Window 2 (8007); Start's controls list no Help (8117) or Power (8022)."
+    },
+    {
+      "id": "afterburn-07",
+      "claim": "layout.regions[3] says 'Nothing else goes outside the squircle'.",
+      "where": ["layout.regions.4", "README Layout"],
+      "template": {
+        "does": "Main Recording puts the recording status in the left rail's top-left corner: the record icon at 3,8, 56x58 and the '00:00:00' / '--:--:--' timer at 49,14 and 68,14.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main Recording"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.2", "says": "Main Recording also keeps its record status"}
+      ],
+      "gone": ["Nothing else goes outside the squircle."],
+      "evidence": "Recording Feedback and Time (9200) twice (the record kit button and the 00:00:00 button) and Recording Timer - Not Recording (9201, '--:--:--' #6A6E89)."
+    },
+    {
+      "id": "afterburn-08",
+      "claim": "The Rail README says its children stack 'down it in order', a Slider taking 'the length the others leave'.",
+      "where": ["Rail README"],
+      "template": {
+        "does": "Afterburn's right rail is not one stack: the Volume heading is at 160 (level with the left rail's first heading), the slider runs 202-597, Mute overlaps the slider's foot at 594, an empty band follows, and Help and Power sit side by side in one row (1125,706 and 1197,706). An optional top slot is at 30. The column is centred on x 1193, not the rail's centre 1189.5.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD"]
+      },
+      "status": "deviation",
+      "reason": "The Rail stacks its children on every panel (docs/claude-design.md section 4), which is how the 520, 320 and 300 columns fit a small screen; it cannot put Help and Power in one row or let Mute overlap the slider. On the panel the canvas is drawn on a Rail stands at the right rail's band, as the template's column does, and stacks there too: one rule for the column on every panel, where placing it by hand on the drawn panel left a designer two contradictory ones and the template's own 8 px pair under the 2 mm gate. The README says so, and what the template does.",
+      "here": "A Rail stacks its controls down the right rail on every panel, the drawn one too: the template's column does not - its Volume heading level with the left rail's first heading, Mute over the slider's foot, and Help and Power side by side.",
+      "fix": [
+        {"readme": "Afterburn's own right column is not one stack, which a Rail is"}
+      ],
+      "evidence": "Main Volume Label 4052 at 1109,160; Main Volume Slider 8024 at 1168,202 50x395; Main Volume Mute 8021 at 1161,594 64x64; Help 8117 at 1125,706 and Power 8022 at 1197,706."
+    },
+    {
+      "id": "afterburn-09",
+      "claim": "The Rail and Slider READMEs say that on a panel without a slider the slider 'becomes a Level with Down and Up buttons at its ends', and the README says 'a level between - and +'.",
+      "where": ["Rail README", "Slider README", "README Every panel the room has"],
+      "template": {
+        "does": "The 520 and 535 stand Up and Down together at the top of a column with Mute at the bottom, beside a full-height level (525 Start: level 670,113, 15x314; Up 705,113; Down 705,194; Mute 705,361). On Main the level is a separate 50x480 'Volume Level' popup at 637,0, left of a rail of Up, Down, Mute, Help, Settings and Power. The glyphs are up and down triangles, not - and +; only the 300M uses minus and plus, in a row with Mute under a horizontal level.",
+        "seed": "seeds/Afterburn 525.gdl",
+        "pages": ["Start", "Main", "Volume Level"]
+      },
+      "status": "deviation",
+      "reason": "The Rail builds the volume of a panel whose seed has no slider as a level between two buttons of the panel's own look (bundle.js asLevel), with `-` and `+` as their words. Extron's triangles are glyphs of its Afterburn icon font, which a design system does not carry (the owner allows the kit's PNGs, not fonts); the kit draws the same triangles as images in Afterburn/Icons/PNG (Carets' caret-up-gray and caret-down-gray), and the 300M's minus and plus (minus, plus), but this system's kit root is Afterburn/Buttons/PNG, so its `icon` list does not name them and a level's `steps` cannot yet (docs/ROADMAP.md). The README says what the template does.",
+      "here": "On a panel with no slider the volume is a level between `-` and `+` buttons; the template's are up and down triangles, glyphs of a font the system does not carry.",
+      "fix": [
+        {"key": "layout.rail_note", "says": "with triangle glyphs from its icon font"},
+        {"key": "layout.rail_note", "says": "the kit draws those triangles as images too (Afterburn/Icons/PNG's Carets)"}
+      ],
+      "evidence": "The 525's Start page level and Up, Down, Mute buttons; Main's Volume Level popup; the 300M Portrait's volume row (seeds/Afterburn 300M Portrait.gdl)."
+    },
+    {
+      "id": "afterburn-10",
+      "claim": "The Rail README's volume, mute, help and power, and the panels table's 320 rail [0,190,320,50], have the 320's rail take the volume, Help and Power.",
+      "where": ["Rail README", "panels.Afterburn 320 Series.rail"],
+      "template": {
+        "does": "The 320 template's footer is a title and paging bar, 50 px deep at 0,190 across its 320: the page name (17.5 pt at 12,197: 'Select Source', 'DVD', 'Doc Cam') with 'More' and a chevron (270,190) or a Back chevron (0,190). No volume, Help or Power is on screen; the volume is the modal 'Volume Level' (level 288,25, 15x190 on a #BABCCE strip at 270,0). The 300 Portrait's footer holds Settings, Help and Power on Main, with Back and the title elsewhere, and puts the volume in the main region; the 300 Landscape's right column holds Settings, Help and Power, not the volume. The 520 and 535 rails add a Settings gear.",
+        "seed": "seeds/Afterburn 320.gdl",
+        "pages": ["Start", "Main", "Doc Cam 1", "Volume Level"]
+      },
+      "status": "deviation",
+      "reason": "Afterburn draws its chrome as background art, not controls (`layout.bars` is not `controls`), so its system has no region components: its small panels re-lay a Page's controls in rows over a Rail across the foot. The 320's page per source under a title strip, More and Back, and its Volume modal are built for the bar themes only (the region frame spec, item 7). The README says what the template does.",
+      "here": "On the 320 a Page is laid out in rows over a Rail across the foot; the template gives each source a page of its own over a 50 px strip at its foot that holds the page's name, More and Back - the bar themes' region pages draw theirs under a strip at the top.",
+      "fix": [
+        {"key": "layout.rail_note", "says": "The 320 draws no volume, Help or Power on screen"}
+      ],
+      "evidence": "The 320's Doc Cam 1 title strip and More; its Volume Level modal; seeds/Afterburn 300M Portrait.gdl's Main footer and seeds/Afterburn 300M Landscape.gdl's right column."
+    },
+    {
+      "id": "afterburn-11",
+      "claim": "The README's modal guidance says 'put its card inside as a Panel'.",
+      "where": ["README Designing a panel", "Page README"],
+      "template": {
+        "does": "Afterburn's modal card is the squircle art itself: a full-canvas PBImage 'Background' (opaque 182-1099 x 24-776) over the alpha-166 scrim. It is not a Panel (raised fill and a #6A6E89 stroke). Titles go at 485,36, 310x50 (21 pt white) and the Close at 1026,25.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Help", "Audio Settings", "Camera Select"]
+      },
+      "status": "deviation",
+      "reason": "Build draws a modal as the page beneath under its own scrim and ignores a background (gdl/design.py), and a Panel draws a flat fill and a stroke - no gradient, no shadow - so the squircle over the scrim cannot be placed; the Panel is the nearest card the system draws, and the README says what the template's is.",
+      "here": "A modal's card is a Panel you draw: the template's is its squircle art, which a Page cannot place.",
+      "fix": [
+        {"readme": "Afterburn's own card is its squircle art, which a Page cannot place"},
+        {"key": "layout.popups", "says": "A modal's own card is the template's squircle art"}
+      ],
+      "evidence": "Help's Background PBImage (TLPImageID 86) over the page's scrim (image 85, alpha 166), its Help Label 4008 at 485,36 and Close Help 9057 at 1026,25."
+    },
+    {
+      "id": "afterburn-12",
+      "claim": "The README's modal guidance says a modal comes 'with a Close'.",
+      "where": ["README Designing a panel"],
+      "template": {
+        "does": "Confirmation, Confirmation - Recording and Incoming Call have no Close and no title: a 21 pt question (290,223, 700x50 on Confirmation and Incoming Call; Confirmation - Recording's runs 740x170 at 270,113) and two outlined 154x64 buttons at 462,325 and 664,325. Starting Up and Powering Down have no buttons at all.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Confirmation", "Confirmation - Recording", "Incoming Call", "Starting Up", "Powering Down"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.popups", "says": "A confirmation has neither title nor Close"}
+      ],
+      "gone": ["with a Close: `nav` back to the page that opens it"],
+      "evidence": "Confirmation's Power Down Confirmation Label 4056 and buttons 9028 and 9029; Starting Up and Powering Down carry one Label and no button."
+    },
+    {
+      "id": "afterburn-13",
+      "claim": "The README says 'a page flip is for a mode of the room, such as a call or one source's controls'.",
+      "where": ["README Designing a panel"],
+      "template": {
+        "does": "One source's controls are a standard popup (group 1, 880x525) in the region at 200,175 on every working page. Pages flip only for the room's mode (Main SD and Main VC) and from Start to Main Select Source.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD", "Main SD Screen Arrows", "Main Multi-Window", "Main VC", "Main Recording", "PC", "Laptop", "TV"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.popups", "says": "one source's controls are a standard popup of its own group in that region (the template's group 1"}
+      ],
+      "gone": ["a page flip is for a mode of the room, such as a call or one source's controls"],
+      "evidence": "The Controls popup reference (group 1) on each of the five working pages; PC, Laptop, TV, Streaming, BluRay, Doc Cam and the VTC popups are group-1 880x525 pages."
+    },
+    {
+      "id": "afterburn-14",
+      "claim": "The README says help, confirmations and settings sets 'are modals, as Afterburn's own templates draw them'.",
+      "where": ["README Designing a panel"],
+      "template": {
+        "does": "That holds for the 1020, 1220, 1230, 1520 and 1720 templates only. The 520 and 535 draw Help, Audio, Display, Screen and Lighting Settings and Recording Controls as group-1 standard popups in the main region with a Back chevron, and the 300M templates draw them as pages.",
+        "seed": "seeds/Afterburn 525.gdl",
+        "pages": ["Help", "Audio Settings", "Lighting Settings", "Recording Controls"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.popups", "says": "the 520 and 535 draw them as standard popups filling main, each with a Back chevron, and the 300M as pages"}
+      ],
+      "gone": ["are modals, as Afterburn's own templates draw them; a page flip"],
+      "evidence": "seeds/Afterburn 525.gdl: those popups are group 1 and not modal; seeds/Afterburn 1035.gdl's are modal with the scrim image."
+    },
+    {
+      "id": "afterburn-15",
+      "claim": "The icon variant and Iconography say 'a stand-alone control (help, power, close, mute) is variant=\"icon\"' and 'Every icon comes from Afterburn's own resource kit'.",
+      "where": ["buttons.icon.usage", "iconography.rules.1", "iconography.intro"],
+      "template": {
+        "does": "The template's Close, Back, More, d-pad, transport, zoom, scroll and screen arrows are glyphs in the 'Extron-Afterburn' icon font (25-90 pt, #BABCCE or #767789) on plain or outlined buttons. The kit draws most of them as images too, in Afterburn/Icons/PNG beside the Buttons/PNG the system reads: Close's X (440x440_close.png), Back's and the 320's More's chevrons (Chevron's chevron-left and chevron-right), the scroll and volume triangles (Carets, in #BABCCE and #767789), the More dots (more) and most of the transport keys. None is in the system's `icon` list, which is read from Buttons/PNG, so the Close the README called an icon button was not one it offers.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Help", "Search Results", "Camera Settings"]
+      },
+      "status": "deviation",
+      "reason": "The glyphs are characters of Extron's Afterburn icon font, which a design system does not carry (the owner allows the kit's PNGs, not fonts). The kit's own images of them sit in Afterburn/Icons/PNG, which this system's kit root (Afterburn/Buttons/PNG) does not reach, so its `icon` list does not name them yet (docs/ROADMAP.md); until it does, a button for one says what it does in words.",
+      "here": "Close, Back, More and the arrows are words or kit icons the system offers: the template draws them as glyphs of its Afterburn font, which the system does not carry.",
+      "fix": [
+        {"key": "iconography.intro", "says": "which the design system does not carry"},
+        {"key": "iconography.intro", "says": "The kit draws most of them as images too, in Afterburn/Icons/PNG"},
+        {"key": "layout.popups", "says": "the kit draws it as an image too (Afterburn/Icons/PNG's close)"},
+        {"key": "iconography.rules.1", "says": "a stand-alone control (Help, Power, mute) is"}
+      ],
+      "gone": ["a stand-alone control (help, power, close, mute) is", "are not kit images but glyphs"],
+      "evidence": "Close Help (9057) caption U+E95C; Search Back U+E97B; Search Result Scroll Up U+E94E and Down U+E91D; none a kit image. Drawn in Extron - Afterburn 1a.ttf, U+E95C is Icons/PNG's close, U+E97B and U+E97C Chevron's chevron-left and chevron-right, U+E94E and U+E91D Carets' caret-up and caret-down, U+E912 and U+E939 minus and plus, U+E933 more."
+    },
+    {
+      "id": "afterburn-16",
+      "claim": "Iconography and outlined.usage say an important labelled action is outlined with an icon '(End Call, Swap)' / '(Swap, Contacts, End Call)'.",
+      "where": ["buttons.outlined.usage", "iconography.rules.1"],
+      "template": {
+        "does": "End Call is a `list` kit button (1224x344_end-call) in the left rail of Main VC. Only Make Call, Swap and Contacts (1059x440 kit, 154x64, VTC Dialer) are icon-and-caption outlined buttons.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main VC", "VTC Dialer"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "buttons.outlined.usage", "says": "(Make Call, Swap, Contacts)"},
+        {"key": "iconography.rules.1", "says": "Make Call, End Call and Privacy among them"}
+      ],
+      "gone": ["(Swap, Contacts, End Call)", "(End Call, Swap)"],
+      "evidence": "End Call (5215) at 0,266 178x50 on list art; VTC Dialer's Call (5214), Swap (5251) and Contacts (5250) on 1059x440 art, 'Afterburn - 10 Radius 2 Thick'."
+    },
+    {
+      "id": "afterburn-17",
+      "claim": "The icon variant's On look is 'a round fill behind it' (fill pressed + afterburn-ellipse).",
+      "where": ["buttons.icon.usage", "buttons.icon.states"],
+      "template": {
+        "does": "Help has no fill when On (it only swaps to help-orange-sel); Power's On fill is raised #37394E on 'Afterburn - Elipse 0 Thick'; Mute has four states (Muted, Level 1, Level 2, Level 3) showing the volume level, not Off and On.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "buttons.icon.usage", "says": "Power's raised and Help's none"},
+        {"key": "buttons.icon.usage", "says": "Muted, then Level 1 to 3"}
+      ],
+      "gone": ["Pressed, a round fill behind it, and the icon in the accent where the kit has a selected one"],
+      "evidence": "Help (8117) Off and On both fill None, images help_nsel and help-orange-sel; Power (8022) On fill and stroke #37394E; Main Volume Mute (8021) four states on speaker-mute-1-orange_sel and speaker-volume-periwinkle_1 to _3."
+    },
+    {
+      "id": "afterburn-18",
+      "claim": "type.heading is 23.5 pt bold, 'A popup's or a section's heading'.",
+      "where": ["type.heading"],
+      "template": {
+        "does": "The template's popup and modal titles are 21 pt regular #FFFFFF (28 labels); 23.5 bold appears only on the entry readouts 'vtc@extron.com' and '10007'.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["VTC Keyboard", "TV"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "type.heading.usage", "says": "An entry readout"}
+      ],
+      "gone": ["A popup's or a section's heading."],
+      "evidence": "PBLabel survey of seeds/Afterburn 1035.gdl: Open Sans 23.5 bold #FFFFFF on 2 labels (VTC Keyboard's address, TV's channel); Open Sans 21 #FFFFFF on 28."
+    },
+    {
+      "id": "afterburn-19",
+      "claim": "type.subheading is 21 pt, 'A secondary heading, in text-secondary'.",
+      "where": ["type.subheading"],
+      "template": {
+        "does": "Every 21 pt label in the template is #FFFFFF, primary: 'Select a Source', all popup and modal titles, the confirmation questions and the 'Please wait...' messages.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main Select Source", "PC", "Confirmation", "Starting Up"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "type.subheading.usage", "says": "A popup's or a modal's title, a confirmation's question"}
+      ],
+      "gone": ["A secondary heading, in text-secondary."],
+      "evidence": "All 28 Open Sans 21 labels read #FFFFFF."
+    },
+    {
+      "id": "afterburn-20",
+      "claim": "type.button-large is 20 pt bold, 'The caption of a large button: a source, a main action'.",
+      "where": ["type.button-large"],
+      "template": {
+        "does": "20 pt bold appears only on the keyboard and keypad keys (62 buttons). Sources caption at 13 pt regular, 'Press to begin' at 17 pt regular, and Preview and Video Conference at 13 pt.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["VTC Keyboard", "Main Select Source", "Start"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "type.button-large.usage", "says": "The caption of a keypad or keyboard key"}
+      ],
+      "gone": ["The caption of a large button: a source, a main action."],
+      "evidence": "PBButton survey: Open Sans 20 bold on 62 states (VTC Keyboard); 13 on 94; 17 on 7 (Start's Press to begin, Doc Cam's inputs, Camera Settings' presets)."
+    },
+    {
+      "id": "afterburn-21",
+      "claim": "type.body-strong is 16 bold, 'A label that names a group of controls', and Label defaults to color text.",
+      "where": ["type.body-strong", "type.body"],
+      "template": {
+        "does": "The template has two group labels: rail headings ('Display', 'Settings', 'Lights', 'VTC', 'Volume') are 16 pt regular #FFFFFF in Title case, and in-popup group labels ('MIC', 'LIGHTS', 'INPUTS', 'PAN / TILT', 'TITLE:') are 16 pt bold #BABCCE in capitals. The profile gave neither the color nor the case.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD", "Doc Cam", "Audio Settings", "Recording Controls"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "type.body.usage", "says": "a rail group's heading (Display, Settings, Lights, Volume) in Title case and `text`"},
+        {"key": "type.body-strong.usage", "says": "capitals in `text-secondary`"}
+      ],
+      "gone": ["A label that names a group of controls."],
+      "evidence": "PBLabel survey: 16 regular #FFFFFF on 29 labels (the rail headings); 16 bold #BABCCE on 25 (INPUTS, ZOOM, MAIN, PROGRAM...)."
+    },
+    {
+      "id": "afterburn-22",
+      "claim": "type.title is 'A page's title'.",
+      "where": ["type.title"],
+      "template": {
+        "does": "38 pt is used once, for the room name on Start; the working pages have no page title.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Start", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "type.title.usage", "says": "The room's name on the Start page"}
+      ],
+      "gone": ["A page's title - the seed's largest label."],
+      "evidence": "Start's Room Title Label (7001) 'Board Room' Open Sans 38 at 475,136; no other label above 23.5."
+    },
+    {
+      "id": "afterburn-23",
+      "claim": "The README type floor says 'Nothing under 14 pt'.",
+      "where": ["README Visual foundations", "type.button.usage"],
+      "template": {
+        "does": "94 template buttons caption at 13 pt (the profile acknowledges this), the labels 'ZOOM', 'CHANNEL' and 'LAST' are 13 pt, and the dialer's letter labels are 10.5 pt.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main Select Source", "Camera Settings", "TV", "VTC Dialer"]
+      },
+      "status": "deviation",
+      "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 13 pt to 14. The README says the template's own go under it.",
+      "here": "Nothing is under 14 pt, the toolkit's floor: the template's captions go down to 13 pt.",
+      "fix": [
+        {"readme": "Nothing under 14 pt: that is the toolkit's floor, and a template's own smallest captions can be under it"},
+        {"key": "type.button.usage", "says": "Afterburn's own small buttons use 13 pt"}
+      ],
+      "evidence": "PBButton survey: 13 pt on 94 states; PBLabel survey: 13 bold on 3, 10.5 bold on 8."
+    },
+    {
+      "id": "afterburn-24",
+      "claim": "The README size rules say 'at least 53 px each way', 'at least 12 px between touchable controls', 'no more than nine buttons in one group' and 'GUI Designer's 10 px nudge'.",
+      "where": ["README Visual foundations"],
+      "template": {
+        "does": "The template's rail buttons are 50 tall and 8 px apart, the slider is 50 wide, search rows are 42 tall, Window 1 and Window 2 are 7 px apart, keyboard keys are 6 px apart, Window Layout holds 12 presets in one grid, positions such as 1168,202, 1161,594 and 527,384 are off a 10 px grid, and the 725's Help and Power are 48x60.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD", "Main Multi-Window", "VTC Keyboard", "Window Layout"]
+      },
+      "status": "deviation",
+      "reason": "The 2 mm gap and the 9 mm touch minimum (53 px on the 1035) the toolkit checks between and on touch targets, and Extron's documented nine-button and 10 px standards (docs/design-rules.md section 2), which a designer's own controls keep. The Layout grows the 50 px slider to 54; the README now says the template does not always keep them.",
+      "here": "Controls are at least 53 px each way and 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards; the template's rail buttons are 50 tall and 8 px apart. The slider is drawn 54 wide where the template's is 50.",
+      "fix": [
+        {"readme": "Extron's Design Standards, which its own templates do not always keep"}
+      ],
+      "evidence": "Rail rows 178x50 on a 58 pitch; Main Volume Slider 50x395; Window 1 and 2 at 1104 and 1193 (82 wide); VTC Keyboard's 62 keys; Window Layout's 12 presets."
+    },
+    {
+      "id": "afterburn-25",
+      "claim": "colors.alert and the alert variant are 'a red fill with a white caption', with alert 'only as an alert's fill'.",
+      "where": ["colors.alert.usage", "buttons.alert", "examples.color_rule", "iconography.rules.3"],
+      "template": {
+        "does": "The template never fills a button red. Its red is a state: the On stroke #D32A2A of 'Start Sharing' and 'Stop Share' (sharing live), and the red record glyph or kit icon (#D32929 on Record - Start and Record - Stop when On).",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main VC", "Video Preview - Share Source", "Main Recording"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "colors.alert.usage", "says": "A live state: the stroke of a sharing button while it is live"},
+        {"key": "buttons.alert.usage", "says": "A live action: an outlined button whose On state draws its stroke red"},
+        {"key": "buttons.alert.states.1.stroke", "says": "alert"},
+        {"key": "examples.color_rule", "says": "`alert` only as the red stroke of a live action"},
+        {"key": "iconography.rules.3", "says": "a live state, not a fill"}
+      ],
+      "gone": ["a red fill and a white caption", "a red fill with a white caption", "`alert` only as an alert's fill"],
+      "builds": "An `alert` button is the outlined look (raised fill, text-secondary stroke) that goes red-stroked when On, where it was a red fill with a white caption (and a pressed fill, red stroke On).",
+      "evidence": "Share Content (8090) On: fill #37394E, stroke #D32A2A; Record - Start (9209) on 1224x344_record_red_sel; no button state of any page fills #D32929 or #D32A2A."
+    },
+    {
+      "id": "afterburn-26",
+      "claim": "The README says 'Extron caps a project at six colors'.",
+      "where": ["README Visual foundations"],
+      "template": {
+        "does": "The 1035 template's own controls use 13: #FFFFFF, #242634, #BABCCE, #37394E, #767789, #D69B61, #6A6E89, #D32A2A, #D32929, #191919, #000000, #AFB0BE and #242633. The art's gradient comes on top of that.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD", "Main VC", "Help"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"readme": "The tokens here are the template's own palette and do not count against the six"}
+      ],
+      "evidence": "Distinct fill, stroke and caption colors of every control of the seed (gdl.project): 13."
+    },
+    {
+      "id": "afterburn-27",
+      "claim": "colors.raised covers 'panels and cards', and Visual foundations says the panel 'cannot draw ... a gradient, a shadow'.",
+      "where": ["colors.raised.usage", "examples.color_rule", "layout.main_note"],
+      "template": {
+        "does": "The template's card is background art: a squircle in a gradient from #4F4C6B to #3A364D, with a drop shadow. It is not a #37394E panel. The only container drawn as a control is the VTC Search Results list (#37394E fill, #6A6E89 stroke).",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Main SD", "VTC Search Results"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "colors.raised.usage", "says": "The squircle every page sits on is not a panel: it is the background image's art"},
+        {"key": "layout.main_note", "says": "a vertical gradient from #4F4C6B to #3A364D with a drop shadow, art rather than a panel"}
+      ],
+      "gone": ["panels and cards;", "`raised` for idle buttons and panels, with `shape` outlining a card"],
+      "evidence": "The page image 6400x4000_bg1.png sampled #4F4C6B at y 30 to #3A364D at y 770 with a #14151C shadow; VTC Search Results' Search Result List Background PBShape (156,75 345x385)."
+    },
+    {
+      "id": "afterburn-28",
+      "claim": "The Panel component's example is a 'TopBar' 1280x112 with border rect, and borders.rect is 'a full-width bar'.",
+      "where": ["Panel README", "borders.rect.usage", "borders.afterburn-flat.usage"],
+      "template": {
+        "does": "Afterburn draws no bars; its chrome is background art. 2D Rectangle appears only on the PBVideo.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Video Preview", "VTC Search Results"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "borders.rect.usage", "says": "the template draws it only on its video window"},
+        {"key": "borders.afterburn-flat.usage", "says": "A card is `afterburn`, with its stroke"},
+        {"key": "examples.panel.name", "says": "Results"},
+        {"readme": "name=\"Results\" fill=\"raised\" border=\"afterburn\" style=\"width: 345px; height: 385px\""}
+      ],
+      "gone": ["a full-width bar", "name=\"TopBar\"", "ghost buttons, panels, cards"],
+      "evidence": "Border resources of every control: '2D Rectangle' on the 2 PBVideo only; the list card is 'Afterburn - 10 Radius 2 Thick'."
+    },
+    {
+      "id": "afterburn-29",
+      "claim": "buttons.ghost is 'list rows, tabs, icon buttons'.",
+      "where": ["buttons.ghost.usage"],
+      "template": {
+        "does": "The template's tabs are `source` kit buttons and its rail rows are `list` kit buttons. Its no-fill-until-pressed buttons are the dialer and TV keypad digits, which press to a circle ('Afterburn - Elipse 0 Thick', #242634), plus the zoom - and + and the search-result rows.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["VTC Dialer", "TV", "Camera Settings", "VTC Search Results"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "buttons.ghost.usage", "says": "The template's tabs and rail rows are `source` and `list` image buttons, not ghost"}
+      ],
+      "gone": ["No fill until pressed or selected: list rows, tabs, icon buttons."],
+      "evidence": "Dialer Keypad 1-9 (5203...) and TV Keypad: Off fill None, On #242634, border Afterburn - Elipse 0 Thick; Camera Zoom - and +: 'Afterburn - 10 Radius 0 Thick'."
+    },
+    {
+      "id": "afterburn-30",
+      "claim": "The README Example (examples.source / examples.help) builds the start page with a title, a Laptop source button, a date-only clock bottom-left and Help at 1157,706.",
+      "where": ["examples.source", "examples.help", "README Example"],
+      "template": {
+        "does": "The template's Start has the room name, 'Press to begin' and one centred date-and-time clock, with no sources and no Help or Power. On the working pages Help is at 1125,706 beside Power at 1197,706; 1157 is the rail's centre, not a template position.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Start", "Main Select Source", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "examples.source.rect", "says": "505 315 110 110"},
+        {"key": "examples.help.rect", "says": "1125 706 64 64"},
+        {"readme": "<x-import component-from-global-scope=\"ExtronAfterburn.Page\" name=\"Start\" start=\"true\""}
+      ],
+      "gone": ["left: 1157px", "left: 403px"],
+      "evidence": "Start's Room Title Label 475,136 330x50, Start 527,384 228x64 and Current Date & Time 415,714 450x60; Help (8117) 1125,706; Main Select Source's Laptop Select Source (8101) 505,315 110x110."
+    },
+    {
+      "id": "afterburn-31",
+      "claim": "The README says to 'Name the start page's file Main.dc.html'.",
+      "where": ["README Designing a panel"],
+      "template": {
+        "does": "The template calls its boot page 'Start' and uses 'Main ...' for the working pages; 'Main Select Source' is the hub.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["Start", "Main Select Source", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.regions.1", "says": "name it `Start` and mark it `start=\"true\"` (its file is still `Main.dc.html`, as the canvas names its entry)"}
+      ],
+      "evidence": "The seed's DefaultPage is Start (ID 0); the Main pages follow it."
+    },
+    {
+      "id": "afterburn-32",
+      "claim": "The Group component pages with 'Previous and Next under them ... arrows'.",
+      "where": ["Group README"],
+      "template": {
+        "does": "The template's only paged list (VTC Search Results) uses up and down triangle glyphs beside the list (444,73 and 444,398, #767789). The 320 pages a device with 'More' and a chevron in the footer and a Back chevron. The words Previous and Next never appear.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": ["VTC Search Results"]
+      },
+      "status": "deviation",
+      "reason": "A Group fits its members on every panel by paging them under the touch minimum and nine-button standards. Extron's triangles and chevrons are glyphs of its Afterburn icon font, which a design system does not carry; the kit draws them as images in Afterburn/Icons/PNG (Carets, Chevron), which this system's kit root (Afterburn/Buttons/PNG) does not reach yet (docs/ROADMAP.md), so the toolkit's paging says Previous and Next. The README says what the template does.",
+      "here": "A Group that pages says Previous and Next; the template pages with triangle and chevron glyphs of its font, which the system does not carry.",
+      "fix": [
+        {"key": "examples.group_note", "says": "a Group's Previous and Next are the toolkit's own"},
+        {"key": "examples.group_note", "says": "which the kit draws as images too (Afterburn/Icons/PNG's Carets and Chevron)"}
+      ],
+      "gone": ["scrolls with up and down arrows beside it"],
+      "evidence": "Search Result Scroll Up (10048) and Scroll Down (10049), captions U+E94E and U+E91D, #767789."
+    },
+    {
+      "id": "afterburn-33",
+      "claim": "panels 'Afterburn 1230 Series' has popup: null, and the regions text does not describe its split squircle.",
+      "where": ["panels.Afterburn 1230 Series.popup", "layout.regions"],
+      "template": {
+        "does": "The 1230 template shows group-1 standard popups (650x500) in a region at 1028,149 on all five working pages. Its squircle is split by a vertical divider (950,50, 19x599) into a Preview half (video 248,212, 644x362, 'Send to Display') and the source-controls half.",
+        "seed": "seeds/Afterburn 1230W.gdl",
+        "pages": ["Main SD", "Main SD Screen Arrows", "Main Multi-Window", "Main VC", "Main Recording"]
+      },
+      "status": "frame",
+      "fix": [
+        {"key": "layout.regions.4", "says": "The 1230 Series splits its squircle with a vertical divider"}
+      ],
+      "frame": [
+        {"series": "Afterburn 1230 Series", "key": "center.region"},
+        {"series": "Afterburn 1230 Series", "key": "center.items"}
+      ],
+      "evidence": "seeds/Afterburn 1230W.gdl's Main SD: Divider 950,50 19x599, Video 248,212 644x362, Send to Display, the popup region 1028,149; 650x500 is 94% of a quarter of 1920x720, under measure_series.popup_region's rule."
+    },
+    {
+      "id": "afterburn-34",
+      "claim": "panels 520/535 main [0,0,688,480] / [0,0,1101,720] is measured off the _main art (Main page).",
+      "where": ["panels.Afterburn 520 Series.main", "panels._source"],
+      "template": {
+        "does": "The Start page of both templates draws a squircle (_starrt art) between a Lights left rail and a Volume right rail, like the 1220's, so a Start page there does not use the measured main region.",
+        "seed": "seeds/Afterburn 525.gdl",
+        "pages": ["Start", "Main"]
+      },
+      "status": "deviation",
+      "reason": "The panels table keeps one background per theme and size for the 520 and 535, their `_main` art, and a Page there is laid out in the hub's main region; the Start page's squircle on the `_start` art is not drawn. The README and the table's notes say what the template does.",
+      "here": "A Start page on the 520 and 535 is laid out in the hub's main region on its Main art; the template's Start draws a squircle of its own there.",
+      "fix": [
+        {"key": "layout.regions.1", "says": "the system builds every page of those panels on their Main art"}
+      ],
+      "evidence": "seeds/Afterburn 525.gdl's Start: Lights Label and presets at the left, Volume Label, level, Up, Down, Mute at the right, on the _starrt art."
+    }
+  ]
+}

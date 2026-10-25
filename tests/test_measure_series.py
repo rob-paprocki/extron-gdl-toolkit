@@ -4,6 +4,7 @@ regions are when no art draws them, read off the template's own controls."""
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -21,7 +22,7 @@ REPO = os.path.dirname(HERE)
 
 def _facts(part, size):
     return {'part': part, 'size': list(size), 'slider': True, 'level': True, 'datetime': True, 'popup': True,
-            'borders': {}}
+            'image': True, 'borders': {}}
 
 
 class TestASeriesSeeds(unittest.TestCase):
@@ -508,6 +509,38 @@ class TestTheFrameOfEachSeries(unittest.TestCase):
                     drawn = sorted(list(c['rect']) for c in page['controls'] if c['type'] == 'PBButton'
                                    and c['id'] in ids and tuple(c['rect'][1:]) == tuple(tabs['first'][1:]))
                     self.assertEqual([it['rect'] for it in tabs['items']], drawn)
+        if not checked:
+            self.skipTest('no seeds here (git lfs pull)')
+
+    def test_each_device_picture_is_where_the_seed_draws_it(self):
+        # Read off the seed's own popups, not through frame_of: a device's
+        # picture is a standard popup's PBImage drawing <size>_<device>.png,
+        # put on the page at the popup region's origin - each series' own
+        # size for that device (the 725's Doc Cam 261x216, its Laptop and PC
+        # 235x193).
+        from gdl import seeds
+        from gdl.project import Project
+        checked = 0
+        for series, row in _profile('turbulence')['panels'].items():
+            pics = ((row.get('frame') or {}).get('center') or {}).get('pictures') if not series.startswith('_') else None
+            seed = measure_series.series_seed(row) if pics else None
+            if not seeds.usable(seed):
+                continue
+            checked += 1
+            with self.subTest(series=series):
+                at = row['frame']['center']['region'][:2]
+                drawn = {}
+                for pg in measure_series.seed_pages(Project.open(seeds.path(seed))):
+                    for c in pg['controls'] if pg['kind'] == 'popup' and not pg['modal'] else ():
+                        m = re.match(r'^\d+x\d+_(.+)\.png$', c['art'] or '') if c['type'] == 'PBImage' else None
+                        if m:
+                            drawn.setdefault(m.group(1), []).append(
+                                [c['rect'][0] + at[0], c['rect'][1] + at[1], c['rect'][2], c['rect'][3]])
+                for device, rect in pics.items():
+                    self.assertIn(rect, drawn.get(device, []), device)
+                if series == 'Turbulence 1020 Series':
+                    self.assertEqual((pics['doc-cam'], pics['laptop'], pics['pc']),
+                                     ([112, 103, 261, 216], [112, 103, 235, 193], [112, 103, 235, 193]))
         if not checked:
             self.skipTest('no seeds here (git lfs pull)')
 

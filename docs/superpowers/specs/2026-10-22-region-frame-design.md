@@ -155,7 +155,66 @@ build at a time.
    working pages; the ledger of every disagreement, fixed or a deviation with
    its reason; a claim lint; `python -m gdl.designsys audit <theme>` at zero;
    the six-colour exemption; README Layout generated from the frame.
+   Decided in the making (2026-10-23): the ledger is
+   `gdl/designsys/truth/<theme>.json`, one entry per disagreement the
+   grammar measurement found, against a schema beside it - the claim and
+   where it was, what the template does off which seed and pages, and a
+   status (`fixed` naming the profile key and words or the README's words
+   that now say it, `frame` naming the frame key the regions draw it from,
+   `deviation` with its reason), with the old words that must stay `gone`
+   and what a fix changes in what builds. The claim lint reads a sentence as
+   a claim by its phrasing ("as the seed draws it", "as Mach's own pages
+   put them", "every Mach 1035 page", a number said to be the template's)
+   and wants a ledger fix's words, the frame or a `_` source naming the
+   seed and a page behind it; it flags rather than guesses. The Layout is
+   every series' bands in a table and the design panel's regions, sets,
+   items, surfaces and windows with their rects, all off the frame, and a
+   profile's hand-written `layout.regions` follows it. The README's shared
+   words the ledger found wrong are the frame's where the template has one
+   (Popups, the Page's `kind`, the Rail's column, the Panel's and
+   PopupRegion's examples) and its Example is the working page in the
+   region components. Mach is first: its page buttons `solid`, ghost the
+   keys on its dark grounds, accent an active mute or privacy with a black
+   caption, red and green actions on its square rounded border, its levels
+   shade and white, its clock #808080. Turbulence's lit docks, Help and call
+   tiles say Lime (`lime`) and Privacy's red (`alert`), Room Mode's card is
+   `veil`, its header and footer are art a Panel cannot draw (flat `shade`,
+   without the art's rule, until item 9 drew the art), and its README says its tabs run left-aligned
+   from the left rail's edge, its rail is the kit's art, its docks and Help
+   are clear beveled tiles, not invisible, and its pages take a photograph
+   by role. Shockwave's lit captions are its family's dark (`ink` on gray,
+   `caution` on yellow, `alert` on red, `go` on green), a source popup's and
+   a 320 page's keys light `text-secondary` (`key`), its Mute rests gray and
+   lights red, its clock is #C0C0C0 in 14 pt, its scrim is black, its
+   standard popups are no cards, its theme is set per page, and its 1035's
+   tab names are the twin the region page draws (item 3). Afterburn's chrome is
+   its background art, so it keeps its system without region components and
+   its Layout is the frame's plus a hand-written account of its working
+   page: a row of `source` tabs over a divider and the selected source's
+   popup under it, no title, the foot's date, Preview and time; Start and
+   Main Select Source told apart from it; `list` and `toggle` rows in the
+   left rail, not ghost; the right column that is not a Rail's stack. Its
+   titles are the 21 pt white `subheading`, its `heading` an entry readout,
+   its modal's card the squircle art (a Panel stands in), its Close, Back and
+   arrows glyphs of a font the design system does not carry, and its red the
+   On stroke of a sharing button, the one change to what builds.
 3. **IDs**: region mirrors and seed IDs for fixed chrome in the translator.
+   Decided in the making (2026-10-23): the bundle writes the frame's seed ID
+   on the chrome a region draws in those slots - the Footer's Help, Power
+   and mode launcher, the RightRail's Volume and Mute, by default or the
+   designer's own in the slot - as `seed_id`, not `id`, and `pin_ids` keeps
+   it on every page that draws it and every panel where the designer gave
+   none and no canvas control has it, keyed by name, before the page's band,
+   which steps over it; a designer's `id`
+   always wins, and the Volume heading, no chrome a program drives, keeps
+   no seed ID. The one mirror the frames record is Shockwave's tab `twin`
+   (the 1035's and 1535's): there the tab draws no caption and a derived
+   `<name> Caption` across its foot at the twin's depth says it, white in
+   both states, with the tab's ID (`mirror`), `nav`, `does` and state
+   names. Inside its control and sharing its ID, `gdl.spec` holds it to its
+   control's touch target, gaps and states, not its own; the ID map lists
+   it as the tab's mirror, and its check across panels still holds the tab
+   to every panel.
 4. **Regions on tier A**: the components, placement from each series' frame,
    joined stacks, surfaces and default chrome; missing-region warnings.
 5. **Center and windows.** Decided in the making (2026-10-22): a source's
@@ -166,7 +225,7 @@ build at a time.
    since their keys reach up beside the title). Shockwave's source title is
    centred across the popup's top, as both its seeds align it, and its well
    is the page's (a `Center Well` the Center draws). Turbulence's device
-   picture waits for the image kind (9): the popup leaves its place empty.
+   picture is item 9's.
    A confirm's Power Down takes the Page's `does`; Close and Cancel carry
    what they do and no `nav`, since only the program knows the page that
    opened the window. The template's words are the profile's `writing`.
@@ -264,8 +323,65 @@ build at a time.
    opaque black, so a label with no fill is now written transparent, as a
    button is, and verify_built reports a label planned clear that is not.
 8. **The README rewritten around the grammar** and the design systems
-   republished, with the template renders.
+   republished, with the template renders. Decided in the making
+   (2026-10-23): the README leads with the grammar - per family, off the
+   frames: the bar panels' five regions, the hubs' menu bar, Select a Source
+   and options, the 320's strip, keys, More and Back - then the working page
+   with a complete example (every artboard it leads to, by `role`), the
+   center, the windows, the writing, a hand-over checklist, the pages without
+   regions and the Differences, which are each ledger `deviation`'s new
+   `here` (the audit wants one); the measured Layout and each panel's room
+   follow. The renders are each family's frame page off its seed through
+   `gdl.compose`, its region showing the frame's own popup (Main SD with
+   Laptop, a hub's Select a Source), composited with real alpha
+   (`compose.BINARY`, off for these alone, since GUI Designer's snapshot rule
+   paints Mach's #000000B4 wells and Shockwave's 15% white well solid),
+   WebP at 640, 400 and 320 px, 3 to 15 KB each, in `templates/` and on a
+   `Template` card. Each profile gains `writing.voice` - the template's rules
+   for captions, headings, titles and messages, its launchers' words, the
+   capitals it sets itself, its sentence-case captions and the words it says
+   instead of ours - and Afterburn a `writing` of its own; the caption lint
+   holds the README's and the profile's caption examples to it, in the audit.
+   `compare --template` sets each artboard, per panel, beside the seed's page
+   of its kind (the working page, a source's popup by name, a window by role),
+   and SKILL.md runs it as the critique loop before a build. From a fresh
+   designer's read of the built READMEs (2026-10-23): the example is a whole
+   room - Start in `Main.dc.html` (`examples.start`), every Page with
+   `panels` and `theme`, every tab its glyph - and Afterburn's is too, its
+   right column a Rail that stacks on the drawn panel as on the rest (one
+   rule, not two) and every window on a Panel card where the squircle
+   stands; the RightRail's and the Footer's words split as the components
+   split them; the bar panel's question and a settings window have renders of
+   their own; and each number of Differences is held to its ledger entry.
 9. **Seed clone** (optional): an image kind and a verbatim clone op for art
    the design system cannot draw (Turbulence's bars, Shockwave's round art).
+   Decided in the making (2026-10-23): no verbatim clone op - the image kind
+   is a clone of the seed's own `PBImage` with its art set, and the art the
+   seed's own resource of that name, which the applier reuses where its
+   pixels agree, so a template's bar built from the spec is the seed's,
+   checked off its built artwork (`check_images`: the seed's own 0% off its
+   file). The spec's `image` names a kit file and its `layout` (`fill` or
+   `stretch`, as Turbulence's device pictures and bars lie), and a standard
+   popup takes the page's photo (`background_image`), as Shockwave's and
+   Turbulence's hubs draw theirs. The design system draws the frame's art
+   surfaces as derived Images where the kit has the file and the panel's
+   seed can clone a `PBImage` (the series' `kinds`, now measuring `image`),
+   else as before; Turbulence's source popups their device picture at the
+   frame's rect for that device (`center.pictures`: each device its own
+   size, the Laptop's for one the seed pictures for no source), by the
+   Page's `device`, its name or the seed's pairing
+   (`regions.source.devices`); a hub's popups their photo
+   (`regions.hub.popup.photo`); and offers an `Image` component where the
+   profile says what its template draws with one (`examples.image`:
+   Turbulence's window pictures). Shockwave's seeds have no `PBImage`, so
+   its round art stays the kit's gray_round, which it is pixel for pixel,
+   and its Share Content art, the seed's own and in no kit, waits for an
+   extraction filter (`docs/ROADMAP.md`). The README of 8 says each where a
+   designer reads it - the grammar's bars as the template's art (and the
+   Header's and Footer's READMEs), the center's picture and `device`, a
+   hub's popups on its photo in the grammar, the center and the windows, and
+   a settings window's picture as an `Image` - and its Differences no longer
+   lists the bars or the device picture: the ledger's turbulence-02 and
+   turbulence-34 are the frame's, and turbulence-35 each device's own size.
 10. **Round four**: fresh designers from the published systems alone, built on
     the 1035, 725, 525 and 320, each page beside the template's own.

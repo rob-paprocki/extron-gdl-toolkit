@@ -37,7 +37,7 @@ together.
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
 | `gdl/edit.py` | change vocabulary for an existing panel: rename, restyle, states, retarget, renumber |
 | `gdl/idmap.py` | the ID map a programmer works from: every addressable control, where it is, what it does |
-| `gdl/designsys/` | an Extron template as a Design System artifact: its profile, the components every template shares, and the region components (Header, LeftRail, Section, RightRail, Footer, Center) of the templates that draw their bars as controls |
+| `gdl/designsys/` | an Extron template as a Design System artifact: its profile, the components every template shares, and the region components (Header, LeftRail, Section, RightRail, Footer, Center) of the templates that draw their bars as controls; and in `truth/`, each theme's ledger of what its profile once said that its template does not do, which `python -m gdl.designsys audit <theme>` checks |
 | `gdl/design.py` | turns a Design canvas into a spec for each panel it lists, laying it out in headless Chrome with the canvas's own runtime, pinned in `gdl/dc_runtime.json` |
 | `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
 | `gdl/templates.py` | Extron's series templates, from GUI Designer's own table: which template a model takes |
@@ -112,7 +112,10 @@ Then, from the repo root:
    one `gdl/dc_runtime.json` pins
    (`docs/claude-design.md` §5). Without it the Chrome tests skip.
 6. `python -m pytest`, then `python tests/audit_corpus.py`. Any FAIL the audit
-   reports should already be an open item in `docs/ROADMAP.md`.
+   reports should already be an open item in `docs/ROADMAP.md`. Before
+   publishing a theme's design system, `python -m gdl.designsys audit <theme>`
+   reports what it says about its template that the template's own pages do
+   not back (`docs/claude-design.md` §2 *Truth*); a theme at zero is ready.
 
 Three things trip a fresh Windows machine: cloning into a deep directory needs
 `git config --global core.longpaths true`; the PowerShell entry points need

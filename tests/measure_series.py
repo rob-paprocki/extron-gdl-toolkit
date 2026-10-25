@@ -784,6 +784,46 @@ def _centre_from(popup, at):
                  if _surface(c)]
 
 
+def _pictures(page, pages, at, drawn):
+    """{device: rect} - the picture each source's popup pins, on the page at
+    `at`, by the device its art names (1152x1152_doc-cam.png is the kit's
+    doc-cam: a plain picture, its stem its family). Turbulence sizes each
+    device its own way - the 1035's Doc Cam 326x288 and Tuner 526x329 where
+    its Laptop is 293x257 - so the measured popup's own picture (in `drawn`,
+    its surfaces: the Laptop's) is no other's. Only pictures named at that
+    one's size, so a template that pins none (Mach, Shockwave) records none.
+
+    A popup the working page's buttons open, or one those open, is a
+    setting's - the 525's Display Control, and More Options' Audio and
+    Lighting Control, standard popups on a hub where its bar series' are
+    modals - and the device it pictures is no source's, wherever else it is
+    drawn: Dual Display Select, the 525's Blu-ray routing step, pictures
+    the monitor its Display Control does."""
+    own = next((s['art'] for s in drawn if s['kind'] == 'image' and s['art']), None)
+    size = re.match(r'^(\d+x\d+)_', own or '')
+    if not size:
+        return {}
+    art = re.compile('^' + re.escape(size.group(1)) + r'_(.+)\.png$')
+    std = [pg for pg in pages if pg['kind'] == 'popup' and not pg['modal'] and pg['name']]
+
+    def opened(cs):
+        return [pg for pg in (_windows_named(std, c['name']) for c in cs if c['type'] == 'PBButton' and c['name'])
+                if pg]
+
+    def devices(pg):
+        return [(m.group(1), c) for c in pg['controls'] if c['type'] == 'PBImage'
+                for m in [art.match(c['art'] or '')] if m]
+    settings = opened(page['controls'])
+    settings += [pg for s in list(settings) for pg in opened(s['controls']) if pg not in settings]
+    theirs = {d for pg in settings for d, _ in devices(pg)}
+    out = {}
+    for pg in std:
+        for d, c in devices(pg) if pg not in settings else ():
+            if d not in theirs:
+                out.setdefault(d, _offset(c['rect'], at))
+    return dict(sorted(out.items()))
+
+
 def _band(rect, cs, surfaces):
     return {'rect': rect, 'surfaces': [_surface_of(c) for c in surfaces],
             'items': [_item(c) for c in sorted(cs, key=lambda c: (c['rect'][1], c['rect'][0]))]}
@@ -831,7 +871,8 @@ def frame_of(path, size, art=None):
     None where the template draws none - its surfaces and its items by role,
     the header's tabs, the left rail's groups and the centre's popup region,
     with the well, title, empty state and status of a source's popup on it,
-    the sizes it sets them in and the title of a source with controls;
+    the sizes it sets them in, the title of a source with controls and the
+    picture each source's popup pins, by device;
     the windows' sizes and the lines their messages take; on a 300
     or a 320 the home page's and a source's second page's bands as records of
     their own; the windows a page opens; the seed IDs of the fixed chrome; the
@@ -957,6 +998,9 @@ def _bars_frame(page, pages, size, art):
     titled = _controls_title(pages, region[:2] if region else (0, 0))
     if titled:
         out['center']['title_controls'] = titled
+    pictures = _pictures(page, pages, region[:2] if region else (0, 0), drawn)
+    if pictures:
+        out['center']['pictures'] = pictures
     if f['well'] and not out['center'].get('well'):
         out['center']['well'] = list(f['well'])
     out['ids'] = _ids([it for b in BANDS if out[b] for it in out[b]['items']], [])
@@ -1028,6 +1072,9 @@ def _hub_frame(page, popups, size, art):
     titled = _controls_title(popups, region[:2])
     if titled:
         centre['title_controls'] = titled
+    pictures = _pictures(page, popups, region[:2], drawn)
+    if pictures:
+        centre['pictures'] = pictures
     level = _level_strip(popups, next((it['rect'] for it in centre['items'] if it['role'] == 'popup'), None))
     if level:
         centre['level'] = level
@@ -1458,6 +1505,8 @@ def seed_facts(path, border_names, border_defs=None):
     return {'part': part, 'size': list(canvas.most_common(1)[0][0]) if canvas else None,
             'slider': kinds['PBSlider'] > 0, 'level': kinds['PBLevel'] > 0,
             'datetime': kinds['PBDateTime'] > 0, 'popup': std, 'borders': borders,
+            # An image control clones a PBImage: no Shockwave seed has one.
+            'image': kinds['PBImage'] > 0,
             'radii': seed_radii(p, border_defs or {})}
 
 
@@ -1511,7 +1560,7 @@ def match_seeds(theme, models, size, seeds):
                 else:
                     continue
                 if not turned or kinds is None:
-                    kinds = {k: facts[k] for k in ('slider', 'level', 'datetime', 'popup')}
+                    kinds = {k: facts[k] for k in ('slider', 'level', 'datetime', 'popup', 'image')}
                     borders = facts['borders']
     return out, kinds, borders
 

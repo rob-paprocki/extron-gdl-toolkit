@@ -511,6 +511,142 @@ class TestBackgroundImage(unittest.TestCase):
         self.assertTrue(any('single flat color' in p for p in problems), problems)
 
 
+class TestPopupPhoto(unittest.TestCase):
+    """A hub popup on the page's photo (Shockwave's and Turbulence's) is
+    checked as a page's image is - and a popup planned with no fill of its
+    own is not then taken for one built opaque."""
+
+    def setUp(self):
+        self.vb = _vb(self)
+        import io
+        import tempfile
+        from PIL import Image
+        self.file = os.path.join(tempfile.mkdtemp(), 'photo.png')
+        src = Image.new('RGBA', (80, 20), (90, 80, 120, 255))
+        src.paste((200, 20, 20, 255), (0, 0, 40, 20))
+        src.save(self.file)
+        buf = io.BytesIO()
+        src.resize((40, 20)).convert('RGB').save(buf, 'PNG')
+        self.good = buf.getvalue()
+
+    def _check(self, art):
+        plan = [{'name': 'Laptop', 'modal': False, 'background': 0x00000000, 'background_layout': 1,
+                 'background_image': {'name': 'photo.png', 'file': self.file}}]
+        return self.vb.check_popup_background(plan, {'Laptop': {'Name': 'Laptop', 'TLPImageID': 7}}, {7: art})
+
+    def test_its_photo_stretched_passes(self):
+        self.assertEqual(self._check(self.good), [])
+
+    def test_one_built_without_it_is_reported(self):
+        problems = self._check(_png((0, 0, 0)))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("popup 'Laptop'", problems[0])
+
+
+class TestImageArt(unittest.TestCase):
+    """layout.json names no image, so an image control's artwork is checked
+    against its planned art laid out as planned: stretched (the Turbulence
+    seeds' bars) or fitted (their device pictures)."""
+
+    def setUp(self):
+        self.vb = _vb(self)
+        import tempfile
+        from PIL import Image
+        self.dir = tempfile.mkdtemp()
+        self.bar = os.path.join(self.dir, 'bar.png')
+        im = Image.new('RGBA', (80, 20), (20, 30, 120, 255))
+        im.paste((200, 200, 200, 255), (0, 16, 80, 20))
+        im.save(self.bar)
+        self.other = os.path.join(self.dir, 'other.png')
+        Image.new('RGBA', (80, 20), (200, 20, 20, 255)).save(self.other)
+
+    def _art(self, file, layout):
+        import io
+        buf = io.BytesIO()
+        (self.vb.stretch_image(file, 40, 20) if layout == 1 else self.vb.fit_image(file, 40, 20)).save(buf, 'PNG')
+        return buf.getvalue()
+
+    def _check(self, art, layout=1, file=None):
+        plan = [{'name': 'Home', 'controls': [{
+            'donor_type': 'PBImage', 'fields': {'nameField': 'Top bar'}, 'fill': None,
+            'image': {'name': 'bar.png', 'file': file or self.bar}, 'image_layout': layout, 'image_align': 3}]}]
+        table = {'Home': {'Name': 'Home', 'Controls': [
+            {'Name': 'Top bar', 'Type': 10, 'Width': 40, 'Height': 20, 'TLPImageID': 7}]}}
+        return self.vb.check_images(plan, table, {7: art} if art else {}, 'page')
+
+    def test_its_art_as_planned_passes(self):
+        self.assertEqual(self._check(self._art(self.bar, 1)), ([], 1))
+
+    def test_the_state_check_leaves_an_image_to_its_own_layout(self):
+        """check_states fits every planned image, as a button's icon lies; an
+        image control's art is stretched where it is planned so, and is this
+        check's. The Turbulence 1035's header, its seed's own art stretched,
+        read there as 26% off - it is not that image."""
+        import copy
+        plan = [{'name': 'Home', 'controls': [{
+            'donor_type': 'PBImage', 'fields': {'nameField': 'Top bar'}, 'fill': None,
+            'image': {'name': 'bar.png', 'file': self.bar}, 'image_layout': 1, 'image_align': 3}]}]
+        table = {'Home': {'Name': 'Home', 'Controls': [
+            {'Name': 'Top bar', 'Type': 10, 'Width': 40, 'Height': 20, 'TLPImageID': 7,
+             'States': [{'Name': 'Top bar', 'TLPImageID': 7}]}]}}
+        assets = {7: self._art(self.bar, 1)}
+        problems, _, _ = self.vb.check_states(copy.deepcopy(plan), table, assets, 'page')
+        self.assertEqual(problems, [])
+
+    def test_another_image_is_reported(self):
+        problems, _ = self._check(self._art(self.other, 1))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("'Top bar'", problems[0])
+
+    def test_it_is_held_to_its_own_layout(self):
+        problems, _ = self._check(self._art(self.bar, 1), layout=0)
+        self.assertEqual(len(problems), 1, problems)
+
+    def test_one_built_with_no_artwork_is_reported(self):
+        problems, _ = self._check(None)
+        self.assertTrue(any('no artwork' in p for p in problems), problems)
+
+    def test_a_file_this_machine_lacks_is_reported(self):
+        problems, _ = self._check(self._art(self.bar, 1), file=os.path.join(self.dir, 'gone.png'))
+        self.assertTrue(any('not at' in p for p in problems), problems)
+
+
+class TestImageArtOnTheSeed(unittest.TestCase):
+    """The check on Build's own artwork: the Turbulence 1035 seed's header
+    and footer bars and its device pictures against the art extracted from
+    it (vendor/README.md) - each its own file, laid out as the seed lays it,
+    0% off, and another's 10% and up."""
+    SEED = os.path.join(os.path.dirname(HERE), 'seeds', 'Turbulence 1035.gdl')
+    ART = {'Top bar': ('2047x151_header.png', 1), 'Bottom bar': ('1648x134_footer.png', 1),
+           'Laptop Image': ('1152x1152_laptop.png', 0), 'PC Image': ('1152x1152_pc.png', 0)}
+
+    def test_each_is_its_own_art_and_not_another(self):
+        vb = _vb(self)
+        from gdl.spec import resolve_image
+        if not usable(self.SEED):
+            self.skipTest('seeds/Turbulence 1035.gdl is not here (git lfs pull)')
+        files = {n: resolve_image('Turbulence/' + f) for n, (f, _) in self.ART.items()}
+        if not all(files.values()):
+            self.skipTest("Turbulence's art is not extracted here (python -m gdl.designsys extract turbulence)")
+        from gdl.compose import load
+        layout, assets = load(self.SEED)
+        built = {}
+        for pg in layout['Pages'] + layout['PopupPages']:
+            for c in pg.get('Controls') or []:
+                built.setdefault(c.get('Name'), (pg['Name'], c))
+        swap = {'Laptop Image': 'PC Image', 'PC Image': 'Laptop Image', 'Top bar': 'Laptop Image',
+                'Bottom bar': 'PC Image'}
+        for name, (f, layout_) in self.ART.items():
+            page, c = built[name]
+            table = {page: {'Name': page, 'Controls': [c]}}
+            for art, bad in ((name, False), (swap[name], True)):
+                plan = [{'name': page, 'controls': [{
+                    'donor_type': 'PBImage', 'fields': {'nameField': name}, 'fill': None,
+                    'image': {'name': self.ART[art][0], 'file': files[art]}, 'image_layout': layout_}]}]
+                problems, _ = vb.check_images(plan, table, assets, 'page')
+                self.assertEqual(bool(problems), bad, (name, art, problems))
+
+
 class TestStateImage(unittest.TestCase):
     """layout.json names no image once built, so a state's kit image is
     checked against its artwork."""

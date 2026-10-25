@@ -10,8 +10,9 @@ and follow it:
 
 - **A Design canvas** (a claude.ai link to a Design artifact made with the
   template's design system): `docs/claude-design.md` §1 *Build: in Claude Code*
-  - read the canvas, translate it, build and verify every panel it lists, and
-  put each artboard beside its built page for sign-off.
+  - read the canvas, translate it, critique it against the template (step 3),
+  build and verify every panel it lists, and put each artboard beside its
+  built page for sign-off.
 - **A description, or a spec**: `SKILL.md` workflow A.
 - **An existing panel**: `SKILL.md` workflow B.
 

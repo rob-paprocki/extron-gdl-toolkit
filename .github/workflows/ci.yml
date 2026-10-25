@@ -252,6 +252,14 @@ jobs:
         # Extron's kit or its templates skips.
         run: python tests/test_designsys.py
 
+      - name: what Shockwave's and Afterburn's profiles say of their templates
+        # The truth ledgers' own checks for the two themes with them. What reads
+        # a seed other than Afterburn's 1035, or Extron's kit, skips; the
+        # kit-image comparison skips without Pillow.
+        run: |
+          python tests/test_shockwave_truth.py
+          python tests/test_afterburn_truth.py
+
       - name: the Claude Design translator, on the probe's output
         # The Chrome tests skip: Chrome is on the runner, but they also need the
         # Design type's runtime ($GDL_DC_RUNTIME), which is not in the repo.

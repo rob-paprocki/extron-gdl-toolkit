@@ -501,6 +501,26 @@ statement is in the live docs; this is the record that it changed.
   where a Rail goes and whether it takes a Label, what a `datetime` clock
   prints, and what a state keeps of its variant's look.
 
+- **Afterburn's profile and README described its two least typical pages**
+  (until 2026-10-23; the grammar measurement of 2026-10-22). They were read
+  off Start and Main Select Source, and told a designer 35 things the working
+  pages do not do: the sources in the squircle's middle (they are a tab row
+  across its top, over a divider, and the middle is the selected source's
+  popup); a title; ghost buttons down the left rail (its rows are `list` and
+  `toggle` image buttons); a Start Sharing button and a mode button on every
+  page; a `heading` for a popup's title and a `subheading` in
+  `text-secondary` (a title is 21 pt regular white; 23.5 bold is an entry
+  readout); a modal whose card is a Panel (it is the squircle art) and which
+  has a Close (a confirmation has neither title nor Close); Close, Back and
+  the arrows as icons the system offers (the template sets them as glyphs of
+  Extron's Afterburn font, and the kit's images of them, in Icons/PNG, are
+  not in the system's `icon` list); an
+  `alert` that fills a button red (the template's red is the On stroke of a
+  sharing button, and the record icon); and an Example that was a Start page
+  with a source and a Help. `gdl/designsys/truth/afterburn.json` holds each
+  with the seed and pages it was read off. Only the `alert` variant changes
+  what builds.
+
 ## Dated facts moved out of the live docs
 
 - **Seeds** were made by hand on 2026-09-09; the 835 seed a day earlier (it was

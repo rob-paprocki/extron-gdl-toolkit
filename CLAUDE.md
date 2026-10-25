@@ -63,7 +63,7 @@ author, build and verify in one session.
 | `gdl.spec` check / render / plan / donors / icons | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
 | `gdl.idmap` check / write / write-panels / from-built | |
-| `gdl.designsys` build (its icons and backgrounds need Pillow and Extron's kit, and say so without them); `gdl.design` translate (needs headless Chrome) | |
+| `gdl.designsys` build (its icons and backgrounds need Pillow and Extron's kit, and say so without them) and audit; `gdl.design` translate (needs headless Chrome) | |
 | the `python -m pytest` suite, with Pillow - a test that needs the seeds, the client fixtures, Extron's kit, the Design runtime or Windows PowerShell skips without them | |
 | `tests/verify_built.py`, `tests/verify_idmap.py`, `tests/verify_seed.py` (it compares a seed's series only where Extron's templates are - the install or `vendor/` - and says so where they are not), `tests/type_probe.py`, given the built file or seed | |
 
@@ -148,6 +148,9 @@ an opaque fill, and for a translucent one the pixels at that fill's alpha,
 which Build writes exactly - and reads the page and popup assets too — a donor
 background image re-rasterized under the fill, or a popup meant to show its page
 through it built opaque, is invisible in every field and obvious in the artwork.
+Art is read the same way: a page's or popup's photo, a button state's kit
+image and an image control's art are each compared with the planned file laid
+out as planned, since layout.json names none of them.
 
 The ID map a programmer works from has a second gate:
 

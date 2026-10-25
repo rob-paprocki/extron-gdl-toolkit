@@ -1,0 +1,711 @@
+{
+  "theme": "mach",
+  "_source": "Each entry is a claim our profile (gdl/designsys/mach.json) or its README made that Mach's own pages contradict, found by the grammar measurement of 2026-10-22: every page and popup of seeds/Mach 1035.gdl, 725, 720, 1525, 1535, 525, 535 and 320, read with gdl.project (each control's rect, look, caption and font) beside its renders. `template` is what those pages do, off the seed and pages named; the region frame (panels[series].frame) is the same seeds measured by tests/measure_series.py frame_of. `python -m gdl.designsys audit mach` checks every resolution against the profile, the README and the frame as they stand.",
+  "entries": [
+    {
+      "id": "mach-00",
+      "claim": "The header bar (1280x64 at 0,0) is a shade Panel with the page's title centered on it, a header Label (Select a source, Room Title).",
+      "where": ["layout.regions.0", "README Layout"],
+      "template": {
+        "does": "Only Main Select Source titles its header. The working pages' header is the source selector: four 190x64 tabs at x 258, 449, 640 and 831, an icon at the left of each, between Header Rectangle fillers 0,0 257x64 and 1022,0 258x64. Room Title is on Start, which has no header, at 442,126 in black Open Sans 32.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Main SD Screen Arrows", "Main Multi-Window", "Main VC", "Main Recording", "Main Select Source", "Start"]
+      },
+      "status": "frame",
+      "frame": [{"series": "Mach 1220 Series", "key": "top.tabs"}, {"series": "Mach 1220 Series", "key": "top.surfaces"}],
+      "gone": ["is a `shade` Panel with the page's title centered on it"],
+      "evidence": "Main SD's SD PC, SD Laptop, SD TV and SD Streaming (IDs 8052, 8050, 8059, 8063) and its two Header Rectangle shapes; Main Select Source's Header shape and its 'Select a source' label (ID 6072); Start's Room Title label."
+    },
+    {
+      "id": "mach-01",
+      "claim": "type.header: 26 pt, as every Mach 1035 page's own header label.",
+      "where": ["type.header.usage"],
+      "template": {
+        "does": "Only Main Select Source has a header label, 'Select a source', in Open Sans Light 26, not the regular Open Sans the profile's font gives.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main Select Source"]
+      },
+      "status": "fixed",
+      "fix": [{"key": "type.header.usage", "says": "The header's title on the one Main page whose header has one: Main Select Source's Select a source, Open Sans Light 26"}],
+      "gone": ["as every Mach 1035 page's own header label"],
+      "evidence": "Main Select Source's label ID 6072 at 306,0 660x64, Open Sans Light 26, #FFFFFF; no other page has a header label."
+    },
+    {
+      "id": "mach-02",
+      "claim": "The footer bar (1280x55 at 0,745) is shade too, holding a footer Room Mode button at its left (140 wide), the date and time centered in text-secondary, and footer Help (70) and Power (140) buttons at its right.",
+      "where": ["layout.regions.1", "README Layout"],
+      "template": {
+        "does": "The footer is four abutting cells with 1 px photo hairlines between them: a left launcher 0-140 (Room Mode on four Main pages, Window Layout on Multi-Window, Recording Controls on Main Recording), the Footer Rectangle 141,745 927x55 holding the date and time, Help 1069,745 70x55 and Power 1140,745 140x55.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Main Multi-Window", "Main Recording"]
+      },
+      "status": "frame",
+      "frame": [{"series": "Mach 1220 Series", "key": "bottom.items"}, {"series": "Mach 1220 Series", "key": "bottom.surfaces"}],
+      "gone": ["The footer bar (1280x55 at 0,745) is `shade` too"],
+      "evidence": "Main SD's Room Mode (8118), Footer Rectangle, SD Date/Time, Help (8117) and Power Down (8022); Main Multi-Window's Window Layout (8119); Main Recording's Recording Controls (8130)."
+    },
+    {
+      "id": "mach-03",
+      "claim": "defaults.clock color text-secondary (#919191), type body; the Clock doc's default format 'time'.",
+      "where": ["defaults.clock", "Clock README"],
+      "template": {
+        "does": "Every footer clock shows the date and time, 'MMMM dd, yyyy - h:mm tt', in #808080 Open Sans Light 16, centred at 398,751 483x42. Start's clock is #000000 Open Sans 16.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Start"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "defaults.clock.color", "says": "text-muted"},
+        {"key": "colors.text-muted.usage", "says": "as Main SD's SD Date/Time draws it"},
+        {"key": "regions.clock.format", "says": "MMMM dd, yyyy - h:mm tt"},
+        {"readme": "The default `time` is this component's: Mach's footer draws the date and time, `MMMM dd, yyyy - h:mm tt`"}
+      ],
+      "builds": "A Clock's default colour, the region Footer's among them, is #808080 where it was #919191 (a new token, text-muted, which the six-colour cap exempts as the template's own).",
+      "evidence": "Main SD's SD Date/Time: PBDateTime, pattern 'MMMM dd, yyyy - h:mm tt', Open Sans Light 16, #808080; the system offers Open Sans, so it draws 16 pt Open Sans."
+    },
+    {
+      "id": "mach-04",
+      "claim": "Left-rail buttons 103x60, 12 px apart (the seed stacks a group's with no gap ...).",
+      "where": ["layout.regions.2", "README Layout"],
+      "template": {
+        "does": "A group's buttons are 1 px apart (a 61 px step: 186, 247, 308 and 438, 499, 560), so the photo draws a hairline between them; the 725 steps 70 (10 px apart), the 720 56 (8 px). Nothing in the template is 12 px apart.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD"]
+      },
+      "status": "frame",
+      "frame": [{"series": "Mach 1220 Series", "key": "left.groups.0.pitch"}, {"series": "Mach 1020 Series", "key": "left.groups.0.pitch"}],
+      "gone": ["12 px apart (the seed stacks a group's with no gap"],
+      "evidence": "Main SD's Display On/Off/Mute (8112-8114) at y 186, 247, 308 and Screen, Lighting, Audio Settings (8115, 8116, 8020) at 438, 499, 560, each 60 deep; the owner's call of 2026-10-22 keeps a rail group a joined set 1 px apart."
+    },
+    {
+      "id": "mach-05",
+      "claim": "The left rail's headings are Display, Settings, Lighting Preset.",
+      "where": ["layout.regions.2"],
+      "template": {
+        "does": "Lighting Preset is Start's alone. On the working pages the first group is Display (or VTC's Make Call, End Call, Privacy) and the second Settings, Screen or Recording.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Start", "Main SD", "Main VC", "Main SD Screen Arrows", "Main Recording"]
+      },
+      "status": "frame",
+      "frame": [{"series": "Mach 1220 Series", "key": "left.groups.0.heading.text"}, {"series": "Mach 1220 Series", "key": "left.groups.1.heading.text"}],
+      "gone": ["Settings, Lighting Preset"],
+      "evidence": "Start's Lighting Preset label at 0,184 137x61; Main SD's Display (7033) and Settings (7022) labels; Main VC's VTC (7012); Main SD Screen Arrows' Screen (8075); Main Recording's Recording (7034)."
+    },
+    {
+      "id": "mach-06",
+      "claim": "The right rail's Mute is a solid Mute button (On in accent with a page caption); the README tells the designer to make the slider 54 wide.",
+      "where": ["layout.regions.3", "regions.mute.states"],
+      "template": {
+        "does": "Mute On is solid #EDB95E with a #000000 caption. The slider is 30 wide (1198,178 30x363).",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD"]
+      },
+      "status": "deviation",
+      "reason": "The 53 px touch minimum: a slider is touched along its rail and across it, and 30 px is under 9 mm on the 1035, so the frame's legal rect (gdl.designsys.models) grows the 30 px slider about its centre. Mute's caption is the template's black (fixed).",
+      "here": "The volume slider is drawn 53 px wide where the template's is 30: a slider is touched along its rail and across it, and 53 px is the 1035's touch minimum (9 mm). The RightRail draws it so by itself.",
+      "fix": [{"key": "regions.mute.states.On.color", "says": "ink"}, {"key": "layout.regions.0", "says": "is 30 wide in the Layout and is drawn 53 on the 1035"}],
+      "gone": ["make it 54, since 30 is under the 53 px touch minimum"],
+      "builds": "The region RightRail's Mute, On, has a #000000 caption where it was #303030.",
+      "evidence": "Main SD's SD Volume Slider (8024) 30x363 and Volume Mute (8021), On: fill #EDB95E, text #000000."
+    },
+    {
+      "id": "mach-07",
+      "claim": "Sources sit in the middle of the photo as source tiles about 150x150, each with its name as its caption on the tile; a status line or a single action is centered under them.",
+      "where": ["layout.regions.4", "README Layout"],
+      "template": {
+        "does": "On five of the six Main pages the sources are the header's tabs. Main Select Source's tiles are 100x100 at y 311, 60 px apart, with no caption: each name is a black Open Sans Light 16 Label (114x48) under its tile, and nothing is under the row.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main Select Source", "Main SD"]
+      },
+      "status": "frame",
+      "frame": [{"series": "Mach 1220 Series", "key": "top.tabs.items"}],
+      "fix": [{"key": "examples.group_note", "says": "Main Select Source's tiles (100x100, 60 px apart)"}],
+      "gone": ["Sources sit in the middle of the photo"],
+      "evidence": "Main Select Source's tiles 8100-8103 at 350/510/670/830,311 100x100 and labels 8078-8082; Main SD's tabs 8052, 8050, 8059, 8063."
+    },
+    {
+      "id": "mach-08",
+      "claim": "buttons.source: a solid square about 150x150 with the caption under the icon on the tile, as the seed's Camera 1/2, look shade with no border; a name in a Label outside reads off-center. iconography: Sources are source tiles with the icon centered.",
+      "where": ["buttons.source.usage", "buttons.source.look.border", "iconography.rules.0"],
+      "template": {
+        "does": "Main Select Source's tiles are 100x100 shade squares with 440x440 _2 icons, no caption, on '2D Rounded Rectangle', their names in Labels under them. Camera 1 and 2 are ghost (#FFFFFF32/#FFFFFF78) on '2D Rounded Rectangle', on Camera Select, a modal.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main Select Source", "Camera Select"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "buttons.source.usage", "says": "A source tile, as Main Select Source draws its four: a shade square 100x100 with the kit's 440x440 icon"},
+        {"key": "buttons.source.look.border", "says": "rounded"},
+        {"key": "iconography.rules.0", "says": "A source tile (`source`, as Main Select Source's) has its icon and no caption"}
+      ],
+      "gone": ["as the seed's Camera 1/2", "Sources are `source` tiles with the icon centered"],
+      "builds": "A `source` button is authored on '2D Rounded Rectangle' (which Mach's seed draws square) where it had no border resource.",
+      "evidence": "Main Select Source's tiles 8100-8103 (440x440_pc_2, laptop_2, monitor_2, media-player_4); Camera Select's Camera 1 and 2 (440x440_camera.png, ' \\r\\n\\r\\n\\r\\nCamera 1')."
+    },
+    {
+      "id": "mach-09",
+      "claim": "examples.source (450,300 150x150, caption Laptop, icon laptop_1) and the README Example: Laptop 150x150 at 450,300, a Clock 'date' at 17,625 inside MainArea, Help at 1058,745.",
+      "where": ["examples.source", "examples.help", "README Example"],
+      "template": {
+        "does": "The Laptop tile is 100x100 at 510,311 with 440x440_laptop_2.png and no caption. No page has a date clock in main. Help is at 1069,745 (1115 on Multi-Window), against Power.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main Select Source", "Main SD", "Main Multi-Window"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "examples.source.rect", "says": "510 311 100 100"},
+        {"key": "examples.source.attrs", "says": "laptop_2"},
+        {"key": "examples.help.rect", "says": "1069 745 70 55"},
+        {"readme": "<!-- The page the panel boots to: Main.dc.html, the canvas's entry. -->"}
+      ],
+      "gone": ["left: 1058px; top: 745px", "left: 450px; top: 300px"],
+      "evidence": "Main Select Source's Laptop tile 8101 at 510,311 100x100 (440x440_laptop_2.png); Main SD's Help 8117 at 1069,745 70x55. The README's Example is now a working page in the region components."
+    },
+    {
+      "id": "mach-10",
+      "claim": "defaults.button.variant ghost; buttons.ghost 'The default button: a white wash over the photo'; iconography 'most buttons are ghost'.",
+      "where": ["defaults.button.variant", "buttons.ghost.usage", "iconography.rules.0"],
+      "template": {
+        "does": "No button on any page is ghost: the page buttons with a fill are shade-based (shade/shade-on, shade/accent, the call, recording and footer colours). The ghost buttons are all inside popups and modals - on the shade well or the #303030 window - never on the photo; on the 525 and 535 ghost sits on the shade menu bar.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Main VC", "Main Recording", "Doc Cam", "Lighting Settings", "Camera Select"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "defaults.button.variant", "says": "solid"},
+        {"key": "buttons.ghost.usage", "says": "The template draws none on the photo"},
+        {"key": "buttons.solid.usage", "says": "The page's button, and the default"},
+        {"key": "regions.window.button.variant", "says": "ghost"},
+        {"key": "iconography.rules.0", "says": "page buttons - the rails, the tabs - are `solid` (the default)"}
+      ],
+      "gone": ["The default button: a white wash over the photo", "most buttons are `ghost`", "(183 of Mach 1035's 327", "(69 of 327 pairs)"],
+      "builds": "A Mach button with no variant is `solid` (shade, shade-on when On) where it was `ghost` (raised, pressed); a window's own keys stay ghost (regions.window.button), as a source well's do (regions.source.button).",
+      "evidence": "Every PBButton on the eight pages read with gdl.project: their fills are #000000B4/#1F292EA0 and the call, recording and footer colours; the #FFFFFF32/#FFFFFF78 buttons are all on popups (Doc Cam, BluRay, TV, Streaming, VTC Dialer) and modals (Lighting Settings, Camera Select, Help's Close)."
+    },
+    {
+      "id": "mach-11",
+      "claim": "colors.raised: a panel, card or track's fill.",
+      "where": ["colors.raised.usage"],
+      "template": {
+        "does": "The panels, cards and wells are shade #000000B4 (the popup's Header and Container, the bars); its tracks are images. raised is only ever a button fill, on a dark surface.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Laptop", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [{"key": "colors.raised.usage", "says": "only ever on a dark ground - a source popup's shade well, a #303030 window, the hubs' menu bar - never on the photo"}],
+      "gone": ["and a panel, card or track's fill", "the same 183 button-state pairs", "the same 69 button-state pairs"],
+      "evidence": "Laptop's Header and Container shapes #000000B4; Main SD's Header and Footer Rectangles #000000B4; SD Volume Slider's track 8x500_mach_track_bg@3x.png."
+    },
+    {
+      "id": "mach-12",
+      "claim": "colors.page: behind the photo and a popup's background, as the seed's own header and footer bars fall back to; _source: #303030 on 13 of the seed's own header/footer PBShape bars.",
+      "where": ["colors.page.usage", "_source Colors"],
+      "template": {
+        "does": "The header and footer bars are #000000B4. The 13 #303030 shapes are the 13 modal windows ('Modal Window' 0,64 1280x681 on Help, Display, Screen, Lighting and Audio Settings, Confirmation, Confirmation - Recording, Incoming Call, Camera Select, Window Layout, Recording Controls, Starting Up and Powering Down). The 995x549 standard popups have no fill.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Help", "Confirmation", "Lighting Settings", "Laptop", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "colors.page.usage", "says": "The opaque window between the bars: #303030, the 'Modal Window' (0,64 1280x681)"},
+        {"key": "_source", "says": "the seed's 13 'Modal Window' shapes"}
+      ],
+      "gone": ["as the seed's own header and footer bars fall back to", "on 13 of the seed's own header/footer PBShape bars"],
+      "evidence": "The Modal Window shape on each of the 13 modals, #303030; Laptop popup 995x549 with no background; Main SD's Header and Footer Rectangles #000000B4."
+    },
+    {
+      "id": "mach-13",
+      "claim": "colors.accent: a selected tab, list row or source choice; buttons.highlight: solid accent when selected; examples.color_rule: accent only for a selected item.",
+      "where": ["colors.accent.usage", "buttons.highlight.usage", "examples.color_rule", "iconography.rules.1", "examples.states"],
+      "template": {
+        "does": "Yellow #EDB95E marks an active mute or privacy - Display Mute, Volume Mute, Mic/Program/Main Mute, Display 1/2 Mute, Privacy - with a #000000 caption (18 states). The tabs, source tiles and list rows (Search Result 1-5) select by moving to #1F292EA0 or #FFFFFF78, never to accent.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Main VC", "Audio Settings", "Display Settings", "VTC Search Result", "Main Select Source"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "colors.accent.usage", "says": "An active mute or privacy"},
+        {"key": "buttons.highlight.usage", "says": "A selection is not a highlight"},
+        {"key": "examples.color_rule", "says": "`accent` only for an active mute or privacy, with an `ink` caption"},
+        {"key": "iconography.rules.1", "says": "`accent` with an `ink` caption for an active mute or privacy"},
+        {"key": "examples.states", "says": "Muted"}
+      ],
+      "gone": ["A selected tab, list row or source choice", "`accent` only for a selected item"],
+      "evidence": "The 18 button states with fill #EDB95E: Display Mute 8114, Volume Mute 8021, Audio Settings' mutes, Display Settings' Display 1/2 Mute, Main VC's Privacy 5217, each with TextColor #000000; Search Result 1-5 On #FFFFFF78; the tabs' On #1F292EA0."
+    },
+    {
+      "id": "mach-14",
+      "claim": "buttons.highlight: white text on solid accent does not clear 4.5:1, so On's caption is darkened here (to page, #303030) rather than left as measured.",
+      "where": ["buttons.highlight.usage", "buttons.highlight.states"],
+      "template": {
+        "does": "The measured caption on every accent state is already #000000, not white.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Audio Settings", "Display Settings"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "buttons.highlight.states.On.color", "says": "ink"},
+        {"key": "examples.states_note", "says": "with a black (`ink`) caption"}
+      ],
+      "gone": ["so On's caption is darkened here rather than left as measured", "with a `page`-colored caption"],
+      "builds": "A `highlight` button's On caption is #000000 where it was #303030.",
+      "evidence": "Display Mute 8114 and Volume Mute 8021, On: TextColor #000000 on #EDB95E."
+    },
+    {
+      "id": "mach-15",
+      "claim": "colors.alert: a fault, an active mute; buttons.alert: a fault or warning, not shutting down, no border, as the seed draws it; color_rule: alert only for a fault or a mute that is on, never for shutting the room down.",
+      "where": ["colors.alert.usage", "buttons.alert.usage", "buttons.alert.look.border", "examples.color_rule", "iconography.rules.2"],
+      "template": {
+        "does": "The template has no fault indicator and never paints a mute red. Its red (#A829258C or #A82925DC at rest, #E23636 pressed, on '2D Rounded Rectangle') is on its consequential actions: Power Down (the confirmation), Decline, End Call and Screen 1-4 Stop, which stop or end something, and Record, which starts a recording its confirmation tells the room of. Share Content's On is the #A82925DC alone, on no border: its live state, never solid.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Confirmation", "Confirmation - Recording", "Incoming Call", "Main VC", "Screen Settings"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "colors.alert.usage", "says": "The red of an action that stops or ends something"},
+        {"key": "buttons.alert.usage", "says": "An action that stops or ends something: Power Down on the confirmation"},
+        {"key": "buttons.alert.usage", "says": "or one that starts what attendees must be told of, Record"},
+        {"key": "colors.alert.usage", "says": "or starts what attendees must be told of: Record, on its confirmation"},
+        {"key": "colors.alert-dim.usage", "says": "Share Content's On, its live state, is the #A82925DC on no border"},
+        {"key": "buttons.alert.look.border", "says": "rounded"},
+        {"key": "examples.color_rule", "says": "`alert` for an action that stops or ends something"},
+        {"key": "iconography.rules.2", "says": "**Red and green** mark actions, not faults"},
+        {"key": "borders.none.usage", "says": "the seed's header tabs and footer cells"}
+      ],
+      "gone": ["a fault, an active mute", "never for shutting the room down", "Shutting the room down is not one", "Screen 1-4 Stop, Share Content On", "End Call and Share Content On", "Power Down on the confirmation, Record, Decline"],
+      "builds": "An `alert` button (and a window's Power Down, regions.window.power) is authored on '2D Rounded Rectangle' (square on Mach) where it had no border resource.",
+      "evidence": "Confirmation's Power Down 9028, Confirmation - Recording's Record 9244 (its label: 'You are about to start recording. Please let attendees know they will be recorded.'), Incoming Call's Decline, Main VC's End Call 5215, Screen Settings' Stop: fills #A829258C/#A82925DC to #E23636, border '2D Rounded Rectangle'. Main VC's Share Content 8090: #000000B4 to #A82925DC, no border."
+    },
+    {
+      "id": "mach-16",
+      "claim": "mach.json has no green token, and no steel blue or dim yellow.",
+      "where": ["colors"],
+      "template": {
+        "does": "Green starts a call: Make Call #659945DC to #86D161, Accept #65994596 to #86D161, VC Call #86D16150 to #86D161D2. Steel blue is a secondary choice (Contacts #B0C4DE50, Camera Near/Far On #B0C4DE8C); dim yellow is Privacy at rest (#AD8544DC) and Flash (#EDB95E50).",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main VC", "Incoming Call", "VTC Dialer", "Camera Settings"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "colors.call-dim.value", "says": "#659945DC"},
+        {"key": "colors.call-on.value", "says": "#86D161"},
+        {"key": "colors.steel.value", "says": "#B0C4DE50"},
+        {"key": "colors.steel-on.value", "says": "#B0C4DE8C"},
+        {"key": "colors.accent-dim.value", "says": "#AD8544DC"},
+        {"key": "buttons.call.usage", "says": "Starting a call: Make Call and Accept"}
+      ],
+      "builds": "Nothing that built before changes: the tokens and the `call` variant are new, and the six-colour cap exempts them as the template's own.",
+      "evidence": "Main VC's Make Call 5014 and Privacy 5217, Incoming Call's Accept, VTC Dialer's VC Call, Contacts and Flash, Camera Settings' Near/Far, read with gdl.project."
+    },
+    {
+      "id": "mach-17",
+      "claim": "iconography: the kit draws each icon once, so the icon never shows state; every icon comes from the kit through a Button's icon.",
+      "where": ["iconography.icon_prop", "iconography.intro", "kit.note"],
+      "template": {
+        "does": "Buttons swap icons by state: Privacy privacy_nsel to privacy_sel, Record record_1 to record_red_1 to play_1, the recording indicator record to record_red, VC Call call to end-call, the Window Layout presets preset-NN_nsel to _sel. 56 buttons draw their icon as an Extron-Lift glyph caption (arrows, transport, back, delete, keyboard, more).",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main VC", "Main Recording", "Window Layout", "VTC Dialer", "BluRay", "Streaming"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "iconography.icon_prop", "says": "give that state its own `icon`"},
+        {"key": "iconography.intro", "says": "as Extron-Lift glyph captions, which this system does not draw"},
+        {"key": "kit.note", "says": "a state that swaps its icon names its own"}
+      ],
+      "gone": ["so the icon never shows state", "Mach shows state by the button's fill, not by swapping its icon"],
+      "evidence": "Main VC's Privacy 5217 states (755x440_privacy_nsel.png, privacy_sel.png); Main Recording's Record 9209 (record_1, record_red_1, play_1); Window Layout's presets; the glyph captions on BluRay, Streaming and VTC Dialer."
+    },
+    {
+      "id": "mach-18",
+      "claim": "_source Buttons: no border on a minority (Help, Power Down, Camera 1/2); the confirm Power Down has no border.",
+      "where": ["_source Buttons"],
+      "template": {
+        "does": "Camera 1/2 and the confirmation's Power Down carry '2D Rounded Rectangle'. The borderless buttons are the header tabs, the footer cells (Room Mode, Window Layout, Recording Controls, Help, Power), Window 1/2, Share Content and the recording layout buttons.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Main Multi-Window", "Main VC", "Main Recording", "Confirmation", "Camera Select"]
+      },
+      "status": "fixed",
+      "fix": [{"key": "_source", "says": "no border on a minority (Main SD's header tabs and footer cells"}],
+      "gone": ["no border on a minority (Help, Power Down, Camera 1/2)"],
+      "evidence": "Each PBButton's border resource per state (Project.border): '' on the tabs 8052-8063, Room Mode 8118, Help 8117, Power 8022, Window 1/2 8007-8008, Share Content 8090; '2D Rounded Rectangle' on Power Down 9028 and Camera 1/2."
+    },
+    {
+      "id": "mach-19",
+      "claim": "_source Buttons: never a whole-button image as Afterburn's are.",
+      "where": ["_source Buttons"],
+      "template": {
+        "does": "Window Layout's 12 presets are image-only buttons with no fill (preset-01_nsel.png and on); TV Channels' presets and the recording layouts are whole-button logo or diagram images (755x440_abc.png, 712x440_generic_*.png).",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Window Layout", "TV Channels", "Recording Controls"]
+      },
+      "status": "fixed",
+      "fix": [{"key": "_source", "says": "A few are whole-button images, which no Mach variant offers"}],
+      "gone": ["never a whole-button image as Afterburn's are"],
+      "evidence": "Window Layout's Preset 1-12, TV Channels' ABC/BBC/CBS/CNN/FOX/NBC and Recording Controls' layout buttons: state images and no fill."
+    },
+    {
+      "id": "mach-20",
+      "claim": "buttons.footer: with an icon and no caption, the kit's footer icon alone (help, power).",
+      "where": ["buttons.footer.usage"],
+      "template": {
+        "does": "Help is the word 'Help' (Open Sans 12); only Power is an icon (700x448_power.png).",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD"]
+      },
+      "status": "fixed",
+      "fix": [{"key": "buttons.footer.usage", "says": "Help is its word (Open Sans 12 in the template), Power the kit's 700x448 power icon alone"}],
+      "gone": ["the kit's footer icon alone (help, power)"],
+      "evidence": "Main SD's Help 8117 caption 'Help', Open Sans 12; Power Down 8022, 700x448_power.png and no caption."
+    },
+    {
+      "id": "mach-21",
+      "claim": "buttons.ghost with_icon: the kit's 1376x440 icon strip at the left and the caption after it.",
+      "where": ["buttons.ghost.with_icon", "buttons.ghost.usage"],
+      "template": {
+        "does": "The 1376x440 icon-left, caption-after look is only the shade header tabs' (190x64, no border). A ghost button with an icon is Camera Select's Camera 1 and 2: the 440x440 camera with the caption under it.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Camera Select"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "buttons.ghost.with_icon.kit", "says": "440x440"},
+        {"key": "buttons.ghost.with_icon.caption", "says": "below"},
+        {"key": "buttons.ghost.usage", "says": "the kit's 440x440 icon with the caption under it, as Camera Select's Camera 1 and 2"}
+      ],
+      "builds": "A `ghost` button with an icon and a caption draws the kit's 440x440 icon with the caption three lines down, where it drew the 1376x440 icon with the caption after it; with no caption it is unchanged.",
+      "evidence": "Main SD's tabs (1376x440_pc.png and on, '    PC'); Camera Select's Camera 1 and 2 (440x440_camera.png, ' \\r\\n\\r\\n\\r\\nCamera 1') on #FFFFFF32."
+    },
+    {
+      "id": "mach-22",
+      "claim": "type.heading: a popup's or a section's heading, Open Sans 22 pt, 2 of Mach 1035's own labels.",
+      "where": ["type.heading"],
+      "template": {
+        "does": "Those two labels are the Offline Page's body messages. The popup and modal titles are Open Sans Light 24, white, left-aligned: Help, Document Camera, Display Settings, Camera Select, Blu-ray, Lighting Settings and the rest.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Offline Page", "Help", "Doc Cam", "Display Settings", "Lighting Settings"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "type.heading.pt", "says": "24"},
+        {"key": "type.heading.usage", "says": "A popup's or a window's title: Open Sans Light 24, white, at its top left"}
+      ],
+      "gone": ["2 of Mach 1035's own labels"],
+      "builds": "A Label of type `heading` is 24 pt where it was 22.",
+      "evidence": "The title labels of Help, Doc Cam, BluRay, Display, Lighting and Screen Settings, Camera Select: Open Sans Light 24, #FFFFFF, left; the Offline Page's two Open Sans 22 messages."
+    },
+    {
+      "id": "mach-23",
+      "claim": "type.title: a page's title - the seed's single largest label in Open Sans (32 pt); display headings run up to 35 pt in Open Sans Light.",
+      "where": ["type.title.usage"],
+      "template": {
+        "does": "The 32 pt label is Start's Room Title on the photo, not a page title. The only 35 pt Open Sans Light is the captionless Swap button's font on Recording Controls; the largest Light heading is Room Mode VC's 28 pt 'Please select a room mode'.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Start", "Recording Controls", "Room Mode VC"]
+      },
+      "status": "fixed",
+      "fix": [{"key": "type.title.usage", "says": "The room's name on the Start page: Room Title, Open Sans 32"}],
+      "gone": ["the seed's single largest label in Open Sans", "up to 35 pt"],
+      "evidence": "Start's Room Title label at 442,126, Open Sans 32, #000000; Recording Controls' Swap button, Open Sans Light 35, no caption; Room Mode VC's prompt at 321,202 638x56, Open Sans Light 28."
+    },
+    {
+      "id": "mach-24",
+      "claim": "type.button-large: a source, a main action, 20 pt, from 15 Open Sans 20 button captions.",
+      "where": ["type.button-large.usage"],
+      "template": {
+        "does": "Those 15 are the dial pad's digits and its period. The sources have no caption, and the main actions (Press to begin, Presentation, Video Conference, the tabs) are 16 pt.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["VTC Dialer", "Start", "Room Mode VC", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [{"key": "type.button-large.usage", "says": "The template's main actions - Press to begin, Presentation, Video Conference, the tabs - are 16 pt"}],
+      "gone": ["The caption of a large button: a source, a main action"],
+      "evidence": "VTC Dialer's 0-9 and '.' keys, Open Sans 20; Start's Press to begin, Room Mode VC's Presentation and Video Conference, Main SD's tabs: Open Sans 16."
+    },
+    {
+      "id": "mach-25",
+      "claim": "type.button 14 and the README's 'Nothing under 14 pt'.",
+      "where": ["type.button", "README Visual foundations"],
+      "template": {
+        "does": "The rail and footer captions are Open Sans 12 (98 buttons), Camera Settings' section labels Light 12, and Power's text 11.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Camera Settings"]
+      },
+      "status": "deviation",
+      "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 12 pt to 14. The README now says the floor is the toolkit's.",
+      "here": "Nothing is under 14 pt, the toolkit's floor: the template's rail and footer captions are 12 pt, and here they are 14.",
+      "fix": [{"readme": "Nothing under 14 pt: that is the toolkit's floor, and a template's own smallest captions can be under it."}],
+      "evidence": "Main SD's Display On/Off/Mute, Settings, Mute, Room Mode and Help captions: Open Sans 12."
+    },
+    {
+      "id": "mach-26",
+      "claim": "README Designing a panel: Help, a confirmation, and a set of controls opened from a page - lighting, audio, camera select, presets - are modals, as Mach's own templates draw them; a page flip is for a mode of the room, such as a call or one source's controls.",
+      "where": ["README Designing a panel"],
+      "template": {
+        "does": "On the 1035, 725, 1525, 1535 and 720 one source's controls are never a page flip: they are a standard Transport1 popup swapped into the same page's centre region. On the 525/535 hubs Lighting, Audio, Display Settings, Settings and Recording Controls are standard popups in that group, not modals. Only the 320 gives a source its own page.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Laptop", "Doc Cam", "Lighting Settings"]
+      },
+      "status": "fixed",
+      "fix": [{"readme": "On Mach's working page one source's controls are a popup in the Center (`role=\"source\"`), swapped in by its Header tab while the page stays"}],
+      "frame": [{"series": "Mach 1220 Series", "key": "center.region"}, {"series": "Mach 520 Series", "key": "options"}],
+      "gone": ["are modals, as Mach's own templates draw them; a page flip is for a mode of the room, such as a call or one source's controls"],
+      "evidence": "Main SD's Controls popup reference at 140,137 995x549 (group Transport1) and its members Doc Cam, Laptop, PC, TV; seeds/Mach 525.gdl's Main Page with Lighting, Audio and Settings as Transport 1 popups."
+    },
+    {
+      "id": "mach-27",
+      "claim": "README / Page doc: a modal shows the page beneath, dimmed; put its card inside as a Panel; a popup is a card, 995x549.",
+      "where": ["README Designing a panel", "Page README"],
+      "template": {
+        "does": "A 1035 modal has no card: its window is a full-width opaque #303030 band, 0,64 1280x681, between the header and footer, covering both rails, its title top-left at 27,82 and Close top-right at 1186,82 72x52. The 525/535 modals have no window: their text sits on the scrim. The 995x549 standard popup is transparent; its visible card is the 778-wide well at 110,48 inside it.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Help", "Lighting Settings", "Laptop"]
+      },
+      "status": "frame",
+      "frame": [{"series": "Mach 1220 Series", "key": "windows.help.rect"}, {"series": "Mach 1220 Series", "key": "center.well"}],
+      "fix": [
+        {"readme": "`popup` (a standard popup, 995x549 unless `width` and `height` say otherwise: it draws nothing of its own"},
+        {"readme": "with a `role`, one of the template's windows, drawn from its frame"}
+      ],
+      "gone": ["`popup` (a card, 995x549"],
+      "evidence": "The Modal Window shape on Help and the settings windows; Laptop's Header 110,48 778x58 and Container 110,107 778x376 in a 995x549 popup with no fill; seeds/Mach 525.gdl's Help with no window shape."
+    },
+    {
+      "id": "mach-28",
+      "claim": "README: a modal's Close is nav back to the page that opens it.",
+      "where": ["README Designing a panel"],
+      "template": {
+        "does": "The 1035's Close is the word Close, ghost 72x52, top-right; the 525/535's is the Extron-Lift back glyph (61x66). Confirmations have no Close, only Cancel or Decline.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Help", "Lighting Settings", "Confirmation", "Incoming Call"]
+      },
+      "status": "frame",
+      "frame": [{"series": "Mach 1220 Series", "key": "windows.help.close"}, {"series": "Mach 1220 Series", "key": "windows.confirm.buttons"}],
+      "fix": [{"readme": "A window's Close and Cancel go back to the page that opened it - the program's to do, so they carry no `nav`."}],
+      "evidence": "Help's Close Help 9057 at 1186,82 72x52 (#FFFFFF32, Open Sans 12 'Close'); Confirmation's Power Down 9028 and Cancel 9029, no Close; seeds/Mach 525.gdl's Help with its back-glyph Close."
+    },
+    {
+      "id": "mach-29",
+      "claim": "Rail doc: the page's column of system controls - volume, mute, help, power - as Mach's own pages put them on the right; its example puts Help in the Rail.",
+      "where": ["Rail README"],
+      "template": {
+        "does": "On the bar series the right column holds only Volume, the slider and Mute; Help and Power are footer cells. On the 525/535 hubs the right bar holds Volume up, down and mute, Settings and Power, Help on the Select Source popup.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Main Page", "Select Source"]
+      },
+      "status": "fixed",
+      "fix": [{"readme": "On Mach's working page the right column holds its heading, the volume and Mute, as its frame measures it"}],
+      "frame": [{"series": "Mach 1220 Series", "key": "right.items"}],
+      "gone": ["as Mach's own pages put them on the right"],
+      "evidence": "Main SD's Volume Label 7035, SD Volume Slider 8024 and Volume Mute 8021 in 1140-1280; Help 8117 and Power Down 8022 in the footer; seeds/Mach 525.gdl's Right Menu Background."
+    },
+    {
+      "id": "mach-30",
+      "claim": "Panel doc: default border rect, example TopBar fill raised 1280x112; defaults.panel border rect; borders.rect a full-width bar.",
+      "where": ["Panel README", "defaults.panel.border", "borders.rect.usage"],
+      "template": {
+        "does": "The 1035's bars and wells have no border resource (Main Select Source's header is on '2D Rounded Rectangle'); its top bar is 64 deep and shade, not raised. '2D Rectangle' is only on the 525/535 Right Menu Background.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Laptop", "Main Select Source"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "defaults.panel.border", "says": "none"},
+        {"key": "borders.rect.usage", "says": "which only the hubs' Right Menu Background draws"},
+        {"readme": "name=\"TopBar\" fill=\"shade\" border=\"none\" style=\"width: 1280px; height: 64px\""}
+      ],
+      "gone": ["A square-cornered fill: a full-width bar", "name=\"TopBar\" fill=\"raised\" border=\"rect\""],
+      "builds": "A Panel with no border is authored with no border resource where it was '2D Rectangle'.",
+      "evidence": "Main SD's Header and Footer Rectangles and Laptop's Header and Container: no border resource; seeds/Mach 525.gdl's Right Menu Background on '2D Rectangle'."
+    },
+    {
+      "id": "mach-31",
+      "claim": "Line doc and defaults.line: a divider in text-secondary.",
+      "where": ["Line README", "defaults.line"],
+      "template": {
+        "does": "No page or popup has a PBLine. Mach divides with 1 px gaps that let the photo through: between header tabs, footer cells, stacked rail buttons, and a popup well's title and body.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Laptop"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "defaults.line.note", "says": "Mach draws no line on any page or popup"},
+        {"key": "colors.text-secondary.usage", "says": "A de-emphasised label: the Recording Controls window's ALL CAPS status labels"}
+      ],
+      "gone": ["A de-emphasised label or a divider line", "Main Recording's ALL CAPS status labels"],
+      "evidence": "No PBLine among the 1035's controls (Project.instances('PBLine') is empty); Main SD's tabs at x 258, 449, 640, 831 (190 wide); Laptop's Header ending at y 106 and Container starting at 107."
+    },
+    {
+      "id": "mach-32",
+      "claim": "Level doc 'filled in accent'; defaults.level fill raised, border mach, value accent.",
+      "where": ["Level README", "defaults.level"],
+      "template": {
+        "does": "The levels (525, 535, 320) are a #000000B4 track (#000000 on the 320) filled with the image 19x259_vol-full.png, with no border.",
+        "seed": "seeds/Mach 525.gdl",
+        "pages": ["Volume Level", "Main Page"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "defaults.level.fill", "says": "shade"},
+        {"key": "defaults.level.border", "says": "none"},
+        {"key": "defaults.level.value", "says": "text"},
+        {"readme": "A rail like Slider's with no thumb, filled in `text`"}
+      ],
+      "frame": [{"series": "Mach 520 Series", "key": "center.level"}],
+      "gone": ["filled in `accent`"],
+      "builds": "A Level's default look is a shade track with no border, filled white, where it was a raised track on the `mach` border filled in accent; a hub's Volume Level strip is drawn from its frame as before.",
+      "evidence": "seeds/Mach 525.gdl's Volume Level popup: its PBLevel on #000000B4, fill image 19x259_vol-full.png, no border resource; seeds/Mach 320.gdl's Volume on #000000."
+    },
+    {
+      "id": "mach-33",
+      "claim": "Group doc: default gap 49; examples cell 110x110, gap 55; the group note's header tabs 'butted'.",
+      "where": ["Group README", "examples.group_note"],
+      "template": {
+        "does": "The source tiles are 100x100, 60 apart; the header tabs 1 px apart; the light and blind presets 10 apart; the recording transport 3 apart.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main Select Source", "Main SD", "Lighting Settings", "Recording Controls"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "examples.group.cell", "says": "100x100"},
+        {"key": "examples.group_note", "says": "the header's tabs (190x64, 1 px apart)"},
+        {"readme": "title=\"Sources\" cell=\"100x100\" gap=\"60\""},
+        {"readme": "(default 49, the toolkit's)"}
+      ],
+      "gone": ["(190x64, butted)", "cell=\"110x110\" gap=\"55\""],
+      "evidence": "Main Select Source's tiles at x 350, 510, 670, 830 (100 wide); Main SD's tabs at a 191 step; Lighting Settings' Preset 1-5 168x48 10 apart."
+    },
+    {
+      "id": "mach-34",
+      "claim": "MainArea doc example: a 'Select a Source' heading inside main at top 190; PopupRegion example 880x525.",
+      "where": ["MainArea README", "PopupRegion README"],
+      "template": {
+        "does": "'Select a source' is in the header bar (Main Select Source), and the popup region is 140,137 995x549.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main Select Source", "Main SD"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"readme": "name=\"SourceArea\" group=\"Sources\" style=\"width: 995px; height: 549px\""},
+        {"readme": "name=\"Laptop\" variant=\"source\" icon=\"laptop_2\" style=\"position: absolute; left: 370px; top: 247px"}
+      ],
+      "gone": ["'Select a Source', 'position: absolute; left: 0px; top: 190px", "width: 880px; height: 525px"],
+      "evidence": "Main Select Source's label 6072 in the header; Main SD's Controls popup reference 140,137 995x549; Laptop tile 8101 at 510,311 (370,247 in main)."
+    },
+    {
+      "id": "mach-35",
+      "claim": "README Themes: each theme is one of Extron's recommended pairings of a background image and an accent scheme; Extron allows mixing a background with another accent scheme.",
+      "where": ["README Themes"],
+      "template": {
+        "does": "Mach has one scheme, and Extron publishes no pairing for it; its six backgrounds are photographs in its kit, the seed's own mach-bg-02 behind every page.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Start"]
+      },
+      "status": "fixed",
+      "fix": [{"readme": "Each theme is one of Mach's background photographs from its kit, with its one accent scheme"}],
+      "gone": ["Each theme is one of Extron's recommended pairings", "Extron allows mixing a background with another accent scheme"],
+      "evidence": "Every page's background mach-bg-02.png (Project.pages()); Resources/Mach/Backgrounds holds six 5472x3648 photographs and no scheme pairing."
+    },
+    {
+      "id": "mach-36",
+      "claim": "README Visual foundations: Extron caps a project at six colors.",
+      "where": ["README Visual foundations"],
+      "template": {
+        "does": "The template itself uses about 15: #000000B4, #1F292EA0, #FFFFFF32, #FFFFFF78, #303030, #FFFFFF, #000000, #808080, #919191, #C0C0C0, #EDB95E, #A829258C/#A82925DC, #E23636, #659945DC/#86D161, #AD8544DC, #B0C4DE.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Main VC", "Help"]
+      },
+      "status": "fixed",
+      "fix": [{"readme": "The tokens here are the template's own palette and do not count against the six"}],
+      "evidence": "The owner's call of 2026-10-22: the README keeps the cap as Extron's documented standard (Design Standards p.49) and says which colours are the template's own; gdl.spec check exempts the profile's tokens (`_template_colors`)."
+    },
+    {
+      "id": "mach-37",
+      "claim": "README Visual foundations: the panel cannot draw ... transparency effects.",
+      "where": ["README Visual foundations"],
+      "template": {
+        "does": "The template's whole look is alpha fills over the photo: #000000B4 bars, rails and wells, #FFFFFF32 ghost buttons, the #000000A6 scrim.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Laptop", "Help"]
+      },
+      "status": "fixed",
+      "fix": [{"readme": "a fill's transparency is its alpha (a token's `#RRGGBBAA`)"}],
+      "gone": ["a gradient, a shadow or transparency effects"],
+      "evidence": "Main SD's Header and Footer Rectangles at alpha 180; Laptop's well at 180; Help's Close at alpha 50."
+    },
+    {
+      "id": "mach-38",
+      "claim": "README Visual foundations: at least 12 px between touchable controls, no more than nine buttons in one group, place things on GUI Designer's 10 px nudge.",
+      "where": ["README Visual foundations"],
+      "template": {
+        "does": "The template butts controls 1 px apart, has groups of 12 (Window Layout) and 40 (the keyboard), and places at 17, 149, 186, 247, 258, 449, 1069 and the like, off the 10 px grid.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Window Layout", "VTC Keyboard"]
+      },
+      "status": "deviation",
+      "reason": "The 2 mm gap the toolkit checks between touch targets and Extron's documented nine-button and spacing standards (docs/design-rules.md section 2), which a designer's own controls keep; the template's own joined sets are the owner's exception (2026-10-22), kept 1 px apart by the region components. The README now says the template does not always keep them.",
+      "here": "Your own controls keep 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards. The template's own sets (its tabs, a rail group) stand as it draws them, 1 px apart, and the region components draw them so.",
+      "fix": [{"readme": "Extron's Design Standards, which its own templates do not always keep"}],
+      "evidence": "Main SD's tabs and rail groups 1 px apart; Window Layout's twelve presets; VTC Keyboard's 40 keys."
+    },
+    {
+      "id": "mach-39",
+      "claim": "README: give feedback with states ... every state must look different.",
+      "where": ["README Designing a panel"],
+      "template": {
+        "does": "13 template buttons have identical Off and On looks: Window Layout Presets 6-12, the five Recording Layout label buttons and Recording Metadata - Title Value.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Window Layout", "Recording Controls"]
+      },
+      "status": "deviation",
+      "reason": "gdl.spec check refuses two states that look alike - the program could set either and the panel would show no change - so a designer's states differ; the template's alike ones are image presets and labels the program does not light.",
+      "here": "Every state looks different: the spec check refuses two alike, since the panel would show no change. The template's few alike states are image presets and labels the program does not light.",
+      "fix": [{"readme": "Every state must look different: the spec check refuses two alike"}],
+      "evidence": "Window Layout's Preset 6-12 and Recording Controls' layout labels: the same fill, text and image in both states."
+    },
+    {
+      "id": "mach-40",
+      "claim": "Page doc (small panels): rows go on over pages of their own - Home 2, Home 3 - each under the strip, with Previous and Next at its foot.",
+      "where": ["Page README"],
+      "template": {
+        "does": "The 320 goes to a second page with a More glyph (40x40 at 280,200, bottom-right) and comes back with a Back glyph (57x36) at the right end of the second page's title strip (a 262x36 Header and Back at 263,0). It has no Previous or Next.",
+        "seed": "seeds/Mach 320.gdl",
+        "pages": ["Doc Cam 1", "Doc Cam 2"]
+      },
+      "status": "frame",
+      "frame": [{"series": "Mach 320 Series", "key": "center.items"}, {"series": "Mach 320 Series", "key": "second.top.items"}],
+      "fix": [{"readme": "That reflow is the toolkit's: Extron's own small pages go on by More at the foot and come back by Back at the strip's end, and a region page is drawn that way"}],
+      "evidence": "seeds/Mach 320.gdl's Doc Cam More (8010) at 280,200 40x40 and Doc Cam Back (8011) at 263,0 57x36."
+    },
+    {
+      "id": "mach-41",
+      "claim": "The profile and README never mention the Start splash page; the README makes the start page the main page and its example start page is a sources page.",
+      "where": ["README Designing a panel", "README Example"],
+      "template": {
+        "does": "The DefaultPage is Start: no bars, the room's name, Press to begin, presets and the volume on the photo. The working pages come after it.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Start"]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "layout.start", "says": "Mach's panel boots to Start, its seed's DefaultPage"},
+        {"readme": "Mach's panel boots to Start, its seed's DefaultPage"}
+      ],
+      "evidence": "The seed's DefaultPage 0, Start: Room Title, Press to begin, Lighting Preset 1-5 and Main Volume, no Header or Footer shapes."
+    },
+    {
+      "id": "mach-42",
+      "claim": "_source Layout: measured from Mach 1035's Main Select Source and Start.",
+      "where": ["_source Layout"],
+      "template": {
+        "does": "Neither is representative: Start has no bars, and Main Select Source is the only Main page with a titled header and centre source tiles. The other five Main pages (header tabs and a centre popup region) are the working-page grammar.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": ["Main SD", "Main Select Source", "Start"]
+      },
+      "status": "fixed",
+      "fix": [{"key": "_source", "says": "Layout: each series' working page, measured into its `panels` entry's `frame`"}],
+      "frame": [{"series": "Mach 1220 Series", "key": "page"}],
+      "gone": ["Layout: Mach 1035's Main Select Source and Start."],
+      "evidence": "The 1035's six Main pages: Main SD, Main SD Screen Arrows, Main Multi-Window, Main VC and Main Recording share the header tabs and the Controls popup region; Main Select Source alone has the titled header and tiles."
+    }
+  ]
+}

@@ -1,15 +1,19 @@
 {
   "_source": [
-    "Surveyed off seeds/Turbulence 1035.gdl - every page and popup, every control and every button state, its images by name - and the art extracted from it and Turbulence's six TouchLink templates (`python -m gdl.designsys extract turbulence`; 1.28 has no Turbulence kit beside the others - docs/design-rules.md section 7). Four read-only analyses of that survey and the art set the kit's grammar, the button looks, the layout and the rest; their numbers are below.",
-    "Turbulence draws its buttons as kit images, not fills: 316 buttons, every one two states Off and On, none authoring a fill or a control-level border; 310 of them name an image on each state (buttonImageField), 620 in all. At rest a button is a gray gradient tile, a white outline ring, a navy tile or nothing; lit, a white tile or disc with a green glow and a green glyph, or a dark-teal tile with a lime one. 183 have their words or glyph baked into the art; 119 draw a caption over a blank image.",
+    "Surveyed off seeds/Turbulence 1035.gdl - every page and popup, every control and every button state, its images by name - and the art extracted from it and Turbulence's six TouchLink templates (`python -m gdl.designsys extract turbulence`; 1.28 has no Turbulence kit beside the others - docs/design-rules.md section 7). Four read-only analyses of that survey and the art set the kit's grammar, the button looks, the layout and the rest; their numbers are below. The grammar measurement of 2026-10-22 then read every page and popup of seeds/Turbulence 1035.gdl, 725, 1525, 720, 525 and 320 with gdl.project, beside the series' frames, and found what this profile and its README said that the pages contradict: each is an entry of the ledger, gdl/designsys/truth/turbulence.json, with the seed and pages it was read off.",
+    "Buttons: Turbulence draws its buttons as kit images, not fills: 316 buttons, every one two states Off and On, none authoring a fill or a control-level border (seeds/Turbulence 1035.gdl, every page and popup); 310 of them name an image on each state (buttonImageField), 620 in all. At rest a button is a gray gradient tile, a white outline ring, a navy tile, or - the docks and Help - a clear tile whose art draws an inset shadow at its top left and a blue bevel at its right and foot; lit, a white tile or disc with a green glow and a green glyph, or a dark-teal tile with a lime one. 183 have their words or glyph baked into the art; 119 draw a caption over a blank image. The lit captions, read off every Main page, Room Mode VC and the popups: LimeGreen #32CD32 on the tabs, keys, rings and wide bars (86 of 121), Lime #00FF00 on the docks, Help and the Initiate Call and End Call tiles (33), and Privacy's red #FF0000 (2).",
     "Kit grammar: <W>x<H>_<icon>_<nsel|sel>.png, and 95 of the seed's buttons (21 pairs) name their two files apart - outline_NN at rest and round_NN lit, volume_mute_white with volume_mute, input_<x>_solid_text with input_<x>_text, transp_blank with blank, blu-ray with bluray, share-content_blue with stop-sharing, a green vc_power-dn with the red one's lit file. kit.named pairs each, and kit_index drops the half icons the pattern made of them. Extron's own typo tranpsort_up is named transport_up.",
-    "Colors, read through the KnownColor table (most of the seed's colors are stored by name - docs/gdl-format.md section 7): every label, clock and slider text White; lit captions LimeGreen #32CD32 (86 of 121) or Lime #00FF00 (33, on the dock's teal art; folded into accent); the only solid fills are cards - #021E38 (19 inner cards) and #184E80 (8 modal windows, 6 of them at transparencyField 17, alpha 212). The header and footer are images of one color, #020D1A at alpha 128; the side rails Black at transparencyField 85 (alpha 38). Every one of the 13 modal popups authors transparency 35, alpha 166: the scrim. #DCDCDC (three feedback fields, the search rows' rest fill) is left out to keep six colors.",
-    "Contrast: the seed's lit caption, LimeGreen on its white lit art, is 2.1:1 - below docs/design-rules.md section 2's 4.5:1. It is the seed's own pair, kept and flagged; the dock's teal lit art carries it at 5.8:1.",
-    "Type: every drawn caption and label is Open Sans Light, regular weight (the seed sets Bold only on uncaptioned states and an icon font); the system carries Open Sans at 400, a little heavier. Labels 16 pt (36), 36 (17), 20 (16); captions 16 (146 states) and 20 (88, the keyboard). The draft's 35 pt and 10 pt bold came off states with no caption and are gone.",
-    "Borders: 13 defined, 4 drawn - 2D Rounded Rectangle on all 28 shapes, 2D Rectangle on the 6 search rows' states, the 3D Gradient pair on the 12 preset states. No button has a control-level border.",
+    "Colors: read through the KnownColor table (most of the seed's colors are stored by name - docs/gdl-format.md section 7), off every page and popup of seeds/Turbulence 1035.gdl: every label, clock and slider text White; lit captions LimeGreen #32CD32 (86 of 121; `accent`), Lime #00FF00 (33, on the docks, Help and two call tiles; `lime`) and Privacy's red #FF0000 (`alert`); the solid fills are cards - #021E38 (19: Help, the confirmation, Incoming Call, Powering Down, Starting Up and the cards inside the settings windows) and #184E80 (8: the 1120x684 settings windows, six of them at transparencyField 17, alpha 212, Lighting Control's opaque, and Offline's 648x400 card, opaque) - and Room Mode VC's card, #000000 at transparencyField 47 (alpha 135; `veil`). The header and footer are kit art, 2047x151_header.png and 1648x134_footer.png: #020D1A at alpha 128 with a 3-row #A4A4A5 rule at alpha 61 on the edge facing main (the footer's has one more row at its foot), 302956 of the header's 309097 pixels the body; the side rails are fill-only, Black at transparencyField 85 (alpha 38). Every one of the 13 modal popups authors transparency 35, alpha 166: the scrim. #DCDCDC (the Tuner, dialer and keyboard feedback labels, the search rows' rest fill) is not a token: no component draws a filled label.",
+    "Contrast: the seed's lit caption, LimeGreen on its white lit art, is 2.1:1 - below docs/design-rules.md section 2's 4.5:1 - and Lime on the call tiles' white art about 1.3:1. They are the seed's own pairs, kept and flagged; the dock's dark-teal lit art carries Lime at about 9:1 and LimeGreen at 5.8:1.",
+    "Type: every drawn caption and label on the 1035 is Open Sans Light, regular weight (the seed sets Bold only on uncaptioned states and an icon font); its 525 and 320 draw Open Sans regular. The system carries Open Sans at 400, a little heavier than Light, and no profile offers Light (docs/claude-design.md section 2). Labels 16 pt (36), 36 (17), 20 (16); captions 16 (146 states) and 20 (88, the keyboard); the window messages 20 (Confirmation, Incoming Call Label, Powering Down, Starting Up), Room Mode VC's question 28, Main Select Source's heading 34, the VTC popups' titles 30 and Offline Page's two lines 22 in Open Sans regular. The draft's 35 pt and 10 pt bold came off states with no caption and are gone.",
+    "Borders: 13 defined, 4 drawn - 2D Rounded Rectangle on all 28 shapes of seeds/Turbulence 1035.gdl, 2D Rectangle on the 6 VTC Search Result rows' states, the 3D Gradient pair on the 12 Preset Selection states. No button has a control-level border, and the header and footer are PBImage controls with no border resource; the 525's Main Page draws its header strip and side bar as shapes on 2D Rectangle.",
     "Slider: all 10 seed sliders are image-drawn - 52 wide, sliderTrackWidth 44, thumb 52x52 from 102x102_thumb_turb_sq.png, rail 52x535_turb_slider_bg.png under 52x535_turb_slider_fill.png - with no fill or border. The seed has no level; `level` is the 525's, whose seed has no slider: the volume level on its Start page - the first, the one the applier clones - is 10 wide by 236, drawn from 24x535_vert_vol-bars_full.png over _empty.png, as the 320's is 12 wide. Its Up and Down, where a level stands in for a slider, show the kit's volume_up and volume_down where their look draws an icon (`steps`) - the 525's own, beside its Volume Mute.",
-    "Layout, from Main SD: a 1280x133 header holding six 127x133 source tabs from x 141, 140 px rails either side, a 997x110 footer at 140,688, and the 995x549 popup region at 140,137 where a source's popup shows. Every page stretches its photo (backgroundImageLayoutField 1): bkgd_pc behind the device pages, bkgd_home behind Select a Source, bkgd_home_plain behind Room Mode, bkgd_start behind Start. bkgd_home and bkgd_start paint bars into the photo and only suit those layouts, so they are not themes; the templates add bkgd_lighting, bkgd_swoop_plain and bkgd_water-1_plain.",
-    "Sizes: each button variant's `size` is the size the seed draws it at - the most common rect among its buttons, read by the art their first state shows: the square tile 87x90 (39 of 43), the ring 100x100 (18), the dock's tile 140x108 (23), a call tile 140x89, a source tab 127x133, a wide bar 383x100, a scene picture 266x209, an answer 240x129, a preset 218x149, the Start disc 271x282, Close 60x60."
+    "Layout: from Main SD, seeds/Turbulence 1035.gdl: a 1280x133 header holding six 127x133 source tabs from x 141 and left-aligned - the row's centre is 557, not the page's 640 - 140 px rails either side, a 997x110 footer at 140,688, and the 995x549 popup region at 140,137 where a source's popup shows. The header and footer are PBImage art, the rails fill-only images: none is a Panel. The rails run beside the footer, the left to y 799 and the right to y 796. Main SD, Main SD Screen Arrows, Main Multi-Window, Main VC and Main VC Share Content are drawn so; Main Select Source paints its bars into bkgd_home.png and puts its title where the tabs are, Start paints 293-wide side columns into bkgd_start.png and has no header or footer, and Room Mode VC has no bars - a 648x400 card on bkgd_home_plain.png. Every page stretches its photo (backgroundImageLayoutField 1): bkgd_pc behind the device pages, bkgd_home behind Select a Source, bkgd_home_plain behind Room Mode, bkgd_start behind Start; the 1525's and the 720's Main SD draw bkgd_lighting. bkgd_home and bkgd_start paint bars into the photo and only suit those layouts, so they are not themes; the templates add bkgd_lighting, bkgd_swoop_plain and bkgd_water-1_plain.",
+    "Sizes: each button variant's `size` is the size the seed draws it at - the most common rect among its buttons, read by the art their first state shows (seeds/Turbulence 1035.gdl: Main SD, Main VC, Main Select Source, Camera Control, VTC Keyboard, Preset Selection, Start): the square tile 87x90 (39 of 43), the ring 100x100 (18), the dock's tile 140x108 (23), a call tile 140x89, a source tab 127x133, a wide bar 383x100, a scene picture 266x209, an answer 240x129, a preset 218x149, the Start disc 271x282, Close 60x60.",
+    "Cover: every card of seeds/Turbulence 1035.gdl - Help, Confirmation, Room Mode VC, the settings windows and their cards - is a PBShape on 2D Rounded Rectangle, radius 10.",
+    "Iconography: read off seeds/Turbulence 1035.gdl's Main SD, Main VC, Main Multi-Window, Confirmation, Incoming Call Label, Camera Select and Lighting Control: which kit art each control draws, which captions are drawn over a blank image and which are in the art, and which windows have a Close.",
+    "Themes: each page's background by name in seeds/Turbulence 1035.gdl, 1525, 720 and 725 (Main SD, Main Select Source, Room Mode VC, Start), and the photographs Turbulence's templates add.",
+    "Examples: the tabs, the Select a Source tiles, Help and the clock where seeds/Turbulence 1035.gdl's Main SD and Main Select Source place them, and the 525's Main Page."
   ],
   "template": "Turbulence",
   "namespace": "ExtronTurbulence",
@@ -20,38 +24,43 @@
   "size": [1280, 800],
   "popup": [995, 549],
   "background_layout": "stretch",
+  "themes_note": "set on each Page to the photograph Turbulence draws for its role: `corridor` behind its working pages, `bokeh` behind Room Mode, `office` behind Main SD on its 1525 and 720; Select a Source and Start paint their bars into theirs (bkgd_home.png and bkgd_start.png), which only suit those layouts, so they are not themes",
   "pt": 1.375,
   "touch": 53,
   "spacing": 12,
   "font": {
     "family": "Open Sans",
     "stack": "\"Open Sans\", Arial, sans-serif",
-    "google": "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap"
+    "google": "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap",
+    "note": "Its own labels and captions are Open Sans Light, a little lighter than the Open Sans this canvas draws and the panel is authored in: no profile offers Light."
   },
   "schemes": [
     {"id": "default", "name": "Turbulence", "usage": "Turbulence's one palette: navy cards and bars over a photo, white captions that turn green when lit. Its color is in the kit's art, not a scheme."}
   ],
   "colors": [
-    {"name": "page", "value": "#021E38", "usage": "A modal's card - Help, the confirmation, the cards inside a modal window - and the page's solid fallback. No page authors a fill: each draws a photo, about this color on average."},
-    {"name": "raised", "value": "#184E80D4", "usage": "A modal window, 1120x684 at 80,56: #184E80 at alpha 212, with `page` cards inside it."},
-    {"name": "shade", "value": "#020D1A80", "usage": "The header and footer bars over the photo: the seed draws them as images of this one color, at alpha 128."},
+    {"name": "page", "value": "#021E38", "usage": "A modal's card - Help 761x500, the power-down confirmation 800x448, Incoming Call and the waits 648x400, and the cards inside a settings window - and the page's solid fallback. No page authors a fill: each draws a photo, about this color on average."},
+    {"name": "raised", "value": "#184E80D4", "usage": "A settings window, 1120x684 at 80,56: #184E80 at alpha 212 (Lighting Control's is opaque), with `page` cards inside it. Offline's 648x400 card is this color too, opaque."},
+    {"name": "shade", "value": "#020D1A80", "usage": "The header and footer bars over the photo: the kit art 2047x151_header.png and 1648x134_footer.png, #020D1A at alpha 128 with a 3-row light rule (#A4A4A5 at alpha 61) on the edge facing main. The region components draw each bar as that art, stretched; this is the bar where the art is not extracted, without the rule."},
     {"name": "rail", "value": "#00000026", "usage": "The side rails over the photo: black at alpha 38."},
     {"name": "text", "value": "#FFFFFF", "usage": "Every label, the clock, and a caption at rest."},
-    {"name": "accent", "value": "#32CD32", "usage": "A lit caption. On the kit's white lit art it is 2.1:1, the seed's own pair and under the 4.5:1 a caption should have; on the dock's teal it is 5.8:1."},
+    {"name": "accent", "value": "#32CD32", "usage": "A lit caption on the tabs, keys, rings and wide bars: LimeGreen. On the kit's white lit art it is 2.1:1, the seed's own pair and under the 4.5:1 a caption should have. The docks', Help's and the call tiles' lit caption is `lime`."},
     {"name": "ink", "value": "#000000", "usage": "Dark text, on a light field."},
+    {"name": "lime", "value": "#00FF00", "usage": "The lit caption of a dock, Help and the Initiate Call and End Call tiles. On the dock's dark-teal lit art it is about 9:1; on the call tiles' white lit art about 1.3:1, the seed's own pair, flagged as `accent`'s 2.1:1 is."},
+    {"name": "alert", "value": "#FF0000", "usage": "Privacy's lit caption, on its red-edged art: give the button's On state this color."},
+    {"name": "veil", "value": "#00000087", "usage": "Room Mode's card, 648x400 over the plain photograph: black at alpha 135 (transparencyField 47), not `page`."},
     {"name": "scrim", "value": "#000000A6", "usage": "Behind a modal: alpha 166, what every one of the seed's modal popups authors."},
     {"name": "header", "value": "#00000073", "usage": "A hub's header strip across the top of main (the 525's and 535's Select a Source, and each popup over it): black at alpha 115. Its menu bar draws near it, and the region page draws it in this."}
   ],
   "type": [
-    {"name": "title", "pt": 36, "weight": 400, "usage": "A popup's or modal's title, and the Start page's room name - the seed's largest label."},
-    {"name": "heading", "pt": 20, "weight": 400, "usage": "A section's heading inside a modal (Display 1, Mic, Program) and a keyboard key's caption."},
-    {"name": "body", "pt": 16, "weight": 400, "usage": "Labels, status and messages, and the clock - the seed's most common size."},
+    {"name": "title", "pt": 36, "weight": 400, "usage": "A source popup's, window's or modal's title, and the Start page's room name - the seed's largest label at 36 pt; Room Mode's question is 28, Select a Source 34 and the VTC popups' titles 30 (set `size`)."},
+    {"name": "heading", "pt": 20, "weight": 400, "usage": "A section's heading inside a modal (Display 1, Mic, Program), a keyboard key's caption, and a window's message - the power-down question, Incoming Call's, the waits."},
+    {"name": "body", "pt": 16, "weight": 400, "usage": "Labels and the clock - the seed's most common size."},
     {"name": "button", "pt": 16, "weight": 400, "usage": "A drawn caption: a source tab's name, a dock button's, a call button's."},
     {"name": "small", "pt": 14, "weight": 400, "usage": "A minor label (Press to Begin) - the 14 pt floor gdl.spec checks."}
   ],
   "borders": {
-    "rounded": {"resource": "2D Rounded Rectangle", "radius": 10, "thickness": 3, "usage": "A card or a modal window - every shape in the seed."},
-    "rect": {"resource": "2D Rectangle", "radius": 0, "thickness": 3, "usage": "A square-cornered bar: the header and footer, the seed's list rows."},
+    "rounded": {"resource": "2D Rounded Rectangle", "radius": 10, "thickness": 3, "usage": "A card or a modal window - every shape in the 1035's seed."},
+    "rect": {"resource": "2D Rectangle", "radius": 0, "thickness": 3, "usage": "A square-cornered shape: the 525's header strip and side bar, and the results rows of the dialer's search popup - the 1035's header and footer are art, with no border."},
     "none": {"resource": "", "radius": 0, "thickness": 0, "usage": "No border: the kit's image draws the button's whole shape."}
   },
   "buttons": {
@@ -73,17 +82,17 @@
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "accent"}]
     },
     "dock": {
-      "usage": "A launcher on a rail, its caption drawn on the photo: invisible at rest, a dark-teal tile with a lime edge when On - the seed's Screen Control, Lighting Control, Audio Control and Room Mode, 140x108. Two words go on two lines, as the seed draws them: a caption of two or more words is broken at the space nearest its middle (`lines`). `display`, `display1_blank` and `display2_blank` add a monitor glyph above the caption.",
+      "usage": "A launcher, its caption drawn on the photo: a clear tile at rest - the art draws an inset shadow at its top left and a blue bevel at its right and foot - and a dark-teal tile with a lime edge when On, its caption `lime`. It stands on the left rail (Screen Control, Lighting Control, Display Control), in the right rail (Audio Control) and in the footer (Room Mode, Preset Selection), 140x108. Two words go on two lines, as the seed draws them: a caption of two or more words is broken at the space nearest its middle (`lines`). `display`, `display1_blank` and `display2_blank` add a monitor glyph above the caption.",
       "kit": "712x440",
       "size": [140, 108],
       "lines": 2,
       "icon": "blank",
       "icons": ["blank", "display"],
       "look": {"border": "none", "color": "text"},
-      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "accent"}]
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "lime"}]
     },
     "call": {
-      "usage": "A call control: a colored tile with the kit's glyph above and the caption one line below it, white when On - the seed's Initiate Call (dialer, green), End Call (end-call, red) and Privacy (privacy, gold), 140x89. `share-content` has its words in the art and takes no caption.",
+      "usage": "A call control: a colored tile with the kit's glyph above and the caption one line below it, white when On, its caption `lime` (Privacy's lit caption is `alert`: give its On state that color) - Initiate Call (dialer, green), End Call (end-call, red) and Privacy (privacy, gold), 140x89, stacked flush down the call pages' left rail; and Share Content (share-content) at the header's right end. `share-content` has its words in the art and takes no caption.",
       "kit": "712x440",
       "size": [140, 89],
       "icon": "end-call",
@@ -91,10 +100,10 @@
       "caption": "below",
       "breaks": 1,
       "look": {"border": "none", "color": "text"},
-      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "accent"}]
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "lime"}]
     },
     "source": {
-      "usage": "A source tab in the header: a navy tile with the kit's white glyph, dark teal with a lime glyph when chosen, and the source's name under the glyph - the seed's PC, Laptop, Blu-ray, AUX, Tuner and Doc Cam, 127x133, and Help (input_help, invisible at rest) 103x108 in the footer. `icon` is input_pc, input_laptop, input_bluray, input_ipod, input_tuner, input_doc-cam, input_vc-cam or input_help.",
+      "usage": "A source tab in the header: a navy tile with the kit's white glyph, dark teal with a lime glyph when chosen, and the source's name under the glyph - PC, Laptop, Blu-ray, AUX, Tuner and Doc Cam, 127x133. Help (input_help), 103x108 in the footer, is a clear beveled tile with a white ? in the art at rest, its lit caption `lime`, which the Footer's Help sets itself. `icon` is input_pc, input_laptop, input_bluray, input_ipod, input_tuner, input_doc-cam, input_vc-cam or input_help.",
       "kit": "504x504",
       "size": [127, 133],
       "icon": "input_laptop",
@@ -149,7 +158,7 @@
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on"}]
     },
     "close": {
-      "usage": "A modal's Close: a gray sphere with a red X, white with a green X when pressed. 60x60, 5 px inside the card's top right.",
+      "usage": "A window's Close: a gray sphere with a red X, white with a green X when pressed. 60x60: 5 px inside Help's top right and 6 to 7 px inside a settings window's.",
       "kit": "440x440",
       "size": [60, 60],
       "icon": "close",
@@ -192,51 +201,71 @@
     "radius": 10
   },
   "iconography": {
-    "icon_prop": "Each image is the whole button, at rest and lit: state 0 draws it at rest, the others lit, their caption in the accent green.",
-    "intro": "Turbulence draws every button from its kit: one image per state, which carries the button's shape, color and any icon or word. At rest a button is a gray tile, a white ring, a navy tile or nothing at all; lit, it is white with a green glow, or dark teal with a lime edge, and its caption turns `accent`. Name the image with a Button's `icon` - never draw a button's shape or an icon yourself.",
+    "icon_prop": "Each image is the whole button, at rest and lit: state 0 draws it at rest, the others lit, their caption in the accent green (lime on a dock, Help and the call tiles).",
+    "intro": "Turbulence draws every button from its kit: one image per state, which carries the button's shape, color and any icon or word. At rest a button is a gray tile, a white ring, a navy tile or, a dock or Help, a clear tile with an inset shadow and a blue bevel; lit, it is white with a green glow, or dark teal with a lime edge, and its caption turns `accent` (`lime` on a dock, Help and the call tiles). Name the image with a Button's `icon` - never draw a button's shape or an icon yourself.",
     "rules": [
-      "**Which button**: a key or a control in a popup is a `button` tile (95x100); a rail control is a `ring` (100x100); a rail launcher is a `dock` (140x108); a call control is `call` (140x89); a source is a `source` tab in the header (127x133), or a `scene` picture on a page of its own; a modal's choices are `button` tiles with their words in the art (vc_power-dn, cancel) at 146x153; a modal closes with `close`.",
+      "**Which button**: a key or a control in a popup is a `button` tile (95x100); a rail control is a `ring` (100x100); a launcher on a rail or in the footer is a `dock` (140x108); a call control is `call` (140x89); a source is a `source` tab in the header (127x133), or a `scene` picture on a page of its own; a window's choices are `button` tiles with their words in the art (vc_power-dn, cancel) at 146x153, or an incoming call's `answer` keys (240x129); Help and a settings window close with `close`, and the question, an incoming call and the waits have no Close.",
       "**Words in the art**: most of the kit carries its own word or glyph - Back, Cancel, Enter, the dialpad, Power Down, Accept Call. Give those buttons no caption. Captions are for the blank images: square_blank, round_blank, the dock, the wide bar, and the source and call tiles, whose captions go under the glyph.",
       "**Feedback**: state 0 draws the image at rest, the others lit. A state can name another `icon` - Share Content becomes Stop Sharing - or another look: vc_power-dn's `green` rests green for a confirmation, red elsewhere.",
-      "**Color is the art's**: gray for most, red for power, end call and cancel, green to call or confirm, blue for contacts, delete and flash, gold for privacy at rest. A caption is `text` at rest and `accent` lit, never another color."
+      "**Color is the art's**: gray for most, red for power, end call and cancel, green to call or confirm, blue for contacts, delete and flash, gold for privacy at rest. A caption is `text` at rest and, lit, `accent` on the tabs, keys, rings and wide bars, `lime` on a dock, Help and the Initiate Call and End Call tiles, and `alert` on Privacy."
     ]
   },
   "examples": {
-    "source": {"attrs": "variant=\"source\" icon=\"input_laptop\"", "text": "Laptop", "rect": [577, 0, 127, 133], "in_main": false},
+    "source": {"attrs": "variant=\"source\" icon=\"input_laptop\"", "text": "Laptop", "rect": [282, 0, 127, 133], "in_main": false},
     "help": {"attrs": "variant=\"source\" icon=\"input_help\"", "text": "Help", "rect": [141, 690, 103, 108]},
+    "group": {"cell": "127x133", "gap": 14},
+    "main": {"attrs": "variant=\"scene\" icon=\"input_laptop\"", "text": "", "rect": [210, 400, 266, 209]},
+    "panel": {"name": "Card", "fill": "page", "border": "rounded", "size": [800, 448]},
+    "start": [
+      {"component": "Label", "attrs": "name=\"Room Title\" type=\"title\" align=\"center\" does=\"The room's name, which the program sets.\"", "text": "Room Title", "rect": [310, 120, 660, 110]},
+      {"component": "Label", "attrs": "name=\"Lighting Preset Label\"", "text": "Lighting Preset", "rect": [20, 130, 380, 60]},
+      {"component": "Group", "attrs": "title=\"Lighting Preset\" cell=\"100x100\" gap=\"20\" cap=\"2\"", "rect": [40, 200, 280, 280], "members": [
+        {"attrs": "name=\"Lighting Preset 1\" does=\"Recalls lighting preset 1.\"", "text": "1"},
+        {"attrs": "name=\"Lighting Preset 2\" does=\"Recalls lighting preset 2.\"", "text": "2"},
+        {"attrs": "name=\"Lighting Preset 3\" does=\"Recalls lighting preset 3.\"", "text": "3"},
+        {"attrs": "name=\"Lighting Preset 4\" does=\"Recalls lighting preset 4.\"", "text": "4"}
+      ]},
+      {"component": "Button", "attrs": "name=\"Start\" variant=\"start\" nav=\"Main SD\"", "text": "", "rect": [500, 260, 270, 280]},
+      {"component": "Label", "attrs": "name=\"Press Here Label\" align=\"center\"", "text": "Press to Begin", "rect": [440, 560, 400, 60]}
+    ],
+    "camera": {"heading": [360, 110, 120, 60], "key": [370, 170, 100, 100], "step": 140, "box": [370, 170, 100, 280], "icons": ["vc_plus", "vc_dash"]},
+    "_image": "The device pictures Turbulence pins on its popups and windows, each a PBImage drawing a kit file fitted (seeds/Turbulence 525.gdl's Lighting Control: Light Image, 1152x1152_lightbulb.png at 220,49 262x250; its Audio Control's speaker, its Display Control's monitor; every source popup's own, which the Center draws).",
+    "image": {"name": "Lighting Image", "image": "1152x1152_lightbulb.png", "size": [262, 250], "note": "Turbulence pins a device picture on its popups and windows, fitted: the Center draws a source's by itself, by its `device`; on a settings window put one where its template stands it - the 525's Lighting Control draws the lightbulb (`1152x1152_lightbulb.png`, 262x250) under its title and behind its preset cards, its Audio Control the speaker and its Display Control the monitor."},
     "states": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"Warming\",\"look\":\"off\",\"color\":\"accent\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"accent\"}]",
-    "states_note": "In Turbulence a state shows itself through the kit's image: at rest the art is gray, a ring or nothing, lit it is white or teal, and a lit caption is `accent`. A state can name its own `icon` (Share Content's lit image is Stop Sharing) or `look` (vc_power-dn's green).",
+    "states_note": "In Turbulence a state shows itself through the kit's image: at rest the art is a gray tile, a white ring, a navy tile or a clear beveled tile, lit it is white or dark teal, and a lit caption is `accent` (`lime` on a dock, Help and the call tiles). A state can name its own `icon` (Share Content's lit image is Stop Sharing) or `look` (vc_power-dn's green).",
     "on_off": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"accent\"}]",
-    "group_note": "Neither is Turbulence's: its source row is six 127x133 tabs across the header, about 14 px apart, and its source page's tiles (266x209) run two and three to a row. Set `cap`, `cell` and `gap` for the group you mean.",
-    "color_rule": "A theme's photo behind everything; `shade` for the header and footer bars and `rail` for the side rails; `page` for a modal's card and `raised` for a modal window, `scrim` behind either; `text` for labels and resting captions, `accent` for a lit caption; a button's color from its kit art, never a fill."
+    "group_note": "Neither is Turbulence's: its source row is six 127x133 tabs across the header, 14 px apart (four on Share Content), and its Select a Source page's 266x209 tiles run three and three to a row, 10 to 29 px apart (212x155 on the 525). Set `cap`, `cell` and `gap` for the group you mean.",
+    "color_rule": "A theme's photo behind everything; the header and footer bars are the kit's art, which the Header and Footer draw (`shade` on a panel whose seed cannot clone an image), and `rail` is the side rails; `page` for a modal's card, `raised` for a settings window and `veil` for Room Mode's card, `scrim` behind a modal; `text` for labels and resting captions, `accent` for a lit caption, `lime` for a lit dock's, Help's or call tile's and `alert` for Privacy's; a button's color from its kit art, never a fill."
   },
   "themes": [
-    {"id": "corridor", "name": "Corridor", "scheme": "default", "image": "bkgd_pc.png", "file": "Turbulence/bkgd_pc.png", "usage": "A navy-tinted curved glass corridor - the seed's own, behind every device page."},
-    {"id": "bokeh", "name": "Bokeh", "scheme": "default", "image": "bkgd_home_plain.png", "file": "Turbulence/bkgd_home_plain.png", "usage": "Dark-to-royal-blue bokeh - the seed's Room Mode page, and the one behind a page that is mostly a card."},
-    {"id": "office", "name": "Office", "scheme": "default", "image": "bkgd_lighting.png", "file": "Turbulence/bkgd_lighting.png", "usage": "A navy-tinted office, desks and chairs - from Turbulence's templates."},
+    {"id": "corridor", "name": "Corridor", "scheme": "default", "image": "bkgd_pc.png", "file": "Turbulence/bkgd_pc.png", "usage": "A navy-tinted curved glass corridor - behind Turbulence's device pages (the 1525's and 720's Main SD draw `office` instead)."},
+    {"id": "bokeh", "name": "Bokeh", "scheme": "default", "image": "bkgd_home_plain.png", "file": "Turbulence/bkgd_home_plain.png", "usage": "Dark-to-royal-blue bokeh - Room Mode's photograph, and the one behind a page that is mostly a card."},
+    {"id": "office", "name": "Office", "scheme": "default", "image": "bkgd_lighting.png", "file": "Turbulence/bkgd_lighting.png", "usage": "A navy-tinted office, desks and chairs - behind Main SD on the 1525 and the 720, and from Turbulence's templates."},
     {"id": "swoop", "name": "Swoop", "scheme": "default", "image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png", "usage": "Navy with sweeping arcs of light blue - from Turbulence's templates."},
     {"id": "water", "name": "Water", "scheme": "default", "image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png", "usage": "The darkest: a faint water texture over navy - from Turbulence's templates."}
   ],
   "layout": {
     "bars": "controls",
-    "bars_note": "Its bars and rails are controls over the photograph, not background art, so on a panel other than the one drawn a Page's own children go through both panels' bands (docs/claude-design.md section 4).",
+    "bars_note": "Its working pages' bars and rails are controls over the photograph, not background art, so on a panel other than the one drawn a Page's own children go through both panels' bands (docs/claude-design.md section 4); Select a Source and Start paint theirs into the photograph.",
     "hub_header": {
       "depth": {"TLC521M": 118, "TLC521M-Portrait": 118, "TLC526M": 118, "TLP520M": 118, "TLP520M-Portrait": 118,
                 "TLP525C": 118, "TLP525M": 118, "TLP525T": 118},
-      "_source": "How deep the header comes out on each hub holding the Layout's own source tabs - six 127x133 `source` tabs 14 apart, with the seed's captions (PC, Laptop, Blu-ray, AUX, Tuner, Doc Cam): a band beside main is as deep as a Group it holds (bundle.js touchIn), and the tabs grow to their captions at the hub's 18 pt floor; longer captions are deeper. Measured by the bundle in headless Chrome, and re-measured by tests/test_design.py. The README's room for a hub reads it, where it assumed a button."
+      "_source": "How deep the header comes out on each hub holding the Layout's own source tabs - six 127x133 `source` tabs 14 apart, with the seed's captions (PC, Laptop, Blu-ray, AUX, Tuner, Doc Cam): a band beside main is as deep as a Group it holds (bundle.js touchIn), and the tabs grow to their captions at the hub's 18 pt floor; longer captions are deeper. Measured by the bundle in headless Chrome, and re-measured by tests/test_design.py. The README's room for a hub reads it, where it assumed a button. That is a page that draws its own header; the template's hub header is a 72 px title strip - a Shape at 0,0 700x72, Select a Source at 30 pt and Help 60x60 at its right (seeds/Turbulence 525.gdl's Main Page) - with the sources as 212x155 tiles in the body, which a region page draws."
     },
     "main": [140, 137, 995, 549],
+    "start": "Turbulence's panel boots to Start, its seed's DefaultPage: a splash page with no bars - the room's name over the photograph (Room Title, 36 pt), the Start disc with Press to Begin and Room Text Here under it, the date and time, lighting presets 1 to 6 on its left and the main volume on its right - from which its working pages are reached.",
     "main_note": "The popup region, between the header and footer bars and the rails: the chosen source's popup shows here, drawn straight on the photo - its name in `title`, a message in `body`, or its transport keys.",
     "regions": [
-      "**The header (1280x133 at 0,0) is a `shade` Panel with the source tabs across it**: `source` tabs 127x133 flush with its top, about 141 apart, their names under their glyphs, the row centered on the page (the seed starts its six at x 141, over the left rail's edge).",
-      "**The left rail (140 wide, x 0, from y 133 down) is a `rail` Panel holding the display**: a `Display` label 140x61, then `ring`s 100x100 at x 19 (On, Off, Mute) 112 apart (the seed's are 108 apart, 8 px between, under the 12 px the toolkit checks between two touchable controls), and `dock` launchers 140x108 at the bottom, 12 px apart (Screen Control, Lighting Control).",
-      "**The right rail (140 wide, x 1138) holds volume**: a `Volume` label, a slider centered under it (the seed's is 52 wide; make it 54, since 52 is under the 53 px touch minimum the toolkit checks), a `ring` mute 100x100 below, and an Audio Control `dock` at the bottom.",
-      "**The footer (997x110 at 140,688) is a `shade` Panel**: Help (a `source` tab, input_help, 103x108) and Room Mode (`dock`) at its left, Help 12 px in from its end (x 152) to clear the left rail's dock beside it, the date and time centered, and Power Down (`button`, vc_power-dn, 103x108) at its right.",
-      "**A modal is a card or a window over the `scrim`**: a `page` card (Help 761x500, the power-down confirmation 800x448) centered on the page, or a `raised` window 1120x684 at 80,56 with `page` cards inside; a 36 pt title, and a `close` 60x60 5 px inside the top right."
+      "**The header** holds the source tabs from the left rail's edge, left-aligned - the Layout's own first place, not centred on the page. Its right end is the page's mode control where the page has one: Share Content (`call`, share-content) on the call pages, a Window label over two window keys on Multi-Window, and empty on the SD pages: put it in `slot=\"end\"`.",
+      "**The left rail** says what it controls under a heading and follows the room's mode: `Display` over the `ring`s On, Off and Mute in a presentation; `VTC` over the Initiate Call, End Call and Privacy `call` tiles, stacked flush, with a Display Control `dock`, on a call page; `Screen` over Screen Up and Down on Screen Arrows. Its `dock` launchers stand at its foot, the last beside the footer, since the rail runs to the foot of the screen.",
+      "**The right rail** is the same on every working page: the Volume heading, the slider, a `ring` Mute and an Audio Control `dock`. It holds no Help or Power - they are the footer's. The slider is 52 wide in the Layout and is drawn 53 on the 1035, since 52 is under the 53 px touch minimum the toolkit checks.",
+      "**The footer** holds Help and the mode launcher at its left - Room Mode, or Preset Selection on Multi-Window - the date and time centred, and Power Down at its right. Help stands 1 px from the left rail's last launcher, as the Layout has it (x 141); the Footer opens that seam to the panel's 2 mm gap, so Help comes out 12 px in on the 1035 (x 152) and the launchers keep their width.",
+      "**A window** is a card or a window over the `scrim`, and only some have a title and a Close: Help (its title in capitals, HELP) and the 1120x684 settings windows do; the power-down question, an incoming call and the waits have neither - the question's two answers are art keys and a wait says one message. An incoming call (648x400: a `page` card, its question in `heading` and the `answer` keys Accept Call and Ignore Call) and Offline (648x400, `raised`, two lines at `size` 22) are yours to draw as a modal without a `role`.",
+      "**Its other pages are not composed so**: Select a Source paints its bars into its photograph and puts its title where the tabs are, over `scene` tiles three and three to a row; Start paints its side columns into its own and has no header or footer; Room Mode has no bars - a `veil` card on the plain photograph holding a 28 pt question over two `wide` buttons, Presentation Mode and Video Conference Mode."
     ]
   },
   "regions": {
-    "_source": "What the region components draw by default (docs/claude-design.md section 3): the clock's pattern off the seed's own Main SD (the 1035's Date/Time1 draws September 28, 1960 - 12:00 AM), and each control in the look this profile measured for it off the 1035's seed (layout.regions, examples.help and the variants' usage): the source tabs `source`; the rail's Display buttons `ring`s, its launchers, Audio Control and Room Mode `dock`s; Mute a ring that is the kit's volume_mute glyph; Help the input_help `source` tab; Power the vc_power-dn `button`, uncaptioned. The bars are art one colour, #010D19 at alpha 128 (166400 of 170240 pixels of the Top bar), which is `shade` - `bar`, the fill of a surface the system draws without its art. Not yet verified by a GUI Designer build of a region page. `rail` is a LeftRail's first group's, `launcher` its later groups' and Audio Control's, `mode` the Footer's mode slot's.",
+    "_source": "What the region components draw by default (docs/claude-design.md section 3): the clock's pattern off the seed's own Main SD (the 1035's Date/Time1 draws September 28, 1960 - 12:00 AM), and each control in the look this profile measured for it off the 1035's seed (layout.regions, examples.help and the variants' usage): the source tabs `source`; the rail's Display buttons `ring`s, its launchers, Audio Control and Room Mode `dock`s; Mute a ring that is the kit's volume_mute glyph; Help the input_help `source` tab; Power the vc_power-dn `button`, uncaptioned. The bars are kit art, #020D1A at alpha 128 apart from a 3-row light rule (166400 of 170240 pixels of the Top bar the frame measures), in PBImages laid out Stretch (Main SD's Top bar and Bottom bar), which the regions draw as that art, stretched over each band; `shade` is `bar`, the fill of a surface drawn without its art - on a machine where the art is not extracted - so without the rule. A lit dock's, Help's and call tile's caption is `lime`. `rail` is a LeftRail's first group's, `launcher` its later groups' and Audio Control's, `mode` the Footer's mode slot's.",
     "heading": {"type": "body", "align": "center"},
     "tab": {"variant": "source", "align": "center"},
     "rail": {"variant": "ring"},
@@ -245,14 +274,15 @@
     "bar": "shade",
     "volume": {"does": "Sets the program volume."},
     "mute": {"variant": "ring", "icon": "volume_mute", "text": "", "states": [{"name": "Off"}, {"name": "On"}], "does": "Mutes the program audio; On while muted."},
-    "help": {"variant": "source", "icon": "input_help", "text": "Help"},
+    "help": {"variant": "source", "icon": "input_help", "text": "Help",
+             "states": [{"name": "Off"}, {"name": "On", "color": "lime"}]},
     "power": {"variant": "button", "icon": "vc_power-dn", "text": ""},
     "clock": {"format": "MMMM dd, yyyy - h:mm tt", "align": "center"},
-    "_center": "What a source popup (role=\"source\") and a window draw (docs/claude-design.md section 4), off the 1035's and 725's seeds' Laptop, Doc Cam, Help, Confirmation, Powering Down and Lighting Control: no well - the source's title Open Sans Light 36 white, centred; its device picture (1152x1152_<device>.png) is pinned at the popup's top left, where the system leaves room, having no image to draw it with; the empty state Light 16 white, centred; the popup's headings 16 pt white and its keys the 440x440 square `button`; a window's title Light 36 white centred, its message Light 20, Close the kit's `close`, Power Down the vc_power-dn key resting green and Cancel the cancel key, their words in the art. Those sizes are the 1035's: a source popup and a window set what they say at each panel's own template's size, its frame's `pt` (Help's message 16 pt, the 725's window titles 30).",
-    "source": {"title": {"size": 36, "align": "center", "color": "text"}, "empty": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "button"}},
+    "_center": "What a source popup (role=\"source\") and a window draw (docs/claude-design.md section 4), off the 1035's and 725's seeds' Laptop, Doc Cam, Help, Confirmation, Powering Down and Lighting Control, and every source popup's picture: no well - the source's title Open Sans Light 36 white, centred; its device picture (1152x1152_<device>.png) at the popup's top left - on the 525 under its title - fitted, behind the words, each device at a size of its own (every source popup's `<name> Image`, a PBImage: the 1035's Laptop, PC, Aux and AppleTV 293x257, its Doc Cam 326x288, BluRay 352x310, Camera Control 200x209 and Tuner 526x329; the 525's Laptop 310x241 at 196,45 and PC 264x260 at 219,38 - the frame's `center.pictures`), which the Center draws where the panel's seed draws that device, the Laptop's where it pictures it for no source, by the source's `device`, else its name, else `devices`: the names the seed pairs with another device's picture, its Aux the iPod's and its Camera Control vc-1's; the empty state Light 16 white, centred; the popup's headings 16 pt white and its keys the 440x440 square `button`; a window's title Light 36 white centred, its message Light 20, Close the kit's `close`, Power Down the vc_power-dn key resting green and Cancel the cancel key, their words in the art. Those sizes are the 1035's: a source popup and a window set what they say at each panel's own template's size, its frame's `pt` (Help's message 16 pt, the 725's window titles 30).",
+    "source": {"title": {"size": 36, "align": "center", "color": "text"}, "empty": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "button"}, "devices": {"aux": "ipod", "camera": "vc-1"}},
     "window": {"title": {"size": 36, "align": "center", "color": "text"}, "message": {"size": 20, "align": "center", "color": "text"}, "label": {"color": "text"}, "close": {"variant": "close"}, "power": {"variant": "button", "icon": "vc_power-dn", "text": "", "states": [{"name": "Off", "look": "green"}, {"name": "On", "look": "on"}]}, "cancel": {"variant": "button", "icon": "cancel", "text": ""}},
-    "_hub": "What a hub's region page, source popups and windows draw (the 525's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Volume Up, Down and Mute the kit's rings (images 18, 20, 22: volume_up, volume_down, volume_mute); More the kit's transparent ••• tile with its word under it (image 34: sm-input_elipses_transp, `source`); the options' pictures the kit's 900x648 input_lightbulb and input_audio (`scene`, images 150 and 152); Close the kit's sphere X; Help its blank ? (`help_blank`). Display Control the kit's 504x504 transparent blank (image 32), its two words over it (`caption` over). Chosen by eye: an option the kit has no picture for the source tab's blank tile. Known differences: Display Control and More, which the template captions at 12 pt, take the 525's 18 pt floor and grow their cells inside the bar; the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn.",
-    "hub": {"title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "source"}, "menu": {"variant": "ring"}, "settings": {"variant": "source", "icon": "elipses", "caption": true}, "display": {"variant": "source", "icon": "blank", "caption": "over"}, "close": {"variant": "close"}, "help": {"variant": "source", "icon": "help_blank"}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "scene"}, "blank": {"variant": "source", "icon": "blank"}, "glyphs": {"light": "input_lightbulb", "audio": "input_audio"}}},
+    "_hub": "What a hub's region page, source popups and windows draw (the 525's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Volume Up, Down and Mute the kit's rings (images 18, 20, 22: volume_up, volume_down, volume_mute); More the kit's transparent ••• tile with its word under it (image 34: sm-input_elipses_transp, `source`); the options' pictures the kit's 900x648 input_lightbulb and input_audio (`scene`, images 150 and 152); Close the kit's sphere X; Help its blank ? (`help_blank`). Display Control the kit's 504x504 transparent blank (image 32), its two words over it (`caption` over). Chosen by eye: an option the kit has no picture for the source tab's blank tile. Every standard popup stands on the page's photo, stretched to its 702x480 (`popup.photo`: the 525's 12, on bkgd_swoop_plain.png), and a source's its device picture under its title, where the 525 draws that device (Laptop Image, 1152x1152_laptop.png 310x241 at 196,45; PC Image, 1152x1152_pc.png 264x260 at 219,38). Known differences: Display Control and More, which the template captions at 12 pt, take the 525's 18 pt floor and grow their cells inside the bar; the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn; the settings windows' own pictures (Lighting Control's lightbulb, Audio Control's speaker, Display Control's monitor) are not drawn.",
+    "hub": {"popup": {"photo": true}, "title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "source"}, "menu": {"variant": "ring"}, "settings": {"variant": "source", "icon": "elipses", "caption": true}, "display": {"variant": "source", "icon": "blank", "caption": "over"}, "close": {"variant": "close"}, "help": {"variant": "source", "icon": "help_blank"}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "scene"}, "blank": {"variant": "source", "icon": "blank"}, "glyphs": {"light": "input_lightbulb", "audio": "input_audio"}}},
     "page": {
       "_source": "The 320's pages (seeds/Turbulence 320.gdl): its strip's white words, its headings and empty state white on the photo, its square gray keys (`button`), More and Back the kit's own keys - Back where it ends the strip the kit's return key (`strip_back`), since its Back key's word is 5 px tall at 40, and the transparent Cancel over its Volume (`clear`). The question and the waits say theirs white (`message`). A caption wider than a key's art at the row's depth takes the next wider art (`wider`).",
       "strip": {"align": "center", "color": "text"},
@@ -276,6 +306,22 @@
     "help_title": "HELP",
     "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
     "page_empty": "{name} is currently selected.\nThere are no controls\nfor this device."
+,
+    "voice": {
+      "_source": "Off seeds/Turbulence 1035.gdl's working pages, popups and windows - Main SD, Main VC, the Laptop, PC and Doc Cam popups, Room Mode, Camera Select, Display Control, Confirmation, Starting Up, Powering Down and Help - and the grammar digest of every Turbulence page: its captions, rail headings, titles and messages. Its docks say Screen Control, Lighting Control, Audio Control and Display Control on two lines, its call tiles Initiate Call and End Call; Help's title alone is in capitals, HELP.",
+      "rules": [
+        "A caption or title is a Title Case noun or noun phrase: Screen Control, Lighting Control, Room Mode, Initiate Call, End Call, Privacy, Camera Select. A dock's two-word caption breaks onto two lines.",
+        "A rail launcher says what it controls: Screen Control, Lighting Control, Audio Control, Display Control.",
+        "A rail heading is one word: Display, VTC, Volume, Screen.",
+        "An instruction is an imperative Title Case heading: Select a Source, Press to Begin. A full sentence takes sentence case and a period: Please wait while the system starts up.",
+        "A popup's title is its device's name (Laptop, Document Camera); Help's alone is in capitals: HELP.",
+        "A question asks yes or no, and its answers name the action: Power Down and Cancel."
+      ],
+      "launchers": ["Screen Control", "Lighting Control"],
+      "caps": ["HELP", "AUX", "VTC"],
+      "sentence": [],
+      "instead": {"Lighting Settings": "Lighting Control", "Audio Settings": "Audio Control", "Screen Settings": "Screen Control", "Display Settings": "Display Control", "Power Off": "Power Down", "Shut Down": "Power Down", "Shutdown": "Power Down", "System Off": "Power Down", "Make Call": "Initiate Call", "Join Call": "Initiate Call", "Start Call": "Initiate Call", "Hang Up": "End Call", "Exit": "Close", "Dismiss": "Close"}
+    }
   },
   "kit": {
     "root": "Turbulence",
@@ -331,13 +377,13 @@
       "880x440": 250,
       "880x880": 280,
       "900x648": 270,
-      "1152x1152": 100
+      "1152x1152": 200, "2047x151": 640, "1648x134": 520
     }
   },
   "panels": {
     "_source": [
       "Series, sizes, DPI and tier: GUI Designer's own TemplateInfoTable.config, through gdl/templates.py; each series' models are the MODELS_FULL models gdl.templates.template_for gives it, by model.",
-      "main and rail: off the series template's own Main* pages (tests/measure_series.py control_regions). Turbulence frames its pages with side bars and a header and footer; its standard popup's window fills what they leave, a few pixels inside the bars, and is main. The rail is the right bar's band between the header and footer.",
+      "main and rail: off the series template's own Main* pages (tests/measure_series.py control_regions). Turbulence frames its pages with side bars and a header and footer; its standard popup's window fills what they leave, a few pixels inside the bars, and is main. The rail is the right bar's band: on the 1035 the bar's image, [1138,130,140,666], starts 3 px into the header band and runs to y 796 beside the footer - which stops at x 1137 - with Audio Control at y 690 in it.",
       "The 520 hub keeps a menu bar down the right: main is the canvas left of it, its title strip included, since Extron places the standard popup over it; the rail is the bar. The 320 keeps nothing on screen from page to page - its volume is a popup no page opens - so it has no rail.",
       "popup: the template's standard popup region, where it fills a quarter of the canvas or more.",
       "backgrounds: each theme's art, one size each, out of the templates (vendor/; tests/measure_series.py theme_backgrounds), stretched as every series draws it. The template's own (bkgd_pc.png, the 320's bkgd_water-1_plain.png, the 520's bkgd_swoop_plain.png) is that file pixel for pixel and keeps its name, which its seed carries with those pixels.",
@@ -378,7 +424,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP1035M": "seeds/Turbulence 1035.gdl", "TLP1035T": "seeds/Turbulence 1035.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -536,6 +582,16 @@
           "empty": [308, 287, 653, 280],
           "pt": {"title": 36, "empty": 16},
           "title_controls": [250, 137, 770, 96],
+          "pictures": {
+            "apple-tv": [140, 137, 293, 257],
+            "bluray": [140, 137, 352, 310],
+            "doc-cam": [140, 137, 326, 288],
+            "ipod": [140, 137, 293, 257],
+            "laptop": [140, 137, 293, 257],
+            "pc": [140, 137, 293, 257],
+            "tuner": [140, 137, 526, 329],
+            "vc-1": [140, 137, 200, 209]
+          },
           "items": []
         },
         "windows": {
@@ -734,7 +790,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP725T": "seeds/Turbulence 725.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -880,6 +936,16 @@
           "empty": [247, 216, 523, 210],
           "pt": {"title": 36, "empty": 16},
           "title_controls": [200, 103, 616, 72],
+          "pictures": {
+            "apple-tv": [112, 103, 235, 193],
+            "bluray": [112, 103, 282, 233],
+            "doc-cam": [112, 103, 261, 216],
+            "ipod": [112, 103, 235, 193],
+            "laptop": [112, 103, 235, 193],
+            "pc": [112, 103, 235, 193],
+            "tuner": [112, 103, 421, 247],
+            "vc-1": [112, 103, 160, 157]
+          },
           "items": []
         },
         "windows": {
@@ -1028,7 +1094,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP1525TG": "seeds/Turbulence 1525.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -1186,6 +1252,16 @@
           "empty": [328, 275, 696, 268],
           "pt": {"title": 36, "empty": 16},
           "title_controls": [266, 131, 821, 92],
+          "pictures": {
+            "apple-tv": [149, 131, 312, 246],
+            "bluray": [149, 131, 375, 297],
+            "doc-cam": [149, 131, 347, 276],
+            "ipod": [149, 131, 312, 246],
+            "laptop": [149, 131, 312, 246],
+            "pc": [149, 131, 312, 246],
+            "tuner": [149, 131, 561, 315],
+            "vc-1": [149, 131, 213, 200]
+          },
           "items": []
         },
         "windows": {
@@ -1334,7 +1410,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP720T": "seeds/Turbulence 720.gdl"},
-      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
         "top": {
@@ -1474,6 +1550,16 @@
           "empty": [194, 174, 409, 168],
           "pt": {"title": 36, "empty": 14},
           "title_controls": [157, 83, 482, 58],
+          "pictures": {
+            "apple-tv": [88, 83, 184, 155],
+            "bluray": [88, 83, 221, 187],
+            "doc-cam": [88, 83, 204, 173],
+            "ipod": [88, 83, 184, 155],
+            "laptop": [88, 83, 184, 155],
+            "pc": [88, 83, 184, 155],
+            "tuner": [88, 83, 329, 198],
+            "vc-1": [88, 83, 125, 126]
+          },
           "items": []
         },
         "windows": {
@@ -1684,7 +1770,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP525T": "seeds/Turbulence 525.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main Page",
         "top": {
@@ -1772,6 +1858,15 @@
           "pt": {"title": 30, "empty": 18},
           "close": {"role": "close", "name": "Close Laptop", "kind": "button", "rect": [629, 6, 60, 60], "id": 9102},
           "title_controls": [0, 10, 702, 52],
+          "pictures": {
+            "apple-tv": [217, 40, 268, 250],
+            "bluray": [234, 59, 233, 219],
+            "doc-cam": [212, 57, 278, 252],
+            "ipod": [218, 58, 265, 202],
+            "laptop": [196, 45, 310, 241],
+            "pc": [219, 38, 264, 260],
+            "tuner": [182, 35, 338, 265]
+          },
           "items": [
             {"role": "popup", "name": "Volume", "kind": "popup_ref", "rect": [651, 0, 51, 480]},
             {"role": "source", "name": "Main Laptop", "kind": "button", "rect": [33, 84, 212, 155], "id": 8064},
@@ -2010,7 +2105,7 @@
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
       "seeds": {"TLP320M": "seeds/Turbulence 320.gdl"},
-      "kinds": {"slider": false, "level": true, "datetime": false, "popup": false},
+      "kinds": {"slider": false, "level": true, "datetime": false, "popup": false, "image": false},
       "frame": {
         "page": "Doc Cam 1",
         "top": {

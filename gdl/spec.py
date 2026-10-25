@@ -458,12 +458,37 @@ CONTROL_KEYS = frozenset((
     'italic', 'align', 'font', 'states', 'on', 'press', 'nav', 'does', 'image', 'thumb_image',
     'track_image', 'fill_image', 'group', 'orientation', 'track', 'bar', 'thumb', 'thumb_height', 'from',
     'to', 'thickness', 'format', 'flatten', 'type', 'grid', 'stack', 'icon',
+    # An image's own: how its art lies in its box (IMAGE_LAYOUTS).
+    'layout',
     # Added by a panel's layout (docs/claude-design.md): navigation it derived,
     # and the segmented control a segment belongs to.
     'derived', 'joined',
 ))
 # Interactive kinds are the ones held to the 9mm touch-target rule.
 TOUCHABLE = {'button', 'slider'}
+
+
+def mirrors(controls):
+    """The ids (Python's, of the dicts) of `controls` that mirror a touch
+    target they lie inside: a button with the ID of a larger button or slider
+    whose rect holds its own. Shockwave's 1035 and 1535 draw each source tab's
+    name so - a caption-only 152x36 button under the tab's glyph with the
+    tab's ID, white in both states (its frame's `twin`). A press there is the
+    tab's, and the tab shows its states, so the mirror's touch size, its gaps,
+    its alike states and the ID it shares are its control's, not its own."""
+    out = set()
+    for c in controls:
+        if c.get('kind') != 'button' or not c.get('id'):
+            continue
+        x, y, w, h = (int(v) for v in c['rect'])
+        for d in controls:
+            if d is c or d.get('id') != c['id'] or d.get('kind') not in TOUCHABLE:
+                continue
+            dx, dy, dw, dh = (int(v) for v in d['rect'])
+            if dx <= x and dy <= y and x + w <= dx + dw and y + h <= dy + dh and w * h < dw * dh:
+                out.add(id(c))
+                break
+    return out
 
 # Button feedback states. GUI Designer 1.28.0.7 reports MaxAllowedStateCount =
 # 256 on PBProject, on the TLP Pro 1035 platform and on PBButton, read through
@@ -528,6 +553,13 @@ IMAGE_LAYOUT, IMAGE_ALIGN = 0, 3
 # seeds lay theirs out, Stretch as the Mach seeds lay their 3:2 photo over a
 # 16:10 page (every one of Mach 1035's pages).
 BACKGROUND_LAYOUTS = {'fill': 0, 'stretch': 1}
+# An `image` control's art, in its backgroundImageField, by the same enum:
+# every PBImage in the Turbulence seeds lies one of these two ways - its
+# header and footer bars Stretch, a source popup's device picture Fill - and
+# Build's artwork of each is the file laid out so, not a pixel off
+# (tests/test_verify_built.py, the 1035 seed's own). A button's image is
+# always Fill (IMAGE_LAYOUT).
+IMAGE_LAYOUTS = BACKGROUND_LAYOUTS
 # The two per-button pointers into the state list, as backing fields.
 # TLPDefaultStateID is 0 on every button in the corpus. TLPPressFeedbackStateID
 # is the state shown while the button is held: On (1) on every Off/On
@@ -1064,6 +1096,11 @@ class Panel:
                 'modal': modal,
                 'background': color(pu.get('background') or self.theme.get('background')
                                      or '#000000', self.theme),
+                # A standard popup's own photo, as Shockwave's and Turbulence's
+                # hubs draw every popup on the page's (seeds/Turbulence 525.gdl:
+                # all 12 on bkgd_swoop_plain.png, stretched to the popup).
+                'background_image': pu.get('background_image'),
+                'background_layout': pu.get('background_layout'),
                 'controls': controls,
                 'group_sizes': groups,
                 'overflow': overflow,
@@ -1135,6 +1172,9 @@ class Panel:
                         'border': {'resource': border, 'radius': radius,
                                    'thickness': thickness},
                         'image': image,
+                        # An image control's art as it lies: a button's is fitted.
+                        'image_layout': (IMAGE_LAYOUTS.get(c.get('layout') or 'fill', 0)
+                                         if c.get('kind') == 'image' else IMAGE_LAYOUT),
                     }
             image = (resolve_image(self.images.get(pg['background_image']))
                      if pg.get('background_image') else None)
@@ -1236,6 +1276,24 @@ class Panel:
                         op['keep_art'] = True
         return plan
 
+    @staticmethod
+    def _image_rules(c, where):
+        """An image's own keys: its art or a ground to draw, and a layout
+        the panel has a word for. `layout` is an image's alone - a button lays
+        its image out Fill whatever it says."""
+        out = []
+        if c.get('kind') != 'image':
+            if 'layout' in c:
+                out.append(f"{where}: 'layout' is an image's - a {c.get('kind', 'panel')} lays its "
+                           'image out Fill, and would ignore it')
+            return out
+        if not c.get('image') and not c.get('fill'):
+            out.append(f'{where}: an image with no `image` and no `fill` draws nothing')
+        if c.get('layout') is not None and c['layout'] not in IMAGE_LAYOUTS:
+            out.append(f"{where}: layout {c['layout']!r} is not one an image takes - "
+                       f"{' or '.join(map(repr, IMAGE_LAYOUTS))}")
+        return out
+
     def _image_op(self, name):
         """A page's background image, or a button state's, for the plan: its
         resource name, and its file when the spec brings it - the verifier
@@ -1262,6 +1320,14 @@ class Panel:
             if not resolve_image(f):
                 out.append(f'image {name!r}: {f!r} is not a file here or under '
                            f"{' or '.join(RESOURCE_ROOTS)}")
+        for item in self.pages + self.popups:
+            for c in item['controls']:
+                out += self._image_rules(c, f"{item['name']!r} {c.get('name') or c.get('kind')}")
+        for pu in self.popups:
+            if pu['modal'] and pu.get('background_image'):
+                out.append(f"popup {pu['name']!r} is a modal, and Build draws a modal as the page "
+                           'beneath under its scrim, whatever its background - its background_image '
+                           'would never show')
         for pg in self.pages:
             seen = {}
             # Two controls with identical type and rect are almost always a
@@ -1276,6 +1342,7 @@ class Panel:
                     out.append(f"page {pg['number']} {label}: same type and rect as "
                                f"{geometry[key]} - one is hidden behind the other")
                 geometry[key] = label
+            inside = mirrors(pg['controls'])
             for c in pg['controls']:
                 x, y, w, h = (int(v) for v in c['rect'])
                 where = f"page {pg['number']} {c.get('name') or c.get('text') or '?'}"
@@ -1283,9 +1350,11 @@ class Panel:
                     out.append(f'{where}: non-positive size {w}x{h}')
                 if x < 0 or y < 0 or x + w > self.size[0] or y + h > self.size[1]:
                     out.append(f'{where}: rect {[x, y, w, h]} leaves the {self.size} canvas')
-                if c['id'] in seen:
-                    out.append(f"{where}: id {c['id']} already used by {seen[c['id']]}")
-                seen[c['id']] = where
+                # A mirror inside its control shares its ID on purpose (mirrors).
+                if id(c) not in inside:
+                    if c['id'] in seen:
+                        out.append(f"{where}: id {c['id']} already used by {seen[c['id']]}")
+                    seen[c['id']] = where
                 b = c.get('border')
                 if b and b not in BORDERS and b not in BORDER_GEOMETRY:
                     out.append(f'{where}: unknown border resource {b!r} - a generator may '
@@ -1295,9 +1364,11 @@ class Panel:
         for pu in self.popups:
             out += [f"popup {pu['name']!r} {o}" for o in pu.get('overflow') or []]
             out += self._house_rules(pu, f"popup {pu['name']!r}")
-            seen = {}
+            seen, inside = {}, mirrors(pu['controls'])
             for c in pu['controls']:
                 where = f"popup {pu['name']!r} {c.get('name') or c.get('text') or '?'}"
+                if id(c) in inside:
+                    continue
                 if c['id'] in seen:
                     out.append(f"{where}: id {c['id']} already used by {seen[c['id']]}")
                 seen[c['id']] = where
@@ -1360,11 +1431,13 @@ class Panel:
             out.append(f"page {pg['number']}: no touch minimum for "
                        f"{self.model or '%dx%d' % tuple(self.size)} - name the panel's "
                        f"model so 9mm can be converted (GUI Design Standards p.55)")
+        inside = mirrors(pg['controls'])
         for c in pg['controls']:
             x, y, w, h = (int(v) for v in c['rect'])
             where = f"{label} {c.get('name') or c.get('text') or '?'}"
-            # Only interactive controls have a touch target to meet.
-            if target and c.get('kind') in TOUCHABLE and (w < target or h < target):
+            # Only interactive controls have a touch target to meet - a mirror
+            # inside one is pressed as it (mirrors).
+            if target and c.get('kind') in TOUCHABLE and id(c) not in inside and (w < target or h < target):
                 out.append(f'{where}: {w}x{h} is below the {target}x{target} px touch '
                            f'target for a {self.size[0]}x{self.size[1]} panel '
                            f'(9mm, GUI Design Standards p.55)')
@@ -1389,7 +1462,7 @@ class Panel:
         # Between every touch target - a slider's too. Two segments of one
         # segmented control (the same `joined`) touch on purpose.
         if spacing:
-            btns = [c for c in pg['controls'] if c.get('kind') in TOUCHABLE]
+            btns = [c for c in pg['controls'] if c.get('kind') in TOUCHABLE and id(c) not in inside]
             for i, a in enumerate(btns):
                 ax, ay, aw, ah = (int(v) for v in a['rect'])
                 for b2 in btns[i + 1:]:
@@ -1532,6 +1605,15 @@ class Panel:
             border = BORDERS['rounded']
         if fill is None and c.get('kind') in ('button', 'label'):
             fill = dict(TRANSPARENT)
+        if c.get('kind') == 'image':
+            # Its art is the picture: a clone of the Turbulence seeds' first
+            # PBImage, a side bar black at 85% transparency the applier makes
+            # opaque, built the art over an opaque black box. Every PBImage in
+            # the seeds has no border resource.
+            if fill is None:
+                fill = dict(TRANSPARENT)
+            if border is None:
+                border = ''
         if c.get('kind') == 'slider' and c.get('track_image'):
             # Build draws a slider's bordered fill IN PLACE of its rail art: a
             # Shockwave slider with the profile's rounded border and black fill
@@ -1607,12 +1689,14 @@ class Panel:
         out = []
         for kind, items in (('page', self.pages), ('popup', self.popups)):
             for pg in items:
+                inside = mirrors(pg['controls'])
                 for c in pg['controls']:
                     out += self._states_of(c, f"{kind} {pg['name']!r} "
-                                              f"{c.get('name') or c.get('text') or '?'}")
+                                              f"{c.get('name') or c.get('text') or '?'}",
+                                           mirror=id(c) in inside)
         return out
 
-    def _states_of(self, c, where):
+    def _states_of(self, c, where, mirror=False):
         out = []
         asked = [k for k in ('states', 'press') if k in c]
         if c.get('kind') != 'button':
@@ -1662,8 +1746,9 @@ class Panel:
             if dup:
                 out.append(f"{where}: state name(s) {', '.join(map(repr, dup))} used twice - "
                            f'the program and the ID map tell states apart by name')
-        # `on` and theme.on make states too, and can make two alike.
-        if not out and self._feedback(c):
+        # `on` and theme.on make states too, and can make two alike. A mirror
+        # inside its control (mirrors) may: the control shows the state.
+        if not out and not mirror and self._feedback(c):
             look = self._states_for(c, *self._base_look(c)) or []
             for i, a in enumerate(look):
                 for b in look[i + 1:]:
@@ -1739,9 +1824,11 @@ class Panel:
             # elsewhere.
             'group': c.get('group'),
             # A kit image on every state, or none: a clone's donor icon is
-            # cleared either way.
+            # cleared either way. An image control's art, laid out as it says;
+            # a button's is always fitted.
             'image': self._image_op(c.get('image')),
-            'image_layout': IMAGE_LAYOUT,
+            'image_layout': (IMAGE_LAYOUTS.get(c.get('layout') or 'fill', 0) if kind == 'image'
+                             else IMAGE_LAYOUT),
             'image_align': IMAGE_ALIGN,
             # A slider's thumb, where the template draws it from its kit
             # (Afterburn: sliderThumbImageField, in the secondary accent).
@@ -1788,6 +1875,9 @@ class Panel:
             # donor popup was 915, and everything past x=915 stacked up at the
             # origin while the file still built with 0 errors.
             'size': list(pu['size']) if pu['size'] else None,
+            # The applier clears the donor's and sets this one, as a page's.
+            'background_image': self._image_op(pu.get('background_image')),
+            'background_layout': BACKGROUND_LAYOUTS.get(pu.get('background_layout') or 'fill', 0),
             'clear_controls': True,
             'controls': [self._op_for(c, i) for i, c in enumerate(pu['controls'])],
         } for pu in self.popups]
@@ -2101,11 +2191,12 @@ class Panel:
 
         # An image the spec does not bring must be one the donor has.
         images = proj._resource_names('PBImageResource')
-        for pg in self.pages:
-            want = pg.get('background_image')
-            if want and want not in self.images and want not in images:
-                out.append(f"page {pg['name']!r}: background image {want!r} is neither in "
-                           f"the spec's `images` nor defined in {path}")
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for pg in items:
+                want = pg.get('background_image')
+                if want and want not in self.images and want not in images:
+                    out.append(f"{kind} {pg['name']!r}: background image {want!r} is neither in "
+                               f"the spec's `images` nor defined in {path}")
         for kind, items in (('page', self.pages), ('popup', self.popups)):
             for pg in items:
                 for c in pg['controls']:
