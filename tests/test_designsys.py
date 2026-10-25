@@ -7,6 +7,7 @@ And the components carry spec fields for gdl.design, so every token, border
 and type style a profile names has to be one the spec and the seed can build.
 """
 import json
+import math
 import os
 import re
 import sys
@@ -1718,9 +1719,10 @@ class TestTheRegionComponents(unittest.TestCase):
                 self.assertEqual(f['top'], own['top'], s)
             self.assertFalse(any('frame' in row for row in prof['models'].values()), t)
             # A backstop, not a limit of the Design type's: a frame repeated
-            # on every model row doubled the bundle. Mach's is about 390 KB
-            # with the 320's pages (PR7).
-            self.assertLess(len(js.encode('utf-8')), 405_000, t)
+            # on every model row doubled the bundle. Mach's is about 415 KB
+            # with the 320's pages (PR7) and round four's layout (the 320's
+            # words and windows, the 725's audio place).
+            self.assertLess(len(js.encode('utf-8')), 430_000, t)
         # Afterburn draws no bars: no frame in its bundle.
         js = designsys.bundle(designsys.load('afterburn'), art=False)
         self.assertEqual(json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))['frames'], {})
@@ -2286,6 +2288,45 @@ class TestBuild(unittest.TestCase):
                 self.assertIn('**What a hub makes of your page.**', text)
                 self.assertIn('**What the 320 makes of your page.**', text)
 
+    def test_the_readme_answers_what_round_four_got_wrong(self):
+        """Round four's designers (tests/data/round4-<theme>) drew Help as a
+        stack of one-line Labels, as 'break help into short lines' told them,
+        and it overflowed at the 525's 18 pt; captioned the 320's keys and
+        headed its columns in words wider than they are; drew a Display
+        Control the hub derives, and two working pages; and put Mic Mute in
+        the RightRail's audio place, which Shockwave's 725 keeps in its left
+        rail. Each README now says it."""
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                text = designsys.readme(p)
+                ms = designsys.models(p)
+                self.assertNotIn('break help into short lines', text)
+                words = next(ln for ln in text.splitlines() if ln.startswith('- **Words.**'))
+                self.assertIn('one Label', words)
+                self.assertIn("a state's own `text`", words)
+                self.assertIn('one Label', next(ln for ln in text.splitlines() if ln.startswith('- `role="help"`')))
+                grammar = _section(text, "The template's grammar")
+                hub = ms['TLP525T']['frame']
+                drawn = grammar.split('**What it draws by itself, and what you may draw.**', 1)[1].split('\n\n', 1)[0]
+                for name in ((hub.get('select') or {}).get('popup') or 'Select Source',
+                             (hub.get('options') or {}).get('popup') or 'More Options', 'Volume Level'):
+                    self.assertIn(f"'{name}'", drawn)
+                self.assertIn('the same `id`s', drawn)
+                small = grammar.split('**Words on the 320.**', 1)[1].split('\n\n', 1)[0]
+                key = ms['TLP320M']['frame']['center']['row'][0]
+                self.assertIn(f'{key[2]}x{key[3]}', small)
+                self.assertIn("`Group`'s `title`", small)
+                self.assertIn('**What it draws by itself.**', grammar)
+                rail = next(ln for ln in grammar.splitlines() if ln.startswith('- **RightRail**'))
+                if theme == 'shockwave':
+                    self.assertIn('1020', rail)
+                    self.assertIn("left rail's second group", rail)
+                for doc, needle in (('Group', 'Words on the 320'), ('RightRail', 'left rail instead')):
+                    if needle == 'left rail instead' and theme == 'mach':
+                        continue
+                    self.assertIn(needle, designsys.component_docs(p)[doc], (theme, doc))
+
     def test_the_layout_keeps_to_the_gates(self):
         """Each Layout described its seed's geometry, and a designer who
         followed it failed the spec check on the design panel: Shockwave's
@@ -2633,7 +2674,7 @@ class TestAfterburnsReadme(unittest.TestCase):
         # glyph - a Doc Cam where the template's TV stands, to show a source
         # with controls.
         tabs = F['center']['tabs']
-        group = re.search(r'ExtronAfterburn\.Group"([^>]*)>', main).group(1)
+        group = re.search(r'ExtronAfterburn\.Group"( title="Sources"[^>]*)>', main).group(1)
         self.assertIn(f'cell="110x110" gap="{tabs["pitch"] - tabs["first"][2]}"', group)
         main_r = self.p['layout']['main']
         self.assertIn(f'left: {tabs["first"][0] - main_r[0]}px; top: {tabs["first"][1] - main_r[1]}px', group)
@@ -2641,15 +2682,27 @@ class TestAfterburnsReadme(unittest.TestCase):
         if designsys.kit_root(self.p):
             for icon in ('pc', 'laptop', 'doc-cam', 'streaming'):
                 self.assertIn(f'icon="{icon}"', main)
-        # The left rail's groups under their headings, in list and toggle buttons.
-        for g in F['left']['groups']:
-            self.assertIn(f'>{g["heading"]["text"]}</x-import>', main)
+        # The left rail one Group of its toggle and list buttons, under its
+        # heading, in cells that carry to the room's 725, 525 and 320 (round
+        # four: loose, at the template's spacing, they did not).
+        rail = re.search(r'ExtronAfterburn\.Group"( title="(\w+)"[^>]*cap="1"[^>]*)>', main)
+        self.assertIn(f'>{rail.group(2)}</x-import>', main)
+        self.assertIn(f'cell="178x{designsys.RAIL_CELL[0]}" gap="{designsys.RAIL_CELL[1]}"', rail.group(1))
         self.assertIn('variant="toggle"', main)
         self.assertIn('variant="list"', main)
-        # The divider as the frame draws it, the date and the time at the foot.
+        # The divider as the frame draws it; no date and time, which the 525
+        # refused in the template's own boxes; the popup region the
+        # template's, as deep as its popups - the 320, where it was too
+        # shallow for a source's words, makes each source a page.
         self.assertIn('width: 760px', main)
-        self.assertIn('format="date"', main)
-        self.assertIn('format="time"', main)
+        self.assertNotIn('format="date"', main)
+        deep = F['center']['region'][3]
+        self.assertEqual(deep, self.p['popup'][1])
+        self.assertIn(f'height: {deep}px', main.split('PopupRegion', 1)[1].split('</x-import>', 1)[0])
+        self.assertIn(f'height="{deep}"', self.boards['PC'])
+        self.assertIn('The 320 gives each source a page of its own and leaves the region off', self.working)
+        self.assertNotIn('Volume Heading', main)
+        self.assertIn('panels="TLP1035T TLP725T TLP525T TLP320M"', main)
         for nav in re.findall(r'nav="([^"]+)"', main):
             self.assertIn(nav, self.boards)
 
@@ -2679,6 +2732,40 @@ class TestAfterburnsReadme(unittest.TestCase):
         self.assertIn('916x752 at 183,24', wins)
         center = _section(self.text, 'The center')
         self.assertIn('write it', center)
+
+    def test_the_320s_rows_are_said(self):
+        """Round four's designer revised three times guessing what the README
+        left out about the 320 - the order its rows take a page's controls in,
+        how many rows its screen holds, how tall a heading is, where Start's
+        button may stand (tests/data/round4-afterburn-revised): each is said,
+        its numbers off the 320's own row in models() and the example's popup
+        region, as bundle.js flowRows and rowsPage lay them."""
+        panels = _section(self.text, 'Every panel the room has')
+        T = designsys.models(self.p)['TLP320M']
+        deep, across = T['main'][3] - 4, T['main'][2] - 2 * T['gap']
+        self.assertIn(f'| TLP320C/M | 320x240 | rows: {deep} px of them, {across} across |', panels)
+        rows = next(ln for ln in panels.splitlines() if ln.startswith('- **Rows**'))
+        line = math.ceil(T['floor'] * self.p['pt'] * 1.2) + 2
+        for said in (f'({line} px on the 320)', "the main area's first, then the Page's own column by column",
+                     "Start's button stands where the Layout puts it", f"within {self.p['spacing']} px",
+                     "stands at that Group's left, in its row", 'between the rows it was drawn between, 2 px clear',
+                     'a row of a side column stands beside the first earlier row',
+                     'one under another and, where a row moved, beside', 'does not go on over pages of its own',
+                     # The 320's seed has no standard popup: each source is a
+                     # page there, with Back, and a region is left off.
+                     'On the TLP320C/M, whose seed has no standard popup, a popup is a page of its own',
+                     "a Back at the foot's left", 'A `PopupRegion` has nothing to show there, and is left off'):
+            self.assertIn(said, rows)
+        grammar = _section(self.text, "The template's grammar")
+        self.assertIn('draws each source popup as a page of its own too', grammar)
+        self.assertIn("its heading at its left", self.working)
+        group = designsys.component_docs(self.p)['Group']
+        self.assertIn("stands at that button's left, in its row", group)
+        # The bar themes' rows go on, and say how much a page that does holds.
+        mach = designsys.load('mach')
+        M = designsys.models(mach)['TLP320M']
+        self.assertIn(f"- {M['main'][3] - 4 - M['touch'] - M['gap']} on a page that goes on |",
+                      _section(designsys.readme(mach), 'Every panel the room has'))
 
     def test_the_320_strip_is_at_the_foot(self):
         grammar = _section(self.text, "The template's grammar")

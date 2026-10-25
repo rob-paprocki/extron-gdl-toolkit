@@ -104,8 +104,8 @@ def _shares_at(assets, tid, alpha):
 def _fill_shares(assets, tid, argb):
     """_shares() for an opaque fill. For a translucent one, {color: share of
     the visible pixels}, every pixel at the fill's own alpha (within 3) and
-    color (within the rounding premultiplying leaves, 255 // (2 * alpha) + 1
-    a channel) counted as the planned (r, g, b) itself, the rest by their own
+    color (within the rounding premultiplying leaves, 255 // alpha + 1 a
+    channel) counted as the planned (r, g, b) itself, the rest by their own
     (r, g, b, a). Build writes a translucent fill's alpha exactly: Turbulence's
     rail, black at 38, came back (0, 0, 0, 38) throughout, and its shade,
     #020D1A at 128, as (1, 13, 25, 128). Read off the opaque pixels alone it
@@ -116,7 +116,10 @@ def _fill_shares(assets, tid, argb):
     if blob is None:
         return {}
     want, alpha = _rgb(argb), (argb >> 24) & 0xFF
-    tol = 255 // (2 * alpha) + 1
+    # Build rounds each channel down on the way into premultiplied form and
+    # again on the way out: up to 255 // alpha a channel - Mach's Make Call,
+    # #659945 at 220, came back (99, 151, 69, 220).
+    tol = 255 // alpha + 1
     raw = Image.open(io.BytesIO(blob)).convert('RGBA').tobytes()
     counts = collections.Counter()
     for i in range(0, len(raw), 4):
@@ -407,6 +410,11 @@ def check_states(plan_items, table, assets, kind):
                 # off - so empty artwork is only wrong if a fill was planned.
                 fill = ws.get('fill')
                 if not _painted(fill):
+                    continue
+                # An image opaque over the box hides the fill under it: it is
+                # the state's look, and _state_image holds it. Shockwave's
+                # Teams tab lit is the kit's opaque _sel tile over white at 60.
+                if _covers(ws.get('image'), c):
                     continue
                 fills = _fill_shares(assets, tid, fill)
                 if not fills:
@@ -747,6 +755,13 @@ def fit_image(file, w, h):
 # wave at 64 px. So each state is also held against its button's other states'
 # images, and nearer one of those than its own is a failure (_state_image).
 IMAGE_PIXEL, IMAGE_OFF, IMAGE_INSET = 60, 0.25, 4
+# The gate was measured on Afterburn's 64 px icons. Mach's 1376x440 tab art
+# fitted into the 725's 152x60 tab comes out 21 to 25% off its own file -
+# ShareLink's 25.1% - and 38% and up off every other icon of its folder. Past
+# the gate and under IMAGE_FAMILY_OFF, a state is its planned image when that
+# file is nearer the artwork than every other same-size file of its folder by
+# IMAGE_FAMILY_MARGIN (_state_image).
+IMAGE_FAMILY_OFF, IMAGE_FAMILY_MARGIN = 0.40, 0.10
 # An image control has no border, ring or caption to be off by: every bar and
 # device picture of the Turbulence 1035, 725 and 525 seeds is 0% off its own
 # file laid out as the seed lays it, and the nearest other - the laptop's
@@ -825,6 +840,34 @@ def _gone(where, img):
     return []
 
 
+def _covers(image, c, share=0.9):
+    """Whether `image`, fitted into the control's box as Build lays it, is
+    opaque over `share` of the box inside its edge."""
+    if not image or not image.get('file') or not os.path.exists(image['file'])             or not c.get('Width') or not c.get('Height'):
+        return False
+    w, h = c['Width'], c['Height']
+    a = fit_image(image['file'], w, h).getchannel('A').crop(
+        (IMAGE_INSET, IMAGE_INSET, max(IMAGE_INSET + 1, w - IMAGE_INSET), max(IMAGE_INSET + 1, h - IMAGE_INSET)))
+    solid = sum(1 for v in a.getdata() if v > 250)
+    return solid >= share * a.width * a.height
+
+
+def _nearest_of_family(image, off, art, c, fill):
+    """Whether the planned file is nearer the artwork than every other file of
+    its folder sharing its size prefix (`1376x440_`) by IMAGE_FAMILY_MARGIN. A
+    file with no such family has nothing to be told from: False."""
+    folder, name = os.path.split(image['file'])
+    prefix = name.split('_', 1)[0] + '_' if '_' in name else None
+    if not prefix:
+        return False
+    rivals = [os.path.join(folder, f) for f in os.listdir(folder)
+              if f != name and f.startswith(prefix) and f.lower().endswith('.png')]
+    if not rivals:
+        return False
+    return all(image_mismatch(r, art, c['Width'], c['Height'], fill) - off >= IMAGE_FAMILY_MARGIN
+               for r in rivals)
+
+
 def _state_image(where, i, bs, c, image, fill, assets, others=()):
     """A state's artwork must be the kit image the plan gave it.
 
@@ -845,7 +888,8 @@ def _state_image(where, i, bs, c, image, fill, assets, others=()):
     if not image.get('file') or not os.path.exists(image['file']):
         return _gone(label, image)
     off = image_mismatch(image['file'], assets[tid], c['Width'], c['Height'], fill)
-    if off > IMAGE_OFF:
+    if off > IMAGE_OFF and not (off <= IMAGE_FAMILY_OFF and
+                                _nearest_of_family(image, off, assets[tid], c, fill)):
         return [f"{label}: {off:.0%} of the artwork differs from the planned image "
                 f"{image['name']!r} - it is not that image"]
     # The NEAREST of them is the one there: levels 1 and 2 can both be nearer

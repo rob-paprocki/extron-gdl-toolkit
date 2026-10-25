@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Powering Down</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Powering Down" kind="modal" reached-by="program" does="Shown by the program while the room powers down." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Panel" name="Card" style="position: absolute; left: 183px; top: 24px; width: 916px; height: 752px"></x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Powering Down Message" type="subheading" align="center" style="position: absolute; left: 290px; top: 375px; width: 700px; height: 50px">Please wait while the system is powering down.</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

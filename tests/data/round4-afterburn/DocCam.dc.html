@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Doc Cam</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- A source with controls: a capitals label over its keys, as the template heads them. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Doc Cam" kind="popup" group="Sources" panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Doc Cam Title" type="subheading" align="center" style="position: absolute; left: 359px; top: 0px; width: 162px; height: 50px">Doc Cam</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Zoom Label" type="body-strong" color="text-secondary" align="center" style="position: absolute; left: 279px; top: 73px; width: 120px; height: 50px">ZOOM</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Group" title="Zoom" cell="154x64" gap="15" cap="1" style="position: absolute; left: 262px; top: 135px; width: 154px; height: 143px">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Zoom Tele" variant="ghost" does="Zooms the document camera in.">+</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Zoom Wide" variant="ghost" does="Zooms the document camera out.">-</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":525}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

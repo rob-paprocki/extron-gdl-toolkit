@@ -786,6 +786,54 @@ class TestStateImage(unittest.TestCase):
         self.assertEqual(n, 1)
         self.assertTrue(any('no artwork' in p for p in problems), problems)
 
+    def test_an_icon_past_the_gate_passes_as_the_nearest_of_its_family(self):
+        """Mach's 1376x440 tab art fitted into the 725's 152x60 tab comes out
+        21 to 25% off its own file at that scale - ShareLink's 25.1%, past the
+        gate measured on Afterburn's 64 px icons - and 38% and up off every
+        other icon of its family. Past the gate, the planned file nearer than
+        any other of its folder's same-size files by a clear margin is the
+        image there; the artwork nearer another, or no family to hold it
+        against, is not."""
+        import io
+        import tempfile
+        from PIL import Image, ImageDraw
+        d = tempfile.mkdtemp()
+
+        def icon(name, draw):
+            im = Image.new('RGBA', (80, 40), (0, 0, 0, 0))
+            draw(ImageDraw.Draw(im))
+            path = os.path.join(d, name)
+            im.save(path)
+            return {'name': name, 'file': path}
+
+        own = icon('80x40_share.png', lambda g: g.rectangle((10, 8, 30, 30), outline=(255, 255, 255, 255), width=2))
+        other = icon('80x40_disc.png', lambda g: g.ellipse((44, 6, 70, 34), outline=(255, 255, 255, 255), width=2))
+        icon('80x40_tv.png', lambda g: g.line((5, 35, 75, 35), fill=(255, 255, 255, 255), width=3))
+        c = {'Width': 80, 'Height': 40}
+        bs = {'Name': 'Off', 'TLPImageID': 7}
+
+        def art(im):
+            buf = io.BytesIO()
+            im.save(buf, 'PNG')
+            return {7: buf.getvalue()}
+        # Its own art with a stroke lost, as a thin line downscaled ninefold
+        # loses one: past the gate, nearest its own file by far.
+        drift = Image.open(own['file']).copy()
+        ImageDraw.Draw(drift).rectangle((6, 6, 34, 11), fill=(0, 0, 0, 0))
+        ImageDraw.Draw(drift).rectangle((6, 6, 13, 12), fill=(0, 0, 0, 0))
+        off = self.vb.image_mismatch(own['file'], art(drift)[7], 80, 40)
+        self.assertTrue(self.vb.IMAGE_OFF < off <= self.vb.IMAGE_FAMILY_OFF, off)
+        self.assertEqual(self.vb._state_image('page Home Share', 0, bs, c, own, None, art(drift)), [])
+        # Another of its family's art: refused.
+        swapped = Image.open(other['file'])
+        self.assertTrue(self.vb._state_image('page Home Share', 0, bs, c, own, None, art(swapped)))
+        # No family beside it: the gate alone decides.
+        lone = icon('lone.png', lambda g: g.rectangle((10, 8, 30, 30), outline=(255, 255, 255, 255), width=2))
+        os.makedirs(os.path.join(d, 'alone'))
+        os.replace(lone['file'], os.path.join(d, 'alone', 'lone.png'))
+        lone['file'] = os.path.join(d, 'alone', 'lone.png')
+        self.assertTrue(self.vb._state_image('page Home Share', 0, bs, c, lone, None, art(drift)))
+
     def test_a_translucent_fill_is_checked_at_its_own_alpha(self):
         """Build writes a translucent fill's alpha exactly and its color to
         within premultiplying's rounding - Turbulence's shade, #020D1A at 128,
@@ -805,7 +853,10 @@ class TestStateImage(unittest.TestCase):
                                  (0x26000000, (0, 0, 0, 38), False),
                                  (0x80020D1A, (1, 13, 25, 255), True),       # alpha lost
                                  (0x80020D1A, (255, 255, 255, 128), True),   # the donor's
-                                 (0x26000000, (0, 0, 0, 128), True)):        # another alpha
+                                 (0x26000000, (0, 0, 0, 128), True),         # another alpha
+                                 # Mach's Make Call, #659945 at 220: Build rounds
+                                 # each channel down on the way in and out, 2 off.
+                                 (0xDC659945, (99, 151, 69, 220), False)):
             op = {'fields': {'nameField': 'Card'}, 'fill': fill}
             problems, notes, n = self.vb.check_fills([{'name': 'Home', 'controls': [op]}],
                                                      table, {7: art(built)}, 'page')
@@ -869,6 +920,44 @@ class TestStateImage(unittest.TestCase):
                                                   art, 'page')
             self.assertEqual(any("state On: planned fill #1F292E at alpha 160" in p
                                  for p in problems), bad, problems)
+
+    def test_a_fill_under_an_opaque_image_is_not_asked_for(self):
+        """Shockwave's Teams tab: lit, the kit's 744x456_microsoft-teams_sel is
+        an opaque light tile over the whole button, so the On state's planned
+        fill, white at 60, cannot show - the image is the state's look, and
+        its own check holds it. An icon over a fill that went missing is
+        still a problem."""
+        import io
+        import tempfile
+        from PIL import Image, ImageDraw
+        d = tempfile.mkdtemp()
+        tile = os.path.join(d, '80x40_teams_sel.png')
+        im = Image.new('RGBA', (80, 40), (207, 207, 207, 255))
+        ImageDraw.Draw(im).rectangle((30, 10, 50, 30), fill=(80, 80, 80, 255))
+        im.save(tile)
+        glyph = os.path.join(d, '80x40_teams_white.png')
+        g = Image.new('RGBA', (80, 40), (0, 0, 0, 0))
+        ImageDraw.Draw(g).rectangle((30, 10, 50, 30), fill=(255, 255, 255, 255))
+        g.save(glyph)
+
+        def png(img):
+            buf = io.BytesIO()
+            img.save(buf, 'PNG')
+            return buf.getvalue()
+        art = {1: png(Image.new('RGBA', (80, 40), (59, 47, 42, 255))), 2: png(Image.open(tile)),
+               3: png(Image.open(glyph))}
+        for on_image, built, bad in ((tile, 2, False), (glyph, 3, True)):
+            op = {'fields': {'nameField': 'Teams'}, 'states': [
+                {'name': 'Off', 'fill': 0xFF3B2F2A},
+                {'name': 'On', 'fill': 0x3CFFFFFF,
+                 'image': {'name': os.path.basename(on_image), 'file': on_image}}]}
+            table = {'Home': {'Name': 'Home', 'Controls': [
+                {'ID': 1, 'Name': 'Teams', 'Width': 80, 'Height': 40, 'States': [
+                    {'Name': 'Off', 'TLPImageID': 1}, {'Name': 'On', 'TLPImageID': built}]}]}}
+            problems, _, _ = self.vb.check_states([{'name': 'Home', 'controls': [op]}], table,
+                                                  art, 'page')
+            self.assertEqual(any('planned fill #FFFFFF at alpha 60' in p for p in problems), bad,
+                             (os.path.basename(on_image), problems))
 
     def test_states_in_translucent_fills_are_not_called_alike(self):
         """Mach's buttons: black at 70% idle, a dark gray at 63% pressed. Their

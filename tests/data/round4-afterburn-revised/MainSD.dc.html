@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boardroom Main</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- The working page, reached from Start. Display state and the selected source show on the panel. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Main SD" does="The room's working page: shares a source to the display and sets display, microphones, lighting and audio." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Settings Heading" style="position: absolute; left: 14px; top: 108px; width: 164px; height: 100px">Settings</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Group" title="Settings" cell="178x80" gap="18" cap="1" style="position: absolute; left: 0px; top: 208px; width: 178px; height: 500px">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Display Power" variant="toggle" states='[{"name":"Off","text":"Display Off"},{"name":"Warming Up","text":"Warming Up","look":"on","fill":"raised"},{"name":"On","text":"Display On"},{"name":"Cooling Down","text":"Cooling Down","look":"off","fill":"pressed"}]' show="On" does="Turns the display on and off; the program steps it through Display Off, Warming Up, Display On and Cooling Down and the caption says which.">Display Off</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Mic Mute" id="201" variant="toggle" states='[{"name":"Live","text":"Mic Live"},{"name":"Muted","text":"Mic Muted"}]' does="Mutes all microphones; Muted while they are muted, and the caption says so.">Mic Live</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Lighting Settings" variant="list" nav="LightingSettings" icon="lights">Lighting</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Audio Settings" variant="list" nav="AudioSettings" icon="audio">Audio</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Video Conference" variant="list" nav="Call" icon="video-conference-1">Video Conference</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.MainArea">
+    <x-import component-from-global-scope="ExtronAfterburn.Group" title="Sources" cell="110x110" gap="49" style="position: absolute; left: 159px; top: 13px; width: 587px; height: 110px">
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Laptop" variant="source" icon="laptop" states="Off, On" show="On" nav="Laptop" does="Routes the table laptop to the display; On while it is on the display.">Laptop</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="ShareLink" variant="source" icon="sharelink-1" states="Off, On" nav="ShareLink" does="Routes the wireless ShareLink share to the display; On while it is on the display.">ShareLink</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="PC" variant="source" icon="pc" states="Off, On" nav="PC" does="Routes the room PC to the display; On while it is on the display.">PC</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Doc Cam" variant="source" icon="doc-cam" states="Off, On" nav="DocCam" does="Routes the document camera to the display; On while it is on the display.">Doc Cam</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Line" name="Divider" style="position: absolute; left: 77px; top: 113px; width: 760px; height: 20px"></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.PopupRegion" name="Controls" group="Sources" style="position: absolute; left: 17px; top: 151px; width: 880px; height: 568px"></x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Rail">
+    <x-import component-from-global-scope="ExtronAfterburn.Slider" name="Volume" id="100" does="Sets the program volume."></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Mute" id="101" variant="icon" icon="speaker-volume_3" states="Off, On" does="Mutes the program audio; On while muted."></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Help" variant="icon" icon="help" nav="Help"></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Power" variant="icon" icon="power" nav="PowerDown"></x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

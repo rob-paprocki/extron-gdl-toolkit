@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Call" reached-by="program" panels="TLP1035T TLP725T TLP525T TLP320M" theme="office" does="The video call page for Microsoft Teams on the room PC; the program shows it by itself when a call comes in.">
+  <x-import component-from-global-scope="ExtronTurbulence.Header">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="201" name="Laptop" icon="input_laptop" states="Off, On" nav="Laptop" does="Routes the table laptop to the display; On while it is the source on the display.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="202" name="ShareLink" icon="blank" states="Off, On" nav="ShareLink" does="Routes the wireless ShareLink share to the display; On while it is the source on the display.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="203" name="PC" icon="input_pc" states="Off, On" nav="PC" does="Routes the room PC to the display; On while it is the source on the display.">PC</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="204" name="Doc Cam" icon="input_doc-cam" states="Off, On" nav="DocCam" does="Routes the document camera to the display; On while it is the source on the display.">Doc Cam</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Label" slot="end" id="110" name="Display Status" align="center" does="Shows the display's state: Display Off, Display Warming Up, Display On or Display Cooling Down." style="width: 300px; height: 60px">Display Off</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.LeftRail">
+    <x-import component-from-global-scope="ExtronTurbulence.Section" title="VTC">
+      <x-import component-from-global-scope="ExtronTurbulence.Button" variant="call" icon="dialer" name="Initiate Call" states="Idle, In Call" does="Joins the Microsoft Teams meeting on the room PC; In Call while connected.">Initiate Call</x-import>
+      <x-import component-from-global-scope="ExtronTurbulence.Button" variant="call" icon="end-call" name="End Call" states="Ready, Ending" does="Ends the Microsoft Teams call.">End Call</x-import>
+      <x-import component-from-global-scope="ExtronTurbulence.Button" variant="call" icon="privacy" name="Privacy" states='[{"name":"Off"},{"name":"On","color":"alert"}]' does="Turns camera privacy on and off; On while the camera is covered.">Privacy</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Section">
+      <x-import component-from-global-scope="ExtronTurbulence.Button" name="Camera Select" nav="CameraSelect" does="Opens the camera presets.">Camera Select</x-import>
+      <x-import component-from-global-scope="ExtronTurbulence.Button" id="101" name="Mic Mute" states='[{"name":"Live","look":"off"},{"name":"Muted","look":"on","text":"Mics Muted"}]' does="Mutes and unmutes the room microphones; Muted, with its caption changed to Mics Muted, while they are muted.">Mic Mute</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.RightRail"></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="mode" variant="dock" name="Presentation" nav="MainSD" does="Shows the working page.">Presentation</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

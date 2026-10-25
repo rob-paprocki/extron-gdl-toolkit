@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audio Settings</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Audio Settings" kind="modal" does="Mutes the microphones and the program audio." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Panel" name="Card" style="position: absolute; left: 183px; top: 24px; width: 916px; height: 752px"></x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Audio Settings Title" type="subheading" align="center" style="position: absolute; left: 330px; top: 36px; width: 620px; height: 50px">Audio Settings</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Close Audio Settings" nav="MainSD" style="position: absolute; left: 1026px; top: 25px; width: 64px; height: 64px">Close</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Mic Label" type="body-strong" color="text-secondary" align="center" style="position: absolute; left: 490px; top: 140px; width: 300px; height: 50px">MIC</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Mic Mute" id="201" variant="toggle" states='[{"name":"Live","text":"Mic Live"},{"name":"Muted","text":"Mic Muted"}]' does="Mutes all microphones; Muted while they are muted, and the caption says so." style="position: absolute; left: 551px; top: 255px; width: 178px; height: 53px">Mic Live</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Program Label" type="body-strong" color="text-secondary" align="center" style="position: absolute; left: 490px; top: 380px; width: 300px; height: 50px">PROGRAM</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Mute" id="101" variant="icon" icon="speaker-volume_3" states="Off, On" does="Mutes the program audio; On while muted." style="position: absolute; left: 608px; top: 480px; width: 64px; height: 64px"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

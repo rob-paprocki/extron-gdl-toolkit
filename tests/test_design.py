@@ -17,7 +17,7 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from gdl import design, designsys, seeds  # noqa: E402
+from gdl import design, designsys, idmap, seeds  # noqa: E402
 from gdl.spec import Panel, resolve_image  # noqa: E402
 
 CANVAS = os.path.join(HERE, 'data', 'design-huddle')
@@ -675,13 +675,195 @@ class TestPanels(unittest.TestCase):
         c = specs['TLP725T']['popups'][0]['controls'][0]
         self.assertEqual(c['nav'], 'Home Sources 2')
 
-    def test_a_derived_name_colliding_with_the_canvas_is_a_problem(self):
-        pg = {'kind': 'page', 'name': 'Help', 'host': 'Home', 'size': [1024, 600], 'background': 'page'}
-        rendered = {'TLP725T': {'Home.dc.html': self.home('TLP725T', parts=[part(pg, [0, 0, 1024, 600])]),
-                                'Help.dc.html': dict(out(panel_page('Help', 'TLP725T')), parts=[], problems=[])}}
+    def test_two_boards_of_one_name_are_a_problem(self):
+        rendered = {'TLP725T': {'Home.dc.html': self.home('TLP725T'),
+                                'Help.dc.html': dict(out(panel_page('Home', 'TLP725T')), parts=[], problems=[])}}
         specs, problems, _ = Fake(['Home.dc.html', 'Help.dc.html']).translate_panels(rendered)
         self.assertIsNone(specs)
-        self.assertTrue(any("'Help'" in p and 'twice' in p for p in problems['TLP725T']), problems)
+        self.assertTrue(any("'Home'" in p and 'also' in p for p in problems['TLP725T']), problems)
+
+    # -- what two region pages derive, and a designer's own window of its name --
+    # A hub derives Select Source, its options, the display group's popup and
+    # the Volume Level strip from each region page, and the 320 its Volume
+    # modal: two working pages (Main SD and a call page) derived each twice.
+    LEVEL = dict(kind='level', name='Volume', fill='raised', track=15, orientation='up', seed_id=8024)
+    STRIP = {'kind': 'popup', 'name': 'Volume Level', 'group': 'Volume Level', 'size': [66, 300]}
+
+    def board(self, name, model, *controls, parts=(), start=False, **kw):
+        pg = json.loads(panel_page(name, model, start=start))
+        o = out(json.dumps(dict(pg, **kw)), *controls)
+        o['parts'], o['problems'] = list(parts), []
+        return o
+
+    @staticmethod
+    def in_part(i, rect, **g):
+        return dict(ctl(rect, **g), part=i)
+
+    # The Center's popup region, on every page of both panels.
+    CENTER = ctl([0, 0, 700, 500], kind='popup_ref', name='Controls', group='Sources')
+
+    def two_pages(self, parts, home=(), call=(), home_big=(), call_big=(), boards=None):
+        """Home and Call on the 1035 as drawn (`home_big`, `call_big`: each
+        page's own controls there) and on the 725 with what its layout derived
+        - `parts` the same on each page, `home` and `call` what is drawn
+        there - with any other `boards` on each panel."""
+        big = [self.CENTER] if boards else []
+        small = [self.CENTER] if boards or any(json.loads(p['gdl']).get('group') == 'Sources' for p in parts) else []
+        rendered = {'TLP1035T': {'Home.dc.html': self.board('Home', 'TLP1035T', *big, *home_big, start=True),
+                                 'Call.dc.html': self.board('Call', 'TLP1035T', *big, *call_big)},
+                    'TLP725T': {'Home.dc.html': self.board('Home', 'TLP725T', *small, *home, parts=parts, start=True),
+                                'Call.dc.html': self.board('Call', 'TLP725T', *small, *call, parts=parts)}}
+        for m in rendered:
+            rendered[m].update({f"{n.replace(' ', '')}.dc.html": self.board(n, m, *(c(m) if callable(c) else c),
+                                                                             kind='popup', group='Sources',
+                                                                             size=[700, 500], **kw)
+                                for n, c, kw in boards or ()})
+        return Fake(list(rendered['TLP1035T'])).translate_panels(rendered)
+
+    @needs_panel_files
+    def test_a_window_two_region_pages_derive_alike_is_one(self):
+        """The Volume Level strip, or the 320's Volume modal, is one window the
+        program shows from any page: derived alike by two region pages - the
+        same controls, the same IDs - it is one popup, not two of one name."""
+        vol = ctl([1100, 200, 66, 300], **dict(self.LEVEL, kind='slider'))
+        # A hub's level carries no seed ID: it is the 1035's slider's by name.
+        lv = self.in_part(0, [10, 10, 46, 280], **{k: v for k, v in self.LEVEL.items() if k != 'seed_id'})
+        ref = ctl([900, 100, 66, 300], kind='popup_ref', name='Volume Region', group='Volume Level', derived=True)
+        specs, problems, _ = self.two_pages([part(self.STRIP, [900, 100, 66, 300])], home=[ref, lv],
+                                            call=[ref, lv], home_big=[vol], call_big=[vol])
+        self.assertEqual(problems, {'TLP1035T': [], 'TLP725T': []})
+        self.assertEqual([p['name'] for p in specs['TLP725T']['popups']], ['Volume Level'])
+        self.assertEqual(specs['TLP725T']['popups'][0]['controls'][0]['id'], 8024)
+
+    @needs_panel_files
+    def test_what_the_program_knows_a_control_by_is_read_off_the_drawn_panel_alone(self):
+        """Whether two derived windows are one is read off the panel the canvas
+        is drawn on. Where it has no spec - the 1035's boards hold no Page - no
+        later panel stands in for it: what the 525 makes of its two Volume
+        strips is what it makes of them listed without the 725, whose slider's
+        seed ID had made them one."""
+        seed = 'seeds/Afterburn 525.gdl'
+        art = ('4000x2400_bg1-default_main.png',
+               'Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg1-default_main.png')
+        if not (seeds.usable(seed) and resolve_image(art[1])):
+            self.skipTest("needs the Afterburn 525 seed and Extron's Afterburn art")
+        three = PANELS + ['TLP525T']
+        lv = self.in_part(0, [10, 10, 46, 280], **{k: v for k, v in self.LEVEL.items() if k != 'seed_id'})
+        ref = ctl([700, 100, 66, 300], kind='popup_ref', name='Volume Region', group='Volume Level', derived=True)
+        vol = ctl([900, 150, 66, 300], **dict(self.LEVEL, kind='slider'))
+
+        def board(name, model, *controls, parts=()):
+            if model == 'TLP525T':
+                pg = page(name, panel=model, panels=three, tier='A', derived=True, size=[800, 480], seed=seed,
+                          background_image=art[0], background_file=art[1], theme='default', start=name == 'Home')
+            else:
+                pg = panel_page(name, model, panels=three, start=name == 'Home')
+            o = out(pg, *controls)
+            o['parts'], o['problems'] = list(parts), []
+            return o
+        none = {'pages': 0, 'page': None, 'controls': [], 'parts': [], 'stray': [], 'errors': [], 'problems': []}
+        strip = [part(self.STRIP, [700, 100, 66, 300])]
+        rendered = {'TLP1035T': {'Home.dc.html': none, 'Call.dc.html': none},
+                    'TLP725T': {n + '.dc.html': board(n, 'TLP725T', vol) for n in ('Home', 'Call')},
+                    'TLP525T': {n + '.dc.html': board(n, 'TLP525T', ref, lv, parts=strip) for n in ('Home', 'Call')}}
+        boards = list(rendered['TLP1035T'])
+        specs, problems, notes = Fake(boards).translate_panels(rendered)
+        self.assertIsNone(specs)
+        self.assertTrue(problems['TLP1035T'], problems)
+        del rendered['TLP725T']
+        _, alone, alone_notes = Fake(boards).translate_panels(rendered)
+        self.assertEqual((problems['TLP525T'], notes['TLP525T']), (alone['TLP525T'], alone_notes['TLP525T']))
+
+    @needs_panel_files
+    def test_a_window_two_region_pages_derive_unalike_is_named_for_its_page(self):
+        """Each page's options hold its own launchers: the later page's takes
+        its page's name in front, and its opener follows it."""
+        opts = {'kind': 'popup', 'name': 'More Options', 'group': 'Options', 'size': [700, 500]}
+        light = dict(BTN16, name='Lighting', text='Lighting', id=301)
+        cam = dict(BTN16, name='Camera', text='Camera', id=302)
+        opener = ctl([800, 300, 120, 80], **dict(BTN16, name='Settings', text='Settings', derived=True,
+                                                   nav='More Options'))
+        ref = ctl([0, 0, 700, 500], kind='popup_ref', name='Options Region', group='Options', derived=True)
+        specs, problems, notes = self.two_pages(
+            [part(opts, [0, 0, 700, 500])],
+            home=[ref, opener, self.in_part(0, [40, 100, 200, 64], **light)],
+            call=[ref, opener, self.in_part(0, [40, 100, 200, 64], **cam)],
+            home_big=[ctl([40, 520, 200, 64], **light)], call_big=[ctl([40, 520, 200, 64], **cam)])
+        self.assertEqual(problems, {'TLP1035T': [], 'TLP725T': []})
+        spec = specs['TLP725T']
+        self.assertEqual(sorted(p['name'] for p in spec['popups']), ['Call More Options', 'More Options'])
+        navs = {pg['name']: next(c['nav'] for c in pg['controls'] if c['name'] == 'Settings') for pg in spec['pages']}
+        self.assertEqual(navs, {'Home': 'More Options', 'Call': 'Call More Options'})
+        self.assertTrue(any("'Call More Options'" in n for n in notes['TLP725T']), notes)
+
+    @needs_panel_files
+    def test_a_designers_window_stands_in_for_the_one_derived_where_it_holds_its_controls(self):
+        """A designer who draws Display Control themselves - the window the
+        hub's display opener shows - is not refused: where their board holds
+        the controls the derived one would (the same names and IDs), it is
+        that window, and the Section's heading, which its title says, is left
+        off the page by name. Where it holds others, the derived one takes its
+        page's name."""
+        disp = {'kind': 'popup', 'name': 'Display Control', 'group': 'Sources', 'size': [700, 500]}
+        on = dict(BTN16, name='Display On', text='On', id=112)
+        dial = dict(BTN16, name='Dial', text='Dial', id=114)
+        heading = dict(kind='label', name='Display Heading', text='Display', color='text', size=16)
+        opener = ctl([800, 300, 120, 80], **dict(BTN16, name='Display Opener', text='Display', derived=True,
+                                                   nav='Display Control'))
+        close = dict(BTN16, name='Display Control Close', text='Close', derived=True, nav='Home')
+        specs, problems, notes = self.two_pages(
+            [part(disp, [0, 0, 700, 500])],
+            home=[opener, self.in_part(0, [40, 40, 300, 30], **heading), self.in_part(0, [40, 100, 200, 64], **on),
+                  self.in_part(0, [600, 10, 80, 60], **close)],
+            call=[opener, self.in_part(0, [40, 100, 200, 64], **dial),
+                  self.in_part(0, [600, 10, 80, 60], **dict(close, nav='Call'))],
+            home_big=[ctl([40, 520, 300, 30], **heading), ctl([40, 580, 200, 64], **on)],
+            call_big=[ctl([40, 580, 200, 64], **dial)],
+            boards=[('Display Control', [ctl([400, 300, 200, 64], **on)], {})])
+        self.assertEqual(problems, {'TLP1035T': [], 'TLP725T': []})
+        spec = specs['TLP725T']
+        by = {p['name']: p for p in spec['popups']}
+        self.assertEqual(sorted(by), ['Call Display Control', 'Display Control'])
+        self.assertEqual([c['name'] for c in by['Display Control']['controls']], ['Display On'])
+        self.assertEqual(by['Display Control']['controls'][0]['id'], 112)
+        home = next(p for p in spec['pages'] if p['name'] == 'Home')
+        self.assertIn('Display Heading', home['left'])
+        navs = {pg['name']: next(c['nav'] for c in pg['controls'] if c['name'] == 'Display Opener')
+                for pg in spec['pages']}
+        self.assertEqual(navs, {'Home': 'Display Control', 'Call': 'Call Display Control'})
+        self.assertTrue(any('stands in' in n for n in notes['TLP725T']), notes)
+
+    @needs_panel_files
+    def test_a_hub_popups_close_goes_back_to_the_one_grid_that_shows_it(self):
+        """With a Select a Source of each page's own, a source both grids show
+        closes where the program says, as a window opened from two places
+        does; one only the call page's grid shows closes back to that one."""
+        grid = {'kind': 'popup', 'name': 'Select Source', 'group': 'Sources', 'size': [700, 500], 'main': True}
+        laptop = dict(BTN16, name='Laptop', text='Laptop', id=101, nav='Laptop')
+        teams = dict(BTN16, name='Teams', text='Teams', id=105, nav='Teams')
+
+        def source(name):
+            def drawn(m):
+                key = ctl([40, 140, 200, 64], **dict(BTN16, name=name + ' Key', text='Key'))
+                if m == 'TLP725T':
+                    return [key, ctl([600, 10, 80, 60], **dict(BTN16, name=name + ' Close', text='Close',
+                                                              derived=True, nav='Select Source'))]
+                return [key]
+            return drawn
+        specs, problems, notes = self.two_pages(
+            [part(grid, [0, 0, 700, 500])],
+            home=[self.in_part(0, [40, 100, 200, 64], **laptop)],
+            call=[self.in_part(0, [40, 100, 200, 64], **laptop), self.in_part(0, [300, 100, 200, 64], **teams)],
+            home_big=[ctl([40, 520, 200, 64], **laptop)],
+            call_big=[ctl([40, 520, 200, 64], **laptop), ctl([300, 520, 200, 64], **teams)],
+            boards=[(n, source(n), {'hub': 'source'}) for n in ('Laptop', 'Teams')])
+        self.assertEqual(problems, {'TLP1035T': [], 'TLP725T': []})
+        by = {p['name']: p for p in specs['TLP725T']['popups']}
+        self.assertEqual(sorted(by), ['Call Select Source', 'Laptop', 'Select Source', 'Teams'])
+        closes = {n: next(c for c in by[n]['controls'] if c['name'] == n + ' Close') for n in ('Laptop', 'Teams')}
+        self.assertNotIn('nav', closes['Laptop'])
+        self.assertEqual(closes['Teams']['nav'], 'Call Select Source')
+        self.assertTrue(any("'Laptop'" in n and 'program' in n for n in notes['TLP725T']), notes)
 
     def _named(self, name):
         rendered = {'TLP1035T': {
@@ -2661,7 +2843,9 @@ class TestTheReadmesRoomTranslates(unittest.TestCase):
     artboard it leads to - translates clean on every panel its Pages list:
     copied as written, it builds. Drawn snug, the presets and keys of the
     first version overlapped on the 725 and the 525, and the 320 refused
-    Shockwave's Start clock (PR8 review)."""
+    Shockwave's Start clock (PR8 review). And its ID map checks clean across
+    every panel, the gate a build stops at before GUI Designer: Afterburn's
+    sources, shown from the 320's Sources pages, refused there."""
 
     def test_each_room_translates_on_every_panel_it_lists(self):
         for theme in designsys.TEMPLATES:
@@ -2675,6 +2859,120 @@ class TestTheReadmesRoomTranslates(unittest.TestCase):
                 listed = re.search(r'panels="([^"]+)"', open(os.path.join(d, 'Main.dc.html'),
                                                               encoding='utf-8').read()).group(1).split()
                 self.assertEqual(sorted(specs), sorted(listed))
+                out = os.path.join(d, 'specs')
+                design.write_panels(specs, out)
+                self.assertEqual(idmap.check_panels(idmap.load_panels(out)), [])
+
+
+# Round four (docs/superpowers/specs/2026-10-22-region-frame-design.md, item
+# 10): what each fresh designer's room, as they left it, is still refused
+# for, panel by panel, once the toolkit's share was fixed
+# (tests/data/round4-left.json) - each problem the designer's to fix, with
+# its class and why: `readme`, a gap round four found in the README, which
+# the README now tells them of; `limit`, one the README now tells them of too,
+# behind which a toolkit limit stays open - named, third, by its heading in
+# docs/ROADMAP.md; or `designer`, what no README could have prevented.
+# Anything else a translation names is a regression; anything it no longer
+# names is a fix to take out of the file, and a limit the ROADMAP no longer
+# lists is one to reclass.
+with open(os.path.join(HERE, 'data', 'round4-left.json'), encoding='utf-8') as _fh:
+    ROUND4_LEFT = json.load(_fh)
+
+
+class TestRoundFourLeft(unittest.TestCase):
+    def test_each_problem_left_has_its_class_and_why(self):
+        with open(os.path.join(os.path.dirname(HERE), 'docs', 'ROADMAP.md'), encoding='utf-8') as fh:
+            roadmap = fh.read()
+        for theme, left in ROUND4_LEFT.items():
+            for q, (c, why, *limit) in left.items():
+                self.assertIn(c, ('readme', 'limit', 'designer'), (theme, q))
+                self.assertTrue(why, (theme, q))
+                self.assertEqual(len(limit), c == 'limit', (theme, q))
+                if limit:
+                    self.assertIn(f'- **{limit[0]}**', roadmap, (theme, q))
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestRoundFourRooms(unittest.TestCase):
+    """The round-four rooms (tests/data/round4-<theme>), drawn for a TLP1035T,
+    725T, 525T and 320M by four fresh designers from one theme's README each,
+    translated unchanged for every panel they list: what is refused is only
+    what ROUND4_LEFT classes as theirs to fix. Their first translation
+    refused Mach 19 times, Shockwave 27, Turbulence 35 and Afterburn 149."""
+
+    def translate(self, theme, folder):
+        """({panel: spec}, {panel: problems}) of tests/data/`folder`, drawn in `theme`."""
+        p = designsys.load(theme)
+        panels = ('TLP1035T', 'TLP725T', 'TLP525T', 'TLP320M')
+        if not all(seeds.usable(f'seeds/{p["template"]} {m[3:-1]}.gdl') for m in panels):
+            self.skipTest(f'the {theme} seeds are not here (git lfs pull)')
+        if not designsys.kit_root(p):
+            self.skipTest(f"Extron's {theme} kit is not here")
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        shutil.copytree(os.path.join(HERE, 'data', folder), d, dirs_exist_ok=True)
+        _stage(d, theme)
+        specs, problems, _ = design.Canvas(d).translate_panels()
+        return specs, problems
+
+    def left(self, theme):
+        _, problems = self.translate(theme, f'round4-{theme}')
+        return sorted(q for qs in problems.values() for q in qs)
+
+    def check(self, theme):
+        got = self.left(theme)
+        self.assertEqual(sorted(ROUND4_LEFT[theme]), got)
+
+    def test_mach(self):
+        self.check('mach')
+
+    def test_shockwave(self):
+        self.check('shockwave')
+
+    def test_turbulence(self):
+        self.check('turbulence')
+
+    def test_afterburn(self):
+        self.check('afterburn')
+
+    _revised = None
+
+    def revised(self):
+        """translate() of Afterburn's revision, once for the tests that read it."""
+        if TestRoundFourRooms._revised is None:
+            TestRoundFourRooms._revised = self.translate('afterburn', 'round4-afterburn-revised')
+        return TestRoundFourRooms._revised
+
+    def test_afterburns_revision_translates_clean(self):
+        """Afterburn's designer revised the room three times from the
+        translator's words and the README (tests/data/round4-afterburn-revised,
+        their notes' Revision sections): the 320 still refused four, a heading
+        each on Start and Call landing on the main area's control and the two
+        overlaps that made - the toolkit's, which laid the page's own controls
+        and the MainArea's out apart, each over the whole screen."""
+        specs, problems = self.revised()
+        self.assertEqual({m: q for m, q in problems.items() if q}, {})
+        listed = re.search(r'panels="([^"]+)"', open(os.path.join(HERE, 'data', 'round4-afterburn-revised',
+                                                                   'Main.dc.html'), encoding='utf-8').read())
+        self.assertEqual(sorted(specs), sorted(listed.group(1).split()))
+
+    def test_afterburns_revision_maps_clean_on_every_panel(self):
+        """The ID map's check across every panel, as `python -m gdl.idmap
+        write-panels` runs it over the translated specs - where the revision's
+        Windows build stopped, before GUI Designer. On the 320 the sources'
+        Group is pages of its own, and its buttons showed the Sources popups
+        from pages with no reference to that group - only Main SD's popup
+        region has one - so none would have appeared; nor could the 320's
+        seed, which has no standard popup, have cloned them. There each
+        source is a page of its own, as the 320's template draws it."""
+        specs, _ = self.revised()
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        design.write_panels(specs, d)
+        maps = idmap.load_panels(d)
+        self.assertEqual(list(maps), list(specs))
+        self.assertEqual(idmap.check_panels(maps), [])
 
 
 def _stage(d, theme):
@@ -3185,16 +3483,50 @@ class TestShockwavesRegionPage(_RegionProbe, unittest.TestCase):
 
     def test_audio_control_keeps_its_gap(self):
         """The right rail's Audio Control, where the 1035's template stands it
-        flush under Mute, opens to the gap. The 725's template stands its
-        Audio Control in the left rail, and says so."""
+        flush under Mute, opens to the gap."""
         edit = tuple(e.replace('{ns}', 'ExtronShockwave') for e in AUDIO_RAIL)
         _, ctl, out = self.probe('Main.dc.html', edit=edit)
         self.assertEqual(out['problems'], [])
         self.assertIn('Audio Control', ctl)
         self.assertEqual(_gaps(ctl, 'TLP1035T'), [])
-        _, ctl, out = self.probe('Main.dc.html', 'TLP725T', edit=edit)
-        self.assertEqual(out['problems'], ["Audio Control takes the RightRail's audio place, which the TLP725T's "
-                                           'template does not draw - list the panels whose template draws one'])
+
+    def test_the_725_keeps_audio_control_where_its_template_does(self):
+        """The 725's template draws no audio place in its right rail: it keeps
+        Audio Control in its left rail's second group (the frame's `audio`
+        role there). The RightRail's audio control goes there, at that place,
+        in the launchers' look - one control, by its name, on both panels."""
+        rail = tuple(e.replace('{ns}', 'ExtronShockwave') for e in AUDIO_RAIL)
+        drop = ('<x-import component-from-global-scope="ExtronShockwave.Button" name="Audio Settings" nav="Audio" '
+                'does="Opens audio settings.">Audio</x-import>', '')
+        _, ctl, out = self.probe('Main.dc.html', 'TLP725T', edit=(rail, drop))
+        self.assertEqual(out['problems'], [])
+        G = self.frame('TLP725T')['left']['groups'][1]['buttons']
+        want = {b['role']: b['rect'] for b in G}
+        self.assertEqual(ctl['Audio Control'][1], want['audio'])
+        self.assertEqual(ctl['Lighting Settings'][1], want['lighting'])
+        self.assertEqual(ctl['Audio Control'][0].get('joined'), ctl['Lighting Settings'][0].get('joined'))
+
+    def test_where_the_725s_left_rail_cannot_hold_it_says_what_to_do(self):
+        """With both launchers kept the second group holds three, more than the
+        725's rail has room for; with no second Section there is nowhere to
+        put it. Each is named with what to do."""
+        rail = tuple(e.replace('{ns}', 'ExtronShockwave') for e in AUDIO_RAIL)
+        _, ctl, out = self.probe('Main.dc.html', 'TLP725T', edit=rail)
+        self.assertEqual(len(out['problems']), 1, out['problems'])
+        # The Section stands as drawn, its launchers at the template's places.
+        G = self.frame('TLP725T')['left']['groups'][1]['buttons']
+        self.assertEqual([ctl[n][1][1] for n in ('Lighting Settings', 'Audio Settings')], [b['rect'][1] for b in G])
+        self.assertNotIn('Audio Control', ctl)
+        self.assertIn("Audio Control takes the RightRail's audio place", out['problems'][0])
+        self.assertIn("keeps it in its LeftRail's second Section", out['problems'][0])
+        self.assertIn('holds 3', out['problems'][0])
+        section = ('<x-import component-from-global-scope="ExtronShockwave.Section" title="Settings">\n'
+                   '<x-import component-from-global-scope="ExtronShockwave.Button" name="Lighting Settings" nav="Lighting" '
+                   'does="Opens lighting settings.">Lighting</x-import>\n'
+                   '<x-import component-from-global-scope="ExtronShockwave.Button" name="Audio Settings" nav="Audio" '
+                   'does="Opens audio settings.">Audio</x-import>\n</x-import>\n')
+        _, _, out = self.probe('Main.dc.html', 'TLP725T', edit=(rail, (section, '')))
+        self.assertTrue(any("draw a second Section" in p for p in out['problems']), out['problems'])
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -3287,6 +3619,24 @@ class TestTurbulencesRegionPage(_RegionProbe, unittest.TestCase):
         _, ctl, _ = self.probe('Main.dc.html', 'TLP720T')
         self.assertEqual(ctl['Room Mode'][1], bottom['mode']['rect'])
         self.assertEqual(ctl['Date Time'][1], bottom['clock']['rect'])
+
+    def test_a_docks_state_caption_goes_on_two_lines_too(self):
+        """A state's own caption is the dock's caption in that state, two
+        words on two lines: 'Mics Muted' measured on one at the 725's 16 pt
+        floor grew the rail's column from 112 to 128 px, into Help beside it
+        (the round-four room's Mic Mute)."""
+        mute = ('>Audio</x-import>', '>Audio</x-import><x-import component-from-global-scope="ExtronTurbulence.Button" '
+                'name="Mic Mute" states=\'[{"name":"Live","look":"off"},{"name":"Muted","look":"on","text":"Mics Muted"}]\'>'
+                'Mic Mute</x-import>')
+        drop = ('<x-import component-from-global-scope="ExtronTurbulence.Button" name="Audio Settings" nav="Audio" '
+                'does="Opens audio settings.">Audio</x-import>', '')
+        _, ctl, out = self.probe('Main.dc.html', 'TLP725T', edit=(mute, drop))
+        self.assertEqual(out['problems'], [])
+        g, r, over = ctl['Mic Mute']
+        self.assertEqual([s.get('text') for s in g['states']], [None, 'Mics\r\nMuted'])
+        self.assertFalse(over)
+        left = self.frame('TLP725T')['left']['groups'][1]['buttons']
+        self.assertEqual(r[2], left[1]['rect'][2])
 
     def test_a_tab_row_stays_one_width(self):
         """Streaming's caption needs more than the 720's 80 px tab: the whole
@@ -3558,6 +3908,33 @@ class _CenterProbe(_Probe):
                                                      ('height: 800px"></x-import>', f'height: 800px">{desk}</x-import>')))
         self.assertEqual(ctl['Help Title'][0]['text'], 'Assistance')
         self.assertNotIn('Help Message', ctl)
+
+    def test_what_stands_clear_of_a_windows_title_stays_clear_of_it(self):
+        """What is put in a window is laid out from the body under its title
+        on the panel drawn into the body under its title on each panel: the
+        725's and the 525's titles stand lower in their windows than the
+        1035's, and a Label 7 px under Shockwave 1035's HELP came out under
+        the 725's title, and into its words on the 525 (round four)."""
+        rec = self.frame('TLP1035T')['windows']['help']
+        t = rec['title']
+        ns = self.profile()['namespace']
+        lab = (f'<x-import component-from-global-scope="{ns}.Label" name="Steps" align="center" style="position: '
+               f'absolute; left: {rec["rect"][0] + 40}px; top: {t[1] + t[3] + 7}px; width: {rec["rect"][2] - 80}px; '
+               'height: 50px">Choose a source.</x-import>')
+        for model in ('TLP1035T', 'TLP725T', 'TLP525T'):
+            _, ctl, out = self.probe('Help.dc.html', model,
+                                     edit=('height: 800px"></x-import>', f'height: 800px">{lab}</x-import>'))
+            self.assertEqual(out['warnings'], [], model)
+            title, steps = ctl['Help Title'][1], ctl['Steps'][1]
+            self.assertGreaterEqual(steps[1], title[1] + title[3], (model, title, steps))
+        if self.THEME == 'shockwave':
+            # Mapped body to body, Shockwave 725's windows set what is in them
+            # a pixel lower than mapped window to window: Lights Preset 1, at
+            # 360 on the 1035, was 268 on the 725 and is 269; Mic Heading 219
+            # and 220.
+            self.assertEqual(self.probe('Lighting.dc.html', 'TLP725T')[1]['Lights Preset 1'][1],
+                             [305, 269, 128, 64])
+            self.assertEqual(self.probe('Audio.dc.html', 'TLP725T')[1]['Mic Heading'][1], [470, 220, 84, 32])
 
     def test_a_window_no_record_names_is_drawn_alike_on_every_panel(self):
         """A settings window whose title names none of the template's windows
@@ -4723,6 +5100,167 @@ class TestARailsKitButton(_Probe, unittest.TestCase):
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
                      'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburnsRowsOnThe320(_Probe, unittest.TestCase):
+    """The round-four Afterburn room (tests/data/round4-afterburn) on the 320,
+    whose page reflows into rows."""
+
+    CANVAS = os.path.join(HERE, 'data', 'round4-afterburn')
+
+    def test_a_popup_region_in_a_row_is_its_popups_size(self):
+        """A popup inherits its reference's size (Standards p.70): the region
+        a row holds is rounded as the popup is scaled, not up - the 880x525
+        region came out 223x133 over its 222x133 popups. Held on the 300,
+        whose seed has standard popups - the 320 makes each source a page of
+        its own and leaves the region off - with a region and popup 690 wide,
+        which a row there holds across (241.04 and 183.4 px at its scale)."""
+        narrow = 'width: 690px; height: 525px'
+        _, ctl, _ = self.probe('MainSD.dc.html', 'TLP300M', ('width: 880px; height: 525px', narrow))
+        page, _, _ = self.probe('Laptop.dc.html', 'TLP300M', ('kind="popup"', 'kind="popup" width="690" height="525"'))
+        self.assertEqual(page['kind'], 'popup')
+        self.assertEqual(page['size'], [241, 183])
+        self.assertEqual(ctl['Controls'][1][2:], page['size'])
+
+    def test_a_pages_own_control_grown_at_its_edge_stays_on_the_page(self):
+        """Grown about its centre, a control drawn flush with the screen's edge
+        - Afterburn's left rail at x 0 - crossed it, and Build moves a control
+        that crosses its page's edge: it grows inward instead, on the panel
+        drawn (the Start page's Lights) as on the 725."""
+        for board, model in (('Main.dc.html', 'TLP1035T'), ('MainSD.dc.html', 'TLP725T')):
+            page, ctl, _ = self.probe(board, model)
+            W, H = designsys.models(designsys.load('afterburn'))[model]['size']
+            for n, (g, r, _) in ctl.items():
+                self.assertTrue(_inside(r, [0, 0, W, H], 0), (board, model, n, r))
+
+    def test_a_main_areas_group_grown_at_its_edge_stays_in_it(self):
+        """In a MainArea too, on every theme: the sources Group's region, grown
+        to the 525's tiles about its centre, stood 17 px above the screen."""
+        _, ctl, _ = self.probe('MainSD.dc.html', 'TLP525T')
+        T = designsys.models(designsys.load('afterburn'))['TLP525T']
+        self.assertTrue(_inside(ctl['Sources Region'][1], [0, 0] + T['size'], 0), ctl['Sources Region'][1])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburnsRevisedRowsOnThe320(_Probe, unittest.TestCase):
+    """Round four's revised Afterburn room (tests/data/round4-afterburn-revised)
+    on the 320, where a page's own controls - the left rail's heading and its
+    Group - and its MainArea's are laid out in one set of rows. They were two,
+    each centred on the screen, so the heading landed on a main-area control
+    whatever the designer moved: Start's Lights Heading on Start, Call's VTC
+    Heading on Camera Presets - and Main SD's Settings heading and button on
+    its popup region, which no check reads as a touch target."""
+
+    CANVAS = os.path.join(HERE, 'data', 'round4-afterburn-revised')
+    # Each working page and the title of its left rail's Group, under a
+    # heading Label named for it.
+    PAGES = (('Main.dc.html', 'Lights'), ('Call.dc.html', 'VTC'), ('MainSD.dc.html', 'Settings'))
+    RAIL = ('Volume Down', 'Volume', 'Volume Up', 'Mute', 'Help', 'Power')
+
+    def on_page(self, board):
+        """{name: rect} of what the 320 draws on the page itself, not on a
+        Group's pages of its own."""
+        _, _, out = self.probe(board, 'TLP320M')
+        return {json.loads(c['gdl']).get('name'): [round(v) for v in c['rect']]
+                for c in out['controls'] if c.get('part') is None}
+
+    def test_nothing_on_a_page_meets(self):
+        for board, _ in self.PAGES:
+            got = sorted(self.on_page(board).items())
+            for i, (a, ra) in enumerate(got):
+                for b, rb in got[i + 1:]:
+                    self.assertFalse(_overlaps(ra, rb), (board, a, ra, b, rb))
+
+    def test_the_rows_stand_in_main_over_the_rail(self):
+        """And the left rail's heading and Group are rows of their own among
+        the main area's, not a second set laid over the same depth: apart,
+        each centred, the two shared their rows whatever the designer moved."""
+        T = designsys.models(designsys.load('afterburn'))['TLP320M']
+        for board, title in self.PAGES:
+            got = self.on_page(board)
+            for n, r in got.items():
+                self.assertTrue(_inside(r, T['rail'] if n in self.RAIL else T['main'], 0), (board, n, r))
+            own = {n: r for n, r in got.items() if n in (title, title + ' Heading')}
+            area = {n: r for n, r in got.items() if n not in own and n not in self.RAIL}
+            self.assertEqual(len(own), 2, (board, own))
+            self.assertTrue(area, board)
+            for a, ra in own.items():
+                for b, rb in area.items():
+                    self.assertFalse(ra[1] < rb[1] + rb[3] and rb[1] < ra[1] + ra[3], (board, a, ra, b, rb))
+
+    def test_a_heading_stands_beside_the_group_it_heads(self):
+        """On the 320 a Group is the one button that opens its pages, captioned
+        with its title: the heading drawn over it on the 1035 stays with it, at
+        its left in its row, with nothing between them."""
+        gap = designsys.models(designsys.load('afterburn'))['TLP320M']['gap']
+        for board, title in self.PAGES:
+            got = self.on_page(board)
+            head, grp = got[title + ' Heading'], got[title]
+            self.assertTrue(grp[1] <= head[1] and head[1] + head[3] <= grp[1] + grp[3], (board, head, grp))
+            self.assertEqual(grp[0] - (head[0] + head[2]), gap, (board, head, grp))
+
+    def test_a_source_is_a_page_of_its_own(self):
+        """The 320's seed has no standard popup to clone (its series' `kinds`),
+        and its template gives each source a page of its own: a source popup
+        is a page there, named as it is, on the page's photo, what is put in
+        it in rows in main and a Back at the foot's left - where a Group's
+        pages stand theirs - that goes back to the page whose button shows
+        it. Kept a popup, it was shown from the Sources Group's pages, which
+        hold no reference to its group: the ID map refused all four."""
+        T = designsys.models(designsys.load('afterburn'))['TLP320M']
+        _, ctl, out = self.probe('MainSD.dc.html', 'TLP320M')
+        group_back = ctl['Sources Back'][1]
+        for board, name in (('Laptop.dc.html', 'Laptop'), ('DocCam.dc.html', 'Doc Cam')):
+            page, got, out = self.probe(board, 'TLP320M')
+            self.assertEqual((page['kind'], page['name'], page.get('group'), page['size']),
+                             ('page', name, None, [320, 240]), board)
+            self.assertEqual(page['background_image'], T['backgrounds']['blue-slate']['image'])
+            self.assertEqual(out.get('problems', []), [], board)
+            back = got[name + ' Back']
+            self.assertTrue(back[0].get('derived') and back[0].get('back'), back)
+            self.assertNotIn('nav', back[0])
+            self.assertEqual(back[1], group_back)
+            for n, r in self.on_page(board).items():
+                if n != name + ' Back':
+                    self.assertTrue(_inside(r, T['main'], 0), (board, n, r))
+        # A Group in it is the one button that opens its pages, its heading at
+        # its left in its row, as on a page; and its pages' Back is the page.
+        _, got, _ = self.probe('DocCam.dc.html', 'TLP320M')
+        zoom, head = got['Zoom'][1], got['Zoom Label'][1]
+        self.assertTrue(zoom[1] <= head[1] and head[1] + head[3] <= zoom[1] + zoom[3], (head, zoom))
+        self.assertEqual(got['Zoom Back'][0].get('nav'), 'Doc Cam')
+        # Drawn on the 1035 it is the popup it was drawn as.
+        page, _, _ = self.probe('Laptop.dc.html', 'TLP1035T')
+        self.assertEqual((page['kind'], page['group']), ('popup', 'Sources'))
+
+    def test_main_sd_leaves_its_region_off(self):
+        """Each source a page of its own, the popup region has nothing to
+        show on the 320: it is left off (the page's `left`), named, as the
+        region page's 320 leaves its Center - and the Divider drawn between
+        the sources and the region stands between the sources and the left
+        rail's row, clear of each."""
+        page, ctl, out = self.probe('MainSD.dc.html', 'TLP320M')
+        self.assertEqual(page.get('left'), ['Controls'])
+        self.assertNotIn('Controls', self.on_page('MainSD.dc.html'))
+        self.assertIn("Main SD's Controls is left off the TLP320M - its seed has no standard popup, and each source "
+                      'is a page of its own', out.get('warnings', []))
+        got = self.on_page('MainSD.dc.html')
+        src, st, div = (got[n] for n in ('Sources', 'Settings', 'Divider'))
+        self.assertLess(src[1] + src[3], div[1])
+        self.assertLess(div[1] + div[3], st[1])
+
+    def test_a_line_keeps_clear_of_the_rows_it_stands_between(self):
+        """A Line between two rows stands in the gap between them with 2 px
+        clear each side: between Main SD's sources and its popup region on
+        the 300 (whose seed has standard popups, so the region stays), the
+        Divider was given exactly its own 2 px and touched both."""
+        _, ctl, out = self.probe('MainSD.dc.html', 'TLP300M')
+        src, div, reg = (ctl[n][1] for n in ('Sources', 'Divider', 'Controls'))
+        self.assertGreaterEqual(div[1] - (src[1] + src[3]), 2, (src, div))
+        self.assertGreaterEqual(reg[1] - (div[1] + div[3]), 2, (div, reg))
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
 class TestPanelsInChrome(_Probe, unittest.TestCase):
     """One canvas, drawn for each of its panels by the components themselves:
     the huddle, panel-aware, laid out for the 1035 it was drawn on and for the
@@ -4962,8 +5500,9 @@ class TestPanelsInChrome(_Probe, unittest.TestCase):
                     self.assertLessEqual(abs(a - b), 1, (m, alt, ctl['CallState'][1], plain['CallState'][1]))
 
     def test_what_does_not_fit_is_named(self):
-        """Nothing is dropped: a main area that cannot hold its controls on a
-        panel says so, with the panel and the room it needed."""
+        """Nothing is dropped: a page whose rows its main area cannot hold on
+        a panel says so, with the panel, the room they needed and the room
+        main has, as the README's Kind gives it."""
         extra = ('<x-import component-from-global-scope="ExtronAfterburn.Clock" name="Date"',
                  '<x-import component-from-global-scope="ExtronAfterburn.Label" name="Extra1" type="title" '
                  'style="position: absolute; left: 0px; top: 630px; width: 916px; height: 30px">More</x-import>\n'
@@ -4971,7 +5510,9 @@ class TestPanelsInChrome(_Probe, unittest.TestCase):
                  'style="position: absolute; left: 0px; top: 662px; width: 916px; height: 30px">More</x-import>\n'
                  '<x-import component-from-global-scope="ExtronAfterburn.Clock" name="Date"')
         _, _, out = self.probe('Home.dc.html', 'TLP320M', edit=extra)
-        self.assertTrue(any('main area' in p and 'TLP320M' in p for p in out['problems']), out['problems'])
+        deep = designsys.models(designsys.load('afterburn'))['TLP320M']['main'][3] - 4
+        self.assertTrue(any(p.startswith("Huddle Home's rows need ") and f"of the {deep} a TLP320M's main holds" in p
+                            for p in out['problems']), out['problems'])
 
     def test_the_modals_fit_every_panel(self):
         for panel in ('TLP725T', 'TLP525T', 'TLP320M'):
@@ -5061,6 +5602,36 @@ class TestGroupsInChrome(_Probe, unittest.TestCase):
         self.assertNotIn('Inputs Next', ctl)
         for n in ('InA', 'InB', 'InC'):
             self.assertTrue(_inside(ctl[n][1], [0, 0] + inputs[0]['size']), (n, ctl[n][1]))
+
+    def test_a_column_too_narrow_for_previous_and_next_stacks_their_arrows(self):
+        """A one-cell column paged on a 525 - Afterburn's left rail in a Group -
+        has no room for Previous and Next side by side, nor for either word:
+        they are arrows at the touch minimum, one over the other under its
+        cells, each in the box and clear of the rest. Side by side they came
+        out 2 px apart, and 'Previous' wider than the box."""
+        edit = ('title="Sources" cell="54x54" gap="16" cap="4" style="position: absolute; left: 326px; top: 40px; '
+                'width: 264px; height: 240px"',
+                'title="Sources" cell="54x54" gap="16" cap="1" style="position: absolute; left: 326px; top: 40px; '
+                'width: 60px; height: 420px"')
+        _, ctl, out = self.probe('Groups.dc.html', 'TLP525T', edit=edit)
+        self.assertEqual([p for p in out['problems'] if 'Sources' in p], [])
+        parts = {p['name']: p for p in self.parts(out) if p.get('group') == 'Group Test Sources'}
+        self.assertGreater(len(parts), 2)
+        by = {}
+        for c in out['controls']:
+            g = json.loads(c['gdl'])
+            if c.get('part') is not None:
+                by.setdefault(self.parts(out)[c['part']]['name'], []).append((g, [round(v) for v in c['rect']]))
+        for name, part in parts.items():
+            box = [0, 0] + part['size']
+            nav = [(g, r) for g, r in by[name] if g['name'].endswith(('Previous', 'Next'))]
+            self.assertTrue(nav, name)
+            for g, r in by[name]:
+                self.assertTrue(_inside(r, box), (name, g['name'], r, box))
+            for (g1, a), (g2, b) in ((x, y) for i, x in enumerate(by[name]) for y in by[name][i + 1:]):
+                self.assertFalse(_overlaps(a, b), (name, g1['name'], g2['name']))
+            for g, r in nav:
+                self.assertIn(g['text'], ('‹', '›'), g['name'])
 
     def test_on_a_320_they_become_pages(self):
         _, ctl, out = self.probe('Groups.dc.html', 'TLP320M')
@@ -5253,6 +5824,16 @@ class TestABarThemeOnThe320(_Probe, unittest.TestCase):
         _, _, out = self.probe('Main.dc.html', 'TLP320M', edit=(bar, ''))
         self.assertEqual(out['problems'], [])
         self.assertTrue(self.over([json.loads(p['gdl']) for p in out['parts']], 'Home'))
+
+    def test_a_heading_goes_on_with_the_row_it_heads(self):
+        """The room's Volume label fitted at Home 2's foot and the volume it
+        heads did not: it stood there alone, its volume over the page on
+        Home 3. It goes on with it."""
+        if self.THEME != 'mach':
+            self.skipTest("Mach's room is the one whose heading met a page's foot")
+        _, parts, on = self.split('Main.dc.html')
+        where = {g.get('name'): w for w, cs in on.items() for g, _ in cs if not g.get('derived')}
+        self.assertEqual(where['VolumeLabel'], where['Volume'])
 
     def test_a_group_on_a_later_page_comes_back_to_it(self):
         """A Group's own pages, opened from Home 2, go Back to Home 2."""
@@ -5562,6 +6143,87 @@ class _PagesProbe(_Probe):
         self.assertEqual((g['derived'], g['back'], g.get('nav')), (True, True, None))
         self.assertNotIn('Laptop More', ctl)
         self.assertEqual(parts, {})
+
+    def _help_in_words(self, *labels):
+        ns = {'mach': 'ExtronMach', 'shockwave': 'ExtronShockwave', 'turbulence': 'ExtronTurbulence'}[self.THEME]
+        tag = 'style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px"></x-import>'
+        body = ''.join(f'<x-import component-from-global-scope="{ns}.Label" name="{n}" style="position: absolute; '
+                       f'left: 160px; top: {170 + 120 * i}px; width: 960px; height: 100px">{t}</x-import>'
+                       for i, (n, t) in enumerate(labels))
+        return self.split('Help.dc.html', edit=(tag, tag[:-len('</x-import>')] + body + '</x-import>'))
+
+    def test_help_in_the_designers_words_is_set_as_the_templates_message(self):
+        """Help holding only words - one Label, or a few - is set as the
+        template sets its Help message: across the page under the strip,
+        clear of Back, each Label as deep as its words wrap to at the 320's
+        floor, one under the other. In the template's columns each was a
+        key's cell (Mach's 74x50), and a sentence ran out of it."""
+        text = 'To share, plug in the table cable or use ShareLink. For help, call the AV desk at 4400.'
+        page, parts, on, out = self._help_in_words(('Help Text', text))
+        self.assertEqual((out['problems'], parts), ([], {}))
+        ctl = on[None]
+        g, r, over = ctl['Help Text']
+        self.assertFalse(over)
+        gap = self.row()['gap']
+        self.assertEqual((r[0], r[2]), (gap, 320 - 2 * gap))
+        strip = ctl['Help Title'][1]
+        self.assertGreater(r[1], strip[1] + strip[3] - 1)
+        self.assertLessEqual(r[1] + r[3], 240)
+        page, parts, on, out = self._help_in_words(('Help Step', 'Press a source to share it.'),
+                                                   ('Help Desk', 'Call the AV desk at 4400.'))
+        self.assertEqual(out['problems'], [])
+        a, b = on[None]['Help Step'][1], on[None]['Help Desk'][1]
+        self.assertLessEqual(a[1] + a[3], b[1])
+        self.assertFalse(on[None]['Help Step'][2] or on[None]['Help Desk'][2])
+
+    def test_help_in_more_lines_than_a_page_goes_on_over_a_second(self):
+        """Lines that do not all fit under the strip go on over a second page
+        by the template's More and Back, at their places and seed IDs; a
+        Label too long for a page of its own is named - one control does not
+        break across pages."""
+        F = self.frame()
+        lines = [(f'Help Step {i}', f'Step {i}: press the source you want, then wait.') for i in range(1, 7)]
+        page, parts, on, out = self._help_in_words(*lines)
+        self.assertEqual(out['problems'], [])
+        self.assertTrue(parts)
+        self.assertEqual(list(parts), [f'Help {i}' for i in range(2, len(parts) + 2)])
+        here = self.mine(on)
+        self.assertEqual({w for w, _, _ in here.values()}, {None} | set(parts))
+        self.assertNotIn(f'Help {len(parts) + 1} More', on[f'Help {len(parts) + 1}'])
+        more, back = self.item(F, 'more'), self.item(F['second'], 'back')
+        g, r, _ = on[None]['Help More']
+        self.assertEqual((g['nav'], g['id']), ('Help 2', more['id']))
+        g, r, _ = on['Help 2']['Help 2 Back']
+        self.assertEqual((g['nav'], g['id']), ('Help', back['id']))
+        for where in [None] + list(parts):
+            for n, (g, r, over) in on[where].items():
+                self.assertTrue(_inside(r, [0, 0, 320, 240], 0), (where, n, r))
+                self.assertFalse(over, (where, n))
+        long_ = ' '.join(['Press the source on the panel, then wait for the display to show it.'] * 4)
+        _, _, _, out = self._help_in_words(('Help Text', long_))
+        self.assertTrue(any("Help's Help Text needs" in p and 'say less' in p for p in out['problems']), out['problems'])
+
+    def test_a_long_source_name_breaks_its_first_line_as_the_template_does(self):
+        """'Document Camera is currently selected.' does not fit the first
+        line's 320 px at the 320's 14 pt floor: it breaks onto two lines in
+        that label, as the template's own Aux Label 2 breaks its sentence
+        (CRLF in one label, grown by a line) - growing up into the room under
+        the strip, so the paragraph under it stays where the template sets it."""
+        F = self.frame()
+        page, parts, on, out = self.split('Laptop.dc.html', edit=('name="Laptop"', 'name="Laptop" title="Document Camera"'))
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        ctl = on[None]
+        lines = F['center']['empty_lines']
+        g, r, over = ctl['Laptop Empty']
+        self.assertEqual(len(g['text'].split('\r\n')), 2, g['text'])
+        self.assertEqual(' '.join(g['text'].split('\r\n')), 'Document Camera is currently selected.')
+        self.assertFalse(over)
+        self.assertEqual(r[1] + r[3], lines[0]['rect'][1] + lines[0]['rect'][3])
+        self.assertLess(r[1], lines[0]['rect'][1])
+        self.assertGreaterEqual(r[1], ctl['Laptop Title'][1][1] + ctl['Laptop Title'][1][3])
+        for i in (1, 2):
+            g, r, over = ctl[f'Laptop Empty {i + 1}']
+            self.assertEqual((r, over), (lines[i]['rect'], None), i)
 
     def test_a_source_with_more_than_a_page_goes_on_over_a_second(self):
         """Doc Cam's four columns: its headings over their controls as the

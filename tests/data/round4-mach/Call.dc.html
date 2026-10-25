@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Teams Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Call" kind="popup" group="Sources" role="source" title="Microsoft Teams" reached-by="program" does="The Teams call page; the program shows it by itself when a call comes in." panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Label" name="Camera Label" align="left" does="Heads the camera presets." style="position: absolute; left: 130px; top: 118px; width: 600px; height: 40px">Camera Presets</x-import>
+  <x-import component-from-global-scope="ExtronMach.Group" title="Camera Presets" cell="200x130" gap="30" cap="3" style="position: absolute; left: 130px; top: 160px; width: 740px; height: 130px">
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Wide" states="Off, On" does="Recalls the Wide camera preset; On while it is active.">Wide</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Table" states="Off, On" does="Recalls the Table camera preset; On while it is active.">Table</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Presenter" states="Off, On" does="Recalls the Presenter camera preset; On while it is active.">Presenter</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="Make Call" variant="call" does="Joins the Microsoft Teams call on the room PC." style="position: absolute; left: 130px; top: 320px; width: 160px; height: 130px">Make Call</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="End Call" variant="alert" does="Ends the Microsoft Teams call." style="position: absolute; left: 320px; top: 320px; width: 160px; height: 130px">End Call</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="Camera Privacy" variant="highlight" states="Off, On" does="Turns camera privacy on and off; On while the camera is blocked." style="position: absolute; left: 510px; top: 320px; width: 160px; height: 130px">Privacy</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" id="201" name="Mic Mute" variant="highlight" states='[{"name":"Live"},{"name":"Muted","fill":"accent","color":"ink","text":"Mics Muted"}]' does="Mutes and unmutes the room microphones; Muted while they are muted." style="position: absolute; left: 700px; top: 320px; width: 160px; height: 130px">Mic Mute</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -371,9 +371,17 @@ class Canvas:
         # The first panel listed is the one the canvas is drawn on: what met
         # there was drawn so.
         drawn = next(iter(rendered.values()), {})
+        self._known = None
         for m, boards in rendered.items():
             self.problems, self.notes = [], []
             spec, probs, nts = self._spec(boards)
+            # What the program will know each canvas control by, off the
+            # panel the canvas is drawn on (identities): the next panels'
+            # derived windows are one where their controls are. Where that
+            # panel has no spec, no later panel stands in for it - each
+            # reads its own IDs, as it would listed alone.
+            if boards is drawn and spec is not None:
+                self._known = identities(spec)
             if boards is not drawn:
                 for b, o in boards.items():
                     probs = probs + _collisions(drawn.get(b), o)
@@ -422,6 +430,8 @@ class Canvas:
                     return list(pg['panels'])
         return []
 
+    # The design panel's identities(), while translate_panels reads the rest.
+    _known = None
     _SEED_NAMES = {}
     # seed -> whether it carries a PBLine to clone.
     _SEED_LINES = {}
@@ -657,6 +667,7 @@ class Canvas:
                     c['thumb_image'] = thumb[0]
                 if c['kind'] == 'slider':
                     c.update({k: f for k, (f, _) in rail.items()})
+        pages[:], popups[:] = _one_name_each(pages, popups, notes, self._known)
         wants_thumb = ((profile.get('defaults') or {}).get('slider') or {}).get('thumb_image')
         if wants_thumb and not thumb and any(c['kind'] == 'slider' for item in pages + popups
                                             for c in item['controls']):
@@ -846,6 +857,161 @@ class Canvas:
                 else:
                     c['nav'] = target
         return c
+
+
+def _one_name_each(pages, popups, notes, known=None):
+    """Each derived part's own name - (pages, popups), with what it did noted.
+
+    What a region page derives on a hub (Select Source, the options, the
+    display group's popup, the Volume Level strip) and on the 320 (its Volume
+    modal) is named by the template, not the page, so two region pages - Main
+    SD and a call page, as every round-four Shockwave and Turbulence room drew
+    - derived each twice, and a designer who drew the window themselves (the
+    README's grammar invites a Display Control) named it a third time: refused
+    as a page named twice. What each part is for decides it:
+
+    - Derived alike from two pages - the same controls, which the program
+      knows by the same IDs - it is one window the program shows from either:
+      one popup. The Volume strip and the 320's Volume modal always are.
+    - Derived otherwise - each page's options hold its own launchers, its
+      display popup its own first Section - each is its page's: the later
+      takes its page's name in front ('Video Call More Options'), and what its
+      page derived that opens it follows (only derived navs: a designer's tile
+      that opens their own board of that name still does).
+    - A designer's board of the name stands in for a derived one that holds
+      nothing it lacks - every canvas control by name, kind and the ID the
+      program knows it by, a Section's heading aside, which the board's own
+      title says and is listed as left off its page - where it is the same
+      kind of window in the same group. It is then the window, kept as drawn.
+      One that lacks any is not that window, and the derived one is renamed.
+
+    A hub's source or settings popup the designer drew closes back to the
+    grid that shows it; where two pages' grids differ and both show it, the
+    way back is the program's, as a window opened from two places is.
+
+    `known`: the design panel's identities() - another panel's copy of a
+    control carries no seed ID of its own (a hub's level), so whether two are
+    one control is read off the panel the canvas is drawn on.
+    """
+    popup_ids = {id(x) for x in popups}
+
+    def frame(it):
+        pop = id(it) in popup_ids
+        return pop, bool(it.get('modal')), it.get('group') if pop and not it.get('modal') else None
+
+    def heading(c):
+        # A Section's heading as the layout draws it (bundle.js sectionIn).
+        return c['kind'] == 'label' and c.get('name') == f"{c.get('text')} Heading"
+
+    def ident(it, c):
+        # What a program knows a canvas control by (identities()): on the
+        # design panel itself, its own ID or its chrome's seed ID - None where
+        # its page's band will number it, so the same name on two pages is
+        # two controls.
+        if known and (it['_host'], c.get('name')) in known:
+            return known[(it['_host'], c.get('name'))]
+        return c.get('id') or c.get('_seed_id')
+
+    def alike(a, b):
+        return a == b or {a, b} == {'slider', 'level'}
+
+    def stands_in(own, d):
+        if frame(own) != frame(d):
+            return False
+        theirs = {c.get('name'): c for c in own['controls'] if c.get('name')}
+        for c in d['controls']:
+            if c.get('derived') or heading(c):
+                continue
+            o = theirs.get(c.get('name'))
+            if o is None or not alike(o['kind'], c['kind']) or ident(d, c) is None \
+                    or isinstance(ident(d, c), tuple) or ident(own, o) != ident(d, c):
+                return False
+        return True
+
+    def bare(x):
+        return {k: v for k, v in x.items()
+                if k not in ('name', 'controls', 'reached_by') and not k.startswith('_')}
+
+    def same(a, b):
+        if frame(a) != frame(b) or bare(a) != bare(b) or len(a['controls']) != len(b['controls']):
+            return False
+        for x, y in zip(a['controls'], b['controls']):
+            mine = () if x.get('derived') else ('_seed_id', 'id')
+            if mine:
+                i = ident(a, x)
+                if i is None or isinstance(i, tuple) or i != ident(b, y):
+                    return False
+            if {k: v for k, v in x.items() if k not in mine} != {k: v for k, v in y.items() if k not in mine}:
+                return False
+        return True
+
+    by = {}
+    for it in pages + popups:
+        by.setdefault(it['name'], []).append(it)
+    gone, ways = set(), {}   # ways: host -> {derived name: the part its page's navs now open}
+    owner = {pg['name']: pg for pg in pages if not pg.get('_derived')}
+    for name, group in by.items():
+        own = [x for x in group if not x.get('_derived')]
+        made = [x for x in group if x.get('_derived')]
+        if len(group) < 2 or len(own) > 1 or not made:
+            continue
+        kept = []
+        for d in made:
+            if own and stands_in(own[0], d):
+                gone.add(id(d))
+                ways.setdefault(d['_host'], {})[name] = own[0]
+                host = owner.get(d['_host'])
+                for c in d['controls']:
+                    if not c.get('derived') and heading(c) and host is not None:
+                        host.setdefault('left', []).append(c['name'])
+                        notes.append(f"{d['_host']}'s {c['name']} is left off this panel - {name!r}, which "
+                                     'stands in for its window there, titles it')
+                notes.append(f"{name!r} stands in for the {name} {d['_host']} derives on this panel - "
+                             'it holds every control that one would')
+                continue
+            rep = next((k for k in kept if same(k, d)), None)
+            if rep is not None:
+                gone.add(id(d))
+                ways.setdefault(d['_host'], {})[name] = rep
+                continue
+            kept.append(d)
+        for i, d in enumerate(kept):
+            if i == 0 and not own:
+                continue
+            first = f'{own[0]["name"]!r}' if own else f"{kept[0]['_host']}'s"
+            d['name'] = f"{d['_host']} {name}"
+            ways.setdefault(d['_host'], {})[name] = d
+            notes.append(f"{d['_host']}'s {name} holds other controls than {first} - it is {d['name']!r} "
+                         'on this panel')
+    pages = [x for x in pages if id(x) not in gone]
+    popups = [x for x in popups if id(x) not in gone]
+
+    def way(host, n):
+        to = (ways.get(host) or {}).get(n)
+        return to['name'] if to is not None else n
+    for it in pages + popups:
+        for c in it['controls']:
+            if c.get('derived') and c.get('nav') and c['nav'] in (ways.get(it['_host']) or {}):
+                c['nav'] = way(it['_host'], c['nav'])
+    # A hub popup the designer drew: back to the grid that shows it.
+    split = {n for m in ways.values() for n, to in m.items() if to['name'] != n}
+    for it in pages + popups:
+        if not it.get('_hub'):
+            continue
+        # The pages whose grid or options show it - a page, or what it derived.
+        hosts = {x['_host'] for x in pages + popups if (x.get('_derived') or id(x) not in popup_ids)
+                 and any(c.get('nav') == it['name'] for c in x['controls'])}
+        for c in it['controls']:
+            if not (c.get('derived') and c.get('nav') in split):
+                continue
+            to = sorted({way(h, c['nav']) for h in hosts})
+            if len(to) == 1:
+                c['nav'] = to[0]
+            elif to:
+                del c['nav']
+                notes.append(f"{it['name']!r} {c.get('name')}: {', '.join(to)} all show {it['name']!r} - it "
+                             'goes back where the program says')
+    return pages, popups
 
 
 def _line_px(family, bold, px):
@@ -1135,6 +1301,48 @@ def _box(r):
 DERIVED_IDS = 50001
 
 
+def _seeded(design, explicit):
+    """{name: seed ID} - the fixed chrome that keeps its template's seed ID on
+    the design panel's spec (pin_ids): a name with no ID of its own whose seed
+    ID no canvas control has, the first name to carry each."""
+    seeded, holder = {}, {}
+    for it in design['pages'] + design['popups']:
+        for c in it['controls']:
+            sid = c.get('_seed_id')
+            if (c.get('derived') or c.get('id') or not c.get('name') or sid is None
+                    or sid in explicit):
+                continue
+            if seeded.get(c['name'], sid) != sid or holder.get(sid, c['name']) != c['name']:
+                continue
+            seeded[c['name']], holder[sid] = sid, c['name']
+    return seeded
+
+
+def identities(design):
+    """{(page, name): what the program will know that canvas control by} on
+    the design panel's spec, as pin_ids numbers it: its own ID, the seed ID
+    its chrome keeps, else its page's band - ('band', page, name), the same
+    name on two pages being two controls. Another panel's copy of a control
+    carries none of it (a hub's level is no seed's), so _one_name_each reads
+    it here."""
+    explicit = {c['id'] for it in design['pages'] + design['popups'] for c in it['controls']
+                if c.get('id') and not c.get('derived')}
+    seeded = _seeded(design, explicit)
+    out = {}
+    for it in design['pages'] + design['popups']:
+        for c in it['controls']:
+            if c.get('derived') or not c.get('name'):
+                continue
+            k = (it['_host'], c['name'])
+            if c.get('id'):
+                out[k] = c['id']
+            elif c.get('_seed_id') is not None and seeded.get(c['name']) == c['_seed_id']:
+                out[k] = c['_seed_id']
+            else:
+                out[k] = ('band',) + k
+    return out
+
+
 def pin_ids(specs, order):
     """One ID per canvas control on every panel - {panel: [problems]}.
 
@@ -1182,16 +1390,7 @@ def pin_ids(specs, order):
     # first name that carries it; another name that claims it takes its band.
     explicit = {c['id'] for spec in specs.values() for it in spec['pages'] + spec['popups']
                 for c in it['controls'] if c.get('id') and not c.get('derived')}
-    seeded, holder = {}, {}
-    for it in design['pages'] + design['popups']:
-        for c in it['controls']:
-            sid = c.get('_seed_id')
-            if (c.get('derived') or c.get('id') or not c.get('name') or sid is None
-                    or sid in explicit):
-                continue
-            if seeded.get(c['name'], sid) != sid or holder.get(sid, c['name']) != c['name']:
-                continue
-            seeded[c['name']], holder[sid] = sid, c['name']
+    seeded = _seeded(design, explicit)
     taken |= set(seeded.values())
 
     def key(it, c, seen):
@@ -1281,7 +1480,13 @@ def pin_ids(specs, order):
                 c['id'] = ids[k]
                 found.add(k)
         left = {(it['_host'], n) for it in spec['pages'] + spec['popups'] for n in it.get('left') or ()}
-        for k in sorted(set(ids) - found - left):
+        # A control is one ID to the program: one a page's copy of a window
+        # held is still here where the window that is one - two region pages'
+        # alike, or the designer's own standing in (_one_name_each) - holds it
+        # by its name and ID.
+        here = {(c.get('name'), c.get('id')) for it in spec['pages'] + spec['popups'] for c in it['controls']
+                if not c.get('derived')}
+        for k in sorted(k for k in set(ids) - found - left if (k[1], ids[k]) not in here):
             problems[model].append(f'{k[1]} on {k[0]!r} is on the {order[0]} and not here - nothing is '
                                    'dropped from a panel')
     return problems

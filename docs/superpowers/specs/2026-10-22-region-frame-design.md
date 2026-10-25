@@ -385,3 +385,83 @@ build at a time.
    turbulence-34 are the frame's, and turbulence-35 each device's own size.
 10. **Round four**: fresh designers from the published systems alone, built on
     the 1035, 725, 525 and 320, each page beside the template's own.
+    Drawn (2026-10-24): four designers, each with one theme's built README
+    and the Design type's instructions only, drew one 12-seat boardroom for
+    the TLP1035T, 725T, 525T and 320M; their canvases as they left them are
+    `tests/data/round4-<theme>`. Translated unchanged, every one was refused
+    - Mach 19 times, Shockwave 27, Turbulence 35, Afterburn 149 - and each
+    problem was put to whoever owned it. The toolkit's: two region pages on a
+    hub derived Select Source, the options, the display popup and the Volume
+    strip twice, and on the 320 the Volume window - now one popup where both
+    derive it alike, the later page's named for its page where not, and a
+    designer's board of a derived name standing in where it holds the same
+    controls by name, kind and ID (`gdl.design._one_name_each`); the 320's
+    empty state breaks a long source name onto two lines in its first label;
+    words alone on a 320 page (Help in the designer's words) are set as the
+    template sets its message, going on over a second page by More and Back;
+    a dock's state caption goes on two lines; a window's content maps from
+    the body under its title; a page's own child, and a MainArea's on every
+    theme, stays on the screen as it grows; a popup region in a 320 row is
+    rounded as its popups; a one-cell paged Group stacks its arrows; and the
+    RightRail's audio control goes where the 725's template keeps it, its
+    left rail's second group, or is named with what to do. The README's:
+    Help as one Label with room, not a stack of one-line Labels; a state's
+    own caption counted; the 320's keys and column headings and the words
+    they hold, a Group's title the heading there alone; what a hub and the
+    320 draw by themselves and what a designer may draw in their place; the
+    725's audio place; and Afterburn's example room drawn in the layout that
+    carries to all four panels, since at the template's own spacing its page
+    carries to the 1035's scale alone. What each canvas, unchanged, is still
+    refused for is `tests/data/round4-left.json` - Mach 6, Shockwave 11,
+    Turbulence 8, Afterburn 90, every one a README gap the README now tells
+    of, Mach's grown state caption and Shockwave's and Turbulence's Help
+    behind a toolkit limit too (`docs/ROADMAP.md`) - which
+    `TestRoundFourRooms` holds it to.
+    Revised (2026-10-25): Mach's, Shockwave's and Turbulence's designers'
+    rooms translate clean on all four panels; Afterburn's designer revised
+    three times from the README and the translator's words and was left with
+    four refusals, all on the 320 - Start's Lights heading running into
+    Start, Call's VTC heading into Camera Presets, and the overlaps under
+    them - which moving controls and taking things out could not clear. The
+    toolkit's: on the 320 Afterburn's Page laid its own controls (the left
+    rail's heading and Group) out over the whole screen and its MainArea's
+    in main, each set centred, so the two landed on each other - Main SD's
+    left rail on its popup region too, unseen, since no check reads a
+    region as a touch target. They are now one set of rows (bundle.js
+    `rowsPage`): the main area's first, then the side columns left to right;
+    a heading at the left of the Group it heads, in its row; a Line in the
+    gap between its rows; and, past what main holds, a side column's row
+    beside an earlier row with room across - Main SD's left rail Group in
+    its sources' row. Two rows of Groups keep the panel's gap apart on every
+    theme. The README's: *Every panel the room has* says the rows' rule -
+    the order, each kind of row's depth, the gaps, how deep and wide each
+    panel's rows are (its Kind, and on the bar themes how deep a page that
+    goes on keeps), where a heading stands, and that Afterburn's page does
+    not go on - the four things the designer's notes said they had guessed.
+    Built (2026-10-25): all sixteen panels - each room on the 1035, 725, 525
+    and 320M - built in GUI Designer and verified, 0 problems, their ID maps
+    0 problems (`archive/job-e823df9b/round4/`); on the 320 Afterburn's
+    sources are pages of their own, as the template draws them, since its
+    seed has no popup to clone. The bar set at the start - zero refusals on
+    the first try - was not met: every room was refused at first, and came
+    clean after the toolkit's and the README's share and one to three
+    revisions from the translator's words.
+    The revision is `tests/data/round4-afterburn-revised`, and
+    `TestRoundFourRooms` holds it clean on every panel it lists. None is
+    built yet: the rooms' builds on a host with GUI Designer are what is
+    left of the round.
+    Building the revision (2026-10-25) stopped before GUI Designer, at the
+    ID map's check across every panel: on the 320 the Sources Group's pages
+    showed the source popups, whose group only Main SD's popup region
+    references, so none would have appeared - and the 320's seed has no
+    standard popup to clone them from. The 320 now gives each source a page
+    of its own, as its template does: what is put in it in rows in main, a
+    Back at the foot's left back to the Group's page that shows it, and the
+    popup region left off - so Main SD's left rail Group no longer needs the
+    sources' row. A Line keeps 2 px clear of the rows it stands between, a
+    page refused for its rows says their depth one under another as well as
+    rearranged, and the README's example room takes the template's own
+    525-deep popups, its 568 having been for the 320's. `TestRoundFourRooms`
+    and `TestTheReadmesRoomTranslates` check the ID map across every panel;
+    Afterburn's unrevised room is left 90 refusals, its 320 popups'
+    shortfall gone.

@@ -489,7 +489,9 @@ A generator should assert all four agree rather than trusting the writes.
 - **A translucent fill reaches the artwork at its own alpha.** Build writes the
   alpha exactly and the color within premultiplying's rounding: Turbulence's
   rail, black at 38, built (0, 0, 0, 38) throughout, and its shade, #020D1A at
-  128, built (1, 13, 25, 128). GUI Designer's snapshots, and the compositor,
+  128, built (1, 13, 25, 128); rounding down on the way in and out, a channel
+  can come back up to 255 // alpha low - Mach's Make Call, #659945 at 220,
+  built (99, 151, 69, 220). GUI Designer's snapshots, and the compositor,
   draw such a pixel at full strength (`docs/render-fidelity.md` §2), but the
   theme is drawn for a panel that blends it - the Turbulence seed's own header
   and footer art is alpha 128 throughout. `tests/verify_built.py` reads a

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boardroom Start</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- The page the panel boots to: Main.dc.html, the canvas's entry. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Start" start="true" does="Boots the room to its start page." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Lights Heading" style="position: absolute; left: 14px; top: 160px; width: 152px; height: 50px">Lights</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Group" title="Lights" cell="178x53" gap="12" cap="1" style="position: absolute; left: 0px; top: 207px; width: 178px; height: 260px">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Start Lighting Full" variant="list" icon="lights" states="Off, On" does="Recalls the full lighting preset; On while it is the active preset.">Full</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Start Lighting Meeting" variant="list" icon="lights" states="Off, On" does="Recalls the meeting lighting preset; On while it is the active preset.">Meeting</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Start Lighting Presentation" variant="list" icon="lights" states="Off, On" does="Recalls the presentation lighting preset; On while it is the active preset.">Presentation</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Start Lighting Off" variant="list" icon="lights" states="Off, On" does="Recalls the off lighting preset; On while it is the active preset.">Off</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.MainArea">
+    <x-import component-from-global-scope="ExtronAfterburn.Label" name="RoomName" type="title" align="center" style="position: absolute; left: 257px; top: 107px; width: 400px; height: 60px">Boardroom</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Start" size="17" nav="MainSD" does="Starts the room and shows the sources." style="position: absolute; left: 344px; top: 360px; width: 228px; height: 64px">Press to begin</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Clock" name="DateTime" format="datetime" align="center" color="text" style="position: absolute; left: 232px; top: 690px; width: 450px; height: 60px"></x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Rail">
+    <x-import component-from-global-scope="ExtronAfterburn.Label" name="Volume Heading" align="center">Volume</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Slider" name="Volume" id="100" does="Sets the program volume."></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Mute" id="101" variant="icon" icon="speaker-volume_3" states="Off, On" does="Mutes the program audio; On while muted."></x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

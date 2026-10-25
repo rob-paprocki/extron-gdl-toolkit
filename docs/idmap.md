@@ -231,8 +231,9 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   panel, and a control the canvas draws is on every panel: nothing is
   dropped. The one exception is named: what a panel's template has no place
   for - a hub's footer clock, the heading Mach's rail draws over its Settings
-  group, the 320's clock and the Center's popup region (each source is a
-  page of its own there) - is listed in its page's `left` and named as a
+  group, the 320's clock and its popup region, the Center's or Afterburn's
+  `PopupRegion` (each source is a page of its own there) - is listed in its
+  page's `left` and named as a
   note by translate, and may be absent there. A mirror a layout derived does
   not excuse its control: the tab is held to every panel, the twin only to
   the panels that draw it.

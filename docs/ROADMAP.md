@@ -73,7 +73,10 @@ opening GUI Designer.**
    drawn from prose by a fresh designer is built and verified on the 1035 and
    the 525 (§6, round three) - and on the 320, where a page goes on over
    pages of its own under the series' title strip, as Extron's own Mach 320
-   spreads a room over twelve (§4, §6). What is left is in §7: a modal that
+   spreads a room over twelve (§4, §6). Round four's rooms, drawn for the
+   1035, 725, 525 and 320 from the region-frame READMEs, are translated and
+   what each designer still has to fix is named (§6, spec item 10): revised
+   from the new READMEs, they are to be built on a host with GUI Designer. What is left is in §7: a modal that
    says more than the 320's one screen, and a plain container there.
    800x480 is two series in all three themes - the 520, tier B, and the 720,
    tier A, which take different layouts - where Afterburn has only the 520.
@@ -152,11 +155,59 @@ opening GUI Designer.**
   Rail, the right one: side controls on the left are the Page's own, and on a
   panel with no room beside its main region they are refused, by name.
 - **Afterburn's working page on the room's other panels.** Drawn at the
-  template's own spacing, it does not carry to a 725, a hub or the 320: its
-  `list` and `toggle` buttons are kit art, which keeps its shape as it grows
-  to the touch minimum, wider than the band beside main there, and its
-  popups' words stand where the 320's rows have no room - so the README's
-  Afterburn example room is the 1035 alone.
+  template's own spacing it carries to the 1035's scale alone: its `list` and
+  `toggle` buttons are kit art, which keeps its shape as it grows to the touch
+  minimum, and an icon `list` button's caption needs 177 px of the 725's
+  145 px rail at 16 pt. The README's example room is drawn in the layout that
+  carries to the 1035, 725, 525 and 320 instead - its left rail one Group
+  under one heading, no date and time, a Rail with no Volume heading, sets
+  and windows with the 525's room - which departs from the template on the
+  1035 itself. A left region for Afterburn, or the 320 drawn as its own
+  template draws it (its foot strip with the page's name, More and Back;
+  each source is already a page of its own there), would keep the template's
+  look where a room allows it; and the kit's icon indent is a count of spaces
+  set for the 1035's 14 pt, which at a smaller panel's larger type is wider
+  than the icon needs. Round four shows it: its fresh designer's room builds
+  and verifies on all four panels, and its 1035 reads as the template, but
+  its 525 and 320 do not (`archive/job-e823df9b/round4/round4_vs_templates.png`).
+- **Afterburn's page on the 320 does not go on.** Its Page's own controls and
+  its MainArea's are one set of rows in main, over the row the Rail runs
+  across the foot (`docs/claude-design.md` §4), and a page past the 186 px
+  main holds is refused, by name, where a bar theme's goes on over pages
+  with Previous and Next. The Rail's row holds the volume and three, which
+  leaves no room for Previous and Next beside them: going on needs the
+  template's own foot strip, its More and Back where the Rail's row stands,
+  or the 320 drawn as its own template draws it (above).
+- **A popup region narrower than its popups on Afterburn's 300.** A popup
+  scales with main, and a popup region in a row is at most the row's width:
+  on the 300 portrait the working page's 880-wide region is drawn 294 px
+  across and its popups 307 (366 and 374 turned), though a popup takes its
+  reference's size (Standards p.70). The region could keep its popups'
+  width, or the popups the region's.
+- **A standard popup with no `role` on a bar theme's 320.** No 320 seed has
+  a standard popup to clone (each series' `kinds`). Afterburn's 320 draws
+  every standard popup as a page of its own, and Mach's, Shockwave's and
+  Turbulence's draw a `role="source"` popup as one (`docs/claude-design.md`
+  §4) - but a popup with no role keeps its kind there, and the applier
+  throws, *donor project has no standard popup to clone*, at build time. It
+  should be a page there too, or refused by name at translate.
+- **A row of loose controls does not re-space as its captions grow.** In a
+  free layout - a source popup's well, a window - each control grows about
+  its centre to its widest caption at the panel's type floor and its
+  neighbours stay where they are, so two drawn a 2 mm gap apart are refused
+  where they grow into it: round four's Mach Call popup, its Mic Mute's
+  'Mics Muted' on the 725 and the 525. The README asks for the room
+  (*Words*: a state's own `text` counts); a row could open its gaps where
+  its box has room for them.
+- **A window's body under its title is smaller than the window.** What is
+  put in a window maps from the body under its title into each panel's, so a
+  line clear of the 1035's title is clear of the 725's and the 525's - and
+  is laid out a little smaller than it was mapped window to window, since
+  their titles stand lower: round four's Shockwave and Turbulence Help, a
+  stack of one-line Labels sized at the 1035's type, overflows on the 525,
+  and Shockwave's on the 725 too. One Label with room for its words, as the
+  README asks, does not. These and the row's above are the `limit` entries
+  of `tests/data/round4-left.json`.
 - **The region frame, beyond tier A** (PR sequence in
   `docs/superpowers/specs/2026-10-22-region-frame-design.md`):
   - a region page, a source popup (`role="source"`) and a window (a modal

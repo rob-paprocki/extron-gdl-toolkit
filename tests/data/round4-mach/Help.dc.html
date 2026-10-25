@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Help</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Help" kind="modal" role="help" does="Explains how to share a screen and gives the AV desk number." panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Label" name="Share Heading" type="heading" align="left" style="position: absolute; left: 160px; top: 170px; width: 960px; height: 50px">How to Share a Screen</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Share Laptop" align="left" style="position: absolute; left: 160px; top: 235px; width: 960px; height: 50px">Laptop: plug in the table cable.</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Share Wireless" align="left" style="position: absolute; left: 160px; top: 300px; width: 960px; height: 50px">ShareLink: share from your device.</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Share PC" align="left" style="position: absolute; left: 160px; top: 365px; width: 960px; height: 50px">Room PC: press Room PC.</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Share Doc Cam" align="left" style="position: absolute; left: 160px; top: 430px; width: 960px; height: 50px">Document camera: press Doc Cam.</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Desk Line 1" align="left" style="position: absolute; left: 160px; top: 525px; width: 960px; height: 50px">For assistance, please call the AV desk</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Desk Line 2" align="left" style="position: absolute; left: 160px; top: 590px; width: 960px; height: 50px">at extension 4400.</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lighting Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Lighting Control" kind="modal" role="settings" title="Lighting Control" panels="TLP1035T TLP725T TLP525T TLP320M" theme="haze">
+  <x-import component-from-global-scope="ExtronShockwave.Group" title="Presets" cell="160x100" gap="30" cap="2" style="position: absolute; left: 440px; top: 260px; width: 400px; height: 300px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" id="201" name="Lighting Full" states="Off, On" does="Recalls the full lighting preset; On while it is recalled.">Full</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" id="202" name="Lighting Meeting" states="Off, On" does="Recalls the meeting lighting preset; On while it is recalled.">Meeting</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" id="203" name="Lighting Presentation" states="Off, On" does="Recalls the presentation lighting preset; On while it is recalled.">Presentation</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" id="204" name="Lighting Off" states="Off, On" does="Recalls the off lighting preset; On while it is recalled.">Off</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

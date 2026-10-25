@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Help</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Help" kind="modal" does="Explains how to share a screen and gives the AV desk number." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Panel" name="Card" style="position: absolute; left: 183px; top: 24px; width: 916px; height: 752px"></x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Help Title" type="subheading" align="center" style="position: absolute; left: 485px; top: 36px; width: 310px; height: 50px">Help</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Close Help" does="Closes this popup." style="position: absolute; left: 1026px; top: 25px; width: 64px; height: 64px">Close</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Share Label" type="body-strong" color="text-secondary" align="center" style="position: absolute; left: 290px; top: 120px; width: 700px; height: 50px">SHARE A SCREEN</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Share Step 1" align="center" style="position: absolute; left: 290px; top: 180px; width: 700px; height: 60px">Choose a source along the top of the main page.</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Share Step 2" align="center" style="position: absolute; left: 290px; top: 250px; width: 700px; height: 60px">Laptop: plug in at the table.</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Share Step 3" align="center" style="position: absolute; left: 290px; top: 320px; width: 700px; height: 60px">ShareLink: share wirelessly from your laptop.</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Share Step 4" align="center" style="position: absolute; left: 290px; top: 390px; width: 700px; height: 60px">PC: show the room PC. Doc Cam: show a document.</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Help Message" align="center" style="position: absolute; left: 290px; top: 520px; width: 700px; height: 100px">For assistance, please call the AV desk at extension 4400.</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

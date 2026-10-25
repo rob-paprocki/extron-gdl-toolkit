@@ -1,0 +1,52 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-25T02:05:22Z"
+ },
+ "title": "Boardroom",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 800, "title": "Start", "is_interactive": true},
+  "MainSD.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Main SD", "is_interactive": true},
+  "Call.dc.html": {"x": 2720, "y": 0, "w": 1280, "h": 800, "title": "Call", "is_interactive": true},
+  "LightingControl.dc.html": {"x": 0, "y": 920, "w": 1280, "h": 800, "title": "Lighting Control"},
+  "CameraSelect.dc.html": {"x": 1360, "y": 920, "w": 1280, "h": 800, "title": "Camera Select"},
+  "Help.dc.html": {"x": 2720, "y": 920, "w": 1280, "h": 800, "title": "Help"},
+  "PowerDown.dc.html": {"x": 0, "y": 1840, "w": 1280, "h": 800, "title": "Power Down"},
+  "PoweringDown.dc.html": {"x": 1360, "y": 1840, "w": 1280, "h": 800, "title": "Powering Down"},
+  "Laptop.dc.html": {"x": 0, "y": 2760, "w": 995, "h": 549, "title": "Laptop"},
+  "ShareLink.dc.html": {"x": 1075, "y": 2760, "w": 995, "h": 549, "title": "ShareLink"},
+  "PC.dc.html": {"x": 2150, "y": 2760, "w": 995, "h": 549, "title": "PC"},
+  "DocCam.dc.html": {"x": 3225, "y": 2760, "w": 995, "h": 549, "title": "Document Camera"}
+ },
+ "order": [
+  "Main.dc.html",
+  "MainSD.dc.html",
+  "Call.dc.html",
+  "LightingControl.dc.html",
+  "CameraSelect.dc.html",
+  "Help.dc.html",
+  "PowerDown.dc.html",
+  "PoweringDown.dc.html",
+  "Laptop.dc.html",
+  "ShareLink.dc.html",
+  "PC.dc.html",
+  "DocCam.dc.html"
+ ],
+ "notes": {
+  "title": {"x": 0, "y": -300, "text": "Boardroom Panels", "kind": "title1", "maxW": 4000}
+ },
+ "designSystems": [
+  {
+   "title": "Extron Turbulence",
+   "namespace": "extronturbulence",
+   "artifact": "https://claude.ai/artifact/3RFtbd87nDJjyVBaXy3gHS",
+   "version": null,
+   "copiedAt": "2026-10-25T02:05:22Z"
+  }
+ ]
+}

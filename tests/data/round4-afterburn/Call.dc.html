@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boardroom Video Conference</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- The Microsoft Teams call page: reached by Video Conference, and shown by the program when a call comes in. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Call" reached-by="program" does="Microsoft Teams call page on the room PC; the program shows it when a call comes in." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="VTC Heading" style="position: absolute; left: 14px; top: 160px; width: 152px; height: 50px">VTC</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Make Call" variant="list" states='[{"name":"Ready","icon":"make-call_available"},{"name":"In Call","icon":"make-call_connected"}]' does="Joins the Teams meeting, or answers an incoming call, on the room PC; In Call while connected." style="position: absolute; left: 0px; top: 207px; width: 178px; height: 53px">Make Call</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="End Call" variant="list" states='[{"name":"No Call","icon":"end-call_disconnected"},{"name":"In Call","icon":"end-call_connected"}]' does="Ends the Teams call; In Call while a call is up." style="position: absolute; left: 0px; top: 272px; width: 178px; height: 53px">End Call</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Privacy" variant="list" icon="privacy" states="Off, On" does="Turns camera privacy on and off; On while the camera is covered." style="position: absolute; left: 0px; top: 337px; width: 178px; height: 53px">Privacy</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Mic Heading" style="position: absolute; left: 14px; top: 440px; width: 152px; height: 50px">Mic</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Mic Mute" id="201" variant="toggle" states='[{"name":"Live","text":"Mic Live"},{"name":"Muted","text":"Mic Muted"}]' does="Mutes all microphones; Muted while they are muted, and the caption says so." style="position: absolute; left: 0px; top: 487px; width: 178px; height: 53px">Mic Live</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Presentation" nav="MainSD" style="position: absolute; left: 20px; top: 706px; width: 144px; height: 64px">Presentation</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.MainArea">
+    <x-import component-from-global-scope="ExtronAfterburn.Label" name="Teams Title" type="subheading" align="center" style="position: absolute; left: 258px; top: 20px; width: 400px; height: 50px">Microsoft Teams</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Label" name="Call Status" align="center" does="Shows the call state: Ready, Incoming Call or In Call." style="position: absolute; left: 158px; top: 75px; width: 600px; height: 50px">Ready to make a call.</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Line" name="Divider" style="position: absolute; left: 77px; top: 143px; width: 760px; height: 20px"></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Label" name="Camera Label" type="body-strong" color="text-secondary" align="center" style="position: absolute; left: 358px; top: 200px; width: 200px; height: 50px">CAMERA</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Group" title="Camera Presets" cell="110x110" gap="49" cap="3" style="position: absolute; left: 159px; top: 260px; width: 587px; height: 130px">
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera Wide" variant="source" icon="ptz-camera" states="Off, On" show="On" does="Recalls the Wide camera preset; On while it is the active preset.">Wide</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera Table" variant="source" icon="ptz-camera" states="Off, On" does="Recalls the Table camera preset; On while it is the active preset.">Table</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera Presenter" variant="source" icon="ptz-camera" states="Off, On" does="Recalls the Presenter camera preset; On while it is the active preset.">Presenter</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Label" name="Privacy Status" type="body-strong" align="center" does="Shows Camera privacy is on or Camera privacy is off." style="position: absolute; left: 158px; top: 430px; width: 600px; height: 50px">Camera privacy is off.</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Clock" name="Current Date" format="date" align="left" style="position: absolute; left: 17px; top: 686px; width: 208px; height: 60px"></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Clock" name="Time" format="time" align="right" style="position: absolute; left: 749px; top: 686px; width: 148px; height: 60px"></x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Rail">
+    <x-import component-from-global-scope="ExtronAfterburn.Label" name="Volume Heading" align="center">Volume</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Slider" name="Volume" id="100" does="Sets the program volume."></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Mute" id="101" variant="icon" icon="speaker-volume_3" states="Off, On" does="Mutes the program audio; On while muted."></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Help" variant="icon" icon="help" nav="Help"></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Power" variant="icon" icon="power" nav="PowerDown"></x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

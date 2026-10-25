@@ -521,6 +521,39 @@ statement is in the live docs; this is the record that it changed.
   with the seed and pages it was read off. Only the `alert` variant changes
   what builds.
 
+- **Afterburn's page on the 320 was two sets of rows** (until 2026-10-25).
+  The Page's own controls - the left rail's heading and Group - reflowed over
+  the whole screen and its MainArea's in main, each set centred, so the two
+  landed on each other. The README said only that the panel lays a page out
+  again in rows, and that the 320's main holds the sources and their popup
+  region "and nothing more", while its own Main SD's left rail stood on that
+  region there - passed, since no check reads a popup region as a touch
+  target. Round four's Afterburn designer, revising from the translator's
+  words, met it as Start's Lights heading running into Start and Call's VTC
+  heading into Camera Presets, inferred a sort by each box's centre from
+  which pages passed, and moved Start's button and the camera presets for
+  nothing. Two rows of Groups - buttons there - were also laid 2 px apart on
+  every theme, and on the bar themes' 320 a heading that fitted at a page's
+  foot stood there alone, the row it heads going on to the next (the Mach
+  room's Volume label on Home 2, its volume on Home 3). The rows are one set
+  now and the README says their rule (`docs/claude-design.md` §4).
+
+- **Afterburn's source popups on the 320 were popups** (until 2026-10-25),
+  scaled into Main SD's popup region, which took the rest of the 320's 186
+  px of rows - so the left rail's Group stood in the sources' row, and the
+  README drew the region and its popups 568 deep, not the template's 525,
+  to give a 222x144 popup room for a source's title and empty state. The
+  sources' buttons were on the Sources Group's own pages there, which hold
+  no reference to the popups' group, and the 320's seed has no standard
+  popup to clone: round four's revised Afterburn room translated clean and
+  stopped at `gdl.idmap write-panels` on Windows, five refusals on the 320,
+  before GUI Designer. No test had run the ID map across panels on a
+  translated canvas. Each source is a page of its own there now, as the
+  320's template draws it (`docs/claude-design.md` §4). At the same time a
+  `Line` between two rows was held to its own thickness, touching both (Main
+  SD's Divider on the 300), and a page that did not fit after a row moved
+  gave only the rearranged depth.
+
 ## Dated facts moved out of the live docs
 
 - **Seeds** were made by hand on 2026-09-09; the 835 seed a day earlier (it was
