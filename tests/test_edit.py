@@ -65,6 +65,63 @@ class TestSelection(unittest.TestCase):
 
 
 @needs_client(MAIN_CLIENT)
+class TestUnknownKeys(unittest.TestCase):
+    """select() tests only the keys it knows, so a misspelled one was skipped
+    and the selector matched everything: a recolor meant for five sliders
+    restyled 292 controls, and a renumber of one page's buttons renumbered its
+    labels and shapes too - with 0 errors, and verify_built checking the same
+    plan. Every level of an edit file is held to the keys something reads."""
+
+    def _errors(self, spec):
+        return Edits(spec, FIXTURE).check()[1]
+
+    def test_a_misspelled_selector_key_is_an_error_and_plans_nothing(self):
+        spec = {'edits': [{'op': 'restyle', 'select': {'tipe': 'PBSlider'},
+                           'map': {'#242634': '#1B2233'}}]}
+        plan, errors, _ = Edits(spec, FIXTURE).check()
+        self.assertTrue([e for e in errors if "'tipe'" in e], errors)
+        self.assertEqual(plan['controls'], [])
+
+    def test_the_correct_selector_still_plans(self):
+        spec = {'edits': [{'op': 'restyle', 'select': {'type': 'PBSlider'},
+                           'map': {'#242634': '#1B2233'}}]}
+        plan, errors, _ = Edits(spec, FIXTURE).check()
+        self.assertEqual(errors, [])
+        self.assertEqual(len(plan['controls']), 5)
+
+    def test_a_renumber_with_a_misspelled_selector_is_an_error(self):
+        errors = self._errors({'edits': [{'op': 'renumber', 'start': 5000,
+                                          'select': {'tpye': 'PBButton', 'page': MAIN}}]})
+        self.assertTrue([e for e in errors if "'tpye'" in e], errors)
+
+    def test_a_misspelled_op_key_is_an_error(self):
+        errors = self._errors({'edits': [{'op': 'restyle', 'mpa': {'#242634': '#1B2233'}}]})
+        self.assertTrue([e for e in errors if "'mpa'" in e], errors)
+
+    def test_a_key_of_another_op_is_an_error(self):
+        """`scale` belongs to retarget; on a rename it does nothing."""
+        errors = self._errors({'edits': [{'op': 'rename', 'map': {'Cameras': 'Cams'},
+                                          'scale': True}]})
+        self.assertTrue([e for e in errors if "'scale'" in e], errors)
+
+    def test_a_misspelled_top_level_key_is_an_error(self):
+        """`edit` for `edits` planned nothing, with 0 errors."""
+        errors = self._errors({'edit': [{'op': 'rename', 'map': {'Cameras': 'Cams'}}]})
+        self.assertTrue([e for e in errors if "'edit'" in e], errors)
+
+    def test_underscored_keys_are_notes(self):
+        errors = self._errors({'_why': 'a note', 'edits': [
+            {'op': 'rename', '_why': 'shorter', 'map': {'Cameras': 'Cams'}}]})
+        self.assertEqual(errors, [])
+
+    def test_the_examples_edit_file_passes(self):
+        import json
+        with open(os.path.join(HERE, 'examples', 'edits.json'), encoding='utf-8') as fh:
+            spec = json.load(fh)
+        self.assertEqual([e for e in self._errors(spec) if 'not a key' in e], [])
+
+
+@needs_client(MAIN_CLIENT)
 class TestRename(unittest.TestCase):
     def _plan(self, edits):
         return _edits(edits).plan()
@@ -148,6 +205,61 @@ class TestRenumber(unittest.TestCase):
                                 'select': {'page': '1000 - Home', 'type': 'PBLabel'},
                                 'start': taken}]).check()
         self.assertTrue(any('already has it' in e for e in errors))
+
+    def test_only_an_addressable_control_is_numbered(self):
+        """A button, label, level or slider with an ID. A control at 0 has none
+        on purpose - the client fixture's clock and popup references on Home -
+        and numbering it gives the program a control it never had."""
+        ed = _edits([{'op': 'renumber', 'select': {'page': '1000 - Home'}, 'start': 1100}])
+        plan, errors, warnings = ed.check()
+        self.assertEqual(errors, [])
+        self.assertEqual([(o['was'], o['fields']['userIdField']) for o in plan['controls']],
+                         [(2, 1100), (63, 1101), (77, 1102)])
+        self.assertTrue(any('7 control(s) the selector matched' in w and 'no ID' in w
+                            for w in warnings), warnings)
+
+    def test_nothing_addressable_is_an_error(self):
+        _, errors, _ = _edits([{'op': 'renumber', 'start': 1100,
+                                'select': {'page': '1000 - Home',
+                                           'type': 'PBPopupPageReference'}}]).check()
+        self.assertTrue(any('nothing addressable' in e for e in errors), errors)
+
+    def test_mirrors_take_one_new_id(self):
+        """Controls sharing an ID are one control to the program - a feedback
+        twin on its page, one button on two confirmation popups. Numbered one
+        by one, each took its own, and check() said nothing."""
+        plan, errors, _ = _edits([{'op': 'renumber', 'start': 30000,
+                                   'select': {'page': MAIN, 'type': 'PBButton'}}]).check()
+        self.assertEqual(errors, [])
+        new = {o['fields']['userIdField'] for o in plan['controls'] if o['was'] == 5000}
+        self.assertEqual(len(new), 1, new)
+        olds = {o['was'] for o in plan['controls']}
+        self.assertEqual(len({o['fields']['userIdField'] for o in plan['controls']}), len(olds))
+        plan, errors, warnings = _edits([{'op': 'renumber', 'start': 40000,
+                                          'select': {'name': 'btn_shutdown_confirm'}}]).check()
+        self.assertEqual((errors, [o['fields']['userIdField'] for o in plan['controls']]),
+                         ([], [40000, 40000]))
+        self.assertEqual([w for w in warnings if 'mirror' in w], [])
+
+    def test_a_mirror_the_selector_leaves_is_a_warning(self):
+        _, errors, warnings = _edits([{'op': 'renumber', 'start': 40000, 'select': {
+            'page': '160 - Confirmation', 'name': 'btn_shutdown_confirm'}}]).check()
+        self.assertEqual(errors, [])
+        self.assertTrue(any("'161 - Teams Confirmation'" in w and 'keeps id 81' in w
+                            for w in warnings), warnings)
+
+    def test_an_id_past_uint16_is_an_error(self):
+        _, errors, _ = _edits([{'op': 'renumber', 'select': {'type': 'PBButton'},
+                                'start': 65530, 'step': 3}]).check()
+        self.assertTrue(any('65535' in e for e in errors), errors)
+
+    def test_a_start_or_step_that_cannot_be_is_an_error_not_a_hang(self):
+        """A step of 0 never moves past a taken ID: the planner spun forever."""
+        for start, step in ((1, 0), (1, -1), (1, 1.5), (0, 1), (70000, 1), ('abc', 1), (True, 1)):
+            plan, errors, _ = _edits([{'op': 'renumber', 'select': {'type': 'PBLabel'},
+                                       'start': start, 'step': step}]).check()
+            self.assertTrue(errors, (start, step))
+            self.assertEqual(plan['controls'], [], (start, step))
 
 
 class TestRestyle(unittest.TestCase):
@@ -234,6 +346,22 @@ class TestRetarget(unittest.TestCase):
         _, _, warnings = _edits([{'op': 'retarget', 'model': 'TLP1535M',
                                   'scale': True}]).check()
         self.assertTrue(any('already under the old' in w for w in warnings))
+
+    @needs_client(MAIN_CLIENT)
+    def test_the_old_minimum_is_the_projects_own_model(self):
+        """The fixture is a TLP Pro 1035 (60-1999-02), whose minimum is 53 px.
+        By its resolution alone the old minimum was the 835's 67, so a button
+        legal on the 1035 that the move to an 835 makes too small was tagged as
+        one that already was."""
+        _, _, warnings = _edits([{'op': 'retarget', 'model': 'TLP835M'}]).check()
+        under = [w for w in warnings if 'touch target' in w]
+        self.assertTrue(under)
+        for w in under:
+            w_, h_ = (int(v) for v in w.split(': ', 1)[1].split()[0].split('x'))
+            self.assertEqual('already under' in w, min(w_, h_) < 53, w)
+        self.assertTrue(any('already under' not in w for w in under), under)
+        self.assertTrue(all("the TLP1035M or TLP1035T's" in w for w in under
+                            if 'already under' in w), under)
 
 
 class TestRetargetOrientation(unittest.TestCase):

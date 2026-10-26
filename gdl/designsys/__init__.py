@@ -954,6 +954,14 @@ def _icon_prop(p):
     return f"an image from {p['template']}'s resource kit, by name, {where}. {how}"
 
 
+def _stem(name):
+    """The file stem of the artboard a Page named `name` is drawn on. The
+    Design type forbids spaces in a file name and a `nav` resolves by stem
+    only, so an example prints `MainSD.dc.html` and `nav="MainSD"` for the
+    Page named Main SD."""
+    return ''.join(name.split())
+
+
 def _example_button(p, key, name, extra=''):
     ex = p['examples'][key]
     r = ex['rect']
@@ -1578,22 +1586,27 @@ def component_docs(p):
     # As wide as it is drawn: a Rail draws a slider 54 px across on the
     # drawn panel (bundle.js railLayout), the regions at the touch minimum.
     slider_w = max(50, sl['thumb'], p['touch'], 54 if not _regions(p) else 0)
+    # The defaults are the design panel's seed's: each profile's slider is its
+    # 1035's, and another series' seed draws its own - Shockwave's 1535 a
+    # 72x47 thumb on a 48 px track where its 1035 draws 52x34 on 52.
+    own = f", the {p['model']}'s"
     if str(sl.get('thumb_image', '')).lower().endswith('.png'):
-        thumb_words = (f"and the template's own thumb image, `thumb` px across (default {sl['thumb']})"
-                       + (f" and {sl['thumb_height']} along the rail" if sl.get('thumb_height') else ''))
+        thumb_words = (f"and the template's own thumb image, `thumb` px across (default {sl['thumb']}"
+                       + (f", and {sl['thumb_height']} along the rail" if sl.get('thumb_height') else '')
+                       + f"{own})")
     else:
         thumb_words = (f"and a round thumb in `{sl['thumb_color']}` whose box is `thumb` px (default "
-                       f"{sl['thumb']}) - the circle itself about two-thirds of that, with a shadow round "
+                       f"{sl['thumb']}{own}) - the circle itself about two-thirds of that, with a shadow round "
                        f"it, as the panel draws it")
     if sl.get('track_image') and sl.get('fill_image'):
         # Mach, Shockwave and Turbulence draw the rail from kit art, on the canvas and the panel alike: it was
         # a rounded rail with its filled part in a color, which none of the three draws.
         rail_words = (f"its kit's rail art - `{sl['track_image']}` for the empty rail and "
-                      f"`{sl['fill_image']}` over it as far as the value - `track` px wide (default {sl['track']}) "
+                      f"`{sl['fill_image']}` over it as far as the value - `track` px wide (default {sl['track']}{own}) "
                       f"down the middle of the control's box,")
         fill_words = ''
     else:
-        rail_words = (f"a rounded rail `track` px wide (default {sl['track']}) down the middle of the control's "
+        rail_words = (f"a rounded rail `track` px wide (default {sl['track']}{own}) down the middle of the control's "
                       f"box, the rail's filled part in `{sl['value']}`,")
         fill_words = (f" `fill`: the rail's empty part, default `{sl['fill']}` - on a `raised` panel use "
                       f"`page`.")
@@ -1603,15 +1616,15 @@ def component_docs(p):
 The root of every artboard: one Page per artboard, holding everything on it. It is one page or popup of the panel, drawn at the panel's size and in the {t} background.
 
 Props:
-- `name`: what the page or popup is called on the panel. The control program shows it by this name, so make it unique and plain: `Home`, `Help`, `Confirm Room Off`.
+- `name`: what the page or popup is called on the panel. The control program shows it by this name, so make it unique and plain: `Home`, `Help`, `Confirm Room Off`. Once a programmer has the panel, renaming it is a change to their program, and its controls take new IDs unless each pins its old `id`.
 - `kind`: `page` (default, {p['size'][0]}x{p['size'][1]}), {_kind_words(p)}.
 - `group`: a popup's group. A standard popup appears where a page has a PopupRegion for its group.
 - `start="true"`: the page the panel boots into. One page only; without it, the first artboard.
 - `reached-by="program"`: the control program shows this page by itself - an incoming call - so no button has to lead to it.
 - `theme`: {', '.join(f'`{th["id"]}`' for th in themes(p))} - {('the background image and accent scheme pairing, ' if len(p['schemes']) > 1 else 'the background photograph, ') if p.get('themes') else ''}{p.get('themes_note') or 'the same on every artboard'}. `scheme` swaps the accent scheme alone: {', '.join(f'`{s["id"]}`' for s in p['schemes'])}.
-- `does`: what the page is for, in a sentence, for the programmer.
+- `does`: what the page is for, in a sentence, for the programmer. The ID map shows it beside the page.
 {_panels_props(p)}{_roles_props(p)}
-Place controls inside it with absolute positions or with flex and grid containers: containers that paint nothing are fine. Anything that paints and is not one of these components is not built.
+Place controls inside it with absolute positions or with flex and grid containers: containers that paint nothing are fine, except on a small panel (the 300s and the 320), whose pages reflow into rows and columns of their own: a sized container there is refused, so put its controls on the Page directly, or in a `Group`. Anything that paints and is not one of these components is not built.
 
 ```html
 {_x(p, 'Page', ' name="Home" start="true"', '...')}
@@ -1662,7 +1675,7 @@ Props:
 - `nav`: the artboard this button shows, by its file name without `.dc.html` - `nav="Help"` shows `Help.dc.html`. The button becomes that link, so Play follows it.
 - `does`: anything else it does, in a sentence for the programmer: "Routes the laptop to the display; Live while it is routed."
 - `show`: the state to draw on the canvas (default the first). Design only.
-- `name`: the control's name; `id` pins its number.
+- `name`: the control's name; `id` pins its number. A program knows a control by its number, and a revision of the canvas keeps the number of every control by its page and its name: a control renamed or moved to another page since the programmer started takes a new one unless it pins its old `id`.
 - `fill`, `stroke`, `color`, `border` set the look of every state that does not set its own - and the variant's `On` sets its own, so give `On` its look in `states` to change it.
 
 Size an image button to its kit image's shape, or the image is letterboxed: {shapes}.
@@ -1837,7 +1850,7 @@ Its children are Sections, the template's groups in order: the first Section sta
 A titled group in the LeftRail. `title` is drawn as the group's heading Label (named `<title> Heading`) where the template draws one; its children need no positions - they stand at the frame's places for that group, down its step as the Layout gives it, as one set, with 2 mm kept between the set and anything else. The set is one width: where one caption needs more room on a panel, every button of the column grows with it. More than the rail holds is named. A Section anywhere but in a LeftRail is named.
 
 ```html
-{ex('Section', f' title="{g2}"' if heads[1:2] and heads[1] else '', chr(10) + '  ' + btn(f' name="{launcher}" nav="{launcher}"', launcher) + chr(10))}
+{ex('Section', f' title="{g2}"' if heads[1:2] and heads[1] else '', chr(10) + '  ' + btn(f' name="{launcher}" nav="{_stem(launcher)}"', launcher) + chr(10))}
 ```
 """,
         'RightRail': f"""# RightRail
@@ -1857,7 +1870,7 @@ The bar across the foot: the room's mode, the date and time, Help and Power. {co
 It draws the template's clock (`{clock}`), Help ({look('help')}) and Power ({look('power')}) by default. Help, Power and the control in the mode slot - drawn by default or yours - keep the template's own IDs where you give them none and no other control has them. `help` and `power` name the artboards they show - `help="Help" power="ConfirmPower"`. A child with a `slot` takes that place instead: `slot="mode"` (the template's mode launcher - Room Mode, {look('mode')} - which is drawn only when given), `slot="clock"`, `slot="help"`, `slot="power"`. {together} The clock gives way, about its middle, to a cell grown into it; the bar's own surface - a Panel named `Footer Bar`{_bar_art_words(p, 'bottom', ', or, where it is')} - is kept flush with the cells beside it as they grow.
 
 ```html
-{ex('Footer', ' help="Help" power="ConfirmPower"', chr(10) + '  ' + btn(' slot="mode" name="Room Mode" nav="Room Mode"', 'Room Mode') + chr(10))}
+{ex('Footer', ' help="Help" power="ConfirmPower"', chr(10) + '  ' + btn(' slot="mode" name="Room Mode" nav="RoomMode"', 'Room Mode') + chr(10))}
 ```
 """,
         'Center': f"""# Center
@@ -2365,8 +2378,8 @@ def readme(p, renders=None):
 
 Start from what the panel has to do - the rooms, sources, calls and settings - and give every job a control. Then draw it in {t}'s own grammar (below): the template says where each control goes and how it looks; you say what each one is for.
 
-- **One artboard per page or popup.** Its root is one `{ns}.Page`, at {w}x{ht} for a page or a modal popup and {p['popup'][0]}x{p['popup'][1]} for a {_popup_noun(p)}. Name the start page's file `Main.dc.html`, as the canvas names its entry, and every other plainly (`Call.dc.html`, `Help.dc.html`); a `nav` names one by that stem (`nav="Main"`). Give each Page a `name` - what the panel calls it - and mark the start page `start="true"`.
-{_panels_readme(p)}- **Only these components are built.** Use {comps} for everything that shows, and `{ns}.MainArea` to place the main task of a page {'that has no regions' if regions else 'in the main region'}. Flex and grid containers that paint nothing are fine for layout. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
+- **One artboard per page or popup.** Its root is one `{ns}.Page`, at {w}x{ht} for a page or a modal popup and {p['popup'][0]}x{p['popup'][1]} for a {_popup_noun(p)}. Name the start page's file `Main.dc.html`, as the canvas names its entry, and every other plainly (`Call.dc.html`, `Help.dc.html`), with no spaces in a file name: the Page named Main SD is `MainSD.dc.html`. A `nav` names an artboard by that file stem and never by a Page's `name` (`nav="Main"`, `nav="MainSD"`). Give each Page a `name` - what the panel calls it - and mark the start page `start="true"`.
+{_panels_readme(p)}- **Only these components are built.** Use {comps} for everything that shows, and `{ns}.MainArea` to place the main task of a page {'that has no regions' if regions else 'in the main region'}. Flex and grid containers that paint nothing are fine for layout, except on a small panel (the 300s and the 320), whose pages reflow into rows and columns of their own: a sized container there is refused, so put its controls on the Page directly, or in a `Group`. Text, color, borders, images or icons drawn any other way are reported and never reach the panel.
 - **Say what every control does.** A button that shows another page or popup has `nav` - the target artboard's file stem - and becomes a working link in Play; on the panel the program shows it, as the control map tells the programmer to. Anything else it does goes in `does`, a plain sentence for the programmer: "Routes the laptop to the display." Labels the program rewrites, sliders and levels get a `does` too.
 - **Give feedback with `states`.** A button's `states` are what the program switches it between, in order: `"Off, On"`, or `No Signal / Ready / Live` with each its own look. Every state must look different: the spec check refuses two alike, since the panel would show no change. `press` is the state shown while it is held.
 - **A page or popup the program opens by itself**, like an incoming call, has `reached-by="program"`; a button may lead to it as well. Every other page must be reachable by `nav` from the start page.
@@ -2810,7 +2823,10 @@ def _hub_derived_md(p, hub):
     return (f"**What it draws by itself, and what you may draw.** {_say([repr(n) for n in names])} are the hub's, "
             f"named by its template and drawn from your working page - draw none of them. Two working pages - "
             f"Main SD and a call page - make one of each where they give it the same controls, and the later "
-            f"page's own, named for that page ('Video Call {names[1]}'), where they do not. A window you draw "
+            f"page's own, named for that page ('Video Call {names[1]}'), where they do not. So the order of the "
+            f"working pages decides which is named for its page. Once a programmer has the panel, keep that order: "
+            f"drawn in another, those windows are renamed - a change to their program - and the IDs of what the "
+            f"hub draws in them, which no `id` of yours can pin, are retired. A window you draw "
             f"yourself under one of those names - a {display} settings window, which the grammar invites - is "
             f"that window where it holds every control the hub would put in it, with the same `id`s (the "
             f"LeftRail's first Section's, there), and its title then says the Section's heading; where it holds "
@@ -3056,12 +3072,12 @@ def _working_example(p):
     def src(name, *stems):
         ic = _glyph(p, names, *stems)
         return x('Button', f' slot="source" name="{name}"' + (f' icon="{ic}"' if ic else '')
-                 + f' nav="{name}" does="Routes the {_noun(name)} to the display."', name)
+                 + f' nav="{_stem(name)}" does="Routes the {_noun(name)} to the display."', name)
     disp = ''.join('\n      ' + x('Button', f' name="Display {wd}" {a}', wd) for wd, a in (
         ('On', 'does="Turns the display on."'), ('Off', 'does="Turns the display off."'),
         ('Mute', 'states="Off, On" does="Mutes the display; On while muted."')))
     launchers = voice.get('launchers') or ['Lighting', 'Audio']
-    sets = ''.join('\n      ' + x('Button', f' name="{lw}" nav="{lw}"', lw) for lw in launchers)
+    sets = ''.join('\n      ' + x('Button', f' name="{lw}" nav="{_stem(lw)}"', lw) for lw in launchers)
     main = ('<!-- The working page, reached from Start. -->\n'
             + x('Page', f' name="Main SD"{room}', '\n  ' + '\n  '.join([
                 x('Header', '', '\n    ' + '\n    '.join((src('Laptop', 'laptop'), src('PC', 'pc'),
@@ -3070,7 +3086,7 @@ def _working_example(p):
                 x('LeftRail', '', '\n    ' + x('Section', f' title="{first}"', disp + '\n    ') + '\n    '
                   + x('Section', f' title="{second}"' if second else '', sets + '\n    ') + '\n  '),
                 x('RightRail'),
-                x('Footer', ' help="Help" power="Power Down"'),
+                x('Footer', ' help="Help" power="PowerDown"'),
                 x('Center', ' group="Sources"')]) + '\n'))
     # A camera as the template draws one in its source popup: a heading over
     # its zoom keys, the in-well look's own glyphs on them where the kit has
@@ -3113,19 +3129,19 @@ def _working_example(p):
                for n in ('Full', 'Meeting', 'Off')]
     presets = [x('Group', f' title="Presets" cell="{bw}x{bh}" gap="{gap}" cap="3"',
                  '\n    ' + '\n    '.join(members) + '\n  ', _at([px0, py0, box_w, box_h]))]
-    out = [('Main', _start_example(p)), ('Main SD', main),
+    out = [('Main', _start_example(p)), ('MainSD', main),
            ('Laptop', '<!-- A source the room only routes: the Center draws its title and the empty state. -->\n'
             + x('Page', f' name="Laptop" kind="popup" group="Sources" role="source"{room}')),
            ('PC', x('Page', f' name="PC" kind="popup" group="Sources" role="source"{room}')),
-           ('Doc Cam', x('Page', f' name="Doc Cam" kind="popup" group="Sources" role="source" title="Document Camera"'
+           ('DocCam', x('Page', f' name="Doc Cam" kind="popup" group="Sources" role="source" title="Document Camera"'
                                  f'{room}', ('\n  ' + '\n  '.join(keys) + '\n') if keys else ''))]
     for lw in launchers:
-        out.append((lw, x('Page', f' name="{lw}" kind="modal" role="settings" title="{title(lw)}"{room}',
+        out.append((_stem(lw), x('Page', f' name="{lw}" kind="modal" role="settings" title="{title(lw)}"{room}',
                           ('\n  ' + '\n  '.join(presets) + '\n') if lw == lit else '')))
     out += [('Help', x('Page', f' name="Help" kind="modal" role="help"{room}')),
-            ('Power Down', x('Page', f' name="Power Down" kind="modal" role="confirm" topic="power" '
+            ('PowerDown', x('Page', f' name="Power Down" kind="modal" role="confirm" topic="power" '
                                      f'does="Powers the room down."{room}')),
-            ('Powering Down', x('Page', f' name="Powering Down" kind="modal" role="wait" topic="down" '
+            ('PoweringDown', x('Page', f' name="Powering Down" kind="modal" role="wait" topic="down" '
                                         f'reached-by="program"{room}'))]
     return out
 
@@ -3180,7 +3196,7 @@ def _afterburn_working(p):
     for n, noun in sources:
         ic = _glyph(p, names, n.lower().replace(' ', '-')) if names else None
         cells.append(x('Button', f' name="{n}" variant="source"' + (f' icon="{ic}"' if ic else '')
-                       + f' states="Off, On" nav="{n}" does="Routes the {noun} to the display."', n))
+                       + f' states="Off, On" nav="{_stem(n)}" does="Routes the {noun} to the display."', n))
     inside = [x('Group', f' title="Sources" cell="{first[2]}x{first[3]}" gap="{pitch - first[2]}"',
                 '\n      ' + '\n      '.join(cells) + '\n    ', _at(row, main))]
     for it in c.get('items') or ():
@@ -3207,7 +3223,7 @@ def _afterburn_working(p):
         elif gi == 1:
             # The launchers in the kit's own list glyphs: Lighting's is lights.
             glyph = {lw: {'Lighting': 'lights'}.get(lw, lw.lower()) for lw in launchers}
-            rows += [(f'{lw} Settings', lw, 'list', f'nav="{lw} Settings"'
+            rows += [(f'{lw} Settings', lw, 'list', f'nav="{_stem(lw)}Settings"'
                       + (f' icon="{glyph[lw]}"' if glyph[lw] in lists else '')) for lw in launchers]
     cell_h, gap = RAIL_CELL
     hd = (groups[1] if len(groups) > 1 else groups[0])['heading'] if groups else {'text': 'Settings', 'rect': [14, 160, 152, 50]}
@@ -3223,7 +3239,7 @@ def _afterburn_working(p):
             x('Button', ' name="Mute" variant="icon"' + (f' icon="{mute_icon}"' if mute_icon else '')
               + ' states="Off, On" does="Mutes the program audio; On while muted."'),
             x('Button', ' name="Help" variant="icon" icon="help" nav="Help"'),
-            x('Button', ' name="Power" variant="icon" icon="power" nav="Power Down"')]
+            x('Button', ' name="Power" variant="icon" icon="power" nav="PowerDown"')]
     page = ('<!-- The working page, reached from Start. Draw Preview and the mode button only where the room has '
             'them. -->\n'
             + x('Page', f' name="Main SD"{room}', '\n  ' + '\n  '.join(
@@ -3268,7 +3284,7 @@ def _afterburn_working(p):
         if win.get('title'):
             out.append(x('Label', f' name="{text} Title" type="subheading" align="center"', text, _at(win['title'])))
         if win.get('close'):
-            out.append(x('Button', f' name="Close {text}" nav="Main SD"', b.get('close', 'Close'),
+            out.append(x('Button', f' name="Close {text}" nav="MainSD"', b.get('close', 'Close'),
                          _at(win['close']['rect'])))
         return out
     hw, cw, ww = wins.get('help') or {}, wins.get('confirm') or {}, wins.get('wait') or {}
@@ -3296,7 +3312,7 @@ def _afterburn_working(p):
             q.append(x('Button', ' name="Power Down" does="Powers the room down; the program shows Powering Down."',
                        b.get('power', 'Power Down'), _at(r)))
         elif bt['role'] == 'cancel':
-            q.append(x('Button', ' name="Cancel" nav="Main SD"', b.get('cancel', 'Cancel'), _at(r)))
+            q.append(x('Button', ' name="Cancel" nav="MainSD"', b.get('cancel', 'Cancel'), _at(r)))
     wait = [x('Label', ' name="Powering Down Message" type="subheading" align="center"',
               said((w.get('wait') or {}).get('down')), _at(deeper(ww.get('message') or [290, 375, 700, 50])))]
     lw0 = launchers[0]
@@ -3308,18 +3324,18 @@ def _afterburn_working(p):
                   '\n    ' + x('Button', f' name="{lw0} {n}" does="Recalls the {n.lower()} {lw0.lower()} preset."', n)
                   for n in ('Full', 'Meeting', 'Off')) + '\n  ',
                   _at([365, st[1] + st[3] + 116, 178, 3 * SET_CELL[0] + 2 * SET_CELL[1] + 10]))])
-    out = [('Main', _start_example(p)), ('Main SD', page),
+    out = [('Main', _start_example(p)), ('MainSD', page),
            ('PC', '<!-- A source the room only routes: its title and the template\'s empty state. -->\n'
             + popup('PC', empty('PC'))),
            ('Laptop', popup('Laptop', empty('Laptop'))),
-           ('Doc Cam', '<!-- A source with controls: a capitals label over its keys, as the template heads them. -->\n'
+           ('DocCam', '<!-- A source with controls: a capitals label over its keys, as the template heads them. -->\n'
             + popup('Doc Cam', zoom)),
            ('Streaming', popup('Streaming', empty('Streaming')))]
     for lw in launchers:
-        out.append((f'{lw} Settings', modal(f'{lw} Settings', lights if lw == lw0 else titled(sw, f'{lw} Settings'))))
+        out.append((f'{_stem(lw)}Settings', modal(f'{lw} Settings', lights if lw == lw0 else titled(sw, f'{lw} Settings'))))
     out += [('Help', modal('Help', help_)),
-            ('Power Down', modal('Power Down', q, ' does="Asks before the room powers down."')),
-            ('Powering Down', modal('Powering Down', wait, ' reached-by="program"'))]
+            ('PowerDown', modal('Power Down', q, ' does="Asks before the room powers down."')),
+            ('PoweringDown', modal('Powering Down', wait, ' reached-by="program"'))]
     return out
 
 
@@ -3371,7 +3387,9 @@ def _center_md(p):
             f"columns, two to a page, the rest on a second page by More and Back"
             + (f"; with none, the 320's three-line empty state ('{page_empty}')" if page_empty else '') + ".\n"
             f"- **Without `role`** a popup in the Center's group scales with main, and is named where it comes out "
-            f"larger than the region: give a source its role.\n\n")
+            f"larger than the region: give a source its role. On the 320 a "
+            f"popup with no `role` is refused, by name: its seed has no standard popup to clone, so only a "
+            f"source (a page of its own there) builds.\n\n")
 
 
 # -- the windows ----------------------------------------------------------------
@@ -3547,6 +3565,12 @@ def _writing_md(p):
                  "answers do.")
     rules.append("- Captions and titles are Title Case" + (f", in capitals only where {t} sets them so ("
                                                           f"{', '.join(caps)})" if caps else '') + ".")
+    if w.get('column_labels_320'):
+        rules.append(f"- On the 320 a `Group`'s title heads its column in capitals, as {t}'s 320 sets its column "
+                     f"labels: write the title as on every other panel (Zoom) and the 320 draws it ZOOM - in the "
+                     f"control map too, which prints what the panel shows. That is extrapolated: the 320 seed shows "
+                     f"capitals on its four camera labels (ZOOM, FOCUS, INPUTS, IRIS) only, and any other title there "
+                     f"is set so by this rule, not by the template.")
     preface = (f"{t}'s own words. Its system draws no empty state or window of its own, so you write these, in "
                f"its words, on the artboards you draw (The center, Windows)."
                if not _regions(p) else

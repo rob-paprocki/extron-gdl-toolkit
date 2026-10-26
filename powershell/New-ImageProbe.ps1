@@ -23,6 +23,7 @@ if (-not $Icon) {
 }
 $ErrorActionPreference = 'Stop'
 . (Join-Path $Repo 'powershell\GdlProject.ps1')
+. (Join-Path $Repo 'powershell\GdlApply.ps1')     # Get-GdlStates
 Initialize-Gdl | Out-Null
 Add-Type -AssemblyName System.Drawing
 
@@ -75,13 +76,11 @@ if (-not $existing) {
         foreach ($c in $pg.Controls) {
             $v = Get-GdlField $c 'buttonImageField'
             if ($v) { $existing = $v; break }
-            $sts = Get-GdlField $c 'statesField'
-            if ($sts -and $sts.Count) {
-                for ($k = 0; $k -lt $sts.Count; $k++) {
-                    if ($null -eq $sts[$k]) { continue }
-                    $v2 = Get-GdlField $sts[$k] 'buttonImageField'
-                    if ($v2) { $existing = $v2; break }
-                }
+            # Get-GdlStates, not a statesField's .Count: PBStates has none,
+            # and PowerShell 5.1 answers 1, so only state 0 was looked at.
+            foreach ($st in @(Get-GdlStates $c)) {
+                $v2 = Get-GdlField $st 'buttonImageField'
+                if ($v2) { $existing = $v2; break }
             }
             if ($existing) { break }
         }
@@ -96,8 +95,8 @@ Set-GdlField $ref 'resourceNameField' $name
 Set-GdlField $target 'buttonImageField' $ref
 
 # States carry their own icon slot; mirror it or the default state keeps the old one.
-$states = Get-GdlField $target 'statesField'
-if ($states -and $states.Count) {
+$states = @(Get-GdlStates $target)
+if ($states.Count) {
     for ($i = 0; $i -lt $states.Count; $i++) {
         $st = $states[$i]
         if ($null -eq $st) { continue }

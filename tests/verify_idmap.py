@@ -7,9 +7,10 @@ that keeps the donor's pages (`keep_donor_pages`) has them alongside its own. A
 programmer works from the map, so every ID and name in it is checked against
 the built file.
 
-    python tests/verify_idmap.py <idmap_dir> <built.gdl>
+    python tests/verify_idmap.py <idmap_dir> <built.gdl> [--panel PANEL]
 
-Exits non-zero on any problem, the way tests/verify_built.py gates a layout.
+A map of every panel (gdl.idmap write-panels) is checked as one panel's view
+of it - `--panel` names which. Exits non-zero on any problem, the way tests/verify_built.py gates a layout.
 Stdlib only: it reads layout.json through gdl.container, not the compositor.
 """
 import json
@@ -166,8 +167,20 @@ def check_layout(idmap_dir, j, panel=None):
                     problems.append(f"{at['container']!r} {at['name']!r}: built as "
                                     f"{x.get('__type')}, the map says {c['type']}")
                 problems += _states(c, at, x)
+    # An ID the map retires - a previous delivery's, whose control is gone -
+    # is on no control: a program still addressing it must reach nothing.
+    retired = {r['id']: r.get('was') or '' for r in m.get('retired') or []}
     for box in list(pages.values()) + list(popups.values()):
         for x in box.get('Controls') or []:
+            if x.get('UserId') in retired and x.get('Type') != REF_TYPE:
+                say = (f"{box['Name']!r} {x.get('Name')!r} carries ID {x['UserId']}, which the map retires "
+                       f"(was {retired[x['UserId']]}) - a program still addressing it would reach this "
+                       'control')
+                if box['Name'] in ours:
+                    problems.append(say)
+                else:
+                    notes.append(f'donor page {say}, if the page is ever shown')
+                continue
             if x.get('UserId') not in addressed or x.get('Type') == REF_TYPE:
                 continue
             if box['Name'] in ours and (box['Name'], x.get('Name')) not in expected:
@@ -207,6 +220,14 @@ def main(argv):
     if len(argv) != 3:
         print(__doc__.strip().splitlines()[0])
         print('usage: verify_idmap.py <idmap_dir> <built.gdl> [--panel PANEL]')
+        return 2
+    # A map of every panel is checked as one panel's, which only the person
+    # running it knows: say which panels it has, before reading any build.
+    with open(os.path.join(argv[1], 'idmap.json'), encoding='utf-8') as fh:
+        models = [p['model'] for p in json.load(fh).get('panels') or []]
+    if models and panel not in models:
+        print(f"{argv[1]} is the map of every panel ({', '.join(models)}) - name the one "
+              f"{argv[2]} is: --panel PANEL" + (f' ({panel!r} is not one of them)' if panel else ''))
         return 2
     problems, notes, checked = check(argv[1], argv[2], panel)
     for n in notes:

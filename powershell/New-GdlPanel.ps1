@@ -43,12 +43,18 @@
     verifies it against the BUILT panel (tests/verify_idmap.py). Navigation is
     checked before anything is built, so a nav to nowhere costs a second, not a
     build.
+
+    -Previous <the previous delivery's idmap folder or idmap.json>, with
+    -IdMap, for a revision translated with `gdl.design translate --previous`:
+    the map is written with changes.md and changes.json beside it - what a
+    program written against the previous map meets (docs/idmap.md section 9).
 #>
 param(
     [Parameter(Mandatory)][string]$Spec,
     [string]$Donor,
     [Parameter(Mandatory)][string]$Output,
     [string]$IdMap,
+    [string]$Previous,
     [string]$Work,
     [string]$Python = 'python',
     [string]$InstallDir = 'C:\Program Files (x86)\Extron\GUI Designer',
@@ -72,7 +78,15 @@ $Spec = (Resolve-Path $Spec).Path
 # of them before any Push-Location $repo - the seed pick's below as much as the
 # build's - which moves what this reads.
 $Output = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Output)
-if ($IdMap) { $IdMap = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($IdMap) }
+# A folder handed to Python loses a trailing backslash, which tab completion
+# adds: it escapes the closing quote Windows PowerShell 5.1 puts round an
+# argument with a space in it, and the arguments after it run into it.
+if ($IdMap) { $IdMap = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($IdMap).TrimEnd('\') }
+if ($Previous) { $Previous = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Previous).TrimEnd('\') }
+if ($Previous -and -not $IdMap) { throw '-Previous diffs the ID map against the previous one - give -IdMap too' }
+# Always an array: an if's empty @() comes back $null, which + appends
+# as an empty argument.
+$prev = @(if ($Previous) { '--previous', $Previous })
 
 # Build scratch goes on a local disk by default. The repo is often on a mounted
 # drive and GUI Designer is slow against one.
@@ -144,7 +158,9 @@ try {
 
     if ($IdMap) {
         Step 'ID map check - navigation targets and reachability'
-        Run $Python @('-m', 'gdl.idmap', 'check', $Spec) 'ID map check'
+        # With -Previous this also refuses a map other than the one the spec
+        # kept its IDs against - before the build, not after it.
+        Run $Python (@('-m', 'gdl.idmap', 'check', $Spec) + $prev) 'ID map check'
     }
 
     Step 'donor check - every cloned type available, no name the built panel keeps'
@@ -231,7 +247,7 @@ try {
 
     if ($IdMap) {
         Step 'write the ID map'
-        Run $Python @('-m', 'gdl.idmap', 'write', $Spec, $IdMap) 'ID map'
+        Run $Python (@('-m', 'gdl.idmap', 'write', $Spec, $IdMap) + $prev) 'ID map'
 
         Step 'verify the ID map against the build'
         # Build renumbers pages, so the names and IDs a programmer will work

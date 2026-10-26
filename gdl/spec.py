@@ -7,7 +7,8 @@ here, because they are pure arithmetic and need nothing installed:
   * a **layout pass** - `grid` and `stack` turn "six buttons across this region
     with a 16px gutter" into rects, so nothing is a hand-typed literal
   * **ID allocation** - page numbers and per-control `userId`s handed out in
-    bands, unique within a page, skipping anything the spec pins by hand
+    bands, unique within a page, skipping anything the spec pins by hand and
+    any ID it retires (`_retired`: a previous delivery's, docs/idmap.md §9)
 
 The third piece - writing the authoring model - has to *run* on 32-bit Windows
 PowerShell with GUI Designer installed, but everything that step needs is
@@ -37,6 +38,7 @@ import math
 import os
 import re
 import sys
+from fractions import Fraction
 
 # AlignmentEnum = 3*vertical + horizontal; vertical 0 bottom / 1 middle / 2 top,
 # horizontal 0 center / 1 left / 2 right. Same convention gdl/compose.py decodes.
@@ -391,6 +393,11 @@ MM_SPACING = 2.0
 MAX_BUTTONS_PER_GROUP = 9        # p.58
 MAX_COLORS_PER_PROJECT = 6      # p.49
 MIN_BODY_POINT_SIZE = 14         # pp.65-67
+# What a control with no `size`, on a theme with none, builds at. The plan and
+# the checks read this one number: the type floor once read a control with no
+# size as none and skipped it, so leaving 14 pt out passed a 535's 28 pt floor
+# that writing it did not.
+DEFAULT_POINT_SIZE = 14
 
 
 def touch_minimums(target):
@@ -464,6 +471,54 @@ CONTROL_KEYS = frozenset((
     # and the segmented control a segment belongs to.
     'derived', 'joined',
 ))
+# And every key the levels above a control take, for the same reason: a key
+# nothing reads falls back to its default, and the plan is made from the same
+# spec, so verify_built agrees with it. A typo'd `start_page` booted the panel
+# into the wrong page with every gate green. A key starting `_` is the
+# translator's own, or a note (`_seed`, `_does`, `_why`), and is never refused.
+SPEC_KEYS = frozenset((
+    'name', 'model', 'size', 'family', 'theme', 'images', 'pages', 'popups', 'start_page',
+    'keep_donor_pages', 'type_floor',
+    # What the panel does, for the ID map (gdl/idmap.py).
+    'does',
+))
+PAGE_KEYS = frozenset((
+    'name', 'number', 'id_base', 'modal', 'controls', 'background', 'background_image',
+    'background_layout',
+    # For the ID map: shown by the program rather than a control, what the
+    # page is for, and the template's place a panel's layout named rather than
+    # drew.
+    'reached_by', 'does', 'left',
+))
+POPUP_KEYS = PAGE_KEYS | {'group', 'size'}
+# What a grid or stack lays out by. Any other key is shared by its items, and
+# held to CONTROL_KEYS there.
+LAYOUT_KEYS = frozenset(('rect', 'cols', 'rows', 'gap', 'gap_y', 'pad', 'items', 'count',
+                         'horizontal', 'name'))
+# A theme's settings. Any other key is a color the palette names - `surface`,
+# `shade-on` - so one whose value is not a color is a typo.
+THEME_SETTINGS = frozenset(('font', 'size', 'on', 'icon_font', 'background_image',
+                            'background_layout'))
+
+
+# A modal's own transparency, in percent. Build draws a modal's page - black,
+# and its photo if it has one - at it over the page beneath, and not its
+# background color: a spec modal with a #242634 one built black. 456 of the 460
+# modals built in the corpus and the archived builds are authored at 35, alpha
+# 166, as every Design canvas draws a modal (the profiles' `scrim`); the other
+# 4, in the client's archived projects, are at 0 and build opaque. The applier
+# wrote none, so a spec modal took its donor modal's.
+MODAL_TRANSPARENCY = 35.0
+
+
+def is_uint16(v):
+    """A whole number a UInt16 holds - not a bool, a float or a string."""
+    return isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 0xFFFF
+
+
+def _odd_keys(d, known):
+    """The keys of `d` nothing reads, sorted: not in `known`, and not `_`-prefixed."""
+    return sorted(k for k in d if k not in known and not str(k).startswith('_'))
 # Interactive kinds are the ones held to the 9mm touch-target rule.
 TOUCHABLE = {'button', 'slider'}
 
@@ -729,6 +784,10 @@ def color(v, theme=None):
             'G': int(h[4:6], 16), 'B': int(h[6:8], 16)}
 
 
+def _round_half_up(v):
+    return math.floor(v + Fraction(1, 2))
+
+
 def grid(rect, cols, rows=1, gap=0, gap_y=None, pad=0):
     """Split a region into cell rects, left to right then top to bottom.
 
@@ -745,13 +804,24 @@ def grid(rect, cols, rows=1, gap=0, gap_y=None, pad=0):
     if cols < 1 or rows < 1:
         raise ValueError(f'grid needs at least one row and column, got {cols}x{rows}')
     x, y, w, h = x + pad, y + pad, w - 2 * pad, h - 2 * pad
-    cw = (w - gap * (cols - 1)) / cols
-    ch = (h - gy * (rows - 1)) / rows
+    # Each cell's two edges, rounded, and its size what lies between them.
+    # Rounding a cell's left and its width apart ran 800 across three into 267
+    # wide from 0, 267 and 533 - the second a pixel into the third - and left
+    # gaps a pixel either side of the one asked for. In exact arithmetic with
+    # halves rounded up, a cell's right edge and the next one's left are a
+    # whole gap apart, exactly.
+    def edges(start, length, n, g):
+        start, g = Fraction(start), Fraction(g)
+        size = (Fraction(length) - g * (n - 1)) / n
+        out = []
+        for i in range(n):
+            s = start + i * (size + g)
+            out.append((_round_half_up(s), _round_half_up(s + size) - _round_half_up(s)))
+        return out
     out = []
-    for r in range(rows):
-        for c in range(cols):
-            out.append([round(x + c * (cw + gap)), round(y + r * (ch + gy)),
-                        round(cw), round(ch)])
+    for top, ch in edges(y, h, rows, gy):
+        for left, cw in edges(x, w, cols, gap):
+            out.append([left, top, cw, ch])
     return out
 
 
@@ -1017,7 +1087,9 @@ class Panel:
         """
         nxt = base
         for c in controls:
-            if c.get('id'):
+            # A pinned 0 is pinned - GUI Designer's 'no ID', which check()
+            # names - not a control with no `id`, to be given another quietly.
+            if c.get('id') is not None:
                 continue
             while nxt in taken:
                 nxt += 1
@@ -1043,7 +1115,15 @@ class Panel:
             flat_pages.append((pg, self._icons(flat, f"page {pg.get('name')!r}"),
                                dict(self._groups), list(self._overflow)))
         taken = {c['id'] for _, cs, _, _ in flat_pages + flat_popups for c in cs
-                 if c.get('id')}
+                 if isinstance(c.get('id'), int)}
+        # IDs an earlier delivery gave controls that are gone (translate
+        # --previous writes them): a program still addressing one must reach
+        # nothing, so no unpinned control is numbered into one.
+        taken |= {r['id'] for r in self.spec.get('_retired') or [] if isinstance(r, dict)}
+        # Which IDs the spec gave, so check() can tell a pinned one from one
+        # the band ran past 65535 with.
+        self._pinned = {id(c) for _, cs, _, _ in flat_pages + flat_popups for c in cs
+                        if c.get('id') is not None}
 
         for i, (pg, controls, groups, overflow) in enumerate(flat_pages):
             page_no = pg.get('number')
@@ -1156,7 +1236,7 @@ class Panel:
                                         or '#FFFFFF', self.theme),
                     'TextAlignment': ALIGN.get(c.get('align', 'center'), 3),
                     'Font': {'Name': font,
-                             'PointSize': c.get('size') or self.theme.get('size') or 14,
+                             'PointSize': c.get('size') or self.theme.get('size') or DEFAULT_POINT_SIZE,
                              'Style': {'Bold': bool(c.get('bold')),
                                        'Italic': bool(c.get('italic'))}},
                 }
@@ -1191,9 +1271,12 @@ class Panel:
 
     def render(self, page=0):
         """Composite one page to a PIL image. Needs Pillow."""
-        from .compose import render_page
+        from .compose import as_the_panel, render_page
         model, fills = self.layout()
-        return render_page(model['Pages'][page], {}, self.size, fills=fills)
+        # As the panel shows it: a translucent fill blends. No donor's faces -
+        # a spec alone cannot know which build the panel will embed.
+        with as_the_panel():
+            return render_page(model['Pages'][page], {}, self.size, fills=fills)
 
     def plan(self, swaps=None, fonts=None, art=None):
         """A build plan: the clone-and-set operations that would write this spec.
@@ -1316,6 +1399,16 @@ class Panel:
                     out.append(f"{item['name']!r} {c.get('name') or c.get('kind')}: "
                                f"{', '.join(repr(k) for k in odd)} is not a key a control takes - "
                                'a typo here is silently ignored')
+                on = c.get('on')
+                if isinstance(on, dict):
+                    odd = _odd_keys(on, STATE_KEYS - {'name'})
+                    if odd:
+                        out.append(f"{item['name']!r} {c.get('name') or c.get('kind')}: `on` "
+                                   f"{', '.join(map(repr, odd))} is not a key a state takes - "
+                                   f"it takes {', '.join(sorted(STATE_KEYS - {'name'}))}")
+                out += self._value_rules(c, f"{item['name']!r} {c.get('name') or c.get('kind')}")
+        out += self._number_rules()
+        out += self._key_rules()
         for name, f in self.images.items():
             if not resolve_image(f):
                 out.append(f'image {name!r}: {f!r} is not a file here or under '
@@ -1325,9 +1418,10 @@ class Panel:
                 out += self._image_rules(c, f"{item['name']!r} {c.get('name') or c.get('kind')}")
         for pu in self.popups:
             if pu['modal'] and pu.get('background_image'):
-                out.append(f"popup {pu['name']!r} is a modal, and Build draws a modal as the page "
-                           'beneath under its scrim, whatever its background - its background_image '
-                           'would never show')
+                out.append(f"popup {pu['name']!r} is a modal, and Build draws a modal's page at the "
+                           f'modal\'s own transparency ({MODAL_TRANSPARENCY:g}%) over the page '
+                           'beneath - its background_image would be a dimmed photo over it, which '
+                           'no canvas draws. Put a picture on an image control in it')
         for pg in self.pages:
             seen = {}
             # Two controls with identical type and rect are almost always a
@@ -1411,6 +1505,93 @@ class Panel:
                        f'(GUI Design Standards p.49)')
         return out
 
+    def _value_rules(self, c, where):
+        """A control's kind and align must be ones the plan knows, and its ID a
+        UInt16 a program can address.
+
+        The plan builds an unknown kind as a PBShape - a mistyped button is a
+        rectangle that does nothing, and verify_built agrees with the plan that
+        says so - and an unknown align as centre. userIdField is a UInt16: the
+        applier's write of anything else fails, warned on Windows only, and the
+        clone keeps its donor's ID - another control's address.
+        """
+        out = []
+        kind = c.get('kind', 'panel')
+        if not isinstance(kind, str) or kind not in KIND_TYPE:
+            out.append(f"{where}: kind {kind!r} is not one the plan builds - "
+                       f"{', '.join(map(repr, KIND_TYPE))} - and would build as an inert shape")
+        align = c.get('align')
+        if align is not None and (not isinstance(align, str) or align not in ALIGN):
+            out.append(f"{where}: align {align!r} is not one of "
+                       f"{', '.join(repr(a) for a in ALIGN if a != 'centre')} - it would build "
+                       f'centred')
+        v = c.get('id')
+        if not is_uint16(v) or v == 0:
+            why = ("0 is GUI Designer's 'no ID' - leave `id` out and one is allocated"
+                   if v == 0 and not isinstance(v, bool) else
+                   'it was allocated from its page\'s number or id_base - lower that'
+                   if id(c) not in self._pinned else
+                   "userIdField is a UInt16, and a write of anything else leaves the clone "
+                   "the donor's ID")
+            out.append(f'{where}: id {v!r} is not a whole number from 1 to 65535 - {why}')
+        return out
+
+    def _number_rules(self):
+        """A page's and popup's number is written through a [uint16] cast,
+        which stops the applier midway on anything else, and the ID band its
+        controls are allocated from starts at it."""
+        out = []
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for it in items:
+                if not is_uint16(it['number']):
+                    out.append(f"{kind} {it['name']!r}: number {it['number']!r} is not a whole "
+                               f'number from 0 to 65535 - the applier writes it as a UInt16')
+        return out
+
+    def _key_rules(self):
+        """Every key above a control's that nothing reads (SPEC_KEYS and the
+        rest), named. A control's own are held to CONTROL_KEYS in check()."""
+        out = []
+        say = ' is not a key {} takes - a typo here is silently ignored'.format
+        odd = _odd_keys(self.spec, SPEC_KEYS)
+        if odd:
+            out.append(', '.join(map(repr, odd)) + say('a spec'))
+        for k, v in (self.spec.get('theme') or {}).items():
+            if k in THEME_SETTINGS or str(k).startswith('_'):
+                continue
+            if not (isinstance(v, str) and HEX.match(v)):
+                out.append(f'theme {k!r} is not a key a theme takes: {v!r} is neither a color '
+                           f"nor one of its settings ({', '.join(sorted(THEME_SETTINGS))}) - a "
+                           f'typo here is silently ignored')
+        for kind, keys, items in (('page', PAGE_KEYS, self.spec.get('pages') or []),
+                                  ('popup', POPUP_KEYS, self.spec.get('popups') or [])):
+            for i, it in enumerate(items):
+                if not isinstance(it, dict):
+                    continue
+                where = f"{kind} {it.get('name') or i!r}"
+                odd = _odd_keys(it, keys)
+                if odd:
+                    out.append(f"{where}: {', '.join(map(repr, odd))}" + say(f'a {kind}'))
+                out += self._directive_keys(it.get('controls') or [], where)
+        return out
+
+    def _directive_keys(self, controls, where):
+        """A grid or stack is an object holding one: anything beside it is
+        dropped, and its own keys are LAYOUT_KEYS or shared with its items."""
+        out = []
+        for c in controls:
+            if not isinstance(c, dict) or not ('grid' in c or 'stack' in c):
+                continue
+            which = 'grid' if 'grid' in c else 'stack'
+            odd = _odd_keys(c, {which})
+            if odd:
+                out.append(f"{where}: {', '.join(map(repr, odd))} is not a key beside a {which} "
+                           f'- it is dropped; it goes inside the {which}, or on its items')
+            spread = c.get(which)
+            if isinstance(spread, dict):
+                out += self._directive_keys(spread.get('items') or [], where)
+        return out
+
     def _house_rules(self, pg, label=None):
         """Extron's own numeric rules. See docs/design-rules.md for provenance.
 
@@ -1441,12 +1622,22 @@ class Panel:
                 out.append(f'{where}: {w}x{h} is below the {target}x{target} px touch '
                            f'target for a {self.size[0]}x{self.size[1]} panel '
                            f'(9mm, GUI Design Standards p.55)')
-            size = c.get('size') or self.theme.get('size') or 0
-            if c.get('kind') in ('button', 'label') and size and size < MIN_BODY_POINT_SIZE:
-                out.append(f'{where}: {size}pt is below the {MIN_BODY_POINT_SIZE}pt '
+            # A control with no words - a key drawn in its fill, a derived Back
+            # drawn as art - has no type to hold; read at the size it builds,
+            # it would be named under every floor above 14.
+            states = c.get('states')
+            looks = [c, c.get('on')] + (states if isinstance(states, list) else [])
+            if c.get('kind') != 'datetime' and not any(
+                    isinstance(s, dict) and (s.get('text') or s.get('icon')) for s in looks):
+                continue
+            given = c.get('size') or self.theme.get('size')
+            size = given or DEFAULT_POINT_SIZE
+            said = f'{size:g}pt' + ('' if given else ', the size a control with none builds at,')
+            if c.get('kind') in ('button', 'label') and size < MIN_BODY_POINT_SIZE:
+                out.append(f'{where}: {said} is below the {MIN_BODY_POINT_SIZE}pt '
                            f'body-text minimum (p.65)')
-            elif c.get('kind') in ('button', 'label', 'datetime') and size and floor and size < floor:
-                out.append(f'{where}: {size:g}pt is under the {floor}pt type floor for a {self.model} - '
+            elif c.get('kind') in ('button', 'label', 'datetime') and floor and size < floor:
+                out.append(f'{where}: {said} is under the {floor}pt type floor for a {self.model} - '
                            f'14 pt as it reads on a TLP Pro 1025/1035 (docs/design-rules.md section 1)')
 
         # p.58: no more than nine buttons in a control group. "Group" is not a
@@ -1605,6 +1796,17 @@ class Panel:
             border = BORDERS['rounded']
         if fill is None and c.get('kind') in ('button', 'label'):
             fill = dict(TRANSPARENT)
+        if fill is None and c.get('kind', 'panel') in ('panel', 'shape', 'line', 'datetime'):
+            # And a panel, a line or a clock, with no border either: the first
+            # PBShape a clone starts from is an opaque slab in most donors -
+            # #37394E bordered in Afterburn 1535, #000000 in the 1230W, the
+            # client's #242634 - and a line's is #BABCCE, so a see-through
+            # panel in the preview built as the donor's.
+            fill = dict(TRANSPARENT)
+            if border is None:
+                # A stroke is the border resource's outline: with none named,
+                # a visible stroke would be planned and previewed, and lost.
+                border = BORDERS['rounded'] if stroke['A'] else ''
         if c.get('kind') == 'image':
             # Its art is the picture: a clone of the Turbulence seeds' first
             # PBImage, a side bar black at 85% transparency the applier makes
@@ -1818,7 +2020,7 @@ class Panel:
             'states': states,
             'alignment': ALIGN.get(c.get('align', 'center'), 3),
             'font': {'name': c.get('font') or self.theme.get('font') or 'Arial',
-                     'size': c.get('size') or self.theme.get('size') or 14,
+                     'size': c.get('size') or self.theme.get('size') or DEFAULT_POINT_SIZE,
                      'bold': bool(c.get('bold')), 'italic': bool(c.get('italic'))},
             # Only meaningful on a popup reference; the applier ignores it
             # elsewhere.
@@ -1867,6 +2069,9 @@ class Panel:
             'name': pu['name'],
             'group': pu['group'],
             'modal': pu['modal'],
+            # A modal's scrim: the applier writes it, and verify_built reads
+            # it back off the modal's artwork (MODAL_TRANSPARENCY).
+            'transparency': MODAL_TRANSPARENCY if pu['modal'] else None,
             'background': _argb(pu['background']),
             # The applier MUST set this. A cloned popup keeps the donor's size,
             # and GUI Designer relocates any control that falls outside the page
@@ -1938,9 +2143,23 @@ class Panel:
                            f'every modal in the corpus is full-canvas, and Build shows it '
                            f'through a full-canvas reference. Draw the card inside it.')
             if not pu['modal'] and not pu['group']:
+                # The format also lets a reference name one popup by its ID -
+                # nine seeds show an ungrouped Volume Level so - but the
+                # applier binds a reference to a group, and only to one.
                 out.append(f"popup {pu['name']!r} is neither modal nor in a group, so no "
-                           f'reference can show it - a standard popup is shown through a '
-                           f'reference bound to its group')
+                           f'reference a spec makes can show it - a spec shows a standard '
+                           f'popup through a reference bound to its group')
+            if not pu['modal'] and not pu['size']:
+                # A modal is given the canvas; a standard popup is given
+                # nothing, and the applier keeps the donor popup's size - so
+                # the fit check above and the reference check below, which
+                # need one, skipped it, and a control past the donor's edge
+                # built at 0,0.
+                seen = sorted({(r[2], r[3]) for r in refs.get(pu['group'], [])})
+                out.append(f"popup {pu['name']!r} has no size - its canvas is its own, and "
+                           f"the applier would keep the donor popup's. Give it its "
+                           f"reference's" + (f": {' or '.join('%dx%d' % s for s in seen)}"
+                                             if seen else ''))
             if not pu['group'] or not pu['size']:
                 continue
             for rect in refs.get(pu['group'], []):
@@ -2015,6 +2234,21 @@ class Panel:
                 have.add(c['type'])
         out += [f'donor {path} has no {t} to clone - that control type cannot '
                 f'be authored from it' for t in sorted(self.needs() - have)]
+
+        # Popups clone from their own kind (Apply-GdlPlan.ps1): a seed with
+        # modals only - every 320 seed - cannot supply a standard popup, and
+        # one with none but Build's own full-canvas reference (id 65535) no
+        # modal. Missed here it stops at the apply step, a Windows round trip on.
+        have_std = any(pg['kind'] == 'popup' and not pg['modal'] for pg in proj.pages())
+        have_modal = any(pg['kind'] == 'popup' and pg['modal'] and pg['id'] != 65535
+                         for pg in proj.pages())
+        for modal, have, what in ((False, have_std, 'standard'), (True, have_modal, 'modal')):
+            names = [pu['name'] for pu in self.popups if bool(pu['modal']) == modal]
+            if names and not have:
+                out.append(f"donor {path} has no {what} popup to clone, and the spec has "
+                           f"{'one' if len(names) == 1 else len(names)}: {', '.join(map(repr, names))} - "
+                           + ('make it a modal, or a page, or build from a seed that has a standard popup'
+                              if not modal else 'build from a seed that has a modal popup'))
 
         # Border resources, for the same clone-never-construct reason and with a
         # much wider spread than control types. Missed here it costs a whole
@@ -2287,8 +2521,8 @@ class Panel:
                 seen.add(tuple(sorted(v.items())))
 
         for pg in self.pages + self.popups:
-            # A modal's background never reaches the panel: Build draws every
-            # modal as the page beneath under black at alpha 166.
+            # A modal's background never reaches the panel: Build draws a
+            # modal black at its own transparency (MODAL_TRANSPARENCY).
             if not pg.get('modal'):
                 add(pg['background'])
             for c in pg['controls']:
@@ -2467,6 +2701,10 @@ def main(argv):
         img = panel.render(page)
         img.convert('RGB').save(argv[3])
         print(f'{panel.pages[page]["name"]} -> {argv[3]}')
+        from .compose import FALLBACKS
+        if FALLBACKS:
+            print(f"  NOTE drawn in a stand-in, not the panel's face - "
+                  f"{'; '.join(sorted(FALLBACKS))}")
         return 0
     print(f'unknown command {cmd!r}')
     return 2

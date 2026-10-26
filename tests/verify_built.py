@@ -182,6 +182,10 @@ def _opaque(argb):
     return argb is not None and (argb >> 24) & 0xFF == 0xFF
 
 
+# What the spec plans clear when it has no fill (gdl/spec.py _base_look), whose
+# artwork is then its words or outline alone. A button's states carry its look.
+CLEAR_TYPES = ('PBLabel', 'PBShape', 'PBLine', 'PBDateTime')
+
 # Below this share of a control's opaque pixels, the planned fill is present but
 # not the field - a caption-heavy button, say. Reported, not failed: the color
 # did survive, and calling that a failure would make the gate untrustworthy.
@@ -234,9 +238,12 @@ def check_fills(plan_items, table, assets, kind):
                                 f'it is mostly {_hexa(top)} ({top_share:.0%})')
         # A label planned clear (the spec writes no fill as alpha 0) is its
         # words alone: artwork mostly opaque is a donor label's fill that came
-        # through - Turbulence 320's empty state built on black bands.
+        # through - Turbulence 320's empty state built on black bands. So is a
+        # panel, a line or a clock planned clear: the donor's first PBShape is
+        # an opaque slab in most seeds.
         for op in item['controls']:
-            if op.get('donor_type') != 'PBLabel' or op.get('fill') is None or _painted(op['fill']):
+            if op.get('donor_type') not in CLEAR_TYPES or op.get('fill') is None \
+                    or _painted(op['fill']):
                 continue
             name = (op.get('fields') or {}).get('nameField')
             c = by_name.get(name)
@@ -244,14 +251,21 @@ def check_fills(plan_items, table, assets, kind):
             if tid is None or tid < 0 or tid not in assets:
                 continue
             checked += 1
-            raw = Image.open(io.BytesIO(assets[tid])).convert('RGBA').tobytes()
+            im = Image.open(io.BytesIO(assets[tid])).convert('RGBA')
+            if op.get('border') and _painted(op.get('stroke')):
+                # Its own outline can be most of a small control's artwork (a
+                # 20 x 20 panel with a 5 px one is 75% opaque); a donor's slab
+                # fills the middle, so read the central half.
+                w, h = im.size
+                im = im.crop((w // 4, h // 4, w - w // 4, h - h // 4))
+            raw = im.tobytes()
             solid = sum(1 for i in range(3, len(raw), 4) if raw[i] > 250) / max(1, len(raw) // 4)
             if solid > 0.5:
                 shares = _shares(assets, tid)
                 top = max(shares.items(), key=lambda kv: kv[1])[0]
                 problems.append(f"{kind} {item['name']!r} {name!r}: planned clear, but "
                                 f'{solid:.0%} of its artwork is opaque, mostly {_hex(top)} - '
-                                "a donor label's fill")
+                                f"a donor {TYPE_NAME.get(c.get('Type'), 'control').lower()}'s fill")
     return problems, notes, checked
 
 
@@ -942,6 +956,16 @@ def _check_background_image(spec, pg, assets, kind='page'):
     return []
 
 
+def _no_artwork(kind, spec, tid):
+    """A page or popup that built with no artwork shows nothing of its fill.
+    Every built page and every referenced standard popup in the 47 corpus
+    projects has artwork; the only ones without are GUI Designer's 35 Offline
+    Pages and an unreferenced popup in two archived client projects - so this
+    was a `continue`, and the check grew quieter as the build got worse."""
+    return (f"{kind} {spec['name']!r} background: the {kind} built with no artwork "
+            f'(TLPImageID {tid}), so its planned fill is not drawn')
+
+
 def check_page_background(plan_pages, pages, assets):
     """The donor's background image is a separate reference from its artwork.
 
@@ -960,7 +984,8 @@ def check_page_background(plan_pages, pages, assets):
             continue
         want = _rgb(spec['background'])
         tid = pg.get('TLPImageID')
-        if tid is None or tid < 0:
+        if tid is None or tid < 0 or tid not in assets:
+            problems.append(_no_artwork('page', spec, tid))
             continue
         shares = _shares(assets, tid)
         if not shares:
@@ -978,19 +1003,47 @@ def check_page_background(plan_pages, pages, assets):
     return problems
 
 
+def _check_scrim(spec, pu, assets):
+    """A modal's artwork is black at its planned transparency, all over: so
+    every template modal in the corpus builds, (0, 0, 0, 166) throughout."""
+    tid = pu.get('TLPImageID')
+    if tid is None or tid < 0 or tid not in assets:
+        return [_no_artwork('popup', spec, tid)]
+    alpha = round(255 * (100 - spec['transparency']) / 100)
+    shares = _fill_shares(assets, tid, alpha << 24)
+    top, top_share = max(shares.items(), key=lambda kv: kv[1]) if shares else (None, 0)
+    if top == (0, 0, 0) and top_share >= 0.99:
+        return []
+    said = _hexa(top) if top else 'transparent'
+    return [f"modal {spec['name']!r}: planned black at alpha {alpha} ({spec['transparency']:g}% "
+            f'transparent), artwork is mostly {said} ({top_share:.0%}) - a modal is drawn at '
+            f"its own transparency, and a clone keeps its donor modal's"]
+
+
 def check_popup_background(plan_popups, popups, assets):
     """A popup's page fill reaches the panel as its artwork, as a page's does.
 
     A Group's popup planned with no fill (alpha 0) built as an opaque black
     box over its page on the 525: given none, the spec's popup took black, and
     no check read a popup's page asset. Planned transparent, the artwork must
-    have no opaque pixel; planned a color, that color must cover it. A modal
-    is skipped - Build draws it under its scrim and ignores its fill.
+    have no opaque pixel; planned a color, that color must cover it.
+
+    A modal is not its fill: Build draws it black at the modal's own
+    transparency, which a clone kept from its donor modal - 35%, alpha 166, in
+    every template, and 0 on the client's archived Incoming modals, which build
+    opaque and hide the page beneath. So a modal is held to the transparency
+    its plan names, and one from a plan that names none is not checked.
     """
     problems = []
     for spec in plan_popups:
         pu = popups.get(spec['name'])
-        if pu is None or spec.get('modal') or spec.get('background') is None:
+        if pu is None:
+            continue
+        if spec.get('modal'):
+            if spec.get('transparency') is not None:
+                problems += _check_scrim(spec, pu, assets)
+            continue
+        if spec.get('background') is None:
             continue
         if spec.get('background_image'):
             # On the page's photo, as Shockwave's and Turbulence's hubs draw
@@ -999,6 +1052,9 @@ def check_popup_background(plan_popups, popups, assets):
             continue
         tid = pu.get('TLPImageID')
         if tid is None or tid < 0 or tid not in assets:
+            # Planned clear too: every referenced standard popup in the corpus
+            # has artwork, transparent ones included.
+            problems.append(_no_artwork('popup', spec, tid))
             continue
         shares = _shares(assets, tid)       # opaque pixels only
         where = f"popup {spec['name']!r} background"
@@ -1229,6 +1285,55 @@ def check_edits(plan, j, assets=None):
               f'compare the asset PNG): {u}')
     for n in notes:
         print(f'  FILL NOT DOMINANT (survived, but check it by eye): {n}')
+    probs, n = check_retarget(plan, j)
+    return problems + probs, checked + n
+
+
+def check_retarget(plan, j):
+    """(problems, checked): an edit plan's `project` and `pages` ops.
+
+    A retarget sets the panel's model and screen, and each page's and popup's
+    own canvas - none of it a control, so a walk of plan['controls'] never
+    looked, and a retarget without `scale`, which plans no control at all,
+    verified with 0 checks against a file that was never retargeted.
+
+    The model is read as its part number, which is how GUI Designer names the
+    panel (a TLP 1035T and 1035M share one), and the way up as the platform's
+    own resolution beside the screen size (docs/gdl-format.md section 7).
+    """
+    from gdl.spec import part_number
+    problems, checked = [], 0
+    scr = j.get('ScreenSize') or {}
+    plat = j.get('Platform') or {}
+    for op in plan.get('project') or []:
+        if not op.get('model'):
+            continue
+        checked += 1
+        w, h = op['size']
+        got = (scr.get('width'), scr.get('height'))
+        if got != (w, h):
+            problems.append(f'the screen is {got[0]}x{got[1]}, the retarget asked for {w}x{h}')
+        res = (plat.get('HorizontalResolution'), plat.get('VerticalResolution'))
+        if res != (w, h):
+            problems.append(f"the platform's resolution is {res[0]}x{res[1]}, the retarget "
+                            f'asked for {w}x{h}')
+        want = part_number(op['model'])
+        for where, part in (('panel', j.get('PartNumber')), ('platform', plat.get('PartNumber'))):
+            if want and part != want:
+                problems.append(f"the {where}'s part number is {part!r}, and a {op['model']} "
+                                f'is {want!r} - the build is not the model the retarget names')
+    pages = {p['ID']: p for p in (j.get('Pages') or []) + (j.get('PopupPages') or [])}
+    for op in plan.get('pages') or []:
+        pg = pages.get(op['page'])
+        if pg is None:
+            problems.append(f"{op.get('kind', 'page')} {op.get('name')!r} (id {op['page']}) "
+                            f'is not in the built file')
+            continue
+        checked += 1
+        got = (pg.get('Width'), pg.get('Height'))
+        if list(got) != list(op['size']):
+            problems.append(f"{op.get('kind', 'page')} {pg.get('Name')!r} is {got[0]}x{got[1]}, "
+                            f"the retarget asked for {op['size'][0]}x{op['size'][1]}")
     return problems, checked
 
 
@@ -1316,9 +1421,77 @@ def check_modal(plan, j):
     return out
 
 
+def _check_id(where, f, c):
+    """The ID a program addresses the control by. A clone keeps its donor's
+    when the write does not take, and two controls then answer to one ID;
+    verify_idmap reads them back only where there is a map (New-GdlPanel
+    -IdMap). Build keeps each control's userIdField as layout.json's UserId -
+    Borders320's three, 1001 to 1003 as planned."""
+    want = f.get('userIdField')
+    if want is None or 'UserId' not in c or c['UserId'] == want:
+        return []
+    return [f"{where}: ID {c['UserId']}, planned {want} - the donor's, if a clone kept it"]
+
+
+def _check_text_color(where, op, c):
+    """A caption's color, for a control whose plan names no states - a label,
+    a clock, a button with no feedback. It is drawn live, so it is the model's
+    TextColor, as a planned state's is (check_states). The applier writes the
+    one color to the control and to every state a clone has, and the panel
+    draws a button's caption from its state."""
+    want = op.get('text_color')
+    f = op.get('fields') or {}
+    if want is None or op.get('states') or not (f.get('textField') or f.get('patternField')):
+        return []
+    out = []
+    # One wrong color on the control and on its states is one fault: the
+    # applier writes the same color to both, so say it once.
+    for label, tc in [('', c.get('TextColor'))] + [
+            (f" state {s.get('Name') or i!r}", s.get('TextColor'))
+            for i, s in enumerate(c.get('States') or [])]:
+        if not isinstance(tc, dict):
+            continue
+        have = (tc.get('R'), tc.get('G'), tc.get('B'))
+        if have != _rgb(want):
+            out.append(f'{where}{label}: text color {_hex(have)}, planned {_hex(_rgb(want))}'
+                       f" - a clone keeps its donor's")
+            if not label:
+                break
+    return out
+
+
+_ORIENT_NAME = {v: k for k, v in __import__('gdl.spec', fromlist=['ORIENT']).ORIENT.items()}
+
+
+def _check_slider(where, f, c):
+    """A slider's or level's orientation, and a slider's track width and thumb
+    size. A clone keeps its donor's - every seed's slider stands up - and
+    check_rails draws the art it expects from the built values, so a donor's
+    passes there as itself. layout.json carries the authoring fields under its
+    own names: orientationField as Orientation, sliderTrackWidth as
+    SliderTrackWidth, sliderThumbWidth and sliderThumbHeight as
+    SliderIndicatorWidth and SliderIndicatorHeight, literal whichever way the
+    slider lies - on every slider and level of the Afterburn 1035 and 525,
+    Shockwave 725 and 320, and Zoom Rooms seeds."""
+    out = []
+    want = f.get('orientationField')
+    if want is not None and c.get('Orientation') is not None and c['Orientation'] != want:
+        out.append(f"{where}: orientation {_ORIENT_NAME.get(c['Orientation'], c['Orientation'])!r}, "
+                   f'planned {_ORIENT_NAME.get(want, want)!r}')
+    want = f.get('sliderTrackWidth')
+    if want is not None and c.get('SliderTrackWidth') is not None and c['SliderTrackWidth'] != want:
+        out.append(f"{where}: track {c['SliderTrackWidth']} wide, planned {want}")
+    want = (f.get('sliderThumbWidth'), f.get('sliderThumbHeight'))
+    have = (c.get('SliderIndicatorWidth'), c.get('SliderIndicatorHeight'))
+    if any(w is not None and h is not None and w != h for w, h in zip(want, have)):
+        out.append(f'{where}: thumb {have[0]}x{have[1]}, planned {want[0]}x{want[1]}')
+    return out
+
+
 def check_placed(plan, pages, popups):
     """Each authored control is in the built file, where it was put, and
-    captioned - or, for a clock, patterned - as planned."""
+    captioned - or, for a clock, patterned - as planned, on its planned ID, in
+    its planned text color, and a slider lying and sized as planned."""
     problems = []
     checked = 0
     for spec, table, kind in ((plan['pages'], pages, 'page'),
@@ -1380,6 +1553,9 @@ def check_placed(plan, pages, popups):
                 if want_pattern is not None and c.get('Pattern') != want_pattern:
                     problems.append(f"{kind} {item['name']!r} {name!r}: clock pattern "
                                     f"{c.get('Pattern')!r}, planned {want_pattern!r}")
+                problems += _check_id(f"{kind} {item['name']!r} {name!r}", f, c)
+                problems += _check_text_color(f"{kind} {item['name']!r} {name!r}", op, c)
+                problems += _check_slider(f"{kind} {item['name']!r} {name!r}", f, c)
             # A generated page or popup is a donor's, cloned and cleared: a
             # control of the donor's left on it ships unasked. Build's own are
             # one full-canvas popup reference per modal popup, on every page.
@@ -1395,6 +1571,118 @@ def check_placed(plan, pages, popups):
                                 f"({TYPE_NAME.get(c.get('Type'), c.get('Type'))}) is on it and "
                                 f"not in the plan - the donor's, left in")
     return problems, checked
+
+
+def _built_project(built_path, _cache={}):
+    """The built file's authoring model, read once per run: the border names
+    and the popup group registry are there and not in layout.json."""
+    if built_path not in _cache:
+        from gdl.project import Project
+        _cache.clear()
+        _cache[built_path] = Project.open(built_path)
+    return _cache[built_path]
+
+
+def popup_group_registry(built_path):
+    """{group id: name}: the built project's popup group registry
+    (PBProject.popupPageGroupsField). layout.json does not carry it, and a
+    group id that is not in it reads 'Unassigned' (docs/gdl-format.md section
+    6)."""
+    p = _built_project(built_path)
+    proj = next(p.instances('PBProject'), None)
+    if proj is None:
+        return {}
+    return {p.field(g, 'idField'): p.field(g, 'nameField')
+            for g in p.items(p.field(proj, 'popupPageGroupsField'))}
+
+
+def check_popup_groups(plan, j, registry):
+    """Is each planned popup reference bound to the group the plan names, and
+    is every group a reference names one some popup is in?
+
+    The built file records a binding on the reference (PopupPageID.GroupID
+    with IsPopupGroupIdValid), on each popup (GroupID), and in the project's
+    group registry (`registry`, popup_group_registry), which alone names the
+    group. This read a `PopupGroups` key instead, which no layout.json in the
+    corpus has, so it never fired. A reference bound to one popup by its
+    PopupID, at GroupID 0 - Extron's 525s show Volume Level so - names no group
+    and is not held to one.
+    """
+    out = []
+    popups = {p['Name']: p for p in j.get('PopupPages') or []}
+    pages = {p['Name']: p for p in j.get('Pages') or []}
+    # The id each planned group built as, read off its popups.
+    ids = {}
+    for pu in plan.get('popups') or []:
+        got = popups.get(pu['name'])
+        if not pu.get('group') or pu.get('modal') or got is None:
+            continue                     # check_placed reports a popup that is not there
+        gid = got.get('GroupID') if got.get('IsGroupValid', True) else 0
+        ids.setdefault(pu['group'], {}).setdefault(gid, []).append(pu['name'])
+    built = {}
+    for g, by_id in sorted(ids.items()):
+        if len(by_id) > 1:
+            out.append(f'popup group {g!r} built as {len(by_id)} groups: ' + '; '.join(
+                f"{', '.join(map(repr, names))} in {f'group {i}' if i else 'no group'}"
+                for i, names in sorted(by_id.items())))
+            continue
+        (gid, names), = by_id.items()
+        if not gid:
+            out.append(f"popup group {g!r}: {', '.join(map(repr, names))} built in no group, so "
+                       f'no reference bound to {g!r} can show it')
+            continue
+        built[g] = gid
+        if gid not in registry:
+            out.append(f"popup group {g!r} built as group {gid}, which is not in the project's "
+                       f"group registry - its references read 'Unassigned'")
+        elif registry[gid] != g:
+            out.append(f'popup group {g!r} built as group {gid}, which the registry names '
+                       f'{registry[gid]!r}')
+    planned = set()                      # said below, so not again with the rest
+    for item in plan.get('pages') or []:
+        got = pages.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item.get('controls') or []:
+            if op.get('donor_type') != 'PBPopupPageReference' or not op.get('group'):
+                continue
+            name = (op.get('fields') or {}).get('nameField')
+            c = by_name.get(name)
+            if c is None:
+                continue                 # check_placed reports it
+            planned.add((item['name'], name))
+            pp = c.get('PopupPageID') or {}
+            where = f"page {item['name']!r} {name!r}"
+            if not pp.get('IsPopupGroupIdValid'):
+                out.append(f"{where}: bound to no popup group - it reads 'Unassigned'; the plan "
+                           f"binds it to {op['group']!r}")
+            elif op['group'] in built and pp.get('GroupID') != built[op['group']]:
+                out.append(f"{where}: bound to group {pp.get('GroupID')}, and {op['group']!r} "
+                           f"is group {built[op['group']]}")
+    # Any reference - on a donor's kept page too - that can show nothing: bound
+    # to a group no popup is in, to a popup that is not there, or to neither.
+    # Each of the corpus's 3745 built references is bound to a group (161) or
+    # to a popup (3584) that is there.
+    have = {p.get('GroupID') for p in popups.values() if p.get('GroupID')}
+    ids = {p.get('ID') for p in popups.values()}
+    for pg in pages.values():
+        for c in pg.get('Controls') or []:
+            pp = c.get('PopupPageID')
+            if not isinstance(pp, dict):
+                continue
+            where = f"page {pg['Name']!r} {c.get('Name')!r}"
+            if pp.get('IsPopupGroupIdValid'):
+                if pp.get('GroupID') not in have:
+                    out.append(f"{where}: bound to popup group {pp.get('GroupID')}, which no "
+                               f'popup is in - it shows nothing')
+            elif pp.get('IsPopupPageIdValid'):
+                if pp.get('PopupID') not in ids:
+                    out.append(f"{where}: bound to popup {pp.get('PopupID')}, which is not in "
+                               f'the built file - it shows nothing')
+            elif (pg['Name'], c.get('Name')) not in planned:
+                out.append(f"{where}: bound to no popup and no group - it reads 'Unassigned'")
+    return out
 
 
 def check_borders(plan, built_path):
@@ -1414,9 +1702,8 @@ def check_borders(plan, built_path):
                     want[(kind, item['name'], name)] = (op.get('border'), op.get('states') or [])
     if not want:
         return [], 0
-    from gdl.project import Project
     got = {}
-    for pg in Project.open(built_path).pages():
+    for pg in _built_project(built_path).pages():
         for c in pg['controls']:
             got.setdefault((pg['kind'], pg['name'], c['name']), c)
     problems, checked = [], 0
@@ -1456,16 +1743,8 @@ def check(plan_path, built_path):
     # A popup reference bound to nothing reads "Unassigned" on the panel and is
     # invisible in the file, so check the binding survived rather than trusting
     # that the applier's own assertion still holds after a build.
-    groups = {g['ID'] for g in (j.get('PopupGroups') or [])}
-    for pg in pages.values():
-        for c in pg.get('Controls') or []:
-            pp = c.get('PopupPageID')
-            if not isinstance(pp, dict):
-                continue
-            if pp.get('IsPopupGroupIdValid') and groups and pp['GroupID'] not in groups:
-                problems.append(f"page {pg['Name']!r} {c.get('Name')!r}: bound to popup "
-                                f"group {pp['GroupID']}, which the built file has no "
-                                f'record of')
+    grouped = any(pu.get('group') for pu in plan.get('popups') or [])
+    problems += check_popup_groups(plan, j, popup_group_registry(built_path) if grouped else {})
 
     # Color, read off the artwork rather than the model - see _shares().
     for spec, table, kind in ((plan['pages'], pages, 'page'),

@@ -1719,10 +1719,10 @@ class TestTheRegionComponents(unittest.TestCase):
                 self.assertEqual(f['top'], own['top'], s)
             self.assertFalse(any('frame' in row for row in prof['models'].values()), t)
             # A backstop, not a limit of the Design type's: a frame repeated
-            # on every model row doubled the bundle. Mach's is about 415 KB
-            # with the 320's pages (PR7) and round four's layout (the 320's
-            # words and windows, the 725's audio place).
-            self.assertLess(len(js.encode('utf-8')), 430_000, t)
+            # on every model row doubled the bundle. Mach's is about 431 KB
+            # with the 320's pages (PR7), round four's layout (the 320's
+            # words and windows, the 725's audio place) and the 320's capitals.
+            self.assertLess(len(js.encode('utf-8')), 435_000, t)
         # Afterburn draws no bars: no frame in its bundle.
         js = designsys.bundle(designsys.load('afterburn'), art=False)
         self.assertEqual(json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))['frames'], {})
@@ -2017,9 +2017,9 @@ class TestBuild(unittest.TestCase):
                 for role in ('role="source"', 'role="settings"', 'role="help"', 'role="confirm" topic="power"',
                              'role="wait" topic="down"'):
                     self.assertIn(role, code)
-                names = set(re.findall(r'\.Page" name="([^"]+)"', code))
+                stems = set(_boards(section))
                 for target in re.findall(r'(?:nav|help|power)="([^"]+)"', code):
-                    self.assertIn(target, names)
+                    self.assertIn(target, stems)
                 first = designsys._design_frame(p)['left']['groups'][0]
                 self.assertIn(f'title="{first["heading"]["text"]}"', main)
                 # The launchers say what the template's say.
@@ -2210,6 +2210,21 @@ class TestBuild(unittest.TestCase):
         self.assertIn('`Main.dc.html`', line)
         self.assertNotIn('Home.dc.html', line)
 
+    def test_no_example_file_name_or_nav_has_a_space(self):
+        """The Design type forbids spaces in a file name and a nav resolves by
+        file stem only, so the README's examples printed `Main SD.dc.html` and
+        `nav="Main SD"` that every designer had to rewrite. A Page's `name`
+        may have spaces; a stem may not."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                texts = [designsys.readme(p)] + list(designsys.component_docs(p).values())
+                stems = [m for t in texts for m in re.findall(r'`([^`\n]*)\.dc\.html`', t)]
+                navs = [m for t in texts for m in re.findall(r'\b(?:nav|help|power)="([^"]*)"', t)]
+                self.assertTrue(stems and navs)
+                for s in stems + navs:
+                    self.assertNotRegex(s, r'\s', s)
+
     def test_the_states_example_draws_every_state_differently(self):
         """The Button README says every state must look different, and
         Turbulence's own example drew Warming exactly as On."""
@@ -2313,6 +2328,9 @@ class TestBuild(unittest.TestCase):
                              (hub.get('options') or {}).get('popup') or 'More Options', 'Volume Level'):
                     self.assertIn(f"'{name}'", drawn)
                 self.assertIn('the same `id`s', drawn)
+                # A revision drawn in another order renamed those windows and
+                # retired their IDs (docs/idmap.md §9).
+                self.assertIn('order of the working pages', drawn)
                 small = grammar.split('**Words on the 320.**', 1)[1].split('\n\n', 1)[0]
                 key = ms['TLP320M']['frame']['center']['row'][0]
                 self.assertIn(f'{key[2]}x{key[3]}', small)
@@ -2591,7 +2609,7 @@ class TestWhatAFreshDesignerFound(unittest.TestCase):
                         self.assertEqual(int(v) % 10, 0, (left, top, w, h))
         # The keys are a Group's cells, at the in-well look's own shape.
         p = designsys.load('shockwave')
-        doc = _boards(_section(designsys.readme(p), 'The working page'))['Doc Cam']
+        doc = _boards(_section(designsys.readme(p), 'The working page'))['DocCam']
         w, h = map(int, re.search(r'Group" title="Zoom" cell="(\d+)x(\d+)"', doc).groups())
         self.assertAlmostEqual(w / h, 504 / 440, delta=0.1)
 
@@ -2601,7 +2619,7 @@ class TestWhatAFreshDesignerFound(unittest.TestCase):
         for theme, icon in (('mach', 'plus'), ('turbulence', 'vc_plus'), ('shockwave', None)):
             with self.subTest(theme=theme):
                 p = designsys.load(theme)
-                doc = _boards(_section(designsys.readme(p), 'The working page'))['Doc Cam']
+                doc = _boards(_section(designsys.readme(p), 'The working page'))['DocCam']
                 self.assertIn('>Zoom</x-import>', doc)
                 if icon and designsys.kit_root(p):
                     self.assertIn(f'icon="{icon}"', doc)
@@ -2655,7 +2673,7 @@ class TestAfterburnsReadme(unittest.TestCase):
         self.boards = _boards(self.working)
 
     def test_the_right_column_is_a_rail_said_once(self):
-        main = self.boards['Main SD']
+        main = self.boards['MainSD']
         rail = main.split('ExtronAfterburn.Rail">', 1)[1]
         for name in ('Volume', 'Mute', 'Help', 'Power'):
             self.assertIn(f'name="{name}"', rail)
@@ -2668,7 +2686,7 @@ class TestAfterburnsReadme(unittest.TestCase):
         self.assertIn('the drawn one too', self.working)
 
     def test_the_working_page_is_the_templates(self):
-        main = self.boards['Main SD']
+        main = self.boards['MainSD']
         F = designsys._design_frame(self.p)
         # Four sources in a Group where the frame stands its row, each its own
         # glyph - a Doc Cam where the template's TV stands, to show a source
@@ -2707,21 +2725,21 @@ class TestAfterburnsReadme(unittest.TestCase):
             self.assertIn(nav, self.boards)
 
     def test_every_window_and_source_popup_is_shown(self):
-        for name in ('PC', 'Doc Cam', 'Help', 'Power Down', 'Powering Down', 'Lighting Settings'):
+        for name in ('PC', 'DocCam', 'Help', 'PowerDown', 'PoweringDown', 'LightingSettings'):
             self.assertIn(name, self.boards)
         empty = self.boards['PC']
         self.assertIn('PC is currently selected.', empty)
         self.assertIn('kind="popup" group="Sources"', empty)
-        for name in ('Help', 'Power Down', 'Powering Down', 'Lighting Settings'):
+        for name in ('Help', 'PowerDown', 'PoweringDown', 'LightingSettings'):
             code = self.boards[name]
             self.assertIn('kind="modal"', code)
             # The card: a Panel the squircle's size, where it stands.
             self.assertIn('ExtronAfterburn.Panel" name="Card"', code)
             self.assertIn('left: 183px; top: 24px; width: 916px; height: 752px', code)
-        self.assertIn('Do you want to power down the system?', self.boards['Power Down'])
+        self.assertIn('Do you want to power down the system?', self.boards['PowerDown'])
         self.assertIn('>Close</x-import>', self.boards['Help'])
-        self.assertIn('reached-by="program"', self.boards['Powering Down'])
-        q = self.boards['Power Down']
+        self.assertIn('reached-by="program"', self.boards['PoweringDown'])
+        q = self.boards['PowerDown']
         self.assertLess(q.index('>Power Down</x-import>'), q.index('>Cancel</x-import>'))
 
     def test_it_says_what_the_designer_writes(self):
@@ -2781,6 +2799,29 @@ class TestAfterburnsReadme(unittest.TestCase):
         wins = _section(self.text, 'Windows')
         self.assertNotIn('a standard popup of group 1 in', wins)
         self.assertIn('`Sources`', wins)
+
+
+class TestCanvasIds(unittest.TestCase):
+    """A control's `id` reaches the spec as the designer wrote it, for gdl.spec
+    check to hold to a UInt16. Number() made 'abc' NaN, which JSON writes as
+    null - the control quietly took an allocated ID - and an empty one 0."""
+
+    def test_every_control_reads_its_id_one_way(self):
+        js = designsys._read('bundle.js')
+        self.assertNotIn('Number(props.id)', js)
+        self.assertEqual(js.count('id: idOf(props.id)'), 3)
+
+    def test_a_whole_number_is_the_id_and_anything_else_goes_through(self):
+        import shutil
+        import subprocess
+        if not shutil.which('node'):
+            self.skipTest('node is not installed')
+        fn = re.search(r'function idOf\(v\) \{.*?\n  \}', designsys._read('bundle.js'), re.S).group(0)
+        cases = ['1001', ' 7 ', 70000, '70000', 12.5, 'abc', '', None, 0]
+        out = subprocess.run(
+            ['node', '-e', f'{fn}\nconsole.log(JSON.stringify({json.dumps(cases)}.map(idOf)))'],
+            capture_output=True, text=True, check=True).stdout
+        self.assertEqual(json.loads(out), [1001, 7, 70000, 70000, 12.5, 'abc', None, None, 0])
 
 
 class TestPreviews(unittest.TestCase):
@@ -2856,6 +2897,22 @@ class TestTheLedger(unittest.TestCase):
         # A number inside a word or a name is not one of its claims.
         named = self._entry(here='The slider is drawn 53 px wide on the TLP1035T, past its 2D border.', **dev)
         self.assertEqual(self._findings(named), [])
+
+    def test_a_number_with_a_unit_a_size_or_a_full_stop_is_one_too(self):
+        """The number pattern stepped over any number a letter or a period
+        followed, so '99px', both sides of '880x525' and a sentence's last
+        number passed unbacked."""
+        dev = dict(status='deviation', fix=None, reason='The 53 px touch minimum.',
+                   template={'does': 'The slider is 30 wide, its well 880x525.', 'seed': 'seeds/Mach 1035.gdl',
+                             'pages': ['Main SD']})
+        for here, unbacked in (('The slider is 99px wide.', ['99']), ('Its well is 880x524.', ['524']),
+                               ('Its well is 881x525.', ['881']), ('The slider ends at 42.', ['42']),
+                               ('It is 14pt and 9mm.', ['9', '14']),
+                               ('The slider is 53px wide in an 880x525 well, as the template draws 30.', [])):
+            with self.subTest(here=here):
+                self.assertEqual(self._findings(self._entry(here=here, **dev)),
+                                 [f"mach-99: its `here` says {n}, which its template, reason and evidence do not"
+                                  for n in unbacked])
 
     def test_every_ledger_is_one_its_schema_takes(self):
         for name in sorted(os.listdir(self.audit.TRUTH)):
@@ -2937,6 +2994,39 @@ class TestTheLedger(unittest.TestCase):
             self.assertEqual(designsys.main(['gdl.designsys', 'audit', 'nothing']), 2)
 
 
+class TestTheColumnLabelsOfTheSmallestPanel(unittest.TestCase):
+    """`writing.column_labels_320` against the four 320 seeds: Mach's,
+    Shockwave's and Afterburn's camera column labels (ZOOM, FOCUS, INPUTS,
+    IRIS) are capitals, Turbulence's are Title Case. The profile key is set on
+    exactly the themes whose own 320 draws a Group's heading (Afterburn's draws
+    none, so it has no use for the key). The seeds show it on those four
+    labels only; applying it to every Group title is extrapolated."""
+
+    LABELS = ('zoom', 'focus', 'input', 'inputs', 'iris')
+
+    def test_the_key_is_set_where_the_seed_capitalises_and_a_heading_is_drawn(self):
+        from gdl import seeds
+        from gdl.project import Project
+        for theme in ('mach', 'shockwave', 'turbulence', 'afterburn'):
+            with self.subTest(theme=theme):
+                path = seeds.path(f'seeds/{theme.title()} 320.gdl')
+                if not seeds.usable(f'seeds/{theme.title()} 320.gdl'):
+                    self.skipTest(f'seeds/{theme.title()} 320.gdl is not here (git lfs pull)')
+                found = {c['text'] for pg in Project.open(path).pages() for c in pg['controls']
+                         if c['type'] == 'PBLabel' and (c.get('text') or '').strip().lower() in self.LABELS}
+                self.assertEqual(len(found), 4, found)
+                caps = all(t == t.upper() for t in found)
+                self.assertEqual(caps, theme != 'turbulence', found)
+                key = designsys.load(theme)['writing'].get('column_labels_320')
+                # Afterburn's 320 draws no heading of a Group's, so its key is unset.
+                self.assertEqual(key == 'caps', caps and theme != 'afterburn', (theme, key))
+
+    def test_the_extrapolation_is_said(self):
+        for theme in ('mach', 'shockwave'):
+            src = designsys.load(theme)['writing']['voice']['_source']
+            self.assertIn('extrapolated', src.lower(), theme)
+
+
 class TestMachsWordsAgainstTheSeed(unittest.TestCase):
     """What Mach's profile counts and names off seeds/Mach 1035.gdl, read off
     the seed again: the claim lint reads phrasing, not numbers, so a count or
@@ -2995,6 +3085,43 @@ class TestMachsWordsAgainstTheSeed(unittest.TestCase):
             self.assertNotIn('Share Content', usage)
         self.assertIn("Share Content's On", self.colors['alert-dim'])
         self.assertIn('no border', self.colors['alert-dim'])
+
+
+class TestTheSliderDefaultsAgainstTheSeeds(unittest.TestCase):
+    """A profile's slider defaults are its design panel's seed's, and the
+    Slider docs say so: Shockwave's note said every seed's slider was the
+    1035's 52 track and 52x34 thumb, and only the 1035 and ECP 16-10 draw
+    that (U61). Read off each seed's layout.json, where Build keeps the
+    authoring fields as SliderTrackWidth and SliderIndicatorWidth/Height."""
+
+    @staticmethod
+    def _sliders(path):
+        from gdl.container import open_payload
+        j = json.loads(open_payload(path).read('layout.json'))
+        return {(c['SliderTrackWidth'], c['SliderIndicatorWidth'], c['SliderIndicatorHeight'])
+                for pg in (j.get('Pages') or []) + (j.get('PopupPages') or [])
+                for c in pg.get('Controls') or [] if c.get('Type') == 27}
+
+    def test_each_profiles_defaults_are_its_design_panels_seeds(self):
+        from gdl import seeds
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            p = designsys.load(theme)
+            path = os.path.join(REPO, seeds.default_path(p['template'], p['model']))
+            with self.subTest(theme=theme):
+                if not usable(path):
+                    self.skipTest(f'{os.path.relpath(path, REPO)} is not here (git lfs pull)')
+                sl = p['defaults']['slider']
+                self.assertEqual(self._sliders(path), {(sl['track'], sl['thumb'], sl.get('thumb_height') or sl['thumb'])})
+                self.assertIn(f"default {sl['track']}, the {p['model']}'s", designsys.component_docs(p)['Slider'])
+
+    def test_shockwaves_note_gives_every_seeds_own(self):
+        import glob
+        note = next(s for s in designsys.load('shockwave')['_source'] if s.startswith('Slider:'))
+        said = {tuple(map(int, m)) for m in re.findall(r'(\d+)(?: wide)? and (?:thumb )?(\d+)x(\d+)', note)}
+        paths = sorted(glob.glob(os.path.join(REPO, 'seeds', 'Shockwave *.gdl')))
+        if not paths or not all(usable(p) for p in paths):
+            self.skipTest("Shockwave's seeds are not here (git lfs pull)")
+        self.assertEqual(said, set().union(*map(self._sliders, paths)))
 
 
 class TestTheClaimLint(unittest.TestCase):

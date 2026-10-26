@@ -225,7 +225,7 @@
         {"attrs": "name=\"Lighting Preset 3\" does=\"Recalls lighting preset 3.\"", "text": "3"},
         {"attrs": "name=\"Lighting Preset 4\" does=\"Recalls lighting preset 4.\"", "text": "4"}
       ]},
-      {"component": "Button", "attrs": "name=\"Start\" variant=\"start\" nav=\"Main SD\"", "text": "", "rect": [500, 260, 270, 280]},
+      {"component": "Button", "attrs": "name=\"Start\" variant=\"start\" nav=\"MainSD\"", "text": "", "rect": [500, 260, 270, 280]},
       {"component": "Label", "attrs": "name=\"Press Here Label\" align=\"center\"", "text": "Press to Begin", "rect": [440, 560, 400, 60]}
     ],
     "camera": {"heading": [360, 110, 120, 60], "key": [370, 170, 100, 100], "step": 140, "box": [370, 170, 100, 280], "icons": ["vc_plus", "vc_dash"]},

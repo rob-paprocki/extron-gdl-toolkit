@@ -664,5 +664,43 @@ class TestALevelDrawnFromArt(unittest.TestCase):
         self.assertTrue(op['keep_art'])
 
 
+class TestAPopupTheDonorCannotSupply(unittest.TestCase):
+    """The applier clones a popup from a donor popup of its own kind and
+    throws "donor project has no standard popup to clone" otherwise. Every 320
+    seed has modal popups only, so a spec's standard popup is refused here, by
+    name, and not one Windows round trip later."""
+
+    def _spec(self, modal):
+        return {'name': 'T', 'model': 'TLP320M', 'size': [320, 240], 'theme': {'text': '#FFFFFF'},
+                'popup_groups': ['G'],
+                'pages': [{'name': 'P', 'number': 1000, 'controls': [
+                    {'kind': 'button', 'name': 'A', 'rect': [16, 16, 120, 64], 'text': 'A'}]}],
+                'popups': [{'name': 'Laptop', 'modal': modal, **({} if modal else {'group': 'G', 'size': [200, 120]}),
+                            'controls': [{'kind': 'label', 'name': 'L', 'rect': [8, 8, 100, 30], 'text': 'L'}]}]}
+
+    def _need(self, name):
+        donor = seed(name)
+        if not usable(donor):
+            self.skipTest(f'seeds/{name} is not pulled from Git LFS here')
+        return donor
+
+    def test_a_standard_popup_is_refused_on_a_320_seed(self):
+        for name in ('Mach 320.gdl', 'Afterburn 320.gdl'):
+            with self.subTest(seed=name):
+                problems = Panel(self._spec(False)).check_donor(self._need(name))
+                self.assertTrue(any('no standard popup to clone' in m and "'Laptop'" in m for m in problems),
+                                problems)
+
+    def test_a_modal_is_fine_on_a_320_seed(self):
+        problems = Panel(self._spec(True)).check_donor(self._need('Mach 320.gdl'))
+        self.assertFalse(any('popup' in m for m in problems), problems)
+
+    def test_a_seed_with_a_standard_popup_supplies_one(self):
+        spec = self._spec(False)
+        spec.update(model='TLP1035T', size=[1280, 800])
+        problems = Panel(spec).check_donor(self._need('Mach 1035.gdl'))
+        self.assertFalse(any('standard popup' in m for m in problems), problems)
+
+
 if __name__ == '__main__':
     unittest.main()

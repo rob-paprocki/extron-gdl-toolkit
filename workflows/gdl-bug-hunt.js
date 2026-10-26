@@ -28,8 +28,13 @@ READ-ONLY. Do not edit, create or delete any file in the repo. You are finding, 
 You MAY write throwaway scripts to your temp dir and run them.
 
 THE CORPUS - this is the point of the exercise: every .gdl project the repo carries.
-  - fixtures/gdl/*.gdl    real client projects
+  - fixtures/gdl/*.gdl    real client projects (in the private archive only: a checkout
+                          without them has none, and usable() is then False for all)
   - seeds/*.gdl           themed seed projects, one per theme and panel size (Git LFS)
+The translator (gdl/design.py, gdl/designsys/) works on Design canvases rather than .gdl
+files: tests/data/design-*/ and tests/data/round4-*/ each hold a canvas.json and its
+*.dc.html pages, and the panel profiles gdl/designsys/{afterburn,mach,shockwave,turbulence}.json
+are measured from the seeds, so those are the corpus for anything translator-shaped.
 Any count or list of them written in a doc or a prompt goes stale, so enumerate them
 yourself, once, from the repo root, and quote what that prints:
   import glob, sys; sys.path.insert(0, '.'); sys.path.insert(0, 'tests')
@@ -72,9 +77,10 @@ TWO BUGS ALREADY FOUND, as calibration for the class of thing worth reporting:
    state 0, so the file looks perfect and only misbehaves once a control system switches it.
 
 2. "A popup's authored size is always the whole canvas" was inferred from the client project,
-   where it happens to be true. In Extron's Afterburn template 10 of 29 popups are authored
-   at 880x525 and the BUILT layout.json reports 880x525 for them. Code acting on the old
-   belief resized every popup to the screen size, turning modal cards into full-screen pages.
+   where it is not even true: its 16 standard popups are 136x496 to 995x800, and only its
+   modals are full-canvas. In the corpus every modal is the screen and no standard popup is,
+   and the BUILT layout.json reports each at its authored size. Code acting on the old belief
+   resized every popup to the screen size, turning standard popups into full-screen pages.
 
 Both share a shape: THE CODE IS CONFIDENT AND THE FORMAT DISAGREES, and nothing fails loudly.
 That is what you are looking for. Rank a silent wrong-output bug far above a crash.
@@ -169,7 +175,11 @@ const CLAIM_SOURCES = [
   },
   {
     key: 'docs-guides',
-    where: 'docs/design-rules.md, docs/claude-design.md, docs/idmap.md, SKILL.md, CLAUDE.md, README.md',
+    where: 'docs/design-rules.md, docs/idmap.md, SKILL.md, CLAUDE.md, README.md',
+  },
+  {
+    key: 'docs-design',
+    where: 'docs/claude-design.md and docs/superpowers/specs/*.md (the region-frame design, 2026-10-22, is the one that states measured template facts; the others are designs, so take only their claims about what the templates or Build do)',
   },
   {
     key: 'python-read',
@@ -181,7 +191,15 @@ const CLAIM_SOURCES = [
   },
   {
     key: 'python-design',
-    where: 'every docstring and comment in gdl/design.py and in the .py files under gdl/designsys/ (its .json files are data, not claims)',
+    where: 'every docstring and comment in gdl/design.py and gdl/designsys/audit.py',
+  },
+  {
+    key: 'python-designsys',
+    where: 'every docstring and comment in gdl/designsys/__init__.py (about 3,900 lines: the design-system builder, the region frame, the derivation words), plus the comments in gdl/designsys/bundle.js',
+  },
+  {
+    key: 'designsys-data',
+    where: 'the truth ledgers gdl/designsys/truth/*.json and the notes, comments and measured-fact fields in the profiles gdl/designsys/{afterburn,mach,shockwave,turbulence}.json (large; read the prose fields and the ledger claims, not every number)',
   },
   {
     key: 'powershell',
@@ -189,7 +207,7 @@ const CLAIM_SOURCES = [
   },
   {
     key: 'gates',
-    where: 'every docstring and comment in the gates and measurement scripts: tests/verify_*.py, tests/type_probe.py, tests/measure_series.py and tests/audit_corpus.py (not the test_*.py files)',
+    where: 'every docstring and comment in the gates and measurement scripts: tests/verify_*.py (verify_idmap.py included), tests/type_probe.py, tests/measure_series.py and tests/audit_corpus.py (not the test_*.py files)',
   },
 ]
 
@@ -429,6 +447,53 @@ names.
 
 The deliverable is: which of the repo's capabilities are actually Afterburn-only, and does
 anything TELL the user that, or does it just quietly do the wrong thing?`,
+  },
+  {
+    key: 'translator-contract',
+    prompt: `The Design translator turns a Claude Design canvas into a spec: gdl/designsys/bundle.js
+runs in headless Chrome and writes data-gdl attributes and geometry into the page, and gdl/design.py
+reads them back (python -m gdl.design translate; docs/claude-design.md). Its corpus is the canvases
+in tests/data/design-*/ and tests/data/round4-*/ (canvas.json plus *.dc.html), and the profiles in
+gdl/designsys/*.json. Headless Chrome needs GDL_DC_RUNTIME; if a command cannot run without it, say so.
+
+Audit four things, each against a real canvas:
+1. THE CONTRACT. Inventory every data-gdl-* attribute and every property bundle.js writes or
+   returns, and every one design.py reads. Find: written and never read; read and never written (a
+   stale name); the same key with a different type or unit on each side (px vs mm, string vs
+   number, "0" vs absent); a value that survives JSON but not the other side's parsing.
+2. REFUSALS THAT CANNOT FIRE. design.py and designsys/audit.py refuse inputs by name
+   (a Problem, a raise, a refusal list). For each, build or find a canvas that should trip it
+   and confirm it does; a refusal behind a filter that removes its own subject, a comparison of a
+   value with itself, or a key the bundle never emits is a finding. Do the same for
+   tests/verify_idmap.py and gdl/idmap.py's check_panels().
+3. LAYOUT MATH AT EACH PANEL TIER. The profiles carry tiers (hub 525/535, the 320, the large and
+   small panels, portrait and turned panels). Translate the same canvas at every tier and look for a
+   control that lands off its page, overlaps another, goes under the touch target, or is dropped
+   without a word; check the derived windows (docs/superpowers/specs/2026-10-11-turned-panels-design.md)
+   for rounding that opens a seam or exceeds the panel.
+4. ID ALLOCATION. pin_ids() and the mirror logic in gdl/design.py: one ID per control across
+   every panel of a canvas, a mirror that takes another panel's ID, an ID over the UInt16
+   userIdField, two controls sharing an ID, an ID that moves when an unrelated control is added.
+   Cross-check against gdl/idmap.py's from-built and write-panels.`,
+  },
+  {
+    key: 'region-frame',
+    prompt: `docs/superpowers/specs/2026-10-22-region-frame-design.md says Extron's own working
+pages share one grammar (header, left rail, right rail, footer, a popup centre; the hubs keep a
+right menu bar only; the 320 gives each source a page) and that the profiles now encode it:
+frame_layout() and the _frame_* functions in gdl/designsys/__init__.py, the frame entries in
+gdl/designsys/{afterburn,mach,shockwave,turbulence}.json, and what the translator in gdl/design.py
+does with a page that names its regions.
+
+Test the frame against the template ITSELF, which is the seeds (seeds/*.gdl, one project per
+theme and panel size). For each theme and size that has a seed: open its working pages with
+gdl.project, measure the header, rails, footer and centre popup rects, the groups in each rail,
+and the control counts and sizes, and compare with what the profile and the spec say. Look for:
+a rect, a gap, a count or a rail membership the profile states that no seed shows; a series
+or size the spec's prose generalises to but a seed contradicts (the spec was measured on a subset);
+a frame band that overlaps another or leaves the panel at some size; a profile field that
+frame_layout() reads but no profile of some series carries (or the reverse); a series where the
+profile and its truth ledger disagree. Report the measured number next to the claimed one.`,
   },
   {
     key: 'layout-math',

@@ -308,6 +308,33 @@ class TestReaderCountsStates(unittest.TestCase):
                            f'changed, the names this spec emits should change too')
 
 
+class TestNoScriptCountsAPBStates(unittest.TestCase):
+    """The appliers were fixed to Get-GdlStates; examples/add-page-and-popup.ps1
+    still bounded its caption loop by `$button.States.Count`, and
+    powershell/New-ImageProbe.ps1 its icon loop by a `statesField`'s `.Count` -
+    each writing state 0 and stopping. Neither can run here, so read them."""
+
+    def test_no_loop_is_bounded_by_one(self):
+        import glob
+        import re
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        bad = []
+        for f in sorted(glob.glob(os.path.join(root, 'powershell', '*.ps1'))
+                        + glob.glob(os.path.join(root, 'examples', '*.ps1'))):
+            with open(f, encoding='utf-8-sig', errors='replace') as fh:
+                code = '\n'.join(line.split('#', 1)[0] for line in fh)
+            where = os.path.relpath(f, root)
+            bad += [f'{where}: .States.Count' for _ in re.finditer(r'\.States\.Count\b', code)]
+            # A variable holding a statesField, up to where it is next assigned.
+            for m in re.finditer(r"\$(\w+)\s*=\s*Get-GdlField\s+\S+\s+'statesField'", code):
+                var = m.group(1)
+                rest = code[m.end():]
+                nxt = re.search(r'\$' + var + r'\s*=[^=]', rest)
+                if re.search(r'\$' + var + r'\.Count\b', rest[:nxt.start() if nxt else None]):
+                    bad.append(f"{where}: ${var}.Count of a statesField")
+        self.assertEqual(bad, [])
+
+
 class TestVerifierCatchesInertButtons(unittest.TestCase):
     """The check that would have caught the original bug. It has to fail on a
     button whose states are identical, or shipping one is silent again."""

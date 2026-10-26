@@ -11,7 +11,8 @@ python -m gdl.idmap write examples/huddle-functions.json out/idmap   # idmap.md,
 ```
 
 With GUI Designer installed, `powershell\New-GdlPanel.ps1 -IdMap out\idmap`
-does all of it and verifies the map against the built panel.
+does all of it and verifies the map against the built panel. A revised canvas
+keeps the IDs the programmer already has (§9).
 
 ## 1. Why a map, and not the panel
 
@@ -42,10 +43,13 @@ brief written out this way.
 | `nav: "<page or popup>"` | button | Shows that page or popup. This one is **checked** (§3). |
 | `does: "<sentence>"` | button, label, level, slider | Anything else, in words, for the programmer: *"Routes the laptop to the display; On while it is live."* |
 
-Two more keys go elsewhere:
+Three more keys go elsewhere:
 
 - `"reached_by": "program"`, on a page or popup, says the control program shows
   it (an incoming-call popup, for example), so no `nav` has to lead there.
+- `does` on a page or popup, a sentence, says what it is for - *"Asks before
+  the room powers off."* A canvas Page's `does` arrives here. The map shows it
+  beside the page.
 - A top-level `does`, a sentence or a list of them, holds panel-wide functions
   such as *"After ten minutes idle, return home."*
 
@@ -81,9 +85,10 @@ block `plan`.
 |---|---|
 | A `nav` target that is not a page or popup in the spec | The button would flip to nothing |
 | `nav` on anything but a button; `does` that is not a sentence; either key on a kind with no ID | It would go nowhere |
-| A standard popup shown where the page beneath has no reference to its group. For a popup shown from another popup, that means every page the first can be showing over. | A standard popup appears only through such a reference (`docs/gdl-format.md` §5) |
+| A standard popup shown where the page beneath has no reference to its group. For a popup shown from another popup, that means every page the first can be showing over. | A spec's standard popup appears only through such a reference: a spec binds a reference to a group, though the format can bind one to a single popup (`docs/gdl-format.md` §5) |
 | Controls sharing an ID but differing in kind, function or states | A program sees one control per ID, and GUI Designer gives every copy the same states |
 | A page or popup no `nav` reaches from the start page, unless it is `reached_by: "program"` | Dead layout, or a missing link |
+| A page's or popup's `does` that is not a sentence | It would say nothing |
 
 The reachability check runs only when the spec uses `nav`. Three unlinked pages
 in a layout-only spec are a layout, not a broken panel.
@@ -108,8 +113,16 @@ Each control row carries its ID, type, the page and control name of every place
 it appears, its caption, a button's states (`0 Off, 1 On`) and the one it
 shows while pressed, and its function
 (`nav` and `does`, in words). The page table shows how each page and popup is
-reached. Every file carries the spec's SHA-256; a map of every panel (§7) carries
-each panel's spec's in `idmap.json`.
+reached, and what it is for (its `does`). Every file carries the spec's
+SHA-256; a map of every panel (§7) carries each panel's spec's in `idmap.json`.
+A map of one panel names the panel its spec is laid out for (`model`), which
+a revision's changes are compared on (§9).
+The CSV puts a caption broken over lines on one line; the JSON keeps the
+break, which is what the panel draws.
+
+A map written from a revision (§9) also lists its **retired IDs**: IDs an
+earlier delivery gave controls that are gone. No control has one, and the
+next revision keeps them out of use too.
 
 ## 5. Verification
 
@@ -126,8 +139,11 @@ built `layout.json`:
   it answers to the same handler if it is ever shown.
 - No page or popup name appears twice.
 - Every popup a button shows can appear over every page it can be shown on.
+- No control carries an ID the map retires (§9). On a donor page it is a note.
 
-It exits non-zero on any problem. `tests/test_verify_idmap.py` makes it fail on
+A map of every panel is checked as one panel's (`--panel`, §7). Without it,
+or with a panel the map does not have, the verifier names the map's panels
+and stops. It exits non-zero on any problem. `tests/test_verify_idmap.py` makes it fail on
 each of those.
 
 **End to end.** `examples/huddle-functions.json` - three-state source buttons
@@ -158,9 +174,12 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   put it (`gdl.design.pin_ids`). A Laptop button on the Home page of a 1035 and
   on a sources page of its own on a 320 is one ID. A control is known by its
   page and its name, so an addressable control on such a canvas must be named.
-- **Where it is, per panel.** Each row has a column per panel: the page or popup
-  the control is on there. Each panel's own page table follows: what it boots
-  into, and how each page and popup is shown. A control that does something
+- **Where it is, per panel.** The rows are in ID order. Each row has a column
+  per panel: the page or popup the control is on there, and the copy's own
+  name where it is not the row's - a mirror's, or a copy the designer named
+  otherwise (*Home; Settings (Power Off)*). Each panel's own page table follows:
+  what it boots into, how each page and popup is shown, and what each is for.
+  A control that does something
   different on a panel - a Group's Next shows a popup on a mid-size panel and a
   page on a small one - says what it does on each, by panel.
 - **The panels are the canvas's own list.** Every spec carries it; the map
@@ -272,3 +291,115 @@ the spec gives no states keeps its clone's, which the built map names and the
 spec's cannot; an icon the spec gives by codepoint is named by its glyph where
 the face names one (`tests/test_idmap.py`). The project must have been built:
 Save and Build writes the `layout.json` it reads.
+
+## 9. A revision: the program keeps its IDs
+
+A client often changes the canvas after the programmer has started. Without
+help, every control without its own `id` is numbered again by its band (1001
+up on the first page, 9001 up on the first popup, 50001 up for what a layout
+derives, in name order). One control drawn ahead of another, or one page whose
+Back sorts ahead of another's, renumbers everything after it. The program then
+breaks silently: a press arrives on the wrong handler.
+
+So a revision is translated against the previous delivery's map:
+
+```bash
+python -m gdl.design translate <canvas dir> out/huddle-r2 --previous out/huddle/idmap
+powershell\New-GdlPanels.ps1 -Out out/huddle-r2 -Name Huddle -Previous out/huddle/idmap
+```
+
+`--previous` takes the previous delivery's `idmap` folder or its `idmap.json`.
+For a single panel, `New-GdlPanel.ps1 -IdMap <dir> -Previous <map>` does the
+same, and so does `python -m gdl.idmap write <spec> <dir> --previous <map>`.
+
+**What keeps its ID.** Every control the previous map knew, matched by its page
+or popup name and its control name (an unnamed one by the name the map shows),
+on whichever panel it is. A control a layout derived is matched by the same
+key, its page or popup and its name.
+
+- **A designer's `id` still wins.** An `id` that is the ID a control still on
+  the canvas keeps is refused, naming both. Copies the previous map gave one
+  ID (a mirror) may pin it on one and keep it on the other.
+- **A new control** takes a free number in its band that the previous map does
+  not use. A page the map knew keeps its band, even with pages drawn in front
+  of it since; a new page takes the first band no known page holds.
+- **An ID whose control is gone is retired.** It is never handed to a new
+  control, nor taken by the chrome's seed rule below. Each spec lists it
+  (`_retired`), the spec's bands skip it, and the map lists it under *Retired
+  IDs*, so every later revision keeps it out of use too. A program still
+  addressing it reaches nothing rather than the wrong control.
+- **A designer may pin a retired ID** on a control, and that is how a control
+  that moved to another page, or was renamed, keeps the ID the program knows
+  it by. The match is by page and name, so without the pin it is a new
+  control. translate notes each one it can tell and the `id` to pin: a name
+  now on another page and gone from its own (moved), or a control gone from a
+  page that gained one of its type with the same `does` (renamed, perhaps).
+- **The chrome's seed IDs** (§7) keep their rules: the chrome takes its
+  template's ID where that is free. An ID the previous map holds is not free.
+  A mirror still takes its control's ID.
+- **Pages and popups keep their names.** A program shows them by name, so
+  translate never maps one name onto another. A page that is gone, where a new
+  one holds most of its controls by name, is reported as a note. The note says
+  the page may have been renamed, that its controls are new to the program,
+  and which `id` to pin on each one to keep it.
+- **A hub's windows are named by the order of the working pages.** A hub
+  names the window each working page derives (Select Source, More Options)
+  by its template, and after its own page where an earlier page derives one
+  too (*Video Call Select Source*). Drawing the working pages in another
+  order, or removing the earlier one, renames those windows. A program shows
+  each by its new name, and what the hub draws in it is known by the window's
+  name, so its IDs are retired. The layout draws those controls, so no `id`
+  on the canvas pins them. translate notes each renamed window with its old
+  name, the IDs retired, and the page to draw first again to keep them.
+
+translate ends with one line: how many IDs were kept, how many are new, and
+how many are retired.
+
+**What changed.** Written with the same map, the map has `changes.md` and
+`changes.json` beside it. `python -m gdl.idmap diff <old> <new>` prints the
+same report for any two maps. It exits 0 when a program needs no change and 1
+when it does. The report covers:
+
+- panels added or gone;
+- pages and popups added, removed, renamed, or shown the other way (page or
+  popup); a popup made modal or put in another group, which changes what
+  ShowPopup does with it; a page or popup the program is now to show on its
+  own, as on an incoming call (`reached_by: program`);
+- controls added or removed, given another ID (`renumbered`), moved to another
+  page or renamed under a new ID (a rename is one gone and one come on a page,
+  of one type and the same states and function), or whose ID is now a
+  different control (`reassigned`: another name, and another place, type or
+  function, or its old name under another ID). That last is what a revision
+  translated without `--previous` can do: a control drawn where a moved one
+  was takes its number, and the program's handler for the old control fires
+  for the new one;
+- a control whose type, states, press state or function changed, or that is
+  on other panels than it was. A state list matters to a `SetState` program: a
+  state put in front of another moves every index after it.
+- a control on another page or popup under the same ID (`relocated`). The
+  program still addresses it by that ID, but the control is up only while its
+  new page or popup is, and the program is what shows that.
+- what needs no change: a caption, a control renamed under its ID (doing
+  what it did), a page's purpose, the page the panel boots into, a page or
+  popup no longer marked `reached_by: program`.
+
+It opens with a one-line verdict, either *A program written against the
+previous map needs no change*, or what it needs. A map of every panel is
+compared panel by panel, over the panels both maps have: a panel added or
+gone is said once, not as a change to every control whose function differs
+there. A change on some panels names them.
+
+Every spec a revision writes records the SHA-256 of the map it kept IDs
+against (`_previous`). The hash is of what the map says, not its bytes, so a
+delivery that came back through Windows re-saved with CRLF line ends or a
+BOM is still that map. `gdl.idmap write`, `write-panels` and `check` refuse a
+`--previous` map other than that one, because the changes would describe the
+wrong delivery. Without `--previous` they write the map and note that it can
+take one.
+
+A map of one panel names its panel (`model`). Compared with a previous map of
+several, which is what `New-GdlPanel.ps1 -IdMap -Previous` does with one
+panel of a canvas of several, it is compared with that map's view of its own
+panel. The report says so and says nothing of the other panels, which are not
+gone. A map of one panel that names none is taken as the panel the canvas is
+drawn on, the first.

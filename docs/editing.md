@@ -14,7 +14,7 @@ checked, but has not been through a build.
 | `rename` | captions, state by state, wherever they actually live | 12 controls built: 9 plain captions correct on both states; 3 formatted ones are in the artwork (below) |
 | `restyle` | remap colors on each control and each state, text color included | 5 sliders built, 5/5 off the artwork; a fill held only on a state and a text color, built and correct |
 | `states` | give a button the states it should have: add, remove, rename or reorder them, and set each one's look | grown 2 to 3, trimmed 3 to 2, and a state inserted before On; built, every state and press state correct |
-| `renumber` | reassign addressable `userId`s in bands | planned + checked |
+| `renumber` | reassign the IDs of the addressable controls it selects - each button, label, level or slider that has one - from `start`, `step` apart, within 1 to 65535; controls sharing an ID (mirrors) take one new one, a mirror the selector leaves is a warning, and a band per page is a renumber per page | planned + checked |
 | `retarget` | move to another panel model, or turn one that rotates, optionally rescaling | **654/654 on the fixture; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved; 650/650 on the same seed turned to a portrait 1035M** |
 
 ## The shape
@@ -29,7 +29,11 @@ Python against the real `.gdl`, on any OS; PowerShell only applies ops.
     python tests/verify_built.py out/edits-plan.json <built.gdl>
 
 Selectors resolve against the actual project at `check` time, so a typo is an
-error up front rather than a silent no-op discovered on the panel. Errors
+error up front rather than a silent no-op discovered on the panel. So is a
+misspelled key, at every level of the file: a selector skips a key it does not
+know, so `{"tipe": "PBSlider"}` once selected every control in the project, and
+`check` now names the key and plans nothing for that edit. A key starting `_`
+is a note (`_why`). Errors
 block the plan; warnings never do — a retarget of a real project always
 surfaces dozens of pre-existing touch-target violations, and refusing on those
 would mean refusing the job.
@@ -69,11 +73,11 @@ is looking at the asset PNG.
 
 ## A button is its states
 
-A button draws from its states, not from itself. In the fixture, **288 of 442
-buttons have no fill of their own** and a fill on each state. Table Input 1 is
-transparent when Off and `#242634` when On, and the two need not share a
-caption either. So every edit reads and writes each state, addressed by index,
-which is also the number the control program sets.
+A button draws from its states, not from itself. In the fixture, **none of its
+442 buttons has a fill of its own**, and 340 have one on each state. Table
+Input 1 is transparent when Off and `#242634` when On, and the two need not
+share a caption either. So every edit reads and writes each state, addressed by
+index, which is also the number the control program sets.
 
 - **`rename` with `map`** changes whatever says the old caption, and nothing
   else. `{"Display On": "Screen On"}` leaves `Display Off` alone.
@@ -140,24 +144,35 @@ controls overflowed and Build moved them to 0,0. Page controls were fine, which
 made it look like a popup-specific bug rather than a missing collection. With
 `PopupPages` included: 654/654.
 
-The first fix for that was wrong in a way the client project could not
-show. It set every page *and popup* to the new **screen** size, on the reading
+The first fix for that was wrong, and what it was checked by could not show
+it. It set every page *and popup* to the new **screen** size, on the reading
 that a popup's authored `widthField`/`heightField` is always the whole canvas
 and `layout.json`'s smaller 915x800 is the *displayed* size taken from the
-reference that shows it. Every popup in that project happens to be authored
-full-canvas, so both rules agree there and it verified 654/654.
+reference that shows it. It is not: 915x800 is that popup's authored size. The
+client project's 16 standard popups are authored at their own sizes - 136x496,
+900x530, 915x800 and 995x800 - and only its modals are full-canvas. A standard
+popup blown up to the screen still holds its scaled controls, so nothing
+overflowed, and the 654/654 counted controls landing where planned; no popup's
+size was compared.
 
-Extron's own Afterburn template settles it: **10 of its 29 popups are authored
-at 880x525, and the built `layout.json` reports 880x525 for them** — all 29
-built popup sizes match the authored canvas exactly. The authored size *is* the
-popup size. Forcing it to the screen size turns a modal card into a
-full-screen page in the shipped file.
+The corpus settles it. In all 47 projects a popup's built `layout.json` size is
+its authored size; every one of the 454 modals is the screen, and none of the
+442 standard popups is - Afterburn's 1035 seed has 19 modals at 1280x800 and 10
+standard popups at 880x525. Forcing a standard popup to the screen size turns
+it into a full-screen page in the shipped file.
 
-So `gdl.edit` now emits a size per page, each scaled by the same per-axis
-factors as its own controls. A full-canvas page lands exactly on the screen size
-(1280×1.5, 800×1.35 → 1920×1080); an 880×525 card becomes 1320×709. What matters
-is that canvas and contents move together, so nothing can overflow that did not
-overflow before. `tests/test_retarget_canvas.py` pins it.
+So `gdl.edit` emits a size for every page and popup on every retarget. Scaled,
+each canvas is scaled by the same per-axis factors as its own controls: the new
+screen over the old, the old being the project's `screenSizeField`. It was
+taken from the largest control on a page, which 4 of the 47 projects have
+nothing as big as the screen for - `client-greenroom-1.1.0`'s is 1185x269 on a
+1280x800 screen, and a retarget of it to a 1535 scaled by 1.62x4.01. A
+full-canvas page lands exactly on the screen size (1280×1.5, 800×1.35 →
+1920×1080); an 880×525 popup becomes 1320×709. Unscaled, a canvas that was the
+screen becomes the new one and any other keeps its own - left unplanned, the
+applier sets every page and popup to the screen. What matters is that canvas
+and contents move together, so nothing can overflow that did not overflow
+before. `tests/test_retarget_canvas.py` pins it.
 
 **A panel that rotates is turned with `size`.** The panels that run either way
 up (`docs/design-rules.md` §1) take one of their two canvases:
@@ -177,7 +192,14 @@ turned where its theme draws no template that way up gets a seed:
 fall outside its page after the edit is an **error**, because Build relocates it
 silently. It runs against each page's own new canvas, popups included — they
 are the only pages whose canvas may differ from the screen, so they are where it
-matters most.
+matters most. It cannot see factors that are wrong, since it measures each
+control against a canvas scaled by the same ones, so a standard page planned at
+anything but the new screen is an error too.
+
+`verify_built.py` holds the build to both halves of the plan: the screen size,
+the platform's own resolution and the part number the model has, and each page's
+and popup's canvas at its planned size. A retarget without `scale` plans no
+control, so these are all it has to check.
 
 ### What a retarget does and does not promise
 

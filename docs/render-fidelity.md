@@ -82,10 +82,11 @@ consequence in this corpus. It is left in `research/` rather than shipped into
 the maintained compositor, where it would read as a measured rule.
 
 What does hold, and makes the rule unnecessary: **Build bakes the scrim into
-every modal's artwork** - full-canvas black at alpha 166 - whatever background
-the popup was authored with. Every modal in the Afterburn, Mach and Shockwave
-seeds carries it, and so did a modal built from a spec with a `#242634`
-background. The compositor pastes that artwork like any other; to show what the
+every modal's artwork** - full-canvas black at the modal's own transparency,
+alpha 166 at the 35% every template authors - whatever background color the
+popup was authored with (`docs/gdl-format.md` §5). Every modal in the
+Afterburn, Mach and Shockwave seeds carries it, and so did a modal built from a
+spec with a `#242634` background. The compositor pastes that artwork like any other; to show what the
 panel shows, composite it over the page beneath (`gdl.design compare` does,
 over the start page).
 
@@ -99,15 +100,25 @@ Measured over 3,296 partial-alpha pixels: straight alpha is off by a mean of
 **97 levels** per channel; binary alpha by **2.15**. This affects every page
 with an antialiased asset edge, which is all of them.
 
-`gdl.compose.paste` keeps that rule by default. `compose.BINARY = False` blends
-instead, and two callers turn it off, for a picture of the panel rather than of
-its snapshot: the design systems' template renders
-(`gdl.designsys.render_templates`) and the critique loop's template side
-(`gdl.design compare --template`). The panel shows a translucent bar or well
-over its photo - Mach's #000000B4 header, Shockwave's white well at 15% - with
-the photo through it, where the snapshot rule paints it solid. Each puts the
-rule back as it found it. The preview, the sign-off and the baseline keep the
-snapshot rule.
+`gdl.compose.paste` keeps that rule by default, and it is the rule wherever a
+render is **scored** against a snapshot: `tests/score.py`,
+`tests/compare_snapshots.py` and the baseline, because the snapshots themselves
+are drawn that way and a blended render would score worse against them.
+Everything a person reads as a picture of the *panel* blends instead, in
+`gdl.compose.as_the_panel()` (`BINARY` off): the sign-off
+(`gdl.design compare`, via `_Built.image`), the critique loop's template side
+(`gdl.design compare --template`), the design systems' template renders
+(`gdl.designsys.render_templates`) and the spec preview (`gdl.spec render`). The
+panel shows a translucent bar or well over its photo - Mach's #000000B4 header,
+Shockwave's white well at 15% - with the photo through it, where the snapshot
+rule paints it solid. With `BINARY` off, `draw_fill` composites a fill rather
+than overwriting under it, and `flatten` lays the page on black by alpha rather
+than by the binary mask. Each caller puts the rule back as it found it. That the
+panel itself blends is read from the art (Build bakes the transparency into
+the PNG's alpha), not seen on a panel.
+
+The sign-off's percentages stay above a scored page's even so: a modal drawn
+over the start page differs from the designed one for other reasons.
 
 ## 3. Group-form popup references paint
 

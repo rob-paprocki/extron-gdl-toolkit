@@ -107,6 +107,14 @@
     return out;
   }
   function truthy(v) { return v === true || v === 'true' || v === 'yes' || v === '1'; }
+  // A control's `id` as the designer wrote it: a whole number is the ID, and
+  // anything else goes through as written, for gdl.spec check to name.
+  // Number() made 'abc' NaN, which JSON writes as null, so the control quietly
+  // took an allocated ID; and an empty one 0, GUI Designer's 'no ID'.
+  function idOf(v) {
+    if (v == null || String(v).trim() === '') return null;
+    return /^\s*\d+\s*$/.test(String(v)) ? Number(v) : v;
+  }
 
   // -- props that arrive as text from markup --------------------------------
   // `states` may be "Off, On" or a JSON list '[{"name":"Off"}, ...]', or an
@@ -732,7 +740,18 @@
         // A popup region is rounded as its popups are scaled (panelPage), a
         // popup being its reference's size (Standards p.70): rounded up, the
         // 320's 880x525 region came out 223x133 over 222x133 popups.
-        if (it.kind === 'popupregion') { w = Math.round(w); ht = Math.round(ht); }
+        if (it.kind === 'popupregion') {
+          // A row holds the frame's width less its padding, and the popups
+          // scale as the region would: past it they are wider than their
+          // region, which a popup being its reference's size cannot be. The
+          // 300 Portrait (a 294 px row, 307 px popups) names what to draw.
+          if (it.rect[2] * k > W + 0.5) {
+            probs.push(nameOf(it) + ' is ' + Math.round(it.rect[2]) + ' px wide, which a row on the ' + T.model
+                       + ' (' + Math.floor(W) + ' px) cannot hold - draw it and its popups at most '
+                       + Math.floor(W / k) + ' px wide');
+          }
+          w = Math.round(w); ht = Math.round(ht);
+        }
         w = Math.ceil(w); ht = Math.ceil(ht);
         line.push({ it: it, w: w, h: ht });
       });
@@ -1273,6 +1292,14 @@
     // of its own (popupPage), as that template gives each source one.
     var alone = kind === 'popup' && !part && P.layout.bars !== 'controls' && T.tier === 'C' && model !== designModel
       && T.main && D.main && (T.kinds || {}).popup === false;
+    // One left over - a bar theme's roleless popup on the same panel - has
+    // nothing to be built from: refused here by name, where the build would
+    // stop at "donor project has no standard popup to clone" on Windows.
+    if (kind === 'popup' && !part && !alone && (T.kinds || {}).popup === false) {
+      problems.push((props.name || 'Page') + ' is a standard popup, which the ' + T.model + "'s seed cannot build - "
+                    + (barFrames() ? 'say role="source" and the ' + T.model + ' draws it as a page, as it draws every source'
+                                   : 'make it a kind="modal" or a kind="page"'));
+    }
     if (part && part.size) {
       tw = part.size[0]; th = part.size[1];
     } else if (!full && !alone) {
@@ -3820,9 +3847,13 @@
     var blocks = cols.map(function (c) {
       var g = c.items[0];
       if (c.own && g.kind === 'group') {
-        // Its title a heading the 320 adds (no other panel draws one).
+        // Its title a heading the 320 adds (no other panel draws one), in
+        // capitals where the template sets its 320's column labels so (ZOOM,
+        // INPUTS: the profile's writing.column_labels_320). The control keeps
+        // the designer's name; its caption is what the panel shows.
         var gt = propsOf(g).title || propsOf(g).name || null;
-        return { head: gt ? pageMember(null, Object.assign({ name: gt + ' Heading', text: gt, derived: true }, RD.heading || {},
+        var shown = gt && WD.column_labels_320 === 'caps' ? gt.toUpperCase() : gt;
+        return { head: gt ? pageMember(null, Object.assign({ name: gt + ' Heading', text: shown, derived: true }, RD.heading || {},
                                                            PD.heading || {}), 'label') : null,
                  title: gt, members: groupMembers(g, where, probs).map(function (it) {
                    return pageMember(it, null, it.kind);
@@ -4974,7 +5005,7 @@
       className: 'xgdl xgdl-button', style: style,
       'aria-label': props['aria-label'] || props.ariaLabel || (img && !caption ? img.icon : null),
       'data-gdl': gdl({
-        kind: 'button', name: props.name, id: props.id != null ? Number(props.id) : null,
+        kind: 'button', name: props.name, id: idOf(props.id),
         variant: variant, text: text, fill: look.fill, stroke: look.stroke,
         color: look.color, border: look.border, size: f.size, bold: f.bold,
         align: align === 'center' ? null : align,
@@ -5025,7 +5056,7 @@
         // size - from inside, where a scaled container laid it out.
         minHeight: L.aware ? (lineHeight(f.size) + 2) / (L.css || 1) + 'px' : undefined
       },
-      'data-gdl': gdl({ kind: 'label', name: props.name, id: props.id != null ? Number(props.id) : null,
+      'data-gdl': gdl({ kind: 'label', name: props.name, id: idOf(props.id),
                         text: words_, color: color, size: f.size,
                         bold: f.bold, align: align, does: props.does,
                         // A copy a panel's layout repeats (overPages' title strip).
@@ -5206,7 +5237,7 @@
     return h('div', {
       className: 'xgdl xgdl-' + kind,
       style: lacks ? outlined(box, [lacks]) : box,
-      'data-gdl': gdl({ kind: kind, name: props.name, id: props.id != null ? Number(props.id) : null,
+      'data-gdl': gdl({ kind: kind, name: props.name, id: idOf(props.id),
                         seed_id: props.__seed != null ? Number(props.__seed) : null,
                         fill: fill, border: props.border || d.border, orientation: o,
                         track: t, thumb: s || null,

@@ -150,7 +150,12 @@ def _series_frames(p):
             if not name.startswith('_') and isinstance(s, dict) and s.get('frame')}
 
 
-_NUMBER = re.compile(r'(?<![\w.])\d+(?:\.\d+)?(?![\w.])')
+# A number the words claim: standing alone, or with a unit (99px, 14pt, 9mm),
+# either side of a size (880x525), or a sentence's last (ends at 42.). Not one
+# inside a word or a name - TLP1035T, 2D, h264. Stepping over any a letter or a
+# period followed let a Differences sentence say '99px' that nothing backed.
+_NUMBER = re.compile(r'(?:(?<![\w.])|(?<=\dx))(\d+(?:\.\d+)?)'
+                     r'(?=(?:px|pt|mm)\b|x\d|\.(?!\w)|(?![\w.]))')
 
 
 def _numbers_unbacked(e):

@@ -17,6 +17,15 @@
     closes it - so a running GUI Designer is closed first, as New-GdlPanel.ps1
     closes it. Allow two to four minutes a panel.
 
+    A revision of a canvas whose map a programmer already has is translated
+    with that map (--previous), which keeps every ID it gave; -Previous names
+    the same map here, and changes.md and changes.json are written beside the
+    new one - what a program written against the old map meets
+    (docs/idmap.md section 9):
+
+        python -m gdl.design translate <canvas dir> out\huddle-r2 --previous out\huddle\idmap
+        powershell\New-GdlPanels.ps1 -Out out\huddle-r2 -Name Huddle -Previous out\huddle\idmap
+
     -Models builds some of them, named as the canvas lists them - TLP300M-Landscape
     for a 300M turned - and the map is still every panel's. -KeepGoing
     builds the rest after one fails. Exits 0 only if every panel built and
@@ -28,6 +37,7 @@ param(
     [Parameter(Mandatory)][string]$Out,
     [Parameter(Mandatory)][string]$Name,
     [string[]]$Models,
+    [string]$Previous,
     [string]$Python = 'python',
     [switch]$KeepGoing
 )
@@ -38,6 +48,10 @@ $repo = Split-Path $PSScriptRoot -Parent
 # Windows PowerShell 5.1 puts round an argument with a space in it.
 $Out = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Out).TrimEnd('\')
 if (-not (Test-Path $Out)) { throw "not found: $Out - translate the canvas there first" }
+if ($Previous) { $Previous = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Previous).TrimEnd('\') }
+# Always an array: an if's empty @() comes back $null, which + appends
+# as an empty argument.
+$prev = @(if ($Previous) { '--previous', $Previous })
 
 # The canvas's own list, the panel it is drawn on first: each spec carries it.
 # Only those: a folder another translate left is not this canvas's panel, and a
@@ -59,7 +73,7 @@ Push-Location $repo
 try {
     $map = Join-Path $Out 'idmap'
     Write-Output "=== the ID map, every panel -> $map"
-    & $Python -m gdl.idmap write-panels $Out $map
+    & $Python -m gdl.idmap write-panels $Out $map @prev
     if ($LASTEXITCODE -ne 0) { throw "the ID map did not check (exit $LASTEXITCODE)" }
 
     $results = @()

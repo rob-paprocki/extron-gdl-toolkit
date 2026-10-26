@@ -1,6 +1,6 @@
 # workflows/
 
-## gdl-bug-hunt.js - planned, never completed
+## gdl-bug-hunt.js
 
 A multi-agent hunt for latent bugs of the shape this repo's worst ones have
 had: **the code is confident, the format disagrees, and nothing fails loudly.**
@@ -13,7 +13,7 @@ elsewhere.
 |---|---|---|
 | Extract | haiku, one per source | Pull every absolute claim ("always", "never", counts) out of one source: a slice of the docs, of the Python, the PowerShell, or the gates and measurement scripts. The sources are `CLAIM_SOURCES` in the script. |
 | Falsify | sonnet, one per source | Test that source's claims against every project in the corpus. Pipelined behind its extractor. Any extractor, falsifier or sweep that returns nothing is logged and named in the result's `uncovered`, so a dead agent never reads as a clean one. |
-| Hunt | sonnet, one per dimension | Independent sweeps: collection traps (more `.Count` liars), guards that cannot fire, silent no-ops, Python↔PowerShell plan-contract drift, `verify_built.py` blind spots, fields a clone inherits that nobody clears, what is secretly Afterburn-only, layout-math edge cases. |
+| Hunt | sonnet, one per dimension | Independent sweeps: collection traps (more `.Count` liars), guards that cannot fire, silent no-ops, Python↔PowerShell plan-contract drift, `verify_built.py` blind spots, fields a clone inherits that nobody clears, what is secretly Afterburn-only, the translator's contract (what `bundle.js` writes into `data-gdl` against what `design.py` reads, refusals that cannot fire, layout math at each panel tier, ID allocation), the region frame measured against the template's own pages in the seeds, layout-math edge cases. |
 | Verify | sonnet, two per finding | Adversarial, default-refuted, two lenses (reproduce; already-handled). The top findings by severity, up to `MAX_VERIFY`; the rest are reported as unverified rather than dropped, and so is a finding that a lens's agent died before judging - it survives only on every lens's verdict. |
 
 No agent runs on Opus. Extraction is mechanical, so haiku; the rest is
@@ -21,7 +21,11 @@ analysis, so sonnet; and the synthesis is the session that launched the run,
 reading what the script returns. Every agent is read-only and must attach a
 paste-able command and its real output to each finding.
 
-The corpus is every usable project under `fixtures/gdl/` and `seeds/`. The
+The corpus is every usable project under `fixtures/gdl/` and `seeds/` - the
+client fixtures are in the private archive only, so a checkout without them
+hunts the seeds. The translator dimensions also use the Design canvases in
+`tests/data/` and the series profiles in `gdl/designsys/*.json`; running
+`translate` needs `GDL_DC_RUNTIME`. The
 agents enumerate it themselves with `usable()` from `tests/_corpus.py`, so a
 seed added later is picked up and an un-pulled LFS pointer is skipped and
 reported. The script states neither a corpus size nor an agent total: it logs
@@ -52,4 +56,15 @@ to be added to `CLAIM_SOURCES`.
    workflow is for the judgment-heavy dimensions it cannot cover. The FAILs it
    reports should already be open items (`docs/gdl-format.md` §9).
 
-`docs/history.md` records why the first two runs did not finish.
+4. Keep the launching session open until the workflow finishes - it runs
+   for hours. A headless `claude -p` session exits when its turn ends and
+   takes a running workflow with it; tell it in its prompt to wait for the
+   workflow (the Monitor tool, or repeated `until` loops on the workflow
+   task's `.output` file) rather than end its turn.
+
+Findings over `MAX_VERIFY` come back unverified: verify them in a second,
+smaller workflow with the same two lenses rather than raising the cap, and
+deduplicate them first.
+
+`docs/history.md` records why the first two runs did not finish and what the
+first complete one found; its results are in `archive/job-e823df9b/bug-hunt/`.

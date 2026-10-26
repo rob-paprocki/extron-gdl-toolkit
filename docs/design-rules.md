@@ -51,7 +51,9 @@ have no tier - their screen is the host's.
 minimum (§2) is 2.2 mm of cap height on a 1035 and 1.1 mm on a 535. The toolkit
 holds text to **14 pt × DPI / 149, rounded up, never under 14**
 (`gdl.spec.type_floor`), which is the 14 pt as it reads on the TLP Pro 1025/1035:
-16 pt on a 725, 18 on an 835 or 525, 28 on a 535. Extron's own templates break
+16 pt on a 725, 18 on an 835 or 525, 28 on a 535. A caption with no size is
+held at the 14 pt it builds at; a control with no words has no type to hold.
+Extron's own templates break
 it on dense panels: their 520 series keep the 1035's sizes - most of Mach's 525
 text is 13 to 22 pt, as on its 1035 - and their 535s step up, but short of
 it - Mach's and Shockwave's from 18 pt, most of it 20 to 36 (each seed's built
@@ -80,8 +82,10 @@ one of the panels that rotate (below) is: for both, the wizard adds a
 table is one fixed resolution. Each soft client's presets are in
 `research/data/platform-details.txt`. ECP is an app, and its dropdown has seven.
 `MODELS_FULL` carries 1920 × 1080 because that is what `GetDefaultResolutionDpi`
-reports, but that is a default, not a constraint. The real list, read from a
-built project's `Platform.SupportedResolutions`:
+reports, but that is a default, not a constraint of the panel type. The real
+list, read from a built project's `Platform.SupportedResolutions` (this
+toolkit's `spec.sizes` knows 1920 × 1080 alone, so a spec at any other ECP size
+is refused until the table carries them):
 
 | Preset | Canvas |
 |---|---|
@@ -277,11 +281,12 @@ Four accent schemes; pick one per project and keep it:
 | 4 | Medium Blue `#4695D6` | Gold `#D6B961` |
 
 **What ships is not the guide's scrim.** The guide specifies the modal background
-as `#242634` at 20% transparency. Build draws every modal popup as full-canvas
-**black at alpha 166** (~65% opacity) over the page beneath, whatever background
-the popup was given: every modal in the Afterburn, Mach and Shockwave seeds and
-the client fixture, and a modal built from a spec with a `#242634`
-background. So a modal's own background never reaches the panel.
+as `#242634` at 20% transparency. Every template modal builds as full-canvas
+**black at alpha 166** (~65% opacity) over the page beneath: Build draws a modal
+black at its own transparency, 35% in every template, and not its background
+color - a modal built from a spec with a `#242634` background came out the same.
+So a modal's own background never reaches the panel, and a spec writes the 35%
+on every modal rather than keep its donor's (`docs/gdl-format.md` §5).
 `docs/render-fidelity.md` has what this means for the compositor.
 
 ## 5. Four button archetypes

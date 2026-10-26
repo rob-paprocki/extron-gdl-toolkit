@@ -226,10 +226,11 @@ statement is in the live docs; this is the record that it changed.
   state an edit writes: all nine plain renames correct on both states.
 - **Then `rename` wrote one caption to every state, and `restyle` matched only
   a control's own colors** (until 2026-09-24). A button whose states said
-  different things lost its feedback wording. 288 of the client
-  fixture's 442 buttons keep their fill only on their states, so `restyle`
-  matched none of them - and one it did match got the control's new color on
-  every state, On included. Nothing was reported, and the verifier never
+  different things lost its feedback wording. None of the client fixture's
+  442 buttons has a fill of its own - 340 keep one on every state - so
+  `restyle` matched no button's fill, and a button it did match on a color of
+  its own got the new color on every state, On included. (This entry said 288
+  of 442; the reader counts 340.) Nothing was reported, and the verifier never
   checked an edit's colors at all. Both now edit state by state, and colors are
   read off the built artwork.
 - **The client fixture was thought to deviate from Afterburn's modal
@@ -569,6 +570,18 @@ statement is in the live docs; this is the record that it changed.
   `archive/claude/sessions/9fe2c865-.../subagents/workflows/`. On 2026-10-07 the
   host this repo is developed on had a system-managed pagefile and a 12.5 GB
   commit limit (11.75 GB of RAM).
+- **The first complete bug hunt** ran on 2026-10-25 on the owner's Linux box
+  (8 threads, 31 GB), refreshed first to reach the translator and the region
+  frame: 62 agents, none dead. It confirmed 15 findings, refuted 1, and left
+  69 unverified over `MAX_VERIFY`; a second verification workflow
+  deduplicated those to 61 and confirmed 26 with both lenses, refuting 35. All
+  41 confirmed were fixed in #62 - among them a `verify_built` popup-group
+  check that read a key no file has and could never fire, `gdl.spec` and
+  `gdl.edit` ignoring misspelt keys (a typo'd `start_page` booted the wrong
+  page), and a retarget scaling from the largest control rather than the
+  screen. Its first launch on that box died about ten minutes in, when the
+  headless session that started it ended its turn. Results, triage and both
+  verification passes: `archive/job-e823df9b/bug-hunt/`.
 - **The bug hunt's script and README were a month stale** (until 2026-10-07):
   they counted 19 projects and 13 seeds, read none of the modules or docs
   written since (`design.py`, `designsys/`, `idmap.py`, `templates.py`,

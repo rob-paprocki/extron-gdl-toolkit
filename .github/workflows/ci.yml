@@ -357,6 +357,12 @@ jobs:
         # Pillow. After the recovery, so the recovered Arial is there to draw in.
         run: python tests/test_fonts.py
 
+      - name: the sign-off draws as the panel does, the scoring path as the snapshots do
+        # Here rather than in `test`: it imports the compositor at the top. After
+        # the recovery, so its carried-face tests have a recovered Arial to set
+        # the panel's own face against.
+        run: python tests/test_signoff_blend.py
+
       - name: an inert button is caught off its artwork
         # Here as well as in `test`, where the verifier's artwork tests skip
         # without Pillow: they are the only check that a button whose states

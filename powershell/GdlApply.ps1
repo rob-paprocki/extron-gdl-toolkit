@@ -457,8 +457,9 @@ function Set-GdlBorder {
     <#  Point a control's border at a named resource that already exists.
 
         Referencing an existing resource is the whole design: appending a NEW
-        PBBorderResource has never been tested against GUI Designer, so a plan
-        may only name resources the donor already carries. This checks that.
+        PBBorderResource builds (docs/from-scratch.md, test 2) but a plan may
+        only name resources the donor already carries, or the nearest it has.
+        This checks that.
 
         $null leaves the border as it is. '' is NO border, which is how
         Extron's own image buttons reference one: a clone otherwise keeps its

@@ -25,7 +25,8 @@ The five operations:
             (`size`). Sets the fields that have to agree (platform instance,
             platform type enum, screen size, and the platform's own resolution)
             and optionally rescales the layout.
-  renumber  reassign the addressable IDs (`userIdField`) in per-page bands.
+  renumber  reassign the addressable IDs (`userIdField`) from a start, a step
+            apart, mirrors together.
 
 Selectors are ANDed, and every one of them is resolved against the real project
 here, so `check` can say "this matched nothing" instead of the edit silently
@@ -41,9 +42,14 @@ import json
 import re
 import sys
 
+from .idmap import CLASS_OF
 from .project import Project
-from .spec import (HEX, MAX_STATES, MODELS, PRESS_FIELD, DEFAULT_FIELD, dpi, sizes,
-                   touch_minimums, MM_TOUCH_TARGET)
+from .spec import (HEX, KIND_TYPE, MAX_STATES, MODELS, MODELS_FULL, PRESS_FIELD, DEFAULT_FIELD,
+                   dpi, is_uint16, part_number, sizes, touch_minimums, MM_TOUCH_TARGET)
+
+# What `renumber` numbers: the four kinds a control program can take hold of
+# (gdl/idmap.py) - PBButton, PBLabel, PBLevel, PBSlider.
+ADDRESSABLE = frozenset(KIND_TYPE[k] for k in CLASS_OF)
 
 # The colors `restyle` rewrites, on the control and on each state: the field,
 # and the key gdl/project.py reads it into.
@@ -54,6 +60,24 @@ COLOR_KEYS = (('borderFillColorField', 'fill'), ('borderColorField', 'stroke'),
 # as the spec spells it. No border: a border is a named resource, and the edit
 # applier writes colors and captions only.
 STATE_KEYS = {'name', 'text', 'fill', 'stroke', 'color'}
+
+# Every key each level of an edit file is read for. Anything else was skipped,
+# and a key a selector skips widens it: {"tipe": "PBSlider"} selected every
+# control in the project. A key starting `_` is a note (`_why`, `_comment`).
+FILE_KEYS = frozenset({'edits'})
+OP_KEYS = {
+    'rename': frozenset({'op', 'select', 'map', 'text', 'state'}),
+    'renumber': frozenset({'op', 'select', 'start', 'step'}),
+    'restyle': frozenset({'op', 'select', 'map'}),
+    'states': frozenset({'op', 'select', 'states', 'press'}),
+    'retarget': frozenset({'op', 'model', 'size', 'scale'}),
+}
+SELECT_KEYS = frozenset({'type', 'name', 'text', 'id', 'name_matches', 'text_matches', 'page'})
+
+
+def _odd(d, known):
+    """The keys of `d` nothing reads, in order: not in `known` and not a note."""
+    return sorted(k for k in d if k not in known and not str(k).startswith('_'))
 
 
 def _argb_hex(c):
@@ -243,40 +267,66 @@ class Edits:
         return op
 
     def _renumber(self, e, ops, problems):
-        """Fresh `userIdField`s in a per-page band.
+        """Fresh `userIdField`s from `start`, `step` apart, in the selector's
+        order. A band per page is a renumber per page (`select.page`).
 
         This changes the numbers a control system talks to. That is the point,
         but it also means the control program has to change with it, so the
         plan records every old -> new pair for whoever has to do that.
+
+        Only an addressable control is numbered: a button, label, level or
+        slider - the kinds Extron's libraries take hold of (gdl/idmap.py) -
+        that has an ID. One at 0 has none on purpose - 145 of the client
+        fixture's 654 controls: its popup references and clock, and 59
+        buttons and 40 labels, its Preview Source buttons among them - and
+        numbering it hands the program a control it never had. And mirrors move together: controls that share an ID -
+        one button on two confirmation popups, a feedback twin on its page -
+        are one control to the program, so each old ID takes one new one.
         """
         start = e.get('start')
         step = e.get('step', 1)
         if start is None:
             problems.append("renumber: needs 'start'")
             return
+        if not is_uint16(start) or start == 0:
+            problems.append(f'renumber: start {start!r} is not a whole number from 1 to 65535 - '
+                            f"userIdField is a UInt16, and 0 is GUI Designer's 'no ID'")
+            return
+        if not is_uint16(step) or step == 0:
+            # A step of 0 never moved past an ID once taken: the planner spun.
+            problems.append(f'renumber: step {step!r} is not a whole number of 1 or more')
+            return
         hits = self.select(e.get('select'))
         if not hits:
             problems.append(f"renumber: selector {e.get('select')} matched nothing")
-        # Only controls that are actually addressable are worth a number.
-        n = int(start)
-        taken = set()
-        for pg, c in hits:
-            while n in taken:
-                n += step
+            return
+        numbered = [(pg, c) for pg, c in hits if c['type'] in ADDRESSABLE and c['id']]
+        if not numbered:
+            problems.append(f"renumber: selector {e.get('select')} matched nothing addressable - "
+                            f'a button, label, level or slider with an ID')
+            return
+        new = {}
+        for _, c in numbered:
+            new.setdefault(c['id'], start + step * len(new))
+        last = max(new.values())
+        if last > 0xFFFF:
+            problems.append(f'renumber: {len(new)} ID(s) from {start}, {step} apart, run to '
+                            f'{last} - past 65535, the most a userIdField holds')
+            return
+        self._renumbered.append((e.get('select'), len(hits) - len(numbered), new, numbered))
+        for pg, c in numbered:
             ops.append({'page': pg['id'], 'control': c['obj_id'],
-                        'was': c['id'], 'why': f'renumber id {c["id"]} -> {n}',
-                        'fields': {'userIdField': n}})
-            taken.add(n)
-            n += step
+                        'was': c['id'], 'why': f"renumber id {c['id']} -> {new[c['id']]}",
+                        'fields': {'userIdField': new[c['id']]}})
 
     def _restyle(self, e, ops, problems):
         """Remap colors project-wide, or under a selector.
 
         Each state is remapped from its OWN colors. A button's look lives on
-        its states - 288 of the 442 buttons in the client fixture have no
-        fill of their own - so matching only the control's colors missed most
-        buttons, and writing the control's new color to every state would have
-        painted an On state the Off color.
+        its states - none of the client fixture's 442 buttons has a fill of its
+        own, and 340 have one on every state - so matching only the control's
+        colors missed every button's fill, and writing the control's new color
+        to every state would have painted an On state the Off color.
         """
         table = {_norm(k): _norm(v) for k, v in (e.get('map') or {}).items()}
         if not table:
@@ -503,16 +553,16 @@ class Edits:
         scaling the canvas is the silent-destruction case: Build moves anything
         that no longer fits to 0,0 and reports nothing. The applier used to set
         every page - popups included - to the new SCREEN size, on the belief
-        that a popup's authored size is always the full canvas. That came from
-        the client fixture, where every popup happens to be full-canvas,
-        and it is wrong: 10 of the 29 popups in Extron's own Afterburn template
-        are authored at 880x525, and the built layout.json reports 880x525 for
-        them. Blowing those up to the screen size turns a modal card into a
+        that a popup's authored size is always the full canvas. It is not: in
+        the corpus every modal is the screen and no standard popup is - the
+        client fixture's 16 are 136x496 to 995x800, 10 of Afterburn 1035's are
+        880x525 - and the built layout.json reports each at its authored size.
+        Blowing a standard popup up to the screen size turns it into a
         full-screen page.
 
         So scale each page's own canvas by the same per-axis factors as its
-        controls. A full-canvas popup lands exactly on the screen size
-        (1280*1.5, 800*1.35 -> 1920x1080), and a genuinely small one keeps its
+        controls. A full-canvas page lands exactly on the screen size
+        (1280*1.5, 800*1.35 -> 1920x1080), and a smaller popup keeps its
         proportions. What matters is that canvas and contents move together, so
         nothing can overflow that did not overflow before.
         """
@@ -557,6 +607,22 @@ class Edits:
         project_ops.append({'why': f'retarget to {model} ({new_size[0]}x{new_size[1]})',
                             'model': model, 'size': list(new_size)})
         if not e.get('scale'):
+            # The controls stay put, but every canvas is still planned: one
+            # that was the screen - each standard page, and each modal, which
+            # is the screen in all 454 of the corpus's - becomes the new
+            # screen, and a popup authored at its own size keeps it. Left
+            # unplanned, the applier set every page and popup to the screen.
+            for pg in self.pages:
+                pw, ph = pg['size']
+                if None in (pw, ph):
+                    continue
+                full = old_size is not None and (pw, ph) == tuple(old_size)
+                page_ops.append({
+                    'page': pg['id'], 'name': pg['name'], 'kind': pg['kind'],
+                    'why': 'the screen' if full else 'keep its own size',
+                    'was': [pw, ph],
+                    'size': list(new_size) if full else [pw, ph],
+                })
             return old_size, new_size
         if not old_size:
             problems.append('retarget: cannot scale - the project has no screen size')
@@ -585,23 +651,40 @@ class Edits:
                 })
         return old_size, new_size
 
-    def _screen_size(self):
-        """The project's current canvas, taken from its own pages.
+    def _old_minimum(self):
+        """(touch minimum, what it is) on the panel the project is leaving: its
+        own model's, read off its platform's part number - or, a project with
+        none, the densest panel's at its old resolution. By resolution alone a
+        TLP Pro 1035 (53 px) was held to the 835's 67 px, and a button legal on
+        it that a move made too small was tagged as one that already was."""
+        top = next(self.project.instances('PBProject'), None)
+        plat = self.project.field(top, 'platformField') if top is not None else None
+        part = self.project.field(plat, 'partNumberField') if plat is not None else None
+        models = [m for m in MODELS_FULL if part and part_number(m) == part]
+        if models:
+            # One part number is one panel: the 1035M and 1035T share 60-1999-02.
+            target = min(touch_minimums(m)[0] for m in models)
+            return target, f"the {' or '.join(models)}'s {target}px"
+        old = self._resize[0] if self._resize else None
+        target = touch_minimums(old or ())[0]
+        return target, (f'{target}px, the densest panel at {old[0]}x{old[1]}' if target else None)
 
-        `screenSizeField` lives on PBProject and the reader does not surface it,
-        but a standard page IS the canvas, so the largest page is the panel.
+    def _screen_size(self):
+        """The project's current screen: PBProject's `screenSizeField`.
+
+        Not the largest control on a standard page, which this used to take on
+        the reading that something always fills the screen. Four of the
+        corpus's 47 projects have nothing that does - client-greenroom-1.1.0's
+        largest is 1185x269 on a 1280x800 screen - and a retarget of it to a
+        1535 scaled by 1.62x4.01. A project with no screen size (a `.glt`) falls
+        back to its standard pages' own canvas, which is the screen.
         """
-        best = None
-        for pg in self.pages:
-            if pg['kind'] != 'page':
-                continue
-            for c in pg['controls']:
-                x, y, w, h = c['rect']
-                if None in (w, h):
-                    continue
-                if best is None or w * h > best[0] * best[1]:
-                    best = (w, h)
-        return best
+        size = self.project.screen_size()
+        if size:
+            return size
+        own = [tuple(pg['size']) for pg in self.pages
+               if pg['kind'] == 'page' and None not in tuple(pg['size'])]
+        return max(own, key=lambda s: s[0] * s[1], default=None)
 
     # -- plan and checks ---------------------------------------------------
     def plan(self):
@@ -610,8 +693,15 @@ class Edits:
         self._model = None
         self._scale = None
         self._unused_colors = []
-        for e in self.edits:
+        self._renumbered = []
+        odd = _odd(self.spec, FILE_KEYS)
+        if odd:
+            problems.append(f"{', '.join(map(repr, odd))} is not a key an edit file takes - it "
+                            f"takes 'edits'; a typo here is silently ignored")
+        for i, e in enumerate(self.edits):
             op = e.get('op')
+            if self._key_problems(i, e, problems):
+                continue
             if op == 'rename':
                 self._rename(e, ops, problems)
             elif op == 'renumber':
@@ -634,6 +724,35 @@ class Edits:
             'pages': page_ops,
             'controls': ops,
         }, problems
+
+    @staticmethod
+    def _key_problems(i, e, problems):
+        """True, having said why, if edit `i` has a key its op does not read -
+        or its selector one a selector does not. Such an op is not planned:
+        planned, a selector that lost a key would touch every control it no
+        longer narrows to."""
+        known = OP_KEYS.get(e.get('op'))
+        if known is None:
+            return False                # plan() reports the unknown op
+        bad = False
+        odd = _odd(e, known)
+        if odd:
+            problems.append(f"edit {i} ({e['op']}): {', '.join(map(repr, odd))} is not a key a "
+                            f"{e['op']} takes - it takes {', '.join(sorted(known - {'op'}))}")
+            bad = True
+        sel = e.get('select')
+        if sel is not None and not isinstance(sel, dict):
+            problems.append(f"edit {i} ({e['op']}): select is {sel!r} - a selector is an "
+                            f'object of {", ".join(sorted(SELECT_KEYS))}')
+            return True
+        odd = _odd(sel or {}, SELECT_KEYS)
+        if odd:
+            problems.append(f"edit {i} ({e['op']}): {', '.join(map(repr, odd))} is not a key a "
+                            f"selector takes - it takes {', '.join(sorted(SELECT_KEYS))}. A "
+                            f'selector skips a key it does not know, so this one would select '
+                            f'every control the rest of it allows')
+            bad = True
+        return bad
 
     def check(self):
         """Everything that would otherwise be found on the Windows box.
@@ -689,6 +808,19 @@ class Edits:
             # screen are allowed to disagree, so they are the only place this
             # check could ever have fired.
             resized = {p['page']: p['size'] for p in plan['pages']}
+            # A standard page IS the panel, so its planned canvas must be the
+            # new screen. The overflow test below cannot see factors that are
+            # wrong: it measures each control against a canvas scaled by the
+            # same ones, and found nothing in a greenroom retarget that put
+            # controls at y=2863 on a 1080-high panel.
+            for p in plan['pages']:
+                if p['kind'] == 'page' and tuple(p['size']) != tuple(size):
+                    old = self._resize[0]
+                    errors.append(
+                        f"{p['name']}: its canvas would be {p['size'][0]}x{p['size'][1]}, "
+                        f'and a page is the {size[0]}x{size[1]} screen - it was '
+                        f"{p['was'][0]}x{p['was'][1]} on a project whose screen is taken as "
+                        f"{'%dx%d' % tuple(old) if old else 'unknown'}")
             for pg in self.pages:
                 canvas = resized.get(pg['id'])
                 if canvas is None:
@@ -731,11 +863,11 @@ class Edits:
                         # If so the retarget did not cause this, and saying so
                         # is the difference between a useful warning and noise.
                         was = ''
-                        old_target, _ = touch_minimums(self._resize[0] or ())
+                        old_target, old_said = self._old_minimum()
                         ow, oh = c['rect'][2], c['rect'][3]
                         if old_target and None not in (ow, oh) and (
                                 ow < old_target or oh < old_target):
-                            was = ' (already under the old panel\'s minimum)'
+                            was = f" (already under the old panel's minimum - {old_said})"
                         warnings.append(
                             f"{pg['name']} {c['name'] or c['caption'] or c['type']}: "
                             f'{w}x{h} is under the {target}px touch target for a '
@@ -760,17 +892,33 @@ class Edits:
 
         # Renumbering to an ID something else already has is legal in the format
         # (Extron uses duplicates for feedback mirrors) but is almost never what
-        # a renumber means.
+        # a renumber means - unless the two shared one before, as mirrors do.
         assigned = {}
         for o in plan['controls']:
             new = (o.get('fields') or {}).get('userIdField')
             if new is None:
                 continue
             key = (o['page'], new)
-            if key in assigned:
+            if key in assigned and assigned[key] != o.get('was'):
                 errors.append(f'renumber: two controls on page {o["page"]} both get '
                               f'id {new}')
-            assigned[key] = o['control']
+            assigned.setdefault(key, o.get('was'))
+        for sel, skipped, new, numbered in self._renumbered:
+            if skipped:
+                warnings.append(f'renumber: {skipped} control(s) the selector matched have no ID '
+                                f'(0) or are not a kind a program addresses, and are left as they '
+                                f'are - a renumber does not make a control addressable')
+            # A mirror the selector leaves keeps the old ID, and is no longer
+            # one control with the rest to the program.
+            mine = {(pg['id'], c['obj_id']) for pg, c in numbered}
+            for pg in self.pages:
+                for c in pg['controls']:
+                    if c['id'] in new and c['type'] in ADDRESSABLE and \
+                            (pg['id'], c['obj_id']) not in mine:
+                        warnings.append(
+                            f"renumber: {_label(pg, c)} keeps id {c['id']} - the selector "
+                            f"renumbers the controls it mirrors to {new[c['id']]}, so they are "
+                            f'no longer one control to the program')
         touched = {(o['page'], o['control']) for o in plan['controls']
                    if 'userIdField' in (o.get('fields') or {})}
         for pg in self.pages:

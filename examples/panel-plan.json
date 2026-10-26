@@ -1,6 +1,7 @@
 {
  "generated_by": "gdl.spec",
  "default_page": "Home",
+ "keep_donor_pages": false,
  "popup_groups": [
   "Volume"
  ],
@@ -11,11 +12,14 @@
    "name": "2310 - Program Volume",
    "group": "Volume",
    "modal": false,
+   "transparency": null,
    "background": 4280559156,
    "size": [
     984,
     108
    ],
+   "background_image": null,
+   "background_layout": 0,
    "clear_controls": true,
    "controls": [
     {
@@ -32,7 +36,7 @@
       "heightField": 108,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4290428110,
@@ -297,11 +301,14 @@
    "name": "2320 - Speech Volume",
    "group": "Volume",
    "modal": false,
+   "transparency": null,
    "background": 4280559156,
    "size": [
     984,
     108
    ],
+   "background_image": null,
+   "background_layout": 0,
    "clear_controls": true,
    "controls": [
     {
@@ -318,7 +325,7 @@
       "heightField": 108,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4290428110,
@@ -585,7 +592,7 @@
       "heightField": 96,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4294967295,
@@ -620,7 +627,7 @@
       "heightField": 96,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4290428110,
@@ -746,7 +753,7 @@
       "leftField": 16,
       "topField": 202,
       "widthField": 200,
-      "heightField": 70,
+      "heightField": 71,
       "<TLPImageID>k__BackingField": -1,
       "<HidePressFeedback>k__BackingField": false,
       "<HideVisualFeedback>k__BackingField": false,
@@ -864,7 +871,7 @@
       "leftField": 16,
       "topField": 367,
       "widthField": 200,
-      "heightField": 70,
+      "heightField": 71,
       "<TLPImageID>k__BackingField": -1,
       "<HidePressFeedback>k__BackingField": false,
       "<HideVisualFeedback>k__BackingField": false,
@@ -985,7 +992,7 @@
       "heightField": 32,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4290428110,
@@ -1075,7 +1082,7 @@
       "textField": "Wireless",
       "leftField": 599,
       "topField": 152,
-      "widthField": 315,
+      "widthField": 314,
       "heightField": 122,
       "<TLPImageID>k__BackingField": -1,
       "<HidePressFeedback>k__BackingField": false,
@@ -1252,7 +1259,7 @@
       "textField": "Camera",
       "leftField": 599,
       "topField": 294,
-      "widthField": 315,
+      "widthField": 314,
       "heightField": 122,
       "<TLPImageID>k__BackingField": -1,
       "<HidePressFeedback>k__BackingField": false,
@@ -1374,7 +1381,7 @@
       "heightField": 32,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4290428110,
@@ -1562,7 +1569,7 @@
       "heightField": 108,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4290428110,
@@ -1868,7 +1875,7 @@
       "heightField": 48,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4290428110,
@@ -1903,7 +1910,7 @@
       "heightField": 48,
       "<TLPImageID>k__BackingField": -1
      },
-     "fill": null,
+     "fill": 0,
      "stroke": 0,
      "border": null,
      "text_color": 4290428110,
@@ -1962,5 +1969,6 @@
     }
    ]
   }
- ]
+ ],
+ "fonts": []
 }

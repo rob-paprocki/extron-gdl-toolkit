@@ -47,8 +47,9 @@ AFTERBURN = {
     'fill': '#BABCCE',                    # slider fill
     'thumb_off': '#6A6E89',
     # The modal scrim, as the guide gives it. It is NOT what ships: Build draws
-    # every modal as black at alpha 166 over the page beneath, whatever its
-    # background (docs/design-rules.md section 4).
+    # a modal black at its own transparency - 35%, alpha 166, in every
+    # template - over the page beneath, whatever its background
+    # (docs/design-rules.md section 4).
     'modal_scrim': '#33242634',
 }
 

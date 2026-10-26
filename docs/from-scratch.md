@@ -106,9 +106,11 @@ rather than by the resource list.
 | GUI Designer opens + builds | **Verified**, and scriptable from the host (§7). |
 
 Popup groups need nothing more: `Register-GdlPopupGroup` is a complete
-implementation of the only group concept the format has — a class census finds
-exactly five `PBControlGroup` instances across the whole corpus, all of them
-popup-page groups.
+implementation of the only group concept the format has — a class census of the
+corpus's 47 projects finds 58 `PBControlGroup` instances, from none to five a
+project, and every one an entry of its project's popup group registry
+(`popupPageGroupsField`): a seed's one, where it has any (`Controls`,
+`Transport1`, `inputs`, `Room Controls`), as much as the client's four or five.
 
 ## 4. The preview is the point
 
@@ -154,7 +156,7 @@ measurement and "builds and keeps the resource" as the 1.28 one.
 | 2 | Append a *new* `PBBorderResource` and bind to it? | **YES** |
 | 3 | Out-of-corpus `PBBorderInfo` values? | **Builds clean** (visual check still open) |
 | 4 | Cross-graph `Copy-GdlObject`? | **YES** |
-| 5 | ID / name uniqueness enforcement | **NAMES yes, hard error**; ids untested |
+| 5 | ID / name uniqueness enforcement | **NAMES yes, hard error**; duplicate ids are legal to GUI Designer (`gdl.spec` still refuses a repeat on one page) |
 | 6 | `referenceCountField` semantics | not yet tested |
 
 **1 — referencing an unused resource works.** A `PBShape` was repointed from
@@ -536,8 +538,11 @@ person. It still needs GUI Designer running and a desktop to draw on.
 
 ## 6. Honest limits of everything above
 
-- Control-ID uniqueness (the other half of question 5) and question 6 are
-  untested.
+- Question 6 is untested. Control-ID uniqueness (the other half of question 5)
+  is answered: duplicate IDs are legal and draw no complaint - Extron's own
+  built seeds repeat them within a page and across pages, and
+  `examples/boardroom-full.json` mirrors its tabs under one ID on every page
+  and builds with 0 problems (§5c).
 - Test 3 is only half-answered: an out-of-corpus radius/thickness *builds*, but
   nobody has looked at whether it *rasterizes* correctly. The control used was
   the Offline Window, which Build legitimately leaves unrasterized, so there is

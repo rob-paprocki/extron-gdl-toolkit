@@ -295,10 +295,22 @@ class TestTheSeedSaysIt(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from gdl.project import Project
-        cls.pages = {pg['name']: pg for pg in Project.open(SEED).pages()}
+        cls.project = Project.open(SEED)
+        cls.pages = {pg['name']: pg for pg in cls.project.pages()}
 
     def ctl(self, page, name):
         return next(c for c in self.pages[page]['controls'] if c['name'] == name)
+
+    def test_the_flat_scan_holds_every_control_its_pages_do(self):
+        """Project.controls() scans by class name, and its list had no PBVideo:
+        it gave 648 of the seed's 650, its two video windows short - 11 short on
+        the 1230W. PBVideo is the one class the corpus's pages hold that the
+        list lacked (layout.json, all 47 projects)."""
+        on_pages = sorted((c['type'], c['name']) for pg in self.pages.values()
+                          for c in pg['controls'])
+        flat = sorted((c['type'], c['name']) for c in self.project.controls())
+        self.assertEqual(flat, on_pages)
+        self.assertEqual(sum(t == 'PBVideo' for t, _ in flat), 2)
 
     def test_only_main_select_source_puts_the_sources_in_the_middle(self):
         """afterburn-00."""

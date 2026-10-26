@@ -290,6 +290,63 @@ class TestPanels(unittest.TestCase):
         with self.assertRaises(ValueError):
             vi.check_layout(d, built_layout(IdMap(Panel(s))))
 
+    def test_the_command_names_the_panels_and_asks_for_one(self):
+        """Without --panel the command stopped with a traceback, and with a
+        panel the map does not have it stopped with another."""
+        import contextlib
+        import io
+        from gdl.idmap import IdMap, write_panels
+        from gdl.spec import Panel
+        s = {'name': 'T', 'model': 'TLP1035T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'}, 'popups': [],
+             'pages': [{'name': 'Home', 'number': 1000, 'controls': [
+                 {'kind': 'button', 'name': 'Help', 'text': 'Help', 'rect': [0, 0, 100, 80], 'id': 1002}]}]}
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        write_panels({'TLP1035T': IdMap(Panel(s)), 'TLP725T': IdMap(Panel(dict(s, model='TLP725T',
+                                                                               size=[1024, 600])))}, d)
+        for extra in ([], ['--panel', 'TLP320M']):
+            with self.subTest(extra=extra):
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    self.assertEqual(vi.main(['verify_idmap.py', d, os.path.join(d, 'none.gdl')] + extra), 2)
+                self.assertIn('TLP1035T, TLP725T', buf.getvalue())
+                self.assertIn('--panel', buf.getvalue())
+
+
+class TestRetired(unittest.TestCase):
+    """An ID the map retires - a previous delivery's, whose control is gone -
+    is on no built control: a program still addressing it would reach that
+    one instead of nothing."""
+
+    def setUp(self):
+        from gdl.idmap import IdMap
+        from gdl.spec import Panel
+        s = {'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'}, 'popups': [],
+             '_retired': [{'id': 1001, 'was': 'Home / Display'}],
+             'pages': [{'name': 'Home', 'number': 1000, 'controls': [
+                 {'kind': 'button', 'name': 'Help', 'text': 'Help', 'rect': [0, 0, 100, 80]}]}]}
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir, True)
+        self.m = IdMap(Panel(s))
+        self.m.write(self.dir)
+
+    def test_a_faithful_build_passes(self):
+        self.assertEqual(vi.check_layout(self.dir, built_layout(self.m))[0], [])
+
+    def test_a_control_carrying_a_retired_id_is_reported(self):
+        j = built_layout(self.m)
+        j['Pages'][0]['Controls'].append({'Name': 'Stray', 'UserId': 1001, 'Type': 7, '__type': 'PBButton'})
+        problems = vi.check_layout(self.dir, j)[0]
+        self.assertTrue(any('Stray' in p and '1001' in p and 'Home / Display' in p for p in problems), problems)
+
+    def test_a_donor_page_carrying_one_is_a_note(self):
+        j = built_layout(self.m)
+        j['Pages'].append({'Name': 'Start', 'ID': 0, 'Controls': [
+            {'Name': 'Donor', 'UserId': 1001, 'Type': 7, '__type': 'PBButton'}]})
+        problems, notes, _ = vi.check_layout(self.dir, j)
+        self.assertEqual(problems, [])
+        self.assertTrue(any('Start' in n and '1001' in n for n in notes), notes)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

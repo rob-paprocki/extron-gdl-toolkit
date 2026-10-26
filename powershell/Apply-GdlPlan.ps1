@@ -407,6 +407,12 @@ if (@($spec.popups).Count) {
                     ([Activator]::CreateInstance($backs.GetType())) | Out-Null
             }
             Set-GdlFieldIfPresent $popup 'hasReferencesField' $false | Out-Null
+            # Build draws a modal black at its own transparency, and a clone
+            # kept its donor modal's: 35 in every template, 0 - opaque, the
+            # page beneath hidden - on the client's archived Incoming modals.
+            if ($null -ne $pu.transparency) {
+                Set-GdlFieldIfPresent $popup 'transparencyField' ([double]$pu.transparency) | Out-Null
+            }
         }
         # A cloned popup keeps the DONOR's size, and GUI Designer RELOCATES any
         # control that falls outside its page to 0,0 - at build time, silently,

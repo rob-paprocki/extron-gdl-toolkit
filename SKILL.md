@@ -34,7 +34,10 @@ comes in through workflow A: `python -m gdl.design translate` writes its spec -
 one per panel the canvas lists, each with its own seed - and every step from 4
 on applies to each, with one difference: the panels share one ID map, so they
 are built with `powershell\New-GdlPanels.ps1` (step 7), not one by one with
-`-IdMap`. `docs/claude-design.md`.
+`-IdMap`. `docs/claude-design.md`. A revision of a canvas whose map a
+programmer already has is translated with `--previous <that map>` and built
+with `-Previous`, so every ID the program uses is kept and `changes.md` says
+what changed (`docs/idmap.md` §9).
 
 Before a canvas is built, run its **critique loop** - translate, `python -m
 gdl.design compare <canvas dir> --template <out dir>`, fix on the canvas, and
@@ -123,7 +126,8 @@ again until nothing differs that the README's *Differences* does not list
    the install), and the applier appends it. A standard popup takes a
    `background_image` and `background_layout` too - Shockwave's and
    Turbulence's hubs draw their popups on the page's photo, stretched; a
-   modal takes none, since Build draws it under its scrim. Art that is
+   modal takes none - Build draws a modal's page, photo too, at the modal's
+   35% transparency, which no canvas draws. Art that is
    neither a page's nor a button's is an `image` control:
    `{"kind": "image", "name": "Top bar", "rect": [0, 0, 1280, 133], "image":
    "2047x151_header.png", "layout": "stretch"}` - `layout` `fill` (the
@@ -151,7 +155,10 @@ again until nothing differs that the README's *Differences* does not list
    `python -m gdl.idmap check <spec.json>` - it rejects a nav to nowhere, a
    popup that cannot appear where it is shown, a page nothing reaches.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
-   a size the model does not have, unknown resources and unknown control keys,
+   a size the model does not have, unknown resources, a key nothing reads at
+   any level - the spec's, a page's or popup's, a control's, a state's, a
+   theme's that is neither a setting nor a color (a key starting `_` is the
+   translator's, or a note) -
    a `grid` or `stack` with more items than cells (the rest would not be laid out),
    and Extron's numeric standards on every page and popup (touch target, 2 mm
    between touch targets and no two overlapping - except the segments of one
@@ -247,7 +254,7 @@ the real project, then apply:
    `rename` (captions), `restyle` (color remap), `states` (add, remove or
    rename a button's states), `retarget` (another panel model, or the other
    way up for one that rotates, optionally rescaling), `renumber` (addressable
-   `userId`s). Selectors are ANDed and
+   `userId`s; planned and checked, never yet built). Selectors are ANDed and
    support exact or regex match on name and caption.
 2. **Check it**: `python -m gdl.edit check <edits.json> <panel.gdl>`. Every
    selector resolves against the real file, so "matched nothing" is an error
@@ -328,7 +335,8 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   the donor** - its Offline Page, or every one under `keep_donor_pages`. Build
   refuses the duplicate only once it has started; `gdl.spec donors` checks.
 - **Author every popup's size.** Build moves a control that overflows its page
-  to 0,0, and a cloned popup keeps the donor's size.
+  to 0,0, and a cloned popup keeps the donor's size. A modal is given the
+  canvas; `check` names a standard popup with none, and its references' size.
 - **A bridge-saved file always needs rebuilding** — `Save-GdlProject` resets
   every `TLPImageID` (§3) — and the bare `0x80070002` it prints on every save is
   not an error.
@@ -346,7 +354,9 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
   button in the Afterburn seeds is drawn — `Fill` (fit, keeping the aspect),
   `MiddleCenter` — so size the button to the image's shape. A button or a
   label with no `fill` is written transparent, so neither keeps its donor's
-  (Turbulence 320's donor label is opaque black). A donor
+  (Turbulence 320's donor label is opaque black); so is a panel, a line or a
+  clock, and with no border unless it names one (the first panel in most
+  seeds is an opaque, bordered slab). A donor
   image of the same name but other pixels is not reused: the file goes in as
   `<name>_1`. A slider's thumb is a kit image too: `thumb_image`, in the
   scheme's secondary accent (Afterburn: `440x440_thumb-1-<color>_sel.png`),

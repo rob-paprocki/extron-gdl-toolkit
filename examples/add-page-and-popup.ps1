@@ -25,6 +25,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\powershell\GdlProject.ps1')
+. (Join-Path $PSScriptRoot '..\powershell\GdlApply.ps1')     # Get-GdlStates
 Initialize-Gdl
 
 $p = Open-GdlProject $InputGcp
@@ -85,9 +86,11 @@ Set-GdlField $button 'userIdField' ([uint16]4001)
 Set-GdlField $button 'idField' ([uint64]900)
 Set-GdlField $button 'leftField' 140
 Set-GdlField $button 'topField' 700
-# every state carries its own caption
-for ($i = 0; $i -lt $button.States.Count; $i++) {
-    Set-GdlField $button.States.Item($i) 'textField' 'Generated Button'
+# every state carries its own caption. Get-GdlStates, not $button.States.Count:
+# PBStates has no Count, PowerShell 5.1 answers 1, and a loop bounded by it
+# writes state 0 and stops - the donor's On state kept the donor's caption.
+foreach ($st in @(Get-GdlStates $button)) {
+    Set-GdlField $st 'textField' 'Generated Button'
 }
 $page.Controls.Add($button)
 

@@ -637,15 +637,15 @@
       "claim": "README Visual foundations: at least 12 px between touchable controls, no more than nine buttons in one group, place things on GUI Designer's 10 px nudge.",
       "where": ["README Visual foundations"],
       "template": {
-        "does": "The template butts controls 1 px apart, has groups of 12 (Window Layout) and 40 (the keyboard), and places at 17, 149, 186, 247, 258, 449, 1069 and the like, off the 10 px grid.",
+        "does": "The template butts controls 1 px apart - its header tabs on every series, a rail group's buttons on the 1035, 1525 and 1535, where the 725's step 10 px apart and the 720's 8 - has groups of 12 (Window Layout) and 40 (the keyboard), and places at 17, 149, 186, 247, 258, 449, 1069 and the like, off the 10 px grid.",
         "seed": "seeds/Mach 1035.gdl",
         "pages": ["Main SD", "Window Layout", "VTC Keyboard"]
       },
       "status": "deviation",
-      "reason": "The 2 mm gap the toolkit checks between touch targets and Extron's documented nine-button and spacing standards (docs/design-rules.md section 2), which a designer's own controls keep; the template's own joined sets are the owner's exception (2026-10-22), kept 1 px apart by the region components. The README now says the template does not always keep them.",
-      "here": "Your own controls keep 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards. The template's own sets (its tabs, a rail group) stand as it draws them, 1 px apart, and the region components draw them so.",
+      "reason": "The 2 mm gap the toolkit checks between touch targets and Extron's documented nine-button and spacing standards (docs/design-rules.md section 2), which a designer's own controls keep; the template's own joined sets are the owner's exception (2026-10-22), kept by the region components at the step the frame measures. The README now says the template does not always keep them.",
+      "here": "Your own controls keep 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards. The template's own sets stand as it draws them - its tabs 1 px apart, a rail group 1 px apart on the 1035, 1525 and 1535 and 10 and 8 on the 725 and 720 - and the region components draw them so.",
       "fix": [{"readme": "Extron's Design Standards, which its own templates do not always keep"}],
-      "evidence": "Main SD's tabs and rail groups 1 px apart; Window Layout's twelve presets; VTC Keyboard's 40 keys."
+      "evidence": "Main SD's tabs and rail groups 1 px apart; Window Layout's twelve presets; VTC Keyboard's 40 keys. Each series' frame (top.tabs, left.groups.0.pitch): the tabs 1 px apart on all five; a rail group's buttons 60 deep at a 61 step on the 1220 and 1520 Series and 84 at 85 on the 1720, 60 at 70 on the 1020 Series (the 725) and 48 at 56 on the 720."
     },
     {
       "id": "mach-39",

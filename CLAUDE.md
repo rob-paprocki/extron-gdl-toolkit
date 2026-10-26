@@ -62,7 +62,7 @@ author, build and verify in one session.
 | `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` (the last two score against the client fixtures, so in the archive) | File > Save and Build |
 | `gdl.spec` check / render / plan / donors / icons | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
-| `gdl.idmap` check / write / write-panels / from-built | |
+| `gdl.idmap` check / write / write-panels / from-built / diff | |
 | `gdl.designsys` build (its icons and backgrounds need Pillow and Extron's kit, and say so without them) and audit; `gdl.design` translate (needs headless Chrome) | |
 | the `python -m pytest` suite, with Pillow - a test that needs the seeds, the client fixtures, Extron's kit, the Design runtime or Windows PowerShell skips without them | |
 | `tests/verify_built.py`, `tests/verify_idmap.py`, `tests/verify_seed.py` (it compares a seed's series only where Extron's templates are - the install or `vendor/` - and says so where they are not), `tests/type_probe.py`, given the built file or seed | |
@@ -131,13 +131,19 @@ python tests/verify_built.py out/plan.json out/generated.gdl
 ```
 
 It diffs the built `layout.json` against the plan that produced it and exits
-non-zero on any authored control that moved, lost its caption, or came back at
-the donor's font size instead of the spec's, or with another text alignment -
+non-zero on any authored control that moved, lost its caption, or came back on
+another ID than its plan's, at the donor's font size instead of the spec's, in
+another text color or text alignment, or - a slider or level - lying another
+way or with another track or thumb -
 and on a panel that boots into the wrong page, carries a page or popup its plan
 does not name (the donor's, left in), or a control on a generated page or popup
-the plan did not put there, has a popup that built as the wrong kind, or a
+the plan did not put there, has a popup that built as the wrong kind, a popup
+reference bound to another group than its plan's or to nothing (read off the
+reference, the popups and the built project's group registry), or a
 button whose states came back more, fewer, misnamed, drawn alike, or with a
-state built in another state's image.
+state built in another state's image. An edit plan's retarget is held to the
+build as well: the screen, the platform's resolution and part number, and each
+page's and popup's canvas.
 
 It also checks **color, off the artwork rather than the model.** That
 distinction is the whole point: a built control's `BackgroundFillColor` reads
@@ -147,7 +153,8 @@ takes the plurality color of each control's own asset - its opaque pixels for
 an opaque fill, and for a translucent one the pixels at that fill's alpha,
 which Build writes exactly - and reads the page and popup assets too — a donor
 background image re-rasterized under the fill, or a popup meant to show its page
-through it built opaque, is invisible in every field and obvious in the artwork.
+through it built opaque, is invisible in every field and obvious in the artwork,
+and a page or popup that built with no artwork at all is reported, not skipped.
 Art is read the same way: a page's or popup's photo, a button state's kit
 image and an image control's art are each compared with the planned file laid
 out as planned, since layout.json names none of them.
@@ -239,7 +246,7 @@ were updated. So:
   projects at once adds more. Past the limit, processes die mid-task and new
   ones fail with *The paging file is too small for this operation to complete* —
   which killed the first version of `tests/audit_corpus.py`, and very likely
-  both runs of `workflows/gdl-bug-hunt.js`. Stream over
+  the first two runs of `workflows/gdl-bug-hunt.js`. Stream over
   projects instead of loading them all, keep workflows small, and let the OS
   manage the pagefile.
 - **A long Claude Code session on Windows shrinks that limit as it goes.** On
@@ -308,7 +315,9 @@ either, or with one it reads nothing from. Keep the client's name out of
 tracked text, file names and commit messages: `fixtures/README.md` is the one
 file that names it. A binary that should publish is looked at by a person and
 pinned in the tool's `BINARY_OK` by the SHA-256 of what was looked at; one whose
-bytes change is refused until someone looks again.
+bytes change is refused until someone looks again, and the version it replaced
+stays pinned beside it, since `check --history` still reads it in older
+published commits.
 
 ## Where things live
 

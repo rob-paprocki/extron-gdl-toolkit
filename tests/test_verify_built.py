@@ -280,6 +280,345 @@ class TestEditIds(unittest.TestCase):
         self.assertTrue(any('UserId' in p and '2001' in p for p in problems), problems)
 
 
+def _placed(test, fields, built, op=None):
+    """check_placed's problems for one planned control on page 'P' and the
+    built control `built`, both at 0,0 10x10."""
+    vb = _vb(test)
+    f = dict({'nameField': 'C', 'leftField': 0, 'topField': 0, 'widthField': 10,
+              'heightField': 10}, **fields)
+    plan = {'pages': [{'name': 'P', 'controls': [dict(op or {}, fields=f)]}]}
+    c = dict({'Name': 'C', 'Left': 0, 'Top': 0, 'Width': 10, 'Height': 10}, **built)
+    return vb.check_placed(plan, {'P': {'Name': 'P', 'Controls': [c]}}, {})[0]
+
+
+class TestControlIds(unittest.TestCase):
+    """The program addresses a control by its ID alone, and a clone keeps its
+    donor's when the write does not take - two controls then answer to one.
+    Only verify_idmap read the IDs back, and New-GdlPanel runs it only with
+    -IdMap."""
+
+    def test_a_control_that_kept_another_id_is_reported(self):
+        problems = _placed(self, {'userIdField': 2001}, {'Type': 7, 'UserId': 777})
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('ID 777, planned 2001', problems[0])
+
+    def test_the_planned_id_passes(self):
+        self.assertEqual(_placed(self, {'userIdField': 2001}, {'Type': 7, 'UserId': 2001}), [])
+
+
+class TestTextColor(unittest.TestCase):
+    """A label's or a clock's text color is in the model, not the artwork, and
+    only a button's planned states were read back - so a label that kept its
+    donor's color, dark on a dark page, verified clean."""
+
+    WHITE, BLACK = {'A': 255, 'R': 255, 'G': 255, 'B': 255}, {'A': 255, 'R': 0, 'G': 0, 'B': 0}
+
+    def _check(self, built, fields=None, **op):
+        fields = dict({'textField': 'Room 101'}, **(fields or {}))
+        built = dict({'Type': 11, 'Text': fields['textField'],
+                      'Pattern': fields.get('patternField')}, **built)
+        for s in built.get('States') or []:
+            s.setdefault('Text', fields['textField'])
+        return _placed(self, fields, built, dict({'text_color': 0xFFFFFFFF}, **op))
+
+    def test_a_label_that_kept_its_donors_color_is_reported(self):
+        problems = self._check({'TextColor': self.BLACK})
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('text color #000000, planned #FFFFFF', problems[0])
+
+    def test_the_planned_color_passes(self):
+        self.assertEqual(self._check({'TextColor': self.WHITE}), [])
+
+    def test_a_clock_is_held_to_it(self):
+        problems = self._check({'Type': 8, 'TextColor': self.BLACK},
+                               {'textField': 'September 28', 'patternField': 'MMMM d'})
+        self.assertEqual(len(problems), 1, problems)
+
+    def test_a_button_with_no_planned_states_is_read_state_by_state(self):
+        """The applier writes the one color to every donor state, and the
+        panel draws a button's caption from its state."""
+        built = {'Type': 7, 'TextColor': self.WHITE,
+                 'States': [{'Name': 'Off', 'TextColor': self.WHITE},
+                            {'Name': 'On', 'TextColor': self.BLACK}]}
+        problems = self._check(built)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("state 'On'", problems[0])
+
+    def test_a_wrong_color_on_a_control_and_its_states_is_reported_once(self):
+        built = {'Type': 7, 'TextColor': self.BLACK,
+                 'States': [{'Name': 'Off', 'TextColor': self.BLACK},
+                            {'Name': 'On', 'TextColor': self.BLACK}]}
+        problems = self._check(built)
+        self.assertEqual(len(problems), 1, problems)
+
+    def test_planned_states_are_check_states_own(self):
+        built = {'Type': 7, 'States': [{'Name': 'Off', 'TextColor': self.BLACK}]}
+        self.assertEqual(self._check(built, states=[{'name': 'Off', 'text_color': 0xFF000000}]), [])
+
+    def test_a_control_with_no_caption_is_not_held_to_one(self):
+        self.assertEqual(self._check({'Type': 13, 'TextColor': self.BLACK},
+                                     {'textField': ''}), [])
+
+
+class TestSliderGeometry(unittest.TestCase):
+    """A slider's orientation, track width and thumb size are fields a clone
+    keeps from its donor - every seed's slider stands up - and the rail check
+    drew its expected art from the built values, so a donor's passed as
+    itself. layout.json carries the authoring fields under its own names:
+    orientationField as Orientation, sliderTrackWidth as SliderTrackWidth and
+    sliderThumbWidth and sliderThumbHeight as SliderIndicatorWidth and
+    SliderIndicatorHeight, on every slider and level of the Afterburn 1035 and
+    525, Shockwave 725 and 320 and Zoom Rooms seeds."""
+
+    FIELDS = {'orientationField': 0, 'sliderTrackWidth': 9, 'sliderThumbWidth': 7,
+              'sliderThumbHeight': 25}
+    BUILT = {'Type': 27, 'Orientation': 0, 'SliderTrackWidth': 9, 'SliderIndicatorWidth': 7,
+             'SliderIndicatorHeight': 25}
+
+    def test_a_slider_as_planned_passes(self):
+        self.assertEqual(_placed(self, self.FIELDS, self.BUILT), [])
+
+    def test_the_donors_orientation_is_reported(self):
+        problems = _placed(self, self.FIELDS, dict(self.BUILT, Orientation=2))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("orientation 'up', planned 'right'", problems[0])
+
+    def test_the_donors_track_and_thumb_are_reported(self):
+        problems = _placed(self, self.FIELDS, dict(self.BUILT, SliderTrackWidth=10,
+                                                   SliderIndicatorWidth=50,
+                                                   SliderIndicatorHeight=50))
+        self.assertEqual(len(problems), 2, problems)
+        self.assertTrue(any('track 10 wide, planned 9' in p for p in problems), problems)
+        self.assertTrue(any('thumb 50x50, planned 7x25' in p for p in problems), problems)
+
+    def test_a_levels_orientation_is_checked(self):
+        problems = _placed(self, {'orientationField': 3}, {'Type': 9, 'Orientation': 2})
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("planned 'down'", problems[0])
+
+
+class TestNoArtwork(unittest.TestCase):
+    """A page or popup that built with no artwork shows the panel's default
+    behind its controls, and its fill check stepped over it - quieter as the
+    build got worse. Every built page and every referenced standard popup in
+    the 47 corpus projects has artwork; the only ones without are GUI
+    Designer's 35 Offline Pages and an unreferenced popup in two archived
+    client projects."""
+
+    def setUp(self):
+        self.vb = _vb(self)
+
+    def test_a_page_with_none_is_reported(self):
+        for tid in (-1, None, 5):
+            problems = self.vb.check_page_background(
+                [{'name': 'P', 'background': 0xFF112233}], {'P': {'TLPImageID': tid}}, {})
+            self.assertEqual(len(problems), 1, (tid, problems))
+            self.assertIn('no artwork', problems[0])
+
+    def test_a_popup_with_none_is_reported(self):
+        for background in (0xFF112233, 0x00000000):
+            problems = self.vb.check_popup_background(
+                [{'name': 'P', 'background': background}], {'P': {'TLPImageID': -1}}, {})
+            self.assertEqual(len(problems), 1, (background, problems))
+            self.assertIn('no artwork', problems[0])
+
+    def test_a_modal_with_none_is_reported(self):
+        problems = self.vb.check_popup_background(
+            [{'name': 'M', 'modal': True, 'background': 0xFF000000, 'transparency': 35.0}],
+            {'M': {'TLPImageID': -1}}, {})
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('no artwork', problems[0])
+
+
+@unittest.skipUnless(usable(FIXTURE), 'the client fixture is not here')
+class TestPopupGroupBinding(unittest.TestCase):
+    """A reference bound to the wrong group, or to none, reads 'Unassigned' or
+    opens the wrong popup, and is invisible in every other field. The check
+    read a `PopupGroups` key no layout.json has - none of the corpus's 47 - so
+    it never fired. The built file records the binding on the reference
+    (PopupPageID.GroupID, IsPopupGroupIdValid), on each popup (GroupID) and in
+    the project's group registry, which names each group."""
+
+    PAGE, REF, GROUP = '2000 - Main - Presentation', 'Volume Popup Page Reference', 'Volume Popups'
+    PLAN = {'generated_by': 'gdl.spec', 'popup_groups': [GROUP],
+            'pages': [{'name': PAGE, 'controls': [
+                {'donor_type': 'PBPopupPageReference', 'group': GROUP,
+                 'fields': {'nameField': REF}}]}],
+            'popups': [{'name': '2210 - Conference Volume', 'group': GROUP, 'modal': False},
+                       {'name': '2220 - CATV Volume', 'group': GROUP, 'modal': False}]}
+
+    def setUp(self):
+        self.vb = _vb(self)
+        from gdl.compose import load
+        self.j, _ = load(FIXTURE)
+        self.registry = self.vb.popup_group_registry(FIXTURE)
+
+    def _ref(self):
+        page = next(p for p in self.j['Pages'] if p['Name'] == self.PAGE)
+        return next(c for c in page['Controls'] if c['Name'] == self.REF)['PopupPageID']
+
+    def _check(self, plan=None, registry=None):
+        return self.vb.check_popup_groups(plan or self.PLAN, self.j,
+                                          self.registry if registry is None else registry)
+
+    def test_the_registry_is_read_off_the_built_project(self):
+        self.assertEqual(self.registry, {1: 'Volume Popups', 2: 'Tech Popups',
+                                         3: 'Presentation Popups', 5: 'Keyboards'})
+
+    def test_a_binding_as_planned_passes(self):
+        self.assertEqual(self._check(), [])
+
+    def test_a_reference_bound_to_another_group_is_reported(self):
+        self._ref()['GroupID'] = 3
+        problems = self._check()
+        self.assertTrue(any(self.REF in p and 'group 3' in p and "'Volume Popups'" in p
+                            for p in problems), problems)
+
+    def test_a_reference_bound_to_nothing_is_reported(self):
+        self._ref().update(GroupID=0, IsPopupGroupIdValid=False)
+        problems = self._check()
+        self.assertTrue(any(self.REF in p and 'Unassigned' in p for p in problems), problems)
+
+    def test_a_group_registered_under_another_name_is_reported(self):
+        problems = self._check(registry={1: 'Volume', 2: 'Tech Popups',
+                                         3: 'Presentation Popups', 5: 'Keyboards'})
+        self.assertTrue(any("'Volume'" in p and "'Volume Popups'" in p for p in problems), problems)
+
+    def test_an_unregistered_group_is_reported(self):
+        problems = self._check(registry={2: 'Tech Popups', 3: 'Presentation Popups',
+                                         5: 'Keyboards'})
+        self.assertTrue(any('registry' in p and 'Unassigned' in p for p in problems), problems)
+
+    def test_a_planned_popup_built_in_no_group_is_reported(self):
+        next(p for p in self.j['PopupPages']
+             if p['Name'] == '2210 - Conference Volume').update(GroupID=0, IsGroupValid=False)
+        problems = self._check()
+        self.assertTrue(any("'2210 - Conference Volume' in no group" in p for p in problems),
+                        problems)
+        plan = dict(self.PLAN, popups=self.PLAN['popups'][:1])
+        problems = self._check(plan)
+        self.assertTrue(any('2210 - Conference Volume' in p and 'built in no group' in p
+                            for p in problems), problems)
+
+    def test_a_planned_group_split_across_two_built_groups_is_reported(self):
+        next(p for p in self.j['PopupPages'] if p['Name'] == '2220 - CATV Volume')['GroupID'] = 2
+        problems = self._check()
+        self.assertTrue(any("'Volume Popups'" in p and '2220 - CATV Volume' in p
+                            for p in problems), problems)
+
+    def test_the_hunts_repro_every_group_reference_rebound_to_999(self):
+        """No plan reference at all - a donor's kept pages - and still caught:
+        a group no popup is in shows nothing."""
+        n = 0
+        for page in self.j['Pages']:
+            for c in page.get('Controls') or []:
+                pp = c.get('PopupPageID')
+                if isinstance(pp, dict) and pp.get('IsPopupGroupIdValid'):
+                    pp['GroupID'] = 999
+                    n += 1
+        problems = self._check(plan={'pages': [], 'popups': [], 'keep_donor_pages': True})
+        self.assertEqual(n, 4)
+        self.assertEqual(len([p for p in problems if 'group 999' in p]), 4, problems)
+
+    def test_a_kept_reference_bound_to_nothing_is_reported(self):
+        self._ref().update(GroupID=0, IsPopupGroupIdValid=False)
+        problems = self._check(plan={'pages': [], 'popups': [], 'keep_donor_pages': True})
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('Unassigned', problems[0])
+
+    def test_a_planned_reference_bound_to_nothing_is_reported_once(self):
+        self._ref().update(GroupID=0, IsPopupGroupIdValid=False)
+        self.assertEqual(len([p for p in self._check() if self.REF in p]), 1)
+
+    def test_a_reference_to_a_popup_that_is_not_there_is_reported(self):
+        self._ref().update(GroupID=0, IsPopupGroupIdValid=False, IsPopupPageIdValid=True,
+                           PopupID=4242)
+        problems = self._check(plan={'pages': [], 'popups': [], 'keep_donor_pages': True})
+        self.assertTrue(any('4242' in p for p in problems), problems)
+
+    def test_a_direct_reference_to_one_popup_is_not_a_group_binding(self):
+        """Extron's 525s bind Volume Level by its PopupID, at GroupID 0."""
+        self._ref().update(GroupID=0, IsPopupGroupIdValid=False, IsPopupPageIdValid=True,
+                           PopupID=2)
+        problems = self._check(plan={'pages': [], 'popups': [], 'keep_donor_pages': True})
+        self.assertEqual(problems, [])
+
+
+class TestRetarget(unittest.TestCase):
+    """An edit plan's `project` ops set the panel model and screen, and its
+    `pages` ops each page's and popup's own canvas. None of that is a control,
+    and check_edits walked only plan['controls'] - so a retarget without
+    `scale`, which plans no control at all, verified against a file that was
+    never retargeted with 0 checks and exit 0."""
+
+    PLAN = {'generated_by': 'gdl.edit',
+            'project': [{'why': 'retarget to TLP1535M (1920x1080)', 'model': 'TLP1535M',
+                         'size': [1920, 1080]}],
+            'pages': [{'page': 1, 'name': 'Home', 'kind': 'page', 'was': [1280, 800],
+                       'size': [1920, 1080]},
+                      {'page': 2, 'name': 'Volume', 'kind': 'popup', 'was': [136, 496],
+                       'size': [204, 670]}],
+            'controls': []}
+
+    @staticmethod
+    def _layout(screen=(1920, 1080), part='60-2000-02', home=(1920, 1080), volume=(204, 670)):
+        return {'ScreenSize': {'width': screen[0], 'height': screen[1]},
+                'PartNumber': part,
+                'Platform': {'HorizontalResolution': screen[0], 'VerticalResolution': screen[1],
+                             'PartNumber': part},
+                'Pages': [{'ID': 1, 'Name': 'Home', 'Width': home[0], 'Height': home[1],
+                           'Controls': []}],
+                'PopupPages': [{'ID': 2, 'Name': 'Volume', 'Width': volume[0],
+                                'Height': volume[1], 'Controls': []}]}
+
+    def test_a_retarget_built_as_planned_passes(self):
+        vb = _vb(self)
+        problems, checked = vb.check_edits(self.PLAN, self._layout())
+        self.assertEqual(problems, [])
+        self.assertEqual(checked, 3)
+
+    def test_a_screen_left_at_the_old_size_is_reported(self):
+        vb = _vb(self)
+        problems, _ = vb.check_edits(self.PLAN, self._layout(screen=(1280, 800)))
+        self.assertTrue(any('1280x800' in p and '1920x1080' in p and 'screen' in p
+                            for p in problems), problems)
+
+    def test_another_models_part_number_is_reported(self):
+        vb = _vb(self)
+        problems, _ = vb.check_edits(self.PLAN, self._layout(part='60-1999-02'))
+        self.assertTrue(any('60-1999-02' in p and 'TLP1535M' in p for p in problems), problems)
+
+    def test_a_page_or_popup_at_another_size_is_reported(self):
+        vb = _vb(self)
+        problems, _ = vb.check_edits(self.PLAN, self._layout(home=(1280, 800),
+                                                             volume=(1920, 1080)))
+        self.assertTrue(any("'Home'" in p and '1280x800' in p for p in problems), problems)
+        self.assertTrue(any("'Volume'" in p and '1920x1080' in p for p in problems), problems)
+
+    def test_an_unretargeted_seed_fails_its_retarget_plan(self):
+        """The hunt's own repro: a scaled TLP1020M plan, its control ops
+        dropped, against the Mach 1035 seed it was planned from."""
+        vb = _vb(self)
+        seed = os.path.join(os.path.dirname(HERE), 'seeds', 'Mach 1035.gdl')
+        if not usable(seed):
+            self.skipTest('seeds/Mach 1035.gdl is not pulled from Git LFS here')
+        from gdl.edit import Edits
+        plan, errors = Edits({'edits': [{'op': 'retarget', 'model': 'TLP1020M',
+                                         'scale': True}]}, seed).plan()
+        self.assertEqual(errors, [])
+        plan['controls'] = []
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, 'plan.json')
+            with open(path, 'w', encoding='utf-8') as fh:
+                json.dump(plan, fh)
+            problems, checked = vb.check(path, seed)
+        self.assertTrue(any('screen' in p for p in problems), problems)
+        self.assertTrue(any('TLP1020M' in p for p in problems), problems)
+        self.assertGreater(len(problems), len(plan['pages']) // 2, problems)
+        self.assertGreater(checked, 0)
+
+
 def _png(rgb):
     import io
     from PIL import Image
@@ -415,9 +754,37 @@ class TestPopupBackground(unittest.TestCase):
         Image.new('RGBA', (8, 8), (0, 0, 0, 0)).save(buf, 'PNG')
         self.assertEqual(self._check(buf.getvalue()), [])
 
-    def test_a_modal_is_not_checked(self):
-        # Build draws a modal under its scrim and ignores its fill.
+    def test_a_modal_from_a_plan_without_its_transparency_is_not_checked(self):
+        # Its scrim is the donor modal's, which such a plan does not say.
         self.assertEqual(self._check(_png((0, 0, 0)), modal=True), [])
+
+    @staticmethod
+    def _rgba(rgba):
+        import io
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new('RGBA', (8, 8), rgba).save(buf, 'PNG')
+        return buf.getvalue()
+
+    def _modal(self, art):
+        vb = _vb(self)
+        plan = [{'name': 'Confirm', 'modal': True, 'background': 0xFF000000, 'transparency': 35.0}]
+        return vb.check_popup_background(plan, {'Confirm': {'Name': 'Confirm', 'TLPImageID': 7}},
+                                          {7: art})
+
+    def test_a_modal_is_black_at_its_planned_transparency(self):
+        """35% is alpha 166, as every template modal builds."""
+        self.assertEqual(self._modal(self._rgba((0, 0, 0, 166))), [])
+
+    def test_a_modal_built_opaque_is_reported(self):
+        """A donor modal authored at 0 - the client's archived Incoming ones -
+        builds opaque, and the page beneath is gone."""
+        problems = self._modal(self._rgba((0, 0, 0, 255)))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('166', problems[0])
+
+    def test_a_modal_in_another_color_is_reported(self):
+        self.assertEqual(len(self._modal(self._rgba((36, 38, 52, 166)))), 1)
 
     def test_an_opaque_popup_must_be_its_color(self):
         self.assertEqual(self._check(_png((36, 38, 52)), background=0xFF242634), [])
@@ -886,6 +1253,55 @@ class TestStateImage(unittest.TestCase):
             problems, _, _ = self.vb.check_fills([{'name': 'Laptop', 'controls': [op]}],
                                                  table, {7: art(band)}, 'page')
             self.assertEqual(bool(problems), bad, (band, problems))
+
+    def test_a_shape_line_or_clock_planned_clear_built_on_a_fill_is_reported(self):
+        """A panel planned with no fill kept its donor shape's opaque slab,
+        and only a clear label's artwork was read."""
+        import io
+        from PIL import Image
+
+        def art(slab):
+            im = Image.new('RGBA', (40, 10), (55, 57, 78, 255) if slab else (0, 0, 0, 0))
+            buf = io.BytesIO()
+            im.save(buf, 'PNG')
+            return buf.getvalue()
+
+        for donor, typ in (('PBShape', 13), ('PBLine', 12), ('PBDateTime', 8)):
+            table = {'Home': {'Name': 'Home', 'Controls': [
+                {'ID': 1, 'Name': 'Ghost', 'Type': typ, 'TLPImageID': 7}]}}
+            op = {'op': 'clone-control', 'donor_type': donor,
+                  'fields': {'nameField': 'Ghost'}, 'fill': 0}
+            for slab, bad in ((True, True), (False, False)):
+                with self.subTest(donor=donor, slab=slab):
+                    problems, _, _ = self.vb.check_fills([{'name': 'Home', 'controls': [op]}],
+                                                         table, {7: art(slab)}, 'page')
+                    self.assertEqual(bool(problems), bad, problems)
+                    if bad:
+                        self.assertIn('#37394E', problems[0])
+
+    def test_a_small_clear_shape_with_its_own_outline_is_not_a_slab(self):
+        """A 20 x 20 panel with a 5 px outline is 75% opaque and has no fill:
+        the outline is most of its artwork. A donor's slab fills the middle."""
+        import io
+        from PIL import Image
+
+        def art(slab):
+            im = Image.new('RGBA', (20, 20), (110, 110, 140, 255))
+            if not slab:
+                im.paste((0, 0, 0, 0), (5, 5, 15, 15))
+            buf = io.BytesIO()
+            im.save(buf, 'PNG')
+            return buf.getvalue()
+
+        table = {'Home': {'Name': 'Home', 'Controls': [
+            {'ID': 1, 'Name': 'Ring', 'Type': 13, 'TLPImageID': 7}]}}
+        op = {'op': 'clone-control', 'donor_type': 'PBShape',
+              'fields': {'nameField': 'Ring'}, 'fill': 0, 'stroke': 0xFF6E6E8C,
+              'border': '2D Rounded Rectangle'}
+        for slab, bad in ((False, False), (True, True)):
+            problems, _, _ = self.vb.check_fills([{'name': 'Home', 'controls': [op]}],
+                                                 table, {7: art(slab)}, 'page')
+            self.assertEqual(bool(problems), bad, (slab, problems))
 
     def test_an_opaque_fill_built_translucent_says_so(self):
         """Not 'missing or fully transparent' - the panel draws it, see-through."""

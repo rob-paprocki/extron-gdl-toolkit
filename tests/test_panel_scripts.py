@@ -49,6 +49,15 @@ class TestPathsAreTheShells(unittest.TestCase):
         self.assertNotRegex(script, r'GetFullPath\(\$Out\)')
         self.assertIn('GetUnresolvedProviderPathFromPSPath($Out)', script)
 
+    def test_a_folder_handed_to_python_loses_its_trailing_backslash(self):
+        """Tab completion ends a folder with a backslash, which escapes the
+        closing quote Windows PowerShell 5.1 puts round an argument with a
+        space in it: the folder and every argument after it arrive as one."""
+        for name, params in (('New-GdlPanels.ps1', ('Out', 'Previous')), ('New-GdlPanel.ps1', ('IdMap', 'Previous'))):
+            script = _read(name)
+            for p in params:
+                self.assertIn(f"GetUnresolvedProviderPathFromPSPath(${p}).TrimEnd('\\')", script, f'{name} -{p}')
+
     def test_no_entry_point_resolves_a_parameter_against_the_process(self):
         for name in sorted(os.listdir(os.path.join(REPO, 'powershell'))):
             if not name.endswith('.ps1'):
@@ -57,6 +66,32 @@ class TestPathsAreTheShells(unittest.TestCase):
             params = re.search(r'(?ms)^param\((.*?)^\)', script)
             for p in re.findall(r'\[string\]\$(\w+)', params.group(1) if params else ''):
                 self.assertNotRegex(script, rf'GetFullPath\(\${p}\)', f'{name} -{p}')
+
+
+class TestARevisionPassesThePreviousMap(unittest.TestCase):
+    """A revised canvas translated with --previous keeps the IDs the previous
+    delivery's map gave; the map written for the build is diffed against that
+    map into changes.md, so both scripts hand -Previous to gdl.idmap - resolved
+    where the shell is, before the script moves to the repo."""
+
+    def check(self, name, command):
+        script = _read(name)
+        self.assertRegex(re.search(r'(?ms)^param\((.*?)^\)', script).group(1), r'\[string\]\$Previous\b', name)
+        # Trimmed as -Out is: a trailing backslash, which tab completion adds
+        # to a folder, escapes the closing quote Windows PowerShell 5.1 puts
+        # round an argument with a space in it.
+        resolve = script.index("GetUnresolvedProviderPathFromPSPath($Previous).TrimEnd('\\')")
+        self.assertLess(resolve, re.search(r'(?m)^\s*Push-Location \$repo\s*$', script).start(), name)
+        # Always an array: `if` hands back an empty @() as $null, which `+`
+        # appends as an empty argument.
+        self.assertIn("$prev = @(if ($Previous) { '--previous', $Previous })", script, name)
+        self.assertRegex(script, command, name)
+
+    def test_every_panel(self):
+        self.check('New-GdlPanels.ps1', r"& \$Python -m gdl\.idmap write-panels \$Out \$map @prev")
+
+    def test_one_panel(self):
+        self.check('New-GdlPanel.ps1', r"Run \$Python \(@\('-m', 'gdl\.idmap', 'write', \$Spec, \$IdMap\) \+ \$prev\)")
 
 
 class TestAPanelKeepsNoDonorsChecksum(unittest.TestCase):
@@ -105,6 +140,18 @@ class TestALevelKeepsItsArt(unittest.TestCase):
         script = _read('Apply-GdlPlan.ps1')
         self.assertRegex(script, r"if \(-not \$op\.keep_art\) \{\s*Set-GdlFieldIfPresent \$c "
                                  r"'backgroundImageField' \$null")
+
+
+class TestAModalIsGivenItsScrim(unittest.TestCase):
+    def test_the_applier_writes_the_plans_transparency_on_a_modal(self):
+        """Build draws a modal black at its own transparency, and a clone kept
+        its donor modal's - 0, opaque, on the client's archived Incoming
+        modals - while every canvas draws 35%."""
+        script = _read('Apply-GdlPlan.ps1')
+        m = re.search(r"if \(\$pu\.modal\) \{(.*?)\n        \}", script, re.S)
+        self.assertIsNotNone(m)
+        self.assertRegex(m.group(1), r"Set-GdlFieldIfPresent \$popup 'transparencyField' "
+                                     r"\(\[double\]\$pu\.transparency\)")
 
 
 class TestAnImageDrawsItsArt(unittest.TestCase):

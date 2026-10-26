@@ -125,7 +125,7 @@
     {
       "name": "scrim",
       "value": "#000000A6",
-      "usage": "What the panel shows behind a modal popup's card: the page beneath, under black at 65% (alpha 166). Build draws it over every modal whatever background it was given - measured on the Afterburn, Mach and Shockwave seeds and on a panel built from a canvas - so it is not one of a panel's six colors. The guide's #242634 at 20% transparency is not what ships."
+      "usage": "What the panel shows behind a modal popup's card: the page beneath, under black at 65% (alpha 166). Build draws a modal black at its own transparency - 35%, which every template's modals are authored at and the spec writes on every modal - whatever background it was given, measured on the Afterburn, Mach and Shockwave seeds and on a panel built from a canvas - so it is not one of a panel's six colors. The guide's #242634 at 20% transparency is not what ships."
     }
   ],
   "type": [
@@ -480,7 +480,7 @@
     "panel": {"name": "Results", "fill": "raised", "border": "afterburn", "size": [345, 385]},
     "start": [
       {"component": "Label", "attrs": "name=\"RoomName\" type=\"title\" align=\"center\"", "text": "Huddle Room", "rect": [440, 131, 400, 60]},
-      {"component": "Button", "attrs": "name=\"Start\" size=\"17\" nav=\"Main SD\" does=\"Starts the room and shows the sources.\"", "text": "Press to begin", "rect": [527, 384, 228, 64]},
+      {"component": "Button", "attrs": "name=\"Start\" size=\"17\" nav=\"MainSD\" does=\"Starts the room and shows the sources.\"", "text": "Press to begin", "rect": [527, 384, 228, 64]},
       {"component": "Clock", "attrs": "name=\"DateTime\" format=\"datetime\" align=\"center\" color=\"text\"", "text": "", "rect": [415, 714, 450, 60]}
     ],
     "states": "[{\"name\":\"No Signal\",\"look\":\"off\",\"color\":\"text-secondary\"},{\"name\":\"Ready\",\"look\":\"off\"},{\"name\":\"Live\",\"look\":\"on\",\"fill\":\"pressed\"}]",

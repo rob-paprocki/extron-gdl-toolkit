@@ -29,8 +29,11 @@ from . import nrbf
 from .container import open_gdl
 
 REF = 'ref'
+# Every class a page in the corpus holds as a control (layout.json, all 47
+# projects). PBVideo - the Afterburn seeds' video windows, 20 of them - was
+# missing, so controls() gave 648 of Afterburn 1035's 650.
 CONTROL_TYPES = ('PBButton', 'PBLabel', 'PBShape', 'PBLine', 'PBImage',
-                 'PBSlider', 'PBLevel', 'PBDateTime', 'PBPopupPageReference')
+                 'PBSlider', 'PBLevel', 'PBDateTime', 'PBPopupPageReference', 'PBVideo')
 # "Afterburn - 10 Radius 0 Thick" -> radius 10, thickness 0
 BORDER_NAME = re.compile(r'(\d+)\s*Radius\s*(\d+)\s*Thick', re.I)
 
@@ -226,10 +229,10 @@ class Project:
     def state(self, st):
         """One state's own appearance: what `gdl.edit` matches and rewrites.
 
-        A button draws from its states, not from itself: in the client
-        fixture 288 of 442 buttons have no fill of their own and a fill on
-        every state. So anything that changes how a button looks has to read
-        and write each state, not the control.
+        A button draws from its states, not from itself: none of the client
+        fixture's 442 buttons has a fill of its own, and 340 have one on every
+        state. So anything that changes how a button looks has to read and
+        write each state, not the control.
         """
         text, ftext = self.deref(st.get('textField')), self.deref(st.get('ftextField'))
         caption, where = None, None
@@ -360,6 +363,17 @@ class Project:
                 if self.kind(pg).rsplit('.', 1)[-1] != suffix:
                     continue
                 yield self._page(pg, kind)
+
+    def screen_size(self):
+        """(width, height) the panel is built for: PBProject's
+        `screenSizeField`, a System.Drawing.Size. None for a `.glt`, which has
+        no project. Not the largest control - on client-greenroom-1.1.0 that is
+        1185x269 on a 1280x800 screen."""
+        proj = next(self.instances('PBProject'), None)
+        s = self.field(proj, 'screenSizeField') if proj is not None else None
+        if isinstance(s, dict) and s.get('width') and s.get('height'):
+            return (s['width'], s['height'])
+        return None
 
     def first_control(self, suffix):
         """The first control of a class, pages before popups, each in its own

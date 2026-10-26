@@ -194,16 +194,17 @@ foreach ($op in $spec.project) {
         # and popup to $op.size, on the belief that a popup's authored
         # widthField/heightField is always the full canvas (1280x800 here) with
         # layout.json's smaller 915x800 being the DISPLAYED size taken from the
-        # reference that shows it. That belief came from the client
-        # fixture, where every popup happens to be authored full-canvas, and it
-        # is wrong. In Extron's own Afterburn template 10 of the 29 popups are
-        # authored at 880x525, and the BUILT payload reports 880x525 for them -
-        # all 29 popup sizes in layout.json match the authored canvas exactly.
-        # The authored size IS the popup size. Forcing it to the screen size
-        # turns a modal card into a full-screen page in the shipped file.
+        # reference that shows it. It is not: 915x800 is that popup's authored
+        # size. In the corpus every modal is the screen and no standard popup
+        # is - the client project's 16 are 136x496 to 995x800, 10 of
+        # Afterburn 1035's are 880x525 - and the BUILT payload reports each at
+        # its authored size. Forcing a standard popup to the screen size turns
+        # it into a full-screen page in the shipped file.
         #
-        # gdl.edit now emits a size per page, each scaled by the same per-axis
-        # factors as its controls, so canvas and contents move together. Fall
+        # gdl.edit now emits a size for every page and popup on every
+        # retarget - scaled by the same per-axis factors as its controls, or,
+        # unscaled, the new screen for a canvas that was the screen and its own
+        # size for any other - so canvas and contents move together. Fall
         # back to the old blanket behaviour only for a plan that predates it -
         # leaving a popup at the old canvas is the one outcome that silently
         # destroys the layout.

@@ -19,6 +19,7 @@ from _corpus import MAIN_CLIENT, needs_client, seed, usable  # noqa: E402
 
 from gdl.spec import ALIGN, BORDER_GEOMETRY, Panel, color, grid, stack  # noqa: E402
 
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class TestGrid(unittest.TestCase):
     def test_single_cell_is_the_whole_region(self):
@@ -77,6 +78,31 @@ class TestGrid(unittest.TestCase):
         cells = grid([0, 0, 200, 210], 2, 2, gap=0, gap_y=10)
         self.assertEqual(cells[0][3], 100)
         self.assertEqual(cells[2][1], 110)
+
+    def test_neighbours_are_exactly_the_gap_apart(self):
+        """Each cell's left and width were rounded apart, so 800 across three
+        built 267 wide from 0, 267 and 533 - the second ran a pixel into the
+        third - and a gap came out a pixel either side of the one asked for,
+        under the 2 mm minimum where that was the gap given."""
+        self.assertEqual(grid([0, 0, 800, 100], 3), [[0, 0, 267, 100], [267, 0, 266, 100],
+                                                      [533, 0, 267, 100]])
+        for w in range(300, 2000, 37):
+            for cols in range(2, 13):
+                for gap in (0, 1, 2, 7, 10, 16):
+                    if w - gap * (cols - 1) < cols:
+                        continue
+                    for rows, (x, y, cw, ch) in ((1, (5, 0, w, 90)), (3, (0, 9, w, 3 * w))):
+                        cells = grid([x, y, cw, ch], cols, rows, gap)
+                        for r in range(rows):
+                            row = cells[r * cols:(r + 1) * cols]
+                            self.assertEqual(row[0][0], x)
+                            self.assertEqual(row[-1][0] + row[-1][2], x + cw, (w, cols, gap))
+                            for a, b in zip(row, row[1:]):
+                                self.assertEqual(b[0] - (a[0] + a[2]), gap, (w, cols, gap, a, b))
+                        col = cells[::cols]
+                        self.assertEqual(col[-1][1] + col[-1][3], y + ch)
+                        for a, b in zip(col, col[1:]):
+                            self.assertEqual(b[1] - (a[1] + a[3]), gap, (w, cols, gap, a, b))
 
 
 class TestStack(unittest.TestCase):
@@ -218,6 +244,51 @@ class TestIdAllocation(unittest.TestCase):
                         'a duplicate pinned id must be caught, not silently kept')
 
 
+class TestIdRange(unittest.TestCase):
+    """userIdField is a UInt16, and the applier writes a page's and popup's
+    number through a [uint16] cast. An ID past 65535 failed the applier's
+    write, so the clone kept its donor's - another control's address - with a
+    warning on Windows only; a number past it stopped the applier midway. And
+    a pinned 0, GUI Designer's 'no ID', was taken for no pin and replaced."""
+
+    def _ids(self, *ids, **page):
+        return _spec([dict({'kind': 'button', 'rect': [200 * i, 0, 100, 100]},
+                           **({} if v is None else {'id': v}))
+                      for i, v in enumerate(ids)], **page)
+
+    def test_a_pinned_id_outside_uint16_or_not_whole_is_reported(self):
+        for bad in (70000, 65536, -5, 12.5, 'abc', '1001', True):
+            problems = [m for m in self._ids(bad).check() if 'whole number' in m]
+            self.assertEqual(len(problems), 1, (bad, problems))
+            self.assertIn(repr(bad), problems[0])
+
+    def test_the_whole_range_is_allowed(self):
+        self.assertEqual([m for m in self._ids(1, 65535).check() if 'whole number' in m], [])
+
+    def test_a_pinned_zero_is_kept_and_named(self):
+        p = self._ids(0, None)
+        self.assertEqual([c['id'] for c in p.pages[0]['controls']], [0, 1001])
+        problems = [m for m in p.check() if 'whole number' in m]
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("'no ID'", problems[0])
+
+    def test_an_id_allocated_past_uint16_is_reported(self):
+        p = self._ids(None, None, id_base=65535)
+        self.assertEqual([c['id'] for c in p.pages[0]['controls']], [65535, 65536])
+        problems = [m for m in p.check() if 'whole number' in m]
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('id_base', problems[0])
+
+    def test_a_page_or_popup_number_outside_uint16_is_reported(self):
+        p = Panel({'pages': [{'name': 'P', 'number': 70000, 'id_base': 5001, 'controls': []}],
+                   'popups': [{'name': 'Q', 'number': -1, 'modal': True, 'id_base': 6001,
+                               'controls': []}]})
+        problems = [m for m in p.check() if 'number' in m and 'UInt16' in m]
+        self.assertEqual(len(problems), 2, problems)
+        self.assertTrue(any("page 'P'" in m and '70000' in m for m in problems), problems)
+        self.assertTrue(any("popup 'Q'" in m and '-1' in m for m in problems), problems)
+
+
 class TestCheck(unittest.TestCase):
     def test_off_canvas_is_caught(self):
         p = _spec([{'kind': 'label', 'rect': [1200, 0, 200, 10]}])
@@ -260,6 +331,108 @@ class TestCheck(unittest.TestCase):
         self.assertEqual(p.check(), [])
 
 
+class TestUnknownKeys(unittest.TestCase):
+    """A key nothing reads falls back to its default, and the plan is built
+    from the same spec - so a typo'd `start_page` booted the panel into the
+    wrong page with check, plan and verify_built all agreeing. Only a control's
+    keys were held to a list; every level is now."""
+
+    PANEL = {'kind': 'panel', 'rect': [0, 0, 100, 50], 'fill': '#242634', 'border': 'rounded'}
+
+    def _odd(self, spec):
+        return [m for m in Panel(spec).check() if 'is not a key' in m]
+
+    def _base(self, **top):
+        return dict({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+                     'pages': [{'name': 'P', 'number': 1000, 'controls': [dict(self.PANEL)]}]},
+                    **top)
+
+    def test_a_typo_at_the_top_is_named(self):
+        odd = self._odd(self._base(start_pag='P'))
+        self.assertEqual(len(odd), 1, odd)
+        self.assertIn("'start_pag'", odd[0])
+
+    def test_a_typo_on_a_page_is_named(self):
+        spec = self._base()
+        spec['pages'][0]['nmuber'] = 2000
+        odd = self._odd(spec)
+        self.assertEqual(len(odd), 1, odd)
+        self.assertIn("'nmuber'", odd[0])
+        self.assertIn("'P'", odd[0])
+
+    def test_a_typo_on_a_popup_is_named(self):
+        spec = self._base(popups=[{'name': 'Confirm', 'modl': True, 'controls': []}])
+        odd = self._odd(spec)
+        self.assertEqual(len(odd), 1, odd)
+        self.assertIn("'modl'", odd[0])
+
+    def test_a_theme_setting_typo_is_named(self):
+        """A theme is a palette, so any name may be a color - but one that is
+        neither a setting nor a color is a typo: `fnot` for `font`."""
+        spec = self._base()
+        spec['theme'] = {'text': '#FFFFFF', 'shade-on': '#33000000', 'fnot': 'Open Sans'}
+        odd = self._odd(spec)
+        self.assertEqual(len(odd), 1, odd)
+        self.assertIn("'fnot'", odd[0])
+
+    def test_a_typo_beside_a_grid_is_named(self):
+        spec = self._base()
+        spec['pages'][0]['controls'] = [
+            {'grid': {'rect': [0, 0, 400, 100], 'cols': 2, 'kind': 'label',
+                      'items': [{'text': 'A'}, {'text': 'B'}]}, 'nmae': 'Row'}]
+        odd = self._odd(spec)
+        self.assertEqual(len(odd), 1, odd)
+        self.assertIn("'nmae'", odd[0])
+
+    def test_a_typo_in_on_is_named(self):
+        """`on` is a state's look, so it takes a state's keys."""
+        spec = self._base(theme={'text': '#FFFFFF', 'accent': '#3D8BFD'})
+        spec['pages'][0]['controls'] = [{'kind': 'button', 'name': 'B', 'rect': [0, 0, 100, 100],
+                                         'on': {'fil': 'accent'}}]
+        odd = self._odd(spec)
+        self.assertEqual(len(odd), 1, odd)
+        self.assertIn("'fil'", odd[0])
+
+    def test_underscored_keys_are_the_translators_own(self):
+        spec = self._base(_seed='Afterburn 1035.gdl', _from='Design canvas')
+        spec['pages'][0]['_does'] = 'the room'
+        spec['popups'] = [{'name': 'Confirm', 'modal': True, '_does': 'asks', 'controls': []}]
+        self.assertEqual(self._odd(spec), [])
+
+    def test_the_hunts_repro_names_the_typod_start_page(self):
+        with open(os.path.join(REPO, 'examples', 'huddle-functions.json'), encoding='utf-8') as fh:
+            d = json.load(fh)
+        d['pages'].reverse()
+        d['start_pag'] = d.pop('start_page')
+        odd = self._odd(d)
+        self.assertTrue([m for m in odd if "'start_pag'" in m], odd)
+
+    def test_every_spec_the_repo_carries_passes(self):
+        """The examples and every archived spec - the translator's and the
+        region frame's output among them - use only keys something reads."""
+        import glob
+        seen = 0
+        for f in sorted(glob.glob(os.path.join(REPO, 'examples', '*.json'))
+                        + glob.glob(os.path.join(REPO, 'archive', '**', '*.json'), recursive=True)):
+            try:
+                with open(f, encoding='utf-8') as fh:
+                    d = json.load(fh)
+            except (ValueError, OSError):
+                continue
+            if not (isinstance(d, dict) and isinstance(d.get('pages'), list) and d['pages']
+                    and isinstance(d['pages'][0], dict) and 'controls' in d['pages'][0]
+                    and 'op' not in d['pages'][0]):
+                continue
+            seen += 1
+            with self.subTest(spec=os.path.relpath(f, REPO)):
+                try:
+                    odd = self._odd(d)
+                except ValueError as e:      # an archived spec of a format since changed
+                    self.skipTest(f'{f}: {e}')
+                self.assertEqual(odd, [])
+        self.assertGreater(seen, 10)
+
+
 class TestControlTypes(unittest.TestCase):
     """The four types beyond panel/button/label/line, and their own fields."""
 
@@ -293,6 +466,20 @@ class TestControlTypes(unittest.TestCase):
         self.assertEqual(f['startPointField'], 7)
         self.assertEqual(f['endPointField'], 3)
         self.assertEqual(f['thicknessField'], 3)
+
+    def test_an_unknown_kind_or_align_is_reported(self):
+        """A kind the plan does not know became a PBShape - a mistyped button
+        built as a rectangle that does nothing, and verify_built agreed with
+        the plan that said so - and an unknown align became centre."""
+        p = _spec([{'kind': 'buton', 'name': 'Nav', 'text': 'Go', 'align': 'midle',
+                    'rect': [0, 0, 100, 100]}])
+        problems = p.check()
+        self.assertTrue(any("kind 'buton'" in m and "'button'" in m for m in problems), problems)
+        self.assertTrue(any("align 'midle'" in m and "'center'" in m for m in problems), problems)
+        ok = _spec([{'kind': k, 'rect': [0, 120 * i, 100, 100], 'align': a}
+                    for i, (k, a) in enumerate((('label', 'left'), ('label', 'centre'),
+                                                ('button', 'right'), ('panel', 'center')))])
+        self.assertEqual([m for m in ok.check() if 'kind' in m or 'align' in m], [])
 
     def test_level_and_image_and_datetime_map_to_their_classes(self):
         self.assertEqual(self._ops({'kind': 'level', 'rect': [0, 0, 40, 300]})['donor_type'],
@@ -527,6 +714,48 @@ class TestImageKind(unittest.TestCase):
             self.assertEqual(any('PBImage' in m for m in problems), lacks, (name, problems))
 
 
+class TestNoFillIsClear(unittest.TestCase):
+    """A panel, line or clock with no fill was planned fill null and border
+    null, which the applier reads as 'keep the clone's' - and the first
+    PBShape is an opaque slab in most donors: #37394E with a border in
+    Afterburn 1535, #000000 in the 1230W, #242634 in the client's. The preview
+    drew nothing. So no fill is written transparent, and no border none."""
+
+    def _op(self, c):
+        return _spec([c]).plan()['pages'][0]['controls'][0]
+
+    def test_a_panel_line_or_clock_with_no_fill_is_clear_and_borderless(self):
+        for c in ({'kind': 'panel', 'name': 'Ghost', 'rect': [0, 0, 100, 50]},
+                  {'kind': 'panel', 'name': 'Ghost', 'rect': [0, 0, 100, 50], 'fill': 'none'},
+                  {'kind': 'shape', 'name': 'Ghost', 'rect': [0, 0, 100, 50]},
+                  {'kind': 'line', 'name': 'Rule', 'rect': [0, 0, 100, 4]},
+                  {'kind': 'datetime', 'name': 'Clock', 'rect': [0, 0, 200, 40]}):
+            with self.subTest(c=c):
+                op = self._op(c)
+                self.assertEqual((op['fill'], op['border']), (0, ''))
+
+    def test_a_border_it_names_is_kept(self):
+        """An outline with no ground: its border is what draws the stroke."""
+        op = self._op({'kind': 'panel', 'name': 'Ring', 'rect': [0, 0, 100, 50],
+                       'stroke': '#FFFFFF', 'border': 'rounded'})
+        self.assertEqual((op['fill'], op['border']), (0, '2D Rounded Rectangle'))
+
+    def test_a_filled_panel_still_takes_the_rounded_border(self):
+        op = self._op({'kind': 'panel', 'name': 'Card', 'rect': [0, 0, 100, 50],
+                       'fill': '#242634'})
+        self.assertEqual((op['fill'], op['border']), (0xFF242634, '2D Rounded Rectangle'))
+
+    def test_the_hunts_repro_on_the_afterburn_1535(self):
+        p = Panel({'name': 'Ghost', 'model': 'TLP1535M', 'size': [1920, 1080],
+                   'theme': {'text': '#FFFFFF'},
+                   'pages': [{'name': 'P', 'controls': [
+                       {'kind': 'panel', 'name': 'Ghost', 'rect': [0, 0, 400, 200],
+                        'fill': 'none'}]}]})
+        op = p.plan()['pages'][0]['controls'][0]
+        self.assertEqual({k: op[k] for k in ('donor_type', 'fill', 'stroke', 'border')},
+                         {'donor_type': 'PBShape', 'fill': 0, 'stroke': 0, 'border': ''})
+
+
 class TestPopupPhoto(unittest.TestCase):
     """Shockwave's and Turbulence's hub popups carry the page's photo as
     their own ground: every standard popup of seeds/Turbulence 525.gdl on
@@ -552,11 +781,14 @@ class TestPopupPhoto(unittest.TestCase):
         self.assertIsNone(op['background_image'])
 
     def test_a_modal_takes_none(self):
-        """Build draws a modal as the page beneath under its scrim and
-        ignores its background."""
+        """Build draws a modal's page, photo and all, at the modal's own
+        transparency - the client's archived Booting modal shows its photo
+        at alpha 166 - which no canvas draws."""
         p = self._panel(background_image='bkgd.png', modal=True)
-        self.assertTrue(any('Laptop' in m and 'modal' in m and 'background_image' in m for m in p.check()),
-                        p.check())
+        said = [m for m in p.check() if 'Laptop' in m and 'modal' in m and 'background_image' in m]
+        self.assertTrue(said, p.check())
+        self.assertIn('transparency', said[0])
+        self.assertNotIn('never show', said[0])
 
     def test_the_donor_must_have_one_the_spec_does_not_bring(self):
         donor = seed('Afterburn 1035.gdl')
@@ -832,6 +1064,41 @@ class TestExtronRules(unittest.TestCase):
                             ('TLP300M', 16), ('TLP1220MG', 14)):
             self.assertEqual(type_floor(model), want, model)
         self.assertIsNone(type_floor((1000, 700)))
+
+    def test_a_control_with_no_size_is_held_to_the_floor_at_the_size_it_builds(self):
+        """The plan builds a control with no size at 14 pt, and the check read
+        it as no size and skipped it - so on a 535, whose floor is 28, writing
+        14 was reported and leaving it out was not."""
+        def floor(controls, **theme):
+            p = Panel({'model': 'TLP535M', 'theme': theme, 'pages': [
+                {'name': 'P', 'controls': controls}]})
+            return [m for m in p.check() if 'type floor' in m]
+        unsized = [{'kind': k, 'name': k, 'text': 'hi', 'rect': [10, 10 + 100 * i, 300, 80]}
+                   for i, k in enumerate(('label', 'button', 'datetime'))]
+        problems = floor(unsized)
+        self.assertEqual(len(problems), 3, problems)
+        self.assertTrue(all('14pt' in m and 'the size a control with none builds at' in m
+                            for m in problems), problems)
+        self.assertEqual(floor(unsized, size=28), [])
+        named = Panel({'model': 'TLP1035T', 'pages': [{'name': 'P', 'controls': unsized}]})
+        self.assertEqual([m for m in named.check() if 'pt' in m], [])
+
+    def test_a_control_with_no_words_has_no_type_to_hold(self):
+        """Read at the size it builds, an unsized button with no caption - a
+        key drawn in its fill, or the Back a layout derives - was held to a
+        type floor it draws no type at. One with words anywhere still is: its
+        own, a state's, its `on`'s or an icon's glyph."""
+        def floor(**kw):
+            p = Panel({'model': 'TLP535M', 'pages': [{'name': 'P', 'controls': [
+                dict({'kind': 'button', 'name': 'B', 'rect': [10, 10, 300, 100]}, **kw)]}]})
+            return [m for m in p.check() if 'type floor' in m or 'body-text' in m]
+        self.assertEqual(floor(), [])
+        self.assertEqual(floor(text=''), [])
+        self.assertEqual(floor(size=12), [])
+        for words in ({'text': 'Go'}, {'states': [{'name': 'Off'}, {'name': 'On', 'text': 'Live'}]},
+                      {'on': {'text': 'Live'}}):
+            with self.subTest(words=words):
+                self.assertEqual(len(floor(**words)), 1)
 
     def test_a_panel_with_no_known_minimum_says_so(self):
         """A custom canvas has no DPI to convert 9mm with. Passing quietly would
@@ -1546,6 +1813,18 @@ class TestModalPopups(unittest.TestCase):
         op = self._p({'name': 'Confirm', 'modal': True, 'controls': []}).plan()['popups'][0]
         self.assertTrue(op['modal'])
 
+    def test_a_modal_is_planned_the_scrim_every_template_draws(self):
+        """Build draws a modal black at the modal's own transparency: 35% -
+        alpha 166 - on 456 of the 460 built modals here, opaque on the 4 the
+        client's archived projects author at 0. The applier wrote none, so a
+        spec's modal took its donor modal's."""
+        p = _project(pages=[{'name': 'Home', 'number': 1000, 'controls': [_label()]}],
+                     popups=[{'name': 'Confirm', 'modal': True, 'controls': []},
+                             {'name': 'Card', 'group': 'G', 'size': [100, 100], 'controls': []}])
+        ops = {op['name']: op for op in p.plan()['popups']}
+        self.assertEqual(ops['Confirm']['transparency'], 35.0)
+        self.assertIsNone(ops['Card']['transparency'])
+
     def test_a_modal_popup_without_a_size_is_given_the_canvas(self):
         op = self._p({'name': 'Confirm', 'modal': True, 'controls': []}).plan()['popups'][0]
         self.assertEqual(op['size'], [1280, 800])
@@ -1570,8 +1849,9 @@ class TestModalPopups(unittest.TestCase):
         self.assertEqual(p.check(), [])
 
     def test_a_standard_popup_with_no_group_is_reported(self):
-        # Only a reference can show a standard popup, and a reference binds to
-        # a group. With no group it can never appear.
+        # Only a reference can show a standard popup, and a spec's reference
+        # binds to a group - Extron's 525s bind one popup by its ID, which a
+        # spec does not author. With no group it can never appear.
         p = self._p({'name': 'Loose', 'size': [100, 100], 'controls': []})
         self.assertTrue(any('group' in m for m in p.check()), p.check())
 
@@ -1589,6 +1869,37 @@ class TestModalPopups(unittest.TestCase):
     def test_a_modal_control_off_the_canvas_is_reported(self):
         p = self._p({'name': 'Confirm', 'modal': True,
                      'controls': [_label(rect=[1275, 0, 10, 10])]})
+        self.assertTrue(any('does not fit' in m for m in p.check()), p.check())
+
+
+class TestStandardPopupSize(unittest.TestCase):
+    """A standard popup's canvas is its own size, and with none the applier
+    keeps the donor popup's. Both popup checks - does each control fit, and is
+    it its reference's size - began by skipping a popup with no size, so one
+    holding a 400x400 button at 1000,700 checked clean and Build moved the
+    button to 0,0. A modal is given the canvas; a standard popup is given
+    nothing, so it must say."""
+
+    def _p(self, popup, ref=(264, 620, 984, 108)):
+        return _project(pages=[{'name': 'Home', 'number': 1000, 'controls': [
+            {'kind': 'popup_ref', 'name': 'Ref', 'rect': list(ref), 'group': 'Volume'}]}],
+            popups=[popup])
+
+    def test_a_standard_popup_with_no_size_is_reported_with_its_references(self):
+        p = self._p({'name': 'Vol', 'group': 'Volume', 'controls': [
+            {'kind': 'button', 'name': 'Big', 'rect': [1000, 700, 400, 400], 'text': 'X'}]})
+        said = [m for m in p.check() if "'Vol'" in m and 'size' in m]
+        self.assertEqual(len(said), 1, p.check())
+        self.assertIn('984x108', said[0])
+
+    def test_one_with_its_references_size_is_clean(self):
+        p = self._p({'name': 'Vol', 'group': 'Volume', 'size': [984, 108], 'controls': [
+            {'kind': 'button', 'name': 'Up', 'rect': [0, 0, 100, 100], 'text': 'X'}]})
+        self.assertEqual([m for m in p.check() if "'Vol'" in m], [])
+
+    def test_the_fit_check_runs_once_it_has_a_size(self):
+        p = self._p({'name': 'Vol', 'group': 'Volume', 'size': [984, 108], 'controls': [
+            {'kind': 'button', 'name': 'Big', 'rect': [1000, 700, 400, 400], 'text': 'X'}]})
         self.assertTrue(any('does not fit' in m for m in p.check()), p.check())
 
 
@@ -1936,6 +2247,20 @@ class TestPalette(unittest.TestCase):
         op = p.plan()['pages'][0]['controls'][0]
         self.assertEqual(op['stroke'], 0)
         self.assertNotIn((('A', 0), ('B', 0), ('G', 0), ('R', 0)), p.palette())
+
+    def test_a_stroke_with_no_fill_and_no_border_gets_the_default_border(self):
+        """A stroke is drawn by a border resource. Planned fill clear and border
+        '' it was lost: the plan, the preview and check all agreed nothing drew."""
+        for kind in ('panel', 'shape', 'line', 'datetime'):
+            p = _project([dict({'name': 'P', 'controls': [
+                {'kind': kind, 'name': 'Ring', 'rect': [0, 0, 100, 40],
+                 'stroke': '#6E6E8C'}]}, **self.BG)])
+            op = p.plan()['pages'][0]['controls'][0]
+            self.assertEqual(op['border'], '2D Rounded Rectangle', kind)
+            self.assertEqual(op['fill'], 0, kind)
+        p = _project([dict({'name': 'P', 'controls': [
+            {'kind': 'panel', 'name': 'Bare', 'rect': [0, 0, 100, 40]}]}, **self.BG)])
+        self.assertEqual(p.plan()['pages'][0]['controls'][0]['border'], '')
 
     def test_a_label_with_no_fill_is_written_transparent(self):
         """The applier skips a fill it is not given, so a label left without

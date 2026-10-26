@@ -273,8 +273,9 @@ class TestTranslate(unittest.TestCase):
         self.assertEqual(design.css_to_argb('#37394E'), '#37394E')
 
     def test_a_modal_carries_no_background(self):
-        """Build draws every modal as the page beneath under black at alpha
-        166, whatever background it was given."""
+        """Build draws a modal black at its own transparency - the 35%, alpha
+        166, the spec writes on every modal - whatever background color it
+        was given."""
         modal = page('Confirm', kind='popup', modal=True, background='page')
         spec, _, _ = translate({'Home.dc.html': out(HOME), 'Confirm.dc.html': out(modal)})
         self.assertNotIn('background', spec['popups'][0])
@@ -447,6 +448,30 @@ class TestPanels(unittest.TestCase):
             self.assertEqual(spec['pages'][0]['background_image'], ART[m][0])
             self.assertEqual(spec['images'][ART[m][0]], ART[m][1])
             self.assertEqual(Panel(json.loads(json.dumps(spec))).check(), [])
+
+    @needs_panel_files
+    def test_two_controls_of_one_name_on_a_page_are_refused_by_name(self):
+        """They share an ID (a control is known by its page and its name), which
+        gdl.spec said only as "id N already used"."""
+        a = dict(BTN16, name='A')
+        _, problems, _ = translate_panels({m: {'Home.dc.html': self.home(m, ctl([40, 40, 200, 64], **a),
+                                                                         ctl([40, 140, 200, 64], **a))}
+                                           for m in PANELS})
+        self.assertIn("TLP1035T: 'Home': two controls are named 'A' - give each its own name", problems['TLP1035T'])
+
+    @needs_panel_files
+    def test_a_control_named_like_one_the_layout_draws_is_refused_by_name(self):
+        """A Group's Next, a window's Title and the like have an ID space of
+        their own, so a canvas control of their name passed every check and the
+        ID map listed two with one name."""
+        mine = dict(BTN16, name='A Next')
+        theirs = dict(BTN16, name='A Next', derived=True)
+        _, problems, _ = translate_panels({m: {'Home.dc.html': self.home(m, ctl([40, 40, 200, 64], **mine),
+                                                                         ctl([40, 140, 200, 64], **theirs))}
+                                           for m in PANELS})
+        for m in PANELS:
+            self.assertEqual(len([p for p in problems[m] if "'A Next' is a control the layout draws" in p]), 1,
+                             problems[m])
 
     @staticmethod
     def label_at(rect, text_rect, name='Status', em=21.7, part=None, text='No call in progress'):
@@ -635,10 +660,11 @@ class TestPanels(unittest.TestCase):
         pop = {'kind': 'popup', 'name': 'Home Sources', 'group': 'Home Sources', 'size': [400, 120]}
         pg = {'kind': 'page', 'name': 'Home Cameras', 'host': 'Home', 'size': [1024, 600],
               'background': 'page', 'background_image': ART['TLP725T'][0], 'background_file': ART['TLP725T'][1]}
-        laptop = dict(ctl([10, 10, 100, 100], kind='button', name='Laptop', text='Laptop'), part=0)
-        cam = dict(ctl([20, 20, 100, 100], kind='button', name='Cam', text='Cam'), part=1)
-        back = dict(ctl([10, 540, 80, 60], kind='button', name='Cameras Back', text='Back', derived=True,
-                        nav='Home'), part=1)
+        # At the 725's 16 pt type floor, as the bundle sizes every caption.
+        laptop = dict(ctl([10, 10, 100, 100], kind='button', name='Laptop', text='Laptop', size=16), part=0)
+        cam = dict(ctl([20, 20, 100, 100], kind='button', name='Cam', text='Cam', size=16), part=1)
+        back = dict(ctl([10, 540, 80, 60], kind='button', name='Cameras Back', text='Back', size=16,
+                        derived=True, nav='Home'), part=1)
         region = ctl([300, 200, 400, 120], kind='popup_ref', name='Sources Region', group='Home Sources')
         rendered = {m: {'Home.dc.html': self.home(m, region, laptop, cam, back,
                                                   parts=[part(pop, [300, 200, 400, 120]),
@@ -662,8 +688,8 @@ class TestPanels(unittest.TestCase):
 
     @needs_panel_files
     def test_derived_nav_names_a_part_not_an_artboard(self):
-        nxt = dict(ctl([300, 260, 80, 60], kind='button', name='Sources Next', text='Next', derived=True,
-                       nav='Home Sources 2'), part=0)
+        nxt = dict(ctl([300, 260, 80, 60], kind='button', name='Sources Next', text='Next', size=16,
+                       derived=True, nav='Home Sources 2'), part=0)
         pops = [part({'kind': 'popup', 'name': 'Home Sources', 'group': 'Home Sources', 'size': [400, 320]},
                      [0, 0, 400, 320]),
                 part({'kind': 'popup', 'name': 'Home Sources 2', 'group': 'Home Sources', 'size': [400, 320]},
@@ -1052,6 +1078,36 @@ class TestPanels(unittest.TestCase):
         self.assertEqual([p for p in problems['TLP1035T'] if 'Laptop Caption' in p], [])
 
     @needs_panel_files
+    def test_a_revision_keeps_the_previous_maps_ids_on_every_panel(self):
+        """Translated with the previous delivery's map, a canvas control keeps
+        its ID on every panel and so does what a panel's layout added; a
+        control drawn since takes a number the previous map does not use."""
+        laptop = dict(BTN16, name='Laptop', text='Laptop')
+        camera = dict(BTN16, name='Camera', text='Camera')
+        prev = dict(BTN16, name='Sources Previous', text='Previous', derived=True, nav='Home')
+        about = dict(BTN16, name='Sources About', text='About', derived=True, nav='Home')
+        rendered = {'TLP1035T': {'Home.dc.html': self.home('TLP1035T', ctl([40, 40, 200, 64], **camera),
+                                                           ctl([40, 140, 200, 64], **laptop))},
+                    'TLP725T': {'Home.dc.html': self.home('TLP725T', ctl([10, 10, 80, 60], **about),
+                                                          ctl([10, 100, 80, 60], **prev),
+                                                          ctl([300, 140, 200, 64], **camera),
+                                                          ctl([300, 240, 200, 64], **laptop))}}
+        old = {'controls': [
+            {'id': 1001, 'type': 'Button', 'at': [{'container': 'Home', 'name': 'Laptop', 'caption': 'Laptop'}],
+             'panels': {m: [{'container': 'Home', 'name': 'Laptop', 'caption': 'Laptop'}] for m in PANELS}},
+            {'id': 50001, 'type': 'Button', 'derived': True,
+             'at': [{'container': 'Home', 'name': 'Sources Previous', 'caption': 'Previous'}],
+             'panels': {'TLP725T': [{'container': 'Home', 'name': 'Sources Previous', 'caption': 'Previous'}]}}],
+            'pages': [{'name': 'Home'}], 'popups': []}
+        specs, problems, _ = Fake(['Home.dc.html']).translate_panels(rendered, previous=old)
+        self.assertEqual(problems, {'TLP1035T': [], 'TLP725T': []})
+        ids = {m: {c['name']: c['id'] for c in specs[m]['pages'][0]['controls']} for m in PANELS}
+        self.assertEqual(ids['TLP1035T'], {'Camera': 1002, 'Laptop': 1001})
+        self.assertEqual(ids['TLP725T'], {'Sources About': 50002, 'Sources Previous': 50001,
+                                          'Camera': 1002, 'Laptop': 1001})
+        self.assertEqual([s['_retired'] for s in specs.values()], [[], []])
+
+    @needs_panel_files
     def test_an_unnamed_button_on_a_canvas_of_panels_is_a_problem(self):
         nameless = {k: v for k, v in BTN.items() if k != 'name'}
         specs, problems, _ = translate_panels({m: {'Home.dc.html': self.home(m, ctl([40, 40, 200, 64], **nameless))}
@@ -1162,6 +1218,307 @@ class TestPanels(unittest.TestCase):
         self.assertEqual([m for m in PANELS if os.path.exists(os.path.join(d, m, 'spec.json'))], [])
 
 
+def _item(name, *controls, host=None):
+    """A page or popup as pin_ids reads it: its controls, and the canvas page
+    it came from."""
+    return {'name': name, '_host': host or name, 'controls': [dict(c) for c in controls]}
+
+
+def _b(name, **kw):
+    return dict({'kind': 'button', 'name': name}, **kw)
+
+
+def _old(*rows, retired=(), pages=(), popups=()):
+    """A previous delivery's map: each row (id, container, name), a fourth
+    True for one a layout derived."""
+    return {'controls': [dict({'id': r[0], 'type': 'Button',
+                               'at': [{'container': r[1], 'name': r[2], 'caption': r[2]}]},
+                              **({'derived': True} if r[3:] and r[3] else {})) for r in rows],
+            'retired': list(retired), 'pages': [{'name': p} for p in pages],
+            'popups': [{'name': p} for p in popups]}
+
+
+def _ids(spec):
+    return {(it['name'], c['name']): c.get('id') for it in spec['pages'] + spec['popups']
+            for c in it['controls']}
+
+
+class TestARevisionKeepsItsIds(unittest.TestCase):
+    """A control program addresses a control by its ID, so a canvas revised
+    after the programmer started must not renumber what the program knows.
+    pin_ids with the previous delivery's map (translate --previous) keeps
+    every ID that map gave a (page or popup, control name); a new control takes
+    a free number in its band that the map does not use; a gone control's ID
+    is retired, never handed on."""
+
+    def pin(self, pages, popups=(), previous=None, more=None):
+        specs = {'A': {'pages': list(pages), 'popups': list(popups)}}
+        if more:
+            specs['B'] = more
+        problems = design.pin_ids(specs, list(specs), previous)
+        return specs, problems
+
+    def test_without_one_the_bands_number_in_drawing_order(self):
+        specs, problems = self.pin([_item('Home', _b('Camera'), _b('Laptop'))])
+        self.assertEqual(problems, {'A': []})
+        self.assertEqual(_ids(specs['A']), {('Home', 'Camera'): 1001, ('Home', 'Laptop'): 1002})
+
+    def test_a_control_drawn_ahead_of_the_rest_takes_a_new_number(self):
+        specs, problems = self.pin([_item('Home', _b('Camera'), _b('Laptop'), _b('Display'))],
+                                   previous=_old((1001, 'Home', 'Laptop'), (1002, 'Home', 'Display')))
+        self.assertEqual(problems, {'A': []})
+        self.assertEqual(_ids(specs['A']), {('Home', 'Camera'): 1003, ('Home', 'Laptop'): 1001,
+                                            ('Home', 'Display'): 1002})
+        self.assertEqual(specs['A']['_retired'], [])
+
+    def test_a_gone_controls_id_is_retired_not_handed_on(self):
+        specs, _ = self.pin([_item('Home', _b('Laptop'), _b('Mute'), _b('Camera'))],
+                            previous=_old((1001, 'Home', 'Laptop'), (1002, 'Home', 'Display'),
+                                          (1003, 'Home', 'Mute')))
+        self.assertEqual(_ids(specs['A']), {('Home', 'Laptop'): 1001, ('Home', 'Mute'): 1003,
+                                            ('Home', 'Camera'): 1004})
+        self.assertEqual(specs['A']['_retired'], [{'id': 1002, 'was': 'Home / Display'}])
+
+    def test_a_retired_id_stays_retired(self):
+        """Through every later revision: the program written against the
+        first delivery may still address it."""
+        specs, _ = self.pin([_item('Home', _b('Laptop'), _b('Camera'))],
+                            previous=_old((1001, 'Home', 'Laptop'),
+                                          retired=[{'id': 1002, 'was': 'Home / Display'}]))
+        self.assertEqual(_ids(specs['A'])[('Home', 'Camera')], 1003)
+        self.assertEqual(specs['A']['_retired'], [{'id': 1002, 'was': 'Home / Display'}])
+
+    def test_the_same_name_on_two_pages_is_two_controls(self):
+        specs, _ = self.pin([_item('Home', _b('Back')), _item('Call', _b('Back'))],
+                            previous=_old((1005, 'Home', 'Back'), (2003, 'Call', 'Back')))
+        self.assertEqual(_ids(specs['A']), {('Home', 'Back'): 1005, ('Call', 'Back'): 2003})
+
+    def test_a_popup_its_page_hosts_does_not_hide_the_pages_controls(self):
+        """The table of names drawn twice counted a page's control and its
+        copy on a popup the page hosts under one key, as two: neither was
+        looked up, and both IDs were retired."""
+        specs, problems = self.pin([_item('Home', _b('Laptop'), _b('Display'))],
+                                   [_item('Home Sources', _b('Laptop'), _b('Display'), host='Home')],
+                                   previous=_old((1001, 'Home', 'Laptop'), (1002, 'Home', 'Display')))
+        self.assertEqual(problems, {'A': []})
+        self.assertEqual(_ids(specs['A']), {('Home', 'Laptop'): 1001, ('Home', 'Display'): 1002,
+                                            ('Home Sources', 'Laptop'): 1001, ('Home Sources', 'Display'): 1002})
+        self.assertEqual(specs['A']['_retired'], [])
+
+    def test_two_controls_of_one_caption_under_a_page_are_told_apart(self):
+        """Unnamed, a control is looked up by its caption. A page's own is the
+        one the map knows on that page; one of that caption on a popup the
+        page hosts is another control, and takes another ID."""
+        back = {'kind': 'button', 'text': 'Back'}
+        specs, problems = self.pin([_item('Home', back)], [_item('Home More', back, host='Home')],
+                                   previous=_old((1005, 'Home', 'Back')))
+        self.assertEqual(problems, {'A': []})
+        got = [c['id'] for it in specs['A']['pages'] + specs['A']['popups'] for c in it['controls']]
+        self.assertEqual(got[0], 1005)
+        self.assertNotIn(got[1], (1005, None))
+
+    def test_a_designers_id_that_is_a_kept_id_is_refused_by_name(self):
+        _, problems = self.pin([_item('Home', _b('Laptop'), _b('Camera', id=1001))],
+                               previous=_old((1001, 'Home', 'Laptop')))
+        self.assertTrue(any("'Home' Camera" in p and 'Laptop' in p and '1001' in p for p in problems['A']),
+                        problems)
+
+    def test_a_designer_may_give_a_control_a_retired_id(self):
+        """How a moved or renamed control keeps the ID a program knows it by."""
+        specs, problems = self.pin([_item('Help', _b('Laptop', id=1001))],
+                                   previous=_old((1001, 'Home', 'Laptop')))
+        self.assertEqual(problems, {'A': []})
+        self.assertEqual(specs['A']['_retired'], [])
+
+    def test_a_mirror_stays_one_control(self):
+        old = {'controls': [{'id': 81, 'type': 'Button', 'at': [
+            {'container': 'Ask', 'name': 'Confirm', 'caption': ''},
+            {'container': 'Ask Again', 'name': 'Confirm', 'caption': ''}]}], 'retired': []}
+        specs, problems = self.pin([], [_item('Ask', _b('Confirm', id=81)), _item('Ask Again', _b('Confirm'))],
+                                   previous=old)
+        self.assertEqual(problems, {'A': []})
+        self.assertEqual(set(_ids(specs['A']).values()), {81})
+
+    def test_what_a_layout_added_keeps_its_id_when_another_sorts_ahead(self):
+        """Derived controls are numbered from 50001 in name order, so a page
+        drawn since - its Back or Close sorting first - renumbered every one
+        after it."""
+        more = {'pages': [_item('Home', _b('Laptop'), _b('Home About', derived=True),
+                                _b('Home Back', derived=True))], 'popups': []}
+        specs, _ = self.pin([_item('Home', _b('Laptop'))], more=more,
+                            previous=_old((1001, 'Home', 'Laptop'), (50001, 'Home', 'Home Back', True)))
+        self.assertEqual(_ids(specs['B']), {('Home', 'Laptop'): 1001, ('Home', 'Home Back'): 50001,
+                                            ('Home', 'Home About'): 50002})
+
+    def test_a_page_the_map_knew_keeps_its_band(self):
+        specs, _ = self.pin([_item('Home', _b('Laptop')), _item('Lights', _b('Dimmer')),
+                             _item('Call', _b('Dial'), _b('Hang Up'))],
+                            previous=_old((1001, 'Home', 'Laptop'), (2001, 'Call', 'Dial')))
+        self.assertEqual(_ids(specs['A']), {('Home', 'Laptop'): 1001, ('Lights', 'Dimmer'): 3001,
+                                            ('Call', 'Dial'): 2001, ('Call', 'Hang Up'): 2002})
+
+    def test_a_popup_the_map_knew_keeps_its_band(self):
+        specs, _ = self.pin([_item('Home', _b('Laptop'))],
+                            [_item('Help', _b('Close')), _item('Confirm', _b('Yes'), _b('No'))],
+                            previous=_old((1001, 'Home', 'Laptop'), (9001, 'Confirm', 'Yes')))
+        self.assertEqual(_ids(specs['A']), {('Home', 'Laptop'): 1001, ('Help', 'Close'): 9101,
+                                            ('Confirm', 'Yes'): 9001, ('Confirm', 'No'): 9002})
+
+    def test_the_chrome_keeps_its_seed_rules(self):
+        """A region's chrome takes its template's seed ID where that is free -
+        and an ID the previous map gave a control now gone is not free."""
+        for old, want in ((_old((1001, 'Home', 'Laptop')), 8117),
+                          (_old((1001, 'Home', 'Laptop'), (8117, 'Home', 'Old Help')), 1002),
+                          (_old((1001, 'Home', 'Laptop'), (8117, 'Home', 'Help')), 8117)):
+            with self.subTest(old=old['controls']):
+                specs, problems = self.pin([_item('Home', _b('Laptop'), _b('Help', _seed_id=8117))],
+                                           previous=old)
+                self.assertEqual(problems, {'A': []})
+                self.assertEqual(_ids(specs['A'])[('Home', 'Help')], want)
+
+    def test_the_chrome_on_a_page_drawn_since_is_the_same_control(self):
+        """Every working page draws the chrome, and it is one control to the
+        program: Help on a page drawn since is the 8117 Help is on the
+        others - and on its own again once it was retired with Help."""
+        for old in (_old((1001, 'Home', 'Laptop'), (8117, 'Home', 'Help')),
+                    _old((1001, 'Home', 'Laptop'), retired=[{'id': 8117, 'was': 'Home / Help'}])):
+            with self.subTest(old=old):
+                specs, problems = self.pin([_item('Home', _b('Laptop'), _b('Help', _seed_id=8117)),
+                                            _item('Call', _b('Dial'), _b('Help', _seed_id=8117))], previous=old)
+                self.assertEqual(problems, {'A': []})
+                self.assertEqual((_ids(specs['A'])[('Home', 'Help')], _ids(specs['A'])[('Call', 'Help')]),
+                                 (8117, 8117))
+
+    def test_translate_keeps_them_and_retires_the_rest(self):
+        """Translated alone, a canvas leaves its IDs to the spec's bands; with
+        a previous map every one is pinned."""
+        laptop = dict(BTN, name='Laptop', text='Laptop')
+        cam = dict(BTN, name='Camera', text='Camera')
+        rendered = {'Home.dc.html': out(HOME, ctl([40, 40, 240, 64], **cam), ctl([40, 140, 240, 64], **laptop))}
+        old = dict(_old((1001, 'Home', 'Laptop'), (1002, 'Home', 'HelpBtn'), pages=['Home']),
+                   _sha256='ab' * 32)
+        spec, problems, _ = Fake(rendered).translate(rendered, previous=old)
+        self.assertEqual(problems, [])
+        self.assertEqual(_ids(spec), {('Home', 'Camera'): 1003, ('Home', 'Laptop'): 1001})
+        self.assertEqual(spec['_retired'], [{'id': 1002, 'was': 'Home / HelpBtn'}])
+        self.assertEqual(spec['_previous'], 'ab' * 32)
+        self.assertNotIn('_host', spec['pages'][0])
+
+    def test_a_renamed_page_is_reported_not_mapped(self):
+        """A program shows a page by its name: a page whose controls are the
+        previous map's Help's under another name is said to be renamed, and
+        its controls are new to the program."""
+        go = dict(BTN, name='Go', text='Go', nav='Support.dc.html')
+        close = dict(BTN, name='Close', text='Close', nav='Home.dc.html')
+        rendered = {'Home.dc.html': out(HOME, ctl([40, 40, 240, 64], **go)),
+                    'Support.dc.html': out(page('Support'), ctl([40, 40, 240, 64], **close))}
+        old = _old((1001, 'Home', 'Go'), (2001, 'Help', 'Close'), pages=['Home', 'Help'])
+        spec, problems, notes = Fake(rendered).translate(rendered, previous=old)
+        self.assertEqual(problems, [])
+        self.assertTrue(any("'Help'" in n and "'Support'" in n and 'renamed' in n for n in notes), notes)
+        self.assertEqual(_ids(spec)[('Support', 'Close')], 2002)
+        self.assertEqual(spec['_retired'], [{'id': 2001, 'was': 'Help / Close'}])
+
+    def test_a_moved_or_renamed_control_is_told_how_to_keep_its_id(self):
+        """Known by its page and name, a control moved to another page or
+        renamed is new to the program; translate says which ID to pin to keep
+        the one the program knows."""
+        laptop = dict(BTN, name='Laptop', text='Laptop', does='Routes the laptop.')
+        dial = dict(BTN, name='Join', text='Join', does='Joins the call.')
+        rendered = {'Home.dc.html': out(HOME, ctl([40, 40, 240, 64], **dial)),
+                    'Help.dc.html': out(HELP, ctl([40, 40, 240, 64], **laptop))}
+        old = dict(_old((1001, 'Home', 'Laptop'), (1002, 'Home', 'Dial'), pages=['Home', 'Help']))
+        for c in old['controls']:
+            c['does'] = {'Laptop': 'Routes the laptop.', 'Dial': 'Joins the call.'}[c['at'][0]['name']]
+        _, problems, notes = Fake(rendered).translate(rendered, previous=old)
+        self.assertEqual(problems, [])
+        self.assertTrue(any("'Help' Laptop" in n and 'moved' in n and 'id=1001' in n for n in notes), notes)
+        self.assertTrue(any("'Home' Join" in n and 'Dial' in n and 'id=1002' in n for n in notes), notes)
+
+    def test_notes_read_the_previous_map_on_the_specs_own_panel(self):
+        """A previous map of several panels was read on its first panel: on a
+        canvas now drawn on another, every control the first panel's layout
+        put elsewhere was said to have moved."""
+        def at(where):
+            return [{'container': where, 'name': 'Laptop', 'caption': 'Laptop'}]
+        old = {'controls': [{'id': 1001, 'type': 'Button', 'at': at('Home Sources'),
+                             'panels': {'TLP725T': at('Home Sources'), 'TLP1035T': at('Home')}}],
+               'panels': [{'model': m, 'start_page': 'Home', 'navigation': [], 'pages': [{'name': 'Home'}],
+                           'popups': [{'name': 'Home Sources'}] if m == 'TLP725T' else []}
+                          for m in ('TLP725T', 'TLP1035T')]}
+        spec = {'model': 'TLP1035T', 'size': [1280, 800], 'popups': [],
+                'pages': [{'name': 'Home', 'controls': [_b('Laptop')]}]}
+        self.assertEqual(design.revision_notes(spec, old), [])
+
+    def test_a_hub_window_renamed_by_the_pages_order_is_noted(self):
+        """A hub names the window a later working page derives after the page
+        (Video Call Select Source), so drawing the pages in another order
+        renamed the windows, and the IDs of what the hub draws in them were
+        retired without a word."""
+        def win(name, host, label):
+            return {'name': name, '_host': host, 'controls': [_b('Laptop'), _b(label, derived=True)]}
+        spec = {'pages': [_item('Video Call', _b('Laptop')), _item('Main SD', _b('Laptop'))],
+                'popups': [win('Select Source', 'Video Call', 'Laptop Label'),
+                           win('Main SD Select Source', 'Main SD', 'Laptop Label')]}
+        old = dict(_old((101, 'Main SD', 'Laptop'), (50076, 'Select Source', 'Laptop Label', True),
+                        (50133, 'Video Call Select Source', 'Laptop Label', True),
+                        pages=['Main SD', 'Video Call'], popups=['Select Source', 'Video Call Select Source']))
+        notes = design.renamed_windows(spec, old, {50076, 50133})
+        self.assertEqual(len(notes), 2, notes)
+        vc = next(n for n in notes if n.startswith("Video Call's Select Source"))
+        self.assertIn("'Select Source' now, not 'Video Call Select Source'", vc)
+        self.assertIn('50133', vc)
+        self.assertNotIn('50076', vc)
+        msd = next(n for n in notes if n.startswith("Main SD's Select Source"))
+        self.assertIn("'Main SD Select Source' now, not 'Select Source'", msd)
+        self.assertIn('50076', msd)
+        self.assertIn('order', msd)
+        # The same order: nothing renamed. A page drawn since: its window is
+        # new, not renamed.
+        same = {'pages': spec['pages'][::-1], 'popups': [win('Select Source', 'Main SD', 'Laptop Label'),
+                                                          win('Video Call Select Source', 'Video Call', 'Laptop Label')]}
+        self.assertEqual(design.renamed_windows(same, old, set()), [])
+        drawn = {'pages': [_item('Call', _b('Laptop'))] + spec['pages'][::-1],
+                 'popups': [win('Select Source', 'Call', 'Laptop Label'), win('Main SD Select Source', 'Main SD', 'L'),
+                            win('Video Call Select Source', 'Video Call', 'Laptop Label')]}
+        self.assertEqual([n.split(' - ')[0] for n in design.renamed_windows(drawn, old, {50076})],
+                         ["Main SD's Select Source is 'Main SD Select Source' now, not 'Select Source'"])
+        # A Group's popup is named for its page, as a later window is, and a
+        # board of the designer's was the previous 'Select Source': no window
+        # took that name from Main SD's.
+        board = {'pages': spec['pages'][::-1], 'popups': [_item('Select Source', _b('Laptop')),
+                                                           win('Main SD Select Source', 'Main SD', 'Laptop Label')]}
+        self.assertEqual(design.renamed_windows(board, old, set()), [])
+
+    def test_translate_ends_by_counting_the_ids(self):
+        spec = {'pages': [{'name': 'Home', 'controls': [{'kind': 'button', 'id': 1001}, {'kind': 'button', 'id': 1003},
+                                                        {'kind': 'image', 'name': 'Logo'}]}],
+                'popups': [], '_retired': [{'id': 1002, 'was': 'Home / Display'}]}
+        self.assertEqual(design._kept([spec], _old((1001, 'Home', 'Laptop'), (1002, 'Home', 'Display')), 'r1'),
+                         'IDs against r1: 1 kept, 1 new, 1 retired - write the map with --previous r1 for '
+                         'changes.md')
+
+    def test_the_command_refuses_a_previous_map_it_cannot_read(self):
+        import contextlib
+        import io
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            got = design.main(['x', 'translate', CANVAS, os.path.join(d, 'out'),
+                               '--previous', os.path.join(d, 'nowhere')])
+        self.assertEqual(got, 1)
+        self.assertIn('nowhere', buf.getvalue())
+
+    def test_a_pages_purpose_reaches_the_spec(self):
+        """A Page's `does` says what the page is for; the ID map carries it."""
+        rendered = {'Home.dc.html': out(page('Home', start=True, does='Where every meeting starts.'),
+                                        ctl([40, 40, 240, 64], **BTN))}
+        spec, _, _ = translate(rendered)
+        self.assertEqual(spec['pages'][0]['does'], 'Where every meeting starts.')
+        self.assertNotIn('_does', spec['pages'][0])
+
+
 class TestCompare(unittest.TestCase):
     """The sign-off page for a canvas of panels: a section per panel, each
     artboard and each derived page or popup as designed beside it as built.
@@ -1180,9 +1537,12 @@ class TestCompare(unittest.TestCase):
 
     PART = {'kind': 'popup', 'name': 'Main Select Source Sources', 'group': 'X', 'size': [400, 200]}
 
-    def _compare(self, built_panels):
+    def _compare(self, built_panels, prepare=None, via_main=False):
         """The sign-off page for a one-board canvas, `built_panels` {panel:
-        built file} its built folders, and compare()'s scores."""
+        built file} its built folders, and compare()'s scores. `prepare`, given
+        the built folder, may change it first; what compare() said it did not
+        compare is `self.notes`. `via_main` runs it as the command line does
+        and leaves what it printed in `self.stdout`."""
         from PIL import Image
         d = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, d, True)
@@ -1197,6 +1557,8 @@ class TestCompare(unittest.TestCase):
         for m, seed in built_panels.items():
             os.makedirs(os.path.join(built, m))
             shutil.copy(seed, os.path.join(built, m, 'Huddle.gdl'))
+        if prepare:
+            prepare(built)
 
         def fake_render(path, chrome, size, timeout=90, panel=None):
             o = out(panel_page('Main Select Source', panel if panel in SIZES else 'TLP1035T'))
@@ -1212,7 +1574,18 @@ class TestCompare(unittest.TestCase):
         design.render, design.screenshot = fake_render, fake_shot
         design.find_chrome = lambda given=None: 'chrome'
         try:
-            scores = design.compare(canvas, built, os.path.join(d, 'signoff'))
+            self.notes = []
+            if via_main:
+                import contextlib
+                import io
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    rc = design.main(['gdl.design', 'compare', canvas, built, os.path.join(d, 'signoff')])
+                self.assertEqual(rc, 0)
+                self.stdout = buf.getvalue()
+                scores = None
+            else:
+                scores = design.compare(canvas, built, os.path.join(d, 'signoff'), notes=self.notes)
         finally:
             design.render, design.screenshot, design.find_chrome = saved
         with open(os.path.join(d, 'signoff', 'index.html'), encoding='utf-8') as fh:
@@ -1224,6 +1597,51 @@ class TestCompare(unittest.TestCase):
         self.assertIn('TLP725T', page)
         self.assertIn('Main Select Source Sources', page)
         self.assertTrue(scores)
+
+    def test_a_panel_with_no_built_file_or_several_is_said_not_dropped(self):
+        """A folder with none, a folder with two, and a listed panel with no
+        folder were each left out of the sheet without a word."""
+        def prepare(built):
+            os.makedirs(os.path.join(built, 'TLP525T'))
+            os.makedirs(os.path.join(built, 'TLP300M'))
+            for name in ('Huddle.gdl', 'Second.gdl'):
+                shutil.copy(self.seeds['TLP725T'], os.path.join(built, 'TLP300M', name))
+        # TLP725T is listed by the canvas and has no folder at all.
+        page, scores = self._compare({'TLP1035T': self.seeds['TLP1035T']}, prepare)
+        said = dict(self.notes)
+        self.assertEqual(sorted(said), ['TLP300M', 'TLP525T', 'TLP725T'])
+        self.assertIn('2 built files', said['TLP300M'])
+        self.assertIn('Second.gdl', said['TLP300M'])
+        self.assertEqual(said['TLP525T'], 'no built .gdl in its folder')
+        self.assertIn('no folder of that name', said['TLP725T'])
+        for m in said:
+            self.assertIn(f'<h2>{m}</h2><p class="note">Not compared:', page)
+        self.assertEqual(page.count('<section class="panel">'), 4)
+
+    def test_the_toolkits_own_folders_beside_the_panels_are_not_panels(self):
+        """The sign-off command is run on out/<room>, which also holds idmap/,
+        critique/ and signoff/ - none a panel, none to appear in the client's
+        page as 'not compared'. A panel model's empty folder still is."""
+        def prepare(built):
+            for n in ('idmap', 'critique', 'signoff'):
+                os.makedirs(os.path.join(built, n))
+            os.makedirs(os.path.join(built, 'TLP525T'))
+            with open(os.path.join(built, 'notes.txt'), 'w') as fh:
+                fh.write('x')
+        page, _ = self._compare(self.seeds, prepare)
+        self.assertEqual(self.notes, [('TLP525T', 'no built .gdl in its folder')])
+        for n in ('idmap', 'critique', 'signoff'):
+            self.assertNotIn(f'<h2>{n}</h2>', page)
+        self.assertEqual(page.count('<section class="panel">'), 3)
+
+    def test_the_command_prints_only_the_panels_it_did_not_compare(self):
+        def prepare(built):
+            for n in ('idmap', 'critique', 'signoff', 'TLP525T'):
+                os.makedirs(os.path.join(built, n))
+        self._compare(self.seeds, prepare, via_main=True)
+        lines = [ln for ln in self.stdout.splitlines() if 'NOT COMPARED' in ln]
+        self.assertEqual(lines, ['  NOT COMPARED  TLP525T: no built .gdl in its folder'])
+        self.assertEqual(self.stdout.count('Main Select Source'), 2)
 
     def test_a_turned_panels_section_is_headed_with_its_own_canvas(self):
         """A built folder is named for its panel, and TLP300M-Landscape is
@@ -1376,9 +1794,9 @@ class TestCompareTemplate(unittest.TestCase):
             self.assertGreater(len(right.getcolors(1 << 20) or ()), 50)
 
     def test_the_critique_puts_the_compositing_rule_back_after_a_failure(self):
-        """compare --template blends the template's translucent chrome
-        (compose.BINARY off) and puts the rule back however a page ends: it
-        was written True, whatever the caller had."""
+        """The compositing rule is _Built.image's to set and restore
+        (compose.as_the_panel, tested in test_signoff_blend), so a page that
+        fails leaves the caller's rule as it was, whatever it had."""
         seen = []
 
         class Boom:
@@ -1391,7 +1809,7 @@ class TestCompareTemplate(unittest.TestCase):
                 raise RuntimeError('boom')
         with self.assertRaises(RuntimeError):
             self._critique(built=Boom)
-        self.assertEqual(seen, [False])
+        self.assertEqual(seen, ['the callers'])
         self.assertEqual(self.binary, 'the callers')
 
     def test_the_command_line_takes_template(self):
@@ -2862,6 +3280,52 @@ class TestTheReadmesRoomTranslates(unittest.TestCase):
                 out = os.path.join(d, 'specs')
                 design.write_panels(specs, out)
                 self.assertEqual(idmap.check_panels(idmap.load_panels(out)), [])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAGroupsTitleOnThe320(unittest.TestCase):
+    """Mach's and Shockwave's 320 templates head a column in capitals (ZOOM,
+    INPUTS: their profiles' writing.column_labels_320), where ours printed the
+    designer's words. The README room's Doc Cam Group is titled Zoom: the 320
+    sets it ZOOM on those two and not on their other panels or on
+    Turbulence's. Afterburn's 320 seed capitals its column labels too, but its
+    translation draws no heading for a Group there. The control keeps its
+    name, and its caption - what the ID map prints - is what the panel shows.
+    (Extrapolated to every Group title: the seeds show it on the four camera
+    labels only.)"""
+
+    # Only the board with the Group is rendered, on the panel asked for: a
+    # whole README room on four panels is minutes of Chrome.
+    rendered = {}
+
+    def headings(self, theme, model):
+        key = (theme, model)
+        if key not in self.rendered:
+            d = tempfile.mkdtemp()
+            self.addCleanup(shutil.rmtree, d, True)
+            boards = readme_room(theme, d)
+            board = next((n for n in boards if 'title="Zoom"' in
+                          open(os.path.join(d, n), encoding='utf-8').read()), None)
+            self.assertIsNotNone(board, f"{theme}'s README room has no Group titled Zoom")
+            out = design.render(os.path.join(d, board), design.find_chrome(),
+                                (boards[board]['w'], boards[board]['h']), panel=model)
+            self.rendered[key] = [json.loads(c['gdl']) for c in out['controls']
+                                  if json.loads(c['gdl']).get('name') == 'Zoom Heading']
+        return [g['text'] for g in self.rendered[key]]
+
+    def test_the_themes_that_capitalise_them_do_on_the_320(self):
+        for theme in ('mach', 'shockwave'):
+            with self.subTest(theme=theme):
+                self.assertEqual(self.headings(theme, 'TLP320M'), ['ZOOM'])
+                self.assertNotIn('ZOOM', self.headings(theme, 'TLP725T'))
+
+    def test_turbulence_says_the_designers_words(self):
+        """Its profile does not say its 320 sets them in capitals."""
+        self.assertEqual(self.headings('turbulence', 'TLP320M'), ['Zoom'])
+
+    def test_afterburn_draws_no_heading_for_a_group_on_the_320(self):
+        self.assertEqual(self.headings('afterburn', 'TLP320M'), [])
 
 
 # Round four (docs/superpowers/specs/2026-10-22-region-frame-design.md, item
@@ -5100,6 +5564,93 @@ class TestARailsKitButton(_Probe, unittest.TestCase):
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
                      'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class _ARolelessPopupOnThe320(_Probe):
+    """All four themes' 320 seeds have no standard popup to clone, so the
+    build would stop at "donor project has no standard popup to clone" on
+    Windows: a popup with no role is refused here, by name."""
+
+    BOARD = 'Laptop.dc.html'
+    NO_ROLE = ('role="source" ', '')
+
+    def test_it_is_refused_on_the_320_and_only_there(self):
+        _, _, out = self.probe(self.BOARD, 'TLP320M', self.NO_ROLE)
+        self.assertEqual(len(out['problems']), 1, out['problems'])
+        self.assertIn('Laptop is a standard popup', out['problems'][0])
+        self.assertIn('role="source"', out['problems'][0])
+        _, _, out = self.probe(self.BOARD, 'TLP1035T', self.NO_ROLE)
+        self.assertEqual(out['problems'], [])
+
+    def test_a_source_is_drawn_as_a_page(self):
+        page, _, out = self.probe(self.BOARD, 'TLP320M')
+        self.assertEqual(out['problems'], [])
+        self.assertEqual(page['kind'], 'page')
+
+
+class TestMachsRolelessPopupOnThe320(_ARolelessPopupOnThe320, unittest.TestCase):
+    THEME, CANVAS = 'mach', os.path.join(HERE, 'data', 'round4-mach')
+
+
+class TestShockwavesRolelessPopupOnThe320(_ARolelessPopupOnThe320, unittest.TestCase):
+    THEME, CANVAS = 'shockwave', os.path.join(HERE, 'data', 'round4-shockwave')
+
+
+class TestTurbulencesRolelessPopupOnThe320(_ARolelessPopupOnThe320, unittest.TestCase):
+    THEME, CANVAS = 'turbulence', os.path.join(HERE, 'data', 'round4-turbulence')
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburnsRolelessPopupOnThe320(_Probe, unittest.TestCase):
+    """What Afterburn's 320 does already: any standard popup is a page there."""
+
+    CANVAS = os.path.join(HERE, 'data', 'round4-afterburn')
+
+    def test_a_popup_is_a_page_and_not_refused(self):
+        page, _, out = self.probe('Laptop.dc.html', 'TLP320M')
+        self.assertEqual(out['problems'], [])
+        self.assertEqual(page['kind'], 'page')
+
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAPlainContainerOnASmallPanel(_Probe, unittest.TestCase):
+    """A flex or grid container that paints nothing is fine on the 1035, 725
+    and 525, where a page keeps its places. A tier C panel - the 300s and the
+    320 - reflows its controls into rows and columns of its own, which a
+    sized container cannot do: it is refused there, by name, with the Group
+    that can (the README says so beside its flex-and-grid sentence)."""
+
+    THEME = 'mach'
+    CANVAS = os.path.join(HERE, 'data', 'round4-mach')
+    LABEL = ('<x-import component-from-global-scope="ExtronMach.Label" name="Share Heading" type="heading" '
+             'align="left" style="position: absolute; left: 160px; top: 170px; width: 960px; height: 50px">'
+             'How to Share a Screen</x-import>')
+
+    def edit(self):
+        return (self.LABEL, '<div style="position: absolute; left: 160px; top: 170px; width: 960px; '
+                            'height: 50px; display: flex"><x-import component-from-global-scope="ExtronMach.Label" '
+                            'name="Share Heading" type="heading" align="left">How to Share a Screen</x-import></div>')
+
+    def test_a_window_on_the_320_refuses_it(self):
+        _, _, out = self.probe('Help.dc.html', 'TLP320M', self.edit())
+        self.assertEqual(out['problems'], ['a plain container in Help cannot reflow on a 320 - put its '
+                                           'controls in Help directly, or in a Group'])
+
+    def test_a_wider_panel_keeps_it(self):
+        for model in ('TLP1035T', 'TLP725T', 'TLP525T'):
+            with self.subTest(model=model):
+                _, _, out = self.probe('Help.dc.html', model, self.edit())
+                self.assertEqual(out['problems'], [])
+
+    def test_the_readme_says_so_beside_its_flex_and_grid_sentence(self):
+        text = designsys.readme(designsys.load('mach'))
+        line = next(ln for ln in text.splitlines() if 'Flex and grid containers that paint nothing' in ln)
+        self.assertIn('Group', line.split('Flex and grid containers that paint nothing', 1)[1])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
 class TestAfterburnsRowsOnThe320(_Probe, unittest.TestCase):
     """The round-four Afterburn room (tests/data/round4-afterburn) on the 320,
     whose page reflows into rows."""
@@ -5119,6 +5670,19 @@ class TestAfterburnsRowsOnThe320(_Probe, unittest.TestCase):
         self.assertEqual(page['kind'], 'popup')
         self.assertEqual(page['size'], [241, 183])
         self.assertEqual(ctl['Controls'][1][2:], page['size'])
+
+    def test_a_region_wider_than_a_row_says_what_width_to_draw(self):
+        """The 300 Portrait's row holds 294 px and its popups scale to 307:
+        the region it was cut to made the popups wider than it, which the spec
+        check refused as a size mismatch with no word of what to change. The
+        region is named instead, with the widest it can be drawn."""
+        _, _, out = self.probe('MainSD.dc.html', 'TLP300M')
+        said = [m for m in out['problems'] if m.startswith('Controls is 880 px wide')]
+        self.assertEqual(said, ['Controls is 880 px wide, which a row on the TLP300M (294 px) cannot hold - '
+                                'draw it and its popups at most 841 px wide'])
+        # ... and a region that width is held, by the same rule.
+        _, _, out = self.probe('MainSD.dc.html', 'TLP300M', ('width: 880px; height: 525px', 'width: 841px; height: 525px'))
+        self.assertFalse([m for m in out['problems'] if 'cannot hold' in m], out['problems'])
 
     def test_a_pages_own_control_grown_at_its_edge_stays_on_the_page(self):
         """Grown about its centre, a control drawn flush with the screen's edge
@@ -6421,7 +6985,9 @@ class _PagesProbe(_Probe):
             self.assertTrue(_inside(r, self.frame()['center']['rect'], 0), (f'Scene {i}', r))
         heads = [g['text'] for ctl in on.values() for n, (g, r, _) in ctl.items() if g.get('kind') == 'label'
                  and g.get('derived') and n.endswith(' Heading')]
-        self.assertIn('Scenes', heads)
+        # In capitals where the template sets its 320's column labels so.
+        caps = designsys.load(self.THEME)['writing'].get('column_labels_320') == 'caps'
+        self.assertIn('SCENES' if caps else 'Scenes', heads)
         for where, ctl in on.items():
             self.assertEqual(_gaps(ctl, self.PANEL), [], where)
             for n, (g, r, _) in ctl.items():

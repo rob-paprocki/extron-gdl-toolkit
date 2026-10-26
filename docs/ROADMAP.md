@@ -22,12 +22,13 @@ opening GUI Designer.**
   design system translates to a spec and builds (`docs/claude-design.md`).
   From prose: one conference-room brief, given to a fresh designer per theme
   with only the design system, built and verified on the TLP1035T and the 525
-  beside it in all four themes, and on the 320 in Mach, Shockwave and
-  Turbulence (§6).
+  beside it in all four themes, and on the 320 in all four (§6).
 - **What the controls do**, from the same spec: `gdl.idmap` checks the page
   flips and writes the programmer's ID map, verified against the built panel
   (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
-  keep modal popups modal. `docs/idmap.md`.
+  keep modal popups modal. A revised canvas keeps every ID the program uses,
+  but those in a hub window its pages' order renamed (*Backlog*), and says
+  what changed (`--previous`, `docs/idmap.md` §9). `docs/idmap.md`.
 - For test results and branch or PR state, run `python -m pytest`, `git` and
   `gh` — a snapshot written into a doc is stale the next time anything merges.
   Setting up a machine is in `README.md` *Setup*.
@@ -44,12 +45,7 @@ opening GUI Designer.**
 
 ## Mine, in order
 
-1. **Run the bug hunt** (`workflows/gdl-bug-hunt.js`) on a host with enough
-   commit limit for the fan-out. `tests/audit_corpus.py` has done the cheap deterministic
-   part; the workflow is for the judgment-heavy dimensions: collection traps,
-   dead guards, silent no-ops, plan-contract drift, verifier blind spots,
-   fields a clone inherits, what is secretly Afterburn-only, layout-math edges.
-2. **What a real-size build spends its time on.** `examples/boardroom-full.json`,
+1. **What a real-size build spends its time on.** `examples/boardroom-full.json`,
    23 pages, builds and verifies, but Save and Build's time varied threefold
    over runs of the same spec on one host, and dropping the donor's pages did
    not decide it - though they are nearly all of a one-page panel's build
@@ -61,7 +57,7 @@ opening GUI Designer.**
    took 168 s, and 935 s made again in that mode with other work on the host
    (`docs/from-scratch.md` §7). Measure with the mode off, on a quiet host,
    with and without real-time scanning of the files a build writes, first.
-3. **A Design canvas as the front end: every panel.** Afterburn's design system
+2. **A Design canvas as the front end: every panel.** Afterburn's design system
    builds one canvas for every panel a room has, each sized for its physical
    screen - proven on the TLP Pro 1035, 725, 525 and 320 (`docs/claude-design.md`
    §4 and §6). Mach, Shockwave and Turbulence list every panel too - main
@@ -76,66 +72,98 @@ opening GUI Designer.**
    spreads a room over twelve (§4, §6). Round four's rooms, drawn for the
    1035, 725, 525 and 320 from the region-frame READMEs, are translated and
    what each designer still has to fix is named (§6, spec item 10): revised
-   from the new READMEs, they are to be built on a host with GUI Designer. What is left is in §7: a modal that
-   says more than the 320's one screen, and a plain container there.
+   from the new READMEs, they are built and verified on all sixteen panels.
+   What is left is in §7: a plain modal that says more than the 320's one
+   screen, a Clock on Shockwave's and Turbulence's 320, a plain container
+   there, and the region frame's gaps below.
    800x480 is two series in all three themes - the 520, tier B, and the 720,
    tier A, which take different layouts - where Afterburn has only the 520.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
    A native-size seed beats a retarget, which matches Extron's own hand layout
    for only 22% of controls. The other gaps in `seeds/README.md` (Teams Rooms,
    Zoom Rooms, Afterburn's 1520 and 535) wait for a job that needs one.
-4. **Retire the client fixtures.** `fixtures/` is a real client's project,
+3. **Retire the client fixtures.** `fixtures/` is a real client's project,
    in the archive only, and the builds in `archive/gdlwork/` made with it as
    the donor carry the same material (`archive/README.md` *Sensitivity*). The
    render baseline is scored against the fixtures' snapshot exports, so they
    go last: first a synthetic fixture with the same reach (many pages, every
    control type the renderer scores) and GUI Designer's snapshot exports of
    it, and a new `tests/baseline.json` from `tests/score.py` - which also gives
-   the public copy a render baseline; then delete them. The examples and CI
-   already run on a seed.
+   the public copy a render baseline; then delete them. The dependency is
+   wider than the baseline: tests in several files (those marked
+   `needs_client`, and `test_verify_built.py`'s), steps of CI,
+   `examples/edits.json`, `tests/audit_corpus.py`, the bug-hunt corpus and
+   `docs/editing.md`'s verification table also read the fixtures, and all of
+   them skip or fail where the fixtures are not (a host that has only the
+   public copy). The worked examples that build run on a seed.
 
 ## Backlog - real, not urgent
 
-- **`gdl.compose` draws a translucent control at full strength.** The Shockwave
-  seeds' video well - white at 85% transparency, which Build bakes into its art
-  as alpha 38 - renders opaque white, because `paste` writes any pixel above
-  alpha 0 as GUI Designer's snapshots do (`docs/render-fidelity.md` §2); the
-  compositor never reads `transparencyField`, and the art already carries it.
-  Ten controls in each of the two archived client fixtures set it (75 and
-  80), and so do the Turbulence seed's side bars, modal windows and room shape.
-  Blending any of them moves the preview off the snapshots the baseline is
-  scored against, so score a change before and after (`docs/gdl-format.md` §7).
-  The template renders and the critique loop blend instead
-  (`docs/render-fidelity.md` §2).
+- **A face with no recovered file previews in Arial**, now said aloud
+  (`gdl.design compare` and `gdl.spec render` print `compose.FALLBACKS`) but
+  not yet drawn right: Roboto (the Shockwave Start clock), Extron GUI
+  Configurator, Segoe UI and GUIC Video Conference 1a have no file in
+  `gdl/fonts/`. The sign-off draws them from the built file when it carries
+  them; the spec preview, with no built file, could read them from the seed
+  that does (`gdl.fonts.find_face`).
+
+- **A hub window renamed by the working pages' order loses its IDs.** A hub
+  names the window a later working page derives after that page
+  (`_one_name_each`), and a derived control is keyed by its window's name, so
+  a revision that draws the working pages in another order renames the windows
+  and retires the IDs of what the hub draws in them: 12 of 142 on round four's
+  Shockwave canvas with its boards reversed. translate notes each one and the
+  order that keeps them (`docs/idmap.md` §9); no `id` on the canvas can pin
+  them. Keying those controls by their host page and the template's window
+  name would keep them, with the window's new name still reported as a change.
+
 - `renumber` is planned and checked but has never been through a build. Build
   one and run `tests/verify_built.py` against it - which, until the behavior
   work, never compared a built control's ID at all (it looked up `UserID`;
   layout.json writes `UserId`).
 - **Behavior the format carries but the spec cannot yet say:** the Offline Page
-  and its enable flag, and a popup's auto-hide timeout (0 on every popup in the
-  corpus). Both are applier work.
+  and its enable flag (some seeds ship it enabled and the rest disabled), and
+  a popup's auto-hide timeout. The timeout is in the authoring graph only
+  (`PBPopupPage.timeoutField`, 0 on every popup in the seeds); the built
+  `layout.json` the panel loads has no timeout key. Both are applier work.
+- **A reference bound to one popup by its ID.** Nine of Extron's seeds show
+  their ungrouped Volume Level so (`docs/gdl-format.md` §5), but the applier
+  binds each reference it makes to a group, so `gdl.spec check` refuses a
+  standard popup with no group and a spec gives the strip one. Authoring the
+  seeds' own way needs the applier to write the reference's `PopupID` and
+  `IsPopupPageIdValid` and the popup's back-pointer to it, and a build to show
+  it reads back - `tests/verify_built.py` already holds such a reference to a
+  popup that is there.
 - **A seed of a panel's other form.** `seeds/` holds one form per size - the
   725T, 525T, 320M, 1535M - so a TLP725M, 725C, 525M, 525C, 320C or 1535T spec
   has no seed, and is refused the other form's rather than built as it
-  (`seeds/README.md`). `gdl.seeds pick` prints the `New-GdlSeed.ps1` line for
-  the form's own (`Afterburn TLP725M.gdl`); none has been made, so the wizard's
-  name for each form's panel type, as `seeds.panel_type()` spells it, is unproven.
-- `docs/from-scratch.md` §6: control-ID uniqueness and `referenceCountField`
-  (question 6) are untested; an out-of-corpus border radius/thickness *builds*
-  but was never checked to *rasterize* correctly; preview fidelity on a fully
-  synthetic page rests on one control.
+  (`seeds/README.md`). Nor has most of what a profile lists a seed of its own
+  part number: `gdl.seeds pick` finds none for the 835T and (outside Afterburn, whose
+  `Afterburn 835 (Project1).gdl` it finds) the 835M, nor for the TLP1220MG and
+  TLP1220TG, the TLP1225MG and TLP1225TG, the 1025s and 1020s, the 1525MG, the
+  720M and 720C and others, and prints the
+  `New-GdlSeed.ps1` line for the form's own (`Afterburn TLP725M.gdl`); none
+  has been made, so the wizard's name for each form's panel type, as
+  `seeds.panel_type()` spells it, is unproven.
+- **A Group's title in capitals on the 320 is extrapolated.** Mach's and
+  Shockwave's 320 seeds set only their camera column labels in capitals (ZOOM,
+  FOCUS, INPUTS, IRIS); `writing.column_labels_320` applies it to every Group
+  title there, PRESETS and DISPLAY included, which no seed shows. Afterburn's
+  320 seed uses capitals too, but its translation draws no Group heading there.
+  Not an Extron requirement (`docs/design-rules.md` keeps extrapolated rules apart).
+- `docs/from-scratch.md` §6: an out-of-corpus border radius/thickness *builds*
+  but was never checked to *rasterize* correctly; preview fidelity on a fully synthetic page rests on
+  one control. Control IDs need not be unique: Extron's own built seeds repeat
+  them within a page and across pages, and `examples/boardroom-full.json`
+  mirrors its tabs under one ID on every page and builds with no problems. The
+  one unbuilt case is a twin the spec authors on the same page (Shockwave's
+  tab twins, below).
 - **`gdl.compose` draws bold Open Sans as regular.** `gdl/fonts/` carries Open
   Sans Regular and Light only, and `face()` falls back to the regular file, so
   a bold caption on a seed-built panel renders regular - the largest remaining
   difference in `gdl.design compare`. Open Sans Bold is Apache 2.0 like the
   others; adding it is a render change, so it needs `tests/score.py` before and
   after.
-- **`gdl.compose` draws a face in the build it finds, not the panel's.** A face
-  is resolved by family, so a panel on the Afterburn 320, 525, 725 or 300M
-  Portrait seed previews its icons in the kit's Extron-Afterburn, 6% of an em
-  lower than the build it embeds draws them (`docs/design-rules.md` §6).
-  Drawing each panel's own needs the face its project carries
-  (`gdl.fonts.carried`), which the compositor does not read.
 - **A horizontal slider in a template whose thumb is not square** (Shockwave's,
   52 across and 34 along). The spec turns the thumb's box as the canvas does, as
   Build keeps width and height literal: the Zoom Rooms seeds' two horizontal
@@ -152,8 +180,11 @@ opening GUI Designer.**
   each paged, until then.
 - **A left `Rail` on Afterburn.** Mach, Shockwave and Turbulence have a
   `LeftRail` region (`docs/claude-design.md` §3). Afterburn's canvas has one
-  Rail, the right one: side controls on the left are the Page's own, and on a
-  panel with no room beside its main region they are refused, by name.
+  Rail, the right one: side controls on the left are the Page's own. On the 725
+  and the 525 they are scaled and grown with no band of their own, and refused,
+  by control name, only where they overlap another touch target or leave the
+  canvas (a Label or Group under a popup region passes); on the 320 the page is
+  refused as 'rows need N px'.
 - **Afterburn's working page on the room's other panels.** Drawn at the
   template's own spacing it carries to the 1035's scale alone: its `list` and
   `toggle` buttons are kit art, which keeps its shape as it grows to the touch
@@ -178,19 +209,6 @@ opening GUI Designer.**
   leaves no room for Previous and Next beside them: going on needs the
   template's own foot strip, its More and Back where the Rail's row stands,
   or the 320 drawn as its own template draws it (above).
-- **A popup region narrower than its popups on Afterburn's 300.** A popup
-  scales with main, and a popup region in a row is at most the row's width:
-  on the 300 portrait the working page's 880-wide region is drawn 294 px
-  across and its popups 307 (366 and 374 turned), though a popup takes its
-  reference's size (Standards p.70). The region could keep its popups'
-  width, or the popups the region's.
-- **A standard popup with no `role` on a bar theme's 320.** No 320 seed has
-  a standard popup to clone (each series' `kinds`). Afterburn's 320 draws
-  every standard popup as a page of its own, and Mach's, Shockwave's and
-  Turbulence's draw a `role="source"` popup as one (`docs/claude-design.md`
-  §4) - but a popup with no role keeps its kind there, and the applier
-  throws, *donor project has no standard popup to clone*, at build time. It
-  should be a page there too, or refused by name at translate.
 - **A row of loose controls does not re-space as its captions grow.** In a
   free layout - a source popup's well, a window - each control grows about
   its centre to its widest caption at the panel's type floor and its
@@ -240,15 +258,13 @@ opening GUI Designer.**
     holds no word longer than about five letters - a longer one ('Normal',
     'Streaming') runs past the key's art, where the template sets its own
     words in the art or at 11 pt (whether a 320 key's caption may take the
-    template's own size is the owner's call); a column heading says the
-    designer's words as written, where Mach's and Shockwave's 320 templates
-    capitalise theirs (ZOOM, INPUTS);
+    template's own size is the owner's call);
   - on a hub the region page derives to the hub's grammar
     (`docs/claude-design.md` §3) - built and verified on Mach's 525 and
     535, Shockwave's 525 and 535 and Turbulence's 525
     (`archive/job-e823df9b/hubs/`) - and what it does not do yet: the
-    popups' photo and Turbulence's device pictures (below) are not yet
-    built; Turbulence's settings windows' own pictures (the 525's Lighting
+    popups' photo and Turbulence's device pictures (below) are built
+    (`archive/job-e823df9b/seed-art/`); Turbulence's settings windows' own pictures (the 525's Lighting
     Control lightbulb, Audio Control speaker and Display Control monitor)
     are an Image the designer places, which the window does not draw by
     itself; a hub's
@@ -256,9 +272,9 @@ opening GUI Designer.**
     under its heading, where Extron's draws a card per display (Display 1
     and 2) - a canvas with two displays has no way to say so yet; a later
     Section's heading has no place among the hub's options and is named, as
-    is the footer's clock; two region pages on one canvas would derive the
-    same popups (Select Source, the options) on a hub, and are refused as a
-    name both have; Mach's Settings popup draws a fourth tile, Recording,
+    is the footer's clock; two region pages on one canvas derive the
+    same popups (Select Source, the options) on a hub once, and rename what
+    differs (`_one_name_each`); Mach's Settings popup draws a fourth tile, Recording,
     whose Main Recording page the regions do not draw. The hubs set their
     menu glyphs, their Volume Level strip's speaker glyphs and Shockwave's
     Up and Down in icon faces (Extron-Lift, Extron GUI Configurator,
@@ -285,12 +301,10 @@ opening GUI Designer.**
     stretched `image`), its source popups' device pictures (a fitted one,
     by the source's `device`) and Shockwave's and Turbulence's hub popups
     on the page's photo (a popup's `background_image`) - translates and
-    checks clean on every panel the region canvases list, and is not yet
-    built in GUI Designer: what the applier does with an `image` control's
-    art and a popup's photo (`Apply-GdlPlan.ps1`) is pinned by text tests
-    only, so a build of the Turbulence region canvas on the 1035 and the
-    525 and of Shockwave's on the 525, each through `verify_built` (its
-    `check_images` and the popup's photo), is the proof. A source naming no
+    checks clean on every panel the region canvases list, and is built and
+    verified in GUI Designer (`archive/job-e823df9b/seed-art/`: Turbulence's
+    on the 1035, 725, 525 and 320M, Shockwave's on all five panels, and
+    again in round four). A source naming no
     device the kit pictures (the region canvas's Streaming) leaves the place
     empty until it says `device`, and a device the panel's seed pictures
     for no source (a `monitor`, which only the 525's settings popups draw)
@@ -321,8 +335,10 @@ opening GUI Designer.**
     and check clean on every panel the region canvases list, and are not yet
     built in GUI Designer: Shockwave's 1035 tab twins - a caption-only
     button inside the tab with the tab's ID, as the template draws it, the
-    first spec mirror on one page - wait for a build and `verify_built` on
-    the 1035, and the 1535's, which no region canvas lists, for a probe;
+    first spec mirror on one page - were built in round four's Shockwave 1035
+    room and verified clean (`archive/job-e823df9b/round4/shockwave/reverify.log`,
+    once the verifier's own limits were fixed), and the 1535's, which no
+    region canvas lists, waits for a probe;
   - Shockwave's and Turbulence's region defaults (the profile's `regions`:
     their tabs, rail, launchers, Room Mode, Mute, Help and Power) are the
     looks those profiles measured off the 1035's seed, built and verified on
@@ -331,8 +347,9 @@ opening GUI Designer.**
     against it;
   - Shockwave stands Audio Control in its right rail on the 1035's series
     only, and in its left rail's second group elsewhere: a RightRail
-    `slot="audio"` is refused by name on a panel whose template does not
-    draw it there, rather than moved to where that template does;
+    `slot="audio"` is moved into the LeftRail's second Section on a panel whose
+    template does not draw it there, and refused by name only where that
+    Section is missing or full;
   - the truth ledger (`gdl/designsys/truth/`, `docs/claude-design.md` §2
     *Truth*) covers a theme once its file is there: `python -m gdl.designsys
     audit <theme>` names a theme with none, and every entry or claim not yet
@@ -388,24 +405,27 @@ opening GUI Designer.**
   none met by the huddle canvas:
   - a canvas's own repeats (`sc-for`) in a main area are not laid out for
     other panels - they stay where they were drawn;
-  - a derived control named like a canvas control on its page, two controls
-    with one name on a page, and a panel listed twice are not refused by name
-    (the second is refused, as an ID clash);
-  - an empty Group leaves an empty region on a mid-size panel;
-  - captions are measured with the fallback face until Open Sans has loaded,
-    about 4% narrow;
-  - `gdl.design compare` says nothing of a panel folder with no built file or
-    several, or of a page the built file lacks;
-  - the map of every panel lists rows in the order first met, shows the first
-    copy's control name only, and keeps a caption's line breaks;
-    `verify_idmap.py` on it without `--panel` stops with a traceback.
+  - a panel listed twice in a Page's `panels` is silently one panel;
+  - an empty Group draws an empty region on a mid-size panel and is refused
+    downstream, not by name where it is drawn (on a mid-size panel by
+    `gdl.spec`'s 'popup reference bound to group ... no popup is in that
+    group', on the 320 as a `nav` naming no page or popup);
+  - captions are measured with the fallback face until Open Sans has loaded
+    (the bundle allows 5% for it), and nothing waits for the face or checks
+    that Google Fonts was reachable, so a translation can differ between
+    hosts;
+  - `gdl.design compare` scores nothing for a page the built file lacks (the
+    sheet shows 'Not in the built file'; the command line says nothing);
 - **ECP's phone and tablet canvases have no donor, and cannot have one.** The
   six themable combinations (Afterburn / Mach / Shockwave × 16-9 and 16-10) are
-  all seeded. The other five presets — iPhone, Android Phone, iPad, Android
-  Tablet and Custom — only offer Blank in the wizard, and a blank ECP project is
-  1 page and 3 controls, so there is nothing useful to clone from. Authoring for
-  a phone canvas therefore means `retarget` off a 16-9 seed, which has never been
-  measured against an ECP target.
+  all seeded, but as seeds only: a spec for the 16-10 seeds (1280x800) fails
+  `Panel.check` ('size 1280x800 is not a canvas the VTLPEcp has'), since
+  `spec.sizes('VTLPEcp')` is 1920x1080 alone. The other five presets — iPhone,
+  Android Phone, iPad, Android Tablet and Custom — only offer Blank in the
+  wizard, and a blank ECP project is 1 page and 3 controls, so there is
+  nothing useful to clone from. A phone canvas cannot be authored either:
+  `retarget` and `check` refuse any ECP size but 1920x1080 (`docs/design-rules.md`
+  §1 calls 1920x1080 a default, which the code treats as the only size).
 - **The probes' error and warning counts are still 1.27.0.9 numbers.**
   `New-FormatProbes.ps1` has been re-run on 1.28.0.7 and all three still author,
   open and build, but the Build Manager's own 0-errors/0-warnings readout was not

@@ -69,7 +69,7 @@ together.
 | `seeds/` | themed seed projects to author from without client material (Git LFS); its README lists them |
 | `tests/audit_corpus.py` | re-tests the repo's documented beliefs against every project it can reach |
 | `research/` | measured findings and unshipped render improvements, with their numbers and scripts |
-| `workflows/` | the planned multi-agent bug hunt, not yet run |
+| `workflows/` | the multi-agent bug hunt - falsifies the code's and docs' claims against every project, then verifies each finding adversarially |
 | `archive/` | raw working state carried off an earlier build host, kept as evidence (Git LFS) |
 | `vendor/` | Extron's templates and icons, on disk but not pushed - see its README |
 | `tools/public_sync.py` | builds and checks the public copy from the private archive; `tools/hooks/pre-push` enforces it |
@@ -162,7 +162,8 @@ Write the change as JSON, resolve it against the real project, then apply it.
 Five operations: `rename` captions and `restyle` colors, both state by state;
 `states` to add, remove or rename a button's states; `retarget` to another
 panel model, or the other way up for a panel that rotates, with optional
-rescaling; and `renumber` addressable IDs. Selectors
+rescaling; and `renumber` addressable IDs (planned and checked, never yet
+built). Selectors
 are ANDed and match exactly or by regex. `docs/editing.md` has the detail.
 
 ```bash
@@ -186,6 +187,7 @@ python -m gdl.spec plan    examples/panel.json out/plan.json --donor "seeds/Afte
 python -m gdl.idmap check examples/huddle-functions.json   # what the controls do
 python -m gdl.idmap write examples/huddle-functions.json out/idmap
 python -m gdl.idmap from-built <panel.gdl> out/idmap        # a panel that was never a spec
+python -m gdl.idmap diff out/idmap-r1 out/idmap-r2          # what a program meets in a revision
 ```
 
 Look at the preview before building. The compositor is scored against GUI
@@ -197,7 +199,9 @@ seed carries, or a border of a near shape, it names, and `plan --donor` appends
 or builds. `SKILL.md` has the full procedure, and where GUI Designer is installed
 `powershell\New-GdlPanel.ps1` runs all of it, build and verification included.
 A spec can also say what its controls do; `gdl.idmap` checks the page flips and
-writes the programmer's ID map from the same file (`docs/idmap.md`).
+writes the programmer's ID map from the same file (`docs/idmap.md`). A revised
+canvas translated with the previous map (`--previous`) keeps every ID the
+program uses, and its map comes with the changes (`docs/idmap.md` §9).
 
 ## Applying a plan, which needs GUI Designer
 
@@ -278,9 +282,10 @@ out:
 - `fixtures/` - a client's real project files and GUI Designer's snapshot
   exports of them, the render baseline's ground truth;
 - the builds in `archive/gdlwork/` made from that project, two screenshots
-  whose status bar shows an account, a few evidence logs and scratch files
-  that name the client or the owner's folders, and the working sessions'
-  transcripts;
+  whose status bar shows an account, the evidence logs and builds of
+  `archive/job-2419a20b/` and `archive/job-e823df9b/` (that `docs/claude-design.md`
+  and `docs/ROADMAP.md` cite throughout), scratch files that name the client or
+  the owner's folders, and the working sessions' transcripts;
 - the design notes and plan for the split itself;
 - GUI Designer's per-user settings file, which neither repository tracks.
 

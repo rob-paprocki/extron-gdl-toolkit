@@ -818,7 +818,7 @@
         "README Visual foundations"
       ],
       "template": {
-        "does": "The template packs controls 0 to 8 px apart - the call tiles 0, docks 2, Help and Room Mode 2, rings 8 (touching on the 725 and 720; on the 525 Display Control, More and Power Down overlap by 3 to 5 px) - and places them off the 10 px grid: tabs at 141, 282, 423, 563, 705 and 846; rings at x 19 and y 186, 294 and 402; Power Down at 1035; Mute at 1159; the slider at 1183.",
+        "does": "The template packs controls 0 to 8 px apart - the call tiles 0, docks 2, Help and Room Mode 2, rings 8 (touching on the 725 and 720; on the 525 Display Control, More and Power Down overlap by 3 to 5 px) - its header tabs further, 13 to 15 px apart on the 1035, 10 to 11 on the 725, 14 to 17 on the 1525 and 8 on the 720, and places them off the 10 px grid: tabs at 141, 282, 423, 563, 705 and 846; rings at x 19 and y 186, 294 and 402; Power Down at 1035; Mute at 1159; the slider at 1183.",
         "seed": "seeds/Turbulence 1035.gdl",
         "pages": [
           "Main SD",
@@ -827,7 +827,7 @@
       },
       "status": "deviation",
       "reason": "The 2 mm gap the toolkit checks between touch targets and Extron's documented nine-button and spacing standards (docs/design-rules.md section 2), which a designer's own controls keep; the template's own sets are the owner's exception (2026-10-22), kept as one set at the step the frame measures by the region components. The README now says the template does not always keep them.",
-      "here": "Your own controls keep 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards. The template's own sets stand as it draws them, 0 to 8 px apart, and the region components draw them so.",
+      "here": "Your own controls keep 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards. The template's own sets stand as it draws them - its header tabs 8 to 17 px apart from panel to panel, its rings, call tiles and docks 0 to 8 on the 1035 - and the region components draw them so.",
       "fix": [
         {
           "readme": "Extron's Design Standards, which its own templates do not always keep"
@@ -839,7 +839,7 @@
       "gone": [
         "a set the template stands 1 px apart"
       ],
-      "evidence": "Main SD's tabs, rings, docks and Help; Main VC's call tiles at y 173, 262 and 351."
+      "evidence": "Main SD's tabs, rings, docks and Help; Main VC's call tiles at y 173, 262 and 351; each series' frame's top.tabs.items, six tabs apiece."
     },
     {
       "id": "turbulence-26",

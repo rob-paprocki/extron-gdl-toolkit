@@ -5,6 +5,7 @@ The point is not to ship this image - it is to prove the render RULES
 (geometry, z-order, state choice, alignment enum, point-size factor, line
 metrics) against ground truth the application produced itself.
 """
+import contextlib
 import io
 import json
 import os
@@ -69,10 +70,84 @@ def _system_fonts():
     return _sysindex
 
 
+# The faces the built file being drawn carries (gdl.fonts.carried), or None.
+# Set only by as_the_panel(): the render baseline is scored in the Monotype
+# faces the fixtures embed, and drawing a Mach seed's Windows Arial there would
+# move it.
+_carried = None
+_carried_tag = None
+_PROJECT_FACES = {}
+
+
+def project_faces(path):
+    """gdl.fonts.carried(path), read once per file (and per edit of it)."""
+    from .fonts import carried
+    key = _project_key(path)
+    if key not in _PROJECT_FACES:
+        # Only the latest edit of a path: an earlier one's bytes are never read
+        # again, and a long session rebuilds the same file many times.
+        for old in [k for k in _PROJECT_FACES if k[0] == key[0]]:
+            del _PROJECT_FACES[old]
+        _PROJECT_FACES[key] = carried(path)
+    return _PROJECT_FACES[key]
+
+
+def _project_key(path):
+    """(abspath, mtime): the one identity of a built file, for both the read of
+    its faces and the faces drawn from them - a file rebuilt in place is new."""
+    return os.path.abspath(path), os.path.getmtime(path)
+
+
+def _carried_face(name, bold, italic):
+    """The bytes of the project's own `name` face in this style, or None.
+    The Regular stands in for a style the project does not carry, as FILES'
+    (name, 0, 0) does for a recovered one."""
+    mine = [f for f in _carried or () if f['family'] == name and f['bytes']]
+    def style(f):
+        s = (f['style'] or '').lower()
+        return int('bold' in s), int('italic' in s or 'oblique' in s)
+    for wanted in ((int(bool(bold)), int(bool(italic))), (0, 0)):
+        for f in mine:
+            if style(f) == wanted:
+                return f['bytes']
+    return None
+
+
+@contextlib.contextmanager
+def as_the_panel(project=None):
+    """Draw as the panel shows, not as GUI Designer's snapshot export does.
+
+    Two rules differ, and a sheet a client signs wants the panel's: a
+    translucent control blends over what is under it (BINARY off), and a face
+    is the one the built file `project` embeds, not the build recovered into
+    gdl/fonts/ (Afterburn's 320/525/725/300M seeds embed a different
+    afterburn.ttf from the others; Mach, Shockwave and Turbulence embed Windows
+    Arial, not the Monotype the fixtures do). A face the file does not carry
+    falls back as it always has. The scoring path (tests/score.py) never enters
+    this and keeps the snapshot rule. Both settings go back as found. Nested, an
+    inner call with no `project` keeps the outer one's faces (only BINARY is
+    set again); one with its own replaces them until it exits."""
+    global BINARY, _carried, _carried_tag
+    was = BINARY, _carried, _carried_tag
+    BINARY = False
+    if project is not None:
+        _carried = project_faces(project)
+        _carried_tag = _project_key(project)
+    try:
+        yield
+    finally:
+        BINARY, _carried, _carried_tag = was
+
+
 def face(name, bold, italic, px):
-    key = (name, bold, italic, round(px, 2))
+    key = (name, bold, italic, round(px, 2), _carried_tag)
     if key in _cache:
         return _cache[key]
+    if _carried:
+        data = _carried_face(name, bold, italic)
+        if data:
+            f = _cache[key] = ImageFont.truetype(io.BytesIO(data), size=px)
+            return f
     primary = FILES.get((name, bold, italic)) or FILES.get((name, 0, 0))
     own = [c for c in [primary] + ALIASES.get(primary or '', []) if c]
     candidates = own + [c for c in ['arial.ttf'] if c not in own]
@@ -330,13 +405,19 @@ def _draw_box(canvas, box, spec, fill, stroke):
     # A capsule is stored as radius 9999 rather than a shape flag, so clamp
     # rather than hand Pillow a radius larger than the box.
     radius = min(radius, min(box[2], box[3]) // 2)
-    d = ImageDraw.Draw(canvas)
+    # ImageDraw writes an RGBA fill over the pixels under it, translucent or
+    # not. Off the snapshot rule, draw on a clear layer and composite it, so a
+    # fill at 85% shows what is under it, as the panel does.
+    layer = Image.new('RGBA', canvas.size, (0, 0, 0, 0)) if not BINARY else canvas
+    d = ImageDraw.Draw(layer)
     if radius > 0:
         d.rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=fill,
                             outline=stroke, width=max(1, thickness) if stroke else 0)
     else:
         d.rectangle([x0, y0, x1, y1], fill=fill,
                     outline=stroke, width=max(1, thickness) if stroke else 0)
+    if layer is not canvas:
+        canvas.alpha_composite(layer)
 
 
 def group_members(layout):
@@ -434,6 +515,10 @@ def flatten(canvas):
     contract is true rather than true-by-accident-of-the-caller.
     """
     bg = Image.new('RGBA', canvas.size, (0, 0, 0, 255))
+    if not BINARY:
+        # The panel's black shows through what is translucent.
+        bg.alpha_composite(canvas)
+        return bg
     bg.paste(canvas, (0, 0), canvas.getchannel('A').point(lambda a: 255 if a else 0))
     bg.putalpha(255)
     return bg

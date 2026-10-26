@@ -12,7 +12,9 @@ and follow it:
   template's design system): `docs/claude-design.md` §1 *Build: in Claude Code*
   - read the canvas, translate it, critique it against the template (step 3),
   build and verify every panel it lists, and put each artboard beside its
-  built page for sign-off.
+  built page for sign-off. A revision of a canvas already handed to a
+  programmer is translated against the previous ID map (`--previous`,
+  `docs/idmap.md` §9), so the program's IDs are kept.
 - **A description, or a spec**: `SKILL.md` workflow A.
 - **An existing panel**: `SKILL.md` workflow B.
 

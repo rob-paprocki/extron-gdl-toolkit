@@ -2,6 +2,11 @@
 
     python -m gdl.design translate <canvas dir> <out dir>         # out/<panel>/spec.json
     python -m gdl.design translate <canvas dir> <out spec.json>   # the design panel's
+    python -m gdl.design translate <canvas dir> <out> --previous <idmap>   # a revision
+
+A revision of a canvas whose ID map a programmer already has is translated
+against that map: every control it knew keeps its ID, and an ID whose control
+is gone is retired rather than handed on (pin_ids, docs/idmap.md §9).
 
 A canvas whose Pages list `panels` is translated once per panel: the design
 system lays every artboard out for that panel (window.__GDL_PANEL) and the
@@ -24,6 +29,7 @@ Anything on an artboard that paints but is not one of the system's components
 is reported and blocks the spec: a panel cannot build it, and a design that
 looked right and shipped different is the failure this repo exists to catch.
 """
+import collections
 import datetime
 import hashlib
 import html
@@ -34,7 +40,7 @@ import shutil
 import subprocess
 import sys
 
-from . import designsys, seeds, spec as gdlspec
+from . import designsys, idmap as gdlidmap, seeds, spec as gdlspec
 
 # Where Chrome lives when neither --chrome nor $CHROME says. Headless Chrome is
 # the only runtime this needs, and only here.
@@ -308,9 +314,11 @@ class Canvas:
         order += [b for b in self.index.get('boards') or {} if b not in order]
         return order
 
-    def translate(self, rendered=None):
+    def translate(self, rendered=None, previous=None):
         """(spec, problems, notes). `rendered` maps board -> probe output, for
-        tests; otherwise each board is laid out in Chrome."""
+        tests; otherwise each board is laid out in Chrome. `previous`, the
+        previous delivery's ID map (gdl.idmap.load_previous), keeps every ID
+        it gave (pin_ids)."""
         if rendered is None:
             if not self.chrome:
                 return None, ['no Chrome found - pass --chrome or set CHROME'], []
@@ -326,23 +334,33 @@ class Canvas:
         if spec is not None:
             if not self._seed_has_line(spec):
                 notes = notes + lines_as_shapes(spec)
+            # Before the IDs are pinned: a designer's own `id` is what it reads.
+            if previous is not None:
+                notes = notes + revision_notes(spec, previous)
             # A region page's chrome keeps its seed IDs and a mirror its
-            # control's, as on a canvas of panels; nothing else is pinned here.
-            if any('_seed_id' in c or '_mirror' in c for it in spec['pages'] + spec['popups']
-                   for c in it['controls']):
-                problems = problems + pin_ids({'': spec}, [''])['']
+            # control's, as on a canvas of panels; nothing else is pinned
+            # here - unless a previous map's IDs are to be kept, when every
+            # one is, so that the spec's bands cannot renumber them.
+            if previous is not None or any('_seed_id' in c or '_mirror' in c
+                                           for it in spec['pages'] + spec['popups'] for c in it['controls']):
+                problems = problems + pin_ids({'': spec}, [''], previous)['']
+            if previous is not None:
+                notes = notes + renamed_windows(spec, gdlidmap.view_of(previous, _panel(spec)),
+                                                {r['id'] for r in spec.get('_retired') or []})
             problems = problems + _spec_check(spec, self._seed_geometry(spec), problems)
         for item in (spec or {}).get('pages', []) + (spec or {}).get('popups', []):
             item.pop('_host', None)
         return spec, problems, notes
 
-    def translate_panels(self, rendered=None):
+    def translate_panels(self, rendered=None, previous=None):
         """({panel: spec} or None, {panel: problems}, {panel: notes}) - one spec
         per panel the canvas's Pages list, each laid out for its panel by the
         design system (window.__GDL_PANEL). All or nothing: any panel with a
         problem means no specs. A canvas that lists no panels is its profile's
         one design panel. `rendered` maps panel -> board -> probe output, for
-        tests; otherwise each board is laid out in Chrome once per panel."""
+        tests; otherwise each board is laid out in Chrome once per panel.
+        `previous`, the previous delivery's ID map (gdl.idmap.load_previous),
+        keeps every ID it gave (pin_ids)."""
         if rendered is None:
             if not self.chrome:
                 msg = ['no Chrome found - pass --chrome or set CHROME']
@@ -397,9 +415,19 @@ class Canvas:
         # Before the IDs are pinned, which number unnamed controls by kind.
         for model, q in lines_everywhere(specs, self._seed_has_line).items():
             notes[model] += [f'{model}: {x}' if model else x for x in q]
+        # Before the IDs are pinned: a designer's own `id` is what it reads.
+        first = next(iter(specs), None)
+        if previous is not None and specs.get(first) is not None:
+            notes[first] += [f'{first}: {x}' if first else x for x in revision_notes(specs[first], previous)]
         if not any(problems.values()) and all(v is not None for v in specs.values()):
-            for model, q in pin_ids(specs, list(specs)).items():
+            for model, q in pin_ids(specs, list(specs), previous).items():
                 problems[model] += [f'{model}: {x}' if model else x for x in q]
+            # Before `_host` goes: a hub's window is its page's.
+            if previous is not None:
+                retired = {r['id'] for r in specs[first].get('_retired') or []}
+                for model, spec in specs.items():
+                    notes[model] += [f'{model}: {x}' if model else x for x in renamed_windows(
+                        spec, gdlidmap.view_of(previous, model, model == first), retired)]
         # Each panel's spec as `gdl.spec check` sees it - the touch minimum,
         # the floor, the spacing a grown caption may have broken - here,
         # before a build is ever started, and for every panel drawn whatever
@@ -529,8 +557,10 @@ class Canvas:
                 names_first = b
             stems[b.rsplit('/', 1)[-1].rsplit('.dc.html', 1)[0]] = name
             item = {'name': name, 'controls': [], '_board': b, '_host': name}
-            # Build draws a modal as the page beneath under black at alpha 166
-            # and ignores its background, so a modal carries none.
+            # Build draws a modal black at its own transparency over the page
+            # beneath, never in its background color, and the spec writes it
+            # the 35% - alpha 166 - the canvas draws (gdl.spec
+            # MODAL_TRANSPARENCY). So a modal carries no background.
             if pg.get('background') and not pg.get('modal'):
                 item['background'] = pg['background']
             # A page's photo - and a hub popup's, which Shockwave's and
@@ -545,8 +575,9 @@ class Canvas:
                     item['background_layout'] = profile['background_layout']
             if pg.get('reached_by'):
                 item['reached_by'] = pg['reached_by']
+            # What the page is for, which the ID map carries beside it.
             if pg.get('does'):
-                item['_does'] = pg['does']
+                item['does'] = pg['does']
             # What this panel's template has no place for, which its layout
             # named rather than drew (a hub's footer clock): pin_ids and the
             # ID map let it be absent here, and the canvas's warning says why.
@@ -1343,7 +1374,7 @@ def identities(design):
     return out
 
 
-def pin_ids(specs, order):
+def pin_ids(specs, order, previous=None):
     """One ID per canvas control on every panel - {panel: [problems]}.
 
     A program drives every panel with one set of IDs. So each canvas control's
@@ -1365,20 +1396,94 @@ def pin_ids(specs, order):
     its page. A canvas control a panel's layout left out by name (its page's `left`:
     a hub's footer clock, which its template has no place for) may be absent
     there.
+
+    `previous`, the previous delivery's ID map (gdl.idmap.load_previous), is a
+    program already written: every control it knew - by page or popup name and
+    control name (gdl.idmap.known), a derived one by the same key - keeps its
+    ID; a designer's own `id` still wins, and one that is an ID a control still
+    on the canvas keeps is refused by name. A page it knew keeps its band. A
+    control drawn since takes a free number in its band that the map does not
+    use, and an ID it gave a control now gone is not handed on - nor taken by
+    the chrome's seed rule - but retired (`_retired`, which Panel honours and
+    the next map lists), so a program still addressing it reaches nothing.
     """
     problems = {m: [] for m in specs}
     design = specs[order[0]]
     canvas_items = [it for it in design['pages'] + design['popups'] if it['_host'] == it['name']]
-    bands, pages_seen, popups_seen = {}, 0, 0
+    if previous is None:
+        known_canvas, known_derived, held = {}, {}, {}
+    else:
+        known_canvas, known_derived, held = gdlidmap.known(previous)
+
+    # A control is looked up by the name the map shows it by - an unnamed
+    # one's caption, or its kind - on its page or popup, else on the canvas
+    # page it came from. Two controls of one name there are not told apart,
+    # and are new to the program. Two, not two copies: a page's control and
+    # its copy on a popup the page hosts are one control (key()), and were
+    # counted twice under the page's name, retiring the ID of each.
+    def key(it, c, seen):
+        if c.get('name'):
+            return (it['_host'], c['name'])
+        n = seen.setdefault((it['_host'], c['kind']), 0)
+        seen[(it['_host'], c['kind'])] += 1
+        return (it['_host'], f"<{c['kind']} {n}>")
+
+    # By container: the controls of each name on each page or popup, and on
+    # each canvas page with every popup it hosts.
+    own, family, seen = collections.defaultdict(set), collections.defaultdict(set), {}
+    for it in design['pages'] + design['popups']:
+        for c in it['controls']:
+            if not c.get('derived'):
+                nm = c.get('name') or c.get('text') or c['kind']
+                k = key(it, c, seen)
+                own[(it['name'], nm)].add(k)
+                family[(it['_host'], nm)].add(k)
+
+    def lookup(it, c):
+        nm = c.get('name') or c.get('text') or c['kind']
+        for k, holds in (((it['name'], nm), own), ((it['_host'], nm), family)):
+            if k in known_canvas and len(holds[k]) < 2:
+                return known_canvas[k]
+        return None
+
+    # A page the previous map knew keeps the band its controls are in -
+    # pages drawn in front of it since do not move it - and the rest take
+    # theirs by position, stepping over every band a known page holds.
+    def band_of(it, popup):
+        got = collections.Counter()
+        for (ct, _), v in known_canvas.items():
+            if ct != it['name'] or not isinstance(v, int):
+                continue
+            if popup and 9000 <= v < 10000:
+                got[9000 + 100 * ((v - 9000) // 100) + 1] += 1
+            elif not popup and 1000 <= v < 9000:
+                got[1000 * (v // 1000) + 1] += 1
+        return min(got, key=lambda b: (-got[b], b)) if got else None
+    bands, claimed = {}, set()
+    for it in canvas_items:
+        b = band_of(it, it not in design['pages'])
+        if b is not None and b not in claimed:
+            bands[it['name']] = b
+            claimed.add(b)
+    pages_seen, popups_seen = 0, 0
     for it in canvas_items:
         if it in design['pages']:
-            bands[it['name']] = 1000 * (pages_seen + 1) + 1
+            b, step = 1000 * (pages_seen + 1) + 1, 1000
             pages_seen += 1
         else:
-            bands[it['name']] = 9000 + 100 * popups_seen + 1
+            b, step = 9000 + 100 * popups_seen + 1, 100
             popups_seen += 1
+        if it['name'] in bands:
+            continue
+        while b in claimed:
+            b += step
+        bands[it['name']] = b
+        claimed.add(b)
     taken = {c['id'] for spec in specs.values() for it in spec['pages'] + spec['popups']
              for c in it['controls'] if c.get('id')}
+    # Every ID the previous map holds is out of the bands' reach: kept by its
+    # control, or retired with it.
+    taken |= set(held)
     # A region page's fixed chrome - the Footer's Help and Power, the
     # RightRail's Volume and Mute, the mode launcher - keeps the template's
     # seed ID (`_seed_id`, off its frame's `ids`) where the designer gave it
@@ -1388,19 +1493,24 @@ def pin_ids(specs, order):
     # the chrome, and it is one control a program drives from any of them, so
     # Help is 8117 on the second page as on the first. A seed ID goes to the
     # first name that carries it; another name that claims it takes its band.
+    # One the previous map gave a control of another name is not free; one
+    # it gave chrome of this name still is - kept by that chrome on the pages
+    # the map knew, the same control on a page drawn since, and the same
+    # control again where it was retired with it.
     explicit = {c['id'] for spec in specs.values() for it in spec['pages'] + spec['popups']
                 for c in it['controls'] if c.get('id') and not c.get('derived')}
-    seeded = _seeded(design, explicit)
+    gave = collections.defaultdict(set)
+    for c in (previous or {}).get('controls') or []:
+        for a in gdlidmap.places(c):
+            gave[c['id']].add(a['name'])
+    for r in (previous or {}).get('retired') or []:
+        gave[r['id']].add(str(r.get('was') or '').split(' / ', 1)[-1])
+    chrome = {(c.get('name'), c['_seed_id']) for it in design['pages'] + design['popups']
+              for c in it['controls'] if c.get('_seed_id') is not None}
+    seeded = _seeded(design, explicit | {i for i in held if not any(s == i and n in gave[i] for n, s in chrome)})
     taken |= set(seeded.values())
 
-    def key(it, c, seen):
-        if c.get('name'):
-            return (it['_host'], c['name'])
-        n = seen.setdefault((it['_host'], c['kind']), 0)
-        seen[(it['_host'], c['kind'])] += 1
-        return (it['_host'], f"<{c['kind']} {n}>")
-
-    ids, nxt, seen = {}, dict(bands), {}
+    ids, nxt, seen, kept, pinned, named = {}, dict(bands), {}, {}, [], {}
     for it in design['pages'] + design['popups']:
         for c in it['controls']:
             if c.get('derived'):
@@ -1410,8 +1520,23 @@ def pin_ids(specs, order):
                                           'keeps its ID on every panel')
                 continue
             k = key(it, c, seen)
+            # Two controls of one name on a page share an ID (they are keyed
+            # by it), which gdl.spec refuses only as "id N already used" - by
+            # the ID, not by what the designer did.
+            on_page = named.setdefault(it['name'], set())
+            if c.get('name') and c['name'] in on_page:
+                problems[order[0]].append(f"{it['name']!r}: two controls are named {c['name']!r} - give each "
+                                          'its own name')
+                continue
+            on_page.add(c.get('name'))
             if c.get('id'):
                 ids[k] = c['id']
+                pinned.append((it, c))
+                continue
+            was = lookup(it, c)
+            if was is not None:
+                ids[k] = was
+                kept.setdefault(was, (it, c))
                 continue
             if c.get('_seed_id') is not None and seeded.get(c.get('name')) == c['_seed_id']:
                 ids[k] = c['_seed_id']
@@ -1422,6 +1547,16 @@ def pin_ids(specs, order):
             ids[k] = n
             taken.add(n)
             nxt[it['_host']] = n + 1
+    # A designer's ID wins - but not over a control still on the canvas that
+    # the program knows by it. Copies the previous map gave one ID (a mirror)
+    # may pin it on one and keep it on the other.
+    for it, c in pinned:
+        holder = kept.get(c['id'])
+        if holder is not None and lookup(it, c) != c['id']:
+            problems[order[0]].append(
+                f"{it['name']!r} {c.get('name') or c['kind']}: id={c['id']} is the ID the previous map gave "
+                f"{holder[0]['name']!r} {holder[1].get('name') or holder[1]['kind']}, which is still on the "
+                f"canvas - a program addressing {c['id']} would reach both; give it another")
     # A mirror the layout drew (`_mirror`: Shockwave's tab twin) has its
     # control's ID, not one of its own.
     derived = sorted({(it['name'], c['name']) for spec in specs.values()
@@ -1435,10 +1570,24 @@ def pin_ids(specs, order):
                 if c.get('derived') and c.get('name') and not c.get('_mirror'):
                     carried.setdefault((it['name'], c['name']), set()).add(c.get('id'))
     canvas_ids = set(ids.values())
+    # What a layout added is numbered in name order, so one added since - a
+    # page's Back sorting ahead of another's - renumbered every one after it:
+    # what the previous map knew keeps its ID first.
+    for k in derived:
+        was = known_derived.get(k)
+        if was is None:
+            continue
+        if was in canvas_ids:
+            holder = next(f'{h!r} {nm}' for (h, nm), v in ids.items() if v == was)
+            problems[order[0]].append(f'{holder}: its ID {was} is the one the previous map gave {k[0]!r} '
+                                      f'{k[1]}, which a panel still draws - give it another')
+        elif was not in did.values():
+            did[k] = was
     for k in derived:
         own = carried.get(k, set())
         cid = next(iter(own)) if len(own) == 1 else None
-        if cid is not None and cid not in canvas_ids and cid not in did.values():
+        if k not in did and cid is not None and cid not in canvas_ids and cid not in did.values() \
+                and cid not in held:
             did[k] = cid
     for k in derived:
         if k in did:
@@ -1448,6 +1597,17 @@ def pin_ids(specs, order):
         did[k] = n
         taken.add(n)
         n += 1
+    # A control the layout draws (a Group's Next, Previous, Back, Up and Down,
+    # a '<name> Title') has an ID space of its own, so a canvas control of its
+    # name on the same page passed every check and left the ID map two rows
+    # with one name.
+    for model, spec in specs.items():
+        for it in spec['pages'] + spec['popups']:
+            mine = {c.get('name') for c in it['controls'] if c.get('name') and not c.get('derived')}
+            for c in it['controls']:
+                if c.get('derived') and not c.get('_mirror') and c.get('name') in mine:
+                    problems[model].append(f"{it['name']!r}: {c['name']!r} is a control the layout draws for "
+                                           f"a Group or a window, and one of yours has its name - rename yours")
     for model, spec in specs.items():
         found, seen = set(), {}
         for it in spec['pages'] + spec['popups']:
@@ -1489,7 +1649,130 @@ def pin_ids(specs, order):
         for k in sorted(k for k in set(ids) - found - left if (k[1], ids[k]) not in here):
             problems[model].append(f'{k[1]} on {k[0]!r} is on the {order[0]} and not here - nothing is '
                                    'dropped from a panel')
+    if previous is not None:
+        # What the previous map held that no control has now: retired, on
+        # every panel's spec, and the map it was kept against, which the map
+        # written for the build is diffed against (gdl.idmap --previous).
+        used = {c.get('id') for spec in specs.values() for it in spec['pages'] + spec['popups']
+                for c in it['controls']}
+        for spec in specs.values():
+            spec['_retired'] = [{'id': i, 'was': held[i]} for i in sorted(set(held) - used)]
+            if previous.get('_sha256'):
+                spec['_previous'] = previous['_sha256']
     return problems
+
+
+def revision_notes(spec, previous):
+    """Notes on what the previous delivery's map knew that the canvas has
+    under another name or on another page, on the panel the canvas is drawn
+    on. Reported, never mapped: a program shows a page by its name, and knows
+    a control by its page and name, so each of these is new to it - unless the
+    designer pins the previous ID, which the note gives.
+
+    - A page or popup that is gone, where one the canvas gained holds most of
+      its controls by name (gdl.idmap.renames): renamed, perhaps.
+    - A control whose name is now on another page, and gone from its own:
+      moved.
+    - A control gone from a page that has gained one of its type doing the
+      same thing (`does`): renamed, perhaps.
+
+    Read on the previous map's view of the spec's own panel, where it has
+    one: on its first panel, a canvas now drawn on another met a note for
+    every control the first panel's layout put elsewhere.
+    """
+    view = gdlidmap.view_of(previous, _panel(spec)) or next(iter(gdlidmap.views(previous).values()))
+    old = gdlidmap.containers(view)
+    items = spec['pages'] + spec['popups']
+    popups = {id(x) for x in spec['popups']}
+    new = {it['name']: ('popup' if id(it) in popups else 'page',
+                        {c['name'] for c in it['controls'] if c.get('name') and not c.get('derived')})
+           for it in items}
+    was = gdlidmap.known(previous)[0]
+    out, pages = [], set()
+    for g, c, kind in gdlidmap.renames(old, new):
+        pages.add(c)
+        both = sorted(old[g][1] & new[c][1])
+        pins = ', '.join(f'{n} id={was[(g, n)]}' for n in both if (g, n) in was)
+        out.append(f"{kind} {g!r} of the previous map is gone, and {c!r} holds {len(both)} of its controls - "
+                   f"if it was renamed, a program shows it by its new name, and its controls are new to the "
+                   f'program, their IDs retired' + (f'; to keep them, pin {pins}' if pins else ''))
+    rows = {(a['container'], a['name']): c for c in view.get('controls') or [] if not c.get('derived')
+            for a in c.get('at') or [] if not a.get('mirror')}
+    now = {(it['name'], c['name']) for it in items for c in it['controls'] if c.get('name') and not c.get('derived')}
+    gone = {k: r for k, r in rows.items() if k not in now and k in was}
+    for it in items:
+        if it['name'] in pages:
+            continue
+        for c in it['controls']:
+            if c.get('derived') or not c.get('name') or c.get('id') or (it['name'], c['name']) in rows:
+                continue
+            kind = gdlidmap.CLASS_OF.get(c['kind'])
+            moved = [k for k, r in gone.items() if k[1] == c['name'] and r['type'] == kind]
+            same = [k for k, r in gone.items() if k[0] == it['name'] and r['type'] == kind and c.get('does')
+                    and r.get('does') == c['does']]
+            if len(moved) == 1:
+                k = moved[0]
+                out.append(f"{it['name']!r} {c['name']}: moved from {k[0]!r}, where the program knows it as "
+                           f'{was[k]} - a control is known by its page and its name, so here it is new to the '
+                           f'program; pin id={was[k]} to keep the one it knows')
+            elif len(same) == 1:
+                k = same[0]
+                out.append(f"{it['name']!r} {c['name']}: does what {k[1]} did ({was[k]}), which is gone - if it "
+                           f'was renamed, it is new to the program; pin id={was[k]} to keep the one it knows')
+    return out
+
+
+def renamed_windows(spec, view, retired):
+    """Notes on the windows a hub derives that the revision renamed, against
+    `view`, the previous map's view of the spec's panel; `retired` is the IDs
+    the revision retires.
+
+    A hub names the window each working page derives (Select Source, More
+    Options) by its template - and after its own page where an earlier page
+    derives one too (Video Call Select Source, _one_name_each). So drawing the
+    working pages in another order, or removing the earlier one, renames it:
+    a program shows it by its new name, and what the hub draws in it, known
+    by the window's name as every derived control is, is new to the program,
+    its IDs retired. The layout draws those, so no `id` on the canvas pins
+    them; the previous order keeps them, and the note names it.
+    """
+    if not view:
+        return []
+    old = {p['name'] for p in view.get('popups') or []}
+    pages = {p['name'] for p in view.get('pages') or []}
+    out = []
+    for it in spec['popups']:
+        host, name = it.get('_host'), it['name']
+        # A page drawn since derives a window new to the program, not renamed.
+        if not host or host == name or host not in pages:
+            continue
+        base = name[len(host) + 1:] if name.startswith(host + ' ') else name
+        was = f'{host} {base}' if f'{host} {base}' in old else base if base in old else None
+        if was is None or was == name:
+            continue
+        if was == base:
+            # Named for its page now because another page's window took the
+            # template's name - not where the name was a board of the
+            # designer's, which the map cannot tell from a window.
+            first = host
+            later = next((x['_host'] for x in spec['popups'] if x['name'] == base
+                          and x.get('_host') not in (None, base)), None)
+            if later is None:
+                continue
+        else:
+            first = next((x['_host'] for x in spec['popups'] if x.get('_host') not in (None, host)
+                          and x['name'] == f"{x['_host']} {base}"), None)
+            later = host
+        ids = sorted(c['id'] for c in view.get('controls') or []
+                     if c['id'] in retired and any(a['container'] == was for a in c.get('at') or []))
+        said = ', '.join(map(str, ids[:4])) + (f' and {len(ids) - 4} more' if len(ids) > 4 else '')
+        out.append(f"{host}'s {base} is {name!r} now, not {was!r} - a hub names a working page's {base} after the "
+                   f"page where an earlier page draws one too, so the pages' order renamed it: a program shows it by "
+                   f"its new name" + (f", and the IDs of what the hub draws in it are retired ({said}) - the layout "
+                                      f"draws those, so no id on the canvas pins them" if ids else '')
+                   + (f"; draw {first} ahead of {later} again to keep {'them' if ids else 'its name'}"
+                      if first and later else ''))
+    return out
 
 
 def _panel(spec):
@@ -1564,6 +1847,7 @@ class _Built:
 
     def __init__(self, built):
         from .compose import fill_index, load  # Pillow
+        self.path = built
         self.j, self.assets = load(built)
         self.fills = fill_index(built)
         self.by_name = {p['Name']: p for p in self.j['Pages'] + self.j['PopupPages']}
@@ -1572,6 +1856,14 @@ class _Built:
         """The page or popup `name` as the panel shows it: a modal over the
         start page - or `base` - under Build's scrim; a group's popup in its
         host page's region; anything else on its own."""
+        # Drawn as the panel shows it, not as GUI Designer's snapshot export
+        # does (compose.as_the_panel): translucency blends, and a face is the
+        # build this file embeds.
+        from .compose import as_the_panel
+        with as_the_panel(self.path):
+            return self._image(name, size, host, base)
+
+    def _image(self, name, size, host, base):
         from .compose import render_page, render_snapshot
         from PIL import Image
         import io
@@ -1638,14 +1930,28 @@ figcaption{{margin-top:6px;color:#a9aab8}} .note{{color:#a9aab8;margin:0 0 8px}}
 """
 
 
-def compare(folder, built, out_dir, chrome=None):
+def print_standins():
+    """Name every face the sheet drew in a stand-in, so Arial is not passed off
+    as the panel's own face (compose.FALLBACKS).
+
+    Read from the loaded module, never imported here: a run that drew nothing
+    has no stand-ins to name, and importing gdl.compose would need Pillow on a
+    host that only translates."""
+    compose = sys.modules.get((__package__ or 'gdl') + '.compose')
+    FALLBACKS = compose.FALLBACKS if compose else ()
+    if FALLBACKS:
+        print(f"  NOTE drawn in a stand-in, not the panel's face - {'; '.join(sorted(FALLBACKS))}"
+              f' - so text there is not to be signed off as it will look')
+
+
+def compare(folder, built, out_dir, chrome=None, notes=None):
     """Each artboard beside the page GUI Designer built from it, for sign-off.
 
     A Design canvas does not draw like GUI Designer, so a client signs off on
     the built panel, not on the canvas. The built side is gdl.compose's render
-    of the built file's own artwork - scored against GUI Designer's snapshots
-    (CLAUDE.md, Verifying a change) - so what shows there is what the panel
-    shows. Writes <out_dir>/index.html and a PNG pair per artboard; returns
+    of the built file's own artwork, drawn as the panel draws it - translucent
+    controls blended and the faces the file carries (compose.as_the_panel) - so
+    what shows there is what the panel shows. Writes <out_dir>/index.html and a PNG pair per artboard; returns
     [(page name, % of pixels that differ)].
 
     `built` may be a folder of panels - <panel>/<Name>.gdl, as
@@ -1654,7 +1960,7 @@ def compare(folder, built, out_dir, chrome=None):
     derived (a Group's) shown as Play shows it after a tap, beside it as built.
     """
     if os.path.isdir(built):
-        return compare_panels(folder, built, out_dir, chrome)
+        return compare_panels(folder, built, out_dir, chrome, notes)
     canvas = Canvas(folder, chrome)
     if not canvas.chrome:
         raise RuntimeError('no Chrome found - pass --chrome or set CHROME')
@@ -1676,20 +1982,46 @@ def compare(folder, built, out_dir, chrome=None):
     return scores
 
 
-def compare_panels(folder, built_dir, out_dir, chrome=None):
-    """compare() for a canvas of panels: a section per panel."""
+def compare_panels(folder, built_dir, out_dir, chrome=None, notes=None):
+    """compare() for a canvas of panels: a section per panel. A panel the
+    canvas lists whose folder holds no built file, or several, or which has no
+    folder at all, is not compared: that is said in its section and appended
+    to `notes` as (panel, what), never left to look like a panel that was fine."""
     canvas = Canvas(folder, chrome)
     if not canvas.chrome:
         raise RuntimeError('no Chrome found - pass --chrome or set CHROME')
-    found = {}
-    for m in sorted(os.listdir(built_dir)):
-        d = os.path.join(built_dir, m)
-        gdls = [f for f in os.listdir(d) if f.lower().endswith('.gdl')] if os.path.isdir(d) else []
-        if len(gdls) == 1:
-            found[m] = os.path.join(d, gdls[0])
     first = render(os.path.join(folder, *canvas.boards()[0].split('/')), canvas.chrome,
                    canvas._size(canvas.boards()[0]))
-    listed = Canvas._panels_of({'b': first}) or list(found)
+    named = Canvas._panels_of({'b': first})
+
+    def is_panel(m):
+        # The toolkit's own output sits beside the panels (idmap/, critique/,
+        # signoff/): a folder with no .gdl is a missing build only if the
+        # canvas lists it or its name is a panel model.
+        if m in named:
+            return True
+        try:
+            gdlspec.panel_of(m)
+        except ValueError:
+            return False
+        return True
+
+    found, skipped = {}, {}
+    for m in sorted(os.listdir(built_dir)):
+        d = os.path.join(built_dir, m)
+        if not os.path.isdir(d):
+            continue
+        gdls = sorted(f for f in os.listdir(d) if f.lower().endswith('.gdl'))
+        if len(gdls) == 1:
+            found[m] = os.path.join(d, gdls[0])
+        elif gdls:
+            skipped[m] = f"{len(gdls)} built files in its folder ({', '.join(gdls)}) - keep one"
+        elif is_panel(m):
+            skipped[m] = 'no built .gdl in its folder'
+    listed = named or list(found)
+    for m in listed:
+        if m not in found and m not in skipped:
+            skipped[m] = f'no folder of that name in {built_dir}'
     models = [m for m in listed if m in found] + [m for m in found if m not in listed]
     scores, sections = [], []
     for m in models:
@@ -1728,6 +2060,11 @@ def compare_panels(folder, built_dir, out_dir, chrome=None):
                         f'&middot; {size[0]}x{size[1]}</h2>'
                         f'<p class="note">Built: {html.escape(os.path.basename(found[m]))}</p>'
                         f'{_cells(rows, m + "/")}</section>')
+    for m, why in skipped.items():
+        if notes is not None:
+            notes.append((m, why))
+        sections.append(f'<section class="panel"><h2>{html.escape(m)}</h2>'
+                        f'<p class="note">Not compared: {html.escape(why)}.</p></section>')
     with open(os.path.join(out_dir, 'index.html'), 'w', encoding='utf-8') as fh:
         fh.write(_page((canvas.index.get('title') or 'Panel') + ', every panel', ''.join(sections)))
     return scores
@@ -1888,15 +2225,9 @@ def compare_template(folder, out_dir, chrome=None):
                 target = (_same_name(built, name, pg.get('title')) or target[0], target[1])
             template_png = None
             if target and built:
-                # Translucent chrome over the photo as the panel shows it, as
-                # the design system's template renders draw it (compose.BINARY).
-                # The rule goes back as it was, so a caller's outlives the pair.
-                from . import compose
-                was, compose.BINARY = compose.BINARY, False
-                try:
-                    img = built.image(target[0], tuple(T['size']), host=target[1], base=target[1])
-                finally:
-                    compose.BINARY = was
+                # Translucent chrome over the photo as the panel shows it:
+                # _Built.image draws under compose.as_the_panel.
+                img = built.image(target[0], tuple(T['size']), host=target[1], base=target[1])
                 if img is not None:
                     template_png = os.path.join(sub, f'{stem}-template.png')
                     img.save(template_png)
@@ -1949,6 +2280,7 @@ def main(argv):
             return 1
         for m, name, seed_page in compare_template(argv[2], argv[4], chrome):
             print(f"  {m}: {name}" + (f" beside {seed_page}" if seed_page else ' (the template has no page of its kind)'))
+        print_standins()
         print(f"-> {os.path.join(argv[4], 'index.html')} and sheet.png")
         return 0
     if len(argv) >= 5 and argv[1] == 'compare':
@@ -1958,16 +2290,32 @@ def main(argv):
         if unproven and '--new-runtime' not in argv:
             print('  PROBLEM ' + unproven)
             return 1
-        for name, pct in compare(argv[2], argv[3], argv[4], chrome):
+        notes = []
+        for name, pct in compare(argv[2], argv[3], argv[4], chrome, notes):
             print(f'  {pct:5.1f}%  {name}')
+        for m, why in notes:
+            print(f'  NOT COMPARED  {m}: {why}')
+        print_standins()
         print(f"-> {os.path.join(argv[4], 'index.html')}")
         return 0
+    # A revision of a canvas whose map a programmer already has: read that
+    # map first, so a path to nowhere costs a second, not a translate.
+    previous = None
+    if '--previous' in argv:
+        i = argv.index('--previous')
+        path = argv[i + 1] if i + 1 < len(argv) else ''
+        argv = argv[:i] + argv[i + 2:]
+        try:
+            previous = gdlidmap.load_previous(path)
+        except ValueError as e:
+            print('  PROBLEM ' + str(e))
+            return 1
     if len(argv) < 4 or argv[1] != 'translate':
         print(__doc__.strip().split('\n\n')[0])
         print('\n  python -m gdl.design translate <canvas dir> <out dir>        one spec per panel'
               '\n  python -m gdl.design translate <canvas dir> <out spec.json>  the design panel only'
               ' [--lenient]'
-              '\n      [--chrome PATH] [--new-runtime]'
+              '\n      [--previous <idmap dir or idmap.json>] [--chrome PATH] [--new-runtime]'
               '\n  python -m gdl.design compare <canvas dir> <built.gdl> <out dir>'
               '\n  python -m gdl.design compare <canvas dir> --template <out dir>   beside the template'
               '\n  python -m gdl.design pin-runtime <dc-runtime.js> --seen <where it came from>')
@@ -1982,7 +2330,7 @@ def main(argv):
     canvas = Canvas(argv[2], chrome)
     if not argv[3].lower().endswith('.json'):
         # One spec per panel the canvas lists, each in its own folder - or none.
-        specs, problems, notes = canvas.translate_panels()
+        specs, problems, notes = canvas.translate_panels(previous=previous)
         for ns in notes.values():
             for n in ns:
                 print('  note    ' + n)
@@ -2002,8 +2350,10 @@ def main(argv):
             print(f"{model}: {len(spec['pages'])} page(s), {len(spec['popups'])} popup(s), "
                   f"{n} controls -> {f}")
             print(f"  donor: {spec['_seed']}")
+        if previous is not None:
+            print(_kept(specs.values(), previous, path))
         return 0
-    spec, problems, notes = canvas.translate()
+    spec, problems, notes = canvas.translate(previous=previous)
     for n in notes:
         print('  note    ' + n)
     for p in problems:
@@ -2019,7 +2369,19 @@ def main(argv):
     print(f"{len(spec['pages'])} page(s), {len(spec['popups'])} popup(s), {n} controls "
           f'-> {argv[3]}')
     print(f"donor: {spec['_seed']}")
+    if previous is not None:
+        print(_kept([spec], previous, path))
     return 0
+
+
+def _kept(specs, previous, path):
+    """What a revision did to the IDs a program knows, in one line."""
+    had = {c['id'] for c in previous['controls']}
+    now = {c['id'] for spec in specs for it in spec['pages'] + spec['popups'] for c in it['controls']
+           if c.get('kind') in ID_KINDS and c.get('id')}
+    retired = next(iter(specs))['_retired']
+    return (f'IDs against {path}: {len(now & had)} kept, {len(now - had)} new, {len(retired)} retired - '
+            f'write the map with --previous {path} for changes.md')
 
 
 if __name__ == '__main__':

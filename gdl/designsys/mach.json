@@ -130,7 +130,7 @@
     {
       "name": "scrim",
       "value": "#000000A6",
-      "usage": "Behind a full-screen modal popup. Build draws every modal as the page beneath under black at alpha 166 (0xA6) regardless of the page's own background - the same value measured on the Afterburn, Mach and Shockwave seeds alike (gdl/designsys/afterburn.json). Not one of the panel's six - Build adds it, the design doesn't choose it."
+      "usage": "Behind a full-screen modal popup. Build draws a modal as the page beneath under black at its own transparency, 35% - alpha 166 (0xA6) - in every template's modals and as the spec writes it, regardless of the page's own background - the same value measured on the Afterburn, Mach and Shockwave seeds alike (gdl/designsys/afterburn.json). Not one of the panel's six - Build adds it, the design doesn't choose it."
     }
   ],
   "type": [
@@ -432,7 +432,7 @@
         {"attrs": "name=\"Lighting Preset 2\" does=\"Recalls lighting preset 2.\"", "text": "2"},
         {"attrs": "name=\"Lighting Preset 3\" does=\"Recalls lighting preset 3.\"", "text": "3"}
       ]},
-      {"component": "Button", "attrs": "name=\"Start\" nav=\"Main SD\"", "text": "Press to begin", "rect": [520, 340, 240, 70]}
+      {"component": "Button", "attrs": "name=\"Start\" nav=\"MainSD\"", "text": "Press to begin", "rect": [520, 340, 240, 70]}
     ],
     "camera": {"heading": [360, 160, 100, 40], "key": [360, 210, 100, 60], "step": 100, "box": [360, 210, 100, 200], "icons": ["plus", "dash"]},
     "states": "[{\"name\":\"No Signal\",\"fill\":\"shade\",\"color\":\"text-secondary\"},\"Ready\",{\"name\":\"Muted\",\"fill\":\"accent\",\"color\":\"ink\"}]",
@@ -543,8 +543,9 @@
     "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
     "page_empty": "{name} is currently selected.\nThere are no controls\nfor this device."
 ,
+    "column_labels_320": "caps",
     "voice": {
-      "_source": "Off seeds/Mach 1035.gdl's working pages, popups and windows - Main SD, Main VC, Main Recording, the Laptop, Doc Cam and TV popups, Lighting Settings, Camera Select, Confirmation, Starting Up, Powering Down and Help - and the grammar digest of every Mach page: its captions, rail headings, titles and messages. The rail's launchers are captioned Screen, Lighting and Audio (IDs 8115, 8116, 8020) and open the Screen, Lighting and Audio Settings windows; the confirmations answer Power Down, Record and Accept, never Yes or OK; the only capitals are the grey metadata labels of Recording Controls (TITLE:, USB STATUS:) and the 320's column labels.",
+      "_source": "Off seeds/Mach 1035.gdl's working pages, popups and windows - Main SD, Main VC, Main Recording, the Laptop, Doc Cam and TV popups, Lighting Settings, Camera Select, Confirmation, Starting Up, Powering Down and Help - and the grammar digest of every Mach page: its captions, rail headings, titles and messages. The rail's launchers are captioned Screen, Lighting and Audio (IDs 8115, 8116, 8020) and open the Screen, Lighting and Audio Settings windows; the confirmations answer Power Down, Record and Accept, never Yes or OK; the only capitals are the grey metadata labels of Recording Controls (TITLE:, USB STATUS:) and the 320's column labels (ZOOM, FOCUS, INPUTS, IRIS on its Doc Cam pages - setting every Group title on the 320 so, PRESETS and DISPLAY included, is extrapolated from those four).",
       "rules": [
         "A caption is a short Title Case word or two that names the thing or the action: On, Off, Mute, Room Mode, Make Call, End Call, Power Down.",
         "A rail launcher names what it opens - Screen, Lighting, Audio, Display - and the window it opens says the rest in its title: Lighting Settings.",

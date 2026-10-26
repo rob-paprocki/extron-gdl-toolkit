@@ -143,6 +143,10 @@ function Test-GdlPopupBinding {
     $grp = [int]$popup.GroupID
 
     if ($popup.Modal -and $grp -ne 0) { $problems += 'modal popup should not be grouped' }
+    # The applier binds every reference it makes to a group, so a standard
+    # popup it makes must have one. The format does not require it - nine of
+    # Extron's seeds show an ungrouped Volume Level through references bound
+    # to it by ID (docs/gdl-format.md section 5) - but the applier makes none.
     if (-not $popup.Modal -and $grp -eq 0) { $problems += 'standard popup has no group' }
 
     if ($grp -ne 0) {

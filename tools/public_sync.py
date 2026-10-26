@@ -112,10 +112,13 @@ SCRUB = [
 # into an image. Pinned by the SHA-256 of the bytes that were looked at (the LFS content, where
 # the file is in LFS), so a regenerated image is refused until someone looks again and re-pins
 # it - a screenshot showing the licensee's e-mail was found only by looking. A new binary is
-# refused until it is reviewed and listed here.
+# refused until it is reviewed and listed here. A path may name a tuple of hashes, every
+# version that was looked at: `check --history` reads the published history too, so the
+# version a regenerated file replaced must still pass where an older commit holds it.
 BINARY_OK = {
-    # the worked example, rendered
-    "docs/panel-preview.png": "c2b9ef77efce72609e7b3da95d7d44b72d3e40e32738d133d41dc420a951836e",
+    # the worked example, rendered - as the 1 px grid fix (#62) redrew it, and before
+    "docs/panel-preview.png": ("88b6876a004cb3e4dd1274b9be03459443d5da076695502cf2c67704be4824f9",
+                               "c2b9ef77efce72609e7b3da95d7d44b72d3e40e32738d133d41dc420a951836e"),
     "docs/generated-built.png": "fcc3fec8148a474f9f3cf634bbfa06d1bcf8775b36e098a6332744ab61a84f7a",
     # Apache-2.0
     "gdl/fonts/opensans-light.ttf": "cf5f5184c1441a1660aa52526328e9d5c2793e77b6d8d3a3ad654bdb07ab8424",
@@ -511,7 +514,7 @@ def check_tree(git, treeish, rules):
             want = BINARY_OK.get(path)
             if want is None:
                 problems.append((shown, 0, "binary file not reviewed (BINARY_OK)", ""))
-            elif hashlib.sha256(data).hexdigest() != want:
+            elif hashlib.sha256(data).hexdigest() not in ((want,) if isinstance(want, str) else want):
                 problems.append((shown, 0, "binary changed since it was reviewed (re-pin in BINARY_OK)", ""))
         else:
             problems += check_text(shown, data.decode("utf-8"), rules)

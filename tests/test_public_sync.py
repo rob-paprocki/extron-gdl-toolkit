@@ -166,6 +166,20 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn('changed since it was reviewed', out)
 
+    def test_every_reviewed_version_of_a_binary_passes(self):
+        # A regenerated image keeps the version it replaced on the list, so the published history,
+        # which still holds that version, checks clean; a version nobody looked at is refused.
+        old, new = b'\x89PNG\r\n\x1a\n\x00\x00old', b'\x89PNG\r\n\x1a\n\x00\x00new'
+        both = (hashlib.sha256(new).hexdigest(), hashlib.sha256(old).hexdigest())
+        with mock.patch.dict(ps.BINARY_OK, {'docs/panel-preview.png': both}):
+            for png in (old, new):
+                r = Repo({'docs/panel-preview.png': png})
+                self.assertEqual(r.run('build', '--archive', 'archive', '--public', 'public')[0], 0)
+            r = Repo({'docs/panel-preview.png': new + b'changed'})
+            code, out = r.run('build', '--archive', 'archive', '--public', 'public')
+        self.assertEqual(code, 1, out)
+        self.assertIn('changed since it was reviewed', out)
+
     def test_build_refuses_a_public_parent_on_the_archive_line(self):
         r = Repo({'README.md': '# toolkit\n'})
         code, out = r.run('build', '--archive', 'archive', '--public', 'archive')

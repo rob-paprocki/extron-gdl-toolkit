@@ -108,9 +108,12 @@ say `splash="true"`.
    designer adds. The README keeps the cap as Extron's documented standard and
    says which colours are the template's own.
 2. **Hairline stacks.** A header tab row and a rail group are `joined`
-   segmented sets, kept 1 px apart as the template draws them; unrelated
+   segmented sets, kept at the step the template draws them at - on Mach 1 px
+   apart, but for the 725's and 720's rail groups, 10 and 8 px; unrelated
    controls keep 2 mm. Footer cells that the template itself draws 1 px apart
-   (Mach's Help and Power) are such a stack too; cells it spaces keep 2 mm.
+   (Mach's Help and Power) are drawn as such a stack too, which goes past the
+   call as written and awaits the owner's word (`docs/ROADMAP.md`); cells it
+   spaces keep 2 mm.
 3. **Template renders.** A downscaled render of each theme's working page may
    go in the private design system as the designer's reference, never in the
    public copy.
@@ -447,9 +450,7 @@ build at a time.
     clean after the toolkit's and the README's share and one to three
     revisions from the translator's words.
     The revision is `tests/data/round4-afterburn-revised`, and
-    `TestRoundFourRooms` holds it clean on every panel it lists. None is
-    built yet: the rooms' builds on a host with GUI Designer are what is
-    left of the round.
+    `TestRoundFourRooms` holds it clean on every panel it lists.
     Building the revision (2026-10-25) stopped before GUI Designer, at the
     ID map's check across every panel: on the 320 the Sources Group's pages
     showed the source popups, whose group only Main SD's popup region
