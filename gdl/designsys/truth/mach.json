@@ -266,7 +266,7 @@
         {"key": "buttons.alert.usage", "says": "An action that stops or ends something: Power Down on the confirmation"},
         {"key": "buttons.alert.usage", "says": "or one that starts what attendees must be told of, Record"},
         {"key": "colors.alert.usage", "says": "or starts what attendees must be told of: Record, on its confirmation"},
-        {"key": "colors.alert-dim.usage", "says": "Share Content's On, its live state, is the #A82925DC on no border"},
+        {"key": "colors.alert-call.usage", "says": "Share Content's On, its live state, is the #A82925DC on no border"},
         {"key": "buttons.alert.look.border", "says": "rounded"},
         {"key": "examples.color_rule", "says": "`alert` for an action that stops or ends something"},
         {"key": "iconography.rules.2", "says": "**Red and green** mark actions, not faults"},
@@ -706,6 +706,301 @@
       "frame": [{"series": "Mach 1220 Series", "key": "page"}],
       "gone": ["Layout: Mach 1035's Main Select Source and Start."],
       "evidence": "The 1035's six Main pages: Main SD, Main SD Screen Arrows, Main Multi-Window, Main VC and Main Recording share the header tabs and the Controls popup region; Main Select Source alone has the titled header and tiles."
+    },
+    {
+      "id": "mach-43",
+      "claim": "The README drew no call page: its grammar was Main SD's alone, and round four's designer drew the call as a source popup in the Center, its keys loose buttons in the well.",
+      "where": [
+        "README The template's grammar",
+        "README The working page"
+      ],
+      "template": {
+        "does": "Main VC is the call mode's working page: its header the same four tabs (8052, 8050, 8059, 8063) with Share Content (8090) at its end, 140x64 at 1140,0, shade lighting #A82925DC, its Header Rectangle closing up to 117 px before it; its left rail 'VTC' over Make Call (Initiate Call 5014, #659945DC to #86D161), End Call (5215, #A82925DC to #E23636) and Privacy (VC Privacy 5217, #AD8544DC to #EDB95E with a black caption), 103x60 at 17,186, 247 and 308; then 'Settings' over Display (8214), Screen, Lighting and Audio at 438 to 621 - four where Main SD's holds three; its right rail, footer and popup region Main SD's.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Main VC",
+          "Main SD"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Mach 1220 Series",
+          "key": "call.left.groups"
+        },
+        {
+          "series": "Mach 1220 Series",
+          "key": "call.top.end"
+        },
+        {
+          "series": "Mach 1220 Series",
+          "key": "call.top.tabs"
+        }
+      ],
+      "fix": [
+        {
+          "key": "regions.call.privacy.fill",
+          "says": "accent-dim"
+        },
+        {
+          "readme": "A video call is a working page of its own, the template's Main VC"
+        }
+      ],
+      "builds": "A Page with role=\"call\" places its LeftRail's first Section at Main VC's VTC places, Make Call, End Call and Privacy in `call`, `alert` and `highlight` on `accent-dim` with seed IDs 5014, 5215 and 5217, its second at Main VC's launchers, and a Header `slot=\"share\"` at 1140,0 with seed ID 8090.",
+      "evidence": "Main VC's VTC Label (7012), Initiate Call (5014), End Call (5215), VC Privacy (5217), Display Settings (8214) and Share Content (8090); the same roles and IDs on seeds/Mach 725, 720, 1525 and 1535.gdl's Main VC, measured into each series' frame `call` (tests/measure_series.py _call_frame)."
+    },
+    {
+      "id": "mach-44",
+      "claim": "Nothing in the system drew the call mode's dialer: a call's keypad was a designer's loose buttons, or none.",
+      "where": [
+        "README The template's grammar"
+      ],
+      "template": {
+        "does": "VTC Dialer is a 995x549 popup of the popup region: a well (Header 542x58 over Container 542x376, #000000B4) titled 'VTC Dialer' (24 pt), a white field under the Dialer Feedback Label (50000) with VC Delete (5237) beside it, a keypad of 60x60 white washes 10 apart - 1 to 9, *, 0, # and a period (Dialer Keypad 1 5203 to 9 5211, 0 5202, * 5212, # 5213, Period 5228) - and VC Call (5214), Flash (5216), Contacts (5250) and Keyboard (5229), 128x60, beside it.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "VTC Dialer"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Mach 1220 Series",
+          "key": "call.center.dialer"
+        }
+      ],
+      "builds": "A popup with role=\"dialer\" draws those keys with their seed IDs at each bar panel's own places, and on a hub and the 320 the drawn panel's keys as a source's controls.",
+      "evidence": "VTC Dialer's 18 buttons and its Dialer Feedback Label on seeds/Mach 1035, 725, 720, 1525 and 1535.gdl, read by tests/measure_series.py _dialer."
+    },
+    {
+      "id": "mach-45",
+      "claim": "The Page README and docs/ROADMAP.md: only the power-down question has the template's words; an incoming call's question is refused by topic.",
+      "where": [
+        "Page README",
+        "writing.confirm"
+      ],
+      "template": {
+        "does": "Incoming Call is a modal on the #303030 band at the power-down question's places: 'Incoming call, do you wish to accept?' (20 pt) over Accept (Accept Call 9032, #65994596 to #86D161) and Decline (Decline Call 9033, #A829258C to #E23636), 258x60 at 372,432 and 650,432.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Incoming Call"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Mach 1220 Series",
+          "key": "windows.incoming"
+        }
+      ],
+      "fix": [
+        {
+          "key": "writing.confirm.call",
+          "says": "Incoming call, do you wish to accept?"
+        },
+        {
+          "key": "writing.buttons.decline",
+          "says": "Decline"
+        }
+      ],
+      "evidence": "Incoming Call's Incoming Call Label (4060), Accept Call (9032) and Decline Call (9033) on seeds/Mach 1035.gdl, and on its 725, 720, 1525 and 1535."
+    },
+    {
+      "id": "mach-46",
+      "claim": "Main Select Source was told apart from the working pages and not drawn: a designer placed `source` tiles by hand, and a room with more sources than the Header holds was refused with no remedy named.",
+      "where": [
+        "README The template's grammar",
+        "Header README"
+      ],
+      "template": {
+        "does": "Main Select Source chooses a source before one is shown: its header one #000000B4 strip titled 'Select a source' (Open Sans Light 26) and no tabs; its sources 100x100 tiles 160 apart at y 311, each its 440x440 _2 icon, its name in a black 16 pt label under it; no popup region; the rails and footer the working page's.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Main Select Source"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Mach 1220 Series",
+          "key": "choose.tiles"
+        },
+        {
+          "series": "Mach 1220 Series",
+          "key": "choose.title"
+        }
+      ],
+      "fix": [
+        {
+          "key": "regions.select.tile.variant",
+          "says": "source"
+        }
+      ],
+      "evidence": "Main Select Source's Select Source Label (6072), Header shape, Laptop, PC, TV and Streaming tiles (8101, 8100, 8102, 8103) and their labels (8078-8082) on seeds/Mach 1035.gdl; the same page on its 725, 720, 1525 and 1535, measured into each series' frame `choose`."
+    },
+    {
+      "id": "mach-47",
+      "claim": "The README's grammar gave the TLP1035T's four source tabs alone, and a Header past its panel's was refused as 'more than the TLP1035T's holds across', with no remedy.",
+      "where": [
+        "README The template's grammar",
+        "Header README"
+      ],
+      "template": {
+        "does": "The header draws four 190x64 tabs at a 191 step from x 258, between its Header Rectangles; a fifth at that step ends at 1212, inside the bar. On Main VC, Share Content takes 1140 to 1280 and the four end at 1021. Every bar series draws four (the 725's 152 wide).",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "- **Sources.** One `slot=\"source\"` tab each"
+        }
+      ],
+      "evidence": "Main SD's SD PC, SD Laptop, SD TV and SD Streaming (8052, 8050, 8059, 8063) at x 258, 449, 640 and 831; Main VC's Share Content (8090) at 1140; tests/measure_series.py's frames `top.tabs` and `call.top.end`."
+    },
+    {
+      "id": "mach-48",
+      "claim": "The README gave a microphone mute and a display's warming and cooling no place, and round four's designer of this theme invented one for each (archive/job-e823df9b/round4/mach/canvas/NOTES.md).",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "No working page, call page or window draws a display status, and none but Audio Settings a mic mute: its Mic column (Mic Label 4050, Mic Slider 9018, Mic Mute 9017) stands beside Program and Main. The display shows its state by Display On and Off lighting (8112, 8113) and by the Starting Up and Powering Down waits.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Audio Settings",
+          "Main SD",
+          "Main VC",
+          "Starting Up",
+          "Powering Down"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "**A microphone mute** goes where"
+        },
+        {
+          "readme": "**A display's state** - off, warming up, on, cooling down -"
+        }
+      ],
+      "evidence": "Audio Settings' Mic Label (4050), Mic Slider (9018) and Mic Mute (9017); no control named for a display's state or a mic on any other page of seeds/Mach 1035.gdl, 725, 720, 1525, 1535, 525, 535 or 320."
+    },
+    {
+      "id": "mach-49",
+      "claim": "regions.call: the call page's keys in the template's look.",
+      "where": [
+        "regions.call",
+        "regions.dialer"
+      ],
+      "template": {
+        "does": "Make Call, End Call and Privacy draw the kit's 755x440 call, end-call and privacy_nsel/_sel art over their caption, set a line down ('\\r\\nMake Call'), End Call resting #A82925DC; the dial pad's 2 to 9 draw their digit over the 440x440 letter art (abc to wxyz); VC Call, Flash and Contacts the kit's 880x440 call, flash and contacts art with their words past its glyph ('               Flash'), Flash #EDB95E50 to #EDB95ED2.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Main VC",
+          "VTC Dialer"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "regions.call.call.icon",
+          "says": "call"
+        },
+        {
+          "key": "regions.call.end-call.fill",
+          "says": "alert-call"
+        },
+        {
+          "key": "regions.dialer.key.icon",
+          "says": "{letters}"
+        },
+        {
+          "key": "regions.dialer.flash.fill",
+          "says": "accent-wash"
+        },
+        {
+          "key": "regions.dialer.contacts.__kit",
+          "says": "880x440"
+        }
+      ],
+      "builds": "The call keys build with their 755x440 icons over their words and End Call at #A82925DC; the dialer's digits over their letters, its Call, Flash and Contacts on their 880x440 art with their words past the glyph (as far as the key holds them), and Flash in the accent's wash.",
+      "evidence": "Main VC's Initiate Call (5014) on 755x440_call.png, End Call (5215) on 755x440_end-call.png #A82925DC to #E23636, VC Privacy (5217) on 755x440_privacy_nsel/_sel; VTC Dialer's Dialer Keypad 2-9 (5204-5211) on 440x440_abc to _wxyz, VC Call (5214), VC Flash (5216) and VC PhoneBook (5250) on 880x440_call, _flash and _contacts, their captions led by spaces."
+    },
+    {
+      "id": "mach-50",
+      "claim": "The README's call page: Share Content says Share.",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "Main VC's Share Content (8090) has no words of its own, which its program writes: a #000000B4 key at the header's end that lights #A82925DC.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Main VC"
+        ]
+      },
+      "status": "deviation",
+      "reason": "A key with no words and no icon says nothing on the canvas or in the ID map a programmer works from, and its program writes over its words in any case.",
+      "here": "The README's call page gives Share Content the word Share, where the template's key has none until its program writes them.",
+      "evidence": "Main VC's Share Content (8090): caption '' in both states, #000000B4 to #A82925DC, on seeds/Mach 1035.gdl."
+    },
+    {
+      "id": "mach-51",
+      "claim": "The README's incoming call: its answers as the template's.",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "Incoming Call's Accept Call and Decline Call are 9032 and 9033 on every bar seed.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Incoming Call"
+        ]
+      },
+      "status": "deviation",
+      "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
+      "here": "An incoming call's Accept and Decline take IDs of their own, from 50001, where the template's are 9032 and 9033: a program written for the template's needs them told.",
+      "evidence": "Incoming Call's Accept Call (9032) and Decline Call (9033) on seeds/Mach 1035.gdl, and on its 725, 720, 1525 and 1535; docs/idmap.md, the call mode's dialer."
+    },
+    {
+      "id": "mach-52",
+      "claim": "The README's dialer: Contacts is drawn as the template's.",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "VTC Dialer's Contacts (5250) is a 128x60 key on 880x440_contacts, its word beside the glyph with the template's own gap.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "VTC Dialer"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The word is set past the glyph by the kit's measured reach and the 14 pt type floor, which sets it larger than the template's, so the gap the template leaves shrinks.",
+      "here": "The dialer's Contacts key sets its word larger than the template's, nearly touching its glyph.",
+      "evidence": "VC PhoneBook (5250) at 744,461 128x60 on 880x440_contacts.png, on seeds/Mach 1035.gdl."
+    },
+    {
+      "id": "mach-53",
+      "claim": "The README's dialer: Delete is drawn as the template's.",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "VTC Dialer's VC Delete (5237) is a 60x46 key beside the field, at 614,260, its glyph small in it.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "VTC Dialer"
+        ]
+      },
+      "status": "deviation",
+      "reason": "A key meets the panel's touch minimum and the glyph is drawn at the size that minimum gives it, which is larger than the template's key holds.",
+      "here": "The dialer's Delete key is taller than the template's and its glyph larger.",
+      "evidence": "VC Delete (5237) at 614,260 60x46 on seeds/Mach 1035.gdl."
     }
   ]
 }

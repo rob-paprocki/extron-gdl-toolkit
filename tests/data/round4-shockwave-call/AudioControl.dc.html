@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audio Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Audio Control" kind="modal" role="settings" title="Audio Control" panels="TLP1035T TLP725T TLP525T TLP320M" theme="haze" does="The microphones' mute.">
+  <x-import component-from-global-scope="ExtronShockwave.Label" name="Mic Heading" align="center" style="position: absolute; left: 540px; top: 290px; width: 200px; height: 60px">Mic</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" style="position: absolute; left: 580px; top: 380px; width: 120px; height: 110px" id="120" name="Mic Mute" variant="tile" press="Muted" states='[{"name":"Live","look":"off","icon":"mic_gray"},{"name":"Muted","look":"on","icon":"mic-mute-1_yellow","color":"caution","text":"Mics Muted"}]' does="Mutes and unmutes the room microphones; lit yellow with Mics Muted while they are muted.">Mic Mute</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

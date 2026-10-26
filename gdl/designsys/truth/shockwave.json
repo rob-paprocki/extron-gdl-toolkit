@@ -442,7 +442,7 @@
     "regions.mode"
    ],
    "template": {
-    "does": "The template's is 169x59, not wide's 272x110, and names 1248x440_r_gray_nsel and _sel, which are the kit's gray_round_nsel and gray_round_sel pixel for pixel (the kit does have it). On Main Multi-Window the same slot is 'Preset Selection' (8119).",
+    "does": "The template's is 169x59, not wide's 272x110, and names 1248x440_r_gray_nsel and _sel, which are the kit's gray_round_nsel and gray_round_sel pixel for pixel (the kit does have it). On Main Multi-Window the same slot is 'Preset Selection'.",
     "seed": "seeds/Shockwave 1035.gdl",
     "pages": [
      "Main SD",
@@ -1100,6 +1100,305 @@
     }
    ],
    "evidence": "Main SD's SD PC, SD Laptop and SD Blu-ray at x 169, 322 and 475 (152 wide); Display On, Off and Mute at 29,170, 29,254 and 29,338 (120x80)."
-  }
+  },
+  {
+   "id": "shockwave-33",
+   "claim": "The README drew no call page: its grammar was Main SD's alone, and round four's designer drew Video Call as a working page with Main SD's places and a Share Content launcher in the left rail.",
+   "where": [
+    "README The template's grammar",
+    "README The working page"
+   ],
+   "template": {
+    "does": "Main VC is the call mode's working page: six tabs (Codec 8072 for the Doc Cam) and Share Content (8090), 120x75 at 1123,7 on the header's right block - the seed's own art with its words in it, teal 'Share Content' (712x440_share-content_nsel) lighting to 'Stop Sharing' (712x440_stop-sharing_sel), in no kit; its left rail 'VTC' over Call (Initiate Call 5014), End Call (5215) and Privacy (VC Privacy 5217), 120x60 pills at 29,170, 240 and 310, then the Display, Screen and Lighting Control tiles (8214, 8115, 8116) at 469, 573 and 678; its right rail, footer and well Main SD's.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main VC",
+     "Main SD"
+    ]
+   },
+   "status": "frame",
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "call.left.groups"
+    },
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "call.top.end"
+    },
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "call.top.tabs"
+    }
+   ],
+   "fix": [
+    {
+     "key": "buttons.share.kit",
+     "says": "712x440"
+    },
+    {
+     "key": "kit.extract.only.0",
+     "says": "712x440_share-content_nsel.png"
+    },
+    {
+     "readme": "A video call is a working page of its own, the template's Main VC"
+    }
+   ],
+   "builds": "A Page with role=\"call\" places its call keys at Main VC's VTC places with seed IDs 5014, 5215 and 5217, and a Header `slot=\"share\"` at 1123,7 in `share`, the seed's art extracted (python -m gdl.designsys extract shockwave), with seed ID 8090.",
+   "evidence": "Main VC's VTC Label, Initiate Call (5014), End Call (5215), VC Privacy (5217), Display Control (8214) and Share Content (8090) on seeds/Shockwave 1035.gdl; the same roles and IDs on its 725, 720, 1525 and 1535, measured into each series' frame `call`."
+  },
+  {
+   "id": "shockwave-34",
+   "claim": "Nothing in the system drew the call mode's dialer.",
+   "where": [
+    "README The template's grammar"
+   ],
+   "template": {
+    "does": "VTC Dialer is a 921x574 popup of the well's region titled 'VTC Dialer' (36 pt): a white entry (Dialer Feedback Label 50000, 398x63) with Delete (5237) beside it, the kit's dialpad art keys 80x86 at an 88 step (Dialer Keypad 1 5203 to # 5213), Contacts (5250) and Keyboard (5229) on the 504x440 and 712x440 art, Flash (5216) and Call (5214) on the 960x440 blue and green pills.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "VTC Dialer"
+    ]
+   },
+   "status": "frame",
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "call.center.dialer"
+    }
+   ],
+   "evidence": "VTC Dialer's 17 buttons and its feedback label on seeds/Shockwave 1035, 725, 720, 1525 and 1535.gdl, read by tests/measure_series.py _dialer."
+  },
+  {
+   "id": "shockwave-35",
+   "claim": "The Page README and docs/ROADMAP.md: only the power-down question has the template's words; an incoming call's question is refused by topic.",
+   "where": [
+    "Page README",
+    "writing.confirm"
+   ],
+   "template": {
+    "does": "Incoming Call is a 703x453 #999999 card at 288,173: 'Incoming call,' and 'do you wish to accept?' on two lines (26 pt) over Accept Call (9032, 1248x440_r_call_outline_green_nsel) and Ignore Call (9033, the red one), 272x110 at 355,448 and 653,448.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Incoming Call"
+    ]
+   },
+   "status": "frame",
+   "frame": [
+    {
+     "series": "Shockwave 1220 Series",
+     "key": "windows.incoming"
+    }
+   ],
+   "fix": [
+    {
+     "key": "writing.buttons.accept",
+     "says": "Accept Call"
+    },
+    {
+     "key": "writing.buttons.decline",
+     "says": "Ignore Call"
+    }
+   ],
+   "evidence": "Incoming Call's Incoming Call Label, Accept Call (9032) and Ignore Call (9033) on seeds/Shockwave 1035.gdl, and on its 725, 720, 1525 and 1535."
+  },
+  {
+   "id": "shockwave-36",
+   "claim": "The README's grammar gave the TLP1035T's six source tabs alone, and a Header past its panel's was refused as 'more than the TLP1035T's holds across', with no remedy.",
+   "where": [
+    "README The template's grammar",
+    "Header README"
+   ],
+   "template": {
+    "does": "The header draws six 152x91 tabs at a 153 step from x 169; a seventh at that step ends at 1239, on its right block. On Main VC, Share Content stands at 1123 and the six end at 1086. Shockwave's bar seeds draw no Main Select Source: they choose sources by the tabs alone.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main SD",
+     "Main VC"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "- **Sources.** One `slot=\"source\"` tab each"
+    },
+    {
+     "readme": "Shockwave's bar templates draw no page to choose among more"
+    }
+   ],
+   "evidence": "Main SD's six tabs at x 169 to 934; Main VC's Share Content (8090) at 1123; no page named Main Select Source in seeds/Shockwave 1035, 725, 720, 1525 or 1535.gdl."
+  },
+  {
+   "id": "shockwave-37",
+   "claim": "The README gave a microphone mute and a display's warming and cooling no place, and round four's designer of this theme invented one for each (archive/job-e823df9b/round4/shockwave/canvas/NOTES.md).",
+   "where": [
+    "README The working page"
+   ],
+   "template": {
+    "does": "No working page, call page or window draws a display status, and none but Audio Control a mic mute: its Mic column (Mic Label, Mic Slider 9018, Mic Mute 9017) stands beside Program and Main. The display shows its state by Display On and Off lighting (8112, 8113) and by the Starting Up and Powering Down waits.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Audio Control",
+     "Main SD",
+     "Main VC",
+     "Starting Up",
+     "Powering Down"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "readme": "**A microphone mute** goes where"
+    },
+    {
+     "readme": "**A display's state** - off, warming up, on, cooling down -"
+    }
+   ],
+   "evidence": "Audio Control's Mic Label, Mic Slider (9018) and Mic Mute (9017); no control named for a display's state or a mic on any other page of seeds/Shockwave 1035.gdl, 725, 720, 1525, 1535, 525, 535 or 320."
+  },
+  {
+   "id": "shockwave-38",
+   "claim": "regions.call: the call page's keys in the template's look.",
+   "where": [
+    "regions.call"
+   ],
+   "template": {
+    "does": "Call, End Call and Privacy rest ringed - Call in 960x440_green_outline_nsel, End Call and Privacy in rings the seed names 960x440_red_sel and yellow_sel, the kit's red_outline_nsel and yellow_outline_nsel pixel for pixel - and light to their _1 copies, the kit's red_sel and yellow_sel, their words in the family's dark (#355424, #75063C, #946E06).",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Main VC"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "regions.call.end-call.icon",
+     "says": "red"
+    },
+    {
+     "key": "regions.call.privacy.icon",
+     "says": "yellow"
+    },
+    {
+     "key": "regions.call.privacy.states",
+     "says": "caution"
+    }
+   ],
+   "builds": "Each call key lights its words in its family's dark (`go`, `alert`, `caution`), where a designer's states took the pill's black.",
+   "evidence": "Main VC's End Call (5215): Off 960x440_red_sel.png, which holds the kit's 960x440_red_outline_nsel pixels, On 960x440_red_sel.png_1, the kit's 960x440_red_sel, #75063C; VC Privacy (5217): Off 960x440_yellow_sel.png (the kit's yellow_outline_nsel), On 960x440_yellow_sel.png_1 #946E06; read off seeds/Shockwave 1035.gdl with tests/measure_series.py template_art."
+  },
+  {
+   "id": "shockwave-39",
+   "claim": "regions.dialer and regions.window: the dialer's keys and the incoming call's answers in the template's look.",
+   "where": [
+    "regions.dialer",
+    "regions.window.accept",
+    "regions.window.decline"
+   ],
+   "template": {
+    "does": "VTC Dialer sets Call's and Flash's words past their pills' glyph ('         Call', '          Flash'), Contacts' and Delete's under theirs ('\\r\\n\\r\\nContacts', '\\r\\nDelete'); Incoming Call's Accept Call and Ignore Call are the kit's round 1248x440_r_call_outline_green_nsel and r_end-call_outline_red_nsel, lit r_call_green_sel and r_end-call_red_sel, their words past the glyph ('           Accept Call').",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "VTC Dialer",
+     "Incoming Call"
+    ]
+   },
+   "status": "fixed",
+   "fix": [
+    {
+     "key": "regions.dialer.call.__caption",
+     "says": "indent"
+    },
+    {
+     "key": "regions.dialer.delete.__caption",
+     "says": "below"
+    },
+    {
+     "key": "regions.window.accept.icon",
+     "says": "r_call_green"
+    },
+    {
+     "key": "regions.window.decline.icon",
+     "says": "r_end-call_red"
+    },
+    {
+     "key": "kit.icon_right.960x440"
+    }
+   ],
+   "builds": "The dialer's Call and Flash build with their words past the glyph, Contacts and Delete with theirs under it - Delete's word, which was dropped - and the incoming call's answers on the round call and end-call pills, where they were plain rings.",
+   "evidence": "VTC Dialer's VC Call (5214), VC Flash (5216), VC PhoneBook (5250) and VC Delete (5237) and Incoming Call's Accept Call (9032) and Ignore Call (9033) on seeds/Shockwave 1035.gdl; the 725 sets Call and Flash 7 and 8 spaces in."
+  },
+  {
+   "id": "shockwave-40",
+   "claim": "The README's incoming call: its answers as the template's.",
+   "where": [
+    "README The working page"
+   ],
+   "template": {
+    "does": "Incoming Call's Accept Call and Ignore Call are 9032 and 9033 on every bar seed.",
+    "seed": "seeds/Shockwave 1035.gdl",
+    "pages": [
+     "Incoming Call"
+    ]
+   },
+   "status": "deviation",
+   "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
+   "here": "An incoming call's Accept Call and Ignore Call take IDs of their own, from 50001, where the template's are 9032 and 9033: a program written for the template's needs them told.",
+   "evidence": "Incoming Call's Accept Call (9032) and Ignore Call (9033) on seeds/Shockwave 1035.gdl, and on its 725, 720, 1525 and 1535; docs/idmap.md, the call mode's dialer."
+  },
+  {
+   "id": "shockwave-41",
+   "claim": "The README's call page: the call mode's launchers, as many as Main VC draws.",
+   "where": [
+    "README The template's grammar"
+   ],
+   "template": {
+    "does": "The 725's Main VC stands three 113x98 launchers (Display Control, Audio Control, Lighting Control) at y 293, 393 and 493 under its VTC Section's three 113x50 pills, the last ending at 591 of its rail's 600.",
+    "seed": "seeds/Shockwave 725.gdl",
+    "pages": [
+     "Main VC"
+    ]
+   },
+   "status": "deviation",
+   "reason": "The 725's touch minimum is 60 px: its pills grow to it and stand the Settings Section 30 px lower, past the rail's foot.",
+   "here": "On the 725, Shockwave's call page holds two launchers, where the template's holds three: its 60 px touch minimum deepens the 50 px call keys.",
+   "evidence": "Main VC on seeds/Shockwave 725.gdl: Initiate Call (5014), End Call (5215) and VC Privacy (5217) at y 126, 181 and 236, its launchers at 293, 393 and 493; the 725's 60 px touch minimum (gdl.spec touch_minimums); design-call-shockwave's call page refused with three on the TLP725T."
+  },
+ {
+  "id": "shockwave-42",
+  "claim": "The README's dialer: the star key is the template's.",
+  "where": [
+   "README The working page"
+  ],
+  "template": {
+   "does": "VTC Dialer's Dialer Keypad * (5212) is an 80x86 key on 440x440_gray, its star a glyph of Extron's icon face.",
+   "seed": "seeds/Shockwave 1035.gdl",
+   "pages": [
+    "VTC Dialer"
+   ]
+  },
+  "status": "deviation",
+  "reason": "The system carries no icon face: the key says its star in the type.",
+  "here": "The dialer's star key says a plain * where the template draws a glyph.",
+  "evidence": "Dialer Keypad * (5212) at 287,590 80x86 on 440x440_gray_nsel.png, on seeds/Shockwave 1035.gdl."
+ },
+ {
+  "id": "shockwave-43",
+  "claim": "The README's dialer: Delete stands as the template's.",
+  "where": [
+   "README The working page"
+  ],
+  "template": {
+   "does": "VTC Dialer's VC Delete (5237) is an 84x84 key at 703,248, 12 px right of the field and 10 px above its top.",
+   "seed": "seeds/Shockwave 1035.gdl",
+   "pages": [
+    "VTC Dialer"
+   ]
+  },
+  "status": "deviation",
+  "reason": "The key grows to the panel's touch minimum about its centre, which moves it from the template's place.",
+  "here": "The dialer's Delete key stands higher and further from the field than the template's.",
+  "evidence": "VC Delete (5237) at 703,248 84x84, the field at 293,258 398x63, on seeds/Shockwave 1035.gdl."
+ }
  ]
 }

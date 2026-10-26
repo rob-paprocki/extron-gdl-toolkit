@@ -512,6 +512,42 @@ class TestTheFrameOfEachSeries(unittest.TestCase):
         if not checked:
             self.skipTest('no seeds here (git lfs pull)')
 
+    def test_each_call_key_is_where_the_seed_draws_it(self):
+        # Read off the seed's own Main VC and VTC Dialer, not through
+        # frame_of: the call mode's keys a frame records are the buttons of
+        # their seed IDs there - the VTC group's, the header's Share Content,
+        # every dialer key put on the page at the popup region's origin - and
+        # a series whose seed draws no Main VC (a hub's, the 320's) records
+        # no call mode.
+        from gdl import seeds
+        from gdl.project import Project
+        checked = 0
+        for theme in ('mach', 'shockwave', 'turbulence'):
+            for series, row in _profile(theme)['panels'].items():
+                seed = measure_series.series_seed(row) if not series.startswith('_') else None
+                if not seeds.usable(seed):
+                    continue
+                checked += 1
+                f = row['frame']
+                with self.subTest(series=series):
+                    pages = {pg['name']: pg for pg in Project.open(seeds.path(seed)).pages()}
+                    if 'Main VC' not in pages:
+                        self.assertNotIn('call', f)
+                        continue
+                    C = f['call']
+                    drawn = {c['id']: list(c['rect']) for c in pages['Main VC']['controls'] if c['type'] == 'PBButton'}
+                    for b in C['left']['groups'][0]['buttons']:
+                        self.assertEqual(b['rect'], drawn[b['id']], b['name'])
+                    share = next(x for x in C['top']['end'] if x['role'] == 'share')
+                    self.assertEqual(share['rect'], drawn[8090])
+                    at = C['center']['region'][:2]
+                    keys = {c['id']: c['rect'] for c in pages['VTC Dialer']['controls'] if c['type'] == 'PBButton'}
+                    for k in C['center']['dialer']['keys']:
+                        r = keys[k['id']]
+                        self.assertEqual(k['rect'], [r[0] + at[0], r[1] + at[1], r[2], r[3]], k['name'])
+        if not checked:
+            self.skipTest('no seeds here (git lfs pull)')
+
     def test_each_device_picture_is_where_the_seed_draws_it(self):
         # Read off the seed's own popups, not through frame_of: a device's
         # picture is a standard popup's PBImage drawing <size>_<device>.png,

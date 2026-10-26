@@ -555,6 +555,49 @@ statement is in the live docs; this is the record that it changed.
   SD's Divider on the 300), and a page that did not fit after a row moved
   gave only the rearranged depth.
 
+- **The region frame had no call mode** (until 2026-10-25). It measured Main
+  SD alone, so a call page was a working page in Main SD's places or a
+  source popup in the Center, its keys loose: round four's Mach designer drew
+  the second, its Shockwave and Turbulence designers the first, each with a
+  Share Content of their own and a Mic Mute in a place of their own (the
+  Footer's mode slot, the RightRail's audio slot, a rail dock) and a display
+  status the template never draws. An incoming call's question was refused
+  by topic, nothing drew the VTC Dialer, and Shockwave's Share Content art
+  waited on an extraction filter. The README gave the 1035's source tabs
+  alone, and a Header past its panel's was refused with no remedy. Main VC,
+  its dialer and Incoming Call are measured into each bar series' frame now,
+  with Main Select Source where the series draws it, and the README says
+  each panel's count (`docs/claude-design.md` §4, spec item 11).
+- **Shockwave's `tile` measured a two-word caption on one line** (until
+  2026-10-25), though its usage called it a squarer button for a two-line
+  caption: on the 725 'Lighting Control' grew the left rail's column to 172
+  px, into the footer's mode cell beside the rail's foot. It breaks at the
+  space nearest the middle now, as Turbulence's `dock` does.
+- **Shockwave's Main VC draws End Call and Privacy lit at rest** - the
+  ledger's shockwave-38, a deviation, read off the resource names (until
+  2026-10-26): its End Call and Privacy rest on `960x440_red_sel.png` and
+  `yellow_sel.png`. A review extracted the images the seed embeds under those
+  names: they hold the kit's `red_outline_nsel` and `yellow_outline_nsel`
+  rings pixel for pixel, and their `_1` copies the lit pills. The template
+  rests them ringed, as the system draws them; the entry is `fixed`, and a
+  name is no longer read as the art it holds.
+- **The call mode's dialer draws its number field** - believed, and said by
+  turbulence-42 (a white field), until a review on 2026-10-26: the frame
+  measured Shockwave's and Turbulence's field as the entry label's own paint,
+  which the region chrome drew only for shapes, so the number stood black on
+  the well there and on every hub and 320, where no field was drawn for any
+  theme. A Label paints its own field now (`fill`).
+- **Build rounds a translucent fill down on the way into premultiplied form
+  and out** - written with #55's tolerance, 255 // alpha + 1 a channel, from
+  Mach's Make Call building #659945 at 220 as (99, 151, 69) (until
+  2026-10-26). The call mode put the call icon over that key, and its 1035,
+  725 and 525 builds failed `verify_built` at (98, 150, 69) - the Mach 1035
+  seed's own Initiate Call, byte for byte. Fitted to every translucent fill in
+  those builds and Mach's seeds, the way in rounds to nearest and only the way
+  out truncates, twice, with a third pass inside an image drawn over the fill,
+  and a channel can come back high (`docs/gdl-format.md`). The tolerance takes
+  one more under an image.
+
 ## Dated facts moved out of the live docs
 
 - **Seeds** were made by hand on 2026-09-09; the 835 seed a day earlier (it was

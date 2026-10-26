@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Call" role="call" reached-by="program" does="The Teams call page; the program shows it by itself when a call comes in." panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Header">
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="101" name="Laptop" icon="laptop" nav="Laptop" states="Off, On" does="Routes the table laptop to the display. Live while it is the source on the display.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="102" name="ShareLink" icon="sharelink" nav="ShareLink" states="Off, On" does="Routes the wireless ShareLink share to the display. Live while it is the source on the display.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="103" name="Room PC" icon="pc" nav="RoomPC" states="Off, On" does="Routes the room PC to the display. Live while it is the source on the display.">Room PC</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="104" name="Doc Cam" icon="doc-cam" nav="DocCam" states="Off, On" does="Routes the document camera to the display. Live while it is the source on the display.">Doc Cam</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.LeftRail">
+    <x-import component-from-global-scope="ExtronMach.Section" title="VTC">
+      <x-import component-from-global-scope="ExtronMach.Button" name="Make Call" states="Off, On" does="Joins the Microsoft Teams call on the room PC; On while in the call.">Make Call</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" name="End Call" does="Ends the Microsoft Teams call.">End Call</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" name="Camera Privacy" states="Off, On" does="Turns camera privacy on and off; On while the camera is blocked.">Privacy</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronMach.Section" title="Settings">
+      <x-import component-from-global-scope="ExtronMach.Button" id="121" name="Lighting" nav="Lighting" does="Opens the lighting presets.">Lighting</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" id="122" name="Audio" nav="Audio" does="Opens the audio settings, where the microphones are muted.">Audio</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.RightRail"></x-import>
+  <x-import component-from-global-scope="ExtronMach.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronMach.Button" slot="mode" name="Presentation" nav="Home" does="Shows the working page.">Presentation</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

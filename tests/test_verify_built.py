@@ -1221,8 +1221,8 @@ class TestStateImage(unittest.TestCase):
                                  (0x80020D1A, (1, 13, 25, 255), True),       # alpha lost
                                  (0x80020D1A, (255, 255, 255, 128), True),   # the donor's
                                  (0x26000000, (0, 0, 0, 128), True),         # another alpha
-                                 # Mach's Make Call, #659945 at 220: Build rounds
-                                 # each channel down on the way in and out, 2 off.
+                                 # Mach's Make Call, #659945 at 220, bare: two of
+                                 # Build's round trips, 2 off.
                                  (0xDC659945, (99, 151, 69, 220), False)):
             op = {'fields': {'nameField': 'Card'}, 'fill': fill}
             problems, notes, n = self.vb.check_fills([{'name': 'Home', 'controls': [op]}],
@@ -1230,6 +1230,75 @@ class TestStateImage(unittest.TestCase):
             self.assertEqual(n, 1, (hex(fill), built))
             self.assertEqual(bool(problems), bad, (hex(fill), built, problems))
             self.assertFalse(any('not checked' in x for x in notes), notes)
+
+    @staticmethod
+    def _make_call(under, edge=(99, 151, 69, 220)):
+        """Mach's Make Call Off as Build drew it on the 1035, 103 x 60: its
+        fill #659945 at 220 built `under` inside the 755x440 call icon's
+        fitted rect, `edge` in the last column and row past it, and the
+        glyph's 75 white pixels."""
+        import io
+        from PIL import Image
+        im = Image.new('RGBA', (103, 60), edge)
+        im.paste(under, (0, 0, 102, 59))
+        im.paste((255, 255, 255, 255), (44, 9, 49, 24))
+        buf = io.BytesIO()
+        im.save(buf, 'PNG')
+        return buf.getvalue()
+
+    def test_a_translucent_fill_under_an_image_takes_one_more_rounding(self):
+        """Build draws an image over a translucent fill with one more round
+        trip through premultiplied form, inside the image's rect: Mach's Make
+        Call under its call icon built (98, 150, 69) where its bare key builds
+        (99, 151, 69), and failed a tolerance of one rounding on the 1035, 725
+        and 525. The Mach 1035 seed's own Initiate Call is the same bytes
+        (TestTranslucentFillUnderAnImageOnTheSeed)."""
+        table = {'Call': {'Name': 'Call', 'Controls': [
+            {'ID': 1, 'Name': 'Make Call', 'Type': 7, 'Width': 103, 'Height': 60,
+             'TLPImageID': 7, 'States': [{'Name': 'Off', 'TLPImageID': 7},
+                                         {'Name': 'On', 'TLPImageID': 8}]}]}}
+        # No file: the image comparison is _state_image's, tested on its own.
+        icon = {'name': '755x440_call.png'}
+        on = self._make_call((134, 209, 97, 255), (134, 209, 97, 255))
+
+        def check(under, image):
+            op = {'fields': {'nameField': 'Make Call'}, 'fill': 0xDC659945, 'image': image,
+                  'states': [{'name': 'Off', 'fill': 0xDC659945, 'image': image},
+                             {'name': 'On', 'fill': 0xFF86D161, 'image': image}]}
+            plan = [{'name': 'Call', 'controls': [op]}]
+            assets = {7: self._make_call(under), 8: on}
+            fills, _, n = self.vb.check_fills(plan, table, assets, 'page')
+            states, _, m = self.vb.check_states(plan, table, assets, 'page')
+            self.assertEqual((n, m), (1, 2))
+            return fills + states
+
+        self.assertEqual(check((98, 150, 69, 220), icon), [])
+        # Bare, the third round trip has nothing to come from.
+        self.assertEqual(len(check((98, 150, 69, 220), None)), 2)
+        # Under the icon, one further is another color, and the donor's is.
+        for under in ((97, 149, 69, 220), (255, 255, 255, 220), (98, 150, 69, 255)):
+            self.assertEqual(len(check(under, icon)), 2, under)
+
+    def test_the_fill_tolerance_holds_every_color_builds_round_trips_leave(self):
+        """The model _fill_tolerance() documents, measured off every
+        translucent fill in Mach's call builds and seeds: rounding in,
+        truncating out through a 16.16 reciprocal, twice bare and three times
+        under an image. Every channel at every alpha stays within it, and
+        the third pass is what needs the one more."""
+        def trip(c, a, n):
+            for _ in range(n):
+                c = min(255, ((c * a + 127) // 255) * ((255 << 16) // a) >> 16)
+            return c
+        self.assertEqual([trip(c, 220, 2) for c in (0x65, 0x99, 0x45)], [99, 151, 69])
+        self.assertEqual([trip(c, 220, 3) for c in (0x65, 0x99, 0x45)], [98, 150, 69])
+        past_one = 0
+        for a in range(1, 255):
+            for c in range(256):
+                self.assertLessEqual(abs(trip(c, a, 2) - c), self.vb._fill_tolerance(a), (a, c))
+                self.assertLessEqual(abs(trip(c, a, 3) - c), self.vb._fill_tolerance(a, True),
+                                     (a, c))
+                past_one += abs(trip(c, a, 3) - c) > self.vb._fill_tolerance(a)
+        self.assertTrue(past_one)
 
     def test_a_label_planned_clear_built_on_a_fill_is_reported(self):
         """Turbulence 320's empty state: labels planned with no fill built on
@@ -1578,6 +1647,42 @@ class TestStateImageOnTheSeed(unittest.TestCase):
         problems = self._check(i, i - 1)
         self.assertEqual(len(problems), 1, problems)
         self.assertIn(f"nearer {self.imgs[i - 1]['name']!r}", problems[0])
+
+
+class TestTranslucentFillUnderAnImageOnTheSeed(unittest.TestCase):
+    """Extron's own build of a translucent fill under an icon: the Mach 1035
+    seed's Main VC 'Initiate Call', #659945 at 220 Off and #86D161 On under
+    755x440_call.png, built as (98, 150, 69, 220) - the very bytes the call
+    mode's Make Call built on the 1035, which a tolerance of one rounding
+    failed. Planned as the spec plans that key, it verifies."""
+    SEED = os.path.join(os.path.dirname(HERE), 'seeds', 'Mach 1035.gdl')
+
+    def test_the_seeds_call_key_verifies_as_planned(self):
+        vb = _vb(self)
+        from gdl.spec import resolve_image
+        if not usable(self.SEED):
+            self.skipTest('seeds/Mach 1035.gdl is not here (git lfs pull)')
+        f = resolve_image('Mach/Extracted/755x440_call.png')
+        if not f:
+            self.skipTest("Mach's call icon is not extracted here (python -m gdl.designsys extract mach)")
+        from gdl.compose import load
+        layout, assets = load(self.SEED)
+        page = next(pg for pg in layout['Pages'] if pg['Name'] == 'Main VC')
+        c = next(c for c in page['Controls'] if c.get('Name') == 'Initiate Call')
+        table = {'Main VC': {'Name': 'Main VC', 'Controls': [c]}}
+
+        def check(image):
+            op = {'fields': {'nameField': 'Initiate Call'}, 'fill': 0xDC659945, 'image': image,
+                  'states': [{'name': 'Off', 'fill': 0xDC659945, 'image': image},
+                             {'name': 'On', 'fill': 0xFF86D161, 'image': image}]}
+            plan = [{'name': 'Main VC', 'controls': [op]}]
+            return (vb.check_fills(plan, table, assets, 'page')[0]
+                    + vb.check_states(plan, table, assets, 'page')[0])
+
+        self.assertEqual(check({'name': '755x440_call.png', 'file': f}), [])
+        # Planned bare, the same artwork is one rounding too far.
+        bare = check(None)
+        self.assertTrue(bare and all('#629645 at alpha 220' in p for p in bare), bare)
 
 
 class TestEditStates(unittest.TestCase):

@@ -235,7 +235,21 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   (8024) and Mute (8021) - the frame's `ids` - where the designer gave the
   control no `id` and no other canvas control has that ID, the same on every
   page that draws them and every panel; each page's band steps over them. A designer's `id` always wins, and
-  where a seed ID is taken the chrome takes one of its band.
+  where a seed ID is taken the chrome takes one of its band. A call page
+  (`role="call"`) keeps the call mode's too: Make Call (5014), End Call
+  (5215) and Privacy (5217) - by what their names say, wherever in the VTC
+  Section they stand - and Share Content (8090), the call record's `ids`.
+- **The call mode's dialer keeps its template's IDs on every panel.** A
+  popup with `role="dialer"` draws the template's VTC Dialer, each key the
+  popup's own control with its seed ID as its `id` - Dialer Keypad 0 to 9
+  (5202 to 5211), * (5212), # (5213), Period (5228), VC Call (5214), Flash
+  (5216), Contacts (5250), Keyboard (5229), Delete (5237) and the entry the
+  program writes the number into (50000) - so a key keeps it on every page
+  the 320 spreads the dialer over, where a derived control, keyed by its
+  page, would take one of its own on each. The incoming call's
+  answers (`topic="call"`) are the question's, from 50001, as the
+  power-down question's are - not the template's 9032 and 9033, which each
+  bar theme's README lists under *Differences*.
 - **A region page's mirrors share their control's ID.** Where a template draws
   one function twice and the program addresses it as one control - the
   Shockwave 1035's tab name under the tab's glyph (its frame's `twin`) - the

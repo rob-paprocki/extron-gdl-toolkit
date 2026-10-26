@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lighting</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Lighting" kind="modal" role="settings" panels="TLP1035T TLP725T TLP525T TLP320M" theme="haze">
+  <x-import component-from-global-scope="ExtronShockwave.Group" name="Lighting Presets" title="Presets" style="position: absolute; left: 240px; top: 300px; width: 800px; height: 200px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Lights Full" does="Sets the lights to Full.">Full</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Lights Meeting" does="Sets the lights to Meeting.">Meeting</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Lights Off" does="Sets the lights to Off.">Off</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

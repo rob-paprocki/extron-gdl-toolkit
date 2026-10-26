@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Teams</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Teams" kind="popup" group="Sources" role="source" title="Teams" panels="TLP1035T TLP725T TLP525T TLP320M" theme="haze">
+  <x-import component-from-global-scope="ExtronShockwave.Label" name="Teams Call Status" type="body" align="center" does="Shows the Teams call status: No Call, Ringing or In Call." style="position: absolute; left: 260px; top: 120px; width: 400px; height: 60px">No Call</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Group" title="Presets" cell="130x120" gap="40" cap="3" style="position: absolute; left: 130px; top: 300px; width: 660px; height: 200px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Camera Wide" states="Off, On" does="Points the room camera at the wide preset; On while it is recalled.">Wide</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Camera Table" states="Off, On" does="Points the room camera at the table preset; On while it is recalled.">Table</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Camera Presenter" states="Off, On" does="Points the room camera at the presenter preset; On while it is recalled.">Presenter</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":921,"height":574}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

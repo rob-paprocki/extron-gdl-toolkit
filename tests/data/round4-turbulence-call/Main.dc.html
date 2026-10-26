@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Start</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Start" splash="true" start="true" panels="TLP1035T TLP725T TLP525T TLP320M" theme="office" does="The page the panel boots to; Start opens the working page.">
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="Room Title" type="title" align="center" does="The room's name, which the program sets." style="position: absolute; left: 310px; top: 120px; width: 660px; height: 110px">Boardroom</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Start" variant="start" nav="MainSD" style="position: absolute; left: 500px; top: 260px; width: 270px; height: 280px"></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="Press Here Label" align="center" style="position: absolute; left: 440px; top: 560px; width: 400px; height: 60px">Press to Begin</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

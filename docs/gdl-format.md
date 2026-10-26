@@ -514,14 +514,23 @@ A generator should assert all four agree rather than trusting the writes.
 - **A translucent fill reaches the artwork at its own alpha.** Build writes the
   alpha exactly and the color within premultiplying's rounding: Turbulence's
   rail, black at 38, built (0, 0, 0, 38) throughout, and its shade, #020D1A at
-  128, built (1, 13, 25, 128); rounding down on the way in and out, a channel
-  can come back up to 255 // alpha low - Mach's Make Call, #659945 at 220,
-  built (99, 151, 69, 220). GUI Designer's snapshots, and the compositor,
-  draw such a pixel at full strength (`docs/render-fidelity.md` §2), but the
-  theme is drawn for a panel that blends it - the Turbulence seed's own header
-  and footer art is alpha 128 throughout. `tests/verify_built.py` reads a
-  translucent fill off the pixels at its alpha, as it reads an opaque one off
-  the opaque pixels.
+  128, built (1, 13, 25, 128). Each channel goes into premultiplied form
+  rounded, (c * a + 127) // 255, and out truncated through a 16.16
+  reciprocal, p * ((255 << 16) // a) >> 16 - twice for a fill, and a third
+  time inside the rect of an image drawn over it; that reproduces every
+  translucent fill in Mach's call builds and its 1035, 725 and 525 seeds, 26
+  looks at nine alphas. A channel comes back up to 255 // alpha + 1 off bare
+  and one more under an image, high as well as low: Mach's Make Call, #659945
+  at 220, built (99, 151, 69, 220) bare and (98, 150, 69, 220) under its
+  755x440 call icon, but for the last column and row, past the fitted icon -
+  as the Mach 1035 seed's own Initiate Call is built, byte for byte - and the
+  seed's VC Call, #86D161 at 80 under its icon, green 210. GUI Designer's
+  snapshots, and the compositor, draw such a pixel at full strength
+  (`docs/render-fidelity.md` §2), but the theme is drawn for a panel that
+  blends it - the Turbulence seed's own header and footer art is alpha 128
+  throughout. `tests/verify_built.py` reads a translucent fill off the pixels
+  at its alpha, as it reads an opaque one off the opaque pixels, within that
+  rounding (`_fill_tolerance`).
 - **A built-in border draws as its project defines it.** Every project carries
   its own copy of GUI Designer's 13 built-ins, each a `PBBorderInfo` in its
   resource's `dataField` - `cornerRadiusField`, `thicknessField` - and seeds

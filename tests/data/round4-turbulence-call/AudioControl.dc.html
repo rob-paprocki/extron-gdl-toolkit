@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audio Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Audio Control" kind="modal" role="settings" title="Audio Control" panels="TLP1035T TLP725T TLP525T TLP320M" theme="office" does="The microphones' mute.">
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="Mic Heading" align="center" style="position: absolute; left: 540px; top: 300px; width: 200px; height: 48px">Mic</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" variant="ring" style="position: absolute; left: 590px; top: 380px; width: 100px; height: 100px" id="101" name="Mic Mute" states='[{"name":"Live","look":"off"},{"name":"Muted","look":"on","text":"Mics Muted"}]' does="Mutes and unmutes the room microphones; Muted, with its caption changed to Mics Muted, while they are muted.">Mic Mute</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

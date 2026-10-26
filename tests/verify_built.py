@@ -101,25 +101,42 @@ def _shares_at(assets, tid, alpha):
     return {tuple(k): v / n for k, v in counts.items()} if n else {}
 
 
-def _fill_shares(assets, tid, argb):
+def _fill_tolerance(alpha, under_image=False):
+    """How far a channel of a translucent fill at `alpha` can build off its
+    plan.
+
+    Build premultiplies each channel rounding to nearest, (c * a + 127) // 255,
+    and unpremultiplies it truncating through a 16.16 reciprocal,
+    p * ((255 << 16) // a) >> 16 - twice for a fill, and a third time inside
+    the rect of an image drawn over it. That reproduces every translucent fill
+    in Mach's call builds and its 1035, 725 and 525 seeds - 26 looks at nine
+    alphas from 50 to 220, 15 of them under an image - and a channel can come
+    back high as well as low (the 1035 seed's VC Call, #86D161 at 80 under its
+    icon, built green 210). Mach's Make Call, #659945 at 220, builds (99, 151,
+    69) bare and (98, 150, 69) under its 755x440 icon, except in the last
+    column and row, which the fitted icon does not reach; the seed's own
+    Initiate Call, the same fill under the same icon, is those very bytes. At
+    every alpha two passes stay within 255 // alpha + 1 and three within one
+    more, and only an image adds the third."""
+    return 255 // alpha + 1 + bool(under_image)
+
+
+def _fill_shares(assets, tid, argb, under_image=False):
     """_shares() for an opaque fill. For a translucent one, {color: share of
     the visible pixels}, every pixel at the fill's own alpha (within 3) and
-    color (within the rounding premultiplying leaves, 255 // alpha + 1 a
-    channel) counted as the planned (r, g, b) itself, the rest by their own
-    (r, g, b, a). Build writes a translucent fill's alpha exactly: Turbulence's
-    rail, black at 38, came back (0, 0, 0, 38) throughout, and its shade,
-    #020D1A at 128, as (1, 13, 25, 128). Read off the opaque pixels alone it
-    has none, and nothing would be checked."""
+    color (within Build's rounding, _fill_tolerance(), which an image drawn
+    over the fill - `under_image` - widens) counted as the planned (r, g, b)
+    itself, the rest by their own (r, g, b, a). Build writes a translucent
+    fill's alpha exactly: Turbulence's rail, black at 38, came back (0, 0, 0,
+    38) throughout, and its shade, #020D1A at 128, as (1, 13, 25, 128). Read
+    off the opaque pixels alone it has none, and nothing would be checked."""
     if _opaque(argb):
         return _shares(assets, tid)
     blob = assets.get(tid)
     if blob is None:
         return {}
     want, alpha = _rgb(argb), (argb >> 24) & 0xFF
-    # Build rounds each channel down on the way into premultiplied form and
-    # again on the way out: up to 255 // alpha a channel - Mach's Make Call,
-    # #659945 at 220, came back (99, 151, 69, 220).
-    tol = 255 // alpha + 1
+    tol = _fill_tolerance(alpha, under_image)
     raw = Image.open(io.BytesIO(blob)).convert('RGBA').tobytes()
     counts = collections.Counter()
     for i in range(0, len(raw), 4):
@@ -218,7 +235,9 @@ def check_fills(plan_items, table, assets, kind):
                                 f'{label} but Build produced no artwork '
                                 f'({field} {tid}), so it will draw nothing')
                 continue
-            shares = _fill_shares(assets, tid, op['fill'])
+            # A button's op carries its first state's image, as its TLPImageID
+            # is that state's artwork.
+            shares = _fill_shares(assets, tid, op['fill'], op.get('image'))
             if not shares:
                 problems.append(f"{kind} {item['name']!r} {name!r}: planned fill {label}, but "
                                 f'{_bare(assets, tid)}')
@@ -430,7 +449,7 @@ def check_states(plan_items, table, assets, kind):
                 # Teams tab lit is the kit's opaque _sel tile over white at 60.
                 if _covers(ws.get('image'), c):
                     continue
-                fills = _fill_shares(assets, tid, fill)
+                fills = _fill_shares(assets, tid, fill, ws.get('image'))
                 if not fills:
                     problems.append(
                         f"{kind} {item['name']!r} {name!r} state "

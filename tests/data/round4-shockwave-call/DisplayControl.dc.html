@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Display Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Display Control" kind="modal" role="settings" title="Display Control" panels="TLP1035T TLP725T TLP525T TLP320M" theme="haze">
+  <x-import component-from-global-scope="ExtronShockwave.Group" title="Display" cell="150x90" gap="40" cap="2" style="position: absolute; left: 440px; top: 340px; width: 400px; height: 160px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" id="112" name="Display On" press="Warming Up" states='[{"name":"Idle","look":"off"},{"name":"Warming Up","look":"on","icon":"yellow","color":"caution","text":"Warming Up"},{"name":"Display On","look":"on","icon":"green","color":"go"}]' does="Turns the display on; Warming Up while it starts, then lit green while it is on.">On</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" id="113" name="Display Off" press="Cooling Down" states='[{"name":"Display Off","look":"on","icon":"red","color":"alert"},{"name":"Cooling Down","look":"on","icon":"yellow","color":"caution","text":"Cooling Down"},{"name":"Idle","look":"off"}]' does="Turns the display off; Cooling Down while it shuts down, then lit red while it is off.">Off</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

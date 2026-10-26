@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
 from gdl import design, designsys, idmap, seeds  # noqa: E402
-from gdl.spec import Panel, resolve_image  # noqa: E402
+from gdl.spec import Panel, color as spec_color, resolve_image  # noqa: E402
 
 CANVAS = os.path.join(HERE, 'data', 'design-huddle')
 
@@ -306,6 +306,19 @@ class TestTranslate(unittest.TestCase):
         _, problems, _ = translate({'Home.dc.html': out(
             HOME, ctl([0, 0, 100, 64], **dict(BTN, missing_icon=['440x440 rocket'])))})
         self.assertTrue(any("icon 'rocket' is not in Afterburn's 440x440 kit" in p
+                            for p in problems), problems)
+        # Afterburn's kit is all installed: no extract step to name.
+        self.assertFalse(any('extract' in p for p in problems), problems)
+
+    def test_an_icon_an_extracted_kit_lacks_names_the_extract_step(self):
+        """Shockwave's Share Content art is only in its seeds: a checkout
+        that has not extracted it was refused 'not in Shockwave's 712x440
+        kit', which reads as a wrong icon."""
+        home = page('Home', start=True, template='Shockwave', scheme='default')
+        _, problems, _ = translate({'Home.dc.html': out(
+            home, ctl([0, 0, 120, 75], **dict(BTN, missing_icon=['712x440 share-content'])))})
+        self.assertTrue(any("icon 'share-content' is not in Shockwave's 712x440 kit - where its art comes out "
+                            "of Extron's files, run `python -m gdl.designsys extract shockwave` first" in p
                             for p in problems), problems)
 
     def test_a_slider_with_no_kit_thumb_is_noted(self):
@@ -1689,6 +1702,41 @@ class TestCompareTemplate(unittest.TestCase):
         self.assertEqual(small['page'], ('Main', None))
         self.assertEqual(small['source'], ('Doc Cam 1', None))
         self.assertEqual(small['confirm'], ('Confirmation', None))
+
+    def test_the_call_mode_has_its_counterparts_in_each_bar_frame(self):
+        """A call page beside Main VC, the dialer beside VTC Dialer in Main
+        VC's region, the incoming call's question beside the template's own
+        over Main VC - not the power-down Confirmation - and the page sources
+        are chosen on beside Main Select Source, where the template draws it.
+        A hub's and a 320's template has no call mode: there each is beside
+        what the panel draws it as."""
+        for t, incoming, choose in (('mach', 'Incoming Call', 'Main Select Source'),
+                                    ('shockwave', 'Incoming Call', None),
+                                    ('turbulence', 'Incoming Call Label', 'Main Select Source')):
+            ms = designsys.models(designsys.load(t))
+            with self.subTest(theme=t):
+                bar = design.template_counterparts(ms['TLP1035T']['frame'])
+                self.assertEqual(bar['call'], ('Main VC', None))
+                self.assertEqual(bar['dialer'], ('VTC Dialer', 'Main VC'))
+                self.assertEqual(bar['incoming'], (incoming, 'Main VC'))
+                self.assertEqual(bar['select'], (choose, None) if choose else ('Main SD', None))
+                self.assertEqual(design.template_counterparts(ms['TLP725T']['frame'])['dialer'],
+                                 ('VTC Dialer', 'Main VC'))
+                hub = design.template_counterparts(ms['TLP525T']['frame'])
+                self.assertEqual((hub['call'], hub['select']), (hub['page'],) * 2)
+                self.assertEqual((hub['dialer'], hub['incoming']), (hub['source'], hub['confirm']))
+                small = design.template_counterparts(ms['TLP320M']['frame'])
+                self.assertEqual((small['call'], small['dialer'], small['incoming']),
+                                 (small['page'], small['source'], small['confirm']))
+
+    def test_the_call_modes_artboards_say_their_roles(self):
+        def page(attrs):
+            return f'<x-import component-from-global-scope="ExtronMach.Page" name="X" {attrs}></x-import>'
+        self.assertEqual(design.board_role(page('role="call"')), 'call')
+        self.assertEqual(design.board_role(page('kind="popup" role="dialer"')), 'dialer')
+        self.assertEqual(design.board_role(page('role="select"')), 'select')
+        self.assertEqual(design.board_role(page('kind="modal" role="confirm" topic="call"')), 'incoming')
+        self.assertEqual(design.board_role(page('kind="modal" role="confirm" topic="power"')), 'confirm')
 
     def test_a_source_or_window_is_set_beside_the_seeds_own_of_its_name(self):
         """The canvas's PC beside the seed's PC, its DocCam beside Doc Cam,
@@ -3120,6 +3168,17 @@ class TestAPagesOwnBars(_Probe, unittest.TestCase):
         self.assertEqual(x, 0)
         self.assertAlmostEqual(w, 140 * 0.9, delta=1)
 
+    def test_a_designers_filled_label_paints_its_own_field(self):
+        """A `<Label fill=...>` the designer drew carries its fill into the
+        spec, as the dialer's number field does, where it was once dropped."""
+        anchor = '<x-import component-from-global-scope="ExtronMach.Panel" name="Footer"'
+        label = ('<x-import component-from-global-scope="ExtronMach.Label" name="Field" type="body" align="left" '
+                 'fill="accent" style="position: absolute; left: 0px; top: 130px; width: 140px; height: 37px">'
+                 'Field</x-import>\n')
+        _, ctl, out = self.probe('Home.dc.html', 'TLP535T', edit=(anchor, label + anchor))
+        self.assertEqual(out['problems'], [])
+        self.assertEqual(ctl['Field'][0]['fill'], 'accent')
+
     def test_a_hubs_level_runs_beside_its_up_and_down(self):
         for panel in ('TLP525T', 'TLP535T'):
             with self.subTest(panel=panel):
@@ -3268,6 +3327,9 @@ class TestTheReadmesRoomTranslates(unittest.TestCase):
     def test_each_room_translates_on_every_panel_it_lists(self):
         for theme in designsys.TEMPLATES:
             with self.subTest(theme=theme):
+                # Its call page's Share Content draws Shockwave's extracted art.
+                if _unextracted(designsys.load(theme)):
+                    self.skipTest(f"{theme}'s art is not extracted here (python -m gdl.designsys extract {theme})")
                 d = tempfile.mkdtemp()
                 self.addCleanup(shutil.rmtree, d, True)
                 boards = readme_room(theme, d)
@@ -3437,6 +3499,350 @@ class TestRoundFourRooms(unittest.TestCase):
         maps = idmap.load_panels(d)
         self.assertEqual(list(maps), list(specs))
         self.assertEqual(idmap.check_panels(maps), [])
+
+
+class _CallMode(_Probe):
+    """The call mode in the region grammar (tests/data/design-call-<theme>):
+    a working page, a call page (role="call") with its Share Content, its
+    VTC keys and launchers, the dialer (role="dialer"), the incoming call's
+    question (topic="call") and, where the template draws one, the page its
+    sources are chosen on (role="select") - each drawn from the panel's own
+    series' frame (`call`, `choose`, `windows.incoming`)."""
+    PANELS = ('TLP1035T', 'TLP725T')
+
+    def frame(self, model):
+        return designsys.models(designsys.load(self.THEME))[model]['frame']
+
+    def test_the_call_page_stands_its_keys_where_main_vc_does(self):
+        for model in self.PANELS:
+            with self.subTest(panel=model):
+                _, ctl, out = self.probe('Call.dc.html', model)
+                self.assertEqual(out['problems'], [], model)
+                C = self.frame(model)['call']
+                vtc = {b['role']: b for b in C['left']['groups'][0]['buttons']}
+                prev = None
+                for name, role, sid in (('Make Call', 'call', 5014), ('End Call', 'end-call', 5215),
+                                        ('Privacy', 'privacy', 5217)):
+                    g, r, _ = ctl[name]
+                    self.assertEqual(g['seed_id'], sid, name)
+                    # At its template's place - the first where the template's
+                    # stands, the next on from it as each grew to the panel's
+                    # touch minimum (the 725's 50 px pills), the template's
+                    # seam kept.
+                    t = vtc[role]['rect']
+                    if prev is None:
+                        self.assertEqual(r[1], t[1], name)
+                    else:
+                        seam = t[1] - (prev[1][1] + prev[1][3])
+                        self.assertEqual(r[1], max(t[1], prev[0][1] + prev[0][3] + seam), name)
+                    prev = (r, t)
+                share = next(x for x in C['top']['end'] if x['role'] == 'share')
+                g, r, _ = ctl['Share Content']
+                self.assertEqual(g['seed_id'], 8090)
+                self.assertEqual(r[:2], share['rect'][:2])
+                # The tabs end before it.
+                tabs = [ctl[n][1] for n in ('Laptop', 'PC', 'Doc Cam')]
+                self.assertLess(max(x[0] + x[2] for x in tabs), r[0])
+
+    def test_more_tabs_than_a_call_page_holds_names_the_templates_answer(self):
+        extra = ''.join(f'<x-import component-from-global-scope="{self.NS}.Button" slot="source" name="Extra {i}" '
+                        f'nav="Laptop" does="Shows the laptop.">Extra {i}</x-import>' for i in range(self.EXTRA))
+        _, _, out = self.probe('Call.dc.html', 'TLP1035T',
+                               edit=('<x-import component-from-global-scope="' + self.NS + '.Button" slot="share"',
+                                     extra + '<x-import component-from-global-scope="' + self.NS + '.Button" slot="share"'))
+        said = [q for q in out['problems'] if 'more than the TLP1035T\'s holds across' in q]
+        self.assertTrue(said, out['problems'])
+        self.assertIn(self.ANSWER, said[0])
+
+    def test_the_dialer_draws_the_templates_keys_with_their_ids(self):
+        for model in self.PANELS:
+            with self.subTest(panel=model):
+                page, ctl, out = self.probe('Dialer.dc.html', model)
+                self.assertEqual(out['problems'], [], model)
+                d = self.frame(model)['call']['center']['dialer']
+                g0 = self.frame(model)['call']['center']['region']
+                self.assertEqual(page['size'], g0[2:])
+                for k in d['keys']:
+                    g, r, _ = ctl[k['name']]
+                    # The popup's own control with the template's ID, not a
+                    # derived one, which the 320's pages would number apart.
+                    self.assertEqual((g['id'], g.get('derived')), (k['id'], None), k['name'])
+                    # At its place in the popup, grown about it at most.
+                    t = [k['rect'][0] - g0[0], k['rect'][1] - g0[1], k['rect'][2], k['rect'][3]]
+                    self.assertTrue(r[0] <= t[0] + 1 and r[1] <= t[1] + 1 and r[0] + r[2] >= t[0] + t[2] - 1
+                                    and r[1] + r[3] >= t[1] + t[3] - 1, (k['name'], r, t))
+                self.assertEqual(ctl[d['entry']['name']][0]['id'], 50000)
+
+    def test_an_incoming_call_asks_the_templates_question(self):
+        w = designsys.load(self.THEME)['writing']
+        for model in self.PANELS:
+            with self.subTest(panel=model):
+                _, ctl, out = self.probe('Incoming.dc.html', model)
+                self.assertEqual(out['problems'], [], model)
+                own = self.frame(model)['windows']['incoming']
+                self.assertEqual(' '.join(ctl['Incoming Call Message'][0]['text'].split()),
+                                 ' '.join(w['confirm']['call'].split()))
+                answers = sorted(n for n, v in ctl.items() if v[0].get('kind') == 'button')
+                words = [b.get('text') or w['buttons'][b['role']] for b in own['buttons']]
+                self.assertEqual(answers, sorted(f'Incoming Call {x}' for x in words))
+                self.assertEqual(ctl[f'Incoming Call {words[0]}'][0]['does'], 'Answers the incoming call.')
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestMachsCallMode(_CallMode, unittest.TestCase):
+    CANVAS = os.path.join(HERE, 'data', 'design-call-mach')
+    THEME, NS, EXTRA = 'mach', 'ExtronMach', 2
+    ANSWER = 'draw a Page with role="select" whose Header holds every source, and keep 4 or fewer tabs here'
+
+    def test_the_page_sources_are_chosen_on_is_main_select_sources(self):
+        """Mach's Main Select Source: its header one strip titled 'Select a
+        source', the Header's tabs its 100x100 tiles at y 311, 160 apart, each
+        its name in a label under it - and no popup region."""
+        _, ctl, out = self.probe('Sources.dc.html', 'TLP1035T')
+        self.assertEqual(out['problems'], [])
+        S = self.frame('TLP1035T')['choose']
+        self.assertEqual(ctl['Select Source Title'][0]['text'], 'Select a source')
+        self.assertEqual([ctl[n][1] for n in ('Laptop', 'PC', 'Doc Cam')],
+                         [[430, 311, 100, 100], [590, 311, 100, 100], [750, 311, 100, 100]])
+        self.assertEqual([t['rect'][1] for t in S['tiles']], [311] * 4)
+        self.assertIn('Laptop Label', ctl)
+        self.assertFalse([n for n, v in ctl.items() if v[0].get('kind') == 'popup_ref'])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestShockwavesCallMode(_CallMode, unittest.TestCase):
+    CANVAS = os.path.join(HERE, 'data', 'design-call-shockwave')
+    THEME, NS, EXTRA = 'shockwave', 'ExtronShockwave', 4
+    ANSWER = "Shockwave's template draws no page to choose among more there: keep 6 or fewer tabs here"
+
+    def test_a_select_page_is_named_where_the_template_draws_none(self):
+        _, _, out = self.probe('MainSD.dc.html', 'TLP1035T', edit=('name="Main SD"', 'name="Main SD" role="select"'))
+        self.assertTrue(any('role="select" is a page the TLP1035T\'s template does not draw' in q
+                            for q in out['problems']), out['problems'])
+
+    def test_a_section_grown_past_the_next_moves_it_down_the_rail(self):
+        """The 725's VTC pills, 50 px deep in its template, grow to its 60 px
+        touch minimum: the Settings Section under them moves down by as much,
+        the panel's gap clear of Privacy (bundle.js planLeftRail), and with
+        the three launchers its Main VC draws there, the last is named past
+        the rail's foot."""
+        _, ctl, out = self.probe('Call.dc.html', 'TLP725T')
+        self.assertEqual(out['problems'], [])
+        T = designsys.models(designsys.load(self.THEME))['TLP725T']
+        G = T['frame']['call']['left']['groups']
+        self.assertEqual({b['rect'][3] for b in G[0]['buttons']}, {50})
+        priv, light = ctl['Privacy'][1], ctl['Lighting'][1]
+        self.assertEqual(priv[3], T['touch'])
+        self.assertEqual(light[1], priv[1] + priv[3] + T['gap'])
+        self.assertGreater(light[1], G[1]['buttons'][0]['rect'][1])
+        three = '\n'.join(f'<x-import component-from-global-scope="{self.NS}.Button" name="{w}" nav="Lighting" '
+                          f'does="Opens it.">{w}</x-import>' for w in ('Lighting', 'Audio', 'Screen'))
+        _, _, out = self.probe('Call.dc.html', 'TLP725T', edit=(
+            f'<x-import component-from-global-scope="{self.NS}.Button" name="Lighting" nav="Lighting" '
+            'does="Opens the lighting.">Lighting</x-import>', three))
+        self.assertEqual(out['problems'], ["Screen runs past the foot of the TLP725T's left rail - the Settings "
+                                           "Section stands lower there, under the VTC Section grown to the touch "
+                                           "minimum"])
+
+    def test_a_tiles_two_words_go_on_two_lines(self):
+        """Shockwave's tile - its Settings launchers, 120x110 - breaks a
+        caption of two words at the space nearest its middle, as the seed's
+        Lighting Control is set (`tile.lines`): on one line it widened the
+        call page's rail past the template's 120 at x 29."""
+        _, ctl, out = self.probe('Call.dc.html', 'TLP1035T', edit=('>Lighting</x-import>', '>Lighting Control</x-import>'))
+        self.assertEqual(out['problems'], [])
+        g, r, _ = ctl['Lighting']
+        self.assertEqual(designsys.load(self.THEME)['buttons']['tile']['lines'], 2)
+        self.assertEqual(g['text'], 'Lighting\r\nControl')
+        self.assertEqual((r[0], r[2]), (29, 120))
+        self.assertEqual([ctl[n][1][0::2] for n in ('Make Call', 'End Call', 'Privacy')], [[29, 120]] * 3)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestTurbulencesCallMode(_CallMode, unittest.TestCase):
+    CANVAS = os.path.join(HERE, 'data', 'design-call-turbulence')
+    THEME, NS, EXTRA = 'turbulence', 'ExtronTurbulence', 4
+    ANSWER = 'draw a Page with role="select" whose Header holds every source, and keep 6 or fewer tabs here'
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestTheCallModeOnEveryPanel(unittest.TestCase):
+    """Each call canvas translated for the TLP1035T, 725T, 525T and 320M it
+    lists: clean on each, the call keys and Share Content keeping the
+    template's seed IDs on every panel, the dialer's keys theirs, and the ID
+    map's check across every panel clean - on the 525, whose template has no
+    call mode, the call keys a popup of their own the page shows first."""
+
+    def translate(self, theme, folder):
+        p = designsys.load(theme)
+        panels = ('TLP1035T', 'TLP725T', 'TLP525T', 'TLP320M')
+        if not all(seeds.usable(f'seeds/{p["template"]} {m[3:-1]}.gdl') for m in panels):
+            self.skipTest(f'the {theme} seeds are not here (git lfs pull)')
+        if not designsys.kit_root(p):
+            self.skipTest(f"Extron's {theme} kit is not here")
+        # Shockwave's Share Content art, which every call page draws.
+        if _unextracted(p):
+            self.skipTest(f"{theme}'s art is not extracted here (python -m gdl.designsys extract {theme})")
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        shutil.copytree(os.path.join(HERE, 'data', folder), d, dirs_exist_ok=True)
+        _stage(d, theme)
+        specs, problems, _ = design.Canvas(d).translate_panels()
+        self.assertEqual({m: q for m, q in problems.items() if q}, {})
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out, True)
+        design.write_panels(specs, out)
+        self.assertEqual(idmap.check_panels(idmap.load_panels(out)), [])
+        return specs
+
+    def test_turbulences_dialer_field_is_the_templates_on_every_panel(self):
+        """The #DCDCDC field is the template's own colour, which the six-colour
+        cap exempts; on the 525 and 320, whose dialer is derived, it was not,
+        and took one of the designer's six."""
+        specs = self.translate('turbulence', 'design-call-turbulence')
+        for m, spec in specs.items():
+            with self.subTest(panel=m):
+                self.assertIn('#FFDCDCDC', spec['_template_colors'])
+
+    def check(self, theme):
+        specs = self.translate(theme, f'design-call-{theme}')
+        for m, spec in specs.items():
+            ids = {c['name']: c.get('id') for it in spec['pages'] + spec['popups'] for c in it['controls']}
+            with self.subTest(panel=m):
+                self.assertEqual((ids['Make Call'], ids['End Call'], ids['Privacy'], ids['Share Content']),
+                                 (5014, 5215, 5217, 8090))
+                self.assertEqual((ids['Dialer Keypad 1'], ids['VC Call']), (5203, 5214))
+                self.assertEqual(_dialer_field(spec), [], m)
+                self.assertEqual(_blank_keys(spec), [], m)
+        hub = {it['name']: it for it in specs['TLP525T']['popups']}
+        self.assertIn('VTC', hub)
+        self.assertTrue({'Make Call', 'End Call', 'Privacy', 'Share Content'}
+                        <= {c['name'] for c in hub['VTC']['controls']})
+        # The hub's VTC popup draws the call keys as the call page does - in
+        # the call's green, red and yellow, not the options grid's key - in
+        # their own shape, and says VTC once, in its title.
+        call = next(it for it in specs['TLP1035T']['pages'] if it['name'] == 'Video Call')
+        bar = {c['name']: c for c in call['controls']}
+        keys = {c['name']: c for c in hub['VTC']['controls']}
+        self.assertNotIn('VTC Heading', keys)
+        for n in ('Make Call', 'End Call', 'Privacy', 'Share Content'):
+            with self.subTest(key=n):
+                self.assertEqual(_look(keys[n]), _look(bar[n]))
+                # Its words where the call page sets them: under Mach's icon.
+                lead = str(bar[n].get('text') or '')[:2] == '\r\n'
+                self.assertEqual(str(keys[n].get('text') or '')[:2] == '\r\n', lead)
+                # A call key's art in its own shape (Share Content's cell is
+                # theirs, its art fitted in it as Build fits it).
+                if n != 'Share Content' and any(i for i, _, _ in _look(bar[n])[1]):
+                    a, b = keys[n]['rect'], bar[n]['rect']
+                    self.assertAlmostEqual(a[2] / a[3], b[2] / b[3], delta=0.25 * b[2] / b[3])
+
+    def test_mach(self):
+        self.check('mach')
+
+    def test_shockwave(self):
+        self.check('shockwave')
+
+    def test_turbulence(self):
+        self.check('turbulence')
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestRoundFourCallRooms(TestTheCallModeOnEveryPanel):
+    """Round four's Mach, Shockwave and Turbulence rooms as revised and built
+    (archive/job-e823df9b/round4/<theme>/canvas/project), their call pages
+    redrawn in the call mode (tests/data/round4-<theme>-call): the call page
+    a Page with role="call" in the working page's regions, its Make Call,
+    End Call and Privacy in its LeftRail's VTC Section - Mach's out of a
+    source popup - Shockwave's Share Content in its Header's share place,
+    the mic mute in the audio window the template keeps it in and the
+    display's state in its On and Off keys' states. Each translates clean
+    on the 1035, 725, 525 and 320M, its ID map too."""
+
+    def check(self, theme):
+        specs = self.translate(theme, f'round4-{theme}-call')
+        call = next(it for it in specs['TLP1035T']['pages'] if it['name'] in ('Call', 'Video Call'))
+        ids = {c['name']: c.get('id') for c in call['controls']}
+        self.assertEqual(ids['End Call'], 5215)
+        self.assertFalse([c for it in specs['TLP1035T']['pages'] for c in it['controls']
+                          if c['name'] in ('Mic Mute', 'Display Status')])
+
+    def test_mach(self):
+        self.check('mach')
+
+    def test_shockwave(self):
+        self.check('shockwave')
+
+    def test_turbulence(self):
+        self.check('turbulence')
+
+
+def _unextracted(p):
+    """Whether art the theme's profile names to extract (`kit.extract.only`:
+    Shockwave's Share Content, which only its seeds carry) is missing from
+    this machine's kit - a checkout that has not run `python -m gdl.designsys
+    extract`. Turbulence's whole kit comes so, and kit_root() says that."""
+    only = ((p.get('kit') or {}).get('extract') or {}).get('only') or ()
+    have = designsys.kit_index(p)['paths'] if only else {}
+    return any(f not in have for f in only)
+
+
+def _dialer_field(spec):
+    """What is wrong with the field the dialer's number stands on in `spec`,
+    as 'page: why' - [] where every Dialer Feedback Label (50000) is on an
+    opaque ground its ink reads on: its own fill, as Shockwave's and
+    Turbulence's templates paint the field, or a filled panel under it that
+    holds it, as Mach's draws its Input Field Rectangle. Black ink on the
+    well behind it, which no field covered, could not be read."""
+    out, found = [], False
+    for it in spec['pages'] + spec['popups']:
+        cs = it['controls']
+        for i, c in enumerate(cs):
+            if c.get('id') != 50000:
+                continue
+            found = True
+            x, y, w, h = c['rect']
+            under = [c] + [d for d in reversed(cs[:i]) if d['kind'] == 'panel' and d['rect'][0] <= x
+                           and d['rect'][1] <= y and x + w <= d['rect'][0] + d['rect'][2]
+                           and y + h <= d['rect'][1] + d['rect'][3]]
+            ground = next((spec_color(d["fill"], spec["theme"]) for d in under if d.get('fill')), None)
+            ink = spec_color(c.get("color") or "text", spec["theme"])
+            if not ground or ground['A'] < 0xF0:
+                out.append(f"{it['name']}: no opaque field under {c['name']} ({ground})")
+                continue
+            lum = (lambda v: 0.299 * v['R'] + 0.587 * v['G'] + 0.114 * v['B'])
+            if abs(lum(ground) - lum(ink)) < 128:
+                out.append(f"{it['name']}: {c['name']}'s ink {ink} on its field {ground}")
+    return out if found else ['no Dialer Feedback Label (50000)']
+
+
+def _blank_keys(spec):
+    """The dialer's keys in `spec` that show nothing, as 'page: key': no
+    words, and no art or only a blank of the kit's - Turbulence's Period took
+    the keypad's dialpad_{key}, a file its kit lacks, and its own vc_dot was
+    never read."""
+    out = []
+    for it in spec['pages'] + spec['popups']:
+        if not it['name'].startswith('VTC Dialer'):
+            continue
+        for c in it['controls']:
+            if c['kind'] != 'button' or c.get('derived'):
+                continue
+            art = [s.get('image') for s in c.get('states') or () if isinstance(s, dict)]
+            if not str(c.get('text') or '').strip() and not any(a and 'blank' not in a for a in art):
+                out.append(f"{it['name']}: {c['name']}")
+    return out
+
+
+def _look(c):
+    """A button's look in a spec: its fill and each state's art, fill and words' colour."""
+    return (c.get('fill'), tuple((s.get('image'), s.get('fill'), s.get('color')) if isinstance(s, dict)
+                                 else (None, None, None) for s in c.get('states') or ()))
 
 
 def _stage(d, theme):

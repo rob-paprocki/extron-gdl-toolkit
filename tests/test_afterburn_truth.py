@@ -42,9 +42,10 @@ class TestAfterburnsLedger(unittest.TestCase):
 
     def test_it_has_an_entry_for_every_disagreement(self):
         """The grammar measurement found 35 claims of Afterburn's profile and
-        README that its pages contradict: one entry each, in its order."""
+        README that its pages contradict, and the mic mute and display state's
+        one more (afterburn-35): one entry each, in its order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'afterburn-{i:02d}' for i in range(35)])
+        self.assertEqual(ids, [f'afterburn-{i:02d}' for i in range(36)])
 
     def test_afterburn_is_done(self):
         self.assertEqual(audit.audit('afterburn'), [])

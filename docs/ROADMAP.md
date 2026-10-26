@@ -42,6 +42,17 @@ opening GUI Designer.**
    Remote Desktop window open and restored, for the run - from two minutes to
    over twenty a seed, with its build (`docs/from-scratch.md` §7). Next needed
    when a job needs a panel `seeds/README.md` lists as a gap.
+2. **Confirm or overrule where a mic mute and a display's state go.** Round
+   four's brief asks for both, and each designer's notes show a place of their
+   own for each - the footer's mode slot, the RightRail's audio slot, a rail
+   dock, a status Label in the header. Assumed, until you say otherwise: follow the template's own
+   places, and where it has none give the README a recipe in its grammar and
+   draw no region of our own. So a mic's Mute is in the audio window, as the
+   template's Mic column (Mic 4050, its level 9018, Mute 9017), and a
+   display's state is its On and Off keys' `states` - Warming Up and Cooling
+   Down as their own `text` - since no template page draws a status field
+   (`docs/claude-design.md` §4, each theme's README *The working page*, the
+   ledgers' entries). Overruled, a slot for either is a region's to draw.
 
 ## Mine, in order
 
@@ -73,6 +84,9 @@ opening GUI Designer.**
    1035, 725, 525 and 320 from the region-frame READMEs, are translated and
    what each designer still has to fix is named (§6, spec item 10): revised
    from the new READMEs, they are built and verified on all sixteen panels.
+   Their call pages, sources, mic mutes and display states, which every
+   designer improvised, are now the template's (spec item 11): redrawn so,
+   Mach's, Shockwave's and Turbulence's translate clean on all four panels.
    What is left is in §7: a plain modal that says more than the 320's one
    screen, a Clock on Shockwave's and Turbulence's 320, a plain container
    there, and the region frame's gaps below.
@@ -314,10 +328,11 @@ opening GUI Designer.**
     its template's own is a button's. Its round art (1248x440_r_gray) is
     the kit's gray_round pixel for pixel, which the system draws; its Share
     Content is the seed's own 120x75 art with the words baked in
-    (712x440_share-content_nsel, lit 712x440_stop-sharing_sel), in no kit:
-    drawing it needs the two extracted from the seed - `kit.extract` takes
-    every image a seed names, and the 1035 names 34 its kit does not, so a
-    filter first - and a variant that draws them;
+    (712x440_share-content_nsel, lit 712x440_stop-sharing_sel), in no kit,
+    which `python -m gdl.designsys extract shockwave` takes from the seed
+    (`kit.extract.only`, the two alone) and its `share` variant draws at a
+    call page's header end - built and verified in round four's Shockwave
+    call room (`tests/data/round4-shockwave-call`) on all four panels;
   - a source popup's controls are mapped from the drawn panel's well into
     each panel's at one scale, each grown about its centre: a column whose
     captions need more than the scaled width on the 725 comes out ragged
@@ -328,9 +343,42 @@ opening GUI Designer.**
     100 apart, and its headings 20 px over them, where the template's
     stand 9: at the 725's 16 pt floor a heading's words grow into the key
     under it;
-  - only the power-down confirmation (`topic="power"`) and the waits
-    (`"up"`, `"down"`) have the template's words; a recording or incoming
-    call confirmation is refused by topic until its words are measured;
+  - only the power-down confirmation (`topic="power"`), the incoming call's
+    question (`"call"`) and the waits (`"up"`, `"down"`) have the template's
+    words; a recording or room-mode question is refused by topic until its
+    words are measured;
+  - the call mode - a call page (`role="call"`, Main VC), its dialer
+    (`role="dialer"`) and the incoming call's question (`topic="call"`) -
+    and the page sources are chosen on (`role="select"`, Main Select
+    Source) translate and check clean, their ID maps too, on the TLP1035T,
+    725T, 525T and 320M in all three themes (`tests/data/design-call-<theme>`)
+    and in round four's rooms redrawn so (`tests/data/round4-<theme>-call`).
+    Those rooms and those canvases are built in GUI Designer and verified
+    on every panel, their ID maps too - the dialer's field, its keys' seed
+    IDs and art included (`archive/job-e823df9b/call/`). What it does not do yet: Mach's Share Content
+    says Share, an incoming call's answers take IDs of their own, Turbulence's
+    Select a Source tiles too, and Shockwave's 725 call page holds two of its
+    Main VC's three launchers (Differences); a key whose template sets its
+    words past its glyph (the dialer's Call, Flash and Contacts, Shockwave's
+    incoming answers) takes them 4 px past it, as the Header's tabs do,
+    where Shockwave's template leaves about 20 - and on a hub and the 320,
+    which draw no dialer of their template's, those keys say their words on
+    the key, Mach's without their 880x440 art; a hub draws a call page's
+    keys as a popup named for its Section's title, shown first, and leaves
+    its bar's Display Control off that page, whose first Section is no
+    display's - no hub template draws a call; the 320 shows a call page's
+    Select a Source keys first and its call keys on Main's later pages, and
+    pages the dialer over four, each page filled before the next, so a last
+    page can hold one control alone (Share Content on Video Call 4, Mach's
+    Keyboard on VTC Dialer 4) where evening the pages out would not; what
+    Share Content opens (Mach's 'Select a source to share', Shockwave's and
+    Turbulence's Main VC Share Content) is the designer's to draw; on the
+    725 the rail's foot launcher stands 1 px beside the Footer's first cell,
+    so a column its words widen (Initiate Call at the 16 pt floor) runs into
+    it and is named, where the footer could give way; and a room with more
+    sources than a Header holds is refused on Shockwave's bar panels, whose
+    templates draw no Main Select Source, with fewer tabs and a source popup
+    of keys as the remedy;
   - the region page's seed IDs and mirrors (`docs/idmap.md` §7) translate
     and check clean on every panel the region canvases list, and are not yet
     built in GUI Designer: Shockwave's 1035 tab twins - a caption-only

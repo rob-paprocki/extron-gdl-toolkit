@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Video Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Video Call" role="call" reached-by="program" panels="TLP1035T TLP725T TLP525T TLP320M" theme="haze" does="The call page; the program shows it when a call comes in.">
+<x-import component-from-global-scope="ExtronShockwave.Header">
+  <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" id="101" name="Laptop" icon="laptop_white" nav="Laptop" states="Off, On" does="Routes the laptop to the display; On while it is shown.">Laptop</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" id="102" name="PC" icon="pc_white" nav="PC" states="Off, On" does="Routes the PC to the display; On while it is shown.">PC</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" id="103" name="Doc Cam" icon="doc-cam_white" nav="DocCam" states="Off, On" does="Routes the doc cam to the display; On while it is shown.">Doc Cam</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" slot="share" name="Share Content" states="Off, On" does="Shares the room's source into the call; On while sharing.">Share</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronShockwave.LeftRail">
+  <x-import component-from-global-scope="ExtronShockwave.Section" title="VTC">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Make Call" states="Off, On" does="Joins the call; On while in a call.">Make Call</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="End Call" does="Ends the call.">End Call</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Privacy" states="Off, On" does="Covers the camera; On while covered.">Privacy</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Section" title="Settings">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Lighting" nav="Lighting" does="Opens the lighting.">Lighting</x-import>
+  </x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronShockwave.RightRail"></x-import>
+<x-import component-from-global-scope="ExtronShockwave.Footer" help="Help" power="PowerDown">
+  <x-import component-from-global-scope="ExtronShockwave.Button" slot="mode" name="Presentation" nav="MainSD" does="Shows the working page.">Presentation</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

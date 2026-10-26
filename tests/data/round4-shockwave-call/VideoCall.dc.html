@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Video Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Video Call" role="call" reached-by="program" panels="TLP1035T TLP725T TLP525T TLP320M" theme="haze" does="The Microsoft Teams call page on the room PC; the program shows it by itself when a call comes in.">
+  <x-import component-from-global-scope="ExtronShockwave.Header">
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" id="105" name="Teams" icon="microsoft-teams" nav="Teams" states="Off, On" does="Shows the Teams camera presets; On while a Teams call is in progress.">Teams</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" id="101" name="Laptop" icon="laptop_white" nav="Laptop" states="Off, On" does="Routes the laptop at the table to the display; On while it is the source on the display.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" id="102" name="ShareLink" icon="sharelink_white" nav="ShareLink" states="Off, On" does="Routes wireless ShareLink sharing to the display; On while it is the source on the display.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" id="103" name="PC" icon="pc_white" nav="PC" states="Off, On" does="Routes the room PC to the display; On while it is the source on the display.">PC</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" id="104" name="Doc Cam" icon="doc-cam_white" nav="DocCam" states="Off, On" does="Routes the document camera to the display; On while it is the source on the display.">Doc Cam</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="share" name="Share Content" nav="MainSD" does="Shows the Main SD page, where a source is shared to the display."></x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.LeftRail">
+    <x-import component-from-global-scope="ExtronShockwave.Section" title="VTC">
+      <x-import component-from-global-scope="ExtronShockwave.Button" name="Call" press="Ringing" states='[{"name":"Ready","look":"off"},{"name":"Ringing","look":"on","icon":"yellow","color":"caution","text":"Accept Call"},{"name":"In Call","look":"on"}]' does="Joins the Teams call on the room PC; shows Accept Call while a call is ringing and lit while in a call.">Call</x-import>
+      <x-import component-from-global-scope="ExtronShockwave.Button" name="End Call" does="Ends the Teams call.">End Call</x-import>
+      <x-import component-from-global-scope="ExtronShockwave.Button" name="Privacy" states="Off, On" does="Turns camera privacy on and off; On while the camera is covered.">Privacy</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Section">
+      <x-import component-from-global-scope="ExtronShockwave.Button" name="Display Control" nav="DisplayControl">Display Control</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.RightRail">
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="audio" name="Audio Control" nav="AudioControl" does="Opens the audio controls, where the microphones are muted.">Audio Control</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="mode" name="Presentation" nav="MainSD" does="Shows the working page.">Presentation</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

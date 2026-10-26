@@ -1,0 +1,134 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-25T02:05:22Z"
+  },
+  "title": "Boardroom",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 800,
+      "title": "Start",
+      "is_interactive": true
+    },
+    "Home.dc.html": {
+      "x": 1360,
+      "y": 0,
+      "w": 1280,
+      "h": 800,
+      "title": "Home",
+      "is_interactive": true
+    },
+    "Help.dc.html": {
+      "x": 2720,
+      "y": 0,
+      "w": 1280,
+      "h": 800,
+      "title": "Help"
+    },
+    "PowerDown.dc.html": {
+      "x": 4080,
+      "y": 0,
+      "w": 1280,
+      "h": 800,
+      "title": "Power Down"
+    },
+    "PoweringDown.dc.html": {
+      "x": 5440,
+      "y": 0,
+      "w": 1280,
+      "h": 800,
+      "title": "Powering Down"
+    },
+    "Lighting.dc.html": {
+      "x": 0,
+      "y": 920,
+      "w": 1280,
+      "h": 800,
+      "title": "Lighting Settings"
+    },
+    "Audio.dc.html": {
+      "x": 1360,
+      "y": 920,
+      "w": 1280,
+      "h": 800,
+      "title": "Audio"
+    },
+    "Laptop.dc.html": {
+      "x": 0,
+      "y": 1840,
+      "w": 995,
+      "h": 549,
+      "title": "Laptop"
+    },
+    "ShareLink.dc.html": {
+      "x": 1075,
+      "y": 1840,
+      "w": 995,
+      "h": 549,
+      "title": "ShareLink"
+    },
+    "RoomPC.dc.html": {
+      "x": 2150,
+      "y": 1840,
+      "w": 995,
+      "h": 549,
+      "title": "Room PC",
+      "is_interactive": true
+    },
+    "DocCam.dc.html": {
+      "x": 3225,
+      "y": 1840,
+      "w": 995,
+      "h": 549,
+      "title": "Document Camera"
+    },
+    "Call.dc.html": {
+      "x": 4300,
+      "y": 1840,
+      "w": 1280,
+      "h": 800,
+      "title": "Call"
+    },
+    "Teams.dc.html": {
+      "x": 6840,
+      "y": 1840,
+      "w": 995,
+      "h": 549,
+      "title": "Teams",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Home.dc.html",
+    "Help.dc.html",
+    "PowerDown.dc.html",
+    "PoweringDown.dc.html",
+    "Lighting.dc.html",
+    "Audio.dc.html",
+    "Laptop.dc.html",
+    "ShareLink.dc.html",
+    "RoomPC.dc.html",
+    "DocCam.dc.html",
+    "Call.dc.html",
+    "Teams.dc.html"
+  ],
+  "notes": {},
+  "designSystems": [
+    {
+      "title": "Extron Mach",
+      "namespace": "extronmach",
+      "artifact": "https://claude.ai/artifact/MsCJMb2sMX7vJys3KZ42ND",
+      "version": null,
+      "copiedAt": "2026-10-25T02:05:22Z"
+    }
+  ]
+}

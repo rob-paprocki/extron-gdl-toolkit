@@ -53,7 +53,8 @@ CHROME = (r'C:\Program Files\Google\Chrome\Application\chrome.exe',
 FIELDS = {
     'button': ('id', 'text', 'fill', 'stroke', 'color', 'border', 'size', 'bold', 'align',
                'states', 'press', 'nav', 'does', 'derived', 'joined', 'back'),
-    'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does', 'derived'),
+    # A label's `fill` and `border`: the field it paints itself (the dialer's).
+    'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does', 'derived', 'fill', 'border'),
     'panel': ('fill', 'stroke', 'border', 'derived'),
     'line': ('fill', 'thickness', 'from', 'to'),
     # A slider's `joined`: the right rail's volume group, heading, slider and
@@ -536,6 +537,7 @@ class Canvas:
                 notes.append(f'{b}: {q}')
             if profile is None:
                 profile = self._profile(pg.get('template'))
+                self.template = profile['template']
                 scheme = pg.get('scheme')
                 first = pg
             elif pg.get('panels') != first.get('panels'):
@@ -734,7 +736,9 @@ class Canvas:
             # level, which no token is).
             '_template_colors': sorted({v for v in colors.values() if isinstance(v, str) and v.startswith('#')}
                                        | _frame_colors(designsys.models(profile).get(first.get('panel') or '',
-                                                                                     {}).get('frame'))),
+                                                                                     {}).get('frame'))
+                                       | _dialer_field_colors(profile, designsys.models(profile).get(
+                                           first.get('panel') or '', {}).get('frame'))),
             'pages': pages,
             'popups': popups,
         }
@@ -874,8 +878,16 @@ class Canvas:
         if kind == 'button':
             for m in g.get('missing_icon') or []:
                 size, icon = m.split(' ', 1)
+                # Art that only Extron's own files carry - Shockwave's Share
+                # Content, Turbulence's whole kit - is in neither the install
+                # nor a fresh vendor/ until extracted: say so, or the remedy
+                # read as drawing another icon.
+                ex = ((self._profile(self.template).get('kit') or {}).get('extract')
+                      if self.template else None)
                 self.problems.append(f"{where}: icon {icon!r} is not in {self.template}'s "
-                                     f'{size} kit')
+                                     f'{size} kit'
+                                     + (f' - where its art comes out of Extron\'s files, run `python -m '
+                                        f'gdl.designsys extract {self.template.lower()}` first' if ex else ''))
             if 'states' in c:
                 c['states'] = [_state(s) for s in c['states']]
             if 'nav' in c and g.get('derived') and not g.get('mirror'):
@@ -1286,6 +1298,26 @@ def _frame_colors(frame):
             for x in v:
                 walk(x)
     walk(frame)
+    return out
+
+
+def _dialer_field_colors(profile, frame):
+    """The colour a dialer's number field is drawn in, for a series whose frame
+    measures none. The 525 and 320 have no dialer of their own - the hub's and
+    the 320's are derived from the 1035's and 725's - so the field's colour
+    (Turbulence's #DCDCDC, which is no token) comes off the profile's other
+    series. Without it the derived field took one of the designer's six."""
+    def dialer(fr):
+        return (((fr or {}).get('call') or {}).get('center') or {}).get('dialer')
+    if (dialer(frame) or {}).get('surfaces'):
+        return set()
+    out = set()
+    for s in (profile.get('panels') or {}).values():
+        if isinstance(s, dict):
+            for surface in (dialer(s.get('frame')) or {}).get('surfaces') or ():
+                if surface.get('kind') == 'label' and isinstance(surface.get('fill'), str) \
+                        and surface['fill'].startswith('#'):
+                    out.add(css_to_argb(surface['fill']))
     return out
 
 
@@ -2076,14 +2108,20 @@ _REGION_TAG = re.compile(r'component-from-global-scope="[\w.]+\.(?:Header|LeftRa
 
 def board_role(src):
     """What an artboard is, by its root Page: 'page' for a working page (one
-    holding a region), its `role` for a source's popup or a window, else None
-    - a free page, which the template's grammar has no counterpart for."""
+    holding a region), its `role` for a call page, the page sources are
+    chosen on, a source's popup, the dialer or a window - 'incoming' for the
+    question an incoming call asks (role="confirm" topic="call"), which a bar
+    template draws apart from its power-down question - else None, a free
+    page, which the template's grammar has no counterpart for."""
     m = _PAGE_TAG.search(src)
     if not m:
         return None
-    role = dict(re.findall(r'([\w-]+)="([^"]*)"', m.group(1))).get('role')
+    attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', m.group(1)))
+    role = (attrs.get('role') or '').lower()
+    if role == 'confirm' and (attrs.get('topic') or '').lower() == 'call':
+        return 'incoming'
     if role:
-        return role.lower()
+        return role
     return 'page' if _REGION_TAG.search(src) else None
 
 
@@ -2093,7 +2131,16 @@ def template_counterparts(frame):
     source's popup and each window - its frame's own page and popups. On a
     bar panel or a hub a source's popup shows in the working page's region
     and a window over it; a 320's are pages of their own, and its working
-    page is Main, the home its frame records."""
+    page is Main, the home its frame records.
+
+    The call mode as the bar templates draw it: a call page beside Main VC
+    (`call`), the dialer beside VTC Dialer in Main VC's region, the incoming
+    call's question beside the template's own over Main VC (`windows.
+    incoming`), and the page sources are chosen on beside Main Select Source
+    (`choose`). A panel whose template has none of them - a hub, the 320,
+    Shockwave's bar panels for the last - draws a call page and a select
+    page as its working page, the dialer as a source and the question as its
+    power-down one, so each is beside that."""
     page = frame.get('page')
     pages = bool(frame.get('home'))
     host = None if pages else page
@@ -2108,6 +2155,17 @@ def template_counterparts(frame):
     sett = wins.get('settings') or []
     if sett and (sett[0].get('popups') or [None])[0]:
         out['settings'] = (sett[0]['popups'][0], host)
+    call = (frame.get('call') or {}).get('page')
+    dialer = (((frame.get('call') or {}).get('center') or {}).get('dialer') or {}).get('popup')
+    incoming = (wins.get('incoming') or {}).get('popup')
+    choose = (frame.get('choose') or {}).get('page')
+    out['call'] = (call, None) if call else out['page']
+    out['select'] = (choose, None) if choose else out['page']
+    out['dialer'] = (dialer, call) if dialer and call else out['source']
+    if incoming and call:
+        out['incoming'] = (incoming, call)
+    elif 'confirm' in out:
+        out['incoming'] = out['confirm']
     return out
 
 

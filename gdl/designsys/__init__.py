@@ -156,7 +156,9 @@ def tokens(p):
 # frame's own page and each page record it carries (a 300's or 320's home and
 # second page) name their bands so.
 _FRAME_TURN = {'top': 'left', 'left': 'top', 'bottom': 'right', 'right': 'bottom'}
-_FRAME_PAGES = ('home', 'second')
+# The page records a frame carries besides its own - a 320's home and second
+# page, a bar series' call mode - each with bands of its own.
+_FRAME_PAGES = ('home', 'second', 'call')
 _TURNED_NOTE = ("Its series' upright page turned: the upright top band is the left here and the bottom the right. "
                 "Upright: ")
 
@@ -561,8 +563,11 @@ def extract_sources(p):
     return out
 
 
-def extract_images(sources, out):
-    """Write every named image resource in `sources` (.gdl or .glt) to `out`.
+def extract_images(sources, out, only=None):
+    """Write every named image resource in `sources` (.gdl or .glt) to `out`,
+    or those named in `only` - a profile's `kit.extract.only`: Shockwave's
+    Share Content art is the seed's alone, where its 1035 names 34 images its
+    kit does not, and the rest are the kit's own.
 
     Turbulence has no kit beside the others in 1.28's Resources, and the
     library under Sample Projects\\Resources\\Turbulence is a separate one: it
@@ -585,6 +590,8 @@ def extract_images(sources, out):
             name = p.field(r, 'nameField')
             data = p.deref((p.field(r, 'dataField') or {}).get('Data'))
             if not (isinstance(name, str) and name.lower().endswith('.png') and data):
+                continue
+            if only is not None and name not in only:
                 continue
             path = os.path.join(out, name)
             if os.path.exists(path):
@@ -713,6 +720,10 @@ def _slim_windows(windows, ids=False):
         out = {'role': it['role'], 'rect': it['rect']}
         if ids and it.get('id') is not None:
             out['id'] = it['id']
+        # An answer's own words, where the window's template says them (the
+        # incoming call's Accept and Decline, Accept Call and Ignore Call).
+        if it.get('text'):
+            out['text'] = it['text']
         return out
 
     def slim(w):
@@ -729,6 +740,27 @@ def _slim_windows(windows, ids=False):
     if not windows:
         return windows
     return {k: [slim(w) for w in v] if isinstance(v, list) else slim(v) for k, v in windows.items()}
+
+
+def _slim_call(c):
+    """A series' call mode (the frame's `call`, tests/measure_series.py
+    _call_frame) as the bundle draws it: the header's surfaces and its end -
+    Share Content's place and seed ID (the tabs are the working page's) - the
+    left rail whole, and the dialer's title, entry, surfaces' shape, fill and
+    border, and keys by role with their seed IDs and names, not their art."""
+    if not c:
+        return None
+
+    def it(x):
+        return {k: x[k] for k in ('role', 'name', 'rect', 'id', 'text') if x.get(k) is not None} if x else None
+    left = dict(c['left'], items=[it(x) for x in c['left'].get('items') or ()],
+                groups=[dict(g, buttons=[it(b) for b in g['buttons']]) for g in c['left'].get('groups') or ()])
+    d = (c.get('center') or {}).get('dialer')
+    dialer = d and {'title': d.get('title'), 'text': d.get('text'), 'pt': d.get('pt'), 'entry': it(d.get('entry')),
+                    'surfaces': [{k: s.get(k) for k in ('kind', 'rect', 'fill', 'border')} for s in d.get('surfaces') or ()],
+                    'keys': [it(k) for k in d.get('keys') or ()]}
+    return {'top': {'surfaces': c['top']['surfaces'], 'end': [it(x) for x in c['top'].get('end') or ()]},
+            'left': left, 'center': {'dialer': dialer}}
 
 
 def bundle(p, art=True):
@@ -763,11 +795,17 @@ def bundle(p, art=True):
     profile['models'] = {m: {k: v for k, v in row.items() if k != 'frame'} for m, row in rows.items()}
     bars = (p.get('layout') or {}).get('bars') == 'controls'
     drawn = {row['series'] for row in rows.values() if row.get('tier') in ('A', 'B')}
+    # With the call mode (`call`, slimmed: _slim_call) and the page its sources
+    # are chosen on (`choose`, Main Select Source), where the series' template
+    # draws them.
     profile['frames'] = {series: dict({b: s['frame'][b] for b in ('top', 'left', 'right', 'bottom')},
-                                      center={k: s['frame']['center'].get(k)
-                                              for k in ('region', 'well', 'title', 'title_controls', 'empty',
-                                                        'status', 'pt', 'surfaces', 'pictures')},
-                                      windows=_slim_windows(s['frame'].get('windows')))
+                                      center=dict({k: s['frame']['center'].get(k)
+                                                   for k in ('region', 'well', 'title', 'title_controls', 'empty',
+                                                             'status', 'pt', 'surfaces', 'pictures')},
+                                                  rect=s['frame']['center'].get('rect')),
+                                      windows=_slim_windows(s['frame'].get('windows')),
+                                      **{k: v for k, v in (('call', _slim_call(s['frame'].get('call'))),
+                                                           ('choose', s['frame'].get('choose'))) if v})
                          for series, s in (p.get('panels') or {}).items()
                          if bars and series in drawn and s.get('frame')
                          and all(s['frame'].get(b) for b in ('top', 'left', 'right', 'bottom', 'center'))}
@@ -1173,6 +1211,7 @@ def _panels_section(p):
             f"pages would be popups, which only a page shows - so give its box room for all its members on "
             f"every large and mid-size panel there. The `Rail` stacks its controls at each panel's gap. Loose controls only "
             f"scale.\n"
+            + _sources_md(p) +
             f"- **Hubs** are one page of main controls beside a rail. Where the seed has no slider, a slider "
             f"is a level between `-` and `+`, and the rail holds what the table says - a heading over the "
             f"volume counted in a column rail where the template heads it, and in a row rail a heading takes "
@@ -1690,7 +1729,7 @@ Size an image button to its kit image's shape, or the image is letterboxed: {sha
 
 Text on the panel: a title, a status line, a caption beside a control. It fills its box and centers the text vertically.
 
-Props: the text is the element's text; `type` ({', '.join(f'`{n}`' for n in types if not n.startswith('button'))}), `size` in points, `bold`, `align` (`left`, `center`, `right`), `color` (a token: {label_colors}), `name`, `does` - when the program changes the text, say so: "Shows the codec's call status."
+Props: the text is the element's text; `type` ({', '.join(f'`{n}`' for n in types if not n.startswith('button'))}), `size` in points, `bold`, `align` (`left`, `center`, `right`), `color` (a token: {label_colors}), `name`, `does` - when the program changes the text, say so: "Shows the codec's call status." `fill` and `border` paint the label's own ground, a field the program writes into, as a template's dialer draws its number's - none by default: put a card behind words with a Panel.
 
 ```html
 {_x(p, 'Label', ' name="RoomName" type="title"', 'Huddle Room', 'width: 520px; height: 112px')}
@@ -1814,6 +1853,10 @@ def _region_docs(p):
     g1 = (heads[:1] or ['Display'])[0] or 'Display'
     g2 = heads[1] if heads[1:2] and heads[1] else 'its launchers'
     launcher = ((((p.get('writing') or {}).get('voice') or {}).get('launchers')) or ['Lighting'])[-1]
+    # Where the template draws a Main Select Source (the frames' `choose`).
+    chooser = ("On a page with `role=\"select\"` the Header draws the template's title instead, and its tabs are "
+               "the Center's tiles." if any((T.get('frame') or {}).get('choose') for T in models(p).values())
+               else f"{t}'s bar templates draw no Main Select Source, and a page with `role=\"select\"` is refused.")
 
     def ex(comp, attrs='', body=''):
         return _x(p, comp, attrs, body)
@@ -1828,6 +1871,9 @@ The bar across the top: the source tabs. {common}
 Its children say where they go with `slot`:
 - `slot="source"`: a source tab. The tabs stand at the frame's places - its first tab's, then its step, as the Layout gives them - as one set: the 2 mm between touch targets is kept between the set and anything else, not inside it. Fewer tabs than the template draws take its first places and the bar closes up after them; more continue its step. A tab takes the template's look and caption alignment unless it sets its own: on {t}, {look('tab')}, its measured fill when off and on where it draws no art, and its caption centred - one indented past its icon takes as many leading spaces as clear the icon on each panel. The row is one size: where one caption needs more room on a panel, every tab grows with it, and the bar with them. Give each a `nav` to its source's popup.{_twin_words(p)}
 - `slot="start"` and `slot="end"`: anything at the bar's left or right end, at its own size.
+- `slot="share"`, on a call page (`role="call"`) alone: Share Content, at the bar's end where the call mode's template stands it, in {look('share')} unless it sets its own, keeping the template's ID where you give it none. The tabs end before it.
+
+How many tabs a panel's Header holds is in the system's README (*Every panel the room has*, Sources): past it the Header is refused, by name, with the template's answer for a room with more. {chooser}
 
 The bar's own surfaces are drawn as Panels named `Header Left`, `Header Right` or `Header Bar`{_bar_art_words(p, 'top')}.
 
@@ -1839,7 +1885,7 @@ The bar's own surfaces are drawn as Panels named `Header Left`, `Header Right` o
 
 The column left of the center: the room's display controls and the launchers for its settings, in titled Sections. {common}
 
-Its children are Sections, the template's groups in order: the first Section stands where the template's first group does ({g1}), the second where its second does ({g2}). The first Section's buttons take the template's rail look ({look('rail')}), a later one's its launchers' ({look('launcher') if r.get('launcher') else look('rail')}), unless they set their own. A control outside a Section is named.
+Its children are Sections, the template's groups in order: the first Section stands where the template's first group does ({g1}), the second where its second does ({g2}). The first Section's buttons take the template's rail look ({look('rail')}), a later one's its launchers' ({look('launcher') if r.get('launcher') else look('rail')}), unless they set their own. On a call page (`role="call"`) the rail is the call mode's: its first Section stands where the template's VTC group does, Make Call, End Call and Privacy each in the template's look for what it names and keeping the template's ID; its second where the call mode's launchers do. A Section whose buttons grow past the next one's top moves it down the rail. A control outside a Section is named.
 
 ```html
 {ex('LeftRail', '', chr(10) + '  ' + ex('Section', ' title="Display"', chr(10) + '    ' + btn(' name="Display On"', 'On') + chr(10) + '  ') + chr(10))}
@@ -1875,7 +1921,7 @@ It draws the template's clock (`{clock}`), Help ({look('help')}) and Power ({loo
 """,
         'Center': f"""# Center
 
-The middle of the working page: the popup region the sources fill, where the template's is - on every panel that panel's own. `group` names the popup group (default `Sources`) - each source's controls are a popup of that group, `kind="popup"` with `role="source"`, which is drawn as the region's size on each panel, in the template's own well and title (the Page README) - and `name` the region (default `Controls`).{_center_well(p)} {common}
+The middle of the working page: the popup region the sources fill, where the template's is - on every panel that panel's own. `group` names the popup group (default `Sources`) - each source's controls are a popup of that group, `kind="popup"` with `role="source"`, which is drawn as the region's size on each panel, in the template's own well and title (the Page README) - and `name` the region (default `Controls`).{_center_well(p)} On a call page the region also shows the call mode's dialer, a popup of that group with `role="dialer"`; on a page with `role="select"` it holds the Header's tabs instead, in Main Select Source's tiles, and no region. {common}
 
 ```html
 {ex('Center', ' group="Sources"')}
@@ -1921,7 +1967,19 @@ def _roles_props(p):
             f"draws its settings, with its title and a Close back to Select a Source; Help, the question and the wait "
             f"stay windows in the hub's own style. On a 320 each is a page: the question and the wait on the "
             f"template's rounded box, a settings window and Help under the strip with Back to the page that opened "
-            f"it. On a turned panel a window is refused by name for now.\n")
+            f"it. On a turned panel a window is refused by name for now.\n"
+            f"- `role=\"dialer\"` on a `kind=\"popup\"` in the Center's group: the call mode's dialer, which draws "
+            f"{t}'s own whole - its title, the number's field, the keypad and its keys, each with the template's ID - "
+            f"on every panel; put nothing in it. `confirm` with `topic=\"call\"` asks the incoming call's question, "
+            f"'{' '.join(((w.get('confirm') or {}).get('call') or '').split())}', with "
+            f"{(w.get('buttons') or {}).get('accept', 'Accept')} - its `does` is the Page's - and "
+            f"{(w.get('buttons') or {}).get('decline', 'Decline')}.\n"
+            f"- `role` on a page with regions: `call` draws it as {t}'s call mode (Main VC) - its Header's "
+            f"Share Content (`slot=\"share\"`), its left rail's call keys and launchers"
+            + (f"; `select` as its Main Select Source, its Header's tabs the Center's tiles under the template's "
+               f"title" if any((T.get('frame') or {}).get('choose') for T in models(p).values() if T['tier'] == 'A')
+               else '')
+            + f" (the system's README, *The template's grammar*).\n")
 
 
 def _device_pictures(p):
@@ -2757,7 +2815,8 @@ def _grammar_md(p, renders):
              "else stands there.\n\n"
            + _grammar_art(p)
            + f"They stay put: only the Center changes when a source is chosen, and Help, the settings and the "
-           f"power-down question open windows over the page (Windows).\n\n")
+           f"power-down question open windows over the page (Windows).\n\n"
+           + _select_md(p) + _call_md(p))
     if hub:
         sel, opt = hub.get('select') or {}, hub.get('options') or {}
         display = any(i.get('role') == 'display' for i in (hub.get('right') or {}).get('items') or ())
@@ -2811,6 +2870,200 @@ def _grammar_md(p, renders):
               f"`kind=\"modal\"` and `role=\"help\"` (Windows): a window over the page on the bar panels and the "
               f"hubs, and on the 320 a page under the strip, with Back.\n\n")
     return out
+
+
+def _tab_room(F, call=False):
+    """(drawn, holds): how many source tabs a series' Header draws, and how
+    many stand at its places and on at its step before the bar's end - or on
+    a call page before its Share Content, where bundle.js planHeader ends
+    them - with captions that fit the template's tabs; None where it draws
+    none, or no call mode."""
+    top = (F or {}).get('top') or {}
+    tabs = top.get('tabs') or {}
+    items, pitch = tabs.get('items') or [], tabs.get('pitch')
+    if not items or not pitch:
+        return None
+    limit = top['rect'][0] + top['rect'][2]
+    if call:
+        share = next((x for x in (((F.get('call') or {}).get('top') or {}).get('end') or ())
+                      if x.get('role') == 'share'), None)
+        if not share:
+            return None
+        limit = share['rect'][0]
+    n, last = 0, items[-1]['rect']
+    while (items[n]['rect'][0] + items[n]['rect'][2] if n < len(items)
+           else last[0] + (n - len(items) + 1) * pitch + last[2]) <= limit:
+        n += 1
+    return len(items), n
+
+
+def _sources_md(p):
+    """*Every panel the room has*'s Sources line: how many source tabs each
+    panel's Header holds, a call page's too, and the template's answer for a
+    room with more - Mach's and Turbulence's Main Select Source (`role=
+    "select"`), or, where the template draws none (Shockwave's bar panels),
+    the refusal that names what to do. Round four's designers guessed it:
+    the README gave the 1035's count alone."""
+    if not _regions(p):
+        return ''
+    ms, rooms, chooses = models(p), {}, False
+    for m, T in sorted(ms.items(), key=lambda kv: kv[0] != p['model']):
+        if T.get('turned') or T['tier'] != 'A' or not (T.get('frame') or {}).get('top'):
+            continue
+        room, call = _tab_room(T['frame']), _tab_room(T['frame'], call=True)
+        if not room:
+            continue
+        chooses = chooses or bool(T['frame'].get('choose'))
+        series = rooms.setdefault((room, call), [])
+        short = T['series'][len(p['template']) + 1:].replace(' Series', '')
+        if short not in series:
+            series.append(short)
+    said = [f"{room[1]} on {_the_series(series)}" + (f" (the template draws {room[0]})" if room[1] != room[0] else '')
+            + (f", {call[1]} on a call page, before its Share Content" if call else '')
+            for (room, call), series in rooms.items()]
+    if not said:
+        return ''
+    t, ns = p['template'], p['namespace']
+    more = (f"A room with more sources than a panel's Header holds takes {t}'s own answer, its Main Select "
+            f"Source: a Page with `role=\"select\"` whose Header holds every source draws them in its tiles "
+            f"(The template's grammar) - keep on the working page's Header no more than each panel holds."
+            if chooses else
+            f"{t}'s bar templates draw no page to choose among more, so a Header with more than its panel "
+            f"holds is refused there, by name: keep the Header to what each panel holds, and put the rest in a "
+            f"source popup of their own as keys.")
+    return (f"- **Sources.** One `slot=\"source\"` tab each, at the template's places and on at its step: "
+            f"{_say(said)} - fewer where a caption at the panel's type floor grows its tab, which the Header "
+            f"names. A hub chooses on its Select a Source grid and the 320 on its Select a Source keys, going on "
+            f"as far as the room's sources need. {more}\n")
+
+
+def _select_md(p):
+    """The page a bar series chooses among its sources on, where its
+    template draws one (the frame's `choose`, Main Select Source)."""
+    S = _design_frame(p).get('choose')
+    if not S:
+        return ''
+    look = (((p.get('regions') or {}).get('select') or {}).get('tile') or {}).get('variant')
+    return (f"**Choosing among the sources.** {p['template']}'s Main Select Source chooses a source before one "
+            f"is shown, and holds more than a Header does: a Page with `role=\"select\"` and the working page's "
+            f"regions draws its Header as that page's title ('{S.get('text')}') and the Header's tabs as its "
+            f"tiles in the Center" + (f" (`{look}`)" if look else '') + ", each with its name under it, in rows "
+            f"where there are more than the template draws. It has no popup region: give each tile a `nav` to "
+            f"the working page, which shows that source, and an `id` of its own - a tile shows the working page "
+            f"where its tab shows its popup, and one ID is one control with one `nav`. On a hub and the 320 it is "
+            f"drawn as any region page is.\n\n")
+
+
+def _call_md(p):
+    """`### The call page`: the call mode (Main VC) in the grammar - the
+    Header's Share Content, the left rail's VTC group and the launchers
+    under it, the dialer the Center shows and the question an incoming call
+    asks, off the design panel's frame and the profile's words; and what a
+    hub and the 320 make of it. Every round-four designer improvised it."""
+    F = _design_frame(p)
+    C = F.get('call')
+    if not C:
+        return ''
+    t, ns = p['template'], p['namespace']
+    w = p.get('writing') or {}
+    B = w.get('buttons') or {}
+    groups = (C.get('left') or {}).get('groups') or ()
+    sd_groups = (F.get('left') or {}).get('groups') or ()
+    head = ((groups[0].get('heading') or {}).get('text') if groups else None) or 'VTC'
+    keys = {b['role']: b for b in (groups[0]['buttons'] if groups else ()) if b.get('id')}
+    ids = _say([f"{n} {keys[r]['id']}" for r, n in (('call', 'Make Call'), ('end-call', 'End Call'),
+                                                     ('privacy', 'Privacy')) if r in keys])
+    # How many launchers each series' Main VC holds, beside its Main SD's:
+    # read off the 1035 alone, the README sent a room of four to the 725,
+    # whose Main VC holds two (the call mode's review).
+    launch = {}
+    for m, T in sorted(models(p).items(), key=lambda kv: kv[0] != p['model']):
+        TF = T.get('frame') or {}
+        if T.get('turned') or not TF.get('call'):
+            continue
+        g = ((TF['call'].get('left') or {}).get('groups') or ())
+        sg = ((TF.get('left') or {}).get('groups') or ())
+        held = (len(g[1]['buttons']) if len(g) > 1 else 0, len(sg[1]['buttons']) if len(sg) > 1 else 0)
+        short = T['series'][len(t) + 1:].replace(' Series', '')
+        if held[0] and short not in launch.setdefault(held, []):
+            launch[held].append(short)
+    launchers = _say([f"{n} on {_the_series(series)}" + (f" (its working page's {sd})" if sd != n else '')
+                      for (n, sd), series in launch.items()])
+    share = next((x for x in (C.get('top') or {}).get('end') or () if x.get('role') == 'share'), {})
+    d = (C.get('center') or {}).get('dialer') or {}
+    dk = {k['role']: k for k in d.get('keys') or ()}
+    dial_ids = _say([f"{n} {dk[r]['id']}" for r, n in (('digit-1', 'Dialer Keypad 1'), ('call', 'VC Call'))
+                     if r in dk])
+    others = _say([n for r, n in (('flash', 'Flash'), ('contacts', 'Contacts'), ('keyboard', 'Keyboard'),
+                                  ('delete', 'Delete')) if r in dk])
+    asked = ' '.join(((w.get('confirm') or {}).get('call') or '').split())
+    sv = ((p.get('regions') or {}).get('share') or {}).get('variant')
+    art = (p['buttons'].get(sv) or {}).get('caption') == 'none'
+    room = _tab_room(F, call=True)
+    shares = ("on Mach a settings window you draw - `role=\"settings\"`, titled 'Select a source to share', its "
+              "sources as keys" if t == 'Mach' else
+              "a second call page you draw, `role=\"call\"`, whose Header's tabs are the sources it shares, its "
+              "Share Content lit, like Main VC Share Content")
+    return (f"### The call page ({_the_series(_family_series(p, 'bar'))})\n\n"
+            f"A video call is a working page of its own, the template's Main VC: a Page with `role=\"call\"` "
+            f"and the same five regions, drawn as the call mode draws them on every panel. The program shows it "
+            f"when a call comes in (`reached-by=\"program\"`), and the working page's mode launcher leads to it.\n\n"
+            f"- **Header**: the working page's source tabs - the same controls, so the same `id`s - and Share "
+            f"Content at its end, `slot=\"share\"`, where Main VC stands it"
+            + (f" ({share['rect'][2]}x{share['rect'][3]} on the {p['model']})" if share.get('rect') else '')
+            + (f", its words in the template's art (`{sv}`), so give it no caption" if art else
+               f" in the template's look (`{sv}`)" if sv else '')
+            + (f", keeping the template's ID {share['id']}" if share.get('id') else '')
+            + (f". The tabs end before it: {room[1]} on the {p['model']}" if room else '') + ".\n"
+            f"- **LeftRail**: the first Section is the call's, '{head}' over Make Call, End Call and Privacy, each "
+            f"in the template's look for what it is, by its name - one named for none of them takes the rail's "
+            f"look - and keeping the template's IDs ({ids}) where you give it none. The second Section holds the "
+            f"call mode's launchers" + (f", as many as Main VC draws: {launchers}" if launchers else '')
+            + ". Where a caption at a panel's type floor widens the rail - Initiate Call on a 725 - or its touch "
+              "minimum deepens the call keys, the launcher at its foot runs into the Footer's first cell beside it, "
+              "and is named: give the call page only the launchers the call needs (Differences says where a "
+              "panel holds fewer than its Main VC draws).\n"
+            f"- **RightRail, Footer and Center**: the working page's. The Footer's mode launcher goes back to the "
+            f"working page as the working page's comes here.\n"
+            f"- **The dialer**: a popup of the Center's group with `role=\"dialer\"` and nothing in it draws "
+            f"{t}'s {d.get('text') or 'VTC Dialer'} whole - its title, the field the program writes the number "
+            f"into, the keypad, Call{', ' + others if others else ''} - each key with the template's ID"
+            + (f" - {dial_ids.replace(' 5', ' is 5', 1)} -" if dial_ids else '') + " and saying what it does.\n"
+            f"- **An incoming call**: a modal with `role=\"confirm\"`, `topic=\"call\"` and "
+            f"`reached-by=\"program\"` asks '{asked}' with {B.get('accept', 'Accept')} - its `does` is the "
+            f"Page's - and {B.get('decline', 'Decline')}, where the template stands its Incoming Call.\n"
+            f"- **Share Content** opens what the room shares: {shares}.\n\n"
+            f"On a hub, whose template has no call mode, the call page's first Section and its Share Content are a "
+            f"popup of their own in main, titled with the Section's heading, which the program shows first and an "
+            f"option tile shows again; the dialer fills main as a source's popup does. On the 320 the Section is a "
+            f"column on Main's later pages, as any Section is, and the dialer a page that goes on by More.\n\n")
+
+
+def _mic_display_md(p):
+    """Where the room's microphone mute and its display's state go: the
+    template's own places, followed, and a recipe in its grammar where it
+    has none - the assumption docs/ROADMAP.md leaves the owner to overrule.
+    Every round-four designer invented a place for each."""
+    t = p['template']
+    regions = _regions(p)
+    F = _design_frame(p)
+    launch = ("the RightRail's Audio Control (`slot=\"audio\"`) or, where the panel's template keeps it in its "
+              "left rail, its Section there" if any(i.get('role') == 'audio' for i in (F.get('right') or {}).get('items') or ())
+              else "the LeftRail's Audio launcher" if regions else "the audio launcher in the left rail")
+    shown = ('the display Section' if regions else "the left rail's Display group")
+    return (f"**A microphone mute** goes where {t}'s templates keep the mics: in the audio settings window "
+            f"{launch} opens, as its Mic column - a 'Mic' heading over the mic's level and its Mute, beside the "
+            f"program's. The working page and the call page hold none: their Privacy is the camera's. To make a "
+            f"muted mic plain, give that Mute `states` whose lit state says so in its own `text` (Mics Muted), "
+            f"and the template's Mic Mute ID, `id=\"9017\"`, wherever it stands - the Mic Mute of every {t} "
+            f"seed that has one is 9017, so a program written for the template knows it.\n\n"
+            f"**A display's state** - off, warming up, on, cooling down - {t} shows by {shown}'s On and Off "
+            f"lighting, and by its waits while the system starts and powers down; it draws no status field. So "
+            f"give On the `states` Off, Warming Up and On, and Off the `states` Off, Cooling Down and On - each "
+            f"middle one with its own `text`, which the program sets while the display changes - rather than a "
+            f"status Label or a fourth key. Keep that `text` to a word (Warming, Cooling) where the key stands in "
+            f"a rail: the rail's column takes its widest caption, and on a small panel a wider column runs into "
+            f"the footer beside it.\n\n")
 
 
 def _hub_derived_md(p, hub):
@@ -2987,7 +3240,9 @@ def _working_md(p):
     themed = ' and its theme in `theme`' if p.get('themes') else ''
     room = (f"A complete room, one artboard each: Start, the page the panel boots to (`Main.dc.html`, the "
             f"canvas's entry); the working page; a source with no controls and one with them; a settings window; "
-            f"Help; the power-down question and its wait. Every Page lists the room's panels in `panels`{themed}, "
+            f"Help; the power-down question and its wait"
+            + ("; and on a bar theme the call page, its dialer and the incoming call's question (The template's "
+               "grammar)." if _design_frame(p).get('call') else ".") + f" Every Page lists the room's panels in `panels`{themed}, "
             f"and a set of like controls - the presets, a camera's keys - is a `Group` whose box leaves the room "
             f"the room's smaller panels need (Every panel the room has), so the room translates clean on each.")
     if not _regions(p):
@@ -3035,6 +3290,7 @@ def _working_md(p):
                 + _glyphs_md(p, names) + room
                 + f" The example's room is the {_say(_room_panels(p).split())}: drawn as above, it translates "
                   f"clean on each.\n\n"
+                + _mic_display_md(p)
                 + ''.join(f"`{name}.dc.html`:\n\n```html\n{code}\n```\n\n" for name, code in _afterburn_working(p)))
     names = icon_names(p).get(((p.get('regions') or {}).get('tab') or {}).get('variant')) or []
     return (f"## The working page\n\n"
@@ -3049,6 +3305,7 @@ def _working_md(p):
             + room + " Extron's own Start also holds the volume: leave it to the working page's RightRail, or give "
               "a Slider there and the RightRail's `slot=\"volume\"` Slider one `id` of your own (Designing a "
               "panel).\n\n"
+            + _mic_display_md(p)
             + ''.join(f"`{name}.dc.html`:\n\n```html\n{code}\n```\n\n" for name, code in _working_example(p)))
 
 
@@ -3065,6 +3322,7 @@ def _working_example(p):
     room = _room_attrs(p)
     voice = (p.get('writing') or {}).get('voice') or {}
     F = _design_frame(p)
+    call = F.get('call')
     groups = [((g.get('heading') or {}).get('text') or '') for g in ((F.get('left') or {}).get('groups') or ())]
     first, second = (groups + ['Display'])[0] or 'Display', (groups[1:] + [''])[0]
     names = icon_names(p).get(((p.get('regions') or {}).get('tab') or {}).get('variant')) or []
@@ -3086,8 +3344,44 @@ def _working_example(p):
                 x('LeftRail', '', '\n    ' + x('Section', f' title="{first}"', disp + '\n    ') + '\n    '
                   + x('Section', f' title="{second}"' if second else '', sets + '\n    ') + '\n  '),
                 x('RightRail'),
-                x('Footer', ' help="Help" power="PowerDown"'),
+                x('Footer', ' help="Help" power="PowerDown"',
+                  '\n    ' + x('Button', ' slot="mode" name="Video Call" nav="Call" does="Shows the call page."',
+                              'Video Call') + '\n  ') if call else x('Footer', ' help="Help" power="PowerDown"'),
                 x('Center', ' group="Sources"')]) + '\n'))
+    # The call page, as the call mode draws it (_call_md): the same tabs,
+    # Share Content at the Header's end - no caption where its look's art
+    # says it - the VTC keys in the template's own words, the launchers, and
+    # the Footer's mode launcher back to the working page.
+    if call:
+        vtc = {b['role']: b.get('text') for b in ((call.get('left') or {}).get('groups') or [{}])[0].get('buttons') or ()}
+        sv = ((p.get('regions') or {}).get('share') or {}).get('variant')
+        art = (p['buttons'].get(sv) or {}).get('caption') == 'none'
+        keys_ = ''.join('\n      ' + x('Button', f' name="{n}"' + (' states="Off, On"' if st else '') + f' does="{d}"', vtc.get(r) or n)
+                        for r, n, st, d in (('call', 'Make Call', True, 'Joins the call; On while in a call.'),
+                                            ('end-call', 'End Call', False, 'Ends the call.'),
+                                            ('privacy', 'Privacy', True, 'Covers the camera; On while it is covered.')))
+        head = (((call.get('left') or {}).get('groups') or [{}])[0].get('heading') or {}).get('text') or 'VTC'
+        # One launcher, its lighting: the 725 stands the call mode's last
+        # launcher 1 px beside the Footer's Help (Turbulence's), and its
+        # 16 pt floor widens the column for Initiate Call - two launchers put
+        # the second into Help there.
+        light = next((lw for lw in launchers if 'Lighting' in lw), launchers[0])
+        one = '\n      ' + x('Button', f' name="{light}" nav="{_stem(light)}"', light)
+        call_page = ('<!-- The call page: the program shows it when a call comes in. -->\n'
+                     + x('Page', f' name="Call" role="call" reached-by="program"{room}', '\n  ' + '\n  '.join([
+                         x('Header', '', '\n    ' + '\n    '.join((src('Laptop', 'laptop'), src('PC', 'pc'),
+                                                                 src('Doc Cam', 'doc-cam', 'document-camera'),
+                                                                 x('Button', ' slot="share" name="Share Content" states="Off, On" '
+                                                                   'does="Shares the room\'s source into the call; On while it is shared."',
+                                                                   '' if art else 'Share')))
+                           + '\n  '),
+                         x('LeftRail', '', '\n    ' + x('Section', f' title="{head}"', keys_ + '\n    ') + '\n    '
+                           + x('Section', f' title="{second}"' if second else '', one + '\n    ') + '\n  '),
+                         x('RightRail'),
+                         x('Footer', ' help="Help" power="PowerDown"',
+                           '\n    ' + x('Button', ' slot="mode" name="Presentation" nav="MainSD" '
+                                       'does="Shows the working page."', 'Presentation') + '\n  '),
+                         x('Center', ' group="Sources"')]) + '\n'))
     # A camera as the template draws one in its source popup: a heading over
     # its zoom keys, the in-well look's own glyphs on them where the kit has
     # them (Mach's plus and dash) - Title Case on the 1035, as its Doc Cam
@@ -3129,7 +3423,7 @@ def _working_example(p):
                for n in ('Full', 'Meeting', 'Off')]
     presets = [x('Group', f' title="Presets" cell="{bw}x{bh}" gap="{gap}" cap="3"',
                  '\n    ' + '\n    '.join(members) + '\n  ', _at([px0, py0, box_w, box_h]))]
-    out = [('Main', _start_example(p)), ('MainSD', main),
+    out = [('Main', _start_example(p)), ('MainSD', main)] + ([('Call', call_page)] if call else []) + [
            ('Laptop', '<!-- A source the room only routes: the Center draws its title and the empty state. -->\n'
             + x('Page', f' name="Laptop" kind="popup" group="Sources" role="source"{room}')),
            ('PC', x('Page', f' name="PC" kind="popup" group="Sources" role="source"{room}')),
@@ -3143,6 +3437,11 @@ def _working_example(p):
                                      f'does="Powers the room down."{room}')),
             ('PoweringDown', x('Page', f' name="Powering Down" kind="modal" role="wait" topic="down" '
                                         f'reached-by="program"{room}'))]
+    if call:
+        out += [('VTCDialer', '<!-- The call mode\'s dialer: the template draws it whole. -->\n'
+                 + x('Page', f' name="VTC Dialer" kind="popup" group="Sources" role="dialer" reached-by="program"{room}')),
+                ('IncomingCall', x('Page', f' name="Incoming Call" kind="modal" role="confirm" topic="call" '
+                                            f'reached-by="program" does="Answers the call."{room}'))]
     return out
 
 
@@ -3877,7 +4176,7 @@ def main(argv):
             print(f"none of {ex['from']} is on this machine")
             return 1
         out = os.path.join(RESOURCE_ROOTS[0], *ex['to'].split('/'))
-        written = extract_images(sources, out)
+        written = extract_images(sources, out, ex.get('only'))
         print(f'{len(written)} new image(s) from {len(sources)} file(s) -> {out}')
         return 0
     if len(argv) < 4 or argv[1] != 'build' or argv[2] not in TEMPLATES:

@@ -345,8 +345,9 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 
 - **Images** — the normal route, and what real panels use. Extron's kits are
   under the install's `Resources\` (`docs/design-rules.md` §7 has what each
-  holds), and Turbulence's art is extracted from its seed and templates
-  (`vendor/README.md`); a spec names only what those resolve to.
+  holds), and Turbulence's art is extracted from its seed and templates, and
+  Shockwave's Share Content from its seed (`vendor/README.md`); a spec names
+  only what those resolve to.
   A spec button names one by its file name as `image`, on the button or per
   state (`{"name": "On", "image": "756x756_laptop-orange_sel.png"}`), with
   `"border": "none"` since the kit image draws the button; `images` brings any

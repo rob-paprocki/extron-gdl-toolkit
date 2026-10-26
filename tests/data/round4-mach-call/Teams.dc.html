@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Teams</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Teams" kind="popup" group="Sources" role="source" title="Microsoft Teams" reached-by="program" does="The camera presets for the Teams call; the program shows it in the call page's centre." panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Group" title="Presets" cell="200x130" gap="30" cap="3" style="position: absolute; left: 130px; top: 200px; width: 740px; height: 150px">
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Wide" states="Off, On" does="Recalls the Wide camera preset; On while it is active.">Wide</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Table" states="Off, On" does="Recalls the Table camera preset; On while it is active.">Table</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Presenter" states="Off, On" does="Recalls the Presenter camera preset; On while it is active.">Presenter</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

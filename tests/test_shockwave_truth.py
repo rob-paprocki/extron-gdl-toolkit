@@ -47,10 +47,15 @@ class TestShockwavesLedger(unittest.TestCase):
     def test_it_has_an_entry_for_every_disagreement(self):
         """The grammar measurement found 31 claims of Shockwave's profile and
         README that its pages contradict, and the PR8 review two more (the
-        14 pt floor and the 2 mm gap, missing from Differences): one entry
-        each, in order."""
+        14 pt floor and the 2 mm gap, missing from Differences), and the call
+        mode's measurement six (shockwave-33 to 38: the call page and its
+        Share Content art, its dialer and question, the Header's count, the
+        mic and display, and the call keys resting ringed, as the template's
+        do), and its review three (shockwave-39 to 41: the dialer's captions
+        and the answers' art, the answers' IDs, and the 725's call page's
+        launchers): one entry each, in order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'shockwave-{i:02d}' for i in range(33)])
+        self.assertEqual(ids, [f'shockwave-{i:02d}' for i in range(44)])
 
     def test_shockwave_is_done(self):
         self.assertEqual(audit.audit('shockwave'), [])
@@ -60,11 +65,13 @@ class TestShockwavesLedger(unittest.TestCase):
     def test_it_keeps_differing_where_it_says_and_says_why(self):
         """The lit captions of the variants with one, and the gates: the
         slider and the overlapping tiles, the 14 pt floor and a designer's own
-        2 mm (the PR8 review: Differences lacked the last two). The tab
-        captions are the twin the region page draws, as the template does
-        (shockwave-03)."""
+        2 mm (the PR8 review: Differences lacked the last two), and the
+        incoming call's answers' IDs. The tab captions are the twin the region
+        page draws, as the template does (shockwave-03); the call keys rest
+        ringed as the template's do (shockwave-38)."""
         dev = {e['id']: e for e in self.ledger['entries'] if e['status'] == 'deviation'}
-        self.assertEqual(sorted(dev), ['shockwave-20', 'shockwave-30', 'shockwave-31', 'shockwave-32'])
+        self.assertEqual(sorted(dev), ['shockwave-20', 'shockwave-30', 'shockwave-31', 'shockwave-32', 'shockwave-40',
+                                     'shockwave-41', 'shockwave-42', 'shockwave-43'])
         for e in dev.values():
             self.assertTrue(e['reason'].strip(), e['id'])
 
@@ -446,8 +453,10 @@ class TestTheSeedsArtIsTheKits(unittest.TestCase):
             self.skipTest('no Pillow')
         import measure_series
         from gdl.project import Project
+        # The install's kit, not a slice of it vendor/ holds (its extracted
+        # Share Content art, Shockwave/Extracted).
         roots = [os.path.join(r, 'Shockwave') for r in spec.RESOURCE_ROOTS if r]
-        root = next((r for r in roots if os.path.isdir(r)), None)
+        root = next((r for r in roots if os.path.isdir(os.path.join(r, 'buttons'))), None)
         if not root:
             self.skipTest("Extron's Shockwave kit is not here")
         proj = Project.open(SEED)

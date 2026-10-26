@@ -27,7 +27,7 @@
         },
         {
           "key": "layout.regions.0",
-          "says": "Share Content (`call`, share-content) on the call pages"
+          "says": "Share Content (`share`, share-content) on a call page"
         }
       ],
       "frame": [
@@ -1195,6 +1195,264 @@
       ],
       "builds": "A source's `<name> Image` is put where the panel's seed draws its device: the 1035's Doc Cam 326x288, not the Laptop's 293x257, and the 525's PC at 219,38 264x260, not 241 px square in the Laptop's 310x241.",
       "evidence": "Each source popup's `<name> Image` (PBImage, 1152x1152_<device>.png) in seeds/Turbulence 1035.gdl, 725, 1525, 720 and 525; the 525's Display Control, Dual Display Select, Audio Control and Lighting Control picture a monitor, a speaker and a lightbulb for no source (tests/measure_series.py _pictures)."
-    }
+    },
+    {
+      "id": "turbulence-36",
+      "claim": "The README drew no call page beyond the Layout's words, and round four's designer drew Call as a working page with Main SD's places and Mic Mute as a dock in place of Screen Control.",
+      "where": [
+        "README The template's grammar",
+        "README The working page"
+      ],
+      "template": {
+        "does": "Main VC is the call mode's working page: six tabs (Codec 8072 for the Doc Cam) and Share Content (8090), 140x89 at 1097,24 at the header's right end; its left rail 'VTC' over the Initiate Call (5014), End Call (5215) and Privacy (VC Privacy 5217) call tiles, 140x89, stacked flush at y 173, 262 and 351, then the Display, Screen and Lighting Control docks (8214, 8115, 8116) at 470, 580 and 690; its right rail, footer and popup region Main SD's.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main VC",
+          "Main SD"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "call.left.groups"
+        },
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "call.top.end"
+        },
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "call.top.tabs"
+        }
+      ],
+      "fix": [
+        {
+          "key": "layout.regions.0",
+          "says": "which the Header draws there from `slot=\"share\"` on a Page with `role=\"call\"`"
+        },
+        {
+          "key": "kit.named.712x440.share-content.sel",
+          "says": "712x440_stop-sharing_sel.png"
+        }
+      ],
+      "builds": "A Page with role=\"call\" places its call keys at Main VC's VTC places with seed IDs 5014, 5215 and 5217, and a Header `slot=\"share\"` at 1097,24 in `share` - Share Content lighting as Stop Sharing - with seed ID 8090.",
+      "evidence": "Main VC's VTC Label (7012), Initiate Call (5014), End Call (5215), VC Privacy (5217), Display Control (8214) and Share Content (8090) on seeds/Turbulence 1035.gdl; the same roles and IDs on its 725, 720 and 1525, measured into each series' frame `call`."
+    },
+    {
+      "id": "turbulence-37",
+      "claim": "Nothing in the system drew the call mode's dialer.",
+      "where": [
+        "README The template's grammar"
+      ],
+      "template": {
+        "does": "VTC Dialer is a 995x549 popup with no card: 'VTC Dialer' (30 pt) over a #DCDCDC entry (Dialer Feedback Label 50000, 541x66) with VC Delete (5237) at its end, the kit's dialpad art keys 95x100 at a 96 step (Dialer Keypad 1 5203 to # 5213, Period 5228), VC Flash (5216) and Contacts (5250) beside them, the keyboard key (5229, a square with an icon face's glyph) and VC Call (5214) at the foot.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "VTC Dialer"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "call.center.dialer"
+        }
+      ],
+      "evidence": "VTC Dialer's 18 buttons and its feedback label on seeds/Turbulence 1035, 725, 720 and 1525.gdl, read by tests/measure_series.py _dialer."
+    },
+    {
+      "id": "turbulence-38",
+      "claim": "layout.regions[4]: an incoming call (648x400, a `page` card) is yours to draw as a modal without a `role`.",
+      "where": [
+        "layout.regions.4"
+      ],
+      "template": {
+        "does": "The incoming call's question (the 1035's 'Incoming Call Label' popup, the other series' 'Incoming Call') is a 648x400 #021E38 card at 312,200: 'Incoming call, do you wish to accept?' (20 pt) over Accept Call (9032) and Ignore Call (9033), its words in their 880x440 vc_accept-call and vc_ignore-call art, 240x129 at 388,409 and 650,409.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Incoming Call Label"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "windows.incoming"
+        }
+      ],
+      "fix": [
+        {
+          "key": "layout.regions.4",
+          "says": "is a modal with `role=\"confirm\"` and `topic=\"call\"`, which draws it"
+        },
+        {
+          "key": "writing.confirm.call",
+          "says": "Incoming call, do you wish to accept?"
+        }
+      ],
+      "gone": [
+        "are yours to draw as a modal without a `role`"
+      ],
+      "evidence": "Incoming Call Label's Incoming Call (4060), Accept Call (9032) and Ignore Call (9033) on seeds/Turbulence 1035.gdl; Incoming Call on its 725, 720 and 1525."
+    },
+    {
+      "id": "turbulence-39",
+      "claim": "Select a Source was told apart from the working pages and not drawn: a designer placed `scene` tiles by hand, and a room with more sources than the Header holds was refused with no remedy named.",
+      "where": [
+        "layout.regions.5",
+        "Header README"
+      ],
+      "template": {
+        "does": "Main Select Source chooses a source before one is shown: 'Select a Source' (34 pt) where the tabs are, and the sources as 266x209 `scene` pictures three and three to a row (x 210, 486 and 781 at y 124-126; 210, 495 and 780 at y 400), each its name in a 16 pt label under it; no popup region.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main Select Source"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "choose.tiles"
+        },
+        {
+          "series": "Turbulence 1220 Series",
+          "key": "choose.title"
+        }
+      ],
+      "fix": [
+        {
+          "key": "layout.regions.5",
+          "says": "a Page with `role=\"select\"` draws it from its Header's tabs"
+        }
+      ],
+      "evidence": "Main Select Source's Select Source Label (6072), six tiles and their labels (8078-8083) on seeds/Turbulence 1035.gdl, and on its 725, 720 and 1525, measured into each series' frame `choose`."
+    },
+    {
+      "id": "turbulence-40",
+      "claim": "The README's grammar gave the TLP1035T's six source tabs alone, and a Header past its panel's was refused as 'more than the TLP1035T's holds across', with no remedy.",
+      "where": [
+        "README The template's grammar",
+        "Header README"
+      ],
+      "template": {
+        "does": "The header draws six 127x133 tabs at a 141 step from x 141; an eighth at that step ends at 1255, inside the bar. On Main VC, Share Content stands at 1097 and the six end at 973.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main VC"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "- **Sources.** One `slot=\"source\"` tab each"
+        }
+      ],
+      "evidence": "Main SD's six tabs at x 141 to 846; Main VC's Share Content (8090) at 1097; tests/measure_series.py's frames `top.tabs` and `call.top.end`."
+    },
+    {
+      "id": "turbulence-41",
+      "claim": "The README gave a microphone mute and a display's warming and cooling no place, and round four's designer of this theme invented one for each (archive/job-e823df9b/round4/turbulence/canvas/NOTES.md).",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "No working page, call page or window draws a display status, and none but Audio Control a mic mute: its Mic column (Mic Shape, Mic Label 4050, Mic Slider 9018, Mic Mute 9017) stands beside Program and Main. The display shows its state by the Display On and Off rings lighting (8112, 8113) and by the Starting Up and Powering Down waits.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Audio Control",
+          "Main SD",
+          "Main VC",
+          "Starting Up",
+          "Powering Down"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "**A microphone mute** goes where"
+        },
+        {
+          "readme": "**A display's state** - off, warming up, on, cooling down -"
+        }
+      ],
+      "evidence": "Audio Control's Mic Shape, Mic Label (4050), Mic Slider (9018) and Mic Mute (9017); no control named for a display's state or a mic on any other page of seeds/Turbulence 1035.gdl, 725, 720, 1525, 525 or 320."
+    },
+    {
+      "id": "turbulence-42",
+      "claim": "regions.dialer: the dialer drawn as the template's.",
+      "where": [
+        "regions.dialer"
+      ],
+      "template": {
+        "does": "The dialer's entry is #DCDCDC, and its keyboard key a square_blank key with a glyph of Extron's icon face ('B').",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "VTC Dialer"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The system carries no icon face: the keyboard key says its word.",
+      "here": "The dialer's keyboard key says Keys where the template draws a glyph.",
+      "builds": "The number field builds #DCDCDC, the entry's own paint, where none was drawn and the number stood black on the page; the Period key its vc_dot art, which the keypad's look hid.",
+      "evidence": "VTC Dialer's Dialer Feedback Label (50000) filled #DCDCDCFF; VC Keyboard (5229) on 440x440_square_blank with caption 'B'."
+    },
+    {
+      "id": "turbulence-43",
+      "claim": "The README's Choosing among the sources: each tile an `id` of its own.",
+      "where": [
+        "README The template's grammar"
+      ],
+      "template": {
+        "does": "Main Select Source's tiles take their tabs' IDs (8050, 8052, 8062, 8058, 8054, 8060): one control to the program on both pages, whose page flip differs.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Main Select Source",
+          "Main SD"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The ID map holds one ID to one control with one `nav` and `does` (gdl.idmap refuses one mirrored with different functions), and a tile shows the working page where its tab shows its popup.",
+      "here": "Each Select a Source tile takes an ID of its own, where the template's reuse their tabs' (8050, 8052, 8062, 8058, 8054, 8060).",
+      "evidence": "Main Select Source's six tiles beside Main SD's tabs of the same IDs on seeds/Turbulence 1035.gdl, and on its 725, 720 and 1525 alike."
+    },
+    {
+      "id": "turbulence-44",
+      "claim": "The README's incoming call: its answers as the template's.",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "The incoming call's Accept Call and Ignore Call are 9032 and 9033 on every bar seed.",
+        "seed": "seeds/Turbulence 1035.gdl",
+        "pages": [
+          "Incoming Call Label"
+        ]
+      },
+      "status": "deviation",
+      "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
+      "here": "An incoming call's Accept Call and Ignore Call take IDs of their own, from 50001, where the template's are 9032 and 9033: a program written for the template's needs them told.",
+      "evidence": "Incoming Call Label's Accept Call (9032) and Ignore Call (9033) on seeds/Turbulence 1035.gdl; Incoming Call's on its 725, 720 and 1525; docs/idmap.md, the call mode's dialer."
+    },
+  {
+    "id": "turbulence-45",
+    "claim": "The README's dialer: the number field is the template's.",
+    "where": [
+      "README The working page"
+    ],
+    "template": {
+      "does": "VTC Dialer's entry (Dialer Feedback Label, 50000) is a #DCDCDC field whose edge is bevelled.",
+      "seed": "seeds/Turbulence 1035.gdl",
+      "pages": [
+        "VTC Dialer"
+      ]
+    },
+    "status": "deviation",
+    "reason": "The frame measures no bevel for the field (its border is none): a Label's paint is its fill alone.",
+    "here": "The dialer's number field is flat #DCDCDC where the template's is bevelled.",
+    "evidence": "Dialer Feedback Label (50000) filled #DCDCDCFF, no border resource, on seeds/Turbulence 1035.gdl."
+  }
   ]
 }

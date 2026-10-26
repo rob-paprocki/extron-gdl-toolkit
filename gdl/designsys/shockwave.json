@@ -67,9 +67,10 @@
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
     "tile": {
-      "usage": "A squarer button for a two-line caption - the seed's Screen Control and Audio Control, 120x110. `icon` names its color as `button`'s does.",
+      "usage": "A squarer button for a two-line caption - the seed's Screen Control and Audio Control, 120x110, a word on each line: a caption of two or more words is broken at the space nearest its middle (`lines`). `icon` names its color as `button`'s does.",
       "kit": "504x440",
       "icon": "gray",
+      "lines": 2,
       "look": {"border": "none", "color": "text"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
@@ -140,7 +141,8 @@
       "usage": "A transparent area with no art: the 320's Cancel Volume, over the screen beside its level, which puts the volume away. A white wash while pressed.",
       "look": {"fill": "none", "border": "none", "color": "text"},
       "states": [{"name": "Off"}, {"name": "On", "fill": "pressed"}]
-    }
+    },
+    "share": {"usage": "Share Content at a call page's header end: the template's own 120x75 art with its words in it - teal 'Share Content' at rest (712x440_share-content_nsel), pink 'Stop Sharing' lit (712x440_stop-sharing_sel), the seed's art, which `python -m gdl.designsys extract shockwave` takes from it. No caption.", "kit": "712x440", "icon": "share-content", "caption": "none", "look": {"border": "none", "color": "text"}, "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on"}]}
   },
   "defaults": {
     "page": {"background": "page"},
@@ -215,7 +217,7 @@
     "main_task": "a working page's Center draws it, so put in it the main task of a page that has none - a Start page's Start button.",
     "start": "Shockwave's panel boots to Start, its seed's DefaultPage: a splash page with no bars or well - the Saturn photo with Lighting Presets at the left, Main Volume at the right, the clock in 72 pt and a Start button between them - from which its working pages are reached. Room Mode VC, the room-mode chooser (Presentation or Video Conference), is a #999999 card on the haze photograph and has no bars either.",
     "regions": [
-      "**The left rail is the room mode's column, not always Display.** Main SD and Main Multi-Window head it Display, over On, Off and Mute and then two tiles, Screen Control and Lighting Control; Main VC and Main VC Share Content head it VTC, over Call, End Call and Privacy as 120x60 pills, then the Display, Screen and Lighting Control tiles; Main SD Screen Arrows follows Display with a second heading, Screen, over Up and Down arrows where the two tiles stand. The frame above is Main SD's: a `LeftRail` stands each `Section` at its groups' places.",
+      "**The left rail is the room mode's column, not always Display.** Main SD and Main Multi-Window head it Display, over On, Off and Mute and then two tiles, Screen Control and Lighting Control; Main VC and Main VC Share Content head it VTC, over Call, End Call and Privacy as 120x60 pills, then the Display, Screen and Lighting Control tiles - a Page with `role=\"call\"` draws it so; Main SD Screen Arrows follows Display with a second heading, Screen, over Up and Down arrows where the two tiles stand. The frame above is Main SD's: a `LeftRail` stands each `Section` at its groups' places.",
       "**The footer's left cell is the room's mode launcher**: Room Mode on the working pages and Preset Selection on Main Multi-Window, the kit's gray_round art at the frame's size, 169x59 - not a `wide` button's 272x110.",
       "**Where it is drawn otherwise**: the volume slider is 52 wide in the Layout and is drawn 53 on the 1035, since 52 is under the 53 px touch minimum the toolkit checks; and Screen Control and Lighting Control, which the Layout stands one every 104 px, 110 deep and so 6 px over one another, are drawn touching, at 469 and 579 on the 1035, since the toolkit refuses two controls that overlap."
     ]
@@ -232,9 +234,13 @@
     "help": {"variant": "pill", "icon": "yellow", "text": "Help", "states": [{"name": "Off"}, {"name": "On", "color": "caution"}]},
     "power": {"variant": "pill", "icon": "red", "text": "Off", "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]},
     "clock": {"format": "M/d/yyyy h:mm tt", "align": "center"},
+    "_call": "What a call page (role=\"call\"), its dialer (role=\"dialer\") and the incoming call's question (topic=\"call\") draw, off seeds/Shockwave 1035.gdl's Main VC, VTC Dialer and Incoming Call: Call the green pill (960x440 green, lit with `go`), End Call the red and Privacy the yellow, lit with `alert` and `caution`; Share Content the seed's own 120x75 art with its words in it (712x440_share-content_nsel, lit 712x440_stop-sharing_sel, `share`), which no kit carries and `python -m gdl.designsys extract shockwave` takes from the seed; the dialer's digits the kit's dialpad art on its 440x440 square, Call and Flash the green and blue pills with their words past the glyph, Contacts and Delete its 504x440 keys with theirs under it, Keyboard its 712x440 one, the number on white, the entry's own paint; the question's Accept Call and Ignore Call the kit's round call and end-call pills (1248x440 r_call_green, r_end-call_red), their words past the glyph. Shockwave's bar templates draw no Main Select Source.",
+    "call": {"call": {"variant": "pill", "icon": "green", "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "end-call": {"variant": "pill", "icon": "red", "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}, "privacy": {"variant": "pill", "icon": "yellow", "states": [{"name": "Off"}, {"name": "On", "color": "caution"}]}},
+    "share": {"variant": "share"},
+    "dialer": {"key": {"variant": "square", "icon": "dialpad_{key}", "text": ""}, "call": {"variant": "pill", "icon": "call_green", "__caption": "indent"}, "flash": {"variant": "pill", "icon": "flash_blue", "__caption": "indent"}, "contacts": {"variant": "key", "icon": "contacts-b_gray", "__caption": "below", "__breaks": 2}, "keyboard": {"variant": "button", "icon": "keyboard_gray", "text": ""}, "delete": {"variant": "key", "icon": "delete-b_gray", "__caption": "below", "__breaks": 1}, "entry": {"color": "ink", "align": "left"}},
     "_center": "What a source popup (role=\"source\") and a window draw (docs/claude-design.md section 4), off the 1035's and 725's seeds' Laptop, Doc Cam, Help, Confirmation, Powering Down and Lighting Control: the source's title Open Sans 40 white, centred across the popup's top; 'Please connect your laptop.' 22 pt white in the upper half of the empty state's box over a 16 pt Disconnected status centred at its foot, 30% of it each way; the popup's headings 18 pt white and its keys the 504x440 gray `key`; a window's title 40 pt #474747 (`text-secondary`) centred, its message 26 pt #474747, Close the kit's dark X (`close`), Power Down a green_round `wide` pill lighting in `go` and Cancel a red_round one lighting in `alert`, captioned 18 pt. Those sizes are the 1035's: a source popup and a window set what they say at each panel's own template's size, its frame's `pt` (Help's message 20 pt, the 725's titles 30).",
     "source": {"title": {"size": 40, "align": "center", "color": "text"}, "empty": {"size": 22, "align": "center", "color": "text"}, "status": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "key"}},
-    "window": {"title": {"size": 40, "align": "center", "color": "text-secondary"}, "message": {"size": 26, "align": "center", "color": "text-secondary"}, "label": {"color": "text-secondary"}, "close": {"variant": "close"}, "power": {"variant": "wide", "icon": "green_round", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "cancel": {"variant": "wide", "icon": "red_round", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}},
+    "window": {"title": {"size": 40, "align": "center", "color": "text-secondary"}, "message": {"size": 26, "align": "center", "color": "text-secondary"}, "label": {"color": "text-secondary"}, "close": {"variant": "close"}, "power": {"variant": "wide", "icon": "green_round", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "cancel": {"variant": "wide", "icon": "red_round", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}, "accept": {"variant": "wide", "icon": "r_call_green", "__caption": "indent", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "decline": {"variant": "wide", "icon": "r_end-call_red", "__caption": "indent", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}},
     "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Up, Down, Mute, Display Control and More on one art, the kit's 712x440 gray (`button`: the seed's image 15, 92x54, lit 712x440 gray sel), Mute lit red (the seed's image 17, 712x440 red sel); Power the kit's 440x440 power_red, a square power glyph in a crimson ring (image 18); every hub Close the white X at rest and the dark one pressed (images 44 and 45: white_close, black_close), where the card's Close is the other way about; Help the kit's help_yellow (image 34); the options' glyphs the kit's lightbulb_white and speaker_white. Chosen by eye: Up and Down Open Sans's Λ and V for the template's Extron-Shockwave chevrons, which its kit has no art for; a tile the source tab's glyph art on the `well` wash in a rounded `pressed` ring, for the template's own translucent rounded tile. Every standard popup stands on the page's photo, stretched to its 702x480 (`popup.photo`: the 525's 12 and the 535's, on '800x480 bkgd.png'). Known differences: its tile's glyph is the tab art's, about a third the size of the template's line art; the menu's words, set at 12 pt under the 525's 18 pt floor, grow their cells; the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn.",
     "hub": {"popup": {"photo": true}, "title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "device", "fill": "well", "border": "rounded", "stroke": "pressed", "glyph": "_white"}, "menu": {"variant": "button"}, "up": {"icon": null, "text": "Λ"}, "down": {"icon": null, "text": "V"}, "mute": {"variant": "button", "icon": "gray", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "icon": "red", "color": "alert"}]}, "power": {"variant": "square", "icon": "power_red", "text": ""}, "settings": {"variant": "button"}, "display": {"variant": "button"}, "close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}, "help": {"variant": "square", "icon": "help_yellow"}, "window": {"close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "source", "fill": "well", "border": "rounded", "stroke": "pressed"}, "blank": {"variant": "tile"}, "glyphs": {"light": "lightbulb_white", "audio": "speaker_white"}}},
     "page": {
@@ -255,11 +261,11 @@
     "empty": "Please connect your {noun}.",
     "status": "Disconnected",
     "hub_empty": "{name} is currently selected.\nThere are no controls for this device.",
-    "confirm": {"power": "Do you want to\npower down the system?"},
+    "confirm": {"power": "Do you want to\npower down the system?", "call": "Incoming call,\ndo you wish to accept?"},
     "wait": {"up": "Please wait\nwhile the system starts up.", "down": "Please wait while the\nsystem is powering down."},
     "help": "For assistance, please call the help desk at:\nX.XXX.XXX.XXXX",
     "help_title": "HELP",
-    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
+    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close", "accept": "Accept Call", "decline": "Ignore Call"},
     "page_empty": "{name} is currently selected.\nThere are no controls\nfor this device."
 ,
     "column_labels_320": "caps",
@@ -282,7 +288,10 @@
     "root": "Shockwave",
     "thumbs": "Shockwave/Slider",
     "outline_off": true,
-    "named": {"440x440": {"close": {"off": "black_close.png", "sel": "white_close.png"}}},
+    "icon_right": {"960x440": 0.399, "1248x440": 0.343},
+    "icon_right_note": "How far across a pill its glyph reaches, where an indented caption is centred past it: the pixels where 960x440_call_outline_green_nsel and flash_outline_blue_nsel differ from the plain green and blue rings end at x 383 of 960; 1248x440_r_call_green's and r_end-call_red's at 403 and 428 of 1248, the end-call glyph the furthest. VTC Dialer sets its Call and Flash, and Incoming Call its Accept Call and Ignore Call, past them ('         Call', '           Accept Call').",
+    "extract": {"from": ["seeds/Shockwave 1035.gdl"], "to": "Shockwave/Extracted", "only": ["712x440_share-content_nsel.png", "712x440_stop-sharing_sel.png"]},
+    "named": {"440x440": {"close": {"off": "black_close.png", "sel": "white_close.png"}}, "712x440": {"share-content": {"off": "712x440_share-content_nsel.png", "sel": "712x440_stop-sharing_sel.png"}}},
     "prefixed": {"device": {"prefix": "white_", "size": [440, 440]}},
     "note": "Extron's Shockwave resource kit. Each button is one image per state: `<color>_outline_nsel` at rest (dark, with a ring in its color) and `<color>_sel` when lit; a family with an icon is `<icon>_<color>`, and an r_ prefix makes it round. The source tabs' glyphs are `<icon>_white` on the bar's own color.",
     "scale": {
@@ -619,7 +628,389 @@
               },
               "pt": {"title": 40}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [288, 173, 703, 453],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [288, 173, 703, 453],
+                "kind": "shape",
+                "fill": "#999999FF",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 26},
+            "message": [335, 214, 610, 164],
+            "lines": 2,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [355, 448, 272, 110],
+                "id": 9032,
+                "text": "Accept Call"
+              },
+              {
+                "role": "decline",
+                "name": "Ignore Call",
+                "kind": "button",
+                "rect": [653, 448, 272, 110],
+                "id": 9033,
+                "text": "Ignore Call"
+              }
+            ],
+            "text": "Incoming call,\ndo you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": {
+            "rect": [0, 0, 1280, 91],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [1087, 0, 193, 91],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              },
+              {
+                "name": "Shape1",
+                "rect": [0, 0, 168, 91],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              }
+            ],
+            "tabs": {
+              "first": [169, 0, 152, 91],
+              "pitch": 153,
+              "count": 6,
+              "look": {
+                "off": {"fill": "#3B2F2AFF", "border": null, "art": "744x456_pc_nsel.png", "text": null},
+                "on": {"fill": "#FFFFFF3C", "border": null, "art": "744x456_pc_nsel.png", "text": null}
+              },
+              "items": [
+                {"role": "source", "name": "VC PC", "kind": "button", "rect": [169, 0, 152, 91], "id": 8052},
+                {"role": "source", "name": "VC Laptop", "kind": "button", "rect": [322, 0, 152, 91], "id": 8050},
+                {"role": "source", "name": "VC Codec", "kind": "button", "rect": [475, 0, 152, 91], "id": 8072},
+                {"role": "source", "name": "VC Blu-ray", "kind": "button", "rect": [628, 0, 152, 91], "id": 8054},
+                {"role": "source", "name": "VC Tuner", "kind": "button", "rect": [781, 0, 152, 91], "id": 8060},
+                {"role": "source", "name": "VC Aux", "kind": "button", "rect": [934, 0, 152, 91], "id": 8062}
+              ],
+              "twin": {
+                "look": {
+                  "off": {"fill": null, "border": null, "art": null, "text": "#FFFFFFFF"},
+                  "on": {"fill": null, "border": null, "art": null, "text": "#FFFFFFFF"}
+                },
+                "items": [
+                  {"role": "caption", "name": "VC PC", "kind": "button", "rect": [169, 55, 152, 36], "id": 8052},
+                  {"role": "caption", "name": "VC Laptop", "kind": "button", "rect": [322, 55, 152, 36], "id": 8050},
+                  {"role": "caption", "name": "VC Codec", "kind": "button", "rect": [475, 55, 152, 36], "id": 8072},
+                  {"role": "caption", "name": "VC Blu-ray", "kind": "button", "rect": [628, 55, 152, 36], "id": 8054},
+                  {"role": "caption", "name": "VC Tuner", "kind": "button", "rect": [781, 55, 152, 36], "id": 8060},
+                  {"role": "caption", "name": "VC Aux", "kind": "button", "rect": [934, 55, 152, 36], "id": 8062}
+                ]
+              }
+            },
+            "start": [{"role": "surface", "name": "Shape1", "kind": "shape", "rect": [0, 0, 168, 91]}],
+            "end": [
+              {"role": "surface", "name": "Shape1", "kind": "shape", "rect": [1087, 0, 193, 91]},
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1123, 7, 120, 75], "id": 8090}
+            ],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1123, 7, 120, 75], "id": 8090}
+            ]
+          },
+          "left": {
+            "rect": [0, 91, 168, 709],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [29, 109, 120, 61], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Initiate Call",
+                    "kind": "button",
+                    "rect": [29, 170, 120, 60],
+                    "id": 5014,
+                    "text": "Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [29, 240, 120, 60],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "VC Privacy",
+                    "kind": "button",
+                    "rect": [29, 310, 120, 60],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 70
+              },
+              {
+                "heading": null,
+                "buttons": [
+                  {
+                    "role": "display",
+                    "name": "Display Control",
+                    "kind": "button",
+                    "rect": [29, 469, 120, 110],
+                    "id": 8214
+                  },
+                  {
+                    "role": "screen",
+                    "name": "Screen Control",
+                    "kind": "button",
+                    "rect": [29, 573, 120, 110],
+                    "id": 8115
+                  },
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Control",
+                    "kind": "button",
+                    "rect": [29, 678, 120, 110],
+                    "id": 8116
+                  }
+                ],
+                "pitch": 105
+              }
+            ],
+            "items": []
+          },
+          "right": {
+            "rect": [1094, 91, 186, 709],
+            "surfaces": [],
+            "items": [
+              {
+                "role": "heading",
+                "name": "Volume Label",
+                "kind": "label",
+                "rect": [1122, 109, 132, 61],
+                "text": "Volume"
+              },
+              {"role": "volume", "name": "SD Volume Slider", "kind": "slider", "rect": [1163, 163, 52, 315], "id": 8024},
+              {"role": "mute", "name": "Volume Mute", "kind": "button", "rect": [1150, 493, 80, 80], "id": 8021},
+              {"role": "audio", "name": "Audio Control", "kind": "button", "rect": [1127, 573, 120, 110], "id": 8020},
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [1115, 720, 143, 59], "id": 8022}
+            ]
+          },
+          "bottom": {
+            "rect": [168, 718, 926, 82],
+            "surfaces": [
+              {
+                "name": "Shape2",
+                "rect": [166, 718, 928, 62],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Capsule",
+                "art": null
+              }
+            ],
+            "items": [
+              {"role": "mode", "name": "Room Mode", "kind": "button", "rect": [168, 720, 169, 59], "id": 8118},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [956, 720, 143, 59], "id": 8117},
+              {"role": "clock", "name": "Date/Time1", "kind": "datetime", "rect": [402, 725, 475, 49]}
+            ]
+          },
+          "center": {
+            "rect": [168, 91, 926, 627],
+            "region": [172, 124, 921, 574],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [168, 120, 926, 574],
+                "kind": "shape",
+                "fill": "#FFFFFF26",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "items": [],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [339, 130, 587, 86],
+              "text": "VTC Dialer",
+              "pt": {"title": 36, "entry": 26},
+              "entry": {
+                "role": "entry",
+                "name": "Dialer Feedback Label",
+                "kind": "label",
+                "rect": [293, 258, 398, 63],
+                "id": 50000
+              },
+              "surfaces": [
+                {
+                  "name": "Dialer Feedback Label",
+                  "rect": [293, 258, 398, 63],
+                  "kind": "label",
+                  "fill": "#FFFFFFFF",
+                  "border": null,
+                  "art": null,
+                  "popup": "VTC Dialer"
+                }
+              ],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "VC Delete",
+                  "kind": "button",
+                  "rect": [703, 248, 84, 84],
+                  "id": 5237,
+                  "text": "Delete",
+                  "art": "504x440_delete-b_gray_nsel.png"
+                },
+                {
+                  "role": "contacts",
+                  "name": "VC PhoneBook",
+                  "kind": "button",
+                  "rect": [564, 331, 135, 122],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "504x440_contacts-b_gray_nsel.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [287, 332, 80, 86],
+                  "id": 5203,
+                  "art": "440x440_dialpad_01_nsel.png"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [375, 332, 80, 86],
+                  "id": 5204,
+                  "art": "440x440_dialpad_02_440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [463, 332, 80, 87],
+                  "id": 5205,
+                  "art": "440x440_dialpad_03_nsel.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [287, 418, 80, 86],
+                  "id": 5206,
+                  "art": "440x440_dialpad_04_nsel.png"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [375, 418, 80, 86],
+                  "id": 5207,
+                  "art": "440x440_dialpad_05_nsel.png"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [463, 418, 80, 86],
+                  "id": 5208,
+                  "art": "440x440_dialpad_06_nsel.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [287, 504, 80, 86],
+                  "id": 5209,
+                  "art": "440x440_dialpad_07_nsel.png"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [375, 504, 80, 86],
+                  "id": 5210,
+                  "art": "440x440_dialpad_08_nsel.png"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [463, 504, 80, 86],
+                  "id": 5211,
+                  "art": "440x440_dialpad_09_nsel.png"
+                },
+                {
+                  "role": "flash",
+                  "name": "VC Flash",
+                  "kind": "button",
+                  "rect": [794, 504, 178, 86],
+                  "id": 5216,
+                  "text": "Flash",
+                  "art": "960x440_flash_outline_blue_nsel.png"
+                },
+                {
+                  "role": "star",
+                  "name": "Dialer Keypad *",
+                  "kind": "button",
+                  "rect": [287, 590, 80, 86],
+                  "id": 5212,
+                  "art": "440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [375, 590, 80, 86],
+                  "id": 5202,
+                  "art": "440x440_dialpad_00_nsel.png"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [463, 590, 80, 86],
+                  "id": 5213,
+                  "art": "440x440_dialpad_hash_nsel.png"
+                },
+                {
+                  "role": "keyboard",
+                  "name": "VC Keyboard",
+                  "kind": "button",
+                  "rect": [564, 591, 135, 86],
+                  "id": 5229,
+                  "art": "712x440_keyboard_gray_nsel.png"
+                },
+                {
+                  "role": "call",
+                  "name": "VC Call",
+                  "kind": "button",
+                  "rect": [794, 591, 178, 86],
+                  "id": 5214,
+                  "text": "Call",
+                  "art": "960x440_call_outline_green_nsel.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8118},
         "note": "The tabs stand 1 px apart, so the photo draws a hairline between them. Each tab's name is a 152x36 caption under it, a button with the tab's ID and no fill or art; the tab draws no caption of its own. Power Down stands at the right rail's foot, beside the footer. The footer is a capsule standing off the bottom edge. The rails run down beside the footer, to the foot of the screen."
@@ -1017,7 +1408,368 @@
               },
               "pt": {"title": 26}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [231, 131, 561, 338],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [231, 131, 561, 338],
+                "kind": "shape",
+                "fill": "#999999FF",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 20},
+            "message": [320, 165, 384, 122],
+            "lines": 2,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [285, 340, 216, 81],
+                "id": 9032,
+                "text": "Accept Call"
+              },
+              {
+                "role": "decline",
+                "name": "Ignore Call",
+                "kind": "button",
+                "rect": [523, 340, 216, 81],
+                "id": 9033,
+                "text": "Ignore Call"
+              }
+            ],
+            "text": "Incoming call,\ndo you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": {
+            "rect": [0, 0, 1024, 75],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [861, 0, 163, 75],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              },
+              {
+                "name": "Shape1",
+                "rect": [0, 0, 133, 75],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              }
+            ],
+            "tabs": {
+              "first": [134, 0, 120, 75],
+              "pitch": 121,
+              "count": 6,
+              "look": {
+                "off": {"fill": "#3B2F2AFF", "border": null, "art": "744x456_pc_nsel.png", "text": "#FFFFFFFF"},
+                "on": {"fill": "#FFFFFF3C", "border": null, "art": "744x456_pc_nsel.png", "text": "#FFFFFFFF"}
+              },
+              "items": [
+                {"role": "source", "name": "VC PC", "kind": "button", "rect": [134, 0, 120, 75], "id": 8052},
+                {"role": "source", "name": "VC Laptop", "kind": "button", "rect": [255, 0, 120, 75], "id": 8050},
+                {"role": "source", "name": "VC Codec", "kind": "button", "rect": [376, 0, 120, 75], "id": 8072},
+                {"role": "source", "name": "VC Blu-ray", "kind": "button", "rect": [497, 0, 120, 75], "id": 8054},
+                {"role": "source", "name": "VC Tuner", "kind": "button", "rect": [618, 0, 120, 75], "id": 8060},
+                {"role": "source", "name": "VC Aux", "kind": "button", "rect": [740, 0, 120, 75], "id": 8062}
+              ]
+            },
+            "start": [{"role": "surface", "name": "Shape1", "kind": "shape", "rect": [0, 0, 133, 75]}],
+            "end": [
+              {"role": "surface", "name": "Shape1", "kind": "shape", "rect": [861, 0, 163, 75]},
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [890, 5, 112, 66], "id": 8090}
+            ],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [890, 5, 112, 66], "id": 8090}
+            ]
+          },
+          "left": {
+            "rect": [0, 75, 133, 525],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [12, 96, 111, 30], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Initiate Call",
+                    "kind": "button",
+                    "rect": [15, 126, 113, 50],
+                    "id": 5014,
+                    "text": "Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [15, 181, 113, 50],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "VC Privacy",
+                    "kind": "button",
+                    "rect": [15, 236, 113, 50],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 55
+              },
+              {
+                "heading": null,
+                "buttons": [
+                  {
+                    "role": "display",
+                    "name": "Display Control",
+                    "kind": "button",
+                    "rect": [15, 293, 113, 98],
+                    "id": 8214
+                  },
+                  {"role": "audio", "name": "Audio Control", "kind": "button", "rect": [15, 393, 113, 98], "id": 8020},
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Control",
+                    "kind": "button",
+                    "rect": [15, 493, 113, 98],
+                    "id": 8116
+                  }
+                ],
+                "pitch": 100
+              }
+            ],
+            "items": []
+          },
+          "right": {
+            "rect": [872, 75, 152, 525],
+            "surfaces": [],
+            "items": [
+              {"role": "heading", "name": "Volume Label", "kind": "label", "rect": [896, 96, 104, 40], "text": "Volume"},
+              {
+                "role": "volume",
+                "name": "Window 1 Volume Slider",
+                "kind": "slider",
+                "rect": [928, 129, 50, 316],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Volume Mute", "kind": "button", "rect": [915, 445, 75, 75], "id": 8021},
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [894, 530, 113, 60], "id": 8022}
+            ]
+          },
+          "bottom": {
+            "rect": [133, 530, 739, 70],
+            "surfaces": [
+              {
+                "name": "Shape2(0)",
+                "rect": [131, 530, 741, 60],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Capsule",
+                "art": null
+              }
+            ],
+            "items": [
+              {"role": "mode", "name": "Room Mode", "kind": "button", "rect": [136, 530, 154, 60], "id": 8118},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [751, 530, 113, 60], "id": 8117},
+              {"role": "clock", "name": "Date/Time1", "kind": "datetime", "rect": [323, 543, 378, 35]}
+            ]
+          },
+          "center": {
+            "rect": [133, 75, 739, 455],
+            "region": [136, 92, 736, 430],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [133, 90, 739, 430],
+                "kind": "shape",
+                "fill": "#FFFFFF26",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "items": [],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [200, 112, 608, 52],
+              "text": "VTC Dialer",
+              "pt": {"title": 30, "entry": 22},
+              "entry": {
+                "role": "entry",
+                "name": "Dialer Feedback Label",
+                "kind": "label",
+                "rect": [236, 192, 298, 50],
+                "id": 50000
+              },
+              "surfaces": [
+                {
+                  "name": "Dialer Feedback Label",
+                  "rect": [236, 192, 298, 50],
+                  "kind": "label",
+                  "fill": "#FFFFFFFF",
+                  "border": null,
+                  "art": null,
+                  "popup": "VTC Dialer"
+                }
+              ],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "VC Delete",
+                  "kind": "button",
+                  "rect": [542, 186, 66, 62],
+                  "id": 5237,
+                  "text": "Delete",
+                  "art": "504x440_delete-b_gray_nsel.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [232, 248, 64, 63],
+                  "id": 5203,
+                  "art": "440x440_dialpad_01_nsel.png"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [296, 248, 64, 63],
+                  "id": 5204,
+                  "art": "440x440_dialpad_02_440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [361, 248, 64, 65],
+                  "id": 5205,
+                  "art": "440x440_dialpad_03_nsel.png"
+                },
+                {
+                  "role": "contacts",
+                  "name": "VC PhoneBook",
+                  "kind": "button",
+                  "rect": [436, 311, 107, 90],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "504x440_contacts-b_gray_nsel.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [232, 313, 64, 63],
+                  "id": 5206,
+                  "art": "440x440_dialpad_04_nsel.png"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [296, 313, 64, 63],
+                  "id": 5207,
+                  "art": "440x440_dialpad_05_nsel.png"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [361, 313, 64, 63],
+                  "id": 5208,
+                  "art": "440x440_dialpad_06_nsel.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [232, 378, 64, 63],
+                  "id": 5209,
+                  "art": "440x440_dialpad_07_nsel.png"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [296, 378, 64, 63],
+                  "id": 5210,
+                  "art": "440x440_dialpad_08_nsel.png"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [361, 378, 64, 63],
+                  "id": 5211,
+                  "art": "440x440_dialpad_09_nsel.png"
+                },
+                {
+                  "role": "flash",
+                  "name": "VC Flash",
+                  "kind": "button",
+                  "rect": [653, 378, 140, 63],
+                  "id": 5216,
+                  "text": "Flash",
+                  "art": "960x440_flash_outline_blue_nsel.png"
+                },
+                {
+                  "role": "star",
+                  "name": "Dialer Keypad *",
+                  "kind": "button",
+                  "rect": [232, 443, 64, 63],
+                  "id": 5212,
+                  "art": "440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [296, 443, 64, 63],
+                  "id": 5202,
+                  "art": "440x440_dialpad_00_nsel.png"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [361, 443, 64, 63],
+                  "id": 5213,
+                  "art": "440x440_dialpad_hash_nsel.png"
+                },
+                {
+                  "role": "keyboard",
+                  "name": "VC Keyboard",
+                  "kind": "button",
+                  "rect": [436, 443, 107, 63],
+                  "id": 5229,
+                  "art": "712x440_keyboard_gray_nsel.png"
+                },
+                {
+                  "role": "call",
+                  "name": "VC Call",
+                  "kind": "button",
+                  "rect": [654, 443, 140, 63],
+                  "id": 5214,
+                  "text": "Call",
+                  "art": "960x440_call_outline_green_nsel.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8118},
         "note": "The tabs stand 1 px apart, so the photo draws a hairline between them. Power Down stands at the right rail's foot, beside the footer. The footer is a capsule standing off the bottom edge. The rails run down beside the footer, to the foot of the screen."
@@ -1313,7 +2065,374 @@
               },
               "pt": {"title": 40}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [344, 197, 678, 373],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [344, 197, 678, 373],
+                "kind": "shape",
+                "fill": "#999999FF",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 26},
+            "message": [427, 236, 512, 157],
+            "lines": 2,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [457, 436, 200, 80],
+                "id": 9032,
+                "text": "Accept Call"
+              },
+              {
+                "role": "decline",
+                "name": "Ignore Call",
+                "kind": "button",
+                "rect": [709, 436, 200, 80],
+                "id": 9033,
+                "text": "Ignore Call"
+              }
+            ],
+            "text": "Incoming call,\ndo you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": {
+            "rect": [0, 0, 1366, 91],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [1168, 0, 198, 91],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              },
+              {
+                "name": "Shape1",
+                "rect": [0, 0, 189, 91],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              }
+            ],
+            "tabs": {
+              "first": [190, 0, 162, 91],
+              "pitch": 163,
+              "count": 6,
+              "look": {
+                "off": {"fill": "#3B2F2AFF", "border": null, "art": "744x456_pc_nsel.png", "text": "#FFFFFFFF"},
+                "on": {"fill": "#FFFFFF3C", "border": null, "art": "744x456_pc_nsel.png", "text": "#FFFFFFFF"}
+              },
+              "items": [
+                {"role": "source", "name": "VC PC", "kind": "button", "rect": [190, 0, 162, 91], "id": 8052},
+                {"role": "source", "name": "VC Laptop", "kind": "button", "rect": [353, 0, 162, 91], "id": 8050},
+                {"role": "source", "name": "VC Codec", "kind": "button", "rect": [516, 0, 162, 91], "id": 8072},
+                {"role": "source", "name": "VC Blu-ray", "kind": "button", "rect": [679, 0, 162, 91], "id": 8054},
+                {"role": "source", "name": "VC Tuner", "kind": "button", "rect": [842, 0, 162, 91], "id": 8060},
+                {"role": "source", "name": "VC Aux", "kind": "button", "rect": [1005, 0, 162, 91], "id": 8062}
+              ]
+            },
+            "start": [{"role": "surface", "name": "Shape1", "kind": "shape", "rect": [0, 0, 189, 91]}],
+            "end": [
+              {"role": "surface", "name": "Shape1", "kind": "shape", "rect": [1168, 0, 198, 91]},
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1197, 6, 140, 80], "id": 8090}
+            ],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1197, 6, 140, 80], "id": 8090}
+            ]
+          },
+          "left": {
+            "rect": [0, 91, 189, 677],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [18, 102, 151, 61], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Initiate Call",
+                    "kind": "button",
+                    "rect": [33, 157, 120, 60],
+                    "id": 5014,
+                    "text": "Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [33, 223, 120, 60],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "VC Privacy",
+                    "kind": "button",
+                    "rect": [33, 289, 120, 60],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 66
+              },
+              {
+                "heading": null,
+                "buttons": [
+                  {"role": "audio", "name": "Audio Control", "kind": "button", "rect": [33, 436, 120, 110], "id": 8020},
+                  {
+                    "role": "screen",
+                    "name": "Screen Control",
+                    "kind": "button",
+                    "rect": [33, 544, 120, 110],
+                    "id": 8115
+                  },
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Control",
+                    "kind": "button",
+                    "rect": [33, 652, 120, 110],
+                    "id": 8116
+                  }
+                ],
+                "pitch": 108
+              }
+            ],
+            "items": []
+          },
+          "right": {
+            "rect": [1177, 91, 189, 677],
+            "surfaces": [],
+            "items": [
+              {
+                "role": "heading",
+                "name": "Volume Label",
+                "kind": "label",
+                "rect": [1195, 102, 151, 61],
+                "text": "Volume"
+              },
+              {
+                "role": "volume",
+                "name": "Window 1 Volume Slider",
+                "kind": "slider",
+                "rect": [1245, 162, 52, 403],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Volume Mute", "kind": "button", "rect": [1232, 587, 80, 80], "id": 8021},
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [1198, 690, 143, 59], "id": 8022}
+            ]
+          },
+          "bottom": {
+            "rect": [189, 688, 988, 80],
+            "surfaces": [
+              {
+                "name": "Shape2(",
+                "rect": [188, 688, 990, 62],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Capsule",
+                "art": null
+              }
+            ],
+            "items": [
+              {"role": "mode", "name": "Room Mode", "kind": "button", "rect": [197, 690, 169, 59], "id": 8118},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [1033, 690, 143, 59], "id": 8117},
+              {"role": "clock", "name": "Date/Time1", "kind": "datetime", "rect": [443, 697, 506, 47]}
+            ]
+          },
+          "center": {
+            "rect": [189, 91, 988, 597],
+            "region": [192, 116, 982, 551],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [189, 116, 988, 551],
+                "kind": "shape",
+                "fill": "#FFFFFF26",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "items": [],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [389, 130, 587, 86],
+              "text": "VTC Dialer",
+              "pt": {"title": 40, "entry": 22},
+              "entry": {
+                "role": "entry",
+                "name": "Dialer Feedback Label",
+                "kind": "label",
+                "rect": [320, 216, 387, 62],
+                "id": 50000
+              },
+              "surfaces": [
+                {
+                  "name": "Dialer Feedback Label",
+                  "rect": [320, 216, 387, 62],
+                  "kind": "label",
+                  "fill": "#FFFFFFFF",
+                  "border": null,
+                  "art": null,
+                  "popup": "VTC Dialer"
+                }
+              ],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "VC Delete",
+                  "kind": "button",
+                  "rect": [714, 212, 89, 70],
+                  "id": 5237,
+                  "text": "Delete",
+                  "art": "504x440_delete-b_gray_nsel.png"
+                },
+                {
+                  "role": "contacts",
+                  "name": "VC PhoneBook",
+                  "kind": "button",
+                  "rect": [596, 286, 120, 110],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "504x440_contacts-b_gray_nsel.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [313, 291, 80, 80],
+                  "id": 5203,
+                  "art": "440x440_dialpad_01_nsel.png"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [398, 291, 80, 80],
+                  "id": 5204,
+                  "art": "440x440_dialpad_02_440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [486, 291, 80, 80],
+                  "id": 5205,
+                  "art": "440x440_dialpad_03_nsel.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [313, 376, 80, 80],
+                  "id": 5206,
+                  "art": "440x440_dialpad_04_nsel.png"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [398, 376, 80, 80],
+                  "id": 5207,
+                  "art": "440x440_dialpad_05_nsel.png"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [486, 376, 80, 80],
+                  "id": 5208,
+                  "art": "440x440_dialpad_06_nsel.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [313, 460, 80, 80],
+                  "id": 5209,
+                  "art": "440x440_dialpad_07_nsel.png"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [398, 460, 80, 80],
+                  "id": 5210,
+                  "art": "440x440_dialpad_08_nsel.png"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [486, 460, 80, 80],
+                  "id": 5211,
+                  "art": "440x440_dialpad_09_nsel.png"
+                },
+                {
+                  "role": "flash",
+                  "name": "VC Flash",
+                  "kind": "button",
+                  "rect": [875, 460, 170, 80],
+                  "id": 5216,
+                  "text": "Flash",
+                  "art": "960x440_flash_outline_blue_nsel.png"
+                },
+                {
+                  "role": "call",
+                  "name": "VC Call",
+                  "kind": "button",
+                  "rect": [876, 543, 170, 80],
+                  "id": 5214,
+                  "text": "Call",
+                  "art": "960x440_call_outline_green_nsel.png"
+                },
+                {
+                  "role": "star",
+                  "name": "Dialer Keypad *",
+                  "kind": "button",
+                  "rect": [313, 545, 80, 80],
+                  "id": 5212,
+                  "art": "440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [398, 545, 80, 80],
+                  "id": 5202,
+                  "art": "440x440_dialpad_00_nsel.png"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [486, 545, 80, 80],
+                  "id": 5213,
+                  "art": "440x440_dialpad_hash_nsel.png"
+                },
+                {
+                  "role": "keyboard",
+                  "name": "VC Keyboard",
+                  "kind": "button",
+                  "rect": [592, 546, 140, 80],
+                  "id": 5229,
+                  "art": "712x440_keyboard_gray_nsel.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8118},
         "note": "The tabs stand 1 px apart, so the photo draws a hairline between them. Power Down stands at the right rail's foot, beside the footer. The footer is a capsule standing off the bottom edge. The rails run down beside the footer, to the foot of the screen."
@@ -1629,7 +2748,388 @@
               },
               "pt": {"title": 40}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [483, 276, 952, 523],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [483, 276, 952, 523],
+                "kind": "shape",
+                "fill": "#999999FF",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 30},
+            "message": [503, 331, 912, 220],
+            "lines": 2,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [642, 612, 280, 112],
+                "id": 9032,
+                "text": "Accept Call"
+              },
+              {
+                "role": "decline",
+                "name": "Ignore Call",
+                "kind": "button",
+                "rect": [996, 612, 280, 112],
+                "id": 9033,
+                "text": "Ignore Call"
+              }
+            ],
+            "text": "Incoming call,\ndo you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": {
+            "rect": [0, 0, 1920, 127],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [1641, 0, 279, 127],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              },
+              {
+                "name": "Shape1",
+                "rect": [0, 0, 278, 127],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              }
+            ],
+            "tabs": {
+              "first": [279, 0, 226, 127],
+              "pitch": 227,
+              "count": 6,
+              "look": {
+                "off": {"fill": "#3B2F2AFF", "border": null, "art": "744x456_pc_nsel.png", "text": null},
+                "on": {"fill": "#FFFFFF3C", "border": null, "art": "744x456_pc_nsel.png", "text": null}
+              },
+              "items": [
+                {"role": "source", "name": "VC PC", "kind": "button", "rect": [279, 0, 226, 127], "id": 8052},
+                {"role": "source", "name": "VC Laptop", "kind": "button", "rect": [506, 0, 226, 127], "id": 8050},
+                {"role": "source", "name": "VC Codec", "kind": "button", "rect": [733, 0, 226, 127], "id": 8072},
+                {"role": "source", "name": "VC Blu-ray", "kind": "button", "rect": [960, 0, 226, 127], "id": 8054},
+                {"role": "source", "name": "VC Tuner", "kind": "button", "rect": [1187, 0, 226, 127], "id": 8060},
+                {"role": "source", "name": "VC Aux", "kind": "button", "rect": [1414, 0, 226, 127], "id": 8062}
+              ],
+              "twin": {
+                "look": {
+                  "off": {"fill": null, "border": null, "art": null, "text": "#FFFFFFFF"},
+                  "on": {"fill": null, "border": null, "art": null, "text": "#FFFFFFFF"}
+                },
+                "items": [
+                  {"role": "caption", "name": "VC PC", "kind": "button", "rect": [279, 75, 226, 52], "id": 8052},
+                  {"role": "caption", "name": "VC Laptop", "kind": "button", "rect": [506, 75, 226, 52], "id": 8050},
+                  {"role": "caption", "name": "VC Codec", "kind": "button", "rect": [733, 75, 226, 52], "id": 8072},
+                  {"role": "caption", "name": "VC Blu-ray", "kind": "button", "rect": [960, 75, 226, 52], "id": 8054},
+                  {"role": "caption", "name": "VC Tuner", "kind": "button", "rect": [1187, 75, 226, 52], "id": 8060},
+                  {"role": "caption", "name": "VC Aux", "kind": "button", "rect": [1414, 75, 226, 52], "id": 8062}
+                ]
+              }
+            },
+            "start": [{"role": "surface", "name": "Shape1", "kind": "shape", "rect": [0, 0, 278, 127]}],
+            "end": [
+              {"role": "surface", "name": "Shape1", "kind": "shape", "rect": [1641, 0, 279, 127]},
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1681, 7, 196, 112], "id": 8090}
+            ],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1681, 7, 196, 112], "id": 8090}
+            ]
+          },
+          "left": {
+            "rect": [0, 127, 265, 953],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [24, 142, 211, 85], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Initiate Call",
+                    "kind": "button",
+                    "rect": [45, 220, 168, 84],
+                    "id": 5014,
+                    "text": "Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [45, 313, 168, 84],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "VC Privacy",
+                    "kind": "button",
+                    "rect": [45, 405, 168, 84],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 93
+              },
+              {
+                "heading": null,
+                "buttons": [
+                  {"role": "audio", "name": "Audio Control", "kind": "button", "rect": [45, 612, 168, 154], "id": 8020},
+                  {
+                    "role": "screen",
+                    "name": "Screen Control",
+                    "kind": "button",
+                    "rect": [45, 765, 168, 154],
+                    "id": 8115
+                  },
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Control",
+                    "kind": "button",
+                    "rect": [45, 916, 168, 154],
+                    "id": 8116
+                  }
+                ],
+                "pitch": 153
+              }
+            ],
+            "items": []
+          },
+          "right": {
+            "rect": [1652, 127, 268, 953],
+            "surfaces": [],
+            "items": [
+              {
+                "role": "heading",
+                "name": "Volume Label",
+                "kind": "label",
+                "rect": [1678, 142, 211, 85],
+                "text": "Volume"
+              },
+              {
+                "role": "volume",
+                "name": "Window 1 Volume Slider",
+                "kind": "slider",
+                "rect": [1749, 226, 72, 565],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Volume Mute", "kind": "button", "rect": [1731, 825, 111, 112], "id": 8021},
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [1683, 969, 199, 82], "id": 8022}
+            ]
+          },
+          "bottom": {
+            "rect": [265, 967, 1387, 113],
+            "surfaces": [
+              {
+                "name": "Shape2(",
+                "rect": [264, 967, 1390, 87],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Capsule",
+                "art": null
+              }
+            ],
+            "items": [
+              {"role": "mode", "name": "Room Mode", "kind": "button", "rect": [265, 969, 237, 82], "id": 8118},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [1461, 969, 199, 82], "id": 8117},
+              {"role": "clock", "name": "Date/Time1", "kind": "datetime", "rect": [622, 979, 711, 66]}
+            ]
+          },
+          "center": {
+            "rect": [265, 127, 1387, 840],
+            "region": [268, 162, 1380, 774],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [265, 162, 1387, 774],
+                "kind": "shape",
+                "fill": "#FFFFFF26",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "items": [],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [544, 181, 825, 120],
+              "text": "VTC Dialer",
+              "pt": {"title": 40, "entry": 28},
+              "entry": {
+                "role": "entry",
+                "name": "Dialer Feedback Label",
+                "kind": "label",
+                "rect": [446, 301, 543, 87],
+                "id": 50000
+              },
+              "surfaces": [
+                {
+                  "name": "Dialer Feedback Label",
+                  "rect": [446, 301, 543, 87],
+                  "kind": "label",
+                  "fill": "#FFFFFFFF",
+                  "border": null,
+                  "art": null,
+                  "popup": "VTC Dialer"
+                }
+              ],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "VC Delete",
+                  "kind": "button",
+                  "rect": [1001, 297, 124, 97],
+                  "id": 5237,
+                  "text": "Delete",
+                  "art": "504x440_delete-b_gray_nsel.png"
+                },
+                {
+                  "role": "contacts",
+                  "name": "VC PhoneBook",
+                  "kind": "button",
+                  "rect": [835, 400, 168, 154],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "504x440_contacts-b_gray_nsel.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [437, 408, 111, 112],
+                  "id": 5203,
+                  "art": "440x440_dialpad_01_nsel.png"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [557, 408, 111, 112],
+                  "id": 5204,
+                  "art": "440x440_dialpad_02_440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [680, 408, 111, 112],
+                  "id": 5205,
+                  "art": "440x440_dialpad_03_nsel.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [437, 526, 111, 112],
+                  "id": 5206,
+                  "art": "440x440_dialpad_04_nsel.png"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [557, 526, 111, 112],
+                  "id": 5207,
+                  "art": "440x440_dialpad_05_nsel.png"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [680, 526, 111, 112],
+                  "id": 5208,
+                  "art": "440x440_dialpad_06_nsel.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [437, 645, 111, 112],
+                  "id": 5209,
+                  "art": "440x440_dialpad_07_nsel.png"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [557, 645, 111, 112],
+                  "id": 5210,
+                  "art": "440x440_dialpad_08_nsel.png"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [680, 645, 111, 112],
+                  "id": 5211,
+                  "art": "440x440_dialpad_09_nsel.png"
+                },
+                {
+                  "role": "flash",
+                  "name": "VC Flash",
+                  "kind": "button",
+                  "rect": [1228, 645, 238, 112],
+                  "id": 5216,
+                  "text": "Flash",
+                  "art": "960x440_flash_outline_blue_nsel.png"
+                },
+                {
+                  "role": "call",
+                  "name": "VC Call",
+                  "kind": "button",
+                  "rect": [1228, 762, 238, 112],
+                  "id": 5214,
+                  "text": "Call",
+                  "art": "960x440_call_outline_green_nsel.png"
+                },
+                {
+                  "role": "star",
+                  "name": "Dialer Keypad *",
+                  "kind": "button",
+                  "rect": [437, 765, 111, 112],
+                  "id": 5212,
+                  "art": "440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [557, 765, 111, 112],
+                  "id": 5202,
+                  "art": "440x440_dialpad_00_nsel.png"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [680, 765, 111, 112],
+                  "id": 5213,
+                  "art": "440x440_dialpad_hash_nsel.png"
+                },
+                {
+                  "role": "keyboard",
+                  "name": "VC Keyboard",
+                  "kind": "button",
+                  "rect": [829, 766, 196, 112],
+                  "id": 5229,
+                  "art": "712x440_keyboard_gray_nsel.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8118},
         "note": "The tabs stand 1 px apart, so the photo draws a hairline between them. Each tab's name is a 226x52 caption under it, a button with the tab's ID and no fill or art; the tab draws no caption of its own. Power Down stands at the right rail's foot, beside the footer. The footer is a capsule standing off the bottom edge. The rails run down beside the footer, to the foot of the screen."
@@ -2016,7 +3516,368 @@
               },
               "pt": {"title": 24}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [180, 104, 439, 271],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [180, 104, 439, 271],
+                "kind": "shape",
+                "fill": "#999999FF",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 18},
+            "message": [250, 128, 300, 98],
+            "lines": 2,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [221, 268, 169, 65],
+                "id": 9032,
+                "text": "Accept Call"
+              },
+              {
+                "role": "decline",
+                "name": "Ignore Call",
+                "kind": "button",
+                "rect": [407, 268, 169, 65],
+                "id": 9033,
+                "text": "Ignore Call"
+              }
+            ],
+            "text": "Incoming call,\ndo you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": {
+            "rect": [0, 0, 800, 60],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [675, 0, 125, 60],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              },
+              {
+                "name": "Shape1",
+                "rect": [0, 0, 104, 60],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Rectangle",
+                "art": null
+              }
+            ],
+            "tabs": {
+              "first": [105, 0, 94, 60],
+              "pitch": 95,
+              "count": 6,
+              "look": {
+                "off": {"fill": "#3B2F2AFF", "border": null, "art": "744x456_pc_nsel.png", "text": "#FFFFFFFF"},
+                "on": {"fill": "#FFFFFF3C", "border": null, "art": "744x456_pc_nsel.png", "text": "#FFFFFFFF"}
+              },
+              "items": [
+                {"role": "source", "name": "VC PC", "kind": "button", "rect": [105, 0, 94, 60], "id": 8052},
+                {"role": "source", "name": "VC Laptop", "kind": "button", "rect": [200, 0, 94, 60], "id": 8050},
+                {"role": "source", "name": "VC Codec", "kind": "button", "rect": [295, 0, 94, 60], "id": 8072},
+                {"role": "source", "name": "VC Blu-ray", "kind": "button", "rect": [390, 0, 94, 60], "id": 8054},
+                {"role": "source", "name": "VC Tuner", "kind": "button", "rect": [485, 0, 94, 60], "id": 8060},
+                {"role": "source", "name": "VC Aux", "kind": "button", "rect": [580, 0, 94, 60], "id": 8062}
+              ]
+            },
+            "start": [{"role": "surface", "name": "Shape1", "kind": "shape", "rect": [0, 0, 104, 60]}],
+            "end": [
+              {"role": "surface", "name": "Shape1", "kind": "shape", "rect": [675, 0, 125, 60]},
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [696, 4, 88, 53], "id": 8090}
+            ],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [696, 4, 88, 53], "id": 8090}
+            ]
+          },
+          "left": {
+            "rect": [0, 60, 104, 420],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [7, 74, 87, 36], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Initiate Call",
+                    "kind": "button",
+                    "rect": [11, 105, 89, 40],
+                    "id": 5014,
+                    "text": "Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [11, 149, 89, 40],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "VC Privacy",
+                    "kind": "button",
+                    "rect": [11, 193, 89, 40],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 44
+              },
+              {
+                "heading": null,
+                "buttons": [
+                  {
+                    "role": "display",
+                    "name": "Display Control",
+                    "kind": "button",
+                    "rect": [11, 235, 89, 79],
+                    "id": 8214
+                  },
+                  {"role": "audio", "name": "Audio Control", "kind": "button", "rect": [11, 315, 89, 79], "id": 8020},
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Control",
+                    "kind": "button",
+                    "rect": [11, 394, 89, 79],
+                    "id": 8116
+                  }
+                ],
+                "pitch": 80
+              }
+            ],
+            "items": []
+          },
+          "right": {
+            "rect": [682, 60, 118, 420],
+            "surfaces": [],
+            "items": [
+              {"role": "heading", "name": "Volume Label", "kind": "label", "rect": [700, 74, 82, 36], "text": "Volume"},
+              {
+                "role": "volume",
+                "name": "Window 1 Volume Slider",
+                "kind": "slider",
+                "rect": [720, 104, 48, 243],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Volume Mute", "kind": "button", "rect": [715, 356, 59, 60], "id": 8021},
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [696, 424, 89, 48], "id": 8022}
+            ]
+          },
+          "bottom": {
+            "rect": [104, 424, 578, 56],
+            "surfaces": [
+              {
+                "name": "Shape2(0)",
+                "rect": [103, 424, 579, 48],
+                "kind": "shape",
+                "fill": "#3B2F2AFF",
+                "border": "2D Capsule",
+                "art": null
+              }
+            ],
+            "items": [
+              {"role": "mode", "name": "Room Mode", "kind": "button", "rect": [107, 424, 121, 48], "id": 8118},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [587, 424, 89, 48], "id": 8117},
+              {"role": "clock", "name": "Date/Time1", "kind": "datetime", "rect": [252, 435, 296, 28]}
+            ]
+          },
+          "center": {
+            "rect": [104, 60, 578, 364],
+            "region": [106, 74, 575, 344],
+            "surfaces": [
+              {
+                "name": "Shape1",
+                "rect": [104, 72, 578, 344],
+                "kind": "shape",
+                "fill": "#FFFFFF26",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              }
+            ],
+            "items": [],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [156, 77, 475, 51],
+              "text": "VTC Dialer",
+              "pt": {"title": 24, "entry": 20},
+              "entry": {
+                "role": "entry",
+                "name": "Dialer Feedback Label",
+                "kind": "label",
+                "rect": [169, 130, 265, 36],
+                "id": 50000
+              },
+              "surfaces": [
+                {
+                  "name": "Dialer Feedback Label",
+                  "rect": [169, 130, 265, 36],
+                  "kind": "label",
+                  "fill": "#FFFFFFFF",
+                  "border": null,
+                  "art": null,
+                  "popup": "VTC Dialer"
+                }
+              ],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "VC Delete",
+                  "kind": "button",
+                  "rect": [437, 126, 70, 60],
+                  "id": 5237,
+                  "text": "Delete",
+                  "art": "504x440_delete-b_gray_nsel.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [165, 174, 60, 60],
+                  "id": 5203,
+                  "art": "440x440_dialpad_01_nsel.png"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [225, 174, 60, 60],
+                  "id": 5204,
+                  "art": "440x440_dialpad_02_440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [285, 174, 60, 60],
+                  "id": 5205,
+                  "art": "440x440_dialpad_03_nsel.png"
+                },
+                {
+                  "role": "contacts",
+                  "name": "VC PhoneBook",
+                  "kind": "button",
+                  "rect": [356, 233, 84, 72],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "504x440_contacts-b_gray_nsel.png"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [285, 234, 60, 60],
+                  "id": 5208,
+                  "art": "440x440_dialpad_06_nsel.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [165, 236, 60, 60],
+                  "id": 5206,
+                  "art": "440x440_dialpad_04_nsel.png"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [225, 236, 60, 60],
+                  "id": 5207,
+                  "art": "440x440_dialpad_05_nsel.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [165, 294, 60, 60],
+                  "id": 5209,
+                  "art": "440x440_dialpad_07_nsel.png"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [225, 294, 60, 60],
+                  "id": 5210,
+                  "art": "440x440_dialpad_08_nsel.png"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [285, 294, 60, 60],
+                  "id": 5211,
+                  "art": "440x440_dialpad_09_nsel.png"
+                },
+                {
+                  "role": "flash",
+                  "name": "VC Flash",
+                  "kind": "button",
+                  "rect": [527, 297, 110, 51],
+                  "id": 5216,
+                  "text": "Flash",
+                  "art": "960x440_flash_outline_blue_nsel.png"
+                },
+                {
+                  "role": "star",
+                  "name": "Dialer Keypad *",
+                  "kind": "button",
+                  "rect": [165, 354, 60, 60],
+                  "id": 5212,
+                  "art": "440x440_gray_nsel.png"
+                },
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [225, 354, 60, 60],
+                  "id": 5202,
+                  "art": "440x440_dialpad_00_nsel.png"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [285, 354, 60, 60],
+                  "id": 5213,
+                  "art": "440x440_dialpad_hash_nsel.png"
+                },
+                {
+                  "role": "call",
+                  "name": "VC Call",
+                  "kind": "button",
+                  "rect": [527, 360, 110, 51],
+                  "id": 5214,
+                  "text": "Call",
+                  "art": "960x440_call_outline_green_nsel.png"
+                },
+                {
+                  "role": "keyboard",
+                  "name": "VC Keyboard",
+                  "kind": "button",
+                  "rect": [356, 362, 84, 51],
+                  "id": 5229,
+                  "art": "712x440_keyboard_gray_nsel.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8118},
         "note": "The tabs stand 1 px apart, so the photo draws a hairline between them. Power Down stands at the right rail's foot, beside the footer. The footer is a capsule standing off the bottom edge. The rails run down beside the footer, to the foot of the screen."
@@ -2117,6 +3978,16 @@
           "pt": {"title": 40, "empty": 28},
           "close": {"role": "close", "name": "Close Laptop", "kind": "button", "rect": [1012, 9, 96, 90], "id": 9102},
           "title_controls": [128, 0, 865, 108],
+          "level": {
+            "popup": "Volume Level",
+            "fill": "#595757FA",
+            "rect": [17, 96, 46, 528],
+            "track": null,
+            "border": null,
+            "bar": null,
+            "art": {"track": "19x259_vol-empty.png", "fill": "19x259_vol-full.png"},
+            "labels": [[0, 0, 80, 75], [0, 645, 80, 75]]
+          },
           "items": [
             {"role": "popup", "name": "Volume", "kind": "popup_ref", "rect": [1041, 0, 81, 720]},
             {"role": "source", "name": "Main Aux", "kind": "button", "rect": [748, 138, 304, 202], "id": 8070},
@@ -2173,17 +4044,7 @@
               "id": 9109,
               "text": "Apple TV"
             }
-          ],
-          "level": {
-            "popup": "Volume Level",
-            "fill": "#595757FA",
-            "rect": [17, 96, 46, 528],
-            "track": null,
-            "border": null,
-            "bar": null,
-            "art": {"track": "19x259_vol-empty.png", "fill": "19x259_vol-full.png"},
-            "labels": [[0, 0, 80, 75], [0, 645, 80, 75]]
-          }
+          ]
         },
         "select": {
           "popup": null,
@@ -2432,6 +4293,16 @@
           "pt": {"title": 30, "empty": 18},
           "close": {"role": "close", "name": "Close Laptop", "kind": "button", "rect": [633, 6, 60, 60], "id": 9102},
           "title_controls": [80, 0, 541, 72],
+          "level": {
+            "popup": "Volume Level",
+            "fill": "#595757FA",
+            "rect": [11, 64, 29, 352],
+            "track": null,
+            "border": null,
+            "bar": null,
+            "art": {"track": "19x259_vol-empty.png", "fill": "19x259_vol-full.png"},
+            "labels": [[0, 0, 50, 50], [0, 430, 50, 50]]
+          },
           "items": [
             {"role": "popup", "name": "Volume", "kind": "popup_ref", "rect": [651, 0, 51, 480]},
             {"role": "source", "name": "Main Aux", "kind": "button", "rect": [468, 92, 190, 135], "id": 8070},
@@ -2488,17 +4359,7 @@
               "id": 9109,
               "text": "Apple TV"
             }
-          ],
-          "level": {
-            "popup": "Volume Level",
-            "fill": "#595757FA",
-            "rect": [11, 64, 29, 352],
-            "track": null,
-            "border": null,
-            "bar": null,
-            "art": {"track": "19x259_vol-empty.png", "fill": "19x259_vol-full.png"},
-            "labels": [[0, 0, 50, 50], [0, 430, 50, 50]]
-          }
+          ]
         },
         "select": {
           "popup": null,

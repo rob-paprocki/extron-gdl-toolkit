@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Home" does="The working page: choose the source for the wall display, run the display, and reach lighting, audio, help and power." panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Header">
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="101" name="Laptop" icon="laptop" nav="Laptop" states="Off, On" does="Routes the table laptop to the display. Live while it is the source on the display.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="102" name="ShareLink" icon="sharelink" nav="ShareLink" states="Off, On" does="Routes the wireless ShareLink share to the display. Live while it is the source on the display.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="103" name="Room PC" icon="pc" nav="RoomPC" states="Off, On" does="Routes the room PC to the display. Live while it is the source on the display.">Room PC</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="104" name="Doc Cam" icon="doc-cam" nav="DocCam" states="Off, On" does="Routes the document camera to the display. Live while it is the source on the display.">Doc Cam</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.LeftRail">
+    <x-import component-from-global-scope="ExtronMach.Section" title="Display">
+      <x-import component-from-global-scope="ExtronMach.Button" id="111" name="Display On" states='[{"name":"Off"},{"name":"Warming Up","text":"Warming Up"},{"name":"On"}]' does="Turns the display on. The program shows Warming Up while it warms, and lights it while the display is on.">On</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" id="112" name="Display Off" states='[{"name":"Off"},{"name":"Cooling Down","text":"Cooling Down"},{"name":"On"}]' does="Turns the display off. The program shows Cooling Down while it cools, and lights it while the display is off.">Off</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronMach.Section" title="Settings">
+      <x-import component-from-global-scope="ExtronMach.Button" id="121" name="Lighting" nav="Lighting" does="Opens the lighting presets.">Lighting</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" id="122" name="Audio" nav="Audio" does="Opens the audio settings, where the microphones are muted.">Audio</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.RightRail"></x-import>
+  <x-import component-from-global-scope="ExtronMach.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronMach.Button" slot="mode" name="Video Call" nav="Call" does="Shows the call page.">Video Call</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

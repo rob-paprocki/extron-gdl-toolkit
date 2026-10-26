@@ -486,6 +486,12 @@ CHROME = ('help', 'power', 'volume', 'mute', 'mode', 'volume-up', 'volume-down',
 ROLES = ((('display', 'on'), 'display-on'), (('display', 'off'), 'display-off'),
          (('display', 'mute'), 'display-mute'), (('display', 'power'), 'display-power'),
          (('display',), 'display'), (('volume', 'up'), 'volume-up'), (('volume', 'down'), 'volume-down'),
+         # The call mode's (Main VC's Initiate Call, End Call, VC Privacy and
+         # Share Content; Incoming Call's Accept Call and Decline or Ignore
+         # Call; the dialer's VC Call): an ending or an answer before the call
+         # it names.
+         (('end', 'call'), 'end-call'), (('accept',), 'accept'), (('decline',), 'decline'),
+         (('ignore',), 'decline'), (('privacy',), 'privacy'), (('share',), 'share'), (('call',), 'call'),
          (('mute',), 'mute'), (('help',), 'help'), (('power',), 'power'), (('room', 'mode'), 'mode'),
          # Afterburn's foot-left launcher goes to the call's page as Mach's Room
          # Mode goes to its mode page.
@@ -510,6 +516,23 @@ CONTROL_SOURCES = ('Doc Cam',)
 # The windows every theme opens over a working page, by the popup's name - or
 # the page's, on the 300 and the 320, which flip pages for them.
 WINDOWS = (('help', 'Help'), ('confirm', 'Confirmation'), ('wait', 'Powering Down'))
+# The call mode, where a bar series' template draws one: its working page
+# (Main VC - the header's tabs and Share Content at its end, the left rail's
+# VTC group of Make Call, End Call and Privacy over its launchers), the
+# dialer its popup region shows (VTC Dialer), and the question the program
+# shows when a call comes in - 'Incoming Call', which Turbulence's 1035
+# names 'Incoming Call Label'.
+CALL_PAGE = 'Main VC'
+DIALER = 'VTC Dialer'
+INCOMING = ('Incoming Call', 'Incoming Call Label')
+# The call mode's chrome a program drives, whose seed IDs the call page
+# keeps (Initiate Call 5014, End Call 5215, VC Privacy 5217, Share Content
+# 8090 on every bar seed).
+CALL_CHROME = ('call', 'end-call', 'privacy', 'share')
+# The page a bar series chooses among its sources on, with nothing chosen
+# yet - Mach's and Turbulence's, which Shockwave's bar templates do not draw:
+# a title in the header and the sources as tiles in the centre.
+SELECT_PAGE = 'Main Select Source'
 
 
 def series_seed(row):
@@ -916,6 +939,18 @@ def frame_of(path, size, art=None):
     volume = _volume_modal(pages, size) if paged else None
     if volume:
         out['volume'] = volume
+    # A bar series' call mode and the page it chooses sources on, where its
+    # template draws them as controls (not Afterburn's, whose bars are art,
+    # and none of the hubs' or the 320's, which draw neither).
+    if not paged and 'options' not in out and not art:
+        if CALL_PAGE in named:
+            out['call'] = _call_frame(named[CALL_PAGE], pages, size)
+        if SELECT_PAGE in named:
+            out['choose'] = _select_frame(named[SELECT_PAGE], out, size)
+        incoming = next((pg for n in INCOMING for pg in pages
+                         if pg['name'] == n and pg['kind'] == 'popup' and pg['modal']), None)
+        if incoming:
+            out['windows']['incoming'] = _incoming(incoming, size)
     out['ids'], out['note'] = ids, note
     # Each band reads rect, surfaces, its own slots (tabs, groups, the
     # centre's region), then what is left in it.
@@ -928,6 +963,131 @@ def frame_of(path, size, art=None):
 
 def _controls(page, size):
     return [c for c in page['controls'] if not (c['type'] == 'PBPopupPageReference' and _full(c['rect'], size))]
+
+
+def _call_frame(page, pages, size):
+    """The call mode's working page (Main VC) as the working page is read: its
+    four bars - the header's tabs with Share Content at its end, the left
+    rail's VTC group (Make Call, End Call, Privacy) over its launchers, which
+    hold one more than Main SD's on Mach (Display, Screen, Lighting, Audio) -
+    and the centre's popup region and the page's own surfaces round it (a
+    source's popup's are the working page's); the dialer that region shows
+    (VTC Dialer, `center.dialer`); and the seed IDs of the call's chrome."""
+    f = _bars_frame(page, pages, size, None)
+    c = f['center']
+    rec = {'page': page['name']}
+    for b in ('top', 'left', 'right', 'bottom'):
+        rec[b] = f[b]
+    rec['center'] = {'rect': c['rect'], 'region': c['region'],
+                     'surfaces': [s for s in c['surfaces'] if not s.get('popup')], 'items': c['items']}
+    # The VTC keys' own words (Mach's Make Call, Shockwave's Call,
+    # Turbulence's Initiate Call), which an example call page says.
+    said = {c['name']: _said(' '.join((c['caption'] or '').split())) for c in page['controls'] if c['type'] == 'PBButton'}
+    for g in rec['left']['groups'][:1]:
+        for btn in g['buttons']:
+            if said.get(btn['name']):
+                btn['text'] = said[btn['name']]
+    region = c['region']
+    dialer = next((pg for pg in pages if pg['kind'] == 'popup' and not pg['modal'] and pg['name'] == DIALER), None)
+    if dialer is not None and region:
+        rec['center']['dialer'] = _dialer(dialer, region[:2])
+    ids = {}
+    for b in ('top', 'left'):
+        for it in (rec[b]['items'] + [x for e in ('start', 'end') for x in rec[b].get(e) or ()]
+                   + [x for g in rec[b].get('groups') or () for x in g['buttons']]):
+            if it['role'] in CALL_CHROME and it.get('id') and it['role'] not in ids:
+                ids[it['role']] = it['id']
+    rec['ids'] = {k: ids[k] for k in CALL_CHROME if k in ids}
+    return rec
+
+
+def _dial_role(c):
+    """A dialer key's meaning off its name: 'Dialer Keypad 1' is digit-1,
+    'Dialer Keypad *' star, '#' hash, 'Dialer Keypad Period' period; 'VC
+    Call', 'VC Flash', 'VC PhoneBook' (contacts), 'VC Keyboard', 'VC Delete'."""
+    words = (c['name'] or '').split()
+    low = [w.lower() for w in words]
+    if 'keypad' in low:
+        k = low[-1]
+        return {'*': 'star', '#': 'hash'}.get(k, 'digit-' + k if k.isdigit() else k)
+    if 'phonebook' in low or 'contacts' in low:
+        return 'contacts'
+    return next((r for r in ('call', 'flash', 'keyboard', 'delete') if r in low), _role(c))
+
+
+def _said(caption):
+    """A caption as words a system can set: None where it is a glyph of an icon
+    face (Mach's \\ue913 Delete, Shockwave's '(' star) or nothing."""
+    s = (caption or '').strip()
+    return s if s and re.match(r'^[A-Za-z0-9 #*.@-]+$', s) else None
+
+
+def _dialer(pg, at):
+    """The dialer a call page's popup region shows (VTC Dialer), on the page
+    at `at`: its title (the label naming it) and the size it sets it in, the
+    entry the program writes the number into (Dialer Feedback Label, 50000)
+    with the field drawn behind it, its surfaces - Mach's well, its title bar
+    and that field - and each key by its meaning (_dial_role) with its seed
+    ID, its words where it says any, and its art at rest."""
+    cs = pg['controls']
+    labels = [c for c in cs if c['type'] == 'PBLabel']
+    title = next((c for c in labels if (c['caption'] or '').strip().lower() == pg['name'].lower()), None)
+    entry = next((c for c in labels if c is not title), None)
+    keys = []
+    for c in sorted((c for c in cs if c['type'] == 'PBButton'), key=lambda c: (c['rect'][1], c['rect'][0])):
+        k = _item(c, at, _dial_role(c))
+        if _said(c['caption']):
+            k['text'] = _said(c['caption'])
+        art = (c['looks'][0] if c['looks'] else {}).get('art')
+        if art:
+            k['art'] = art
+        keys.append(k)
+    out = {'popup': pg['name'], 'title': _offset(title['rect'], at) if title else None,
+           'text': title['caption'] if title else None,
+           'pt': {k: v for k, v in (('title', title['pt'] if title else None), ('entry', entry['pt'] if entry else None))
+                  if v is not None},
+           'entry': _item(entry, at, 'entry') if entry else None,
+           'surfaces': [_surface_of(c, at, pg['name']) for c in sorted(cs, key=lambda c: (c['rect'][1], c['rect'][0]))
+                        if _surface(c)],
+           'keys': keys}
+    return out
+
+
+def _select_frame(page, bars, size):
+    """The page a bar series chooses among its sources on (Main Select
+    Source): its title - in the header band on both the series that draw it,
+    Mach's 'Select a source' on its strip, Turbulence's 'Select a Source' -
+    with the surfaces across the screen's top, and the source tiles in the
+    centre band (the working page's, `bars`), each with the label under it,
+    as a hub's grid is read (_grid_of)."""
+    centre = bars['center']['rect']
+    cs = _controls(page, size)
+    labels = sorted((c for c in cs if c['type'] == 'PBLabel'), key=lambda c: (c['rect'][1], c['rect'][0]))
+    title = next((c for c in labels if 'select' in (c['caption'] or '').lower()), None)
+    head = [c for c in cs if c['type'] in SURFACES and c['rect'][1] <= TOL and c['rect'][3] < size[1] / 4]
+    held = [c for c in cs if c['type'] in ('PBButton', 'PBLabel') and c is not title and _centre_in(c['rect'], centre)]
+    out = _grid_of(([title] if title else []) + head + held, (0, 0), None)
+    out = dict({'page': page['name']}, **{k: v for k, v in out.items() if k != 'popup'})
+    return out
+
+
+def _incoming(pg, size):
+    """The question the program shows when a call comes in, as the power-down
+    question is read (_window), with its words - Mach's and Turbulence's on
+    one line, Shockwave's broken after its comma - and each answer's where it
+    says any (Mach's Accept and Decline, Shockwave's Accept Call and Ignore
+    Call; Turbulence's are in their art)."""
+    w = _window(pg, size, (0, 0), 'confirm')
+    cs = _controls(pg, size)
+    said = sorted((c for c in cs if c['type'] == 'PBLabel'), key=lambda c: (c['rect'][1], c['rect'][0]))
+    w['text'] = '\n'.join(' '.join(ln.split()) for c in said if c['caption']
+                          for ln in c['caption'].replace('\r\n', '\n').split('\n'))
+    named = {c['name']: c for c in cs if c['type'] == 'PBButton'}
+    for b in w.get('buttons') or ():
+        words = _said((named.get(b['name']) or {}).get('caption'))
+        if words:
+            b['text'] = words
+    return dict({'popup': pg['name']}, **w)
 
 
 def _bars_frame(page, pages, size, art):

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Main SD</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Main SD" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake" does="The working page.">
+<x-import component-from-global-scope="ExtronMach.Header">
+  <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="101" name="Laptop" icon="laptop" nav="Laptop" states="Off, On" does="Routes the laptop to the display; On while it is shown.">Laptop</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="102" name="PC" icon="pc" nav="PC" states="Off, On" does="Routes the PC to the display; On while it is shown.">PC</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="103" name="Doc Cam" icon="doc-cam" nav="DocCam" states="Off, On" does="Routes the doc cam to the display; On while it is shown.">Doc Cam</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronMach.LeftRail">
+  <x-import component-from-global-scope="ExtronMach.Section" title="Display">
+    <x-import component-from-global-scope="ExtronMach.Button" name="Display On" does="Turns the display on.">On</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Display Off" does="Turns the display off.">Off</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Display Mute" states="Off, On" does="Blanks the display; On while blanked.">Mute</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.Section" title="Settings">
+    <x-import component-from-global-scope="ExtronMach.Button" name="Lighting" nav="Lighting" does="Opens the lighting.">Lighting</x-import>
+  </x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronMach.RightRail"></x-import>
+<x-import component-from-global-scope="ExtronMach.Footer" help="Help" power="PowerDown">
+  <x-import component-from-global-scope="ExtronMach.Button" slot="mode" name="Video Call" nav="Call" does="Shows the call page.">Video Call</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronMach.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

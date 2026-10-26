@@ -599,6 +599,34 @@
         {"key": "layout.regions.1", "says": "the system builds every page of those panels on their Main art"}
       ],
       "evidence": "seeds/Afterburn 525.gdl's Start: Lights Label and presets at the left, Volume Label, level, Up, Down, Mute at the right, on the _starrt art."
+    },
+    {
+      "id": "afterburn-35",
+      "claim": "The README gave a microphone mute and a display's warming and cooling no place, and round four's designer of this theme invented one for each (archive/job-e823df9b/round4/afterburn/canvas/NOTES.md).",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "No working page, call page or window draws a display status, and none but Audio Settings a mic mute: its MIC column (Mic Label 4050, Mic Slider 9018, Mic Mute 9017) stands beside the program's. The display shows its state by Display Power's lighting (8112) and by the Starting Up and Powering Down waits.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": [
+          "Audio Settings",
+          "Main SD",
+          "Main VC",
+          "Starting Up",
+          "Powering Down"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "readme": "**A microphone mute** goes where"
+        },
+        {
+          "readme": "**A display's state** - off, warming up, on, cooling down -"
+        }
+      ],
+      "evidence": "Audio Settings' Mic Label (4050), Mic Slider (9018) and Mic Mute (9017) on seeds/Afterburn 1035.gdl; Main SD's Display Power (8112) and Display Mute (8114); no control named for a display's state on any page."
     }
   ]
 }

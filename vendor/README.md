@@ -43,16 +43,19 @@ need a template skip rather than fail.
 
 **Images that exist only inside Extron's files** go here too, extracted rather
 than copied: Turbulence's art, out of its seed and TouchLink templates (1.28
-has no kit for it beside the others - `docs/design-rules.md` §7), and Mach's
-slider art, which lives only inside its seed.
+has no kit for it beside the others - `docs/design-rules.md` §7), Mach's
+slider art, which lives only inside its seed, and Shockwave's Share Content,
+the seed's own two images with their words in them.
 
 ```bash
 python -m gdl.designsys extract turbulence   # -> vendor/extron/Resources/Turbulence (267 images)
 python -m gdl.designsys extract mach         # -> vendor/extron/Resources/Mach/Extracted
+python -m gdl.designsys extract shockwave    # -> vendor/extron/Resources/Shockwave/Extracted (2 images)
 ```
 
 A profile's `kit.extract` names the files to read (`seeds/...`, or a template
-name pattern) and where the images go. Like everything else here, they are
+name pattern), where the images go and, where the rest are its kit's, the
+ones to take (`only`). Like everything else here, they are
 Extron's, reproducible, and not in git.
 
 The rest of the install's `Resources/` (about 2.5 GB of icons and images for

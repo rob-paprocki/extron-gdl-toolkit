@@ -407,7 +407,9 @@ class TestATurnedPanelWithNoTemplate(unittest.TestCase):
 # A frame's page records: the measured page's five bands, and the pages a
 # 300 or a 320 lends it (home, second), which turn as the frame does.
 _SWAP = {'top': 'left', 'left': 'top', 'bottom': 'right', 'right': 'bottom'}
-_PAGES = ('home', 'second')
+# A frame's page records besides its own (gdl.designsys _FRAME_PAGES): a
+# 320's home and second page, a bar series' call mode.
+_PAGES = ('home', 'second', 'call')
 # What models() adds to a frame for its panel: where a slot is under the
 # panel's touch minimum, the rect that meets it and why.
 _DERIVED = ('legal', 'reason')
@@ -878,6 +880,86 @@ class TestTheFrame(unittest.TestCase):
         f = self.frame('afterburn', 'Afterburn 1230 Series')
         self.assertEqual(len(_items(f['center'], 'fullscreen')), 2)
         self.assertFalse(_items(f['center'], 'screen'))
+
+    def test_every_bar_series_frames_its_call_mode(self):
+        """The call mode (Main VC), which every round-four designer drew a
+        way of their own: each bar series' frame carries its page record -
+        the header's Share Content at its end, the left rail's VTC group of
+        Make Call, End Call and Privacy over its launchers - the dialer its
+        popup region shows and the incoming call's question, with the
+        template's seed IDs. No hub or 320 template draws a call mode."""
+        checked = 0
+        for t, p, series, row in self.series():
+            f = row.get('frame')
+            if t == 'afterburn' or not f:
+                continue
+            with self.subTest(series=series):
+                if row['tier'] != 'A':
+                    self.assertNotIn('call', f)
+                    self.assertNotIn('incoming', f['windows'])
+                    continue
+                checked += 1
+                C = f['call']
+                self.assertEqual(C['page'], 'Main VC')
+                vtc = C['left']['groups'][0]
+                self.assertEqual(vtc['heading']['text'], 'VTC')
+                self.assertEqual([b['role'] for b in vtc['buttons']], ['call', 'end-call', 'privacy'])
+                self.assertEqual(C['ids'], {'call': 5014, 'end-call': 5215, 'privacy': 5217, 'share': 8090})
+                share = [x for x in C['top']['end'] if x['role'] == 'share']
+                self.assertEqual(len(share), 1)
+                self.assertTrue(_inside(share[0]['rect'], C['top']['rect']), share)
+                self.assertEqual(C['center']['region'], f['center']['region'])
+                d = C['center']['dialer']
+                keys = {k['role']: k for k in d['keys']}
+                self.assertLessEqual({f'digit-{i}' for i in range(10)} | {'star', 'hash', 'call', 'delete'}, set(keys))
+                self.assertEqual((keys['digit-1']['id'], keys['digit-0']['id'], keys['call']['id']), (5203, 5202, 5214))
+                self.assertEqual(d['entry']['id'], 50000)
+                for k in d['keys']:
+                    self.assertTrue(_inside(k['rect'], C['center']['region']), k)
+                inc = f['windows']['incoming']
+                self.assertEqual([b['role'] for b in inc['buttons']], ['accept', 'decline'])
+                self.assertEqual(' '.join(inc['text'].split()), 'Incoming call, do you wish to accept?')
+        self.assertEqual(checked, 14)
+        # Mach's call mode holds four launchers where its Main SD holds three,
+        # and its Share Content closes the header up to 1139.
+        f = self.frame('mach', 'Mach 1220 Series')
+        self.assertEqual([b['role'] for b in f['call']['left']['groups'][1]['buttons']],
+                         ['display', 'screen', 'lighting', 'audio'])
+        self.assertEqual([x['rect'] for x in f['call']['top']['end']], [[1022, 0, 117, 64], [1140, 0, 140, 64]])
+        # Shockwave's Share Content is its own art; Turbulence's 1035 names its
+        # question 'Incoming Call Label'.
+        self.assertEqual(self.frame('shockwave', 'Shockwave 1220 Series')['call']['top']['end'][-1]['rect'],
+                         [1123, 7, 120, 75])
+        self.assertEqual(self.frame('turbulence', 'Turbulence 1220 Series')['windows']['incoming']['popup'],
+                         'Incoming Call Label')
+
+    def test_mach_and_turbulence_frame_the_page_they_choose_sources_on(self):
+        """Main Select Source, the template's answer to a room with more
+        sources than its Header holds: its title in the header band, its
+        tiles in the centre each with its name under it. Shockwave's bar
+        seeds draw none."""
+        for t, p, series, row in self.series():
+            f = row.get('frame')
+            if t == 'afterburn' or not f or row['tier'] != 'A':
+                continue
+            with self.subTest(series=series):
+                if t == 'shockwave':
+                    self.assertNotIn('choose', f)
+                    continue
+                S = f['choose']
+                self.assertEqual(S['page'], 'Main Select Source')
+                self.assertEqual(S['text'].lower(), 'select a source')
+                self.assertTrue(_inside(S['title'], f['top']['rect'], tol=40), S['title'])
+                self.assertGreaterEqual(len(S['tiles']), 4)
+                for tile in S['tiles']:
+                    # In the centre band - Turbulence's first row reaches 9 px up
+                    # into its header's band, on a page that paints no header.
+                    r, c = tile['rect'], f['center']['rect']
+                    self.assertTrue(c[0] <= r[0] + r[2] / 2 <= c[0] + c[2] and c[1] <= r[1] + r[3] / 2 <= c[1] + c[3], tile)
+                    self.assertTrue(tile['label'] and tile['label'][1] >= tile['rect'][1] + tile['rect'][3] / 2, tile)
+        self.assertEqual([x['rect'] for x in self.frame('mach', 'Mach 1220 Series')['choose']['tiles']],
+                         [[350, 311, 100, 100], [510, 311, 100, 100], [670, 311, 100, 100], [830, 311, 100, 100]])
+        self.assertEqual(len(self.frame('turbulence', 'Turbulence 1220 Series')['choose']['tiles']), 6)
 
     def test_every_model_carries_its_series_frame(self):
         for t in self.THEMES:
@@ -1524,6 +1606,20 @@ class TestExtract(unittest.TestCase):
             self.skipTest("Extron's TouchLink templates are not installed here")
         self.assertTrue(all(os.path.basename(f).startswith('Turbulence ') for f in glts))
 
+    def test_a_profile_can_take_only_the_images_it_names(self):
+        """Shockwave's Share Content art is its seed's alone - its 1035 names
+        34 images its kit does not - so its `kit.extract.only` takes the two
+        and leaves the rest to the kit."""
+        seed = os.path.join(REPO, 'seeds', 'Shockwave 1035.gdl')
+        if not usable(seed):
+            self.skipTest('seed not present (git lfs pull)')
+        only = designsys.load('shockwave')['kit']['extract']['only']
+        self.assertEqual(only, ['712x440_share-content_nsel.png', '712x440_stop-sharing_sel.png'])
+        with tempfile.TemporaryDirectory() as d:
+            written = designsys.extract_images([seed], d, only)
+            self.assertEqual(sorted(written), only)
+            self.assertEqual(sorted(os.listdir(d)), only)
+
     def test_extracting_again_writes_nothing_new(self):
         seed = os.path.join(REPO, 'seeds', 'Turbulence 1035.gdl')
         if not usable(seed):
@@ -1709,20 +1805,39 @@ class TestTheRegionComponents(unittest.TestCase):
                 if f.get('hub') or f.get('pages'):
                     continue
                 own = p['panels'][s]['frame']
-                self.assertEqual(sorted(f), ['bottom', 'center', 'left', 'right', 'top', 'windows'], s)
+                self.assertEqual(sorted(f), sorted(['bottom', 'center', 'left', 'right', 'top', 'windows', 'call']
+                                                   + (['choose'] if own.get('choose') else [])), s)
                 self.assertEqual(f['center'], {k: own['center'].get(k) for k in
                                                ('region', 'well', 'title', 'title_controls', 'empty',
-                                                'status', 'pt', 'surfaces', 'pictures')}, s)
+                                                'status', 'pt', 'surfaces', 'pictures', 'rect')}, s)
+                # The call mode as the regions draw it: the header's end and
+                # surfaces (its tabs the working page's), the left rail whole,
+                # the dialer's keys by role with their seed IDs, not their art;
+                # the page sources are chosen on whole.
+                self.assertEqual(f['call'], designsys._slim_call(own['call']), s)
+                self.assertFalse(any('art' in k for k in f['call']['center']['dialer']['keys']), s)
+                self.assertEqual(f.get('choose'), own.get('choose'), s)
                 # Each window's rects, surfaces and its Close's and buttons' roles.
                 self.assertEqual(f['windows'], designsys._slim_windows(own['windows']), s)
                 self.assertEqual(f['windows']['confirm']['rect'], own['windows']['confirm']['rect'], s)
                 self.assertEqual(f['top'], own['top'], s)
             self.assertFalse(any('frame' in row for row in prof['models'].values()), t)
             # A backstop, not a limit of the Design type's: a frame repeated
-            # on every model row doubled the bundle. Mach's is about 431 KB
+            # on every model row doubled the bundle. Mach's is about 483 KB
             # with the 320's pages (PR7), round four's layout (the 320's
-            # words and windows, the 725's audio place) and the 320's capitals.
-            self.assertLess(len(js.encode('utf-8')), 435_000, t)
+            # words and windows, the 725's audio place), the 320's capitals
+            # and the call mode (each bar series' Main VC, dialer and
+            # question, about 4 KB, and the code that draws them, its
+            # comments a fifth of that). The file a canvas loads is the art
+            # bundle, megabytes of kit art; this is the code and the frames.
+            self.assertLess(len(js.encode('utf-8')), 490_000, t)
+            # And each series' frame, which grows with each part of the
+            # template the regions draw: under 10 KB (Mach's 1720 the most,
+            # 9.1 KB with its call mode), so a key the regions do not read
+            # carried whole - the dialer's art, every surface of a window -
+            # is named by its series, apart from the code.
+            for s, f in prof['frames'].items():
+                self.assertLess(len(json.dumps(f, separators=(',', ':'))), 10_000, (t, s))
         # Afterburn draws no bars: no frame in its bundle.
         js = designsys.bundle(designsys.load('afterburn'), art=False)
         self.assertEqual(json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))['frames'], {})
@@ -1865,6 +1980,121 @@ class TestTheRegionComponents(unittest.TestCase):
         self.assertNotIn('role?:', page)
 
 
+class TestTheCallMode(unittest.TestCase):
+    """The call mode in each bar theme's system: its looks and words in the
+    profile, the template's art for its Share Content, and what the README
+    tells a designer - the call page, its dialer and question, how many
+    sources each panel's Header holds and the template's answer for more, and
+    where a mic mute and a display's state go. Every round-four designer
+    improvised each."""
+    BARS = ('mach', 'shockwave', 'turbulence')
+
+    def test_each_profile_says_how_its_call_mode_looks(self):
+        for t in self.BARS:
+            with self.subTest(theme=t):
+                p = designsys.load(t)
+                r = p['regions']
+                self.assertEqual(sorted(r['call']), ['call', 'end-call', 'privacy'])
+                self.assertIn(r['share']['variant'], p['buttons'])
+                self.assertIn(r['dialer']['key']['variant'], p['buttons'])
+                for k in ('accept', 'decline'):
+                    self.assertIn(r['window'][k]['variant'], p['buttons'])
+                    self.assertTrue(p['writing']['buttons'][k])
+                self.assertEqual(' '.join(p['writing']['confirm']['call'].split()),
+                                 'Incoming call, do you wish to accept?')
+                self.assertEqual('select' in r, t != 'shockwave')
+        # Mach's Privacy rests in the dim yellow its template draws, and End
+        # Call in its red at alpha 220, each under its 755x440 icon (the
+        # call variants' `with_icon`, its words a line down).
+        r = designsys.load('mach')['regions']['call']
+        self.assertEqual(r['privacy'], {'variant': 'highlight', 'fill': 'accent-dim', 'icon': 'privacy'})
+        self.assertEqual(r['end-call'], {'variant': 'alert', 'fill': 'alert-call', 'icon': 'end-call'})
+        mach = designsys.load('mach')
+        self.assertEqual({c['name']: c['value'] for c in mach['colors']}['alert-call'], '#A82925DC')
+        for v in ('call', 'alert', 'highlight'):
+            self.assertEqual(mach['buttons'][v]['with_icon'], {'kit': '755x440', 'bare': '755x440',
+                                                               'caption': 'below', 'breaks': 1}, v)
+
+    def test_share_content_is_the_templates_art_with_its_words(self):
+        """Shockwave's Share Content is the seed's own 120x75 art, in no kit:
+        `python -m gdl.designsys extract shockwave` takes it, and its `share`
+        variant lights it as Stop Sharing; Turbulence's kit has its pair."""
+        for t, off in (('shockwave', '712x440_share-content_nsel.png'), ('turbulence', '712x440_share-content_blue_nsel.png')):
+            with self.subTest(theme=t):
+                p = designsys.load(t)
+                V = p['buttons']['share']
+                self.assertEqual((V['kit'], V['icon'], V['caption']), ('712x440', 'share-content', 'none'))
+                self.assertEqual(p['kit']['named']['712x440']['share-content'], {'off': off, 'sel': '712x440_stop-sharing_sel.png'})
+                index = designsys.kit_index(p)
+                if not index['files']:
+                    self.skipTest(f"{t}'s kit is not here")
+                fam = index['files'].get('712x440', {}).get('share-content')
+                if t == 'shockwave' and not fam:
+                    self.skipTest('the Share Content art is not extracted here (python -m gdl.designsys extract shockwave)')
+                self.assertEqual(fam, {'off': off, 'sel': '712x440_stop-sharing_sel.png'})
+
+    def test_the_readme_draws_the_call_page_in_the_grammar(self):
+        for t in self.BARS:
+            with self.subTest(theme=t):
+                p = designsys.load(t)
+                text = designsys.readme(p)
+                grammar = _section(text, "The template's grammar")
+                call = grammar.split('### The call page', 1)[1].split('\n### ', 1)[0]
+                for said in ('`role="call"`', '`slot="share"`', 'keeping the template\'s ID 8090',
+                             "'VTC' over Make Call, End Call and Privacy", '5014, End Call 5215 and Privacy 5217',
+                             '`role="dialer"`', 'Dialer Keypad 1 is 5203', '`topic="call"`',
+                             f"'{' '.join(p['writing']['confirm']['call'].split())}'",
+                             'On a hub, whose template has no call mode'):
+                    self.assertIn(said, call)
+                page = designsys.component_docs(p)['Page']
+                self.assertIn('`role="dialer"`', page)
+                self.assertIn('`topic="call"`', page)
+                self.assertIn('`slot="share"`', designsys.component_docs(p)['Header'])
+        mach = _section(designsys.readme(designsys.load('mach')), "The template's grammar")
+        # Each series' launchers, as its own Main VC draws them: read off the
+        # 1035 alone, the README sent a room of four to the 725's two.
+        self.assertIn("as many as Main VC draws: 4 on the 1220, 1520 and 1720 Series (its working page's 3) "
+                      "and 2 on the 1020 and 720 Series", mach)
+        turb = _section(designsys.readme(designsys.load('turbulence')), "The template's grammar")
+        self.assertIn("as many as Main VC draws: 3 on the 1220, 1020, 1520 and 720 Series (its working page's 2)",
+                      turb)
+        self.assertIn("**Choosing among the sources.** Mach's Main Select Source", mach)
+        self.assertIn("('Select a source')", mach)
+
+    def test_the_readme_says_how_many_sources_each_panels_header_holds(self):
+        """Round four's designers guessed: the README gave the 1035's count
+        alone. Each series' count is the frame's - its template's places, then
+        on at its step to the bar's end, or to a call page's Share Content -
+        with the template's answer for a room with more."""
+        for t, holds, more in (('mach', '5 on the 1220, 1020, 1520, 1720 and 720 Series (the template draws 4), 4 on a call page',
+                                'a Page with `role="select"` whose Header holds every source'),
+                               ('shockwave', '7 on the 1220, 1020, 1520, 1720 and 720 Series (the template draws 6), 6 on a call page',
+                                "Shockwave's bar templates draw no page to choose among more"),
+                               ('turbulence', '8 on the 1220, 1020 and 720 Series (the template draws 6), 6 on a call page',
+                                'a Page with `role="select"` whose Header holds every source')):
+            with self.subTest(theme=t):
+                p = designsys.load(t)
+                line = next(ln for ln in _section(designsys.readme(p), 'Every panel the room has').splitlines()
+                            if ln.startswith('- **Sources.**'))
+                self.assertIn(holds, line)
+                self.assertIn(more, line)
+                F = designsys.models(p)['TLP1035T']['frame']
+                self.assertEqual(designsys._tab_room(F)[0], F['top']['tabs']['count'])
+
+    def test_the_readme_puts_a_mic_mute_and_a_displays_state_where_the_template_does(self):
+        """The template's own place for each, and a recipe in its grammar
+        where it has none - no region of our own (docs/ROADMAP.md: the
+        owner's to overrule)."""
+        for t in designsys.TEMPLATES:
+            with self.subTest(theme=t):
+                working = _section(designsys.readme(designsys.load(t)), 'The working page')
+                self.assertIn('**A microphone mute** goes where', working)
+                self.assertIn('as its Mic column', working)
+                self.assertIn("**A display's state** - off, warming up, on, cooling down -", working)
+                self.assertIn('Off, Warming Up and On', working)
+                self.assertIn('rather than a status Label or a fourth key', working)
+
+
 class TestTheWriting(unittest.TestCase):
     """Each bar theme's profile holds its template's own words (`writing`),
     measured off its seeds' source popups and windows: the empty state of a
@@ -1882,16 +2112,23 @@ class TestTheWriting(unittest.TestCase):
                        'Please wait while the system is\npowering down.'),
     }
 
+    CALLS = {'mach': ('Incoming call, do you wish to accept?', 'Accept', 'Decline'),
+             'shockwave': ('Incoming call,\ndo you wish to accept?', 'Accept Call', 'Ignore Call'),
+             'turbulence': ('Incoming call, do you wish to accept?', 'Accept Call', 'Ignore Call')}
+
     def test_each_bar_theme_has_its_templates_words(self):
         for t, (empty, confirm, down) in self.WORDS.items():
             with self.subTest(theme=t):
                 w = designsys.load(t)['writing']
                 self.assertTrue(w['_source'])
                 self.assertEqual(w['empty'], empty)
-                self.assertEqual(w['confirm'], {'power': confirm})
+                # And the incoming call's question and its answers, off its
+                # Incoming Call (the frame's `windows.incoming`).
+                self.assertEqual(w['confirm'], {'power': confirm, 'call': self.CALLS[t][0]})
                 self.assertEqual(w['wait']['down'], down)
                 self.assertIn('starts up.', w['wait']['up'])
-                self.assertEqual(w['buttons'], {'power': 'Power Down', 'cancel': 'Cancel', 'close': 'Close'})
+                self.assertEqual(w['buttons'], {'power': 'Power Down', 'cancel': 'Cancel', 'close': 'Close',
+                                                'accept': self.CALLS[t][1], 'decline': self.CALLS[t][2]})
                 self.assertTrue(w['help'].startswith('For assistance, please call the help desk at:'))
         # The 320 breaks the empty state over three lines.
         for t in self.WORDS:
@@ -2924,9 +3161,14 @@ class TestTheLedger(unittest.TestCase):
 
     def test_machs_ledger_has_an_entry_per_disagreement(self):
         """The grammar measurement found 43 claims of Mach's profile and README
-        that its pages contradict: one entry each, in its order."""
+        that its pages contradict, and the call mode's measurement seven more
+        (mach-43 to mach-49: the call page, its dialer and question, Main
+        Select Source, the Header's count, the mic and display, and the call
+        keys' and the dialer's looks), and its review two (mach-50 and 51:
+        Share Content's word, and the incoming call's answers' IDs): one
+        entry each, in its order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'mach-{i:02d}' for i in range(43)])
+        self.assertEqual(ids, [f'mach-{i:02d}' for i in range(54)])
 
     def test_mach_is_done(self):
         self.assertEqual(self.audit.audit('mach'), [])
@@ -2968,6 +3210,50 @@ class TestTheLedger(unittest.TestCase):
         self.assertTrue(any('frame has `top.nothing`' in f for f in out), out)
         out = self._findings(dict(ok, frame=[{'key': 'left.groups'}]))
         self.assertEqual(out, [])
+
+    def test_a_frame_entrys_ids_are_the_frames_at_its_keys(self):
+        """`frame` proved only that its key exists, and the IDs its template's
+        words gave went unchecked (the call mode's review: turbulence-39 gave
+        its Select a Source tiles the tabs' IDs under `choose.tiles`, which
+        holds none). An ID the theme's frames know that the frame at the
+        entry's keys does not hold is named; one no frame knows - a page's
+        title label - and the other numbers are left to the reader."""
+        ok = self._entry(status='frame', fix=None, frame=[{'series': 'Mach 1220 Series', 'key': 'call.top.end'}],
+                         template={'does': 'Share Content (8090), 140x64 at 1140,0.', 'seed': 'seeds/Mach 1035.gdl',
+                                   'pages': ['Main VC']})
+        self.assertEqual(self._findings(ok), [])
+        tabs = dict(ok, template=dict(ok['template'], does='Share Content (8090) after the tabs (8052, 8050).'))
+        self.assertEqual(self._findings(tabs), ['mach-99: its template says ID 8050, which no frame it names holds '
+                                                'at its keys',
+                                                'mach-99: its template says ID 8052, which no frame it names holds '
+                                                'at its keys'])
+        self.assertEqual(self._findings(dict(tabs, frame=tabs['frame'] + [{'series': 'Mach 1220 Series',
+                                                                            'key': 'top.tabs'}])), [])
+        # A fixed entry says what the profile says, and is not held to a frame.
+        self.assertEqual(self._findings(self._entry(template=tabs['template'])), [])
+
+    def test_an_id_no_frame_holds_is_named_too(self):
+        """The check once looked only at IDs some frame already held, so a
+        template saying "Foo is ID 7777." passed. An ID the words state that the
+        entry's own series' frame does not hold at its keys is named - held by
+        another key or by none - a range states every ID
+        between its ends, and an `ids: {...}` map is held as the frame holds it.
+        Panel models, sizes and coordinates are not IDs."""
+        dialer = [{'series': 'Mach 1220 Series', 'key': 'call.center.dialer'}]
+
+        def entry(does, frame=dialer):
+            return self._entry(status='frame', fix=None, frame=frame,
+                               template={'does': does, 'seed': 'seeds/Mach 1035.gdl', 'pages': ['Main VC']})
+
+        def said(does, frame=dialer):
+            return [f.split(' says ID ')[1].split(',')[0] for f in self._findings(entry(does, frame)) if ' says ID ' in f]
+
+        self.assertEqual(said('A 1035 popup 995x549 at 1140,0 with Foo (7777).'), ['7777'])
+        self.assertEqual(said('Keys 1 to 9 (5203 to 5211), 0 (5202) and the field (50000).'), [])
+        self.assertEqual(said('Keys (5203 to 5215).'), ['5215'])
+        self.assertEqual(said('Foo is ID 5014.'), ['5014'])
+        # The same ID under a key that does hold it, and one in an `ids` map.
+        self.assertEqual(said('Foo is ID 5014 and End Call 5215.', [{'series': 'Mach 1220 Series', 'key': 'call'}]), [])
 
     def test_a_claim_said_to_be_gone_must_be(self):
         out = self._findings(self._entry(gone=['Every artboard on a canvas']))
@@ -3083,8 +3369,8 @@ class TestMachsWordsAgainstTheSeed(unittest.TestCase):
         for usage in (self.colors['alert'], self.p['buttons']['alert']['usage']):
             self.assertIn('starts what attendees must be told of', usage)
             self.assertNotIn('Share Content', usage)
-        self.assertIn("Share Content's On", self.colors['alert-dim'])
-        self.assertIn('no border', self.colors['alert-dim'])
+        self.assertIn("Share Content's On", self.colors['alert-call'])
+        self.assertIn('no border', self.colors['alert-call'])
 
 
 class TestTheSliderDefaultsAgainstTheSeeds(unittest.TestCase):
@@ -3478,10 +3764,13 @@ class TestTurbulencesTruth(unittest.TestCase):
     def test_it_has_an_entry_per_disagreement(self):
         """The grammar measurement found 34, the PR8 review one more (the
         device picture, missing from Differences), and measuring every source
-        popup's picture one more (turbulence-35: each device is its own size):
-        one entry each, in order."""
+        popup's picture one more (turbulence-35: each device is its own size),
+        the call mode's measurement seven (turbulence-36 to 42), and its
+        review two (turbulence-43 and 44: Select a Source's tiles take IDs of
+        their own, and the incoming call's answers): one entry each, in
+        order."""
         ids = [e['id'] for e in self.audit.load_ledger('turbulence')['entries']]
-        self.assertEqual(ids, [f'turbulence-{i:02d}' for i in range(36)])
+        self.assertEqual(ids, [f'turbulence-{i:02d}' for i in range(46)])
 
     def test_turbulence_is_done(self):
         self.assertEqual(self.audit.audit('turbulence'), [])

@@ -167,6 +167,62 @@ def _numbers_unbacked(e):
     return sorted(set(_NUMBER.findall(here)) - said, key=lambda n: float(n))
 
 
+def _ids_in(v, out):
+    """Every seed `id` a frame value holds, at any depth - and the IDs of an
+    `ids: {name: id}` map, which a frame keeps its call keys' IDs in."""
+    if isinstance(v, dict):
+        for k, x in v.items():
+            if k == 'id' and isinstance(x, int) and not isinstance(x, bool):
+                out.add(x)
+            elif k == 'ids' and isinstance(x, dict):
+                out.update(i for i in x.values() if isinstance(i, int) and not isinstance(i, bool))
+            _ids_in(x, out)
+    elif isinstance(v, list):
+        for x in v:
+            _ids_in(x, out)
+    return out
+
+
+# A seed ID as the words state it: a number from 5000 up (the theme frames'
+# lowest is 5002, and every panel model, size and coordinate the words give is
+# smaller - 1035, 1220, 2047x151) that is not a size, a coordinate or a
+# unit's number. A range
+# ("5203 to 5211") states every ID between, which the frame holds one by one.
+_ID_WORD = re.compile(r'(?<![\w.,])([5-9]\d{3}|\d{5})(?![\w.]*\d|x\d|,\d|px\b|pt\b|mm\b|%)(?<!x\d{4})(?<!x\d{5})')
+_ID_RANGE = re.compile(r'(?<![\w.])([5-9]\d{3}|\d{5}) to ([5-9]\d{3}|\d{5})(?!\d)')
+
+
+def _ids_said(text):
+    """The seed IDs a sentence states, range interiors included."""
+    out = set()
+    for a, b in _ID_RANGE.findall(text):
+        if int(a) < int(b) <= int(a) + 100:
+            out.update(range(int(a), int(b) + 1))
+    for m in _ID_WORD.finditer(text):
+        out.add(int(m.group(1)))
+    return out
+
+
+def _ids_unframed(e, frames):
+    """The seed IDs a `frame` entry's template says that none of the frames it
+    names holds at its keys. `frame` says the region frame draws what the
+    template does; an ID the template's words give that the frame has not
+    measured there is the template read off something else - whether another
+    frame holds it, or none does. A frame is looked up in the entry's own
+    series; only an entry naming none pools them. The frame's own numbers are
+    checked only so: a size or a step is many numbers' sum."""
+    if e.get('status') != 'frame':
+        return []
+    held = set()
+    for f in e.get('frame') or ():
+        pool = [frames.get(f['series'])] if f.get('series') else list(frames.values())
+        for fr in pool:
+            v = resolve(fr, f['key']) if fr else _MISSING
+            if v is not _MISSING:
+                _ids_in(v, held)
+    return sorted(_ids_said((e.get('template') or {}).get('does') or '') - held)
+
+
 def audit_ledger(p, ledger, text=None):
     """[finding] for every ledger entry that is not resolved."""
     theme = p['template'].lower()
@@ -199,6 +255,8 @@ def audit_ledger(p, ledger, text=None):
         # evidence gives, so the README's Differences cannot drift from them.
         for n in _numbers_unbacked(e):
             out.append(f"{tag}: its `here` says {n}, which its template, reason and evidence do not")
+        for n in _ids_unframed(e, frames):
+            out.append(f"{tag}: its template says ID {n}, which no frame it names holds at its keys")
         for f in e.get('fix') or ():
             if not f.get('key') and not f.get('readme'):
                 out.append(f'{tag}: a fix names neither a key nor README words')

@@ -466,3 +466,41 @@ build at a time.
     and `TestTheReadmesRoomTranslates` check the ID map across every panel;
     Afterburn's unrevised room is left 90 refusals, its 320 popups'
     shortfall gone.
+11. **The parts of a real room round four improvised**: the call, more
+    sources than a Header holds, a mic mute and a display's state. Decided in
+    the making (2026-10-25): `frame_of` measures each bar series' Main VC as a
+    page record of its own (`call`: its four bars, the dialer its popup
+    region shows, `center.dialer`, and the seed IDs of its chrome), its
+    Incoming Call (`windows.incoming`, its words and its answers' words) and,
+    where the series draws it, Main Select Source (`choose`: its title and
+    tiles, as a hub's grid is read); no hub or 320 seed draws a call mode. A
+    Page with `role="call"` draws the call mode's regions: its Header's tabs
+    and Share Content at the end (`slot="share"`, seed ID 8090; Shockwave's
+    the seed's own art, extracted by `kit.extract.only` and drawn by a
+    `share` variant, as Turbulence's kit pair is), its LeftRail's first
+    Section the VTC keys - Make Call, End Call and Privacy each in its look
+    and with its seed ID by what its name says, not its place (`regions.call`)
+    - and its second the call mode's launchers; a Section grown past the next
+    one's top moves it down the rail. A popup with `role="dialer"` draws the
+    template's VTC Dialer whole - the number on the field the template draws
+    under it (a Label's own `fill` where the template's is the label's
+    paint), every key with its seed ID in its role's look, one joined set -
+    at its own series' places on a bar panel and as a source's controls on a
+    hub and the 320; `role="confirm"` with `topic="call"` asks the incoming
+    call's question in the template's window, or at the power-down question's
+    places. On a hub a call page's first Section and its Share Content are a
+    popup of their own, named for the Section, shown first, its keys in
+    their call looks and its title said once. A Header past the
+    tabs its panel holds is refused with the template's answer named - a Page
+    with `role="select"`, drawn as Main Select Source, where the template
+    has one, else fewer tabs - and the README says what each panel holds. A
+    mic mute and a display's state follow the template's own places (the
+    audio window's Mic column; the On and Off keys' states) by a README
+    recipe, with no region of our own - the owner's to overrule
+    (`docs/ROADMAP.md` *Yours*). Proved on round four's rooms redrawn so
+    (`tests/data/round4-<theme>-call`), clean on all four panels and built
+    and verified on each; the call mode's review then changed what they
+    build (the call keys' lit states and looks, Share Content's), so they
+    were built again, with the dialer, which none of them holds
+    (`tests/data/design-call-<theme>`): every panel built and verified,
+    its ID map too (`archive/job-e823df9b/call/`).
