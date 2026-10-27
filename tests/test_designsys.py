@@ -734,6 +734,22 @@ class TestTheFrame(unittest.TestCase):
         self.assertEqual(F('mach', 1220)['title_controls'], F('mach', 1220)['title'])
         self.assertEqual(F('shockwave', 1020)['title_controls'], F('shockwave', 1020)['title'])
 
+    def test_a_source_with_controls_stands_its_keys_at_its_own_pitch(self):
+        """The steps a series' Doc Cam stands its keys at, across its first
+        row and down its first column, off its own seed: Mach's 1035 and 725
+        keep their 103x60 keys 70 apart down, its 525 its 103x66 ones 96 -
+        not one scale of one another's, which put the 725's 52 apart, into
+        each other. Every bar and hub series records them."""
+        F = lambda t, s: self.frame(t, f'{t.capitalize()} {s} Series')['center']
+        self.assertEqual([F('mach', s)['pitch'] for s in (1220, 1020, 520)], [[173, 70], [138, 70], [163, 96]])
+        self.assertEqual([F('shockwave', s)['pitch'] for s in (1220, 1020, 520)], [[189, 104], [151, 78], [160, 88]])
+        for t in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            for s, row in designsys.load(t)['panels'].items():
+                f = None if s.startswith('_') else row.get('frame')
+                if f and (f.get('left') or f.get('select')) and f['center'].get('region'):
+                    with self.subTest(theme=t, series=s):
+                        self.assertEqual(len(f['center']['pitch']), 2)
+
     def test_a_message_keeps_the_lines_its_template_sets_it_in(self):
         """How many lines the template's message takes in its box, in its own
         face: Turbulence's power-down question one on the 1035, two on the 725."""
@@ -1949,8 +1965,9 @@ class TestTheRegionComponents(unittest.TestCase):
                              series, t)
             # What the regions read of each: the bars, the center's popup
             # region, well, titles (an empty source's and one with controls),
-            # empty state, status, type sizes, surfaces and each device's
-            # picture, and the windows.
+            # empty state, status, type sizes, surfaces, each device's
+            # picture and the steps its Doc Cam stands its keys at, and the
+            # windows.
             for s, f in prof['frames'].items():
                 if f.get('hub') or f.get('pages'):
                     continue
@@ -1959,7 +1976,7 @@ class TestTheRegionComponents(unittest.TestCase):
                                                    + (['choose'] if own.get('choose') else [])), s)
                 self.assertEqual(f['center'], {k: own['center'].get(k) for k in
                                                ('region', 'well', 'title', 'title_controls', 'empty',
-                                                'status', 'pt', 'surfaces', 'pictures', 'rect')}, s)
+                                                'status', 'pt', 'surfaces', 'pictures', 'pitch', 'rect')}, s)
                 # The call mode as the regions draw it: the header's end and
                 # surfaces (its tabs the working page's), the left rail whole,
                 # the dialer's keys by role with their seed IDs, not their art;
@@ -1980,10 +1997,15 @@ class TestTheRegionComponents(unittest.TestCase):
             # question, about 4 KB, and the code that draws them, its
             # comments a fifth of that), and the code that draws Afterburn's
             # regions - its left rail, foot row, hub column and foot strip,
-            # about 35 KB, which every theme's bundle carries. The file a
-            # canvas loads is the art bundle, megabytes of kit art; this is
-            # the code and the frames.
-            self.assertLess(len(js.encode('utf-8')), 540_000, t)
+            # about 35 KB, which every theme's bundle carries - the code
+            # that re-spaces a window's or a source popup's rows and columns,
+            # and the footer that gives way (package 1.2, about 14 KB), and a
+            # plain modal going on over modals on a small panel (overModals,
+            # about 5 KB) and a recording's question (its code about 2 KB, its
+            # window under 0.5 KB a series of Mach's and Afterburn's). The
+            # file a canvas loads is the art bundle, megabytes of kit art;
+            # this is the code and the frames.
+            self.assertLess(len(js.encode('utf-8')), 580_000, t)
             # And each series' frame, which grows with each part of the
             # template the regions draw: under 10 KB (Mach's 1720 the most,
             # 9.1 KB with its call mode), so a key the regions do not read
@@ -2287,6 +2309,8 @@ class TestTheWriting(unittest.TestCase):
                        'Please wait while the system is\npowering down.'),
     }
 
+    RECORDING = 'You are about to start recording.\n\nPlease let attendees know they will be recorded.'
+
     CALLS = {'mach': ('Incoming call, do you wish to accept?', 'Accept', 'Decline'),
              'shockwave': ('Incoming call,\ndo you wish to accept?', 'Accept Call', 'Ignore Call'),
              'turbulence': ('Incoming call, do you wish to accept?', 'Accept Call', 'Ignore Call')}
@@ -2299,11 +2323,15 @@ class TestTheWriting(unittest.TestCase):
                 self.assertEqual(w['empty'], empty)
                 # And the incoming call's question and its answers, off its
                 # Incoming Call (the frame's `windows.incoming`).
-                self.assertEqual(w['confirm'], {'power': confirm, 'call': self.CALLS[t][0]})
+                # And a recording's, where the template asks one (Mach's
+                # Confirmation - Recording, the frame's `windows.recording`).
+                rec = {'recording': self.RECORDING} if t == 'mach' else {}
+                self.assertEqual(w['confirm'], dict({'power': confirm, 'call': self.CALLS[t][0]}, **rec))
                 self.assertEqual(w['wait']['down'], down)
                 self.assertIn('starts up.', w['wait']['up'])
-                self.assertEqual(w['buttons'], {'power': 'Power Down', 'cancel': 'Cancel', 'close': 'Close',
-                                                'accept': self.CALLS[t][1], 'decline': self.CALLS[t][2]})
+                self.assertEqual(w['buttons'], dict({'power': 'Power Down', 'cancel': 'Cancel', 'close': 'Close',
+                                                     'accept': self.CALLS[t][1], 'decline': self.CALLS[t][2]},
+                                                    **({'record': 'Record'} if t == 'mach' else {})))
                 self.assertTrue(w['help'].startswith('For assistance, please call the help desk at:'))
         # The 320 breaks the empty state over three lines.
         for t in self.WORDS:
@@ -2315,7 +2343,8 @@ class TestTheWriting(unittest.TestCase):
         # state's first sentence a paragraph apart, in one label.
         w = designsys.load('afterburn')['writing']
         self.assertEqual(w['confirm'], {'power': 'Do you want to power down the system?',
-                                        'call': 'Incoming call, do you wish to accept?'})
+                                        'call': 'Incoming call, do you wish to accept?',
+                                        'recording': self.RECORDING})
         self.assertEqual(w['page_empty'], '{name} is currently selected.\n\nThere are no controls\nfor this device.')
 
     def test_every_theme_has_its_voice(self):
@@ -2651,6 +2680,53 @@ class TestBuild(unittest.TestCase):
                     self.assertIn(want, names, comp)
                     self.assertIn(f'(default `{want}`)', docs[comp])
 
+    def test_a_recording_question_has_the_templates_words_where_it_asks_one(self):
+        """The recording's question (backlog plan 2.3), measured off each
+        series' own seed as the incoming call's is (tests/measure_series.py
+        RECORDING): Afterburn's and Mach's templates ask it - their writing
+        says its words and Record, every series whose seed draws one carries
+        it as `windows.recording` with Record and Cancel and their seed IDs,
+        and the Page README says so; Shockwave's and Turbulence's ask none."""
+        words = 'You are about to start recording.\n\nPlease let attendees know they will be recorded.'
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                w = p['writing']
+                asks = theme in ('afterburn', 'mach')
+                self.assertEqual((w['confirm'].get('recording'), w['buttons'].get('record')),
+                                 (words, 'Record') if asks else (None, None))
+                recs = {s: r['frame']['windows']['recording'] for s, r in p['panels'].items()
+                        if not s.startswith('_') and isinstance(r, dict) and r.get('frame')
+                        and 'recording' in (r['frame'].get('windows') or {})}
+                self.assertEqual(bool(recs), asks)
+                for s, rec in recs.items():
+                    self.assertEqual(rec['popup'], 'Confirmation - Recording', s)
+                    self.assertEqual(' '.join(rec['text'].split()), ' '.join(words.split()), s)
+                    self.assertEqual(sorted((b['text'], b['id']) for b in rec['buttons']),
+                                     [('Cancel', 9245), ('Record', 9244)], s)
+                doc = designsys.component_docs(p)['Page']
+                self.assertEqual('`topic="recording"` asks' in doc, asks)
+
+    def test_a_plain_modal_goes_on_over_modals_on_a_small_panel(self):
+        """A plain modal a small panel's screen cannot hold goes on over
+        modals of its own (bundle.js overModals): the READMEs say so, where
+        they said a modal holds one screen."""
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                text = designsys.readme(designsys.load(theme))
+                self.assertNotIn('A modal holds one screen', text)
+                self.assertIn('goes on over modals of its own', text)
+
+    def test_no_clock_is_refused_on_a_320_whose_seed_has_none(self):
+        """Shockwave's and Turbulence's 320 seeds have no date and time
+        control, and the applier clones the clock from the theme's 525
+        (gdl.spec CROSS_SEED_TYPES): Clock's README no longer refuses it."""
+        for theme in ('shockwave', 'turbulence'):
+            with self.subTest(theme=theme):
+                doc = designsys.component_docs(designsys.load(theme))['Clock']
+                self.assertNotIn('refused', doc)
+                self.assertNotIn('date and time control to clone', doc)
+
     def test_afterburns_example_keeps_inside_its_main_region(self):
         """Afterburn's Example is its Start page, placed in the squircle; its
         Clock sat 696 px down a MainArea 752 deep and below every bar
@@ -2730,9 +2806,12 @@ class TestBuild(unittest.TestCase):
                              (hub.get('options') or {}).get('popup') or 'More Options', 'Volume Level'):
                     self.assertIn(f"'{name}'", drawn)
                 self.assertIn('the same `id`s', drawn)
-                # A revision drawn in another order renamed those windows and
-                # retired their IDs (docs/idmap.md §9).
+                # A revision drawn in another order renames those windows,
+                # and what the hub draws in them keeps its IDs (docs/idmap.md
+                # §9) - the README said they were retired.
                 self.assertIn('order of the working pages', drawn)
+                self.assertIn('keeps its IDs', drawn)
+                self.assertNotIn('retired', drawn)
                 small = grammar.split('**Words on the 320.**', 1)[1].split('\n\n', 1)[0]
                 key = ms['TLP320M']['frame']['center']['row'][0]
                 self.assertIn(f'{key[2]}x{key[3]}', small)
@@ -3310,10 +3389,12 @@ class TestTheLedger(unittest.TestCase):
         Select Source, the Header's count, the mic and display, and the call
         keys' and the dialer's looks), and its review two (mach-50 and 51:
         Share Content's word, and the incoming call's answers' IDs), and the
-        hubs' Volume Level strip, shown on every working page (mach-54): one
-        entry each, in its order."""
+        hubs' Volume Level strip, shown on every working page (mach-54), the
+        dialer's Call and Flash set their words the gap their template leaves
+        past the glyph (mach-55), and the recording question's answers, whose
+        IDs are the layout's own (mach-56): one entry each, in its order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'mach-{i:02d}' for i in range(55)])
+        self.assertEqual(ids, [f'mach-{i:02d}' for i in range(57)])
 
     def test_mach_is_done(self):
         self.assertEqual(self.audit.audit('mach'), [])
@@ -3565,6 +3646,114 @@ class TestMachsWordsAgainstTheSeed(unittest.TestCase):
             self.assertNotIn('Share Content', usage)
         self.assertIn("Share Content's On", self.colors['alert-call'])
         self.assertIn('no border', self.colors['alert-call'])
+
+
+def _drawn_lit(p, look):
+    """The token a lit button's caption is drawn in, for a region's `look`
+    (a variant and, where it names them, its states): the On state's own
+    color, else the variant's resting one (bundle.js Button)."""
+    v = p['buttons'][look['variant']]
+    on = next(s for s in look.get('states') or v['states'] if s['name'] == 'On')
+    on = dict(next(s for s in v['states'] if s['name'] == 'On'), **on)
+    return {c['name']: c['value'] for c in p['colors']}[on.get('color') or v['look']['color']]
+
+
+class TestTheOtherThemesCallKeysLightAsTheirTemplates(unittest.TestCase):
+    """Shockwave's lit captions were drawn `ink` on two variants where its
+    template's were not (shockwave-20). Mach's and Turbulence's call keys,
+    their Room Mode VC choices and the incoming call's answers, read off the
+    1035 seeds, light in the color the system draws them in: nothing to fix."""
+
+    def _check(self, theme, seed_name, rows):
+        from _corpus import seed
+        path = seed(seed_name)
+        if not usable(path):
+            self.skipTest(f'{seed_name} is not here (git lfs pull)')
+        import measure_series
+        from gdl.project import Project
+        pages = measure_series.seed_pages(Project.open(path))
+        p = designsys.load(theme)
+        for page, name, look, hex_ in rows:
+            with self.subTest(theme=theme, key=name):
+                c = next(c for pg in pages if pg['name'] == page for c in pg['controls'] if c['name'] == name)
+                self.assertEqual(c['looks'][1]['text'], hex_ + 'FF')
+                self.assertEqual(_drawn_lit(p, look), hex_)
+
+    def test_machs_call_keys_light_white_and_privacy_black(self):
+        r = designsys.load('mach')['regions']
+        self._check('mach', 'Mach 1035.gdl', (
+            ('Main VC', 'Initiate Call', r['call']['call'], '#FFFFFF'),
+            ('Main VC', 'End Call', r['call']['end-call'], '#FFFFFF'),
+            ('Main VC', 'VC Privacy', r['call']['privacy'], '#000000'),
+            ('VTC Dialer', 'VC Call', r['dialer']['call'], '#FFFFFF'),
+            ('VTC Dialer', 'VC Flash', r['dialer']['flash'], '#FFFFFF'),
+            ('VTC Dialer', 'VC PhoneBook', r['dialer']['contacts'], '#FFFFFF'),
+            ('Incoming Call', 'Accept Call', r['window']['accept'], '#FFFFFF'),
+            ('Incoming Call', 'Decline Call', r['window']['decline'], '#FFFFFF')))
+
+    def test_turbulences_call_tiles_light_lime_and_its_choices_limegreen(self):
+        """Privacy's lit caption is red, which a designer sets on its On
+        state (`alert`); the Room Mode VC choices light the accent."""
+        p = designsys.load('turbulence')
+        r = p['regions']
+        privacy = r['call']['privacy']
+        self.assertEqual(privacy['states'][1]['color'], 'alert')
+        self._check('turbulence', 'Turbulence 1035.gdl', (
+            ('Main VC', 'Initiate Call', r['call']['call'], '#00FF00'),
+            ('Main VC', 'End Call', r['call']['end-call'], '#00FF00'),
+            ('Main VC', 'VC Privacy', privacy, '#FF0000'),
+            ('Room Mode VC', 'Presentation Mode', {'variant': 'wide'}, '#32CD32'),
+            ('Room Mode VC', 'VC Mode', {'variant': 'wide'}, '#32CD32')))
+
+
+# How far past its glyph each of the dialer's keys sets its words on each of
+# Mach's bar series' own seeds, in px from the kit's reach (kit.icon_right) to
+# the first letter (tests/measure_series.py words_gap), which the profile's
+# frame holds (mach-52, mach-55). The words stand left-aligned in the template.
+MACH_GAPS = {
+    'Mach 1220 Series': {'VC Call': 15, 'VC Flash': 15, 'VC PhoneBook': 3},
+    'Mach 1020 Series': {'VC Call': 11, 'VC Flash': 7, 'VC PhoneBook': 0},
+    'Mach 1520 Series': {'VC Call': 19, 'VC Flash': 14, 'VC PhoneBook': 2},
+    'Mach 1720 Series': {'VC Call': 33, 'VC Flash': 27, 'VC PhoneBook': 7},
+    'Mach 720 Series': {'VC Call': 11, 'VC Flash': 7, 'VC PhoneBook': 0},
+}
+
+
+class TestMachsDialerWordsAgainstTheSeeds(unittest.TestCase):
+    """The gap each key of Mach's dialer leaves between the kit's glyph and
+    its words, read off the seed of every bar series again (mach-52, -55): a
+    series whose seed is not here (git lfs pull) is skipped."""
+
+    def test_the_words_stand_the_gap_the_template_leaves_past_the_glyph(self):
+        import measure_series
+        from gdl.project import Project
+        p = designsys.load('mach')
+        seen = 0
+        for series, want in MACH_GAPS.items():
+            seed = next(iter(p['panels'][series]['seeds'].values()))
+            path = os.path.join(REPO, seed)
+            if not usable(path):
+                continue
+            seen += 1
+            pages = measure_series.seed_pages(Project.open(path))
+            dialer = next(pg for pg in pages if pg['name'] == 'VTC Dialer')
+            keys = {k['name']: k for k in p['panels'][series]['frame']['call']['center']['dialer']['keys']}
+            for name, gap in want.items():
+                with self.subTest(series=series, key=name):
+                    c = next(c for c in dialer['controls'] if c['name'] == name)
+                    self.assertEqual(measure_series.words_gap(c, p['kit']['icon_right']), gap)
+                    self.assertEqual(keys[name]['gap'], gap)
+        if not seen:
+            self.skipTest('no Mach bar seed is here (git lfs pull)')
+
+    def test_the_keys_without_words_past_a_glyph_set_no_gap(self):
+        """Keyboard and Delete are glyphs alone; the digits are art with their
+        letters in it."""
+        p = designsys.load('mach')
+        for series in MACH_GAPS:
+            for k in p['panels'][series]['frame']['call']['center']['dialer']['keys']:
+                with self.subTest(series=series, key=k['name']):
+                    self.assertEqual('gap' in k, k['name'] in ('VC Call', 'VC Flash', 'VC PhoneBook'))
 
 
 class TestTheSliderDefaultsAgainstTheSeeds(unittest.TestCase):

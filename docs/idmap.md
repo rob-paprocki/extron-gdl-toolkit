@@ -85,7 +85,7 @@ block `plan`.
 |---|---|
 | A `nav` target that is not a page or popup in the spec | The button would flip to nothing |
 | `nav` on anything but a button; `does` that is not a sentence; either key on a kind with no ID | It would go nowhere |
-| A standard popup shown where the page beneath has no reference to its group. For a popup shown from another popup, that means every page the first can be showing over. | A spec's standard popup appears only through such a reference: a spec binds a reference to a group, though the format can bind one to a single popup (`docs/gdl-format.md` §5) |
+| A standard popup shown where the page beneath has no reference to its group - or, for a popup in no group, none bound to it alone. For a popup shown from another popup, that means every page the first can be showing over. | A spec's standard popup appears only through such a reference: one bound to its group, or one bound to it by its ID, as the seeds' Volume Level is (`docs/gdl-format.md` §5) |
 | Controls sharing an ID but differing in kind, function or states | A program sees one control per ID, and GUI Designer gives every copy the same states |
 | A page or popup no `nav` reaches from the start page, unless it is `reached_by: "program"` | Dead layout, or a missing link |
 | A page's or popup's `does` that is not a sentence | It would say nothing |
@@ -113,7 +113,10 @@ Each control row carries its ID, type, the page and control name of every place
 it appears, its caption, a button's states (`0 Off, 1 On`) and the one it
 shows while pressed, and its function
 (`nav` and `does`, in words). The page table shows how each page and popup is
-reached, and what it is for (its `does`). Every file carries the spec's
+reached, and what it is for (its `does`). In `idmap.json`, a page or popup a
+panel's layout derived also names the page that derived it and the layout's
+name for it (`window`), by which a revision keeps the IDs of what is in it
+(§9). Every file carries the spec's
 SHA-256; a map of every panel (§7) carries each panel's spec's in `idmap.json`.
 A map of one panel names the panel its spec is laid out for (`model`), which
 a revision's changes are compared on (§9).
@@ -191,7 +194,12 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   because a `.gdl` carries no behaviour (§1): nothing happens when it is pressed
   unless the program shows what it names. Each is marked derived, takes an ID
   from 50001 up - the same on every panel it is on - and is listed only on those
-  panels. The first popup of a derived group has no button leading to it: the
+  panels. One in a page or popup the layout derived too - a hub's Select
+  Source, a Group's popup, the 320's later pages - is known by the page that
+  derived that page or popup, the layout's name for it (on a hub, the
+  template's) and its own name: not by the name the page or popup shows,
+  which on a hub follows the working pages' order (§9). The
+  first popup of a derived group has no button leading to it: the
   program shows it as its page comes up, and the page table says so.
 - **So is what a source popup and a window draw** (`role`,
   `docs/claude-design.md` §4): a source's `<name> Title`, `Empty` and `Status`
@@ -259,7 +267,9 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   page, would take one of its own on each. The incoming call's
   answers (`topic="call"`) are the question's, from 50001, as the
   power-down question's are - not the template's 9032 and 9033, which each
-  bar theme's README lists under *Differences*.
+  bar theme's README lists under *Differences* - and so are a recording's
+  (`topic="recording"`, Afterburn's and Mach's), not the template's 9244 and
+  9245.
 - **A region page's mirrors share their control's ID.** Where a template draws
   one function twice and the program addresses it as one control - the
   Shockwave 1035's tab name under the tab's glyph (its frame's `twin`) - the
@@ -339,7 +349,9 @@ same, and so does `python -m gdl.idmap write <spec> <dir> --previous <map>`.
 **What keeps its ID.** Every control the previous map knew, matched by its page
 or popup name and its control name (an unnamed one by the name the map shows),
 on whichever panel it is. A control a layout derived is matched by the same
-key, its page or popup and its name.
+key, its page or popup and its name - and in a page or popup the layout
+derived too, by the page that derived it and the layout's name for it (§7),
+which the map records (`window`).
 
 - **A designer's `id` still wins.** An `id` that is the ID a control still on
   the canvas keeps is refused, naming both. Copies the previous map gave one
@@ -366,15 +378,45 @@ key, its page or popup and its name.
   one holds most of its controls by name, is reported as a note. The note says
   the page may have been renamed, that its controls are new to the program,
   and which `id` to pin on each one to keep it.
-- **A hub's windows are named by the order of the working pages.** A hub
-  names the window each working page derives (Select Source, More Options)
-  by its template, and after its own page where an earlier page derives one
-  too (*Video Call Select Source*). Drawing the working pages in another
-  order, or removing the earlier one, renames those windows. A program shows
-  each by its new name, and what the hub draws in it is known by the window's
-  name, so its IDs are retired. The layout draws those controls, so no `id`
-  on the canvas pins them. translate notes each renamed window with its old
-  name, the IDs retired, and the page to draw first again to keep them.
+- **A hub's windows are named by the order of the working pages, and keep
+  their IDs in any order.** A hub names the window each working page derives
+  (Select Source, More Options) by its template, and after its own page where
+  an earlier page derives one too (*Video Call Select Source*). Drawing the
+  working pages in another order, or removing the earlier one, renames those
+  windows, and a program shows each by its new name. What the hub draws in a
+  window is known by the page that derived it and the template's name for it,
+  so it keeps its IDs. A window whose page and name the map does not have is
+  the window it was where one of three rules says so, and keeps what the hub
+  draws in it:
+  - one window of several pages (the Volume Level strip, two pages' alike
+    Select Source) is the window of the page the map knew it by, whichever
+    page is drawn first;
+  - one the map had by the name it shows - the map's window of that kind and
+    name, as a map keyed by name always knew it: the strip when the first
+    working page is removed, the first page's Select Source when that page
+    is renamed. So a page drawn where a removed one was, its window shown by
+    that name, takes that window's IDs, as it always did;
+  - a renamed page's window is the one the page derived under its old name,
+    where it is the only window of its kind the map lacks and that the only
+    one of its kind gone. A page is renamed where its controls are drawn on
+    a page of another name, as translate notes it (*Pages and popups keep
+    their names* above).
+
+  Anything else is new: a page drawn since takes no window still drawn, nor
+  a removed page's under a name of its own, and the IDs of what the hub drew
+  in a removed page's own windows are retired. translate notes each
+  renamed window with its old name and, where both pages are still on the
+  canvas, the page to draw first again to keep that name; a control the
+  hub no longer draws in it is retired, and the note says which.
+  changes.md lists each as a *renamed window*, and a window gone with its
+  page as that page's window, since its name may be another's now. Round
+  four's Shockwave canvas drawn with its boards reversed keeps all 139 of
+  its IDs, and its 525's Select Source and More Options are its renamed
+  windows. Against a map that does not record `window` (one written
+  before maps did), a window is known by its name, as that map knows it: the
+  IDs of what the hub draws in a renamed one are retired - no `id` on the
+  canvas pins them, since the layout draws them - and the note names them and
+  the page order that keeps them.
 
 translate ends with one line: how many IDs were kept, how many are new, and
 how many are retired.
@@ -386,9 +428,13 @@ when it does. The report covers:
 
 - panels added or gone;
 - pages and popups added, removed, renamed, or shown the other way (page or
-  popup); a popup made modal or put in another group, which changes what
-  ShowPopup does with it; a page or popup the program is now to show on its
-  own, as on an incoming call (`reached_by: program`);
+  popup); a hub's window renamed by the working pages' order (a *renamed
+  window*: the same window, every control in it at its ID, and each control
+  that shows it now showing it by its new name, a function changed), and a
+  window gone with its page named as that page's; a popup made modal or put
+  in another group, which changes what ShowPopup does with it; a page or
+  popup the program is now to show on its own, as on an incoming call
+  (`reached_by: program`);
 - controls added or removed, given another ID (`renumbered`), moved to another
   page or renamed under a new ID (a rename is one gone and one come on a page,
   of one type and the same states and function), or whose ID is now a

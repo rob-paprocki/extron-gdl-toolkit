@@ -1359,6 +1359,31 @@ def _ids(spec):
             for c in it['controls']}
 
 
+def _map_of(specs, windows=True):
+    """Every panel's map of pinned specs, as gdl.idmap.combine writes one:
+    each page and popup by name - and, `windows`, the page that derived it
+    and the template's name for it (`window`) - and each ID where it is on
+    each panel."""
+    rows = {}
+    for m, spec in specs.items():
+        for it in spec['pages'] + spec['popups']:
+            for c in it['controls']:
+                if c.get('id'):
+                    r = rows.setdefault(c['id'], dict({'id': c['id'], 'type': 'Button', 'panels': {}},
+                                                      **({'derived': True} if c.get('derived') else {})))
+                    r['panels'].setdefault(m, []).append({'container': it['name'], 'name': c['name'],
+                                                          'caption': c['name']})
+    for r in rows.values():
+        r['at'] = next(iter(r['panels'].values()))
+
+    def listed(items):
+        return [dict({'name': it['name']}, **({'window': dict(it['_window'])} if windows and it.get('_window')
+                                              else {})) for it in items]
+    return {'controls': sorted(rows.values(), key=lambda r: r['id']), 'retired': [],
+            'panels': [{'model': m, 'start_page': None, 'navigation': [], 'pages': listed(s['pages']),
+                        'popups': listed(s['popups'])} for m, s in specs.items()]}
+
+
 class TestARevisionKeepsItsIds(unittest.TestCase):
     """A control program addresses a control by its ID, so a canvas revised
     after the programmer started must not renumber what the program knows.
@@ -1566,11 +1591,195 @@ class TestARevisionKeepsItsIds(unittest.TestCase):
                 'pages': [{'name': 'Home', 'controls': [_b('Laptop')]}]}
         self.assertEqual(design.revision_notes(spec, old), [])
 
+    # What each working page's Select Source holds, by its page.
+    LABELS = {'Main SD': ('Laptop Label', 'Video Call Label'), 'Video Call': ('Laptop Label', 'Teams Label'),
+              'Call': ('Laptop Label', 'Dial Label')}
+
+    @classmethod
+    def hub(cls, *order, holds=None, draws=None):
+        """A 1035 and a 525 hub of the working pages `order`, drawn in that
+        order, each drawing a Laptop (or `draws`' controls): each one's Select
+        Source (its LABELS, or `holds`', or a Laptop Label and its own),
+        named for its page where it is a later one's (_one_name_each), and
+        the Volume Level strip, one window of them all (`_hosts`)."""
+        holds = dict(cls.LABELS, **(holds or {}))
+        draws = draws or {}
+        first = order[0]
+
+        def win(host):
+            return {'name': 'Select Source' if host == first else f'{host} Select Source', '_host': host,
+                    '_window': {'page': host, 'name': 'Select Source'},
+                    'controls': [_b(n, derived=True) for n in holds.get(host) or ('Laptop Label', f'{host} Label')]}
+
+        def page(p):
+            return _item(p, *(_b(n) for n in draws.get(p) or ('Laptop',)))
+        strip = {'name': 'Volume Level', '_host': first, '_window': {'page': first, 'name': 'Volume Level'},
+                 'controls': [_b('Volume Up', derived=True)]}
+        if len(order) > 1:
+            strip['_hosts'] = list(order)
+        return {'TLP1035T': {'pages': [page(p) for p in order], 'popups': []},
+                'TLP525T': {'pages': [page(p) for p in order], 'popups': [win(p) for p in order] + [strip]}}
+
+    def test_a_control_moved_out_of_a_derived_page_is_told_how_to_keep_its_id(self):
+        """A map that says which page derived each page and popup knows what
+        is in one by that page and the layout's name for it (known()): the
+        Laptop the 320 laid on Main SD's second page, moved to Video Call's,
+        lost its note when the notes looked it up by the page's name."""
+        prev = {'controls': [{'id': 1003, 'type': 'Button',
+                              'at': [{'container': 'Main SD 2', 'name': 'Laptop', 'caption': 'Laptop'}]}],
+                'pages': [{'name': 'Main SD'}, {'name': 'Main SD 2', 'window': {'page': 'Main SD', 'name': 'Main SD 2'}},
+                          {'name': 'Video Call'}], 'popups': []}
+        later = {'name': 'Video Call 2', '_host': 'Video Call', '_window': {'page': 'Video Call', 'name': 'Video Call 2'},
+                 'controls': [_b('Laptop')]}
+        spec = {'pages': [_item('Main SD'), _item('Video Call'), later], 'popups': []}
+        self.assertEqual([n.split(' - ')[0] for n in design.revision_notes(spec, prev)],
+                         ["'Video Call 2' Laptop: moved from 'Main SD 2', where the program knows it as 1003"])
+
+    @staticmethod
+    def by_window(spec):
+        return {(it['_window']['page'], it['_window']['name'], c['name']): c['id']
+                for it in spec['popups'] for c in it['controls']}
+
+    def test_a_hub_windows_ids_survive_the_pages_order(self):
+        """What a hub draws in a window is known by the page that derived it
+        and the template's name for it (`_window`), not by the window's name,
+        which follows the pages' order: drawn the other way round - round
+        four's Shockwave canvas retired 12 of its 139 IDs so - every ID is
+        kept. One window of several pages (the Volume Level strip) is the
+        page's the previous map knew it as, not the page now drawn first."""
+        fwd = self.hub('Main SD', 'Video Call')
+        self.assertEqual(design.pin_ids(fwd, list(fwd)), {'TLP1035T': [], 'TLP525T': []})
+        rev = self.hub('Video Call', 'Main SD')
+        self.assertEqual(design.pin_ids(rev, list(rev), _map_of(fwd)), {'TLP1035T': [], 'TLP525T': []})
+        self.assertEqual(rev['TLP525T']['_retired'], [])
+        self.assertEqual(self.by_window(rev['TLP525T']), self.by_window(fwd['TLP525T']))
+        self.assertEqual(_ids(rev['TLP525T'])[('Volume Level', 'Volume Up')],
+                         _ids(fwd['TLP525T'])[('Volume Level', 'Volume Up')])
+        self.assertEqual(rev['TLP525T']['popups'][-1]['_window']['page'], 'Main SD')
+        # Without a previous map the strip is the first page's, as it is named.
+        again = self.hub('Video Call', 'Main SD')
+        design.pin_ids(again, list(again))
+        self.assertEqual(again['TLP525T']['popups'][-1]['_window']['page'], 'Video Call')
+
+    def test_against_a_map_that_names_no_windows_they_are_known_by_name(self):
+        """A map written before maps said which page derived each window knows
+        what is in it by the window's name: the order the canvas drew its pages
+        in then keeps them, and another retires those of the renamed windows."""
+        fwd = self.hub('Main SD', 'Video Call')
+        design.pin_ids(fwd, list(fwd))
+        old = _map_of(fwd, windows=False)
+        same = self.hub('Main SD', 'Video Call')
+        design.pin_ids(same, list(same), old)
+        self.assertEqual((same['TLP525T']['_retired'], _ids(same['TLP525T'])), ([], _ids(fwd['TLP525T'])))
+        rev = self.hub('Video Call', 'Main SD')
+        design.pin_ids(rev, list(rev), old)
+        self.assertEqual(sorted(r['was'] for r in rev['TLP525T']['_retired']),
+                         ['Select Source / Video Call Label', 'Video Call Select Source / Laptop Label',
+                          'Video Call Select Source / Teams Label'])
+
+    def revise(self, fwd, *order, holds=None, draws=None):
+        """`fwd`'s hub pinned, then `order`'s against its map: (the revision,
+        its map's previous, each retired ID's `was`)."""
+        design.pin_ids(fwd, list(fwd))
+        prev = _map_of(fwd)
+        rev = self.hub(*order, holds=holds, draws=draws)
+        self.assertEqual(design.pin_ids(rev, list(rev), prev), {'TLP1035T': [], 'TLP525T': []})
+        return rev, prev, sorted(r['was'] for r in rev['TLP525T']['_retired'])
+
+    def kept(self, fwd, rev):
+        """Every window `rev` still draws holds what it held at the IDs `fwd` gave it."""
+        old, new = self.by_window(fwd['TLP525T']), self.by_window(rev['TLP525T'])
+        self.assertEqual(new, {k: old.get(k) for k in new})
+
+    def test_a_window_whose_first_page_is_removed_keeps_its_ids(self):
+        """The strip's IDs were the first page's, which is gone: keyed by its
+        page alone they were retired with it, though the strip stays. It is
+        the window the map knew by its name; Video Call's Select Source is
+        its own, under the name Main SD's had."""
+        fwd = self.hub('Main SD', 'Video Call')
+        rev, prev, retired = self.revise(fwd, 'Video Call')
+        self.kept(fwd, rev)
+        self.assertEqual(rev['TLP525T']['popups'][-1]['_window']['page'], 'Main SD')
+        # What is gone is Main SD's own: its page's control and its window's.
+        self.assertEqual(retired, ['Main SD / Laptop', 'Select Source / Laptop Label',
+                                   'Select Source / Video Call Label'])
+        notes = design.renamed_windows(rev['TLP525T'], idmap.view_of(prev, 'TLP525T', False), set())
+        self.assertEqual(len(notes), 1, notes)
+        self.assertIn("Video Call's Select Source is 'Select Source' now, not 'Video Call Select Source'", notes[0])
+        self.assertIn('keeps its IDs', notes[0])
+        # No page to draw first again: Main SD is gone.
+        self.assertNotIn('again', notes[0])
+
+    def test_a_window_whose_first_page_is_renamed_keeps_its_ids(self):
+        """Main SD drawn as Main: its Select Source and the strip are the
+        windows the map knew by their names, every ID kept; only the page's
+        own control is new, as a renamed page's controls are."""
+        fwd = self.hub('Main SD', 'Video Call')
+        rev, _, retired = self.revise(fwd, 'Main', 'Video Call', holds={'Main': self.LABELS['Main SD']})
+        self.kept(fwd, rev)
+        self.assertEqual(self.by_window(rev['TLP525T']), self.by_window(fwd['TLP525T']))
+        self.assertEqual(retired, ['Main SD / Laptop'])
+
+    def test_a_window_of_three_pages_whose_first_is_removed_keeps_its_ids(self):
+        fwd = self.hub('Call', 'Main SD', 'Video Call')
+        rev, _, retired = self.revise(fwd, 'Main SD', 'Video Call')
+        self.kept(fwd, rev)
+        self.assertEqual(len(self.by_window(rev['TLP525T'])), 5)
+        self.assertEqual(retired, ['Call / Laptop', 'Select Source / Dial Label', 'Select Source / Laptop Label'])
+
+    def test_a_page_renamed_and_drawn_behind_keeps_its_windows_ids(self):
+        """Main SD drawn as Main behind Video Call: its window is 'Main Select
+        Source', by no name the map knew. Its Laptop on Main is the evidence
+        the page was renamed (gdl.idmap.renames, as translate notes it), so
+        its window is the one Main SD derived."""
+        fwd = self.hub('Main SD', 'Video Call')
+        rev, _, retired = self.revise(fwd, 'Video Call', 'Main', holds={'Main': self.LABELS['Main SD']})
+        self.assertEqual(self.by_window(rev['TLP525T']), self.by_window(fwd['TLP525T']))
+        self.assertEqual(retired, ['Main SD / Laptop'])
+
+    def test_a_page_removed_and_another_drawn_takes_none_of_its_ids(self):
+        """Main SD removed and Presentation drawn after Video Call: nothing of
+        Main SD's is on Presentation, so Presentation's Select Source is new,
+        and the IDs of what the hub drew in Main SD's are retired - a gone
+        control's ID is never handed to a new one. Video Call's keeps its
+        own; the strip, shown by its name, is the strip."""
+        fwd = self.hub('Main SD', 'Video Call')
+        rev, prev, retired = self.revise(fwd, 'Video Call', 'Presentation', draws={'Presentation': ('Share',)})
+        old, new = self.by_window(fwd['TLP525T']), self.by_window(rev['TLP525T'])
+        self.assertEqual(retired, ['Main SD / Laptop', 'Select Source / Laptop Label',
+                                   'Select Source / Video Call Label'])
+        self.assertEqual({k: v for k, v in new.items() if k[0] != 'Presentation'},
+                         {k: v for k, v in old.items() if k[0] != 'Main SD' or k[1] == 'Volume Level'})
+        self.assertFalse({v for k, v in new.items() if k[0] == 'Presentation'} & set(old.values()))
+        notes = design.renamed_windows(rev['TLP525T'], idmap.view_of(prev, 'TLP525T', False), set())
+        self.assertFalse([n for n in notes if 'Presentation' in n], notes)
+
+    def test_pages_drawn_where_one_was_removed_take_none_of_its_ids(self):
+        """A and B, then B, C and D: two windows of pages drawn since, one of
+        a gone page, and nothing of A's on C or D - neither is A's."""
+        fwd = self.hub('A', 'B')
+        rev, _, retired = self.revise(fwd, 'B', 'C', 'D', draws={'C': ('Camera',), 'D': ('Dial',)})
+        old, new = self.by_window(fwd['TLP525T']), self.by_window(rev['TLP525T'])
+        self.assertEqual(retired, ['A / Laptop', 'Select Source / A Label', 'Select Source / Laptop Label'])
+        self.assertFalse({v for k, v in new.items() if k[0] in ('C', 'D')} & set(old.values()))
+        self.assertEqual({k: v for k, v in new.items() if k[0] == 'B'}, {k: v for k, v in old.items() if k[0] == 'B'})
+
+    def test_a_page_drawn_first_since_takes_no_other_pages_window(self):
+        """Call drawn ahead of Main SD names its Select Source as Main SD's
+        was: Main SD's, still drawn, keeps its own, and Call's is new."""
+        fwd = self.hub('Main SD', 'Video Call')
+        rev, _, retired = self.revise(fwd, 'Call', 'Main SD', 'Video Call')
+        old, new = self.by_window(fwd['TLP525T']), self.by_window(rev['TLP525T'])
+        self.assertEqual({k: v for k, v in new.items() if k in old}, old)
+        self.assertFalse({v for k, v in new.items() if k[0] == 'Call'} & set(old.values()))
+        self.assertEqual(retired, [])
+
     def test_a_hub_window_renamed_by_the_pages_order_is_noted(self):
         """A hub names the window a later working page derives after the page
         (Video Call Select Source), so drawing the pages in another order
-        renamed the windows, and the IDs of what the hub draws in them were
-        retired without a word."""
+        renamed the windows, and - against a map that names no windows,
+        which knows what is in them by the window's name - the IDs of what
+        the hub draws in them were retired without a word."""
         def win(name, host, label):
             return {'name': name, '_host': host, 'controls': [_b('Laptop'), _b(label, derived=True)]}
         spec = {'pages': [_item('Video Call', _b('Laptop')), _item('Main SD', _b('Laptop'))],
@@ -1578,8 +1787,11 @@ class TestARevisionKeepsItsIds(unittest.TestCase):
                            win('Main SD Select Source', 'Main SD', 'Laptop Label')]}
         old = dict(_old((101, 'Main SD', 'Laptop'), (50076, 'Select Source', 'Laptop Label', True),
                         (50133, 'Video Call Select Source', 'Laptop Label', True),
+                        # A control of the designer's in the window, gone since:
+                        # not what the hub draws there.
+                        (7001, 'Select Source', 'Old Tile'),
                         pages=['Main SD', 'Video Call'], popups=['Select Source', 'Video Call Select Source']))
-        notes = design.renamed_windows(spec, old, {50076, 50133})
+        notes = design.renamed_windows(spec, old, {50076, 50133, 7001})
         self.assertEqual(len(notes), 2, notes)
         vc = next(n for n in notes if n.startswith("Video Call's Select Source"))
         self.assertIn("'Select Source' now, not 'Video Call Select Source'", vc)
@@ -1588,6 +1800,7 @@ class TestARevisionKeepsItsIds(unittest.TestCase):
         msd = next(n for n in notes if n.startswith("Main SD's Select Source"))
         self.assertIn("'Main SD Select Source' now, not 'Select Source'", msd)
         self.assertIn('50076', msd)
+        self.assertNotIn('7001', msd)
         self.assertIn('order', msd)
         # The same order: nothing renamed. A page drawn since: its window is
         # new, not renamed.
@@ -1605,6 +1818,34 @@ class TestARevisionKeepsItsIds(unittest.TestCase):
         board = {'pages': spec['pages'][::-1], 'popups': [_item('Select Source', _b('Laptop')),
                                                            win('Main SD Select Source', 'Main SD', 'Laptop Label')]}
         self.assertEqual(design.renamed_windows(board, old, set()), [])
+
+    def test_a_hub_window_renamed_by_the_pages_order_keeps_its_ids_and_is_noted(self):
+        """Against a map that says which page derived each window, a renamed
+        one is still noted - a program shows it by its new name - and what
+        the hub draws in it keeps its IDs, so the note retires none."""
+        fwd = self.hub('Main SD', 'Video Call')
+        design.pin_ids(fwd, list(fwd))
+        prev = _map_of(fwd)
+        rev = self.hub('Video Call', 'Main SD')
+        design.pin_ids(rev, list(rev), prev)
+        notes = design.renamed_windows(rev['TLP525T'], idmap.view_of(prev, 'TLP525T', False), set())
+        self.assertEqual(len(notes), 2, notes)
+        msd = next(n for n in notes if n.startswith("Main SD's Select Source"))
+        self.assertIn("'Main SD Select Source' now, not 'Select Source'", msd)
+        self.assertIn('keeps its IDs', msd)
+        self.assertIn('draw Main SD ahead of Video Call again to keep its name', msd)
+        self.assertNotIn('retired', msd)
+        vc = next(n for n in notes if n.startswith("Video Call's Select Source"))
+        self.assertIn("'Select Source' now, not 'Video Call Select Source'", vc)
+        # The strip, one window of both, is not renamed.
+        self.assertFalse([n for n in notes if 'Volume Level' in n])
+        # A control the hub no longer draws in it is retired, and said so -
+        # not as the rename's doing.
+        gone = _ids(fwd['TLP525T'])[('Select Source', 'Video Call Label')]
+        msd = next(n for n in design.renamed_windows(rev['TLP525T'], idmap.view_of(prev, 'TLP525T', False), {gone})
+                   if n.startswith("Main SD's"))
+        self.assertIn(f'keeps its IDs - but {gone}, which it no longer draws, is retired', msd)
+        self.assertIn('to keep its name', msd)
 
     def test_translate_ends_by_counting_the_ids(self):
         spec = {'pages': [{'name': 'Home', 'controls': [{'kind': 'button', 'id': 1001}, {'kind': 'button', 'id': 1003},
@@ -2532,27 +2773,21 @@ class TestInChrome(unittest.TestCase):
         1035 and the 525, translate for the 320 as well, against the one ID
         map: each page under its title strip, over as many pages as its rows
         need. A modal holds one screen, and Mach's and Shockwave's Help modals
-        say more than the 320's holds; and Shockwave's and Turbulence's 320
-        seeds have no date and time control to clone. Revised as their gates'
-        words ask - Mach's AV desk said shorter, Shockwave's sources left to
-        the tabs they name, the clock off the pages - the rooms translate."""
+        say more than the 320's holds. Revised as their gates' words ask -
+        Mach's AV desk said shorter, Shockwave's sources left to the tabs they
+        name - the rooms translate, their clocks on the pages: Shockwave's and
+        Turbulence's 320 seeds have none, and the clock is cloned from their
+        525s (gdl.spec CROSS_SEED_TYPES)."""
         def label(name, text, x, y, w, h=50):
             return (f'<x-import component-from-global-scope="ExtronShockwave.Label" name="{name}" type="body" '
                     f'align="left" color="text-secondary" style="position: absolute; left: {x}px; top: {y}px; '
                     f'width: {w}px; height: {h}px">{text}</x-import>')
-        sw_clock = ('<x-import component-from-global-scope="ExtronShockwave.Clock" name="DateTime" format="time" '
-                    'size="14" align="center" style="position: absolute; left: 740px; top: 720px; width: 220px; '
-                    'height: 60px"></x-import>')
-        tb_clock = ('<x-import component-from-global-scope="ExtronTurbulence.Clock" name="Clock" format="datetime" '
-                    'type="body" align="center" style="position: absolute; left: 360px; top: 711px; width: 560px; '
-                    'height: 64px"></x-import>')
         edits = {
             'mach': [('Help.dc.html', 'Call the AV desk at extension 4400.', 'AV desk: ext. 4400.')],
             'shockwave': [('Help.dc.html', label('Step2Sources1', 'Laptop, ShareLink (wireless),', 260, 380, 801), ''),
                           ('Help.dc.html', label('Step2Sources2', 'Room PC or Doc Camera.', 260, 430, 801), ''),
-                          ('Help.dc.html', 'Call the AV desk: extension 4400', 'AV desk: ext. 4400'),
-                          ('Main.dc.html', sw_clock, ''), ('Call.dc.html', sw_clock, '')],
-            'turbulence': [('Main.dc.html', tb_clock, ''), ('Call.dc.html', tb_clock, '')],
+                          ('Help.dc.html', 'Call the AV desk: extension 4400', 'AV desk: ext. 4400')],
+            'turbulence': [],
         }
         for theme, edit in edits.items():
             with self.subTest(theme=theme):
@@ -3696,6 +3931,109 @@ class TestRoundFourRooms(unittest.TestCase):
         self.assertEqual(idmap.check_panels(maps), [])
 
 
+def _words_past_glyph(profile, g, rect):
+    """(px, one leading space's width) of how far past its kit glyph a drawn
+    key's words begin: its caption centred in its rect in Open Sans at its
+    size (1.375 px a point), the glyph reaching `kit.icon_right` across its
+    art fitted to the key (tests/measure_series.py words_gap, on what the
+    translator drew)."""
+    from gdl import data, fonts, sfnt
+    text = g['text']
+    lead = len(text) - len(text.lstrip(' '))
+    adv, px = sfnt.Advances(fonts.face_path('Open Sans', 0)), g['size'] * data.PT_TO_PX
+    kw, kh = map(int, re.match(r'(\d+)x(\d+)_', g['states'][0]['image']).groups())
+    w, h = rect[2], rect[3]
+    aw = kw * min(w / kw, h / kh)
+    word = (w - adv.length(text, px)) / 2 + adv.length(' ' * lead, px)
+    return word - ((w - aw) / 2 + profile['kit']['icon_right'][f'{kw}x{kh}'] * aw), adv.length(' ', px)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestARevisionDrawingThePagesInAnotherOrder(unittest.TestCase):
+    """Round four's Shockwave room as built (archive/job-e823df9b/round4/
+    shockwave/canvas/project) on its 1035 and its 525 hub, translated, then
+    with its boards in the reverse order against the first's map (translate
+    --previous): Video Call drawn ahead of Main SD, the hub names Main SD's
+    Select Source and More Options after it and Video Call's by the
+    template. What the hub draws in them is known by the page that derived
+    each and the template's name for it, so every ID is kept - with each
+    window known by its name, 12 of 139 were retired - and changes.md says
+    each window's new name, which a program shows it by."""
+
+    CANVAS = os.path.join(os.path.dirname(HERE), 'archive', 'job-e823df9b', 'round4', 'shockwave', 'canvas',
+                          'project')
+    PANELS = 'TLP1035T TLP525T'
+
+    def setUp(self):
+        if not os.path.isfile(os.path.join(self.CANVAS, 'canvas.json')):
+            self.skipTest("round four's archived canvas is not here (the archive's, not the public copy's)")
+        p = designsys.load('shockwave')
+        if not all(seeds.usable(f'seeds/{p["template"]} {m[3:-1]}.gdl') for m in self.PANELS.split()):
+            self.skipTest('the Shockwave seeds are not here (git lfs pull)')
+        skip_without_kit(self, 'shockwave')
+
+    def tmp(self):
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        return d
+
+    def staged(self, reverse):
+        """The canvas for the 1035 and the 525 alone, its boards reversed."""
+        d = self.tmp()
+        shutil.copytree(self.CANVAS, d, dirs_exist_ok=True)
+        for f in os.listdir(d):
+            if f.endswith('.dc.html'):
+                path = os.path.join(d, f)
+                with open(path, encoding='utf-8') as fh:
+                    text = fh.read()
+                with open(path, 'w', encoding='utf-8') as fh:
+                    fh.write(re.sub(r'panels="[^"]*"', f'panels="{self.PANELS}"', text))
+        if reverse:
+            with open(os.path.join(d, 'canvas.json'), encoding='utf-8') as fh:
+                index = json.load(fh)
+            index['order'] = index['order'][::-1]
+            with open(os.path.join(d, 'canvas.json'), 'w', encoding='utf-8') as fh:
+                json.dump(index, fh)
+        _stage(d, 'shockwave')
+        return d
+
+    def mapped(self, specs, previous=None):
+        """The map `python -m gdl.idmap write-panels` writes of the specs."""
+        out = self.tmp()
+        design.write_panels(specs, out)
+        maps = idmap.load_panels(out)
+        self.assertEqual(idmap.check_panels(maps), [])
+        idmap.write_panels(maps, os.path.join(out, 'idmap'), previous)
+        return os.path.join(out, 'idmap')
+
+    def test_every_id_is_kept_and_the_windows_renamed(self):
+        specs, problems, _ = design.Canvas(self.staged(False)).translate_panels()
+        self.assertIsNotNone(specs, problems)
+        previous = idmap.load_previous(self.mapped(specs))
+        specs, problems, notes = design.Canvas(self.staged(True)).translate_panels(previous=previous)
+        self.assertIsNotNone(specs, problems)
+        self.assertEqual(specs['TLP525T']['_retired'], [])
+        kept = design._kept(specs.values(), previous, 'r1')
+        self.assertRegex(kept, r'\d+ kept, 0 new, 0 retired')
+        # Each renamed window is noted, its IDs kept.
+        said = [n for n in notes['TLP525T'] if 'now, not' in n]
+        self.assertEqual(len(said), 4, said)
+        self.assertTrue(all('keeps its IDs' in n and 'retired' not in n for n in said), said)
+        with open(os.path.join(self.mapped(specs, previous), 'changes.json'), encoding='utf-8') as fh:
+            ch = json.load(fh)
+        self.assertEqual(sorted((r['from'], r['to']) for r in ch['pages']['renamed'] if r.get('window')),
+                         [('More Options', 'Main SD More Options'), ('Select Source', 'Main SD Select Source'),
+                          ('Video Call More Options', 'More Options'),
+                          ('Video Call Select Source', 'Select Source')])
+        self.assertEqual({k: v for k, v in ch['pages'].items() if v and k != 'renamed'}, {})
+        # The same controls, at the same IDs, in the same windows: what
+        # changed is what shows a renamed window.
+        self.assertEqual({k: v for k, v in ch['controls'].items() if v and k not in ('changed', 'captions')}, {})
+        self.assertEqual({k for r in ch['controls']['changed'] for k in r if k not in ('id', 'name')}, {'function'})
+        self.assertTrue(ch['needs_change'])
+
+
 class _CallMode(_Probe):
     """The call mode in the region grammar (tests/data/design-call-<theme>):
     a working page, a call page (role="call") with its Share Content, its
@@ -3790,6 +4128,29 @@ class TestMachsCallMode(_CallMode, unittest.TestCase):
     THEME, NS, EXTRA = 'mach', 'ExtronMach', 2
     ANSWER = 'draw a Page with role="select" whose Header holds every source, and keep 4 or fewer tabs here'
 
+    @needs_kit()
+    def test_the_dialers_words_stand_the_templates_gap_past_their_glyph(self):
+        """Call, Flash and Contacts on the 1035: 15, 15 and 3 px past the
+        880x440 glyph's reach where they stood 4 px past it (mach-52, -55);
+        on the 725 Call and Flash 11 and 7. Its Contacts, 88 px of words at
+        the 16 pt floor in a 103 px key, is set as far past as the key
+        holds."""
+        p = designsys.load(self.THEME)
+        want = {'TLP1035T': {'VC Call': 15, 'VC Flash': 15, 'VC PhoneBook': 3},
+                'TLP725T': {'VC Call': 11, 'VC Flash': 7, 'VC PhoneBook': 0}}
+        for model in self.PANELS:
+            with self.subTest(panel=model):
+                _, ctl, out = self.probe('Dialer.dc.html', model)
+                self.assertEqual(out['problems'], [], model)
+                keys = {k['name']: k for k in self.frame(model)['call']['center']['dialer']['keys']}
+                for name, gap in want[model].items():
+                    self.assertEqual(keys[name]['gap'], gap, name)
+                    if model == 'TLP725T' and name == 'VC PhoneBook':
+                        continue
+                    g, r, _ = ctl[name]
+                    got, space = _words_past_glyph(p, g, r)
+                    self.assertLessEqual(abs(got - gap), space / 2 + 0.5, (name, got))
+
     @needs_kit('mach')
     def test_the_page_sources_are_chosen_on_is_main_select_sources(self):
         """Mach's Main Select Source: its header one strip titled 'Select a
@@ -3842,6 +4203,82 @@ class TestShockwavesCallMode(_CallMode, unittest.TestCase):
                                            "Section stands lower there, under the VTC Section grown to the touch "
                                            "minimum"])
 
+    def test_the_725s_call_page_has_no_room_for_a_third_launcher(self):
+        """Whether the 725's call page has the room its template gives a third
+        launcher (backlog plan 2.3, shockwave-41): it does not. The template
+        stands three 98 px launchers 100 apart from y 293, the last ending at
+        591 of its rail's 600; its 50 px VTC pills grown to the 725's 60 px
+        touch minimum stand the Settings Section at 329, so three at the
+        template's depth and seam need to 627, 27 px past the rail's foot.
+        Two stay; the third is refused by name."""
+        T = designsys.models(designsys.load(self.THEME))['TLP725T']
+        call = T['frame']['call']['left']
+        foot = call['rect'][1] + call['rect'][3]
+        L = call['groups'][1]['buttons']
+        self.assertEqual(([b['rect'][1] for b in L], {b['rect'][3] for b in L}, foot), ([293, 393, 493], {98}, 600))
+        three = '\n'.join(f'<x-import component-from-global-scope="{self.NS}.Button" name="{w}" nav="Lighting" '
+                          f'does="Opens it.">{w}</x-import>' for w in ('Lighting', 'Audio', 'Screen'))
+        _, ctl, out = self.probe('Call.dc.html', 'TLP725T', edit=(
+            f'<x-import component-from-global-scope="{self.NS}.Button" name="Lighting" nav="Lighting" '
+            'does="Opens the lighting.">Lighting</x-import>', three))
+        rects = [ctl[n][1] for n in ('Lighting', 'Audio', 'Screen')]
+        self.assertEqual([r[1] for r in rects], [329, 429, 529])
+        self.assertEqual({r[3] for r in rects}, {98})
+        self.assertEqual(rects[2][1] + rects[2][3] - foot, 27)
+        self.assertEqual(len(out['problems']), 1)
+
+    @needs_kit()
+    def test_the_dialers_words_stand_the_templates_gap_past_their_glyph(self):
+        """Call and Flash lead their words with the spaces that put them the
+        gap their panel's template leaves past the pill's glyph - the 1035's
+        24 and 20 px, the 725's 15 and 11 - where they stood 4 px past it
+        (shockwave-45). Contacts and Delete have theirs under theirs."""
+        p = designsys.load(self.THEME)
+        for model in self.PANELS:
+            with self.subTest(panel=model):
+                _, ctl, out = self.probe('Dialer.dc.html', model)
+                self.assertEqual(out['problems'], [], model)
+                keys = {k['name']: k for k in self.frame(model)['call']['center']['dialer']['keys']}
+                for name, gap in (('VC Call', {'TLP1035T': 24, 'TLP725T': 15}[model]),
+                                  ('VC Flash', {'TLP1035T': 20, 'TLP725T': 11}[model])):
+                    self.assertEqual(keys[name]['gap'], gap, name)
+                    g, r, _ = ctl[name]
+                    got, space = _words_past_glyph(p, g, r)
+                    # The spaces nearest it (a space is 5 or 6 px here).
+                    self.assertLessEqual(abs(got - gap), space / 2 + 0.5, (name, got))
+                for name in ('VC PhoneBook', 'VC Delete'):
+                    self.assertNotIn('gap', keys[name])
+                    self.assertFalse(ctl[name][0]['text'].startswith(' '), name)
+
+    @needs_kit()
+    def test_the_answers_words_stand_the_templates_gap_past_their_glyph(self):
+        """Accept Call and Ignore Call: the 1035's 18 and 25 px, the 725's 10
+        and 16."""
+        p = designsys.load(self.THEME)
+        for model in self.PANELS:
+            with self.subTest(panel=model):
+                _, ctl, out = self.probe('Incoming.dc.html', model)
+                self.assertEqual(out['problems'], [], model)
+                answers = {b['name']: b for b in self.frame(model)['windows']['incoming']['buttons']}
+                want = {'TLP1035T': (18, 25), 'TLP725T': (10, 16)}[model]
+                for name, gap in zip(('Accept Call', 'Ignore Call'), want):
+                    self.assertEqual(answers[name]['gap'], gap, name)
+                    g, r, _ = ctl[f'Incoming Call {name}']
+                    got, space = _words_past_glyph(p, g, r)
+                    self.assertLessEqual(abs(got - gap), space / 2 + 0.5, (name, got))
+
+    @needs_kit()
+    def test_the_dialers_lit_captions_are_the_templates(self):
+        """The green Call lights #355424 (`go`) and the blue Flash #474747
+        (`text-secondary`) where both lit `ink`; Delete's was right
+        already."""
+        for model in self.PANELS:
+            with self.subTest(panel=model):
+                _, ctl, _ = self.probe('Dialer.dc.html', model)
+                lit = {n: [s.get('color') for s in ctl[n][0]['states']] for n in ('VC Call', 'VC Flash', 'VC Delete')}
+                self.assertEqual(lit, {'VC Call': [None, 'go'], 'VC Flash': [None, 'text-secondary'],
+                                       'VC Delete': [None, 'text-secondary']})
+
     def test_a_tiles_two_words_go_on_two_lines(self):
         """Shockwave's tile - its Settings launchers, 120x110 - breaks a
         caption of two words at the space nearest its middle, as the seed's
@@ -3854,6 +4291,36 @@ class TestShockwavesCallMode(_CallMode, unittest.TestCase):
         self.assertEqual(g['text'], 'Lighting\r\nControl')
         self.assertEqual((r[0], r[2]), (29, 120))
         self.assertEqual([ctl[n][1][0::2] for n in ('Make Call', 'End Call', 'Privacy')], [[29, 120]] * 3)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestShockwavesLitCaptions(_Probe, unittest.TestCase):
+    """A lit image's caption is its icon's color's dark, as the template's
+    are (shockwave-20): Room Mode VC's two gray choices (`action`) and a blue
+    Flash light #474747 where a gray rail button lights #000000, and a state's
+    own `color` still sets another."""
+    CANVAS = os.path.join(HERE, 'data', 'design-room-shockwave')
+    THEME = 'shockwave'
+
+    @needs_kit()
+    def test_a_lit_caption_is_its_icons_family(self):
+        button = ('<x-import component-from-global-scope="ExtronShockwave.Button" name="%s" variant="%s" icon="%s" %s '
+                  'does="Probe." style="position: absolute; left: %dpx; top: 440px; width: 200px; height: 80px">%s</x-import>\n')
+        own = 'states=\'[{"name":"Off"},{"name":"On","color":"caution"}]\''
+        old = '<x-import component-from-global-scope="ExtronShockwave.Label" name="CameraLabel"'
+        added = ''.join(button % (n, v, i, st, x, n) for n, v, i, st, x in (
+            ('Presentation', 'action', 'r_presentation_gray', '', 20), ('SharePill', 'action', 'r_share-1_blue', '', 240),
+            ('FlashPill', 'pill', 'flash_blue', '', 460), ('OwnColor', 'action', 'r_end-call_red', own, 680),
+            ('GrayTile', 'tile', 'gray', '', 900)))
+        _, ctl, out = self.probe('Call.dc.html', 'TLP1035T', edit=(old, added + old))
+        self.assertEqual(out['problems'], [])
+        lit = {n: [s.get('color') for s in ctl[n][0]['states']] for n in (
+            'JoinCall', 'EndCall', 'Presentation', 'SharePill', 'FlashPill', 'OwnColor', 'GrayTile')}
+        self.assertEqual(lit, {
+            'JoinCall': [None, 'go'], 'EndCall': [None, 'alert'],
+            'Presentation': [None, 'text-secondary'], 'SharePill': [None, 'text-secondary'],
+            'FlashPill': [None, 'text-secondary'], 'OwnColor': [None, 'caution'], 'GrayTile': [None, 'ink']})
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -5384,6 +5851,42 @@ class _CenterProbe(_Probe):
             self.assertNotIn('ConfirmPower Close', ctl)
             self.assertNotIn('ConfirmPower Title', ctl)
 
+    def test_a_recording_question_is_the_templates_own(self):
+        """A recording's question (`topic="recording"`) where the template
+        asks one - Afterburn's and Mach's Confirmation - Recording, measured
+        into each series' frame as `windows.recording`: its words over its own
+        message box, Record in the power-down question's look - the page's
+        `does` - and Cancel, each at its place. Where the template asks none
+        (Shockwave, Turbulence) the topic is refused, by name (backlog plan
+        2.3)."""
+        said = (self.writing().get('confirm') or {}).get('recording')
+        # The templates that ask it: Afterburn's and Mach's.
+        self.assertEqual(said is not None, self.THEME in ('afterburn', 'mach'))
+        look = self.profile()['regions']['window']
+        for model in self.PANELS:
+            rec = self.frame(model)['windows'].get('recording')
+            _, ctl, out = self.probe('ConfirmPower.dc.html', model, edit=('topic="power"', 'topic="recording"'))
+            if said is None:
+                self.assertIsNone(rec, model)
+                self.assertEqual(len(out['problems']), 1, out['problems'])
+                self.assertIn("topic 'recording' is not one the", out['problems'][0])
+                continue
+            self.assertEqual((out['problems'], out['warnings']), ([], []), model)
+            g, r, _ = ctl['ConfirmPower Message']
+            self.assertEqual(g['text'], rec['text'])
+            self.assertEqual(' '.join(g['text'].split()), ' '.join(said.split()))
+            self.assertAt(r, rec['message'], model)
+            self.assertTrue(_inside(r, rec['rect'] or [0, 0] + self.row(model)['size']), (model, r))
+            yes = next(b for b in rec['buttons'] if b['role'] != 'cancel')
+            no = next(b for b in rec['buttons'] if b['role'] == 'cancel')
+            record, r, _ = ctl['ConfirmPower ' + yes['text']]
+            self.assertAt(r, yes['rect'], model)
+            self.assertEqual((record['variant'], record['does']), (look['power']['variant'], 'Powers the room down.'))
+            cancel, r, _ = ctl['ConfirmPower ' + no['text']]
+            self.assertAt(r, no['rect'], model)
+            self.assertEqual(cancel['variant'], look['cancel']['variant'])
+            self.assertNotIn('ConfirmPower Power Down', ctl)
+
     def test_a_message_keeps_the_lines_its_template_sets_it_in(self):
         """Where the template sets a message on one line, its box holds the
         words on one line in the system's Open Sans - wider than the Light
@@ -5421,8 +5924,11 @@ class _CenterProbe(_Probe):
                 self.assertFalse([n for n, v in ctl.items() if v[0]['kind'] == 'button'], model)
 
     def test_a_topic_the_template_has_no_words_for_is_named(self):
-        _, _, out = self.probe('ConfirmPower.dc.html', edit=('topic="power"', 'topic="recording"'))
-        self.assertTrue(any("'recording'" in q and 'ConfirmPower' in q for q in out['problems']), out['problems'])
+        """A room-mode question: the templates ask it on a page of its own
+        (Room Mode VC), its choices in looks no profile measures yet, so it is
+        refused by topic on every theme (docs/ROADMAP.md)."""
+        _, _, out = self.probe('ConfirmPower.dc.html', edit=('topic="power"', 'topic="mode"'))
+        self.assertTrue(any("'mode'" in q and 'ConfirmPower' in q for q in out['problems']), out['problems'])
 
     def test_a_role_a_page_does_not_take_is_named(self):
         """A typo, a source role on a modal, a window's role on a popup: named,
@@ -5813,6 +6319,367 @@ class TestAfterburnsCenterAndWindows(_CenterProbe, unittest.TestCase):
         g = ctl['ConfirmPower Background'][0]
         self.assertEqual(g['image'], self.row('TLP725T')['backgrounds']['grape']['image'])
         self.assertEqual(g['file'], self.row('TLP725T')['backgrounds']['grape']['file'])
+
+
+# What is put in a free layout - a source popup's well, a window's body - is
+# mapped from the panel drawn at one scale, and each control grown to what
+# it needs on the panel it is laid out for (bundle.js framedLayout). Its rows
+# and columns re-space as they grow (backlog plan, package 1.2).
+
+def _row_gaps(rects):
+    """The gaps between rects standing in a row, left to right."""
+    rs = sorted(rects)
+    return [b[0] - (a[0] + a[2]) for a, b in zip(rs, rs[1:])]
+
+
+def _children(probe, board, inner):
+    """A _Probe edit that puts `inner` in place of what the board's Page
+    holds."""
+    with open(os.path.join(probe.dir, board), encoding='utf-8') as fh:
+        src = fh.read()
+    start = src.index('>', src.index('.Page"')) + 1
+    end = src.rindex('</x-import>')
+    return (src[start - 1:end + len('</x-import>')], '>' + inner + '</x-import>')
+
+
+def _keys(ns, *specs):
+    """Buttons at `specs`: (name, left, top, width, height, caption)."""
+    return ''.join(f'<x-import component-from-global-scope="{ns}.Button" name="{n}" does="Tests." style="position: '
+                   f'absolute; left: {x}px; top: {y}px; width: {w}px; height: {h}px">{c}</x-import>'
+                   for n, x, y, w, h, c in specs)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestARowOfLooseControlsReSpaces(_Probe, unittest.TestCase):
+    """Round four's Mach Call popup (tests/data/round4-mach): Make Call, End
+    Call, Privacy and Mic Mute drawn 160 wide, 30 px apart. On the 725 and the
+    525 Mic Mute grows about its centre to its 'Mics Muted' at the panel's
+    type floor, and its neighbours stood where they were: 9 px and 6 px from
+    it, under the 2 mm gap. The row opens its gaps where its box has room for
+    them - each the gap drawn, as mapped, down to the panel's 2 mm where the
+    box holds no more - and only a row the box cannot hold so is named."""
+
+    CANVAS = os.path.join(HERE, 'data', 'round4-mach')
+    THEME = 'mach'
+    ROW = ('Make Call', 'End Call', 'Camera Privacy', 'Mic Mute')
+
+    def test_on_the_panel_drawn_the_row_stands_as_drawn(self):
+        _, ctl, _ = self.probe('Call.dc.html', 'TLP1035T')
+        self.assertEqual([ctl[n][1] for n in self.ROW],
+                         [[130, 320, 160, 130], [320, 320, 160, 130], [510, 320, 160, 130], [700, 320, 160, 130]])
+
+    def test_the_row_opens_its_gaps_where_its_box_has_room(self):
+        for model in ('TLP725T', 'TLP525T'):
+            with self.subTest(panel=model):
+                page, ctl, out = self.probe('Call.dc.html', model)
+                self.assertEqual(out['problems'], [], model)
+                T = designsys.models(designsys.load(self.THEME))[model]
+                rs = [ctl[n][1] for n in self.ROW]
+                # Still a row, in its order, each as wide as it grew.
+                self.assertEqual(sorted(rs), rs)
+                self.assertEqual(len({r[1] for r in rs}), 1, rs)
+                self.assertGreater(rs[3][2], rs[2][2])
+                self.assertTrue(all(g >= T['gap'] for g in _row_gaps(rs)), (_row_gaps(rs), T['gap']))
+                box = ctl['Call Well'][1] if 'Call Well' in ctl else [0, 0] + page['size']
+                for n, r in zip(self.ROW, rs):
+                    self.assertTrue(_inside(r, box, 0), (n, r, box))
+                self.assertEqual(_gaps(ctl, model), [])
+
+    def test_a_row_its_box_cannot_hold_is_left_for_the_gap_check_to_name(self):
+        """'All Microphones Muted' needs more than the 725's well holds beside
+        the other three, the panel's 2 mm apart: the row is not squeezed, and
+        gdl.spec names the pair."""
+        _, ctl, _ = self.probe('Call.dc.html', 'TLP725T', edit=('"text":"Mics Muted"', '"text":"All Microphones Muted"'))
+        self.assertTrue(any('Mic Mute' in q for q in _gaps(ctl, 'TLP725T')), _gaps(ctl, 'TLP725T'))
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestASourcesColumnGrowsAsOne(_Probe, unittest.TestCase):
+    """Mach's region canvas Doc Cam (tests/data/design-regions-mach): four
+    columns of three 103 px keys under their headings. On the 725 each is
+    76 px as mapped; Freeze grew to 92 and Normal to 101 about their centres
+    among them, ragged, where the region rail grows a column as one."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-regions-mach')
+    THEME = 'mach'
+    COLUMNS = (('Doc Cam Inputs 1', 'Doc Cam Inputs 2', 'Doc Cam Inputs 3'),
+               ('Doc Cam Zoom In', 'Doc Cam Zoom Out', 'Doc Cam Zoom Freeze'),
+               ('Doc Cam Focus Far', 'Doc Cam Focus Near', 'Doc Cam Focus Auto'),
+               ('Doc Cam Iris Open', 'Doc Cam Iris Close', 'Doc Cam Iris Normal'))
+
+    def test_each_column_is_one_width(self):
+        for model in ('TLP1035T', 'TLP725T', 'TLP525T'):
+            with self.subTest(panel=model):
+                _, ctl, out = self.probe('DocCam.dc.html', model)
+                self.assertEqual(out['problems'], [], model)
+                for col in self.COLUMNS:
+                    rs = [ctl[n][1] for n in col]
+                    self.assertEqual(len({(r[0], r[2]) for r in rs}), 1, (col, rs))
+                self.assertEqual(_gaps(ctl, model), [])
+        # The widest caption sets its column's width: Freeze's and Normal's.
+        _, ctl, _ = self.probe('DocCam.dc.html', 'TLP725T')
+        widths = [ctl[col[0]][1][2] for col in self.COLUMNS]
+        self.assertGreater(widths[1], widths[0])
+        self.assertGreater(widths[3], widths[1])
+
+    # The canvas's Doc Cam as the template draws its own: its keys 70 apart,
+    # 10 px under the 2 mm gap, its headings 9 px over them.
+    AS_TEMPLATE = tuple((f'top: {y}px; width: 103px; height: {h}px', f'top: {t}px; width: 103px; height: {h}px')
+                        for y, t, h in ((160, 165, 40), (220, 214, 60), (320, 284, 60), (420, 354, 60)))
+
+    def test_keys_at_the_templates_pitch_keep_each_panels(self):
+        """Mach's Doc Cam keys stand 70 apart on its 1035 and its 725 and 96
+        on its 525 (the frame's centre `pitch`). Drawn at the 1035's, they
+        stand at each panel's: mapped at the 725's scale they came 52 apart,
+        into each other. A column at the template's pitch is one set, as the
+        template stands it 10 px apart, under the 2 mm gap."""
+        pitch = {m: designsys.models(designsys.load(self.THEME))[m]['frame']['center']['pitch'][1]
+                 for m in ('TLP1035T', 'TLP725T', 'TLP525T')}
+        self.assertEqual(pitch, {'TLP1035T': 70, 'TLP725T': 70, 'TLP525T': 96})
+        _, _, drawn = self.probe('DocCam.dc.html', 'TLP1035T', edit=self.AS_TEMPLATE)
+        for model in pitch:
+            with self.subTest(panel=model):
+                _, ctl, out = self.probe('DocCam.dc.html', model, edit=self.AS_TEMPLATE)
+                self.assertEqual(out['problems'], [], model)
+                for col in self.COLUMNS:
+                    rs = [ctl[n][1] for n in col]
+                    self.assertEqual([b[1] - a[1] for a, b in zip(rs, rs[1:])], [pitch[model]] * 2, (col, rs))
+                    self.assertEqual(len({ctl[n][0].get('joined') for n in col}), 1, col)
+                    self.assertTrue(ctl[col[0]][0].get('joined'), col)
+                self.assertEqual(_gaps(ctl, model), [])
+                self.assertEqual(design._collisions(drawn, out), [], model)
+
+    def test_a_column_its_box_cannot_hold_at_the_pitch_stays_as_scaled(self):
+        """Five keys at the 1035's 70 px pitch are 340 px deep: at the 725's
+        70 they would need 340 of its 292 px well, at the 525's 96 they would
+        need 450 of the 399 under its title - pushed up past the box's top,
+        and, one set, their overlaps hidden from the gap check. There the
+        pitch is not kept: they stay as scaled, no set, where the checks see
+        them, and none stands above the box."""
+        edit = _children(self, 'DocCam.dc.html',
+                         _keys('ExtronMach', *((f'Key {i}', 359, 120 + 70 * i, 103, 60, str(i)) for i in range(5))))
+        _, ctl, _ = self.probe('DocCam.dc.html', 'TLP1035T', edit=edit)
+        self.assertTrue(all(ctl[f'Key {i}'][0].get('joined') for i in range(5)))
+        for model in ('TLP725T', 'TLP525T'):
+            with self.subTest(panel=model):
+                _, ctl, _ = self.probe('DocCam.dc.html', model, edit=edit)
+                t = ctl['DocCam Title'][1]
+                top = ctl['DocCam Well'][1][1] if 'DocCam Well' in ctl else t[1] + t[3]
+                for i in range(5):
+                    g, r, _ = ctl[f'Key {i}']
+                    self.assertIsNone(g.get('joined'), (model, i))
+                    self.assertGreaterEqual(r[1], top, (model, i, r))
+        _, ctl, _ = self.probe('DocCam.dc.html', 'TLP725T', edit=edit)
+        self.assertTrue(_gaps(ctl, 'TLP725T'))
+
+    def test_keys_apart_down_one_x_are_no_column(self):
+        """Two keys at one x and width, more than a key's depth apart, are not
+        one column: the lower keeps its own width."""
+        edit = _children(self, 'DocCam.dc.html', _keys('ExtronMach', ('Top Key', 359, 120, 103, 60, 'Freeze Frame'),
+                                                       ('Low Key', 359, 400, 103, 60, 'In')))
+        _, ctl, _ = self.probe('DocCam.dc.html', 'TLP725T', edit=edit)
+        self.assertGreater(ctl['Top Key'][1][2], ctl['Low Key'][1][2])
+
+    def test_a_column_widens_no_further_than_its_box(self):
+        """A column at the well's left edge: its widest key grows about its
+        centre as any key does, and the others widen to it only as far as
+        the well holds - what cannot fit is the checks' to name."""
+        edit = _children(self, 'DocCam.dc.html', _keys('ExtronMach', ('Edge 1', 110, 140, 103, 60, 'Freeze Frame Now'),
+                                                       ('Edge 2', 110, 240, 103, 60, 'A'),
+                                                       ('Edge 3', 110, 340, 103, 60, 'B')))
+        _, ctl, _ = self.probe('DocCam.dc.html', 'TLP725T', edit=edit)
+        well = ctl['DocCam Well'][1]
+        for n in ('Edge 2', 'Edge 3'):
+            self.assertTrue(_inside(ctl[n][1], well, 0), (n, ctl[n][1], well))
+        self.assertEqual(ctl['Edge 2'][1][2], ctl['Edge 3'][1][2])
+
+    def test_a_deep_heading_keeps_its_columns_pitch(self):
+        """A heading whose words take two lines on the 725 deepens into the
+        key under it, and the column re-spaces under it - keeping the
+        template's pitch between its keys, not the gap they were drawn at as
+        mapped."""
+        words = 'Zoom in and out on the page under the document camera with these keys'
+        edit = self.AS_TEMPLATE + (('>Zoom</x-import>', f'>{words}</x-import>'),)
+        _, ctl, out = self.probe('DocCam.dc.html', 'TLP725T', edit=edit)
+        rs = [ctl[n][1] for n in self.COLUMNS[1]]
+        self.assertEqual([b[1] - a[1] for a, b in zip(rs, rs[1:])], [70, 70], rs)
+        head = ctl['Zoom Heading'][1]
+        self.assertLessEqual(head[1] + head[3], rs[0][1], (head, rs[0]))
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAColumnOfArtKeysKeepsItsShape(_Probe, unittest.TestCase):
+    """Shockwave's in-well `key` is kit art, which Build fits to its box: a
+    key grows to its caption keeping the art's shape. Its column does not
+    take the widest key's size - widened alone the art would change shape,
+    and deepened with it, run down into the key under it."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-regions-shockwave')
+    THEME = 'shockwave'
+
+    @needs_kit()
+    def test_a_columns_art_keys_keep_their_own_shape(self):
+        for model in ('TLP725T', 'TLP525T'):
+            with self.subTest(panel=model):
+                _, ctl, _ = self.probe('DocCam.dc.html', model)
+                self.assertEqual(ctl['Doc Cam Zoom In'][1][2:], ctl['Doc Cam Inputs 1'][1][2:])
+                self.assertEqual(ctl['Doc Cam Iris Open'][1][2:], ctl['Doc Cam Inputs 1'][1][2:])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAWindowsLinesTakeTheRoomTheyNeed(_Probe, unittest.TestCase):
+    """Round four's Shockwave Help (tests/data/round4-shockwave): a stack of
+    one-line Labels across the 1035's body under HELP, at its type. Mapped
+    from that body into the 725's and the 525's, whose titles stand lower, at
+    one scale, each line's box came out narrower than its words at the
+    panel's type floor, which wrapped and overflowed it, into the next. A
+    line now takes the room its words need in the body - wider from the edge
+    it is set from (these are centred), deeper where wider is not enough -
+    and the stack re-spaces under the title, where the body has the room."""
+
+    CANVAS = os.path.join(HERE, 'data', 'round4-shockwave')
+    THEME = 'shockwave'
+    STACK = ('Share Heading', 'Share Step 1', 'Share Step 2', 'Help Desk')
+
+    def check(self, model, board='Help.dc.html', stack=None, title='Help Title', window='Help Window'):
+        stack = stack or self.STACK
+        _, drawn, d_out = self.probe(board, 'TLP1035T')
+        _, ctl, out = self.probe(board, model)
+        self.assertEqual(out['problems'], [], model)
+        rs = [ctl[n][1] for n in stack]
+        for n in stack:
+            self.assertFalse(ctl[n][2], (model, n, ctl[n][1]))
+        # One under another, in the order drawn, clear of each other.
+        for (a, ra), (b, rb) in zip(zip(stack, rs), zip(stack[1:], rs[1:])):
+            self.assertLessEqual(ra[1] + ra[3], rb[1], (model, a, ra, b, rb))
+        # Under the title, in the window.
+        t, w = ctl[title][1], ctl[window][1]
+        for n, r in zip(stack, rs):
+            self.assertGreaterEqual(r[1], t[1] + t[3], (model, n, r, t))
+            self.assertTrue(_inside(r, w, 0), (model, n, r, w))
+        self.assertEqual(design._collisions(d_out, out), [], model)
+        return drawn, ctl
+
+    def test_on_the_panel_drawn_the_stack_stands_as_drawn(self):
+        _, ctl, _ = self.probe('Help.dc.html', 'TLP1035T')
+        self.assertEqual([ctl[n][1] for n in self.STACK],
+                         [[335, 290, 610, 50], [335, 345, 610, 60], [335, 410, 610, 60], [335, 500, 610, 100]])
+
+    def test_the_725s_body_holds_the_stack(self):
+        self.check('TLP725T')
+
+    def test_the_525s_body_holds_the_stack(self):
+        self.check('TLP525T')
+
+    def test_a_line_deepened_at_the_bodys_foot_stays_in_the_window(self):
+        """One Label low in the 1035's body, its words two lines at the 525's
+        18 pt: deepened about its middle it ran past the window's foot,
+        unnamed. It stays in the body."""
+        ns = designsys.load(self.THEME)['namespace']
+        lone = (f'<x-import component-from-global-scope="{ns}.Label" name="Desk" align="center" style="position: '
+                'absolute; left: 335px; top: 560px; width: 610px; height: 50px">For assistance, please call the AV '
+                'desk at extension 4400.</x-import>')
+        _, ctl, out = self.probe('Help.dc.html', 'TLP525T', edit=_children(self, 'Help.dc.html', lone))
+        g, r, over = ctl['Desk']
+        w = ctl['Help Window'][1]
+        self.assertTrue(_inside(r, w, 0), (r, w))
+        self.assertFalse(over, r)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestTurbulencesWindowsLinesTakeTheRoomTheyNeed(TestAWindowsLinesTakeTheRoomTheyNeed):
+    """Round four's Turbulence Help (tests/data/round4-turbulence): five
+    Labels down the 1035's navy card, which overflowed the 525's."""
+
+    CANVAS = os.path.join(HERE, 'data', 'round4-turbulence')
+    THEME = 'turbulence'
+    STACK = ('Help Step 1', 'Help Step 2', 'Help Step 3', 'Help Step 4', 'Help Contact')
+
+    def test_on_the_panel_drawn_the_stack_stands_as_drawn(self):
+        _, ctl, _ = self.probe('Help.dc.html', 'TLP1035T')
+        self.assertEqual([ctl[n][1][1] for n in self.STACK], [270, 330, 390, 450, 530])
+
+    def test_a_left_set_stack_keeps_one_left_edge(self):
+        """Its Labels are set left. Two need more room on the 525 and widened
+        about their middle, out of line with the rest: a left-set line widens
+        from its left edge, and where that edge must give way for the body's
+        side the stack moves with it, in line."""
+        for model in ('TLP725T', 'TLP525T'):
+            with self.subTest(panel=model):
+                _, ctl, _ = self.probe('Help.dc.html', model)
+                self.assertEqual(len({ctl[n][1][0] for n in self.STACK}), 1, [ctl[n][1] for n in self.STACK])
+
+    def check(self, model, **kw):
+        # Its first step stands 12 px into the 1035's title's box, as drawn:
+        # held below the next one only.
+        _, ctl, out = self.probe('Help.dc.html', model)
+        self.assertEqual(out['problems'], [], model)
+        _, _, d_out = self.probe('Help.dc.html', 'TLP1035T')
+        rs = [ctl[n][1] for n in self.STACK]
+        for n in self.STACK:
+            self.assertFalse(ctl[n][2], (model, n, ctl[n][1]))
+        for ra, rb in zip(rs, rs[1:]):
+            self.assertLessEqual(ra[1] + ra[3], rb[1], (model, ra, rb))
+        w = ctl['Help Window'][1]
+        for r in rs:
+            self.assertTrue(_inside(r, w, 0), (model, r, w))
+        self.assertEqual(design._collisions(d_out, out), [], model)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestTheFooterGivesWayToAWidenedColumn(_Probe, unittest.TestCase):
+    """Turbulence's 725 stands its call page's last launcher 1 px beside the
+    Footer's Help (tests/data/design-call-turbulence, with the three
+    launchers its Main VC draws). At the 725's 16 pt floor the template's own
+    Initiate Call widens the rail's column to 122 px, into Help: the Footer
+    gives way - its first cell, and Room Mode with it, starts past the column
+    at the template's 1 px, which the page then opens to the panel's gap -
+    where the footer has the room, its clock giving way to them."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-call-turbulence')
+    THEME = 'turbulence'
+    ONE = ('<x-import component-from-global-scope="ExtronTurbulence.Button" name="Lighting" nav="Lighting" '
+           'does="Opens the lighting.">Lighting</x-import>')
+    THREE = ''.join(f'<x-import component-from-global-scope="ExtronTurbulence.Button" name="{n}" nav="Lighting" '
+                    f'does="Opens it.">{n}</x-import>' for n in ('Display Control', 'Screen Control', 'Lighting'))
+
+    def laid(self, words):
+        return self.probe('Call.dc.html', 'TLP725T', edit=((self.ONE, self.THREE),
+                                                            ('>Make Call</x-import>', f'>{words}</x-import>')))
+
+    @needs_kit()
+    def test_the_footer_gives_way_to_the_column(self):
+        T = designsys.models(designsys.load(self.THEME))['TLP725T']
+        _, ctl, out = self.laid('Initiate Call')
+        self.assertEqual(out['problems'], [])
+        col, light, hlp, mode = ctl['Make Call'][1], ctl['Lighting'][1], ctl['Help'][1], ctl['Presentation'][1]
+        # The column grew past the template's 112 px, and the footer stands
+        # clear of it, the panel's gap apart.
+        self.assertGreater(col[2], 112)
+        self.assertEqual(light[2], col[2])
+        self.assertGreaterEqual(hlp[0], light[0] + light[2] + T['gap'])
+        # Room Mode moves with Help, its set; the clock gives way to it, the
+        # panel's gap clear, as to a cell grown into it.
+        self.assertGreater(mode[0], hlp[0] + hlp[2])
+        clock = ctl['Date Time'][1]
+        self.assertGreaterEqual(clock[0], mode[0] + mode[2] + T['gap'])
+        self.assertFalse(ctl['Date Time'][2])
+        self.assertEqual(_gaps(ctl, 'TLP725T'), [])
+
+    @needs_kit()
+    def test_where_the_column_keeps_its_width_the_footer_stands_where_it_stood(self):
+        """Make Call fits the template's 112 px: Help gives way to the
+        launcher beside it as before, 12 px in, and Room Mode stays."""
+        _, ctl, out = self.laid('Make Call')
+        self.assertEqual(out['problems'], [])
+        self.assertEqual(ctl['Make Call'][1][2], 112)
+        self.assertEqual((ctl['Help'][1][0], ctl['Presentation'][1][0]), (125, 197))
 
 
 class _HubProbe(_Probe):
@@ -7490,6 +8357,27 @@ class TestPanelsInChrome(_Probe, unittest.TestCase):
                 for name, (g, r, _) in ctl.items():
                     self.assertTrue(_inside(r, [0, 0] + page['size']), (panel, board, name, r))
 
+    def test_a_modal_one_screen_cannot_hold_goes_on_over_modals(self):
+        """Afterburn's plain modal on the 320, given more steps than the
+        screen holds, goes on over a modal of its own - Huddle Help 2 - as the
+        bar themes' do (TestABarThemeOnThe320): Next on the first, Previous on
+        the second, each step once, on the screen."""
+        more = ''.join(f'<x-import component-from-global-scope="ExtronAfterburn.Label" name="Step{i}" type="body" '
+                       f'style="position: absolute; left: 340px; top: {400 + 20 * (i - 3)}px; width: 600px; '
+                       f'height: 18px">{i}. And one more thing to do.</x-import>' for i in range(4, 8))
+        edit = ('3. End the call when done.</x-import>', '3. End the call when done.</x-import>' + more)
+        page, ctl, out = self.probe('Help.dc.html', 'TLP320M', edit=edit)
+        self.assertEqual(out['problems'], [])
+        parts = [json.loads(p['gdl']) for p in out['parts']]
+        self.assertEqual([(p['name'], p['kind'], p.get('modal')) for p in parts],
+                         [('Huddle Help 2', 'popup', True)])
+        self.assertEqual(ctl['Huddle Help Next'][0]['nav'], 'Huddle Help 2')
+        self.assertEqual(ctl['Huddle Help 2 Previous'][0]['nav'], 'Huddle Help')
+        steps = [g['name'] for g, _, _ in ctl.values() if re.fullmatch(r'Step\d', g.get('name') or '')]
+        self.assertEqual(sorted(steps), ['Step%d' % i for i in range(1, 8)])
+        for name, (g, r, _) in ctl.items():
+            self.assertTrue(_inside(r, [0, 0, 320, 240]), (name, r))
+
     def test_a_preview_page_draws_at_its_panel(self):
         """On a Design canvas nothing is injected: `preview` picks the panel."""
         page, ctl, _ = self.probe('Home.dc.html', edit=('start="true"', 'start="true" preview="TLP725T"'))
@@ -7807,10 +8695,13 @@ class TestABarThemeOnThe320(_Probe, unittest.TestCase):
     CANVAS = os.path.join(HERE, 'data', 'design-room-mach')
     THEME = 'mach'
     ORDER = ('SourceHeading', 'DisplayState', 'JoinCall', 'DateTime')
-    # What a board cannot do on the 320, by name. A modal holds one screen:
-    # a popup over the page, it does not go on over more, and its designer's
-    # four steps, each two lines on the 320, and the AV desk are too deep.
-    REFUSED = {'Help.dc.html': ["Help needs 247 px of a TLP320M's 240 - it does not fit"]}
+    # What a board cannot do on the 320, by name: nothing. Its designer's Help
+    # modal - four steps, each two lines on the 320, and the AV desk - needs
+    # 247 px of the 240, and goes on over a modal of its own (OVER).
+    REFUSED = {}
+    # The modal that goes on over modals of its own on the 320, and what it
+    # needs there - None where every modal the canvas draws fits one screen.
+    OVER = ('Help.dc.html', 247)
     STRIP = [0, 0, 320, 36]
     MAIN = [0, 36, 320, 204]
 
@@ -7858,6 +8749,50 @@ class TestABarThemeOnThe320(_Probe, unittest.TestCase):
                 self.assertEqual((g['kind'], g['nav'], g['derived']), ('button', to, True))
                 self.assertTrue(_inside(r, self.MAIN), (here, word, r))
                 self.assertGreaterEqual(min(r[2:]), touch, (here, word, r))
+
+    def test_a_modal_goes_on_over_modals_of_its_own(self):
+        """A plain modal one screen cannot hold goes on over modals of its own
+        - Help 2 - as a page goes on over pages: each a modal the screen's
+        size, Previous and Next at its foot showing the other in its place
+        (a modal's button shows another modal, built and verified in GUI
+        Designer: archive/job-e823df9b/small-panels/), and every control the
+        designer drew on one of them, once, on the screen. The round-three
+        rooms' Help modals needed 247 and 306 px of the 320's 240."""
+        if not self.OVER:
+            self.skipTest(f"every modal of {os.path.basename(self.CANVAS)} fits the 320's screen")
+        board, _ = self.OVER
+        out, parts, on = self.split(board)
+        self.assertEqual(out['problems'], [])
+        page = json.loads(out['page']['gdl'])
+        self.assertEqual((page['kind'], page.get('modal'), page['size']), ('popup', True, [320, 240]))
+        name = page['name']
+        more = [p for p in parts if re.fullmatch(re.escape(name) + r' \d+', p['name'])]
+        self.assertTrue(more)
+        self.assertEqual([p['name'] for p in more], ['%s %d' % (name, i) for i in range(2, len(more) + 2)])
+        for p in more:
+            self.assertEqual((p['kind'], p.get('modal'), p['size'], p.get('reached_by')),
+                             ('popup', True, [320, 240], None))
+        touch = designsys.models(designsys.load(self.THEME))['TLP320M']['touch']
+        names = [name] + [p['name'] for p in more]
+        seen = []
+        for i, here in enumerate(names):
+            ctl = {g.get('name'): (g, r) for g, r in on[None if i == 0 else here]}
+            for g, r in ctl.values():
+                self.assertTrue(_inside(r, [0, 0, 320, 240]), (here, g.get('name'), r))
+                if not g.get('derived'):
+                    seen.append(g.get('name'))
+            for word, to in (('Next', names[i + 1] if i + 1 < len(names) else None),
+                             ('Previous', names[i - 1] if i else None)):
+                if to is None:
+                    self.assertNotIn(here + ' ' + word, ctl)
+                    continue
+                g, r = ctl[here + ' ' + word]
+                self.assertEqual((g['kind'], g['nav'], g['derived']), ('button', to, True))
+                # Both cover the screen: the program hides this one.
+                self.assertTrue(g['does'].startswith(f'Hides {here} as it shows {to}'), (here, word, g['does']))
+                self.assertGreaterEqual(min(r[2:]), touch, (here, word, r))
+                self.assertEqual(r[1] + r[3], 240 - 2, (here, word, r))
+        self.assertEqual(len(seen), len(set(seen)), seen)
 
     def test_the_title_strip_heads_each_of_them(self):
         _, parts, on = self.split('Main.dc.html')
@@ -7981,11 +8916,12 @@ class TestShockwaveOnThe320(TestABarThemeOnThe320):
     CANVAS = os.path.join(HERE, 'data', 'design-room-shockwave')
     THEME = 'shockwave'
     ORDER = ('RoomName', 'SourceStatus', 'Display', 'DateTime')
-    # Its designer's nine lines of help, as Mach's four steps, are too deep;
-    # and the 320's seed has no date and time control to clone.
-    CLOCK = ["DateTime is a date and time, which the TLP320M's seed cannot build"]
-    REFUSED = {'Help.dc.html': ["Help needs 306 px of a TLP320M's 240 - it does not fit"],
-               'Main.dc.html': CLOCK, 'Call.dc.html': CLOCK}
+    # Its designer's nine lines of help, as Mach's four steps, are deeper than
+    # the screen, and go on over a modal of their own. The 320's seed has no
+    # date and time control, and the clock is cloned from the theme's 525
+    # (gdl.spec CROSS_SEED_TYPES), so it is not refused.
+    REFUSED = {}
+    OVER = ('Help.dc.html', 306)
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -7994,9 +8930,11 @@ class TestTurbulenceOnThe320(TestABarThemeOnThe320):
     CANVAS = os.path.join(HERE, 'data', 'design-room-turbulence')
     THEME = 'turbulence'
     ORDER = ('DisplayStatus', 'SourceStatus', 'OpenCall', 'Clock')
-    # The 320's seed has no date and time control to clone.
-    CLOCK = ["Clock is a date and time, which the TLP320M's seed cannot build"]
-    REFUSED = {'Main.dc.html': CLOCK, 'Call.dc.html': CLOCK}
+    # The 320's seed has no date and time control: the clock is cloned from
+    # the theme's 525 (gdl.spec CROSS_SEED_TYPES), so nothing is refused. Its
+    # Help fits one screen.
+    REFUSED = {}
+    OVER = None
 
 
 class _PagesProbe(_Probe):
@@ -8365,6 +9303,22 @@ class _PagesProbe(_Probe):
             self.assertFalse(over, n)
         self.assertEqual(ctl['ConfirmPower Power Down'][0]['does'], 'Powers the room down.')
         self.assertTrue(ctl['ConfirmPower Cancel'][0]['back'])
+
+    def test_a_recording_question_is_refused_where_the_320_asks_none(self):
+        """No 320 template asks a recording question: where its theme's does
+        (Mach's), the question stands in the power-down question's box, which
+        cannot hold its words - three lines and a blank - and is refused by
+        name, with the depth they need; where its theme's asks none, by topic
+        (backlog plan 2.3)."""
+        self.assertNotIn('recording', self.frame()['windows'])
+        _, _, _, out = self.split('ConfirmPower.dc.html', ('topic="power"', 'topic="recording"'))
+        self.assertEqual(len(out['problems']), 1, out['problems'])
+        if (self.profile()['writing'].get('confirm') or {}).get('recording'):
+            self.assertRegex(out['problems'][0], r"^ConfirmPower's recording question needs \d+ px, and the "
+                             + self.PANEL + "'s template asks none: it stands in the power-down question's box, "
+                             r"which holds \d+ - it does not fit$")
+        else:
+            self.assertIn("topic 'recording' is not one the", out['problems'][0])
 
     def test_help_and_the_settings_are_pages_under_the_strip(self):
         """The 320 draws no Help or settings window: each is a page under the
@@ -8924,6 +9878,8 @@ class TestAfterburnsPages(_Probe, unittest.TestCase):
     frame = _PagesProbe.frame
     item = _PagesProbe.item
     split = _PagesProbe.split
+    test_a_recording_question_is_refused_where_the_320_asks_none = \
+        _PagesProbe.test_a_recording_question_is_refused_where_the_320_asks_none
     assertAt = _PagesProbe.assertAt
 
     def test_main_is_the_templates_select_source_with_its_strip_at_the_foot(self):

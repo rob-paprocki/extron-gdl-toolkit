@@ -1673,6 +1673,140 @@ def check_modal(plan, j):
     return out
 
 
+def check_offline(plan, j):
+    """Is GUI Designer's Offline Page shown or not, and in the words, the
+    plan says?
+
+    layout.json carries both: EnableOfflinePage, PBProject.enableOfflineField,
+    and the page itself, popup OfflinePageID (65535), with its labels' words.
+    Build gives every page a full-canvas reference to it while it is on and
+    none while it is off (docs/gdl-format.md section 7), so a page is held to
+    that too: the switch is what the panel reads, the references what shows
+    it. A plan that does not say (`offline` None) ships the donor's.
+    """
+    off = plan.get('offline')
+    if not off:
+        return []
+    out = []
+    oid = j.get('OfflinePageID', 65535)
+    want = off.get('enabled')
+    if want is not None:
+        got = bool(j.get('EnableOfflinePage'))
+        if got != want:
+            out.append(f"the Offline Page built {'on' if got else 'off'}, and the plan has it "
+                       f"{'on' if want else 'off'} (EnableOfflinePage)")
+        else:
+            # Build draws it only while it is on: every seed with it off has
+            # it at TLPImageID -1, every one with it on an asset.
+            page = next((p for p in j.get('PopupPages') or [] if p.get('ID') == oid), None)
+            if want and page is not None and page.get('TLPImageID') in (None, -1):
+                out.append(f"the Offline Page is on and built with no artwork (TLPImageID "
+                           f"{page.get('TLPImageID')})")
+            pages = {p['Name']: p for p in j.get('Pages') or []}
+            for item in plan.get('pages') or []:
+                built = pages.get(item['name'])
+                if built is None:
+                    continue             # check_placed reports a page that is not there
+                has = any(isinstance(c.get('PopupPageID'), dict)
+                          and c['PopupPageID'].get('IsPopupPageIdValid')
+                          and c['PopupPageID'].get('PopupID') == oid
+                          for c in built.get('Controls') or [])
+                if want and not has:
+                    out.append(f"page {item['name']!r} has no reference to the Offline Page, so "
+                               f'the panel cannot show it there')
+                elif has and not want:
+                    out.append(f"page {item['name']!r} has a reference to the Offline Page, "
+                               f'which the plan has off')
+    if off.get('replace'):
+        page = next((p for p in j.get('PopupPages') or [] if p.get('ID') == oid), None)
+        if page is None:
+            return out + [f'the built file has no Offline Page (popup {oid}) to say the '
+                          f"plan's words on"]
+        words = [w for c in page.get('Controls') or []
+                 for w in [c.get('Text')] + [s.get('Text') for s in c.get('States') or []]
+                 if isinstance(w, str) and w]
+        for r in off['replace']:
+            if not any(r['new'] in w for w in words) and r['new']:
+                out.append(f"the Offline Page does not say {r['new']!r}, in place of "
+                           f"{r['old']!r}; it says {' / '.join(map(repr, words)) or 'nothing'}")
+            if r['old'] not in r['new'] and any(r['old'] in w for w in words):
+                out.append(f"the Offline Page still says {r['old']!r}, which the plan "
+                           f"replaces with {r['new']!r}")
+    return out
+
+
+def check_timeouts(plan, built_path):
+    """Is each planned popup's timeout the one in the built project?
+
+    PBPopupPage.timeoutField is in the authoring graph only: no code in GUI
+    Designer 1.28.0.7 reads it, so layout.json - what the panel loads - has
+    no timeout for any popup (docs/gdl-format.md section 7). This holds the
+    built project to the plan, which is all a build can show of it: that the
+    applier wrote it and Save and Build kept it. A plan from before the key
+    says nothing and is not held to it."""
+    want = {pu['name']: pu['timeout'] for pu in plan.get('popups') or []
+            if pu.get('timeout') is not None}
+    if not want:
+        return []
+    p = _built_project(built_path)
+    proj = next(p.instances('PBProject'), None)
+    got = {p.field(pg, 'nameField'): p.field(pg, 'timeoutField')
+           for pg in p.items(p.field(proj, 'popupPagesField'))} if proj is not None else {}
+    out = []
+    for name, t in want.items():
+        if name in got and got[name] != t:
+            out.append(f'popup {name!r} built with timeout {got[name]!r} in the project, and the '
+                       f'plan has {t}')
+    return out
+
+
+def check_popup_ids(plan, j):
+    """Is each planned reference bound to one popup bound to that popup?
+
+    A reference may name one popup by its ID rather than a group - nine
+    seeds show their ungrouped Volume Level so: PopupPageID.PopupID the
+    popup's own ID, IsPopupPageIdValid true (PopupID is not the sentinel),
+    GroupID 0 and IsPopupGroupIdValid false - and its popup is in no group.
+    The applier resolves the ID from the popup's name once it has made it, and
+    Build renumbers popups, so the ID is read off the built popup of that
+    name, not the plan.
+    """
+    out = []
+    popups = {p['Name']: p for p in j.get('PopupPages') or []}
+    pages = {p['Name']: p for p in j.get('Pages') or []}
+    shown = set()
+    for item in plan.get('pages') or []:
+        got = pages.get(item['name'])
+        if got is None:
+            continue
+        by_name = _index(got)
+        for op in item.get('controls') or []:
+            if op.get('donor_type') != 'PBPopupPageReference' or not op.get('popup'):
+                continue
+            name = (op.get('fields') or {}).get('nameField')
+            c, pu = by_name.get(name), popups.get(op['popup'])
+            if c is None or pu is None:
+                continue                 # check_placed reports either missing
+            shown.add(op['popup'])
+            pp = c.get('PopupPageID') or {}
+            where = f"page {item['name']!r} {name!r}"
+            if not pp.get('IsPopupPageIdValid') or pp.get('PopupID') != pu.get('ID'):
+                out.append(f"{where}: bound to popup {pp.get('PopupID')}, and the plan binds it to "
+                           f"{op['popup']!r}, popup {pu.get('ID')}")
+            if pp.get('IsPopupGroupIdValid'):
+                out.append(f"{where}: bound to group {pp.get('GroupID')} as well as to popup "
+                           f"{op['popup']!r}")
+    for name in sorted(shown):
+        pu = popups[name]
+        if pu.get('IsGroupValid') or pu.get('GroupID'):
+            out.append(f"popup {name!r} built in group {pu.get('GroupID')}, and the plan shows it "
+                       f'through references bound to it alone')
+        if not pu.get('HasReferences'):
+            out.append(f"popup {name!r} built with HasReferences false - its references read "
+                       f"'Unassigned'")
+    return out
+
+
 def check_popup_size(plan, j):
     """Did each popup build at the size the plan authored?
 
@@ -2061,6 +2195,9 @@ def check(plan_path, built_path):
     problems += check_only_planned(plan, j)
     problems += check_modal(plan, j)
     problems += check_popup_size(plan, j)
+    problems += check_popup_ids(plan, j)
+    problems += check_offline(plan, j)
+    problems += check_timeouts(plan, built_path)
 
     return problems, checked
 

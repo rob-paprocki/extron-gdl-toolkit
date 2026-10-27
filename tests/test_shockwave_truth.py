@@ -39,6 +39,34 @@ def _colors(p):
     return {c['name']: c['value'] for c in p['colors']}
 
 
+def lit_caption(p, variant, icon):
+    """The colour a lit `variant` button's caption takes with `icon`, as the
+    profile draws it (bundle.js Button): the variant's `lit` for the icon's
+    family - its last word, a `_round` aside - else its On state's own."""
+    v = p['buttons'][variant]
+    family = [w for w in icon.split('_') if w != 'round'][-1]
+    on = next(s for s in v['states'] if s['name'] == 'On')
+    return _colors(p)[(v.get('lit') or {}).get(family) or on['color']]
+
+
+# The call mode's and the footer's keys by what they are in the seed: the page
+# or popup, the control, and the variant and icon the profile draws it as.
+LIT_KEYS = (
+    ('Main VC', 'Initiate Call', 'pill', 'green'),
+    ('Main VC', 'End Call', 'pill', 'red'),
+    ('Main VC', 'VC Privacy', 'pill', 'yellow'),
+    ('Main SD', 'Room Mode', 'wide', 'gray_round'),
+    ('VTC Dialer', 'VC Call', 'pill', 'call_green'),
+    ('VTC Dialer', 'VC Flash', 'pill', 'flash_blue'),
+    ('VTC Dialer', 'VC PhoneBook', 'key', 'contacts-b_gray'),
+    ('VTC Dialer', 'VC Delete', 'key', 'delete-b_gray'),
+    ('Room Mode VC', 'Presentation Mode', 'action', 'r_presentation_gray'),
+    ('Room Mode VC', 'VC Mode', 'action', 'r_vid-conf_gray'),
+    ('Incoming Call', 'Accept Call', 'wide', 'r_call_green'),
+    ('Incoming Call', 'Ignore Call', 'wide', 'r_end-call_red'),
+)
+
+
 class TestShockwavesLedger(unittest.TestCase):
     def setUp(self):
         self.p = designsys.load('shockwave')
@@ -53,9 +81,11 @@ class TestShockwavesLedger(unittest.TestCase):
         mic and display, and the call keys resting ringed, as the template's
         do), and its review three (shockwave-39 to 41: the dialer's captions
         and the answers' art, the answers' IDs, and the 725's call page's
-        launchers): one entry each, in order."""
+        launchers), and the call keys' words, which stand the gap past their
+        glyph their template leaves (shockwave-45): one entry each, in
+        order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'shockwave-{i:02d}' for i in range(45)])
+        self.assertEqual(ids, [f'shockwave-{i:02d}' for i in range(46)])
 
     def test_shockwave_is_done(self):
         self.assertEqual(audit.audit('shockwave'), [])
@@ -63,15 +93,15 @@ class TestShockwavesLedger(unittest.TestCase):
             self.assertEqual(designsys.main(['gdl.designsys', 'audit', 'shockwave']), 0)
 
     def test_it_keeps_differing_where_it_says_and_says_why(self):
-        """The lit captions of the variants with one, and the gates: the
-        slider and the overlapping tiles, the 14 pt floor and a designer's own
-        2 mm (the PR8 review: Differences lacked the last two), and the
-        incoming call's answers' IDs. The tab captions are the twin the region
+        """The gates: the slider and the overlapping tiles, the 14 pt floor
+        and a designer's own 2 mm (the PR8 review: Differences lacked the last
+        two), and the incoming call's answers' IDs. The lit captions are the
+        template's on every variant (shockwave-20, fixed). The tab captions are the twin the region
         page draws, as the template does (shockwave-03); the call keys rest
         ringed as the template's do (shockwave-38); and the hub's Volume Level
         strip, which a group binding shows on every page (shockwave-44)."""
         dev = {e['id']: e for e in self.ledger['entries'] if e['status'] == 'deviation'}
-        self.assertEqual(sorted(dev), ['shockwave-20', 'shockwave-30', 'shockwave-31', 'shockwave-32', 'shockwave-40',
+        self.assertEqual(sorted(dev), ['shockwave-30', 'shockwave-31', 'shockwave-32', 'shockwave-40',
                                      'shockwave-41', 'shockwave-42', 'shockwave-43', 'shockwave-44'])
         for e in dev.values():
             self.assertTrue(e['reason'].strip(), e['id'])
@@ -122,6 +152,29 @@ class TestWhatTheProfileSays(unittest.TestCase):
         self.assertEqual((live['icon'], live['color']), ('green', 'go'))
         names = {t['name'] for t in designsys.tokens(self.p)['color']['tokens']}
         self.assertTrue({'caution', 'go', 'clock'} <= names, names)
+
+    def test_a_variants_lit_caption_is_its_icons_family(self):
+        """A variant has a lit caption for each color its icon can name
+        (shockwave-20): the dialer's green Call lights #355424 and its blue
+        Flash #474747, Room Mode VC's two gray choices (`action`) #474747
+        where a rail's gray button lights #000000, and a state's own `color`
+        still sets another."""
+        p = self.p
+        for variant, icon, hex_ in (
+                ('pill', 'call_green', '#355424'), ('pill', 'flash_blue', '#474747'),
+                ('pill', 'yellow', '#946E06'), ('pill', 'red', '#75063C'), ('pill', 'gray', '#000000'),
+                ('action', 'r_presentation_gray', '#474747'), ('action', 'r_vid-conf_gray', '#474747'),
+                ('action', 'r_call_green', '#355424'), ('action', 'r_end-call_red', '#75063C'),
+                ('action', 'r_help_yellow', '#946E06'), ('action', 'r_share-1_blue', '#474747'),
+                ('wide', 'gray_round', '#000000'), ('wide', 'green_round', '#355424'),
+                ('wide', 'red_round', '#75063C'), ('key', 'gray', '#474747'), ('button', 'gray', '#000000'),
+                ('button', 'red', '#75063C'), ('tile', 'gray', '#000000'), ('square', 'red', '#75063C')):
+            with self.subTest(variant=variant, icon=icon):
+                self.assertEqual(lit_caption(p, variant, icon), hex_)
+        # The variants that light a color per family name only tokens it has.
+        for name, v in p['buttons'].items():
+            for token in (v.get('lit') or {}).values():
+                self.assertIn(token, _colors(p), name)
 
     def test_the_footer_clock_is_the_templates(self):
         """#C0C0C0 in Open Sans 14, not raised's #999999 in 16 (shockwave-13)."""
@@ -469,6 +522,98 @@ class TestTheSeedsArtIsTheKits(unittest.TestCase):
                 b = Image.open(os.path.join(root, kit)).convert('RGBA')
                 self.assertEqual(a.size, b.size)
                 self.assertEqual(a.tobytes(), b.tobytes())
+
+
+# The bar seeds, by the series each is the frame's (the profile's `panels`),
+# and how far past its glyph each call key's template sets its words, in px,
+# from the kit's reach (kit.icon_right) to the first letter: tests/
+# measure_series.py words_gap reads it off the seed, and the profile's frame
+# holds it for the system to draw. The Call and Flash are the dialer's, the
+# answers Incoming Call's.
+GAPS = {
+    'Shockwave 1220 Series': {'VC Call': 24, 'VC Flash': 20, 'Accept Call': 18, 'Ignore Call': 25},
+    'Shockwave 1020 Series': {'VC Call': 15, 'VC Flash': 11, 'Accept Call': 10, 'Ignore Call': 16},
+    'Shockwave 1520 Series': {'VC Call': 21, 'VC Flash': 19, 'Accept Call': 8, 'Ignore Call': 11},
+    'Shockwave 1720 Series': {'VC Call': 29, 'VC Flash': 26, 'Accept Call': 13, 'Ignore Call': 18},
+    'Shockwave 720 Series': {'VC Call': 10, 'VC Flash': 9, 'Accept Call': 6, 'Ignore Call': 11},
+}
+ANSWERS = ('Accept Call', 'Ignore Call')
+# Where a seed lights a key another color than its other series' do, which the
+# profile - one color per variant and icon, whatever the panel - draws the
+# others' of: the 720's Flash is lit #000000 in its seed, and in its template
+# its lit caption has no color at all; the six other series' are #474747.
+LIT_ODD = {('Shockwave 720 Series', 'VC Flash'): '#000000FF'}
+
+
+class TestTheCallKeysOnEveryBarSeed(unittest.TestCase):
+    """What the call mode's keys do on each bar series' own seed (the 1035's,
+    725's, 1525's, 1535's and 720's): the lit caption each variant draws
+    (shockwave-20) and how far past its glyph a key's template sets its words
+    (shockwave-45). A series whose seed is not here (git lfs pull) is
+    skipped."""
+
+    @classmethod
+    def setUpClass(cls):
+        import measure_series
+        from gdl.project import Project
+        cls.ms = measure_series
+        cls.p = designsys.load('shockwave')
+        cls.pages = {}
+        for series in GAPS:
+            seed = next(iter(cls.p['panels'][series]['seeds'].values()))
+            path = os.path.join(REPO, seed)
+            if usable(path):
+                cls.pages[series] = measure_series.seed_pages(Project.open(path))
+        if not cls.pages:
+            raise unittest.SkipTest('no Shockwave bar seed is here (git lfs pull)')
+
+    def ctl(self, series, page, name):
+        pg = next(pg for pg in self.pages[series] if pg['name'] == page)
+        return next(c for c in pg['controls'] if c['name'] == name)
+
+    def test_each_call_key_lights_its_variants_dark_for_its_icon(self):
+        """The lit caption of every call-mode and footer key, read off the
+        seed, is what the profile draws that variant and icon with - on every
+        series (the 1035's #355424 Call, #474747 Flash and Room Mode VC
+        pair)."""
+        seen = 0
+        for series in self.pages:
+            for page, name, variant, icon in LIT_KEYS:
+                with self.subTest(series=series, key=name):
+                    try:
+                        c = self.ctl(series, page, name)
+                    except StopIteration:
+                        continue
+                    seen += 1
+                    self.assertEqual(c['looks'][1]['text'],
+                                     LIT_ODD.get((series, name)) or lit_caption(self.p, variant, icon) + 'FF')
+        self.assertGreaterEqual(seen, len(LIT_KEYS))
+
+    def test_the_words_stand_the_gap_the_template_leaves_past_the_glyph(self):
+        reach = self.p['kit']['icon_right']
+        for series, want in GAPS.items():
+            if series not in self.pages:
+                continue
+            frame = self.p['panels'][series]['frame']
+            keys = {k['name']: k for k in frame['call']['center']['dialer']['keys']}
+            answers = {b['name']: b for b in frame['windows']['incoming']['buttons']}
+            for name, gap in want.items():
+                with self.subTest(series=series, key=name):
+                    got = self.ms.words_gap(self.ctl(series, 'Incoming Call' if name in ANSWERS else 'VTC Dialer', name), reach)
+                    self.assertEqual(got, gap)
+                    self.assertEqual((answers if name in ANSWERS else keys)[name]['gap'], gap)
+
+    def test_a_caption_under_its_glyph_or_with_no_leading_spaces_sets_no_gap(self):
+        """Contacts and Delete have their words a line under their glyph, and
+        Keyboard none: they take the 4 px floor, which is no gap recorded."""
+        reach = self.p['kit']['icon_right']
+        for series in self.pages:
+            frame = self.p['panels'][series]['frame']
+            for name in ('VC PhoneBook', 'VC Delete', 'VC Keyboard'):
+                with self.subTest(series=series, key=name):
+                    self.assertIsNone(self.ms.words_gap(self.ctl(series, 'VTC Dialer', name), reach))
+                    key = next(k for k in frame['call']['center']['dialer']['keys'] if k['name'] == name)
+                    self.assertNotIn('gap', key)
 
 
 if __name__ == '__main__':

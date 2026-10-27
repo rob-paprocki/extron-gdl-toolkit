@@ -503,8 +503,10 @@
   // Tiers A and B, and the panel the canvas was drawn for: every child at its
   // own design rect, mapped by the frame's scale - or a page's own, through
   // its bands (`cut`, above) - then grown about its centre to what it needs on
-  // this panel.
-  function scaleLayout(items, D, T, L, frame, cut) {
+  // this panel. `free`: a source popup's well or a window's body
+  // (framedLayout), whose rows and columns then re-space as they grew
+  // (freeLayout) inside `free.box`.
+  function scaleLayout(items, D, T, L, frame, cut, free) {
     var f = fit(D, frame);
     var els = [], probs = [];
     // Where each control came out, and each Panel's slot, for holds() below.
@@ -580,9 +582,14 @@
       // that crosses its page's edge.
       if (c || L.keepIn) g = [Math.min(Math.max(g[0], 0), frame[2] - g[2]), Math.min(Math.max(g[1], 0), frame[3] - g[3]), g[2], g[3]];
       if (it.kind === 'panel' && c && c.hub) cards.push({ at: els.length, it: it, g: g, i: i });
-      else out.push({ it: it, r: g });
+      else out.push({ it: it, r: g, m: r, at: els.length, key: 'c' + i });
       els.push(placeHost(it.host, g, 'c' + i));
     });
+    if (free) {
+      freeLayout(out, free.box, L, f.s, free.pitch).forEach(function (o) {
+        els[o.at] = o.join ? hostAt(o.it, o.r, o.key, { joined: o.join }) : placeHost(o.it.host, o.r, o.key);
+      });
+    }
     // On a hub a bar or a card among a page's own controls holds what was
     // drawn in it, grown to the panel's touch minimum, as the band carved for
     // it does: on the 525 the round-three
@@ -607,6 +614,251 @@
     });
     return { els: els, problems: probs, k: f.s };
   }
+  // -- A free layout: what is put in a source popup's well or a window ----
+  // Mapped from the panel drawn at one scale, each control grown about its
+  // centre to what it needs here, its neighbours stayed where they were:
+  // round four's Mach Call popup drew Privacy and Mic Mute 30 px apart, and
+  // on the 725 and the 525 Mic Mute's 'Mics Muted', at the panel's type
+  // floor, grew to 9 px and 6 px from Privacy, under the 2 mm gap; Mach's Doc
+  // Cam came out ragged on the 725, Freeze 92 and Normal 101 among 76s; and a
+  // stack of one-line Labels across Shockwave 1035's Help body, mapped into
+  // the 725's and the 525's - whose titles stand lower, so whose bodies are
+  // smaller - wrapped each line past its box and into the next. So, once each
+  // has grown (`out`: { it, r where it came out, m where it was mapped }, in
+  // the layout's coordinates; `box` the well or the body there; `k` the
+  // layout's scale):
+  // - a Label whose words do not fit its box at this panel's type takes the
+  //   room they need: wider from the edge it is set from, inside the box a
+  //   gap in from each side, else as deep as its lines, inside the box - a
+  //   stack set from one edge keeping it in line (wordsRoom, alignStacks);
+  // - a column of keys drawn at one x and width grows as one, to the width
+  //   the one that needs most needs, as the region rail grows its columns,
+  //   as far as the box holds it (asOne);
+  // - a column the drawn panel's template keeps at its pitch stands at this
+  //   panel's, where the box holds it so (atPitch, `pitch`);
+  // - and a row, then a stack, whose neighbours came nearer than they may -
+  //   two touch targets under the panel's 2 mm (or as near as drawn, where
+  //   that is nearer), a Label grown for its words into its neighbour -
+  //   re-spaces: each gap the gap drawn, as mapped, down to the 2 mm, or none
+  //   between words, where the box has no more room, the line about its
+  //   middle as drawn, inside the box (respaceLines). Where the box cannot
+  //   hold the line even so it stays as it grew, and the gap check names it.
+  // Returns what moved. Nothing does where nothing grew into anything.
+  var FREE_KINDS = { button: true, slider: true, label: true, clock: true };
+  function freeLayout(out, box, L, k, pitch) {
+    var T = L.panel, Lk = Object.assign({}, L, { k: k });
+    var es = out.filter(function (o) { return o.m && FREE_KINDS[o.it.kind]; });
+    es.forEach(function (e) { e.r = e.r.slice(); e.was = e.r.slice(); });
+    es.forEach(function (e) { if (e.it.kind === 'label') wordsRoom(e, Lk, box, T); });
+    alignStacks(es);
+    asOne(es, box);
+    if (pitch) atPitch(es, pitch, box, k);
+    respaceLines(es, 0, box, T);
+    respaceLines(es, 1, box, T);
+    return es.filter(function (e) {
+      return e.join || [0, 1, 2, 3].some(function (i) { return Math.round(e.r[i]) !== Math.round(e.was[i]); });
+    });
+  }
+  // A Label's words as wrapped at width `w` and font `css`: how many lines,
+  // and the widest - measured 6% wide, as messageBox measures, for the face
+  // a build's text is drawn in.
+  function wrapped(text, css, w) {
+    var ls = wrapWords(text, css, w / 1.06);
+    return { n: ls.length, wide: Math.max.apply(null, ls.map(function (t) { return textWidth(t, css) * 1.06; })) };
+  }
+  function wordsRoom(e, L, box, T) {
+    var p = propsOf(e.it), text = textOf(p.children, p.text);
+    if (!text) return;
+    // Its lines 1.2 em apart, and the words of each as deep as the face's
+    // ascent and descent, 1.36 em for Open Sans (gdl.design _ink).
+    var f = font(p, P.defaults.label.type, L), em = f.size * P.pt, lh = em * 1.2, r = e.r;
+    // As the probe reads a box (gdl.design overflows): too wide, or its words
+    // past its depth by more than half a line.
+    function holds(w, ht) {
+      var q = wrapped(text, f.css, w);
+      return q.wide <= w + 1 && (q.n - 1) * lh + 1.36 * em <= ht + lh / 2;
+    }
+    if (holds(r[2], r[3])) return;
+    var gap = T.gap || 0, lo = box[0] + gap, hi = box[0] + box[2] - gap, most = Math.max(r[2], hi - lo);
+    // The least width at which `ok` holds, from r's up to `most`.
+    function least(ok) {
+      var a = r[2], b = most;
+      if (ok(a)) return a;
+      while (b - a > 1) { var mid = Math.floor((a + b) / 2); if (ok(mid)) b = mid; else a = mid; }
+      return b;
+    }
+    var w, fewest = wrapped(text, f.css, most).n;
+    if (holds(most, r[3])) w = least(function (x) { return holds(x, r[3]); });
+    else w = least(function (x) { var q = wrapped(text, f.css, x); return q.n <= fewest && q.wide <= x + 1; });
+    var ht = Math.max(r[3], Math.ceil(wrapped(text, f.css, w).n * lh));
+    // Wider from the edge its words are set from - a left-set line from its
+    // left, a right-set one from its right, else about its middle - moving
+    // that edge only as far as the body's side makes it (alignStacks keeps a
+    // stack of them in line).
+    var align = p.align || 'left', x = align === 'left' ? r[0] : align === 'right' ? r[0] + r[2] - w
+      : r[0] + (r[2] - w) / 2;
+    if (w > r[2]) x = Math.min(Math.max(x, lo), hi - w);
+    // Deeper about its middle, inside the body: one low in it stands up from
+    // its foot. Too deep for the body, it keeps its depth, and the check
+    // names its words past it.
+    var y = r[1], d = r[3];
+    if (ht > r[3] && ht <= box[3]) {
+      y = Math.min(Math.max(r[1] - (ht - r[3]) / 2, box[1]), box[1] + box[3] - ht);
+      d = ht;
+    }
+    e.r = [x, y, w, d];
+    e.words = true;
+  }
+  // A stack of Labels set from one edge - left-set lines at one left, as
+  // Turbulence's Help is - stays in line where one of them moved that edge
+  // for its words (wordsRoom): the rest move with it.
+  function alignStacks(es) {
+    ['left', 'right'].forEach(function (side) {
+      var labels = es.filter(function (e) { return e.it.kind === 'label' && (propsOf(e.it).align || 'left') === side; });
+      var done = [];
+      labels.forEach(function (e) {
+        if (done.indexOf(e) >= 0) return;
+        function edge(o, r) { return side === 'left' ? r[0] : r[0] + r[2]; }
+        var set = labels.filter(function (o) { return Math.abs(edge(o, o.m) - edge(e, e.m)) <= 1; });
+        done = done.concat(set);
+        if (set.length < 2 || !set.some(function (o) { return o.words; })) return;
+        var at = side === 'left' ? Math.min.apply(null, set.map(function (o) { return o.r[0]; }))
+          : Math.max.apply(null, set.map(function (o) { return o.r[0] + o.r[2]; }));
+        set.forEach(function (o) { o.r[0] = side === 'left' ? at : at - o.r[2]; });
+      });
+    });
+  }
+  // Keys drawn one over another at one x and width - a column, each no more
+  // than a key's depth from the next and nothing else of the layout between
+  // them - grow as one across, about their middle, as far as the box holds
+  // them: one the box cannot hold so keeps its own width, for the checks to
+  // name. Their depths stay their own. A key of kit art is not widened at
+  // all: Build fits the art to its box, so widened alone it would change
+  // shape, and grown with its shape it would run down into the key under it.
+  function asOne(es, box) {
+    var keys = es.filter(function (e) { return isTouch(e.it.kind) && !hasArt(e.it); }), done = [];
+    function between(p, q) {
+      return es.some(function (o) {
+        return o !== p && o !== q && o.m[1] >= p.m[1] + p.m[3] && o.m[1] + o.m[3] <= q.m[1]
+          && o.m[0] < p.m[0] + p.m[2] && p.m[0] < o.m[0] + o.m[2];
+      });
+    }
+    keys.forEach(function (e) {
+      if (done.indexOf(e) >= 0) return;
+      var same = keys.filter(function (o) {
+        return Math.abs(o.m[0] - e.m[0]) <= 1 && Math.abs(o.m[2] - e.m[2]) <= 1;
+      }).sort(function (p, q) { return p.m[1] - q.m[1]; });
+      done = done.concat(same);
+      // Its runs: each key within a key's depth of the one over it.
+      var runs = [];
+      same.forEach(function (o, i) {
+        var p = same[i - 1];
+        if (p && o.m[1] - (p.m[1] + p.m[3]) <= p.m[3] && !between(p, o)) runs[runs.length - 1].push(o);
+        else runs.push([o]);
+      });
+      runs.forEach(function (set) {
+        if (set.length < 2) return;
+        var most = Math.max.apply(null, set.map(function (o) { return o.r[2]; }));
+        set.forEach(function (o) {
+          var c = o.r[0] + o.r[2] / 2, room = 2 * Math.min(c - box[0], box[0] + box[2] - c);
+          var w = Math.min(most, room);
+          if (w <= o.r[2]) return;
+          o.r[0] = c - w / 2;
+          o.r[2] = w;
+        });
+      });
+    });
+  }
+  function joinedPair(p, q) {
+    var x = p.join || propsOf(p.it).joined, y = q.join || propsOf(q.it).joined;
+    return !!x && x === y;
+  }
+  // A column of keys the canvas draws at its template's own row pitch on the
+  // drawn panel (the frame's centre `pitch`, off its Doc Cam: [across,
+  // down]) stands at this panel's, down from its first key's place as
+  // mapped, kept in the box. The template keeps its rows at its own pitch on
+  // each series, not at one scale of another's: Mach's 1035 and 725 stand
+  // their 60 px keys 70 apart, and mapped at the 725's scale the 1035's came
+  // 52 apart, into each other. Each such column is one set (`join`), as the
+  // template stands it 10 px apart, under the 2 mm the gap check keeps
+  // between keys that are not one control. `pitch`: { D: the drawn panel's,
+  // T: this one's }; `k` the layout's scale.
+  function atPitch(es, pitch, box, k) {
+    // A key of a set already (the dialer's keypad) keeps it.
+    var keys = es.filter(function (e) { return e.it.kind === 'button' && !propsOf(e.it).joined; }), n = 0, done = [];
+    var pd = (pitch.D || [])[1], pt = (pitch.T || [])[1];
+    if (!pd || !pt || !k) return;
+    keys.forEach(function (e) {
+      if (done.indexOf(e) >= 0) return;
+      var col = keys.filter(function (o) {
+        return Math.abs(o.m[0] - e.m[0]) <= 1 && Math.abs(o.m[2] - e.m[2]) <= 1;
+      }).sort(function (p, q) { return p.m[1] - q.m[1]; });
+      done = done.concat(col);
+      if (col.length < 2 || !col.every(function (o, i) {
+        return !i || Math.abs((o.m[1] - col[i - 1].m[1]) / k - pd) <= 1;
+      })) return;
+      // Only where the box holds the column at this pitch: five of Mach's
+      // 1035 keys at its 525's 96 need 450 px of the 399 under its title,
+      // and pushed up to fit stood into the title, one set the gap check
+      // passes over. Such a column stays as scaled, where the checks see it.
+      var total = (col.length - 1) * pt + col[col.length - 1].r[3];
+      if (total > box[3]) return;
+      var at = Math.min(Math.max(col[0].m[1], box[1]), box[1] + box[3] - total);
+      n += 1;
+      col.forEach(function (o, i) { o.r[1] = at + i * pt; o.join = 'pitch:' + n; });
+    });
+  }
+  function respaceLines(es, a, box, T) {
+    var b = 1 - a, gap = T.gap || 0;
+    // A line: what stands side by side along `a` as mapped, across one
+    // another's span on the other axis.
+    var parent = es.map(function (_, i) { return i; });
+    function root(i) { while (parent[i] !== i) i = parent[i]; return i; }
+    es.forEach(function (p, i) {
+      es.forEach(function (q, j) {
+        if (j > i && p.m[b] < q.m[b] + q.m[b + 2] && q.m[b] < p.m[b] + p.m[b + 2]) parent[root(j)] = root(i);
+      });
+    });
+    var lines = {};
+    es.forEach(function (e, i) { (lines[root(i)] = lines[root(i)] || []).push(e); });
+    Object.keys(lines).forEach(function (key) {
+      var line = lines[key].slice().sort(function (p, q) { return p.m[a] - q.m[a]; });
+      if (line.length < 2) return;
+      // Only things apart as drawn: one standing over another is no line.
+      for (var i = 1; i < line.length; i++) {
+        if (line[i].m[a] < line[i - 1].m[a] + line[i - 1].m[a + 2] - 0.5) return;
+      }
+      var pairs = [], near = false;
+      for (i = 1; i < line.length; i++) {
+        var p = line[i - 1], q = line[i];
+        // Two keys of a column at its template's pitch (atPitch) keep the
+        // gap that pitch leaves them: the line moves round them, whole.
+        if (p.join && p.join === q.join) {
+          var kept = q.r[a] - (p.r[a] + p.r[a + 2]);
+          pairs.push({ drawn: kept, least: kept });
+          continue;
+        }
+        var drawn = q.m[a] - (p.m[a] + p.m[a + 2]);
+        var touch = isTouch(p.it.kind) && isTouch(q.it.kind) && !joinedPair(p, q);
+        var least = Math.max(0, Math.min(drawn, touch ? gap : 0));
+        if (q.r[a] - (p.r[a] + p.r[a + 2]) < least - 0.5 && (touch || p.words || q.words)) near = true;
+        pairs.push({ drawn: Math.max(drawn, least), least: least });
+      }
+      if (!near) return;
+      var sizes = line.reduce(function (s, e) { return s + e.r[a + 2]; }, 0);
+      var floor = pairs.reduce(function (s, x) { return s + x.least; }, 0);
+      var more = pairs.reduce(function (s, x) { return s + x.drawn - x.least; }, 0);
+      var room = box[a + 2] - sizes - floor;
+      if (room < 0) return;
+      var t = more > 0 ? Math.min(1, room / more) : 0, total = sizes + floor + t * more;
+      var last = line[line.length - 1], mid = (line[0].m[a] + last.m[a] + last.m[a + 2]) / 2;
+      var at = Math.min(Math.max(mid - total / 2, box[a]), box[a] + box[a + 2] - total);
+      line.forEach(function (e, j) {
+        e.r[a] = at;
+        if (j < pairs.length) at += e.r[a + 2] + pairs[j].least + t * (pairs[j].drawn - pairs[j].least);
+      });
+    });
+  }
   // Tier C: positions scaled by a quarter cannot keep 14 pt lines apart, so
   // the frame's children reflow - rows in design order, each control at what
   // it needs, rows centred - and a panel card behind a set of them is drawn
@@ -622,6 +874,85 @@
       return placeHost(card.host, r, 'card' + card.i);
     });
     return { els: back.concat(R.els, put.els), problems: R.probs, k: R.k };
+  }
+  // A plain modal (no role or title) on a tier C panel: its rows as
+  // flowLayout lays them, on the one screen where they fit. Where they do not
+  // they go on over modals of their own - Help 2, Help 3 - as a page goes on
+  // over pages (overPages): each holds the rows that fit above a row of
+  // Previous and Next at the screen's foot, a row never splits, a heading goes
+  // on with the row it heads, and a card drawn behind them is drawn again
+  // behind what lands on a later one. Each later one is a modal popup of its
+  // own, shown by the one before's Next: a modal's button showing another
+  // modal builds and verifies in GUI Designer, which gives every page a
+  // full-canvas reference to each modal, so either shows over whatever page
+  // is up (archive/job-e823df9b/small-panels/). Both cover the screen, so
+  // Next and Previous say the program hides the one they are on. The
+  // round-three rooms' Help modals needed 247 and 306 px of the 320's 240 and
+  // were refused.
+  function overModals(items, D, T, L, frame, name) {
+    var R = flowRows(items, D, T, L, frame, name);
+    var room = frame[3] - 2 * R.tight, box = [0, 0, frame[2], frame[3]];
+    if (R.total <= room) {
+      var put0 = placeRows(R, R.laid, box, Math.round(Math.max(R.tight, (frame[3] - R.total) / 2)));
+      var back0 = cardsBehind(R, put0.placed, box, true, function (card, r) {
+        return placeHost(card.host, r, 'card' + card.i);
+      });
+      return { els: back0.concat(R.els, put0.els), problems: R.probs, k: R.k };
+    }
+    var nav = T.touch, avail = room - nav - R.gap, parts = [[]], used = 0;
+    R.laid.forEach(function (line) {
+      var cur = parts[parts.length - 1];
+      var add = line.h + (cur.length ? line.gap : 0);
+      if (cur.length && used + add > avail) {
+        // A heading goes on with the row it heads, never alone at a foot.
+        var head = cur.length > 1 && cur[cur.length - 1].heading ? cur.pop() : null;
+        parts.push(head ? [head, line] : [line]);
+        used = head ? head.h + line.gap + line.h : line.h;
+        return;
+      }
+      cur.push(line); used += add;
+    });
+    function partName(p) { return p ? name + ' ' + (p + 1) : name; }
+    parts.forEach(function (lines, p) {
+      var deepest = lines.reduce(function (s, line, n) { return s + line.h + (n ? line.gap : 0); }, 0);
+      if (deepest > avail) {
+        R.probs.push(partName(p) + ' has a row ' + Math.round(deepest) + ' px deep, more than the ' + Math.round(avail)
+                     + ' a modal of a ' + T.model + ' holds above Previous and Next - it does not fit');
+      }
+    });
+    var shown = { set: null };
+    function shower(p) { return function () { if (shown.set) shown.set(p); }; }
+    var navFont = font({}, P.defaults.button.type, Object.assign({}, L, { k: R.k }));
+    function navW(word) {
+      return pagingLook(word) ? T.touch : Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24));
+    }
+    var drawn = {};
+    var pages = parts.map(function (lines, p) {
+      var deep = lines.reduce(function (s, line, n) { return s + line.h + (n ? line.gap : 0); }, 0);
+      var put = placeRows(R, lines, box, Math.round(Math.max(R.tight, (avail - deep) / 2)));
+      // The first modal a card is drawn on has the card; a later one, a copy.
+      var back = cardsBehind(R, put.placed, box, p === 0, function (card, r) {
+        if (!drawn[card.i]) { drawn[card.i] = true; return placeHost(card.host, r, 'card' + card.i); }
+        return React.cloneElement(card.host, { key: 'card' + p + '-' + card.i, style: cell(r) },
+                                  React.cloneElement(card.comp, { derived: true }));
+      });
+      var els = back.concat(put.els), ny = frame[3] - R.tight - nav;
+      [['Previous', p - 1, T.gap], ['Next', p + 1, null]].forEach(function (w) {
+        if (w[1] < 0 || w[1] >= parts.length) return;
+        var wd = navW(w[0]), x = w[2] != null ? w[2] : frame[2] - T.gap - wd;
+        els.push(h('div', { key: w[0] + p, style: cell([x, ny, wd, nav]) },
+                   h(Button, Object.assign({ name: partName(p) + ' ' + w[0], derived: true,
+                                             text: pagingLook(w[0]) ? '' : w[0], goes: partName(w[1]),
+                                             does: 'Hides ' + partName(p) + ' as it shows ' + partName(w[1])
+                                                   + ': both cover the screen.',
+                                             onPress: shower(w[1]) }, pagingLook(w[0]) || {}))));
+      });
+      return els;
+    });
+    var els = R.els.concat(pages[0]);
+    els.push(h(Parts, { key: 'parts', names: pages.map(function (_, p) { return partName(p); }), pages: pages,
+                        shown: shown }));
+    return { els: els, problems: R.probs, k: R.k };
   }
   // The rows a frame's children reflow into on a tier C panel: each line of
   // controls at what each needs on it, wrapped to the frame's width, and the
@@ -1175,7 +1506,8 @@
     return { els: els, problems: R.probs, k: R.k };
   }
   // The pages a page goes on over, each laid over it as a page of its own
-  // that wears the page's look; its Groups' pages come Back to it.
+  // that wears the page's look; its Groups' pages come Back to it. A modal's
+  // (overModals) are modals of its own, over the whole screen as it is.
   function Parts(props) {
     var L = React.useContext(Ctx);
     var st = React.useState(0);
@@ -1185,8 +1517,9 @@
     props.names.forEach(function (n, p) { if (forced === n) cur = p; });
     return props.pages.slice(1).map(function (els, j) {
       var p = j + 1, name = props.names[p];
-      var look = Object.assign({ kind: 'page', name: name, host: L.pageName || 'Page', size: L.panel.size },
-                               L.pageLook || {});
+      var look = L.within === 'modal' ? { kind: 'popup', modal: true, name: name, size: L.panel.size }
+        : Object.assign({ kind: 'page', name: name, host: L.pageName || 'Page', size: L.panel.size },
+                        L.pageLook || {});
       return h(Ctx.Provider, { key: 'part' + p, value: Object.assign({}, L, { pageName: name }) },
         h('div', { 'data-gdl-part': JSON.stringify(look),
                    style: Object.assign({ position: 'fixed', left: 0, top: 0, width: L.panel.size[0] + 'px',
@@ -1450,6 +1783,9 @@
     // One whose chrome is its art (Afterburn's): in one set of rows (rowsPage).
     var rowed = kind === 'page' && T.tier === 'C' && model !== designModel && P.layout.bars !== 'controls'
       && T.main && D.main && !L.region && !part;
+    // A plain modal there, in any theme: in rows over the screen, going on
+    // over modals of its own where one screen cannot hold them (overModals).
+    var modalled = kind === 'modal' && !part && T.tier === 'C' && model !== designModel;
     var kids = itemsOf(props.children, [dw, dh]);
     // A dialer's controls are the template's keys (dialerPart): what the
     // designer puts in it is named, not drawn over them.
@@ -1468,6 +1804,7 @@
       : over ? overPages(kids, D, T, L, props.name || 'Page')
       : alone ? popupPage(kids, D, T, L, props.name || 'Page', [dw, dh])
       : rowed ? rowsPage(kids, D, T, L, props.name || 'Page')
+      : modalled ? overModals(kids, [0, 0, dw, dh], L.panel, L, [0, 0, tw, th], props.name || 'Page')
       // A page's own child grown at the screen's edge keeps to the page, as
       // one in a bar theme's MainArea does (keepIn): Build moves a control
       // that crosses its page's edge, and Afterburn's left rail, flush at x
@@ -1886,11 +2223,15 @@
   }
   function isTouch(kind) { return kind === 'button' || kind === 'slider'; }
   // An indented caption centred on kit art whose icon stands at its left
-  // (Mach's 1376x440 tab art): the leading spaces that start the caption 4
-  // px clear of the icon in a `w` x `ht` cell, and the least width from `w`
-  // up at which they and the caption fit, 4 px in from its right. The 4 px
-  // also covers the caption measured before the canvas's Open Sans loads
-  // (in Arial, 5% narrower).
+  // (Mach's 1376x440 tab art): the leading spaces that start the caption a
+  // gap clear of the icon in a `w` x `ht` cell, and the least width from `w`
+  // up at which they and the caption fit, 4 px in from its right. The gap is
+  // 4 px at least (a tab's, and any key whose template sets none), or
+  // `__gap`, the px the key's template leaves between the kit's reach and its
+  // words (measured: tests/measure_series.py words_gap; the dialer's Call,
+  // Flash and Contacts, Shockwave's incoming answers), by the spaces nearest
+  // it. The 4 px at the cell's right also covers the caption measured before
+  // the canvas's Open Sans loads (in Arial, 5% narrower).
   // `kit.icon_right` is how far across its art a kit size's icons reach
   // (Mach's: 319 of 1376, the pc glyph). At the 725's 16 pt type floor four
   // spaces in a 152 px tab ran Streaming into its glyph; the template's own
@@ -1903,11 +2244,18 @@
     if (!reach || !caption || (p.align || V.align || 'left') !== 'center') return null;
     var dims = String(img.kit).split('x').map(Number), f = font(p, P.defaults.button.type, L);
     var tc = textWidth(caption, f.css), sp = textWidth('          ', f.css) / 10, base = img.indent || 0;
+    var gap = p.__gap != null && !isNaN(Number(p.__gap)) ? Math.max(0, Number(p.__gap)) : null;
     function spaces(W) {
       var s = Math.min(W / dims[0], ht / dims[1]), aw = dims[0] * s;
       var icon = (W - aw) / 2 + reach * aw;
-      // Centred, the caption starts at (W - tc + n sp) / 2.
-      return Math.max(base, Math.ceil((2 * (icon + 4) - W + tc) / sp));
+      // Centred, the caption starts at (W - tc + n sp) / 2, so n spaces put
+      // it g clear of the icon where n sp = 2 (icon + g) - W + tc.
+      function at(g) { return (2 * (icon + g) - W + tc) / sp; }
+      // At least 4 px clear. Where the template sets its words a gap, the
+      // spaces nearest it - never nearer the icon than 4 px, or than the
+      // template's own if that is less.
+      var n = gap == null ? Math.ceil(at(4)) : Math.max(Math.round(at(gap)), Math.ceil(at(Math.min(gap, 4))));
+      return Math.max(base, n);
     }
     for (var W = Math.ceil(w); W < w + 400; W++) {
       if (tc + spaces(W) * sp + 8 <= W) return { n: spaces(W), w: W };
@@ -2723,21 +3071,7 @@
         }
       }
     }
-    // The clock gives way on its side to a control grown into it, so its
-    // words do not run into it.
-    slots.forEach(function (s) {
-      if (s.kind !== 'clock') return;
-      slots.forEach(function (t) {
-        if (!t.touch || !overlaps(s.at, t.at)) return;
-        if (t.at[0] + t.at[2] / 2 < s.at[0] + s.at[2] / 2) {
-          var right = s.at[0] + s.at[2];
-          s.at = [Math.min(right, t.at[0] + t.at[2] + L.panel.gap), s.at[1], 0, s.at[3]];
-          s.at[2] = right - s.at[0];
-        } else {
-          s.at = [s.at[0], s.at[1], Math.max(0, t.at[0] - L.panel.gap - s.at[0]), s.at[3]];
-        }
-      });
-    });
+    clockGives(slots, L);
     return { slots: slots, probs: probs, els: function () {
       var els = [];
       slots.forEach(function (s) {
@@ -2756,6 +3090,67 @@
       });
       return els;
     } };
+  }
+  // The clock gives way on its side to a control grown into it, so its
+  // words do not run into it - or, `moved`, to one the footer moved
+  // (footerGives) nearer than the panel's gap to it.
+  function clockGives(slots, L, moved) {
+    var g = L.panel.gap;
+    slots.forEach(function (s) {
+      if (s.kind !== 'clock') return;
+      slots.forEach(function (t) {
+        var near = moved && moved.indexOf(t) >= 0 ? [t.at[0] - g + 1, t.at[1], t.at[2] + 2 * g - 2, t.at[3]] : t.at;
+        if (!t.touch || !overlaps(s.at, near)) return;
+        if (t.at[0] + t.at[2] / 2 < s.at[0] + s.at[2] / 2) {
+          var right = s.at[0] + s.at[2];
+          s.at = [Math.min(right, t.at[0] + t.at[2] + L.panel.gap), s.at[1], 0, s.at[3]];
+          s.at[2] = right - s.at[0];
+        } else {
+          s.at = [s.at[0], s.at[1], Math.max(0, t.at[0] - L.panel.gap - s.at[0]), s.at[3]];
+        }
+      });
+    });
+  }
+  // The footer gives way to a rail's column grown into it. Turbulence's 725
+  // stands its call page's last launcher 1 px beside the Footer's Help, and
+  // at its 16 pt floor the template's own Initiate Call widens that column
+  // from 112 px to 122, into Help: where the footer has the room, the cell
+  // run into - and its set, Room Mode with Help - starts past the column at
+  // the template's own seam to it (1 px), the clock giving way to them, and
+  // openSeams then opens that seam to the panel's gap as it does the
+  // template's. Where the footer has no room for them - another of its touch
+  // cells in the way, or its band's end - they stay where they are, and
+  // openSeams names the two as running into each other.
+  function footerGives(plans, L) {
+    var foot = (plans.footer || {}).slots || [], gave = [];
+    ['leftrail', 'rightrail'].forEach(function (k) {
+      ((plans[k] || {}).slots || []).forEach(function (o) {
+        if (!o.touch || !o.at) return;
+        foot.forEach(function (s) {
+          if (!s.touch || !s.at || !overlaps(o.at, s.at) || !o.r || !s.r) return;
+          // Apart across as the template stands them - beside each other, or
+          // diagonally (the 725's Screen Control ends 2 px over Help's top,
+          // and the two grow into each other there too): one standing over
+          // the other, grown down into it, is not the footer's to give.
+          var right = o.r[0] + o.r[2] <= s.r[0], left = s.r[0] + s.r[2] <= o.r[0];
+          if (!right && !left) return;
+          var seam = right ? s.r[0] - (o.r[0] + o.r[2]) : o.r[0] - (s.r[0] + s.r[2]);
+          var d = right ? o.at[0] + o.at[2] + seam - s.at[0] : o.at[0] - seam - (s.at[0] + s.at[2]);
+          if (right ? d <= 0 : d >= 0) return;
+          var movers = foot.filter(function (m) { return m === s || s.set && m.set === s.set; });
+          var moved = movers.map(function (m) { return [m.at[0] + d, m.at[1], m.at[2], m.at[3]]; });
+          var room = moved.every(function (r, i) {
+            var band = movers[i].band;
+            return r[0] >= band[0] && r[0] + r[2] <= band[0] + band[2] && foot.every(function (t) {
+              return !t.touch || movers.indexOf(t) >= 0 || !overlaps(r, t.at);
+            });
+          });
+          if (!room) return;
+          movers.forEach(function (m, i) { m.at = moved[i]; if (gave.indexOf(m) < 0) gave.push(m); });
+        });
+      });
+    });
+    if (gave.length) clockGives(foot, L, gave);
   }
   // Afterburn's mode launcher no wider than its left rail: its caption breaks
   // into two lines where it has two words (the look's `__lines`: Video over
@@ -3141,6 +3536,7 @@
       plans[it.kind] = PLANS[it.kind](props, L);
       plans[it.kind].props = props;
     });
+    footerGives(plans, L);
     return { plans: plans, count: count, probs: probs.concat(openSeams(plans, L)) };
   }
   function drawRegion(kind, props) {
@@ -3182,6 +3578,9 @@
   var WD = P.writing || {};
   var CLOSE_DOES = 'Closes the window - back to the page that opened it.';
   var WINDOW_ROLES = { settings: true, help: true, confirm: true, wait: true };
+  // The questions a template asks in a window of its own, by `topic`: the
+  // frame's record of it (`windows.incoming`, `windows.recording`).
+  var OWN_QUESTION = { call: 'incoming', recording: 'recording' };
   // A working page's roles (a Page with regions): the call mode and the
   // page its sources are chosen on.
   var PAGE_ROLES = { call: true, select: true };
@@ -3299,9 +3698,11 @@
   function windowOf(F, role, label, from, topic) {
     var W = F.windows || {};
     // The question the program shows when a call comes in is its own window
-    // where the template draws one (Incoming Call); elsewhere it stands where
-    // the power-down question does.
-    if (role === 'confirm' && topic === 'call' && W.incoming) return W.incoming;
+    // where the template draws one (Incoming Call), and so is a recording's
+    // (Confirmation - Recording: Afterburn's and Mach's); elsewhere each
+    // stands where the power-down question does.
+    var own = OWN_QUESTION[topic];
+    if (role === 'confirm' && own && W[own]) return W[own];
     if (role === 'confirm' || role === 'wait') return W[role] || null;
     var help = W.help ? Object.assign({}, W.help, { popups: ['Help'], help: true }) : null;
     if (role === 'help') return help;
@@ -3330,10 +3731,21 @@
   // Ignore Call; Turbulence's are in their art) and looks, where the panel
   // draws the call's question at the power-down question's place.
   function answerOf(b, topic, B, RW) {
+    // A recording's: Record in the power-down question's look - the
+    // template's own is it, Mach's red alert and Afterburn's outline - and
+    // Cancel; where it stands in the power-down question's places, those.
+    if (topic === 'recording') {
+      var rec = b.role !== 'cancel';
+      return { yes: rec, word: b.text || (rec ? B.record || 'Record' : B.cancel || 'Cancel'),
+               look: RW[rec ? 'power' : 'cancel'], does: CLOSE_DOES };
+    }
     var yes = b.role === 'power' || b.role === 'accept';
     if (topic === 'call') {
+      var look = RW[yes ? 'accept' : 'decline'] || RW[yes ? 'power' : 'cancel'];
+      // Its words as far past its glyph as this panel's template sets them.
+      if (b.gap != null) look = Object.assign({}, look, { __gap: b.gap });
       return { yes: yes, word: b.text || (yes ? B.accept || 'Accept' : B.decline || 'Decline'),
-               look: RW[yes ? 'accept' : 'decline'] || RW[yes ? 'power' : 'cancel'], does: 'Declines the call.' };
+               look: look, does: 'Declines the call.' };
     }
     return { yes: yes, word: yes ? B.power || 'Power Down' : B.cancel || 'Cancel', look: RW[yes ? 'power' : 'cancel'],
              does: CLOSE_DOES };
@@ -3392,6 +3804,21 @@
     if (wrapWords(text, f.css, w / 1.06).length > lines) return r;
     var x = Math.min(Math.max(r[0] + (r[2] - w) / 2, win[0] + gap), win[0] + win[2] - gap - w);
     return [Math.round(x), r[1], Math.round(w), r[3]];
+  }
+  // A recording's question where the panel's template asks none (`own`
+  // false: a 320's) stands in the power-down question's box, and is named
+  // where its words - its own breaks, each line then wrapped at the box's
+  // width measured 6% wide, each a line as GUI Designer lays one out (1.37
+  // em) - need more than the box is deep: three lines and a blank on the
+  // 320, whose box holds two. A call's question keeps to its box as it was.
+  function borrowedBox(L, look, text, r, pt, topic, own, name, model) {
+    if (topic !== 'recording' || own) return null;
+    var f = font(Object.assign({}, look || {}, { size: pt != null ? pt : (look || {}).size }), P.defaults.label.type,
+                 Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+    var deep = wrapWords(text, f.css, r[2] / 1.06).length * Math.ceil(f.size * P.pt * 1.37);
+    if (deep <= r[3] + 2) return null;
+    return name + "'s recording question needs " + deep + ' px, and the ' + model + "'s template asks none: it stands "
+      + "in the power-down question's box, which holds " + r[3] + ' - it does not fit';
   }
   // A label's box widened about its middle to hold its words on one line
   // (measured 6% wide, as messageBox measures), inside [0, width].
@@ -3460,6 +3887,7 @@
     if (role === 'source') {
       var SD = sourceParts(FD), ST = sourceParts(FT);
       return { D: SD.body, T: ST.body, dsize: SD.size, size: ST.size, looks: RD.source || {},
+               pitch: { D: FD.center.pitch, T: FT.center.pitch },
                chrome: function (L, content) {
                  var RS = RD.source || {}, els = [], pt = ST.pt;
                  // Turbulence's device picture, behind everything else.
@@ -3500,6 +3928,9 @@
     }
     var asked = String(props.topic || '');
     var rd = windowOf(FD, role, title, null, asked), rt = windowOf(FT, role, title, rd, asked);
+    // The question's own window on this panel (an incoming call's, a
+    // recording's), not the power-down question's it stands in elsewhere.
+    var ownRec = !!(OWN_QUESTION[asked] && rt && rt === (FT.windows || {})[OWN_QUESTION[asked]]);
     // Mach's hubs draw no window: Help, the question and the wait stand on
     // the scrim, over the whole screen.
     if (HT && rt && !rt.rect) rt = Object.assign({}, rt, { rect: [0, 0, T.size[0], T.size[1]] });
@@ -3519,7 +3950,9 @@
     // panel drawn into the body under its title on this one: the 725's and
     // the 525's titles stand lower in their windows than the 1035's, and a
     // Label 7 px under Shockwave 1035's HELP, mapped from window to window,
-    // came out under the 725's title and into its words on the 525.
+    // came out under the 725's title and into its words on the 525. That
+    // body is smaller than the 1035's at one scale, so a line whose words
+    // outgrow its box there takes the room they need in it (freeLayout).
     function body(rec) {
       var r = rec.rect, t = rec.title;
       if (!t) return r;
@@ -3549,8 +3982,10 @@
                if (!plain) {
                  var said_ = WD[role] || {};
                  words_ = said_[topic];
-                 // This panel's own template's words for a call's question.
-                 if (words_ != null && topic === 'call' && rt.text) words_ = rt.text;
+                 // This panel's own template's words for a call's or a
+                 // recording's question, where it asks it in its own window -
+                 // the 520's recording question breaks after 'know'.
+                 if (words_ != null && ownRec && rt.text) words_ = rt.text;
                  if (words_ == null) {
                    probs.push(name + "'s topic '" + topic + "' is not one the " + P.template + ' template has words for - '
                               + 'say topic="' + Object.keys(said_).join('" or "') + '"');
@@ -3559,9 +3994,10 @@
                  words_ = WD.help;
                }
                if (words_ != null && rt.message) {
-                 els.push(chromeLabel(L, RW.message, name + ' Message', words_,
-                                      messageBox(L, RW.message, words_, rt.message, rt.rect, rt.lines, pt.message),
-                                      'message', pt.message));
+                 var mb = messageBox(L, RW.message, words_, rt.message, rt.rect, rt.lines, pt.message);
+                 var no = borrowedBox(L, RW.message, words_, mb, pt.message, topic, ownRec, name, T.model);
+                 if (no) probs.push(no);
+                 els.push(chromeLabel(L, RW.message, name + ' Message', words_, mb, 'message', pt.message));
                }
                if (role === 'confirm' && words_ != null) {
                  (rt.buttons || []).forEach(function (b, i) {
@@ -3652,7 +4088,11 @@
       var p = Object.assign({ name: k.name || 'Dialer ' + word, text: word, id: k.id,
                               does: dial ? 'Dials ' + word + '.' : DIAL_DOES[k.role] || 'Sends ' + word + '.' }, lk);
       // Its words beside its glyph, fitted to the template's key (Button).
-      if (drawn && p.__caption === 'indent') p.__fit = [k.rect[2], k.rect[3]];
+      if (drawn && p.__caption === 'indent') {
+        p.__fit = [k.rect[2], k.rect[3]];
+        // The gap the template leaves between its glyph and the words.
+        if (k.gap != null) p.__gap = k.gap;
+      }
       // One block, as the template packs its keypad and the keys round it
       // 1 to 10 px apart: Delete over the keypad's last column, Call, Flash,
       // Contacts and Keyboard beside it.
@@ -3711,7 +4151,7 @@
       var SD = sourceParts(FD);
       var bars = (c.surfaces || []).filter(function (x) { return x.popup && x.kind === 'shape'; });
       return { D: SD.body, T: hubHead(F, c.title, c.close && c.close.rect, bars), dsize: SD.size, size: [g[2], g[3]], snug: true,
-               hub: 'source',
+               hub: 'source', pitch: { D: FD.center.pitch, T: c.pitch },
                looks: { label: label, button: HD.button || (RD.source || {}).button },
                chrome: function (L, content) {
                  var RS = RD.source || {}, els = [], pt = c.pt || {};
@@ -3765,7 +4205,9 @@
   // box: as drawn on the panel drawn, and on another from the drawn panel's
   // box into this one's at one scale, centred - the 725's well from the
   // 1035's - each in the look the template gives what stands there (white
-  // labels on Mach's well, its ghost keys) unless it sets its own. A plain
+  // labels on Mach's well, its ghost keys) unless it sets its own, then
+  // grown to what it needs there, its rows and columns re-spacing as they
+  // grew (freeLayout). A plain
   // container, and a child with no rect, is drawn at its own place in a
   // layer moved by the box's origin, since the layout draws it at its CSS
   // place in the box and that place is the page's: a flex row drawn at
@@ -3773,7 +4215,7 @@
   // `placed`: where each child with a rect comes out, in the page's
   // coordinates, before it grows to its minimum.
   function framedLayout(items, part, L) {
-    var Dc = part.D, Tc = part.T, looks = part.looks || {};
+    var Dc = part.D, Tc = part.T, T0 = part.T, looks = part.looks || {};
     // A hub's main is about half the 1035's band (`snug`): what was put in
     // the window or the well is mapped from the box round it, a gap clear,
     // centred in the hub's, and scaled up no more than the hub's touch
@@ -3817,7 +4259,11 @@
       return Object.assign({}, it, { host: host, comp: comp, props: comp ? comp.props : it.props,
                                      rect: it.rect ? [it.rect[0] - Dc[0], it.rect[1] - Dc[1], it.rect[2], it.rect[3]] : null });
     });
-    var out = scaleLayout(moved, [0, 0, Dc[2], Dc[3]], L.panel, L, [0, 0, Tc[2], Tc[3]], null);
+    // Its rows and columns re-space in the whole well or body (freeLayout):
+    // on a hub the box under its header, of which `snug` mapped only the
+    // part round what was put in it.
+    var out = scaleLayout(moved, [0, 0, Dc[2], Dc[3]], L.panel, L, [0, 0, Tc[2], Tc[3]], null,
+                          { box: [T0[0] - Tc[0], T0[1] - Tc[1], T0[2], T0[3]], pitch: part.pitch || null });
     return { els: [h('div', { key: 'framed', style: { position: 'absolute', left: Tc[0] + 'px', top: Tc[1] + 'px',
                                                        width: Tc[2] + 'px', height: Tc[3] + 'px' } }, out.els)],
              problems: out.problems, k: out.k, placed: placed };
@@ -5652,8 +6098,8 @@
     var FD = frameFor(D);
     var dsize = role === 'source' && FD ? sourceParts(FD).size : null;
     if (role === 'confirm' || role === 'wait') {
-      var W = role === 'confirm' && String(props.topic || '') === 'call' && (F.windows || {}).incoming
-        || (F.windows || {})[role];
+      var own = role === 'confirm' && (F.windows || {})[OWN_QUESTION[String(props.topic || '')]];
+      var W = own || (F.windows || {})[role];
       if (!W || !W.rect && !W.message) {
         return { problem: name + ' is a ' + role + ' window, which the ' + T.model + "'s template does not draw" };
       }
@@ -5674,9 +6120,10 @@
                      + 'say topic="' + Object.keys(said_).join('" or "') + '"');
         } else if (W.message) {
           var look = Object.assign({}, RW.message || {}, PD.message || {});
-          els.push(chromeLabel(L, look, name + ' Message', words_,
-                               messageBox(L, look, words_, W.message, WR, W.lines, (W.pt || {}).message),
-                               'message', (W.pt || {}).message));
+          var mb = messageBox(L, look, words_, W.message, WR, W.lines, (W.pt || {}).message);
+          var no = borrowedBox(L, look, words_, mb, (W.pt || {}).message, topic, !!own, name, T.model);
+          if (no) probs.push(no);
+          els.push(chromeLabel(L, look, name + ' Message', words_, mb, 'message', (W.pt || {}).message));
         }
         if (role === 'confirm' && words_ != null) {
           (W.buttons || []).forEach(function (b, i) {
@@ -5691,9 +6138,10 @@
             // Mach's grew from the template's 103 to 135, unlike its Cancel.
             if (lk.text == null && !(img && img.caption === 'none')) extra.text = twoLines(L, lk, word, b.rect);
             // The seed IDs are the power-down question's (9028, 9029): a
-            // call's answers standing in its places keep IDs of their own.
-            els.push(navButton(L, lk, name + ' ' + word, b.rect, topic === 'call' && W !== (F.windows || {}).incoming
-                               ? null : b.id, extra, 'answer' + i));
+            // call's or a recording's answers standing in its places keep
+            // IDs of their own.
+            els.push(navButton(L, lk, name + ' ' + word, b.rect, OWN_QUESTION[topic] && !own ? null : b.id, extra,
+                               'answer' + i));
           });
         }
         if (kids.length) probs.push(name + ' is a ' + role + ' window: the template draws its words and its buttons');
@@ -6163,6 +6611,12 @@
     }
     return null;
   }
+  // The color family an icon names - its last word, a `_round` aside:
+  // `gray`, `green_round`, `r_call_green`, `flash_blue`; `01` for a dialpad's.
+  function iconFamily(icon) {
+    var words = String(icon || '').split('_').filter(function (w) { return w !== 'round'; });
+    return words[words.length - 1];
+  }
   function belowBreaks(img) { return img.breaks === 0 ? 0 : img.breaks || 2; }
   // The caption as the panel draws it: the kit leaves the label room below or
   // beside the icon, and the template's own buttons reach it with line breaks
@@ -6225,8 +6679,11 @@
     var look = Object.assign({}, V.look, own);
     // Icons the kit does not have, by size: the translator refuses them.
     var missing = [];
+    var given = !!list(props.states);
     var states = (list(props.states) || V.states).map(function (s, i) {
       s = typeof s === 'string' ? { name: s } : Object.assign({}, s);
+      // A caption color the state names itself (a designer's, a region's).
+      var named = given && s.color != null;
       // A state named like one of the variant's (Off, On) starts from its look.
       s = Object.assign({}, find(V.states, s.name) || {}, s);
       if (img) {
@@ -6234,6 +6691,11 @@
         var want = s.look || (i === 0 ? 'off' : 'on');
         s.image = kitFile(img.kit, icon, want, L.scheme);
         if (!s.image) missing.push(img.kit + ' ' + icon);
+        // A lit image's caption is its icon's family's, where the variant
+        // says (`lit`): Shockwave's yellow lights #946E06, its blue #474747.
+        // A state's own color is still the state's.
+        var lit = want === 'on' && !named && V.lit ? V.lit[iconFamily(icon)] : null;
+        if (lit) s.color = lit;
         if (s.text != null) s.text = placed(img, twoWords(V, s.text));
       } else if (s.text != null) {
         s.text = twoWords(V, s.text);
@@ -6567,14 +7029,9 @@
     var sample = clockSample(CLOCK_FORMATS[fmt] || fmt);
     var align = props.align || 'left';
     // A seed with no date and time control (its series' `kinds`: Shockwave's
-    // and Turbulence's 320s) has none to clone, and the build refuses one
-    // there (gdl.spec donors), so a Clock is named on the panel it cannot be
-    // built for.
-    var panel = L.panel || (L.page && P.models && P.models[P.model]);
-    var lacks = panel && panel.kinds && panel.kinds.datetime === false
-      ? (props.name || 'Clock') + " is a date and time, which the " + (panel.model || P.model)
-        + "'s seed cannot build"
-      : null;
+    // and Turbulence's 320s) is not refused one: the applier clones it from
+    // another seed of the theme, its 525 (gdl.spec CROSS_SEED_TYPES), built
+    // and verified so on both 320s.
     return h('div', {
       className: 'xgdl xgdl-clock',
       style: { boxSizing: 'border-box', width: '100%', height: '100%', display: 'flex',
@@ -6589,7 +7046,7 @@
                         // the 725's one): chrome of that panel, not a control
                         // of the canvas the other panels must carry.
                         derived: truthy(props.derived) || null })
-    }, sample, lacks ? problem(lacks, 'clock') : null);
+    }, sample);
   }
 
   // -- PopupRegion: where a group's popups appear ---------------------------

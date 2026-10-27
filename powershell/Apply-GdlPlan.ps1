@@ -39,7 +39,12 @@ param(
     [Parameter(Mandatory)][string]$Plan,
     [string]$Output,
     [switch]$WhatIf,
-    [string]$InstallDir = 'C:\Program Files (x86)\Extron\GUI Designer'
+    [string]$InstallDir = 'C:\Program Files (x86)\Extron\GUI Designer',
+    # 'PBDateTime=<another seed's ProjectGCP>', ';'-separated where there are
+    # several (a -File argument cannot carry an array): a control type the
+    # donor has none of, cloned from another seed of its theme that carries
+    # one - the plan's type_donors, which New-GdlPanel.ps1 extracts.
+    [string[]]$TypeDonors = @()
 )
 
 $ErrorActionPreference = 'Stop'
@@ -57,6 +62,12 @@ function Add-GdlControls {
     param($Project, $Controls, $Ops, $PageId, [switch]$DryRun)
     foreach ($op in $Ops) {
         $donor = Get-GdlDonor $Project $op.donor_type
+        # One the donor has none of, from the seed of its theme that carries
+        # one (-TypeDonors). Only the control is taken: what it draws with -
+        # font, colors, border - is pointed at this project's own below.
+        if (-not $donor -and $script:TypeDonor.ContainsKey([string]$op.donor_type)) {
+            $donor = $script:TypeDonor[$op.donor_type]
+        }
         if (-not $donor) {
             Note-Fatal "donor project has no $($op.donor_type) to clone - cannot author '$($op.fields.nameField)'"
             continue
@@ -236,10 +247,11 @@ function Add-GdlControls {
             Note-Fatal "op '$($op.fields.nameField)' ($($op.donor_type)) failed: $($_.Exception.Message)"
             ($_.ScriptStackTrace -split "`n") | Select-Object -First 4 | ForEach-Object { Write-Output "      $_" }
         }
-        if ($op.donor_type -eq 'PBPopupPageReference' -and $op.group) {
-            # Remember it: the binding cannot be made until the popups exist.
+        if ($op.donor_type -eq 'PBPopupPageReference' -and ($op.group -or $op.popup)) {
+            # Remember it: the binding cannot be made until the popups exist -
+            # a reference bound to one popup needs that popup's id.
             $script:PendingRefs += [pscustomobject]@{
-                Control = $c; Group = $op.group
+                Control = $c; Group = $op.group; Popup = $op.popup
                 ObjectId = [uint64]$op.fields.idField
                 PageId = [uint64]$PageId
             }
@@ -252,6 +264,18 @@ function Add-GdlControls {
 
 Initialize-Gdl -InstallDir $InstallDir
 $project = Open-GdlProject $DonorProject
+# The controls other seeds supply (-TypeDonors): one of each type, taken from
+# its seed's project as Get-GdlDonor takes one from the donor's.
+$script:TypeDonor = @{}
+foreach ($pair in @($TypeDonors | ForEach-Object { ([string]$_) -split ';' } | Where-Object { $_ })) {
+    $type, $from = $pair -split '=', 2
+    if (-not $from -or -not (Test-Path $from)) { Note-Fatal "type donor '$pair': no project at '$from'"; continue }
+    $other = Open-GdlProject $from
+    $found = Get-GdlDonor $other $type
+    if (-not $found) { Note-Fatal "type donor '$from' has no $type to clone"; continue }
+    $script:TypeDonor[$type] = $found
+    Write-Output "$type cloned from $from"
+}
 # A seed built with feature-flag mode's Gd Generate Checksum on carries a
 # CRC-64 of its own metadata (docs/from-scratch.md section 7), which a panel
 # cloned from it would ship stale. Cleared, the panel's own build writes its
@@ -414,6 +438,13 @@ if (@($spec.popups).Count) {
                 Set-GdlFieldIfPresent $popup 'transparencyField' ([double]$pu.transparency) | Out-Null
             }
         }
+        # A UInt32, 0 on every seed popup, written so a clone never keeps its
+        # donor's. Nothing in GUI Designer 1.28.0.7 reads it - layout.json has
+        # no timeout - so it stays in the project and reaches no panel
+        # (docs/gdl-format.md section 7). A plan from before it says nothing.
+        if ($null -ne $pu.timeout) {
+            Set-GdlFieldIfPresent $popup 'timeoutField' ([uint32]$pu.timeout) | Out-Null
+        }
         # A cloned popup keeps the DONOR's size, and GUI Designer RELOCATES any
         # control that falls outside its page to 0,0 - at build time, silently,
         # with the build still reporting 0 errors. The first popup build lost
@@ -444,6 +475,11 @@ if (@($spec.popups).Count) {
         if ($pu.modal) {
             Set-GdlFieldIfPresent $popup 'groupIDField' 0 | Out-Null
             Set-GdlFieldIfPresent $popup 'groupNameField' $null | Out-Null
+        } elseif (-not $pu.group) {
+            # In no group, shown by references bound to it alone: group 0 and
+            # an empty name, as the nine seeds' ungrouped Volume Level carries.
+            Set-GdlFieldIfPresent $popup 'groupIDField' 0 | Out-Null
+            Set-GdlFieldIfPresent $popup 'groupNameField' '' | Out-Null
         } else {
             Set-GdlFieldIfPresent $popup 'groupIDField' ([int]$groupIds[$pu.group]) | Out-Null
             Set-GdlFieldIfPresent $popup 'groupNameField' $pu.group | Out-Null
@@ -461,19 +497,37 @@ if (@($spec.popups).Count) {
         $made += [pscustomobject]@{ Popup = $popup; Id = $popupId; Group = $pu.group
                                     Name = $pu.name; Modal = [bool]$pu.modal }
         if ($pu.modal) { Write-Output "popup '$($pu.name)' -> id $popupId (modal)" }
+        elseif (-not $pu.group) { Write-Output "popup '$($pu.name)' -> id $popupId (no group)" }
         else { Write-Output "popup '$($pu.name)' -> id $popupId (group '$($pu.group)')" }
     }
 
     # Bind each reference to its GROUP: PopupID is the sentinel, not a page id.
+    # Or to ONE popup by its id, GroupID 0, as nine seeds bind their ungrouped
+    # Volume Level: PBPopupPageID's IsPopupPageIdValid is PopupID != MaxValue
+    # and IsPopupGroupIdValid GroupID > 0, read off GUI Designer 1.28.0.7's
+    # IL, so these two fields are the binding; the names ride along as the
+    # seeds' do.
     foreach ($r in $script:PendingRefs) {
+        $binding = Get-GdlField $r.Control 'popupPageIDField'
+        if (-not $binding) { $binding = $r.Control.PopupPageID }
+        if (-not $binding) { Note-Fatal 'popup reference has no PopupPageID'; continue }
+        if ($r.Popup) {
+            $target = @($made | Where-Object { $_.Name -eq $r.Popup -and -not $_.Modal })
+            if (-not $target.Count) {
+                Note-Fatal "reference names popup '$($r.Popup)' which this plan does not make as a standard popup"
+                continue
+            }
+            Set-GdlFieldIfPresent $binding 'popupIDField' ([uint64]$target[0].Id) | Out-Null
+            Set-GdlFieldIfPresent $binding 'groupIDField' 0 | Out-Null
+            Set-GdlFieldIfPresent $binding 'popupNameField' $r.Popup | Out-Null
+            Set-GdlFieldIfPresent $binding 'groupNameField' $null | Out-Null
+            continue
+        }
         $gid = $groupIds[$r.Group]
         if ($null -eq $gid) {
             Note-Fatal "reference names group '$($r.Group)' which was never registered"
             continue
         }
-        $binding = Get-GdlField $r.Control 'popupPageIDField'
-        if (-not $binding) { $binding = $r.Control.PopupPageID }
-        if (-not $binding) { Note-Fatal 'popup reference has no PopupPageID'; continue }
         Set-GdlFieldIfPresent $binding 'popupIDField' $NONE | Out-Null
         Set-GdlFieldIfPresent $binding 'groupIDField' ([int]$gid) | Out-Null
         Set-GdlFieldIfPresent $binding 'popupNameField' '' | Out-Null
@@ -481,11 +535,14 @@ if (@($spec.popups).Count) {
     }
 
     # The other half: each popup keeps back-pointers to the references that
-    # place it. hasReferencesField must agree or the binding reads Unassigned.
+    # place it - its group's, or for a popup in none those bound to it alone,
+    # whose back-pointers in the seeds are shaped as a group reference's.
+    # hasReferencesField must agree or the binding reads Unassigned.
     $backTemplate = if ($donorPopup) { Get-GdlField $donorPopup 'popupReferencesField' } else { $null }
     foreach ($m in $made) {
         if ($m.Modal) { continue }
-        $refsFor = @($script:PendingRefs | Where-Object { $_.Group -eq $m.Group })
+        $refsFor = @(if ($m.Group) { $script:PendingRefs | Where-Object { $_.Group -eq $m.Group } }
+                     else { $script:PendingRefs | Where-Object { $_.Popup -eq $m.Name } })
         if (-not $refsFor.Count) { continue }
         if (-not $backTemplate -or -not $backTemplate.Count) {
             Note-Fatal "no PBPopupReference to clone for back-pointers on '$($m.Name)'"
@@ -513,6 +570,55 @@ if (@($spec.popups).Count) {
             $chk = Test-GdlPopupBinding $project $m.Id
             if ($chk.ok) { Write-Output "binding verified for '$($m.Name)': $($chk.references) reference(s)" }
             else { Note-Fatal "popup '$($m.Name)' is not correctly bound: $($chk.problems -join '; ')" }
+        }
+    }
+}
+
+# -- the Offline Page -----------------------------------------------------------
+# GUI Designer's own popup, id 65535, which every seed has and the applier keeps
+# whole. The plan may switch it on or off - PBProject.enableOfflineField, which
+# the seeds ship either way, and Build then gives every page a full-canvas
+# reference to it while it is on - and replace words on it: every seed's says
+# 'call XXX.XXX.XXXX'. Words, not controls, so the page keeps the seed's layout
+# and type, whichever of its one or two labels holds them (docs/gdl-format.md
+# section 7).
+if ($spec.offline) {
+    $OFFLINE = [uint64]65535
+    if ($null -ne $spec.offline.enabled) {
+        if (Set-GdlFieldIfPresent $project 'enableOfflineField' ([bool]$spec.offline.enabled)) {
+            Write-Output "Offline Page $(if ($spec.offline.enabled) { 'on' } else { 'off' })"
+        } else {
+            Note-Fatal 'the project has no enableOfflineField, so the Offline Page cannot be switched'
+        }
+    }
+    $reps = @($spec.offline.replace | Where-Object { $null -ne $_ })
+    $offline = @((Get-GdlField $project 'popupPagesField') |
+                 Where-Object { [uint64](Get-GdlField $_ 'idField') -eq $OFFLINE })
+    if ($reps.Count -and -not $offline.Count) {
+        Note-Fatal "the donor has no Offline Page (popup $OFFLINE) to say the plan's words on"
+    } elseif ($reps.Count) {
+        # Every caption on the page wherever it lives: a control's textField
+        # (the seeds' labels) or ftextField, or a state's.
+        $holders = @()
+        foreach ($c in (Get-GdlField $offline[0] 'controlsField')) {
+            if ($null -eq $c) { continue }
+            $holders += $c
+            $holders += @(Get-GdlStates $c)
+        }
+        foreach ($r in $reps) {
+            $hits = 0
+            foreach ($h in $holders) {
+                foreach ($f in 'textField', 'ftextField') {
+                    $v = Get-GdlField $h $f
+                    if ($v -isnot [string] -or -not $v.Contains([string]$r.old)) { continue }
+                    # String.Replace: ordinal and literal. PowerShell's replace
+                    # operator takes a regex, whose dots match any character.
+                    Set-GdlField $h $f ($v.Replace([string]$r.old, [string]$r.new))
+                    $hits++
+                }
+            }
+            if ($hits) { Write-Output "Offline Page: '$($r.old)' -> '$($r.new)' ($hits caption(s))" }
+            else { Note-Fatal "the Offline Page does not say '$($r.old)', so it cannot be replaced" }
         }
     }
 }

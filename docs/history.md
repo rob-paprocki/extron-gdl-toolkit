@@ -556,6 +556,23 @@ statement is in the live docs; this is the record that it changed.
   SD's Divider on the 300), and a page that did not fit after a row moved
   gave only the rearranged depth.
 
+- **A free layout's rows and columns did not re-space** (until 2026-10-27).
+  What is put in a source popup's well or a window's body was mapped from the
+  panel drawn at one scale and each control grown about its centre, its
+  neighbours staying where they were: round four's Mach Call popup drew
+  Privacy and Mic Mute 30 px apart, and 'Mics Muted' at the 725's and the
+  525's type floor grew to 9 px and 6 px from Privacy; Mach's Doc Cam came out
+  ragged on the 725, Freeze 92 and Normal 101 among 76s, and its keys drawn at
+  the template's 70 px pitch came out 52 apart, under the 725's 60 px keys, so
+  the region canvas drew them 100 apart; and Shockwave's and Turbulence's Help,
+  a stack of one-line Labels across the 1035's body, overflowed the 725's and
+  the 525's bodies, whose titles stand lower. `tests/data/round4-left.json`
+  classed those `limit`, behind two ROADMAP items. On Turbulence's 725 the
+  call page's last launcher, 1 px beside the Footer's Help, ran into it when
+  Initiate Call widened the rail's column, and was named. A free layout's
+  rows, columns and lines re-space now, and the Footer gives way
+  (`docs/claude-design.md` §3, §4).
+
 - **The region frame had no call mode** (until 2026-10-25). It measured Main
   SD alone, so a call page was a working page in Main SD's places or a
   source popup in the Center, its keys loose: round four's Mach designer drew
@@ -620,6 +637,21 @@ statement is in the live docs; this is the record that it changed.
   readout to re-read on 1.28** (until 2026-10-26). On 1.28.0.7 a clean
   build's Build Manager shows its phase and no count at all
   (`docs/from-scratch.md` §7).
+- **A Shockwave variant had one lit caption, and a call key's words stood 4
+  px past its glyph** (until 2026-10-27). Room Mode VC's two choices (`action`)
+  and the dialer's blue Flash lit `ink` where their template's lit caption is
+  #474747, and the dialer's green Call `ink` where it is #355424 - the ledger's
+  shockwave-20 listed the first two as a deviation and missed the Call. A
+  variant lights its icon's color's dark now (`lit`). The dialer's Call and
+  Flash and Shockwave's incoming answers set their words 4 px past the glyph,
+  the Header's tabs' gap, where each template leaves its own: the 1035's Call
+  24 px, Flash 20, Accept Call 18 and Ignore Call 25, the 725's 15, 11, 10 and
+  16, and Mach's Call and Flash 15 and Contacts 3 on the 1035. A key's words
+  are set that far past its glyph now (`gap`, measured per key and panel by
+  `tests/measure_series.py` `words_gap`). Mach's and Turbulence's call keys
+  light as their templates' do. The 720's seed lights its Flash #000000 and
+  its template gives the lit caption no color, where the six other series'
+  are #474747; the system draws the six.
 
 ## Dated facts moved out of the live docs
 

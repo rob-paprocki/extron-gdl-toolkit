@@ -46,6 +46,11 @@ def built_layout(m):
             controls.append({'Name': 'Ref ' + g, 'UserId': 0, 'Type': 6,
                              'PopupPageID': {'IsPopupGroupIdValid': True,
                                              'GroupID': groups.get(g, 99)}})
+        # Bound to one popup by its ID, GroupID 0 - the seeds' Volume Level.
+        for one in sorted(ct['popup_refs']):
+            controls.append({'Name': 'Ref ' + one, 'UserId': 0, 'Type': 6,
+                             'PopupPageID': {'IsPopupPageIdValid': True, 'PopupID': ids[one],
+                                             'IsPopupGroupIdValid': False, 'GroupID': 0}})
         box = {'Name': ct['name'], 'ID': ids[ct['name']], 'Controls': controls}
         if ct['kind'] == 'page':
             for p in m.containers:
@@ -55,7 +60,7 @@ def built_layout(m):
                                                      'PopupID': ids[p['name']]}})
             pages.append(box)
         else:
-            box.update(Modal=ct['modal'], GroupID=0 if ct['modal'] else groups[ct['group']])
+            box.update(Modal=ct['modal'], GroupID=groups[ct['group']] if ct['group'] else 0)
             popups.append(box)
     return {'Pages': pages, 'PopupPages': popups}
 
@@ -239,6 +244,51 @@ class TestPopupFromPopup(unittest.TestCase):
         problems, _, _ = vi.check_layout(self.out, j)
         self.assertTrue(any("'B'" in p and 'Home' in p for p in problems), problems)
 
+
+
+class TestPopupBoundById(unittest.TestCase):
+    """A standard popup in no group appears through a reference bound to it
+    alone - PopupID its own, IsPopupPageIdValid - as nine seeds show their
+    Volume Level. The verifier counted only group references for a standard
+    popup, and failed the first panel built so on a page that showed it."""
+
+    SPEC = {
+        'name': 'T', 'size': [1280, 800],
+        'theme': {'text': '#FFFFFF', 'raised': '#2E3142', 'accent': '#3D8BFD', 'on': 'accent'},
+        'pages': [{'name': 'Home', 'number': 1000, 'controls': [
+            {'kind': 'popup_ref', 'name': 'Vol', 'rect': [1180, 100, 80, 480],
+             'popup': 'Volume Level'},
+            {'kind': 'button', 'name': 'Open', 'rect': [0, 700, 100, 80], 'nav': 'Volume Level'}]}],
+        'popups': [
+            {'name': 'Volume Level', 'number': 9100, 'size': [80, 480], 'controls': [
+                {'kind': 'button', 'name': 'Up', 'rect': [0, 0, 80, 100],
+                 'does': 'Volume up.'}]}],
+    }
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        path = os.path.join(self.dir, 'spec.json')
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(self.SPEC, fh)
+        self.m = load(path)
+        self.assertEqual(self.m.check()[0], [])
+        self.out = os.path.join(self.dir, 'map')
+        self.m.write(self.out)
+
+    def tearDown(self):
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def test_the_page_with_the_reference_shows_it(self):
+        problems, _, _ = vi.check_layout(self.out, built_layout(self.m))
+        self.assertEqual(problems, [])
+
+    def test_a_reference_to_another_popup_does_not(self):
+        j = built_layout(self.m)
+        ref = next(c for c in j['Pages'][0]['Controls'] if c.get('Name') == 'Ref Volume Level')
+        ref['PopupPageID']['PopupID'] = 4242
+        problems, _, _ = vi.check_layout(self.out, j)
+        self.assertTrue(any("'Volume Level'" in p and 'cannot appear' in p for p in problems),
+                        problems)
 
 
 class TestPanels(unittest.TestCase):

@@ -57,7 +57,7 @@ in the same commit.
 None of these blocks the phases above; each is in the ROADMAP's *Yours*.
 
 - **Load a built panel onto a TouchLink Pro panel**, and say how panels are loaded - the one step with no evidence.
-- **Confirm or overrule** the assumptions already built: a mic mute and a display's state where the template keeps them; the footer cells the template stands together drawn as a joined set; the 320's column headings in capitals; Afterburn's regions' ten answers.
+- **Confirm or overrule** the assumptions already built: a mic mute and a display's state where the template keeps them; the footer cells the template stands together drawn as a joined set; a source popup's column of keys drawn at the template's row pitch kept at each panel's as a joined set; the 320's column headings in capitals; Afterburn's regions' ten answers.
 - **Decide**: kit art or Extron's icon fonts for the small glyphs; whether a 320 key's caption may go below 14 pt (and the type floor's formula on the 535); whether the call mode's derived answers and tiles take the template's IDs; Open Sans Light; an empty caption on Mach's Share Content.
 - **Approve** deleting the client fixtures once 2.5 has replaced them; schedule `~/gdltmp/nightly.sh` on the Linux box; pick a licence.
 - **Larger calls**: a room whose panels are in two themes or two zones (a cross-canvas ID check); a Design front end for Teams and Zoom Rooms.

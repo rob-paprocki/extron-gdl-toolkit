@@ -111,6 +111,11 @@ corpus's 47 projects finds 58 `PBControlGroup` instances, from none to five a
 project, and every one an entry of its project's popup group registry
 (`popupPageGroupsField`): a seed's one, where it has any (`Controls`,
 `Transport1`, `inputs`, `Room Controls`), as much as the client's four or five.
+A popup in no group needs none: a `popup_ref` naming it is bound to it by its
+ID, as the seeds bind their Volume Level, and `Test-GdlPopupBinding` checks that
+binding as it does a group's (`docs/gdl-format.md` §6). What else a seed ships
+that a spec now says - its Offline Page's switch and words, and each popup's
+`timeout`, which reaches no panel - is in `SKILL.md` step 3.
 
 It makes a group by cloning one of the registry's own, so a project with none -
 the 320 and 300M seeds and one client fixture - cannot take a grouped standard

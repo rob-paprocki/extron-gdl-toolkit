@@ -589,6 +589,7 @@
           "empty": [308, 287, 653, 280],
           "pt": {"title": 36, "empty": 16},
           "title_controls": [250, 137, 770, 96],
+          "pitch": [154, 118],
           "pictures": {
             "apple-tv": [140, 137, 293, 257],
             "bluray": [140, 137, 352, 310],
@@ -1325,6 +1326,7 @@
           "empty": [247, 216, 523, 210],
           "pt": {"title": 36, "empty": 16},
           "title_controls": [200, 103, 616, 72],
+          "pitch": [123, 88],
           "pictures": {
             "apple-tv": [112, 103, 235, 193],
             "bluray": [112, 103, 282, 233],
@@ -2017,6 +2019,7 @@
           "empty": [328, 275, 696, 268],
           "pt": {"title": 36, "empty": 16},
           "title_controls": [266, 131, 821, 92],
+          "pitch": [164, 114],
           "pictures": {
             "apple-tv": [149, 131, 312, 246],
             "bluray": [149, 131, 375, 297],
@@ -2697,6 +2700,7 @@
           "empty": [194, 174, 409, 168],
           "pt": {"title": 36, "empty": 14},
           "title_controls": [157, 83, 482, 58],
+          "pitch": [96, 70],
           "pictures": {
             "apple-tv": [88, 83, 184, 155],
             "bluray": [88, 83, 221, 187],
@@ -3373,6 +3377,7 @@
           "pt": {"title": 30, "empty": 18},
           "close": {"role": "close", "name": "Close Laptop", "kind": "button", "rect": [629, 6, 60, 60], "id": 9102},
           "title_controls": [0, 10, 702, 52],
+          "pitch": [136, 90],
           "pictures": {
             "apple-tv": [217, 40, 268, 250],
             "bluray": [234, 59, 233, 219],

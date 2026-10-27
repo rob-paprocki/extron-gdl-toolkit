@@ -646,11 +646,11 @@
     "empty": "{name} is currently selected.\nThere are no controls for this device.",
     "page_empty": "{name} is currently selected.\n\nThere are no controls\nfor this device.",
     "column_labels_320": "caps",
-    "confirm": {"power": "Do you want to power down the system?", "call": "Incoming call, do you wish to accept?"},
+    "confirm": {"power": "Do you want to power down the system?", "call": "Incoming call, do you wish to accept?", "recording": "You are about to start recording.\n\nPlease let attendees know they will be recorded."},
     "wait": {"up": "Please wait while the system starts up.", "down": "Please wait while the system is powering down."},
     "help": "For assistance, please call the help desk at:\n\nX.XXX.XXX.XXXX",
     "help_title": "Help",
-    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close", "accept": "Accept", "decline": "Decline"},
+    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close", "accept": "Accept", "decline": "Decline", "record": "Record"},
     "voice": {
       "_source": "Off seeds/Afterburn 1035.gdl's working pages, popups and windows - Main SD, Main VC, Main Recording, the Laptop and PC popups, Lighting Settings, Camera Settings, Confirmation, Starting Up, Powering Down and Help - and the grammar digest of every Afterburn page: its captions, rail headings, titles and messages. Press to begin is its one sentence-case button; the group labels inside its popups and windows are capitals, 16 pt bold Labels, not captions.",
       "rules": [
@@ -802,6 +802,7 @@
           "empty": [320, 248, 640, 128],
           "pt": {"title": 21, "empty": 16},
           "title_controls": [559, 175, 162, 50],
+          "pitch": [202, 79],
           "items": [
             {"role": "divider", "name": "Divider", "kind": "line", "rect": [260, 137, 760, 20]},
             {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [568, 701, 144, 64], "id": 8301},
@@ -963,6 +964,44 @@
               }
             ],
             "text": "Incoming call, do you wish to accept?"
+          },
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 0, 1280, 800],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1280, 800],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6400x4000_bg1.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 21},
+            "message": [270, 113, 740, 170],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "start-recording",
+                "name": "Start Recording",
+                "kind": "button",
+                "rect": [462, 325, 154, 64],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [664, 325, 154, 64],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
         "call": {
@@ -1371,6 +1410,7 @@
           "empty": [272, 193, 480, 96],
           "pt": {"title": 17.5, "empty": 12.5},
           "title_controls": [431, 120, 162, 37],
+          "pitch": [153, 70],
           "items": [
             {"role": "divider", "name": "Divider", "kind": "line", "rect": [208, 93, 608, 15]},
             {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [287, 545, 450, 45]}
@@ -1525,6 +1565,44 @@
               }
             ],
             "text": "Incoming call, do you wish to accept?"
+          },
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 0, 1024, 600],
+            "surfaces": [
+              {
+                "name": "Modal Background",
+                "rect": [0, 0, 1024, 600],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "5120x3000_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 17.5},
+            "message": [218, 94, 588, 150],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "start-recording",
+                "name": "Start Recording",
+                "kind": "button",
+                "rect": [346, 275, 144, 60],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Recording Cancel",
+                "kind": "button",
+                "rect": [533, 275, 144, 60],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
         "call": {
@@ -1931,6 +2009,7 @@
           "empty": [508, 327, 898, 180],
           "pt": {"title": 30, "empty": 22},
           "title_controls": [844, 225, 226, 69],
+          "pitch": [285, 111],
           "items": [
             {"role": "divider", "name": "Divider", "kind": "line", "rect": [424, 180, 1068, 27]},
             {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [858, 954, 201, 90], "id": 8301},
@@ -2114,6 +2193,44 @@
               }
             ],
             "text": "Incoming call, do you wish to accept?"
+          },
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 0, 1920, 1080],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 1080],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 30},
+            "message": [438, 147, 1041, 239],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "start-recording",
+                "name": "Start Recording",
+                "kind": "button",
+                "rect": [709, 445, 216, 90],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [993, 445, 216, 90],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
         "call": {
@@ -2520,6 +2637,7 @@
           "empty": [1113, 252, 480, 96],
           "pt": {"title": 21, "empty": 15},
           "title_controls": [1272, 169, 162, 37],
+          "pitch": [159, 80],
           "items": [
             {"role": "preview", "name": "Preview PC", "kind": "button", "rect": [326, 19, 125, 125], "id": 8352},
             {"role": "preview", "name": "Preview Laptop", "kind": "button", "rect": [453, 19, 125, 125], "id": 8350},
@@ -2748,6 +2866,44 @@
               }
             ],
             "text": "Incoming call, do you wish to accept?"
+          },
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 0, 1920, 720],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 720],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "9600x3600_bg1_default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 20},
+            "message": [597, 74, 726, 170],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "start-recording",
+                "name": "Start Recording",
+                "kind": "button",
+                "rect": [764, 275, 174, 72],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [981, 275, 174, 72],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
         "call": {
@@ -3123,6 +3279,7 @@
           "pt": {"title": 21, "empty": 16},
           "close": {"role": "back", "name": "Laptop Back", "kind": "button", "rect": [0, 13, 66, 66], "id": 9102},
           "title_controls": [66, 21, 284, 50],
+          "pitch": [160, 79],
           "level": {
             "popup": "Volume Level",
             "fill": "#BABCCEFF",
@@ -3234,7 +3391,45 @@
               "close": {"role": "back", "name": "Settings Back", "kind": "button", "rect": [0, 13, 66, 66], "id": 6210},
               "pt": {"title": 21}
             }
-          ]
+          ],
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 0, 800, 480],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 800, 480],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "4000x2400_bg1-default_starrt.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 16},
+            "message": [182, 53, 436, 156],
+            "lines": 4,
+            "buttons": [
+              {
+                "role": "start-recording",
+                "name": "Start Recording",
+                "kind": "button",
+                "rect": [222, 222, 154, 66],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Recording Cancel",
+                "kind": "button",
+                "rect": [424, 222, 154, 66],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know\nthey will be recorded."
+          }
         },
         "ids": {"help": 8117, "power": 8022, "mute": 8021, "volume-up": 8120, "volume-down": 8121, "settings": 8040},
         "note": "The popups fill main."
@@ -3679,7 +3874,45 @@
               "art": true,
               "pt": {"title": 14}
             }
-          ]
+          ],
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 0, 480, 320],
+            "surfaces": [
+              {
+                "name": "Image1_ID0",
+                "rect": [0, 0, 480, 320],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "2400x1600_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 14},
+            "message": [33, 46, 332, 124],
+            "lines": 4,
+            "buttons": [
+              {
+                "role": "start-recording",
+                "name": "Start Recording",
+                "kind": "button",
+                "rect": [53, 188, 136, 66],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Recording Cancel",
+                "kind": "button",
+                "rect": [210, 188, 136, 66],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
+          }
         },
         "ids": {"help": 8117, "power": 8022, "settings": 8040},
         "note": "Each source is a page of its own. The title sits in the column at the left, with Back. Main holds Settings, Help and Power Down in the column at the right."

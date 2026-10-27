@@ -64,6 +64,7 @@
       "kit": "712x440",
       "icon": "gray",
       "look": {"border": "none", "color": "text"},
+      "lit": {"yellow": "caution", "red": "alert", "green": "go", "blue": "text-secondary"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
     "tile": {
@@ -72,6 +73,7 @@
       "icon": "gray",
       "lines": 2,
       "look": {"border": "none", "color": "text"},
+      "lit": {"yellow": "caution", "red": "alert", "green": "go", "blue": "text-secondary"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
     "square": {
@@ -79,13 +81,15 @@
       "kit": "440x440",
       "icon": "gray",
       "look": {"border": "none", "color": "text"},
+      "lit": {"yellow": "caution", "red": "alert", "green": "go", "blue": "text-secondary"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
     "pill": {
-      "usage": "A pill - the footer's Help (yellow) and Power (red), 143x59. `icon` names its color as `button`'s does.",
+      "usage": "A pill - the footer's Help (yellow) and Power (red), 143x59, and the dialer's Call (green) and Flash (blue). `icon` names its color as `button`'s does. Lit, its caption is its icon's color's dark (`lit`): `caution` on yellow, `alert` on red, `go` on green, `text-secondary` on blue.",
       "kit": "960x440",
       "icon": "gray",
       "look": {"border": "none", "color": "text"},
+      "lit": {"yellow": "caution", "red": "alert", "green": "go", "blue": "text-secondary"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
     "wide": {
@@ -93,23 +97,26 @@
       "kit": "1248x440",
       "icon": "gray_round",
       "look": {"border": "none", "color": "text"},
+      "lit": {"yellow": "caution", "red": "alert", "green": "go", "blue": "text-secondary"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
     },
     "action": {
-      "usage": "A wide pill with the kit's icon at its left and the caption after it - Accept Call, Ignore Call, Presentation, 272x110. `icon` is required: r_call_green, r_end-call_red, r_help_yellow, r_power_red, r_mic_yellow, r_share-1_blue, r_presentation_gray; without the r_ prefix the button is rounded rather than round.",
+      "usage": "A wide pill with the kit's icon at its left and the caption after it - Accept Call, Ignore Call, Presentation, 272x110. `icon` is required: r_call_green, r_end-call_red, r_help_yellow, r_power_red, r_mic_yellow, r_share-1_blue, r_presentation_gray; without the r_ prefix the button is rounded rather than round. Lit, its caption is its icon's color's dark (`lit`): `go` on r_call_green, `alert` on the red, `caution` on the yellow, and `text-secondary` on the blue and on the gray r_presentation_gray.",
       "kit": "1248x440",
       "icon": "r_call_green",
       "caption": "indent",
       "indent": 11,
       "align": "center",
       "look": {"border": "none", "color": "text"},
-      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "ink"}]
+      "lit": {"yellow": "caution", "red": "alert", "green": "go", "blue": "text-secondary"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "text-secondary"}]
     },
     "key": {
       "usage": "A key in a source's popup or on a 320 page: the 504x440 gray tile that lights with `text-secondary`, as the template's Blu-ray, Doc Cam, Tuner, Camera Control and VTC keys do (a rail's `tile` lights with `ink`). `icon` names its color as `button`'s does.",
       "kit": "504x440",
       "icon": "gray",
       "look": {"border": "none", "color": "text"},
+      "lit": {"yellow": "caution", "red": "alert", "green": "go", "blue": "text-secondary"},
       "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "color": "text-secondary"}]
     },
     "source": {
@@ -173,7 +180,7 @@
   },
   "iconography": {
     "icon_prop": "Each image is the whole button, at rest and lit: state 0 draws it at rest, the others lit.",
-    "intro": "Shockwave draws every button from its kit: one image per state, which carries the button's shape, color and any icon. At rest a button is dark with a ring in its color; lit, it fills with that color's pale tint and its caption takes that color's dark - `ink` on gray, `caution` on yellow, `alert` on red, `go` on green (a gray key in a source popup takes `text-secondary`). Name the image with a Button's `icon` - never draw a button's shape or an icon yourself.",
+    "intro": "Shockwave draws every button from its kit: one image per state, which carries the button's shape, color and any icon. At rest a button is dark with a ring in its color; lit, it fills with that color's pale tint and its caption takes that color's dark - `ink` on gray, `caution` on yellow, `alert` on red, `go` on green, `text-secondary` on blue (a gray key in a source popup, and a gray `action` button, take `text-secondary` too). Name the image with a Button's `icon` - never draw a button's shape or an icon yourself.",
     "rules": [
       "**Color is the image family**: `gray` for most buttons, `yellow` for help, privacy and start, `red` for power (Off), end and cancel - Mute rests gray and lights red - `green` to confirm or answer a call, `blue` for Flash on a call (the kit's share keys are blue too; the 1035's Share Content is its own image, teal and lighting pink). Add `_round` on a `wide` button for a pill.",
       "**Which button**: rail buttons are `button` (120x80); a two-line name is a `tile` (120x110); a square control is `square` (80x80); the footer's Help and Power are `pill`s (143x59); a modal's choices are `wide` (272x110), or `action` with the kit's icon at the left (r_call_green, r_end-call_red); the footer's Room Mode is a `wide` gray_round; a key in a source's popup is a `key`. Sources are `source` tabs in the header: a white glyph (laptop_white, pc_white) on the bar, lit white when chosen. A modal closes with `close`, the kit's X.",
@@ -193,10 +200,10 @@
     ],
     "camera": {"heading": [320, 130, 110, 60], "key": [330, 200, 90, 80], "step": 120, "box": [330, 200, 90, 240], "icons": null},
     "states": "[{\"name\":\"No Signal\",\"look\":\"off\"},{\"name\":\"Ready\",\"look\":\"off\",\"icon\":\"yellow\"},{\"name\":\"Live\",\"look\":\"on\",\"icon\":\"green\",\"color\":\"go\"}]",
-    "states_note": "In Shockwave a state shows itself through the kit's image: a state can name its own `icon` (color) and `look` (off rests dark with a ring, on lights up), and a lit image takes its color's caption - `ink` on gray, `caution` on yellow, `alert` on red, `go` on green. A Mute lights red: its lit state is `{\"name\":\"On\",\"icon\":\"red\",\"color\":\"alert\"}`.",
+    "states_note": "In Shockwave a state shows itself through the kit's image: a state can name its own `icon` (color) and `look` (off rests dark with a ring, on lights up), and a lit image takes its color's caption - `ink` on gray, `caution` on yellow, `alert` on red, `go` on green, `text-secondary` on blue - unless the state names a `color`. A Mute lights red: its lit state is `{\"name\":\"On\",\"icon\":\"red\",\"color\":\"alert\"}`.",
     "on_off": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"ink\"}]",
     "group_note": "Neither is Shockwave's: its source row is the Header's six 152x91 tabs, 1 px apart, which a Group keeps with `joined`. Set `cap`, `cell` and `gap` for the group you mean.",
-    "color_rule": "A theme's photo behind everything; `page` for the header and footer bars and the source tabs; `well` for the video well, with `text` on it; `ink` for a lit gray button's caption; `raised` for a modal's card with `text-secondary` on it; `clock` for the footer's date and time; a button's color from its kit family - gray for most, yellow for help, red for power, end and cancel, green to confirm or call, blue for Flash - with the caption it lights with: `alert` on red, `caution` on yellow, `go` on green."
+    "color_rule": "A theme's photo behind everything; `page` for the header and footer bars and the source tabs; `well` for the video well, with `text` on it; `ink` for a lit gray button's caption; `raised` for a modal's card with `text-secondary` on it; `clock` for the footer's date and time; a button's color from its kit family - gray for most, yellow for help, red for power, end and cancel, green to confirm or call, blue for Flash - with the caption it lights with: `alert` on red, `caution` on yellow, `go` on green, `text-secondary` on blue."
   },
   "themes_note": "set per page: the working pages on `haze`, the Start page on `saturn`",
   "themes": [
@@ -234,7 +241,7 @@
     "help": {"variant": "pill", "icon": "yellow", "text": "Help", "states": [{"name": "Off"}, {"name": "On", "color": "caution"}]},
     "power": {"variant": "pill", "icon": "red", "text": "Off", "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]},
     "clock": {"format": "M/d/yyyy h:mm tt", "align": "center"},
-    "_call": "What a call page (role=\"call\"), its dialer (role=\"dialer\") and the incoming call's question (topic=\"call\") draw, off seeds/Shockwave 1035.gdl's Main VC, VTC Dialer and Incoming Call: Call the green pill (960x440 green, lit with `go`), End Call the red and Privacy the yellow, lit with `alert` and `caution`; Share Content the seed's own 120x75 art with its words in it (712x440_share-content_nsel, lit 712x440_stop-sharing_sel, `share`), which no kit carries and `python -m gdl.designsys extract shockwave` takes from the seed; the dialer's digits the kit's dialpad art on its 440x440 square, Call and Flash the green and blue pills with their words past the glyph, Contacts and Delete its 504x440 keys with theirs under it, Keyboard its 712x440 one, the number on white, the entry's own paint; the question's Accept Call and Ignore Call the kit's round call and end-call pills (1248x440 r_call_green, r_end-call_red), their words past the glyph. Shockwave's bar templates draw no Main Select Source.",
+    "_call": "What a call page (role=\"call\"), its dialer (role=\"dialer\") and the incoming call's question (topic=\"call\") draw, off seeds/Shockwave 1035.gdl's Main VC, VTC Dialer and Incoming Call: Call the green pill (960x440 green, lit with `go`), End Call the red and Privacy the yellow, lit with `alert` and `caution`; Share Content the seed's own 120x75 art with its words in it (712x440_share-content_nsel, lit 712x440_stop-sharing_sel, `share`), which no kit carries and `python -m gdl.designsys extract shockwave` takes from the seed; the dialer's digits the kit's dialpad art on its 440x440 square, Call and Flash the green and blue pills (lit with `go` and `text-secondary`) with their words past the glyph by the gap the template leaves, Contacts and Delete its 504x440 keys with theirs under it, Keyboard its 712x440 one, the number on white, the entry's own paint; the question's Accept Call and Ignore Call the kit's round call and end-call pills (1248x440 r_call_green, r_end-call_red), their words past the glyph by the gap it leaves. Shockwave's bar templates draw no Main Select Source.",
     "call": {"call": {"variant": "pill", "icon": "green", "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "end-call": {"variant": "pill", "icon": "red", "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}, "privacy": {"variant": "pill", "icon": "yellow", "states": [{"name": "Off"}, {"name": "On", "color": "caution"}]}},
     "share": {"variant": "share"},
     "dialer": {"key": {"variant": "square", "icon": "dialpad_{key}", "text": ""}, "call": {"variant": "pill", "icon": "call_green", "__caption": "indent"}, "flash": {"variant": "pill", "icon": "flash_blue", "__caption": "indent"}, "contacts": {"variant": "key", "icon": "contacts-b_gray", "__caption": "below", "__breaks": 2}, "keyboard": {"variant": "button", "icon": "keyboard_gray", "text": ""}, "delete": {"variant": "key", "icon": "delete-b_gray", "__caption": "below", "__breaks": 1}, "entry": {"color": "ink", "align": "left"}},
@@ -289,7 +296,7 @@
     "thumbs": "Shockwave/Slider",
     "outline_off": true,
     "icon_right": {"960x440": 0.399, "1248x440": 0.343},
-    "icon_right_note": "How far across a pill its glyph reaches, where an indented caption is centred past it: the pixels where 960x440_call_outline_green_nsel and flash_outline_blue_nsel differ from the plain green and blue rings end at x 383 of 960; 1248x440_r_call_green's and r_end-call_red's at 403 and 428 of 1248, the end-call glyph the furthest. VTC Dialer sets its Call and Flash, and Incoming Call its Accept Call and Ignore Call, past them ('         Call', '           Accept Call').",
+    "icon_right_note": "How far across a pill its glyph reaches, where an indented caption is centred past it: the pixels where 960x440_call_outline_green_nsel and flash_outline_blue_nsel differ from the plain green and blue rings end at x 383 of 960; 1248x440_r_call_green's and r_end-call_red's at 403 and 428 of 1248, the end-call glyph the furthest. VTC Dialer sets its Call and Flash, and Incoming Call its Accept Call and Ignore Call, past them ('         Call', '           Accept Call'). The gap each leaves between that reach and its words is the one its template leaves, per key and panel (the frame's `gap`, in px: tests/measure_series.py words_gap); a caption is set that far past the glyph, to the nearest space and never closer than 4 px (or than the gap measured, if that is less), and a key with no gap measured takes 4 px.",
     "extract": {"from": ["seeds/Shockwave 1035.gdl"], "to": "Shockwave/Extracted", "only": ["712x440_share-content_nsel.png", "712x440_stop-sharing_sel.png"]},
     "named": {"440x440": {"close": {"off": "black_close.png", "sel": "white_close.png"}}, "712x440": {"share-content": {"off": "712x440_share-content_nsel.png", "sel": "712x440_stop-sharing_sel.png"}}},
     "prefixed": {"device": {"prefix": "white_", "size": [440, 440]}},
@@ -488,6 +495,7 @@
           "status": [536, 516, 192, 102],
           "pt": {"title": 40, "empty": 22, "status": 16},
           "title_controls": [339, 130, 587, 86],
+          "pitch": [189, 104],
           "items": []
         },
         "windows": {
@@ -654,7 +662,8 @@
                 "kind": "button",
                 "rect": [355, 448, 272, 110],
                 "id": 9032,
-                "text": "Accept Call"
+                "text": "Accept Call",
+                "gap": 18
               },
               {
                 "role": "decline",
@@ -662,7 +671,8 @@
                 "kind": "button",
                 "rect": [653, 448, 272, 110],
                 "id": 9033,
-                "text": "Ignore Call"
+                "text": "Ignore Call",
+                "gap": 25
               }
             ],
             "text": "Incoming call,\ndo you wish to accept?"
@@ -964,6 +974,7 @@
                   "rect": [794, 504, 178, 86],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 20,
                   "art": "960x440_flash_outline_blue_nsel.png"
                 },
                 {
@@ -1005,6 +1016,7 @@
                   "rect": [794, 591, 178, 86],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 24,
                   "art": "960x440_call_outline_green_nsel.png"
                 }
               ]
@@ -1176,6 +1188,7 @@
           "status": [428, 385, 152, 75],
           "pt": {"title": 30, "empty": 20, "status": 14},
           "title_controls": [200, 112, 608, 52],
+          "pitch": [151, 78],
           "items": []
         },
         "windows": {
@@ -1434,7 +1447,8 @@
                 "kind": "button",
                 "rect": [285, 340, 216, 81],
                 "id": 9032,
-                "text": "Accept Call"
+                "text": "Accept Call",
+                "gap": 10
               },
               {
                 "role": "decline",
@@ -1442,7 +1456,8 @@
                 "kind": "button",
                 "rect": [523, 340, 216, 81],
                 "id": 9033,
-                "text": "Ignore Call"
+                "text": "Ignore Call",
+                "gap": 16
               }
             ],
             "text": "Incoming call,\ndo you wish to accept?"
@@ -1723,6 +1738,7 @@
                   "rect": [653, 378, 140, 63],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 11,
                   "art": "960x440_flash_outline_blue_nsel.png"
                 },
                 {
@@ -1764,6 +1780,7 @@
                   "rect": [654, 443, 140, 63],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 15,
                   "art": "960x440_call_outline_green_nsel.png"
                 }
               ]
@@ -1925,6 +1942,7 @@
           "status": [580, 492, 204, 97],
           "pt": {"title": 40, "empty": 22, "status": 16},
           "title_controls": [389, 130, 587, 86],
+          "pitch": [201, 91],
           "items": []
         },
         "windows": {
@@ -2091,7 +2109,8 @@
                 "kind": "button",
                 "rect": [457, 436, 200, 80],
                 "id": 9032,
-                "text": "Accept Call"
+                "text": "Accept Call",
+                "gap": 8
               },
               {
                 "role": "decline",
@@ -2099,7 +2118,8 @@
                 "kind": "button",
                 "rect": [709, 436, 200, 80],
                 "id": 9033,
-                "text": "Ignore Call"
+                "text": "Ignore Call",
+                "gap": 11
               }
             ],
             "text": "Incoming call,\ndo you wish to accept?"
@@ -2386,6 +2406,7 @@
                   "rect": [875, 460, 170, 80],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 19,
                   "art": "960x440_flash_outline_blue_nsel.png"
                 },
                 {
@@ -2395,6 +2416,7 @@
                   "rect": [876, 543, 170, 80],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 21,
                   "art": "960x440_call_outline_green_nsel.png"
                 },
                 {
@@ -2608,6 +2630,7 @@
           "status": [812, 690, 286, 135],
           "pt": {"title": 40, "empty": 30, "status": 22},
           "title_controls": [544, 181, 825, 120],
+          "pitch": [282, 127],
           "items": []
         },
         "windows": {
@@ -2774,7 +2797,8 @@
                 "kind": "button",
                 "rect": [642, 612, 280, 112],
                 "id": 9032,
-                "text": "Accept Call"
+                "text": "Accept Call",
+                "gap": 13
               },
               {
                 "role": "decline",
@@ -2782,7 +2806,8 @@
                 "kind": "button",
                 "rect": [996, 612, 280, 112],
                 "id": 9033,
-                "text": "Ignore Call"
+                "text": "Ignore Call",
+                "gap": 18
               }
             ],
             "text": "Incoming call,\ndo you wish to accept?"
@@ -3083,6 +3108,7 @@
                   "rect": [1228, 645, 238, 112],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 26,
                   "art": "960x440_flash_outline_blue_nsel.png"
                 },
                 {
@@ -3092,6 +3118,7 @@
                   "rect": [1228, 762, 238, 112],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 29,
                   "art": "960x440_call_outline_green_nsel.png"
                 },
                 {
@@ -3284,6 +3311,7 @@
           "status": [333, 309, 119, 60],
           "pt": {"title": 24, "empty": 18, "status": 12},
           "title_controls": [156, 77, 475, 51],
+          "pitch": [118, 63],
           "items": []
         },
         "windows": {
@@ -3542,7 +3570,8 @@
                 "kind": "button",
                 "rect": [221, 268, 169, 65],
                 "id": 9032,
-                "text": "Accept Call"
+                "text": "Accept Call",
+                "gap": 6
               },
               {
                 "role": "decline",
@@ -3550,7 +3579,8 @@
                 "kind": "button",
                 "rect": [407, 268, 169, 65],
                 "id": 9033,
-                "text": "Ignore Call"
+                "text": "Ignore Call",
+                "gap": 11
               }
             ],
             "text": "Incoming call,\ndo you wish to accept?"
@@ -3831,6 +3861,7 @@
                   "rect": [527, 297, 110, 51],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 9,
                   "art": "960x440_flash_outline_blue_nsel.png"
                 },
                 {
@@ -3864,6 +3895,7 @@
                   "rect": [527, 360, 110, 51],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 10,
                   "art": "960x440_call_outline_green_nsel.png"
                 },
                 {
@@ -3978,6 +4010,7 @@
           "pt": {"title": 40, "empty": 28},
           "close": {"role": "close", "name": "Close Laptop", "kind": "button", "rect": [1012, 9, 96, 90], "id": 9102},
           "title_controls": [128, 0, 865, 108],
+          "pitch": [256, 132],
           "level": {
             "popup": "Volume Level",
             "fill": "#595757FA",
@@ -4293,6 +4326,7 @@
           "pt": {"title": 30, "empty": 18},
           "close": {"role": "close", "name": "Close Laptop", "kind": "button", "rect": [633, 6, 60, 60], "id": 9102},
           "title_controls": [80, 0, 541, 72],
+          "pitch": [160, 88],
           "level": {
             "popup": "Volume Level",
             "fill": "#595757FA",

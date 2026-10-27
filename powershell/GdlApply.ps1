@@ -548,7 +548,14 @@ function Set-GdlFont {
             Where-Object { $_.GetType().Name -eq 'PBFontResource' })
         $have = @($fontResources | ForEach-Object { $_.Name })
         $current = Get-GdlField $f 'nameField'
-        if ($Font.name -ne $current) {
+        # A control cloned from another seed (Apply-GdlPlan.ps1 -TypeDonors)
+        # names its own seed's resource, which this project may spell
+        # otherwise or lack: pointed at this project's even where the family
+        # is the same.
+        $ref0 = Get-GdlField $f 'fontResourceReferenceField'
+        $named = if ($ref0) { [string](Get-GdlField $ref0 'resourceNameField') } else { '' }
+        $foreign = $named -and ($have -notcontains $named)
+        if ($Font.name -ne $current -or $foreign) {
             # Match on the family the resource declares, not on the resource
             # name - those carry a style suffix ("Forma DJR Display Regular
             # Bold Italic") that no spec would write. The whole family, as

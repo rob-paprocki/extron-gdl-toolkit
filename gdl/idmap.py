@@ -111,15 +111,27 @@ class IdMap:
         if does is not None and not (isinstance(does, str) and does.strip()):
             self._problems.append(f"{kind} {item['name']!r}: does must be a sentence saying what it "
                                   f'is for, not {does!r}')
+        # A page or popup a panel's layout derived: the page that derived it
+        # and the template's name for it (gdl.design `_window`), which its
+        # name need not be - a hub names a later page's Select Source after
+        # that page. What the layout draws in it is known by these.
+        w = raw.get('_window')
+        window = ({'page': w['page'], 'name': w['name']}
+                  if isinstance(w, dict) and isinstance(w.get('page'), str) and isinstance(w.get('name'), str)
+                  else None)
         return {
             'name': item['name'], 'kind': kind,
             'does': does.strip() if isinstance(does, str) and does.strip() else None,
             'modal': bool(item.get('modal')) if kind == 'popup' else False,
             'group': item.get('group') if kind == 'popup' else None,
             'reached_by': rb,
-            # Popup groups this container shows standard popups through.
+            'window': window,
+            # Popup groups this container shows standard popups through, and
+            # the popups it shows through a reference bound to one alone.
             'refs': {c.get('group') for c in item['controls']
                      if c.get('kind') == 'popup_ref' and c.get('group')},
+            'popup_refs': {c.get('popup') for c in item['controls']
+                           if c.get('kind') == 'popup_ref' and c.get('popup')},
             'raw': item['controls'],
         }
 
@@ -224,9 +236,16 @@ class IdMap:
         return hosts
 
     def _only_referencing(self, popup, pages):
-        if popup['modal'] or not popup['group']:
+        if popup['modal']:
             return set(pages)
-        return {p for p in pages if popup['group'] in self.container(p)['refs']}
+        return {p for p in pages if self._references(p, popup)}
+
+    def _references(self, page, popup):
+        """Does `page` hold a reference that shows standard `popup`: one bound
+        to its group, or, for a popup in none, one bound to it alone."""
+        ct = self.container(page)
+        return (popup['group'] in ct['refs'] if popup['group']
+                else popup['name'] in ct['popup_refs'])
 
     # -- checks --------------------------------------------------------------
     def check(self):
@@ -285,16 +304,18 @@ class IdMap:
             if not r['nav'] or r['nav'][0] != 'popup':
                 continue
             pu = self.popup_by_name[r['nav'][1]]
-            if pu['modal'] or not pu['group']:
+            if pu['modal']:
                 continue
             lacking = sorted(p for p in hosts.get(r['container'], ())
-                             if pu['group'] not in self.container(p)['refs'])
+                             if not self._references(p, pu))
             if lacking:
+                to = (f"to its group {pu['group']!r}" if pu['group'] else
+                      'bound to it (it is in no group)')
                 out.append(f"{r['where']}: shows popup {pu['name']!r}, but page"
                            f"{'s' if len(lacking) > 1 else ''} "
                            f"{', '.join(repr(p) for p in lacking)} beneath it "
-                           f"{'have' if len(lacking) > 1 else 'has'} no reference to its group "
-                           f"{pu['group']!r}, so it would not appear there")
+                           f"{'have' if len(lacking) > 1 else 'has'} no reference {to}, so it "
+                           f'would not appear there')
         return out
 
     def _graph_rules(self):
@@ -394,12 +415,16 @@ class IdMap:
             'model': self.panel_name(),
             'start_page': self.start_page,
             'panel': self.panel_does,
-            'pages': [{'name': ct['name'], 'reached_by': ct['reached_by'],
-                       'shown_from': shown_from[ct['name']], 'does': ct['does']}
+            # A derived one's `window` is what the next revision keeps the
+            # IDs of what the layout drew in it by (known()).
+            'pages': [dict({'name': ct['name'], 'reached_by': ct['reached_by'],
+                            'shown_from': shown_from[ct['name']], 'does': ct['does']},
+                           **({'window': ct['window']} if ct['window'] else {}))
                       for ct in self.containers if ct['kind'] == 'page'],
-            'popups': [{'name': ct['name'], 'modal': ct['modal'], 'group': ct['group'],
-                        'reached_by': ct['reached_by'], 'shown_from': shown_from[ct['name']],
-                        'does': ct['does']}
+            'popups': [dict({'name': ct['name'], 'modal': ct['modal'], 'group': ct['group'],
+                             'reached_by': ct['reached_by'], 'shown_from': shown_from[ct['name']],
+                             'does': ct['does']},
+                            **({'window': ct['window']} if ct['window'] else {}))
                        for ct in self.containers if ct['kind'] == 'popup'],
             'controls': controls,
             'navigation': [list(e) for e in edges],
@@ -939,6 +964,31 @@ def places(c):
     return [a for at in (c.get('panels') or {}).values() for a in at] or c.get('at') or []
 
 
+def windows(view):
+    """{(page, template name): its name} - each page or popup a panel's
+    layout derived, in one panel's view of a map, by the page that derived
+    it and the template's name for it (`window`). Empty for a map written
+    before maps said so."""
+    view = view or {}
+    return {(p['window']['page'], p['window']['name']): p['name']
+            for p in (view.get('pages') or []) + (view.get('popups') or [])
+            if isinstance(p.get('window'), dict)}
+
+
+def _windows_by_panel(m):
+    """{panel: {name: (page, template name)}} - windows() turned round, for
+    each panel of map `m` (None for a map of one panel)."""
+    if not m.get('panels'):
+        return {None: {n: k for k, n in windows(m).items()}}
+    return {p.get('model'): {n: k for k, n in windows(p).items()} for p in m['panels']}
+
+
+def windowed(m):
+    """Whether map `m` says which page derived each derived page and popup
+    (windows()): a map written before it did knows them by name alone."""
+    return any(_windows_by_panel(m).values())
+
+
 def known(m):
     """What a previous map gave each control: ({(page or popup, name): ID}
     for the canvas's controls, the same for what a panel's layout derived,
@@ -950,15 +1000,24 @@ def known(m):
     control's, not a key of its own. The two are kept apart so that a canvas
     control drawn since cannot take the ID of a derived one that happens to
     share its page and name.
+
+    In a page or popup the layout derived, a control is known by the page
+    that derived it and the template's name for it (windows()) - the key a
+    tuple, ((page, template name), name) - where the map says them: a hub
+    names a later page's Select Source after that page, so its name follows
+    the pages' order and the window does not.
     """
     books = ({}, {})
+    wins = _windows_by_panel(m)
     for c in m.get('controls') or []:
         book = books[1 if c.get('derived') else 0]
-        for a in places(c):
-            if a.get('mirror'):
-                continue
-            k = (a['container'], a['name'])
-            book[k] = c['id'] if book.get(k, c['id']) == c['id'] else None
+        for model, at in (c.get('panels') or {None: c.get('at') or []}).items():
+            on = wins.get(model) or {}
+            for a in at:
+                if a.get('mirror'):
+                    continue
+                k = (on.get(a['container'], a['container']), a['name'])
+                book[k] = c['id'] if book.get(k, c['id']) == c['id'] else None
     held = {r['id']: r.get('was') or '' for r in m.get('retired') or []}
     for c in m.get('controls') or []:
         at = (c.get('at') or places(c) or [{}])[0]
@@ -1023,6 +1082,18 @@ def renames(old, new):
     return out
 
 
+def window_renames(old, new):
+    """[(old name, new name, kind)]: each page or popup a panel's layout
+    derived that one panel's views `old` and `new` both have (windows())
+    under another name - a hub's Select Source renamed by the order of the
+    working pages (gdl.design _one_name_each). It is the same window: a
+    program shows it by its new name, and what the layout drew in it keeps
+    its IDs."""
+    o, n = windows(old), windows(new)
+    kinds = {p['name']: kind for kind in ('page', 'popup') for p in old.get(kind + 's') or []}
+    return [(o[k], n[k], kinds.get(o[k], 'popup')) for k in n if k in o and o[k] != n[k]]
+
+
 def _shown(popup):
     """How ShowPopup shows a popup: 'modal', 'group <name>' or 'no group'."""
     return 'modal' if popup.get('modal') else f"group {popup['group']}" if popup.get('group') else 'no group'
@@ -1078,15 +1149,30 @@ def diff(old, new):
         return [] if None in ms or (len(every) > 1 and list(ms) == every) else list(ms)
 
     # Pages and popups, panel by panel, said once for every panel it is on.
-    found = collections.OrderedDict()
+    # A window a panel's layout derived is known by the page that derived it
+    # (window_renames): renamed by the pages' order, it is that window under
+    # its new name - not a window gone and one come, nor the window another
+    # page's took the name of. `wren[m]`: {old name: new name} of each.
+    found, wren = collections.OrderedDict(), {}
     for m in every:
         oc, nc = containers(ov[m]), containers(nv[m])
+        wr = window_renames(ov[m], nv[m])
+        # Whose window a gone one was: its name may be another's now.
+        owner = {n: k for k, n in windows(ov[m]).items()}
+        wren[m] = {g: c for g, c, _ in wr}
+        back = {c: g for g, c, _ in wr}
+        for g, c, kind in wr:
+            found.setdefault(('renamed', g, c, kind, True), []).append(m)
+            if g in oc and c in nc and oc[g][0] != nc[c][0]:
+                found.setdefault(('kind', c, oc[g][0], nc[c][0]), []).append(m)
+        oc = {n: v for n, v in oc.items() if n not in wren[m]}
+        nc = {n: v for n, v in nc.items() if n not in back}
         ren = renames(oc, nc)
         for g, c, kind in ren:
-            found.setdefault(('renamed', g, c, kind), []).append(m)
+            found.setdefault(('renamed', g, c, kind, False), []).append(m)
         for n in oc:
             if n not in nc and n not in {g for g, _, _ in ren}:
-                found.setdefault(('removed', n, oc[n][0]), []).append(m)
+                found.setdefault(('removed', n, oc[n][0], owner.get(n)), []).append(m)
             elif n in nc and oc[n][0] != nc[n][0]:
                 found.setdefault(('kind', n, oc[n][0], nc[n][0]), []).append(m)
         for n in nc:
@@ -1095,7 +1181,10 @@ def diff(old, new):
         was = {p['name']: (kind, p) for kind in ('page', 'popup') for p in ov[m].get(kind + 's') or []}
         for kind in ('page', 'popup'):
             for p in nv[m].get(kind + 's') or []:
-                k, q = was.get(p['name'], (None, None))
+                # A renamed window is compared with what it was; a name a
+                # renamed window left is another one's now.
+                k, q = was.get(back.get(p['name'], None if p['name'] in wren[m] else p['name']),
+                               (None, None))
                 if q is None:
                     continue
                 if q.get('does') != p.get('does'):
@@ -1115,8 +1204,10 @@ def diff(old, new):
             found.setdefault(('start', ov[m].get('start_page'), nv[m].get('start_page')), []).append(m)
     for (what, *k), ms in found.items():
         row = {'added': lambda: {'name': k[0], 'kind': k[1]},
-               'removed': lambda: {'name': k[0], 'kind': k[1]},
-               'renamed': lambda: {'from': k[0], 'to': k[1], 'kind': k[2]},
+               'removed': lambda: dict({'name': k[0], 'kind': k[1]},
+                                       **({'window': {'page': k[2][0], 'name': k[2][1]}} if k[2] else {})),
+               'renamed': lambda: dict({'from': k[0], 'to': k[1], 'kind': k[2]},
+                                       **({'window': True} if k[3] else {})),
                'kind': lambda: {'name': k[0], 'from': k[1], 'to': k[2]},
                'shown': lambda: {'name': k[0], 'from': k[1], 'to': k[2]},
                'reached': lambda: {'name': k[0], 'kind': k[1], 'from': k[2], 'to': k[3]},
@@ -1136,15 +1227,22 @@ def diff(old, new):
     def first(rows):
         return next(iter(rows.values()))
 
-    def where(rows):
-        return '; '.join(a['container'] for a in first(rows)['at'])
+    def now(m, name, old):
+        # Where an old row's place is in the new map: a renamed window's
+        # new name.
+        return (wren.get(m) or {}).get(name, name) if old else name
 
-    def on(rows, m):
+    def where(rows, old=False):
+        m = next(iter(rows))
+        return '; '.join(now(m, a['container'], old) for a in first(rows)['at'])
+
+    def on(rows, m, old=False):
         # Its pages and popups on panel m, each once.
-        return list(dict.fromkeys(a['container'] for a in rows[m]['at']))
+        return list(dict.fromkeys(now(m, a['container'], old) for a in rows[m]['at']))
 
-    def keys(rows):
-        return {(m, a['container'], a['name']) for m, r in rows.items() for a in r['at'] if not a.get('mirror')}
+    def keys(rows, old=False):
+        return {(m, now(m, a['container'], old), a['name']) for m, r in rows.items() for a in r['at']
+                if not a.get('mirror')}
 
     def ident(i, rows):
         r = first(rows)
@@ -1154,7 +1252,7 @@ def diff(old, new):
     added = [i for i in ni if i not in oi]
     removed = [i for i in oi if i not in ni]
     for a in list(added):
-        r = next((r for r in removed if keys(oi[r]) & keys(ni[a])), None)
+        r = next((r for r in removed if keys(oi[r], True) & keys(ni[a])), None)
         if r is not None:
             added.remove(a)
             removed.remove(r)
@@ -1174,7 +1272,7 @@ def diff(old, new):
     # longer find. Only where each is the other's one match.
     def like(r, a):
         fo, fn = first(oi[r]), first(ni[a])
-        return (where(oi[r]) == where(ni[a]) and fo['type'] == fn['type'] and fo.get('function')
+        return (where(oi[r], True) == where(ni[a]) and fo['type'] == fn['type'] and fo.get('function')
                 and fo.get('function') == fn.get('function') and (fo.get('states') or None) == (fn.get('states') or None))
     for a in list(added):
         rs = [r for r in removed if like(r, a)]
@@ -1217,7 +1315,7 @@ def diff(old, new):
         if what:
             ch['controls']['changed'].append(dict(row, **what))
         same_name = fo['at'][0]['name'] == fn['at'][0]['name']
-        same_place = [a['container'] for a in fo['at']] == [a['container'] for a in fn['at']]
+        same_place = where(o, True) == where(n)
         # Another name is only a rename where it is still the control it was:
         # in its place, doing what it did, its old name nowhere else.
         if not same_name and (not same_place or 'function' in what or 'type' in what
@@ -1232,7 +1330,7 @@ def diff(old, new):
             # have it on: up only while that one is, which the program shows.
             # Said where it moved - on a panel past the first, the first's
             # places read the same on both sides.
-            ms = [m for m in o if m in n and set(on(o, m)) != set(on(n, m))]
+            ms = [m for m in o if m in n and set(on(o, m, True)) != set(on(n, m))]
             if ms:
                 fr, to = ({m: '; '.join(on(rows, m)) for m in ms} for rows in (o, n))
                 ch['controls']['relocated'].append(
@@ -1327,19 +1425,32 @@ def changes_markdown(ch, title):
         out += ['', '## Panels', '']
         out += [f'- New: {m}' for m in ch['panels']['added']] + [f'- Gone: {m}' for m in ch['panels']['removed']]
     p = ch['pages']
-    rows = ([f"| renamed | {_cell(r['from'])} -> {_cell(r['to'])} | {r['kind']} | {on(r)} |" for r in p['renamed']]
+    rows = ([f"| renamed{' window' if r.get('window') else ''} | {_cell(r['from'])} -> {_cell(r['to'])} | "
+             f"{r['kind']} | {on(r)} |" for r in p['renamed']]
             + [f"| {r['from']} -> {r['to']} | {_cell(r['name'])} | {r['to']} | {on(r)} |" for r in p['kind']]
             + [f"| {_cell(r['from'])} -> {_cell(r['to'])} | {_cell(r['name'])} | popup | {on(r)} |"
                for r in p['shown']]
             + [f"| shown by the program | {_cell(r['name'])} | {r['kind']} | {on(r)} |"
                for r in p['reached'] if r['to'] == 'program']
             + [f"| added | {_cell(r['name'])} | {r['kind']} | {on(r)} |" for r in p['added']]
-            + [f"| removed | {_cell(r['name'])} | {r['kind']} | {on(r)} |" for r in p['removed']])
+            + [f"| removed | {_cell(r['name'])}"
+               + (f" ({_cell(r['window']['page'])}'s window)" if r.get('window') else '')
+               + f" | {r['kind']} | {on(r)} |" for r in p['removed']])
     if rows:
-        out += ['', '## Pages and popups', '',
-                'A program shows a page or popup by its name. A renamed one is reported, never mapped: '
-                'its controls are new to the program, their old IDs retired, unless the canvas pins '
-                "each one's `id`.", '', '| Change | Name | Kind | Panels |', '|---|---|---|---|'] + rows
+        # A renamed window keeps its controls' IDs, and a page or popup the
+        # canvas renamed does not: each sentence only where it is so.
+        windows = any(r.get('window') for r in p['renamed'])
+        say = ['A program shows a page or popup by its name.']
+        if not windows or any(not r.get('window') for r in p['renamed']):
+            say.append(f"{'One the canvas drew and renamed' if windows else 'A renamed one'} is reported, never "
+                       'mapped: its controls are new to the program, their old IDs retired, unless the canvas '
+                       "pins each one's `id`.")
+        if windows:
+            say.append('A *renamed window* is one a layout derived for the same page - a hub names a later '
+                       "page's Select Source after that page, so the pages ahead of it name it: the program "
+                       'shows it by its new name, and every control in it keeps its ID.')
+        out += ['', '## Pages and popups', '', ' '.join(say),
+                '', '| Change | Name | Kind | Panels |', '|---|---|---|---|'] + rows
     c = ch['controls']
     rows = ([f"| added | {r['id']} | {_cell(r['name'])} | {_cell(r['at'])} | - | {r['type']} |" for r in c['added']]
             + [f"| removed | {r['id']} | {_cell(r['name'])} | {_cell(r['at'])} | {r['type']} | retired |"

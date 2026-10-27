@@ -1078,7 +1078,7 @@
         ]
       },
       "status": "deviation",
-      "reason": "The applier binds each reference it makes to a group, never to one popup by its ID, so gdl.spec check refuses a standard popup with no group (docs/gdl-format.md section 5): the strip is the one popup of a Volume Level group of its own, which its reference shows on every working page. Binding it by its ID is applier work (docs/ROADMAP.md, A reference bound to one popup by its ID).",
+      "reason": "The design system gives the strip a Volume Level group of its own, which its reference shows on every working page. A spec binds a reference to one popup by its ID as the template does (docs/gdl-format.md section 5), and the hubs do not yet (docs/ROADMAP.md, The hubs' Volume Level strip is still bound to a group of its own).",
       "here": "On the 525 the Volume Level strip, a 50x480 popup at the menu bar's left, shows on every working page: its reference is bound to a group of its own, where the template binds it to the popup by its ID and shows it only when the program does.",
       "evidence": "seeds/Afterburn 525.gdl's Main: Volume Level at 637,0 50x480, a PBPopupPageReference whose popupPageIDField names popup 2 (Volume Level) and group 0; docs/gdl-format.md section 5's survey, nine seeds' Volume Level placed so."
     },
@@ -1160,6 +1160,24 @@
       ],
       "builds": "The RightRail's Mute draws the volume glyph in the secondary accent while live and the mute glyph lit in the primary while muted, and the hub's Mute its speaker-mute-2 in each state, where a designer's Mute in its slot gives no look of its own.",
       "evidence": "seeds/Afterburn 1035.gdl's, seeds/Afterburn 725.gdl's and seeds/Afterburn 525.gdl's Main Volume Mute states' button images."
+    },
+    {
+      "id": "afterburn-48",
+      "claim": "The Page README's recording question: its answers as the template's.",
+      "where": [
+        "Page README"
+      ],
+      "template": {
+        "does": "Confirmation - Recording's Start Recording and its Cancel are 9244 and 9245 on every seed that asks it.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": [
+          "Confirmation - Recording"
+        ]
+      },
+      "status": "deviation",
+      "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
+      "here": "A recording's question asks Record and Cancel with IDs of their own, from 50001, where the template's are 9244 and 9245: a program written for the template's needs them told.",
+      "evidence": "Confirmation - Recording's Start Recording (9244) and Record Cancel (9245) on seeds/Afterburn 1035.gdl, and on its 1535 and 1230W; Start Recording and Recording Cancel on its 725, 525 and 300M Landscape (archive/job-e823df9b/small-panels/recording/questions.json)."
     }
   ]
 }

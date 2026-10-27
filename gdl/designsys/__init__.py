@@ -778,6 +778,9 @@ def _slim_windows(windows, ids=False):
         # incoming call's Accept and Decline, Accept Call and Ignore Call).
         if it.get('text'):
             out['text'] = it['text']
+        # And how far past its glyph the template sets them (`gap`, px).
+        if it.get('gap') is not None:
+            out['gap'] = it['gap']
         return out
 
     def slim(w):
@@ -801,12 +804,13 @@ def _slim_call(c):
     _call_frame) as the bundle draws it: the header's surfaces and its end -
     Share Content's place and seed ID (the tabs are the working page's) - the
     left rail whole, and the dialer's title, entry, surfaces' shape, fill and
-    border, and keys by role with their seed IDs and names, not their art."""
+    border, and keys by role with their seed IDs, names and the gap their words
+    keep from their glyph, not their art."""
     if not c:
         return None
 
     def it(x):
-        return {k: x[k] for k in ('role', 'name', 'rect', 'id', 'text') if x.get(k) is not None} if x else None
+        return {k: x[k] for k in ('role', 'name', 'rect', 'id', 'text', 'gap') if x.get(k) is not None} if x else None
     left = dict(c['left'], items=[it(x) for x in c['left'].get('items') or ()],
                 groups=[dict(g, buttons=[it(b) for b in g['buttons']]) for g in c['left'].get('groups') or ()])
     d = (c.get('center') or {}).get('dialer')
@@ -881,8 +885,9 @@ def bundle(p, art=True):
     # (below).
     # And only what they read of it: the four bars; the center's popup
     # region and, off a source's popup, its well, title (and a source's with
-    # controls), empty state, status, sizes and surfaces, and each device's
-    # picture, which a source popup (role="source") draws; and the windows
+    # controls), empty state, status, sizes and surfaces, each device's
+    # picture and the steps its Doc Cam stands its keys at (`pitch`), which a
+    # source popup (role="source") draws; and the windows
     # a working page opens, which a modal with a role draws. The ids and the
     # note are the translator's and the reader's.
     rows = models(p)
@@ -901,7 +906,7 @@ def bundle(p, art=True):
     profile['frames'] = {series: dict({b: f[b] for b in ('top', 'left', 'right', 'bottom')},
                                       center=dict({k: f['center'].get(k)
                                                    for k in ('region', 'well', 'title', 'title_controls', 'empty',
-                                                             'status', 'pt', 'surfaces', 'pictures')},
+                                                             'status', 'pt', 'surfaces', 'pictures', 'pitch')},
                                                   rect=f['center'].get('rect')),
                                       windows=_slim_windows(f.get('windows')),
                                       **{k: v for k, v in (('call', _slim_call(f.get('call'))),
@@ -920,7 +925,7 @@ def bundle(p, art=True):
         series: {'hub': True, 'top': s['frame']['top'], 'right': s['frame']['right'],
                  'center': dict({k: s['frame']['center'].get(k)
                                  for k in ('region', 'title', 'title_controls', 'empty', 'status', 'pt',
-                                           'surfaces', 'pictures', 'close', 'level')},
+                                           'surfaces', 'pictures', 'close', 'level', 'pitch')},
                                 strip=next((it['rect'] for it in s['frame']['center'].get('items') or []
                                             if it['role'] == 'popup'), None)),
                  'select': s['frame'].get('select'), 'options': s['frame'].get('options'),
@@ -1413,9 +1418,10 @@ def _panels_section(p):
             f"- **Words.** A label's or caption's box needs *Words* times the width its words take here, and "
             f"room to be as much taller. Keep copy short. A button needs it for its widest caption - a state's "
             f"own `text` too (Mics Muted). Write Help in your own words as one Label of a few short sentences, "
-            f"its box with room for them at the room's largest *Words*: a stack of one-line Labels, each a line "
-            f"deep here, overflows where the type is larger (the 525's 18 pt), and where they run into each "
-            f"other they are refused.\n"
+            f"its box with room for them at the room's largest *Words*. In a window or a source's popup a "
+            f"Label whose words need more room on a panel takes it - wider from the edge it is set from, else deeper, the "
+            f"lines under it moving down - and a row of buttons grown nearer than the panel's gap opens its gaps, as far as "
+            f"the window's body or the well holds them; past that they are refused.\n"
             f"- **Sets.** Put a set of like controls - sources, presets - in a `Group`: its members share one "
             f"cell on every panel, and it pages them where they do not fit, its Previous and Next under them "
             f"or, in a box one cell deep, at the row's ends - "
@@ -1423,8 +1429,8 @@ def _panels_section(p):
                else "as arrows where their words leave no room") + f". In a "
             f"modal or a popup a Group cannot page - its "
             f"pages would be popups, which only a page shows - so give its box room for all its members on "
-            f"every large and mid-size panel there. The `Rail` stacks its controls at each panel's gap. Loose controls only "
-            f"scale.\n"
+            f"every large and mid-size panel there. The `Rail` stacks its controls at each panel's gap. Loose controls "
+            f"scale, and re-space only in a window or a source's popup (above).\n"
             + _sources_md(p) + _left_rail_md(p) +
             f"- **Hubs** are one page of main controls beside a rail. Where the seed has no slider, a slider "
             f"is a level between `-` and `+`, and the rail holds what the table says - a heading over the "
@@ -1481,7 +1487,11 @@ def _rows_md(p):
            "holds a button, or both a Group, and 2 px otherwise, the rows centred 2 px clear of main's top and "
            "foot. What you place level is a row: a control joins the row above while its middle is inside it, a "
            "row wider than the screen wraps, and words wider than it break into lines. *Kind* says how deep a "
-           "stack of rows main holds and how wide a row, so count a page's rows against it.")
+           "stack of rows main holds and how wide a row, so count a page's rows against it. A plain modal - "
+           "no `role` or `title` - is its own rows over the whole screen, and where one screen cannot hold them "
+           "it goes on over modals of its own (`Help 2`, `Help 3`), each with Previous and Next at its foot, a "
+           "heading going on with the row it heads; Next and Previous tell the program to hide the modal they "
+           "are on, since both cover the screen.")
     if (p.get('layout') or {}).get('bars') == 'controls':
         return out + (" The Page's own controls, its `MainArea`'s and its `Rail`'s are one set of rows, region by "
                       "region (Page's `panels`); rows one screen cannot hold go on over pages of their own, with "
@@ -1607,7 +1617,8 @@ def _small_pages(p):
             f"That reflow is the toolkit's: Extron's own "
             f"small pages go on by More at the foot and come back by Back {_back_where(p)}, and a region page "
             f"is drawn that way (the region components' READMEs). Words wider than the screen break into "
-            f"lines. A modal holds one screen there: say in it what fits one.")
+            f"lines. A plain modal there goes on over modals of its own the same way, with Previous and Next at "
+            f"the screen's foot (*Every panel the room has*, Rows).")
 
 
 def _panels_main(p):
@@ -1766,17 +1777,6 @@ def _region_example(p):
     c = _design_frame(p).get('center')
     r = c.get('region') if isinstance(c, dict) else None
     return (r[2], r[3]) if r else (880, 525)
-
-
-def _clock_none(p):
-    """The series whose seed has no date and time control to clone, from the
-    profile's own table: a Clock is refused on their panels."""
-    none = _series_named(p, lambda s: (s.get('kinds') or {}).get('datetime') is False)
-    if not none:
-        return ''
-    return (f" {_the_series(none)[0].upper()}{_the_series(none)[1:]}'s seed has no date and time control to "
-            f"clone, so a Clock on a Page that lists one of its panels is refused there: a room with that "
-            f"panel shows the time in words the program sets, a Label, or not at all.")
 
 
 def _panels_slider(p):
@@ -2004,7 +2004,7 @@ A meter the program drives: signal level, a countdown. A rail like Slider's with
 """,
         'Clock': f"""# Clock
 
-The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`, drawn `12:00 AM`), `date` (`MMMM d`, `September 28`), `datetime` (`MMMM d, h:mm tt`, `September 28, 12:00 AM`), or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; the panel shows the real time; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `{p['defaults']['clock']['color']}`), `name`.{_clock_footer(p)}{_clock_none(p)}
+The panel's own date or time, drawn by the panel with no program. `format`: `time` (default, `h:mm tt`, drawn `12:00 AM`), `date` (`MMMM d`, `September 28`), `datetime` (`MMMM d, h:mm tt`, `September 28, 12:00 AM`), or any .NET date pattern - the pattern the panel formats its clock with, drawn here for 28 September 1960 at midnight as GUI Designer draws it; the panel shows the real time; `align` (`left`, `center`, `right`); `type`, `size`, `color` (default `{p['defaults']['clock']['color']}`), `name`.{_clock_footer(p)}
 
 ```html
 {_x(p, 'Clock', ' name="Time"', '', 'width: 200px; height: 40px')}
@@ -2254,7 +2254,8 @@ def _roles_props(p):
             f"- `role` on a `kind=\"modal\"`: a window, drawn as {t} draws its windows. `settings` (or a `title` and "
             f"no role) draws the window with its `title` and a Close; `help` too, titled '{helped}' unless you give a "
             f"`title`, and with nothing put in it {t}'s own help message; `confirm` with `topic=\"power\"` asks "
-            f"'{question}' with Power Down - its `does` is the Page's - and Cancel; `wait` with `topic=\"up\"` or "
+            f"'{question}' with Power Down - its `does` is the Page's - and Cancel;{_recording_words(p)} `wait` "
+            f"with `topic=\"up\"` or "
             f"`\"down\"` says the wait, with no buttons. Close and Cancel go back to the page that opened the window - "
             f"the program's to do, so they carry no `nav`. Put a settings window's own controls inside it. A `role` the "
             f"Page's `kind` does not take is named. "
@@ -2280,6 +2281,21 @@ def _roles_props(p):
                f"title" if any((T.get('frame') or {}).get('choose') for T in models(p).values() if T['tier'] == 'A')
                else '')
             + f" (the system's README, *The template's grammar*).\n")
+
+
+def _recording_words(p):
+    """A recording's question, where the template asks one (the writing's
+    `confirm.recording`: Afterburn's and Mach's Confirmation - Recording,
+    measured into each series' frame as `windows.recording`)."""
+    w = p.get('writing') or {}
+    said = (w.get('confirm') or {}).get('recording')
+    if not said:
+        return ''
+    b = w.get('buttons') or {}
+    return (f" `confirm` with `topic=\"recording\"` asks '{' '.join(said.split())}' with {b.get('record', 'Record')} - "
+            f"its `does` is the Page's - and {b.get('cancel', 'Cancel')}, in the window the panel's template asks it in "
+            f"(a 320's asks none, and its power-down question's box cannot hold these words: refused there, by "
+            f"name);")
 
 
 def _device_pictures(p):
@@ -3334,10 +3350,11 @@ def _call_md(p):
             f"in the template's look for what it is, by its name - one named for none of them takes the rail's "
             f"look - and keeping the template's IDs ({ids}) where you give it none. The second Section holds the "
             f"call mode's launchers" + (f", as many as Main VC draws: {launchers}" if launchers else '')
-            + ". Where a caption at a panel's type floor widens the rail - Initiate Call on a 725 - or its touch "
-              "minimum deepens the call keys, the launcher at its foot runs into the Footer's first cell beside it, "
-              "and is named: give the call page only the launchers the call needs (Differences says where a "
-              "panel holds fewer than its Main VC draws).\n"
+            + ". Where a panel's touch minimum deepens the call keys, the launchers move down the rail under them, "
+              "and one pushed past its foot is named: give the call page only the launchers the call needs "
+              "(Differences says where a panel holds fewer than its Main VC draws). Where a caption at a panel's "
+              "type floor widens the rail - Initiate Call on a 725 - the Footer's cells beside its foot give way "
+              "to it.\n"
             f"- **RightRail, Footer and Center**: the working page's. The Footer's mode launcher goes back to the "
             f"working page as the working page's comes here.\n"
             f"- **The dialer**: a popup of the Center's group with `role=\"dialer\"` and nothing in it draws "
@@ -3428,9 +3445,9 @@ def _hub_derived_md(p, hub):
             f"named by its template and drawn from your working page - draw none of them. Two working pages - "
             f"Main SD and a call page - make one of each where they give it the same controls, and the later "
             f"page's own, named for that page ('Video Call {names[1]}'), where they do not. So the order of the "
-            f"working pages decides which is named for its page. Once a programmer has the panel, keep that order: "
-            f"drawn in another, those windows are renamed - a change to their program - and the IDs of what the "
-            f"hub draws in them, which no `id` of yours can pin, are retired. A window you draw "
+            f"working pages decides which is named for its page: drawn in another once a programmer has the "
+            f"panel, those windows are renamed - a change to their program, which shows each by its name - and "
+            f"what the hub draws in them keeps its IDs. A window you draw "
             f"yourself under one of those names - a {display} settings window, which the grammar invites - is "
             f"that window where it holds every control the hub would put in it, with the same `id`s (the "
             f"LeftRail's first Section's, there), and its title then says the Section's heading; where it holds "
@@ -3684,10 +3701,9 @@ def _working_example(p):
                                             ('end-call', 'End Call', False, 'Ends the call.'),
                                             ('privacy', 'Privacy', True, 'Covers the camera; On while it is covered.')))
         head = (((call.get('left') or {}).get('groups') or [{}])[0].get('heading') or {}).get('text') or 'VTC'
-        # One launcher, its lighting: the 725 stands the call mode's last
-        # launcher 1 px beside the Footer's Help (Turbulence's), and its
-        # 16 pt floor widens the column for Initiate Call - two launchers put
-        # the second into Help there.
+        # One launcher, its lighting - what the call needs: a panel whose
+        # touch minimum deepens the call keys moves the launchers down the
+        # rail, and Shockwave's 725 holds two of its Main VC's three.
         light = next((lw for lw in launchers if 'Lighting' in lw), launchers[0])
         one = '\n      ' + x('Button', f' name="{light}"{launch_icon(light)} nav="{_stem(light)}"', light)
         call_page = ('<!-- The call page: the program shows it when a call comes in. -->\n'

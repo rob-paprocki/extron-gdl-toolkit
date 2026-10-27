@@ -525,6 +525,11 @@ WINDOWS = (('help', 'Help'), ('confirm', 'Confirmation'), ('wait', 'Powering Dow
 CALL_PAGE = 'Main VC'
 DIALER = 'VTC Dialer'
 INCOMING = ('Incoming Call', 'Incoming Call Label')
+# The question a recording asks before it starts, where the template draws one
+# (Afterburn's and Mach's: 'You are about to start recording.' over Record and
+# Cancel), read as the incoming call's is - a window of its own, on the bar
+# series, the hubs and Afterburn's 300 Landscape alike.
+RECORDING = 'Confirmation - Recording'
 # The call mode's chrome a program drives, whose seed IDs the call page
 # keeps (Initiate Call 5014, End Call 5215, VC Privacy 5217, Share Content
 # 8090 on every bar seed).
@@ -593,6 +598,37 @@ def _lines(c):
     return len(wrap(c['caption'], None, c['rect'][2], lambda s, _: adv.length(s, px)))
 
 
+def words_gap(c, reach):
+    """How far past a key's glyph its template sets the words, in px: where a
+    one-line caption led by spaces (Shockwave's '         Call' on a pill, Mach's
+    '               Flash' beside its 880x440 glyph) starts, less where the glyph
+    is taken to end. `reach` is the profile's `kit.icon_right` - how far across
+    its art, by kit size, the glyph reaches (the furthest of the size's, the one
+    the system sets a caption past). The art is drawn fitted in the key, centred
+    (gdl.spec IMAGE_LAYOUT), and the caption laid out in the key as
+    gdl.compose lays it out, the spaces counted as the face's own. None where a
+    key sets no such words: no leading spaces, a second line (a caption below
+    its icon), art or reach not known, or a face this has no file for. Rounded
+    to the px: the spaces it is made of are 4 to 7 px wide."""
+    from gdl import data, fonts, sfnt
+    raw, art = c.get('raw'), (c['looks'][0] if c.get('looks') else {}).get('art') or ''
+    kit = re.match(r'(\d+)x(\d+)_', art)
+    if not raw or '\n' in raw or raw == raw.lstrip(' ') or not raw.strip() or not kit:
+        return None
+    horz = (c.get('align') if c.get('align') is not None else 3) % 3
+    r = (reach or {}).get('x'.join(kit.groups()))
+    font = c.get('state_font') or {}
+    path = fonts.face_path(font.get('face') or '', 1 if font.get('bold') else 0) if font.get('pt') else None
+    if r is None or horz == 2 or not path:
+        return None
+    adv, px = sfnt.Advances(path), font['pt'] * data.PT_TO_PX
+    w, h = c['rect'][2], c['rect'][3]
+    aw = int(kit.group(1)) * min(w / int(kit.group(1)), h / int(kit.group(2)))
+    start = 0 if horz == 1 else (w - adv.length(raw, px)) / 2
+    word = start + adv.length(raw[:len(raw) - len(raw.lstrip(' '))], px)
+    return round(word - ((w - aw) / 2 + r * aw))
+
+
 def seed_pages(p):
     """Project.pages(), each control with what a frame reads that pages()
     leaves out: its fill after its transparency, its art (an image's picture,
@@ -636,6 +672,19 @@ def seed_pages(p):
                            'art': _res(p, s, 'buttonImageField') or _res(p, s, 'backgroundImageField'),
                            'text': _hex(p.color(p.field(s, 'textColorField')), p.field(s, 'transparencyField'))}
                           for s in p.states(obj)]
+            # Its first state's caption as the template typed it - leading
+            # spaces and all, which `caption` strips - and how it aligns it:
+            # where a key sets its words past its glyph (words_gap).
+            first = (p.states(obj) or [None])[0]
+            c['raw'] = next((p.deref(first.get(f)) for f in ('textField', 'ftextField')
+                             if first and p.deref(first.get(f))), None)
+            al = p.deref(first.get('textAlignmentField')) if first else None
+            c['align'] = al.get('value__') if isinstance(al, dict) else al
+            # A button's face and size are its states' own.
+            f0 = p.field(first, 'fontField') if first else None
+            st0 = p.field(f0, 'styleField') if f0 else None
+            c['state_font'] = ({'face': p.field(f0, 'nameField'), 'pt': _num(p.field(f0, 'pointSizeField')),
+                                'bold': bool(p.field(st0, 'boldField')) if st0 else False} if f0 else None)
         out.append(page)
     return out
 
@@ -782,6 +831,25 @@ def _controls_title(pages, at):
     return _offset(title['rect'], at) if title else None
 
 
+def _key_pitch(pages):
+    """The steps a source's popup with controls (CONTROL_SOURCES: the Doc Cam)
+    stands its keys at, across its first row and down its first column -
+    [across, down], either None where it has one - or None where it has no
+    keys. The template keeps them at its own steps on each series, not at one
+    scale of another's: Mach's 1035 and 725 stand their 103x60 keys 70 apart
+    down, its 525 its 103x66 ones 96."""
+    pops = {pg['name']: pg for pg in pages if pg['kind'] == 'popup' and not pg['modal'] and pg['name']}
+    pg = next((pops[n] for n in CONTROL_SOURCES if n in pops), None)
+    keys = [c for c in (pg or {'controls': []})['controls']
+            if c['type'] == 'PBButton' and _role(c) not in ('close', 'back')]
+    if len(keys) < 2:
+        return None
+    y = min(c['rect'][1] for c in keys)
+    row = sorted((c for c in keys if c['rect'][1] <= y + TOL), key=lambda c: c['rect'][0])
+    col = sorted((c for c in keys if abs(c['rect'][0] - row[0]['rect'][0]) <= TOL), key=lambda c: c['rect'][1])
+    return [_pitch([c['rect'][0] for c in row]), _pitch([c['rect'][1] for c in col])]
+
+
 def _centre_from(popup, at):
     """A source popup's well (its shapes), title (the label naming it), empty
     state (its other labels) and Close, on the page at `at`; and every surface
@@ -897,20 +965,23 @@ def _records(f):
     return [f] + [f[k] for k in ('home', 'second') if f.get(k)]
 
 
-def frame_of(path, size, art=None):
+def frame_of(path, size, art=None, reach=None):
     """A series' frame off its seed at `path` (canvas `size`): the working page
     in the five bands (top, left, right, bottom, center), each band's rect -
     None where the template draws none - its surfaces and its items by role,
     the header's tabs, the left rail's groups and the centre's popup region,
     with the well, title, empty state and status of a source's popup on it,
     the sizes it sets them in, the title of a source with controls and the
-    picture each source's popup pins, by device;
+    steps it stands its keys at (`pitch`), and the picture each source's popup
+    pins, by device;
     the windows' sizes and the lines their messages take; on a 300
     or a 320 the home page's and a source's second page's bands as records of
     their own; the windows a page opens; the seed IDs of the fixed chrome; the
     page measured and a note of what the bands alone do not say. `art` is the
     main region Afterburn's background art draws (frame_art), around which its
-    bands stand; a 300's or 320's pages each stand around their own art."""
+    bands stand; a 300's or 320's pages each stand around their own art.
+    `reach` is the profile's `kit.icon_right`, which the call keys' `gap`
+    (words_gap) is measured from."""
     p = Project.open(path)
     pages = seed_pages(p)
     W, H = size
@@ -943,6 +1014,9 @@ def frame_of(path, size, art=None):
     note, ids = out.pop('note'), out.pop('ids')
     out['windows'] = _windows(pages, size, region[:2] if region else (0, 0),
                               [it['name'] for it in items if it['role'] == 'settings'])
+    recording = next((pg for pg in pages if pg['name'] == RECORDING and pg['kind'] == 'popup' and pg['modal']), None)
+    if recording:
+        out['windows']['recording'] = _incoming(recording, size, reach)
     # A page per source shows its volume in a modal the program shows (the
     # 320's Volume): where it draws it, what it draws.
     volume = _volume_modal(pages, size) if paged else None
@@ -959,13 +1033,13 @@ def frame_of(path, size, art=None):
             if seam is not None:
                 out['left']['seam'] = seam
         if CALL_PAGE in named:
-            out['call'] = _call_frame(named[CALL_PAGE], pages, size, art)
+            out['call'] = _call_frame(named[CALL_PAGE], pages, size, art, reach)
         if SELECT_PAGE in named:
             out['choose'] = _select_frame(named[SELECT_PAGE], out, size)
         incoming = next((pg for n in INCOMING for pg in pages
                          if pg['name'] == n and pg['kind'] == 'popup' and pg['modal']), None)
         if incoming:
-            out['windows']['incoming'] = _incoming(incoming, size)
+            out['windows']['incoming'] = _incoming(incoming, size, reach)
     out['ids'], out['note'] = ids, note
     # Each band reads rect, surfaces, its own slots (tabs, groups, the
     # centre's region), then what is left in it.
@@ -980,7 +1054,7 @@ def _controls(page, size):
     return [c for c in page['controls'] if not (c['type'] == 'PBPopupPageReference' and _full(c['rect'], size))]
 
 
-def _call_frame(page, pages, size, art=None):
+def _call_frame(page, pages, size, art=None, reach=None):
     """The call mode's working page (Main VC) as the working page is read: its
     four bars - the header's tabs with Share Content at its end, the left
     rail's VTC group (Make Call, End Call, Privacy) over its launchers, which
@@ -1007,7 +1081,7 @@ def _call_frame(page, pages, size, art=None):
     region = c['region']
     dialer = next((pg for pg in pages if pg['kind'] == 'popup' and not pg['modal'] and pg['name'] == DIALER), None)
     if dialer is not None and region:
-        rec['center']['dialer'] = _dialer(dialer, region[:2])
+        rec['center']['dialer'] = _dialer(dialer, region[:2], reach)
     ids = {}
     for b in ('top', 'left', 'right'):
         if not rec[b]:
@@ -1041,13 +1115,14 @@ def _said(caption):
     return s if s and re.match(r'^[A-Za-z0-9 #*.@-]+$', s) else None
 
 
-def _dialer(pg, at):
+def _dialer(pg, at, reach=None):
     """The dialer a call page's popup region shows (VTC Dialer), on the page
     at `at`: its title (the label naming it) and the size it sets it in, the
     entry the program writes the number into (Dialer Feedback Label, 50000)
     with the field drawn behind it, its surfaces - Mach's well, its title bar
     and that field - and each key by its meaning (_dial_role) with its seed
-    ID, its words where it says any, and its art at rest."""
+    ID, its words where it says any - and how far past its glyph (`gap`,
+    words_gap) - and its art at rest."""
     cs = pg['controls']
     labels = [c for c in cs if c['type'] == 'PBLabel']
     title = next((c for c in labels if (c['caption'] or '').strip().lower() == pg['name'].lower()), None)
@@ -1060,6 +1135,9 @@ def _dialer(pg, at):
         k = _item(c, at, _dial_role(c))
         if _said(c['caption']):
             k['text'] = _said(c['caption'])
+        gap = words_gap(c, reach)
+        if gap is not None:
+            k['gap'] = gap
         art = (c['looks'][0] if c['looks'] else {}).get('art')
         if art:
             k['art'] = art
@@ -1102,12 +1180,14 @@ def _select_frame(page, bars, size):
     return out
 
 
-def _incoming(pg, size):
+def _incoming(pg, size, reach=None):
     """The question the program shows when a call comes in, as the power-down
     question is read (_window), with its words - Mach's and Turbulence's on
     one line, Shockwave's broken after its comma - and each answer's where it
     says any (Mach's Accept and Decline, Shockwave's Accept Call and Ignore
-    Call; Turbulence's are in their art)."""
+    Call; Turbulence's are in their art). A recording's question (RECORDING)
+    is read the same way: its words over three lines, a blank between its two
+    sentences, Record and Cancel."""
     w = _window(pg, size, (0, 0), 'confirm')
     cs = _controls(pg, size)
     said = sorted((c for c in cs if c['type'] == 'PBLabel'), key=lambda c: (c['rect'][1], c['rect'][0]))
@@ -1118,6 +1198,9 @@ def _incoming(pg, size):
         words = _said((named.get(b['name']) or {}).get('caption'))
         if words:
             b['text'] = words
+        gap = words_gap(named[b['name']], reach) if b['name'] in named else None
+        if gap is not None:
+            b['gap'] = gap
     return dict({'popup': pg['name']}, **w)
 
 
@@ -1189,6 +1272,9 @@ def _bars_frame(page, pages, size, art):
     titled = _controls_title(pages, region[:2] if region else (0, 0))
     if titled:
         out['center']['title_controls'] = titled
+    pitch = _key_pitch(pages)
+    if pitch:
+        out['center']['pitch'] = pitch
     pictures = _pictures(page, pages, region[:2] if region else (0, 0), drawn)
     if pictures:
         out['center']['pictures'] = pictures
@@ -1303,6 +1389,9 @@ def _hub_frame(page, popups, size, art):
     titled = _controls_title(popups, region[:2])
     if titled:
         centre['title_controls'] = titled
+    pitch = _key_pitch(popups)
+    if pitch:
+        centre['pitch'] = pitch
     pictures = _pictures(page, popups, region[:2], drawn)
     if pictures:
         centre['pictures'] = pictures
@@ -1715,7 +1804,8 @@ def frames(theme, profile=None):
             continue
         seed = series_seed(row)
         if seeds.usable(seed):
-            out[series] = frame_of(seeds.path(seed), tuple(row['size']), art=frame_art(profile, row))
+            out[series] = frame_of(seeds.path(seed), tuple(row['size']), art=frame_art(profile, row),
+                                   reach=(profile.get('kit') or {}).get('icon_right'))
     return out
 
 

@@ -50,10 +50,11 @@ class TestAfterburnsLedger(unittest.TestCase):
         computed indents (41), and the gates' moves on the 725's rail (42), its
         Help and Power (43) and the 320's rows (44), and the hub's Volume
         Level strip, shown on every working page (45), its right column's
-        flex, which the region score measured (46), and its Mute's two glyphs
-        (47): one entry each, in its order."""
+        flex, which the region score measured (46), its Mute's two glyphs
+        (47), and the recording question's answers, whose IDs are the
+        layout's own (48): one entry each, in its order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'afterburn-{i:02d}' for i in range(48)])
+        self.assertEqual(ids, [f'afterburn-{i:02d}' for i in range(49)])
 
     def test_afterburn_is_done(self):
         self.assertEqual(audit.audit('afterburn'), [])
@@ -65,12 +66,12 @@ class TestAfterburnsLedger(unittest.TestCase):
         hubs' one background, the kit's drawings of the glyph font fitted to
         their buttons, the 8120 a launcher keeps, and the gates' moves on the
         725's rail, its Help and Power and the 320's rows, the hub's Volume
-        Level strip on every working page and the right column's flex - and
-        only those. The
+        Level strip on every working page, the right column's flex and the
+        recording question's answers' IDs - and only those. The
         right column, the hub's carets, the left rail, the clocks, a window's
         card and the 320's pages are the frame's now."""
         dev = {e['id']: e for e in self.ledger['entries'] if e['status'] == 'deviation'}
-        self.assertEqual(sorted(dev), [f'afterburn-{i:02d}' for i in (23, 24, 32, 34, 36, 38, 42, 43, 44, 45, 46)])
+        self.assertEqual(sorted(dev), [f'afterburn-{i:02d}' for i in (23, 24, 32, 34, 36, 38, 42, 43, 44, 45, 46, 48)])
         for i in ('afterburn-08', 'afterburn-09', 'afterburn-10', 'afterburn-11', 'afterburn-39', 'afterburn-40'):
             self.assertEqual(next(e for e in self.ledger['entries'] if e['id'] == i)['status'], 'frame')
         for e in dev.values():

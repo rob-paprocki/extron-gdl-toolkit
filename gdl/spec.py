@@ -469,6 +469,14 @@ KIND_TYPE = {'panel': 'PBShape', 'shape': 'PBShape', 'button': 'PBButton',
              'label': 'PBLabel', 'line': 'PBLine', 'image': 'PBImage',
              'slider': 'PBSlider', 'level': 'PBLevel', 'datetime': 'PBDateTime',
              'popup_ref': 'PBPopupPageReference'}
+# The control types a panel's seed may lack and the applier clone from another
+# seed of its theme instead (check_donor, Apply-GdlPlan.ps1 -TypeDonors). Only
+# a clock: everything the applier does not write of a clone - its time zone,
+# its dynamic text - is the theme's own, and built from Shockwave's and
+# Turbulence's 525 on their 320s it verified clean
+# (archive/job-e823df9b/small-panels/). An image or a slider carries art its
+# own seed's resources name, which no build has shown cloned across.
+CROSS_SEED_TYPES = frozenset({'PBDateTime'})
 # Every key a control takes. Anything else is ignored - silently - so a typo in
 # one (`joind` for `joined`) would drop what it asked for; check() names it.
 CONTROL_KEYS = frozenset((
@@ -481,6 +489,9 @@ CONTROL_KEYS = frozenset((
     # Added by a panel's layout (docs/claude-design.md): navigation it derived,
     # and the segmented control a segment belongs to.
     'derived', 'joined',
+    # A popup_ref's other binding: one popup by its ID, as nine seeds show
+    # their ungrouped Volume Level (docs/gdl-format.md section 5).
+    'popup',
 ))
 # And every key the levels above a control take, for the same reason: a key
 # nothing reads falls back to its default, and the plan is made from the same
@@ -492,7 +503,17 @@ SPEC_KEYS = frozenset((
     'keep_donor_pages', 'type_floor',
     # What the panel does, for the ID map (gdl/idmap.py).
     'does',
+    # GUI Designer's Offline Page: whether the panel shows it, and its words
+    # (OFFLINE_KEYS). Without it a panel ships its seed's.
+    'offline',
 ))
+# The Offline Page's. `enabled` is PBProject.enableOfflineField, which the
+# seeds ship either way - every Turbulence seed on, every Mach seed off,
+# Shockwave's and Afterburn's some of each - and `replace` maps words on the
+# seed's own page to the panel's: every seed's says 'call XXX.XXX.XXXX'. The
+# page is GUI Designer's own, kept whole, so its layout and type stay the
+# seed's (docs/gdl-format.md section 7).
+OFFLINE_KEYS = frozenset(('enabled', 'replace'))
 PAGE_KEYS = frozenset((
     'name', 'number', 'id_base', 'controls', 'background', 'background_image',
     'background_layout',
@@ -501,8 +522,10 @@ PAGE_KEYS = frozenset((
     # drew.
     'reached_by', 'does', 'left',
 ))
-# `modal` is a popup's: the applier never writes it on a page.
-POPUP_KEYS = PAGE_KEYS | {'group', 'size', 'modal'}
+# `modal` is a popup's: the applier never writes it on a page. So is
+# `timeout`, PBPopupPage.timeoutField - which nothing in GUI Designer 1.28.0.7
+# reads, so it reaches no panel (POPUP_TIMEOUT_NOTE).
+POPUP_KEYS = PAGE_KEYS | {'group', 'size', 'modal', 'timeout'}
 # What a grid or stack lays out by. Any other key is shared by its items, and
 # held to CONTROL_KEYS there.
 LAYOUT_KEYS = frozenset(('rect', 'cols', 'rows', 'gap', 'gap_y', 'pad', 'items', 'count',
@@ -526,6 +549,22 @@ MODAL_TRANSPARENCY = 35.0
 def is_uint16(v):
     """A whole number a UInt16 holds - not a bool, a float or a string."""
     return isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 0xFFFF
+
+
+def is_uint32(v):
+    """A whole number a UInt32 holds - not a bool, a float or a string."""
+    return isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 0xFFFFFFFF
+
+
+# What a popup's `timeout` does, said by `check` wherever a spec gives one. The
+# field is a UInt32 on every PBPopupPage, 0 on every seed popup, and the
+# applier writes it and Save and Build keeps it in the project - but no code in
+# GUI Designer 1.28.0.7 reads it: no property shows it, layout.json has no key
+# for it, and the panel loads layout.json. It is the legacy PanelBuilder
+# popup's Timeout, kept in the graph (docs/gdl-format.md section 7).
+POPUP_TIMEOUT_NOTE = ('is written into the project, where GUI Designer keeps it and nothing '
+                      'reads it - the built panel has no timeout, so a popup that hides by '
+                      'itself is the control program\'s to hide')
 
 
 def _odd_keys(d, known):
@@ -771,6 +810,12 @@ def resolve_image(path):
     return None
 
 
+def _seed_path(seed):
+    """A seed as a profile names it -> where it is (gdl.seeds.path)."""
+    from .seeds import path
+    return path(seed)
+
+
 HEX = re.compile(r'^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
 # Written where a spec gives no color, so the clone does not keep its donor's.
 TRANSPARENT = {'A': 0, 'R': 0, 'G': 0, 'B': 0}
@@ -847,8 +892,32 @@ def stack(rect, count, gap=0, horizontal=False, pad=0):
 
 
 # The donor page the applier keeps whatever a spec says (Apply-GdlPlan.ps1):
-# the Offline Page, popup 65535, which every seed and fixture has.
+# the Offline Page, popup 65535, which every seed and fixture has -
+# PBProject.OfflinePageID returns that constant.
 OFFLINE_PAGE_ID = 65535
+
+
+def offline_page(proj):
+    """(enabled, words) for a project's Offline Page: PBProject.
+    enableOfflineField, and every caption on the page - each control's
+    textField and ftextField and each of its states', where the applier
+    replaces words. words is None where the project has no Offline Page."""
+    top = next(proj.instances('PBProject'), None)
+    if top is None:
+        return None, None
+    enabled = proj.field(top, 'enableOfflineField')
+    for pg in proj.items(proj.field(top, 'popupPagesField')):
+        if proj.field(pg, 'idField') != OFFLINE_PAGE_ID:
+            continue
+        words = []
+        for c in proj.items(proj.field(pg, 'controlsField')):
+            for o in [c] + proj.states(c):
+                for f in ('textField', 'ftextField'):
+                    v = proj.field(o, f)
+                    if isinstance(v, str) and v:
+                        words.append(v)
+        return enabled, words
+    return enabled, None
 
 
 def kept_names(pages, keep_donor_pages=False):
@@ -1196,6 +1265,9 @@ class Panel:
                 # all 12 on bkgd_swoop_plain.png, stretched to the popup).
                 'background_image': pu.get('background_image'),
                 'background_layout': pu.get('background_layout'),
+                # PBPopupPage.timeoutField: 0 on every seed popup, and read by
+                # nothing (POPUP_TIMEOUT_NOTE).
+                'timeout': pu.get('timeout', 0),
                 'controls': controls,
                 'group_sizes': groups,
                 'overflow': overflow,
@@ -1293,7 +1365,7 @@ class Panel:
         with as_the_panel():
             return render_page(model['Pages'][page], {}, self.size, fills=fills)
 
-    def plan(self, swaps=None, fonts=None, art=None):
+    def plan(self, swaps=None, fonts=None, art=None, controls=None):
         """A build plan: the clone-and-set operations that would write this spec.
 
         `swaps` maps a border resource the spec names to the one the donor
@@ -1303,7 +1375,9 @@ class Panel:
         default, author, carrier}, the file written beside the plan and
         `carrier` the seed it is copied from. `art` is check_donor's: where the
         donor's level is drawn from images, every level keeps them (`keep_art`)
-        and is planned no bar color.
+        and is planned no bar color. `controls` is check_donor's too: {control
+        type: the seed of the donor's theme it is cloned from}, written as the
+        plan's `type_donors`.
 
         Deliberately *data*, not code. Writing the authoring model needs 32-bit
         Windows PowerShell and GUI Designer, which cannot be tested here - so
@@ -1343,6 +1417,9 @@ class Panel:
             'keep_donor_pages': bool(self.spec.get('keep_donor_pages')),
             'popup_groups': sorted({p['group'] for p in self.popups if p['group']}),
             'popups': self._popup_ops(),
+            # GUI Designer's Offline Page, as the spec says it (None: the
+            # donor's, untouched).
+            'offline': self._offline_op(),
             # Appended to the donor's resource library where it lacks them;
             # the applier leaves one it already has alone.
             'images': [{'name': n, 'file': resolve_image(f)} for n, f in self.images.items()],
@@ -1355,6 +1432,12 @@ class Panel:
             # Faces the donor lacks, appended before any control is cloned so
             # Set-GdlFont finds them (Add-GdlFontResource).
             'fonts': list(fonts or []),
+            # Control types the donor lacks, each cloned from another seed of
+            # its theme: `seed` as a profile names it, `path` where it is.
+            # New-GdlPanel.ps1 extracts each and hands it to the applier
+            # (-TypeDonors).
+            'type_donors': [{'type': t, 'seed': s, 'path': _seed_path(s)}
+                            for t, s in sorted((controls or {}).items())],
         }
         if swaps:
             for item in plan['pages'] + plan['popups']:
@@ -1424,6 +1507,7 @@ class Panel:
                 out += self._value_rules(c, f"{item['name']!r} {c.get('name') or c.get('kind')}")
         out += self._number_rules()
         out += self._key_rules()
+        out += self._offline_rules()
         for name, f in self.images.items():
             if not resolve_image(f):
                 out.append(f'image {name!r}: {f!r} is not a file here or under '
@@ -1535,6 +1619,10 @@ class Panel:
         if not isinstance(kind, str) or kind not in KIND_TYPE:
             out.append(f"{where}: kind {kind!r} is not one the plan builds - "
                        f"{', '.join(map(repr, KIND_TYPE))} - and would build as an inert shape")
+        if c.get('popup') is not None and kind != 'popup_ref':
+            out.append(f"{where}: 'popup' is a popup_ref's - the one popup it is bound to - "
+                       f'and a {kind} would ignore it; to show a popup from a button, give it '
+                       f'`nav`')
         align = c.get('align')
         if align is not None and (not isinstance(align, str) or align not in ALIGN):
             out.append(f"{where}: align {align!r} is not one of "
@@ -1554,14 +1642,58 @@ class Panel:
     def _number_rules(self):
         """A page's and popup's number is written through a [uint16] cast,
         which stops the applier midway on anything else, and the ID band its
-        controls are allocated from starts at it."""
+        controls are allocated from starts at it. A popup's timeout is a
+        UInt32 field, and the applier's write of anything else fails and
+        leaves the clone its donor's."""
         out = []
         for kind, items in (('page', self.pages), ('popup', self.popups)):
             for it in items:
                 if not is_uint16(it['number']):
                     out.append(f"{kind} {it['name']!r}: number {it['number']!r} is not a whole "
                                f'number from 0 to 65535 - the applier writes it as a UInt16')
+        for pu in self.popups:
+            if not is_uint32(pu['timeout']):
+                out.append(f"popup {pu['name']!r}: timeout {pu['timeout']!r} is not a whole "
+                           f'number from 0 to 4294967295 - PBPopupPage.timeoutField is a UInt32')
         return out
+
+    def _offline_rules(self):
+        """`offline` is {enabled, replace}: enabled a bool, replace words on
+        the donor's Offline Page mapped to the panel's (check_donor says
+        whether the donor's page has each)."""
+        off = self.spec.get('offline')
+        if off is None:
+            return []
+        if not isinstance(off, dict):
+            return [f'offline {off!r} is not an object - it takes '
+                    f"{', '.join(sorted(OFFLINE_KEYS))}: {{\"enabled\": true, \"replace\": "
+                    f'{{"XXX.XXX.XXXX": "555.010.4567"}}}}']
+        out = []
+        odd = _odd_keys(off, OFFLINE_KEYS)
+        if odd:
+            out.append(f"offline: {', '.join(map(repr, odd))} is not a key the Offline Page "
+                       f"takes - it takes {', '.join(sorted(OFFLINE_KEYS))}; a typo here is "
+                       f'silently ignored')
+        if 'enabled' in off and not isinstance(off['enabled'], bool):
+            out.append(f"offline: enabled {off['enabled']!r} is not true or false")
+        rep = off.get('replace')
+        if rep is not None:
+            if not isinstance(rep, dict):
+                out.append(f'offline: replace {rep!r} is not an object of the words on the '
+                           f"donor's Offline Page to the panel's")
+            else:
+                for k, v in rep.items():
+                    if not k.strip() or not isinstance(v, str):
+                        out.append(f'offline: replace {k!r} -> {v!r} is not words to words - '
+                                   f'each key is words on the donor\'s Offline Page, its value '
+                                   f'the panel\'s')
+        return out
+
+    def notes(self):
+        """What `check` says aloud and does not refuse: a key that is written
+        and reaches nothing the panel loads."""
+        return [f"popup {pu['name']!r}: timeout {pu['timeout']} {POPUP_TIMEOUT_NOTE}"
+                for pu in self.popups if is_uint32(pu['timeout']) and pu['timeout']]
 
     def _key_rules(self):
         """Every key above a control's that nothing reads (SPEC_KEYS and the
@@ -2040,8 +2172,11 @@ class Panel:
                      'size': c.get('size') or self.theme.get('size') or DEFAULT_POINT_SIZE,
                      'bold': bool(c.get('bold')), 'italic': bool(c.get('italic'))},
             # Only meaningful on a popup reference; the applier ignores it
-            # elsewhere.
+            # elsewhere. A reference binds to a group, or to one popup by its
+            # ID - which the applier resolves from this name once it has made
+            # the popup, as the seeds' Volume Level references are bound.
             'group': c.get('group'),
+            'popup': c.get('popup') if kind == 'popup_ref' else None,
             # A kit image on every state, or none: a clone's donor icon is
             # cleared either way. An image control's art, laid out as it says;
             # a button's is always fitted.
@@ -2089,6 +2224,10 @@ class Panel:
             # A modal's scrim: the applier writes it, and verify_built reads
             # it back off the modal's artwork (MODAL_TRANSPARENCY).
             'transparency': MODAL_TRANSPARENCY if pu['modal'] else None,
+            # Written always, so a clone never keeps its donor's; verify_built
+            # reads it back off the built project, the only place it is
+            # (POPUP_TIMEOUT_NOTE).
+            'timeout': pu['timeout'],
             'background': _argb(pu['background']),
             # The applier MUST set this. A cloned popup keeps the donor's size,
             # and GUI Designer relocates any control that falls outside the page
@@ -2104,6 +2243,18 @@ class Panel:
             'controls': [self._op_for(c, i) for i, c in enumerate(pu['controls'])],
         } for pu in self.popups]
 
+    def _offline_op(self):
+        """The Offline Page as the plan says it: `enabled` (None leaves the
+        donor's flag) and each `replace` as {old, new}, in the spec's order -
+        a list, so the applier writes them in that order. None when the spec
+        says nothing, and the panel ships its donor's."""
+        off = self.spec.get('offline')
+        if not isinstance(off, dict):
+            return None
+        rep = off.get('replace') if isinstance(off.get('replace'), dict) else {}
+        return {'enabled': off['enabled'] if isinstance(off.get('enabled'), bool) else None,
+                'replace': [{'old': k, 'new': v} for k, v in rep.items()]}
+
     def _popup_rules(self):
         """What the format and GUI Design Standards p.70 require of popups.
 
@@ -2112,17 +2263,44 @@ class Panel:
         checked here rather than discovered on the panel.
         """
         out = []
-        refs = {}
+        refs, by_id = {}, {}
+        popups = {pu['name']: pu for pu in self.popups}
         for pg in self.pages:
             for c in pg['controls']:
                 if c.get('kind') != 'popup_ref':
                     continue
-                g = c.get('group')
-                if not g:
-                    out.append(f"page {pg['number']} {c.get('name') or '?'}: a popup "
-                               f'reference must name a group')
+                g, one = c.get('group'), c.get('popup')
+                where = f"page {pg['number']} {c.get('name') or '?'}"
+                if g and one:
+                    out.append(f'{where}: a popup reference is bound to a group or to one '
+                               f'popup, not both - it names group {g!r} and popup {one!r}')
                     continue
-                refs.setdefault(g, []).append(tuple(int(v) for v in c['rect']))
+                if not g and not one:
+                    out.append(f'{where}: a popup reference must name a group, or the one '
+                               f'popup it shows (`popup`)')
+                    continue
+                rect = tuple(int(v) for v in c['rect'])
+                if g:
+                    refs.setdefault(g, []).append(rect)
+                    continue
+                # Bound to one popup by its ID, as nine seeds show their
+                # ungrouped Volume Level: PopupID the popup's, GroupID 0. Every
+                # such popup in the corpus is standard and in no group, so that
+                # is all a spec binds so.
+                pu = popups.get(one)
+                if pu is None:
+                    out.append(f'{where}: bound to popup {one!r}, which the spec has not - '
+                               f"the binding would read 'Unassigned'")
+                elif pu['modal']:
+                    out.append(f'{where}: bound to popup {one!r}, which is modal - Build makes '
+                               f"a modal's references itself")
+                elif pu['group']:
+                    out.append(f"{where}: bound to popup {one!r}, which is in group "
+                               f"{pu['group']!r} - a grouped popup shows through a reference "
+                               f'bound to its group; bind this one to the group, or take the '
+                               f'popup out of it')
+                else:
+                    by_id.setdefault(one, []).append(rect)
 
         groups = {p['group'] for p in self.popups if p['group']}
         for g in sorted(groups - set(refs)):
@@ -2131,6 +2309,11 @@ class Panel:
         for g in sorted(set(refs) - groups):
             out.append(f'popup reference bound to group {g!r}, but no popup is in that '
                        f"group - the binding would read 'Unassigned'")
+        # A popup's references, whichever way they are bound: its group's, or
+        # those bound to it alone.
+        placed = {pu['name']: (refs.get(pu['group'], []) if pu['group']
+                               else by_id.get(pu['name'], []))
+                  for pu in self.popups}
 
         # A control that does not fit inside its popup is RELOCATED TO 0,0 by
         # GUI Designer, at build time, with no error. Pages get this check from
@@ -2159,27 +2342,28 @@ class Panel:
                            f"{pu['size'][1]}, not the {self.size[0]}x{self.size[1]} canvas - "
                            f'every modal in the corpus is full-canvas, and Build shows it '
                            f'through a full-canvas reference. Draw the card inside it.')
-            if not pu['modal'] and not pu['group']:
-                # The format also lets a reference name one popup by its ID -
-                # nine seeds show an ungrouped Volume Level so - but the
-                # applier binds a reference to a group, and only to one.
-                out.append(f"popup {pu['name']!r} is neither modal nor in a group, so no "
-                           f'reference a spec makes can show it - a spec shows a standard '
-                           f'popup through a reference bound to its group')
+            if not pu['modal'] and not pu['group'] and not by_id.get(pu['name']):
+                # Shown through a reference to its group, or - as nine seeds
+                # show an ungrouped Volume Level - through references bound to
+                # it alone. With neither, nothing can show it.
+                out.append(f"popup {pu['name']!r} is neither modal nor in a group, and no "
+                           f'reference is bound to it, so nothing can show it - give it a '
+                           f'group and a reference bound to the group, or a reference bound '
+                           f'to it alone (a popup_ref with "popup": {pu["name"]!r})')
             if not pu['modal'] and not pu['size']:
                 # A modal is given the canvas; a standard popup is given
                 # nothing, and the applier keeps the donor popup's size - so
                 # the fit check above and the reference check below, which
                 # need one, skipped it, and a control past the donor's edge
                 # built at 0,0.
-                seen = sorted({(r[2], r[3]) for r in refs.get(pu['group'], [])})
+                seen = sorted({(r[2], r[3]) for r in placed[pu['name']]})
                 out.append(f"popup {pu['name']!r} has no size - its canvas is its own, and "
                            f"the applier would keep the donor popup's. Give it its "
                            f"reference's" + (f": {' or '.join('%dx%d' % s for s in seen)}"
                                              if seen else ''))
-            if not pu['group'] or not pu['size']:
+            if pu['modal'] or not pu['size']:
                 continue
-            for rect in refs.get(pu['group'], []):
+            for rect in placed[pu['name']]:
                 if tuple(pu['size']) != (rect[2], rect[3]):
                     out.append(f"popup {pu['name']!r} is {pu['size'][0]}x{pu['size'][1]} but "
                                f'its reference is {rect[2]}x{rect[3]} - a popup inherits its '
@@ -2205,15 +2389,19 @@ class Panel:
                 seen[n] = f'{kind} {n!r}'
         return out
 
-    def check_donor(self, path, swaps=None, fonts=None, art=None):
+    def check_donor(self, path, swaps=None, fonts=None, art=None, notes=None, controls=None):
         """Can this donor supply every control type, and do any names collide?
 
         `swaps`, a dict if one is given, is filled with each border the donor
         lacks and builds as its own nearest instead (border_swaps), `fonts`
         with each family it lacks and a seed carries, to append
-        (gdl.fonts.find_face) - what `donors` says aloud and `plan --donor`
-        writes - and `art` with the images a level it clones is drawn from,
-        which `plan --donor` plans by (keep_art).
+        (gdl.fonts.find_face), `controls` with each control type it lacks
+        that another seed of its theme carries, to clone from there
+        (gdl.seeds.carrier, CROSS_SEED_TYPES) - what `donors` says aloud and
+        `plan --donor` writes - and `art` with the images a level it clones
+        is drawn from, which `plan --donor` plans by (keep_art). `notes`, a
+        list, is given what the panel keeps of the donor's that the spec does
+        not say: its Offline Page shown or not.
 
         Clone-never-construct means a type absent from the donor cannot be
         authored at all, and donors genuinely differ: the _alt fixture has no
@@ -2249,8 +2437,23 @@ class Panel:
         for pg in proj.pages():
             for c in pg['controls']:
                 have.add(c['type'])
-        out += [f'donor {path} has no {t} to clone - that control type cannot '
-                f'be authored from it' for t in sorted(self.needs() - have)]
+        # A type the donor lacks that another seed of its theme carries is
+        # cloned from that seed (Apply-GdlPlan.ps1 -TypeDonors) - only the
+        # kinds a build has shown come out right that way (CROSS_SEED_TYPES).
+        # Shockwave's and Turbulence's 320 seeds have no clock; their 525s do.
+        from . import seeds as _seeds
+        top = next(proj.instances('PBProject'), None)
+        skin = proj.field(top, 'skinField') if top is not None else None
+        found = {}
+        for t in sorted(self.needs() - have):
+            got = _seeds.carrier(t, skin) if t in CROSS_SEED_TYPES else None
+            if got:
+                found[t] = got
+            else:
+                out.append(f'donor {path} has no {t} to clone - that control type cannot '
+                           f'be authored from it')
+        if controls is not None:
+            controls.update(found)
 
         # Popups clone from their own kind (Apply-GdlPlan.ps1): a seed with
         # modals only - every 320 seed - cannot supply a standard popup, and
@@ -2485,6 +2688,29 @@ class Panel:
                 out.append(f"{it['name']!r} already exists in the donor project - page "
                            f'and popup names must be unique, and Build rejects duplicates'
                            + ('' if keep else " (the applier keeps the donor's Offline Page)"))
+
+        # The Offline Page is the donor's own, kept whole: `offline` sets its
+        # flag and replaces words on it, so the donor must have one, and each
+        # word to replace must be on it - one that is not would be a no-op
+        # the applier stops on, a Windows round trip on.
+        off = self._offline_op()
+        enabled, words = offline_page(proj)
+        if notes is not None and words is not None and (off is None or off['enabled'] is None):
+            # Said, not refused: the seeds ship it either way, so the panel
+            # shows it or not as its seed does unless the spec says.
+            notes.append(f"the Offline Page is {'on' if enabled else 'off'}, as {path} ships "
+                         f'it - offline.enabled sets it')
+        if off is not None:
+            if words is None:
+                out.append(f"donor {path} has no Offline Page (popup {OFFLINE_PAGE_ID}), so the "
+                           f"spec's offline cannot be applied - build on a seed (every seed has "
+                           f'one)')
+            else:
+                for r in off['replace']:
+                    if not any(r['old'] in w for w in words):
+                        said = ' / '.join(repr(w) for w in words) or 'nothing'
+                        out.append(f"offline: replace {r['old']!r} - the Offline Page of {path} "
+                                   f'does not say it; it says {said}')
         return out
 
     def needs(self):
@@ -2643,6 +2869,8 @@ def main(argv):
     if cmd == 'check':
         for p in problems:
             print('  ' + p)
+        for n in panel.notes():
+            print('  NOTE ' + n)
         print(f'{len(problems)} problem(s); {len(panel.pages)} page(s), '
               f'{sum(len(p["controls"]) for p in panel.pages)} controls')
         return 1 if problems else 0
@@ -2657,15 +2885,20 @@ def main(argv):
                 return 1
             print(f'donor: {picked}')
             donor = seeds.path(picked)
-        swaps, fonts = {}, {}
-        problems = panel.check_donor(donor, swaps=swaps, fonts=fonts)
+        swaps, fonts, notes, controls = {}, {}, [], {}
+        problems = panel.check_donor(donor, swaps=swaps, fonts=fonts, notes=notes, controls=controls)
         for p in problems:
             print('  ' + p)
+        for n in notes:
+            print('  ' + n)
         for want, got in swaps.items():
             print(f'  border {want!r} is not in {donor}: built as {got!r}, its nearest '
                   f'(plan --donor writes it)')
         for want, face in fonts.items():
             print(f"  font {want!r} is not in {donor}: appended from {face['carrier']} "
+                  f'(plan --donor writes it)')
+        for want, got in controls.items():
+            print(f'  {want} is not in {donor}: cloned from {got}, another seed of its theme '
                   f'(plan --donor writes it)')
         print(f'{len(panel.needs())} control type(s) needed: '
               f'{", ".join(sorted(panel.needs()))}')
@@ -2691,17 +2924,21 @@ def main(argv):
             for p in problems:
                 print('  ' + p)
             return 1
-        swaps, fonts, art = {}, [], {}
+        swaps, fonts, art, controls = {}, [], {}, {}
         if donor:
             # What `donors` says it does (check_donor): the borders the donor
-            # lacks, built as its own nearest, and the faces it lacks that a
-            # seed carries, written beside the plan for the applier to append.
-            # Its problems are `donors`' to refuse; this writes what it can.
+            # lacks, built as its own nearest, the faces it lacks that a seed
+            # carries, written beside the plan for the applier to append, and
+            # the controls it lacks that another seed of its theme carries, for
+            # the applier to clone from there. Its problems are `donors`' to
+            # refuse; this writes what it can.
             from .fonts import _file_name
             faces = {}
-            panel.check_donor(donor, swaps=swaps, fonts=faces, art=art)
+            panel.check_donor(donor, swaps=swaps, fonts=faces, art=art, controls=controls)
             for want, got in swaps.items():
                 print(f'  border {want!r} is built as {got!r}, the nearest {donor} has')
+            for want, got in controls.items():
+                print(f'  {want} is cloned from {got}, which carries one where {donor} has none')
             for want, face in faces.items():
                 # As the carrier records it: Arial Black, a face GUI Designer
                 # supplies, has no file names and declares 28 bytes past its data.
@@ -2715,7 +2952,7 @@ def main(argv):
                               'size': face['size'] or len(face['bytes']), 'default': face['default'],
                               'author': face['author'], 'carrier': face['carrier']})
                 print(f"  font {want!r} is appended to it from {face['carrier']}")
-        plan = panel.plan(swaps, fonts, art)
+        plan = panel.plan(swaps, fonts, art, controls)
         with open(out_path, 'w', encoding='utf-8') as fh:
             json.dump(plan, fh, indent=1)
         print(f'{len(plan["pages"])} page(s), '

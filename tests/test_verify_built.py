@@ -2152,6 +2152,143 @@ class TestBakedCaptionOnTheFixture(unittest.TestCase):
                 self.assertFalse(problem is None and note is None, (w, ft))
 
 
+class TestOfflinePage(unittest.TestCase):
+    """The Offline Page as the plan says it: EnableOfflinePage, the full-canvas
+    reference Build gives every page while it is on, and the words on it."""
+
+    OLD, NEW = 'XXX.XXX.XXXX', '555.010.4567'
+    PLAN = {'pages': [{'name': 'Home'}, {'name': 'Second'}],
+            'offline': {'enabled': True, 'replace': [{'old': OLD, 'new': NEW}]}}
+
+    def _layout(self, on=True, refs=('Home', 'Second'), words=None):
+        words = words or ['It looks like this touchpanel has lost connection.',
+                          '\n\nPlease call 555.010.4567 immediately.']
+        return {'EnableOfflinePage': on, 'OfflinePageID': 65535,
+                'Pages': [{'ID': 51 + i, 'Name': n, 'Controls': [_ref(65535)] if n in refs else []}
+                          for i, n in enumerate(('Home', 'Second'))],
+                'PopupPages': [{'ID': 65535, 'Name': 'Offline Page', 'Modal': True,
+                                'TLPImageID': 4 if on else -1,
+                                'Controls': [{'Type': 11, 'Name': f'Label {i}', 'Text': w}
+                                             for i, w in enumerate(words)]}]}
+
+    def test_built_as_planned_passes(self):
+        self.assertEqual(_vb(self).check_offline(self.PLAN, self._layout()), [])
+
+    def test_a_plan_that_says_nothing_is_not_held(self):
+        vb = _vb(self)
+        self.assertEqual(vb.check_offline({'pages': [{'name': 'Home'}], 'offline': None},
+                                          self._layout(on=False, words=['XXX.XXX.XXXX'])), [])
+
+    def test_switched_the_other_way_is_reported(self):
+        problems = _vb(self).check_offline(self.PLAN, self._layout(on=False, refs=()))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('built off, and the plan has it on', problems[0])
+
+    def test_a_page_with_no_reference_while_it_is_on_is_reported(self):
+        problems = _vb(self).check_offline(self.PLAN, self._layout(refs=('Home',)))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("'Second' has no reference to the Offline Page", problems[0])
+        plan = dict(self.PLAN, offline={'enabled': False, 'replace': []})
+        problems = _vb(self).check_offline(plan, self._layout(on=False, refs=('Home',)))
+        self.assertTrue(any("'Home' has a reference" in p for p in problems), problems)
+
+    def test_on_with_no_artwork_is_reported(self):
+        """Build draws it only while it is on: TLPImageID -1 on every seed
+        with it off, an asset on every one with it on."""
+        j = self._layout()
+        j['PopupPages'][0]['TLPImageID'] = -1
+        problems = _vb(self).check_offline(self.PLAN, j)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('no artwork', problems[0])
+
+    def test_words_not_replaced_are_reported(self):
+        problems = _vb(self).check_offline(self.PLAN, self._layout(
+            words=['\n\nPlease call XXX.XXX.XXXX immediately.']))
+        self.assertTrue(any("does not say '555.010.4567'" in p for p in problems), problems)
+        self.assertTrue(any("still says 'XXX.XXX.XXXX'" in p for p in problems), problems)
+
+    def test_check_runs_it(self):
+        src = open(_vb(self).__file__, encoding='utf-8').read()
+        self.assertIn('check_offline(plan, j)', src)
+
+
+class TestPopupBoundById(unittest.TestCase):
+    """A reference bound to one popup by its ID, as nine seeds show their
+    ungrouped Volume Level: PopupID the built popup's own, IsPopupPageIdValid
+    true, GroupID 0 - and the popup in no group, with its references."""
+
+    PLAN = {'pages': [{'name': 'Home', 'controls': [
+        {'donor_type': 'PBPopupPageReference', 'popup': 'Volume Level', 'group': None,
+         'fields': {'nameField': 'Volume'}}]}],
+            'popups': [{'name': 'Volume Level', 'group': None, 'modal': False}]}
+
+    def _layout(self, **pp):
+        ref = dict(_ref(24), Name='Volume')
+        ref['PopupPageID'] = dict(ref['PopupPageID'], **pp)
+        return {'Pages': [{'ID': 51, 'Name': 'Home', 'Controls': [ref]}],
+                'PopupPages': [{'ID': 24, 'Name': 'Volume Level', 'Modal': False, 'GroupID': 0,
+                                'IsGroupValid': False, 'HasReferences': True},
+                               {'ID': 25, 'Name': 'Other', 'Modal': False, 'GroupID': 0,
+                                'IsGroupValid': False, 'HasReferences': True}]}
+
+    def test_built_as_planned_passes(self):
+        self.assertEqual(_vb(self).check_popup_ids(self.PLAN, self._layout()), [])
+
+    def test_bound_to_another_popup_is_reported(self):
+        problems = _vb(self).check_popup_ids(self.PLAN, self._layout(PopupID=25))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("bound to popup 25, and the plan binds it to 'Volume Level', popup 24",
+                      problems[0])
+        problems = _vb(self).check_popup_ids(self.PLAN, self._layout(
+            PopupID=18446744073709551615, IsPopupPageIdValid=False))
+        self.assertEqual(len(problems), 1, problems)
+
+    def test_bound_to_a_group_as_well_is_reported(self):
+        problems = _vb(self).check_popup_ids(self.PLAN, self._layout(GroupID=3,
+                                                                     IsPopupGroupIdValid=True))
+        self.assertTrue(any('bound to group 3 as well' in p for p in problems), problems)
+
+    def test_the_popup_built_in_a_group_or_unreferenced_is_reported(self):
+        j = self._layout()
+        j['PopupPages'][0].update(GroupID=2, IsGroupValid=True, HasReferences=False)
+        problems = _vb(self).check_popup_ids(self.PLAN, j)
+        self.assertTrue(any("'Volume Level' built in group 2" in p for p in problems), problems)
+        self.assertTrue(any('HasReferences false' in p for p in problems), problems)
+
+    def test_check_runs_it(self):
+        self.assertIn('check_popup_ids(plan, j)', open(_vb(self).__file__, encoding='utf-8').read())
+
+
+class TestPopupTimeout(unittest.TestCase):
+    """PBPopupPage.timeoutField is in the authoring graph only - layout.json
+    has no timeout - so the built project is what is held to the plan."""
+
+    def _seed(self):
+        from _corpus import seed
+        path = seed('Afterburn 320.gdl')
+        if not usable(path):
+            self.skipTest('seeds/Afterburn 320.gdl is not here (an LFS pull fetches it)')
+        return path
+
+    def test_the_built_projects_field_is_held_to_the_plan(self):
+        vb, path = _vb(self), self._seed()
+        # 0 on every seed popup.
+        self.assertEqual(vb.check_timeouts({'popups': [{'name': 'Volume Level', 'timeout': 0}]},
+                                           path), [])
+        problems = vb.check_timeouts({'popups': [{'name': 'Volume Level', 'timeout': 30}]}, path)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("'Volume Level' built with timeout 0 in the project, and the plan has 30",
+                      problems[0])
+
+    def test_a_plan_from_before_the_key_is_not_held(self):
+        self.assertEqual(_vb(self).check_timeouts({'popups': [{'name': 'Volume Level'}]},
+                                                  'no-such-file.gdl'), [])
+
+    def test_check_runs_it(self):
+        self.assertIn('check_timeouts(plan, built_path)',
+                      open(_vb(self).__file__, encoding='utf-8').read())
+
+
 class TestTypeNames(unittest.TestCase):
     """TYPE_NAME once said Line 9, DateTime 12, Slider 14 and Level 15. Every
     message naming one of those types was wrong."""

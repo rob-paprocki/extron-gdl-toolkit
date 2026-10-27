@@ -27,8 +27,8 @@ opening GUI Designer.**
   flips and writes the programmer's ID map, verified against the built panel
   (`New-GdlPanel.ps1 -IdMap`). Generated panels boot to their own start page and
   keep modal popups modal. A revised canvas keeps every ID the program uses,
-  but those in a hub window its pages' order renamed (*Backlog*), and says
-  what changed (`--previous`, `docs/idmap.md` §9). `docs/idmap.md`.
+  those in a hub window its pages' order renamed too, and says what changed
+  (`--previous`, `docs/idmap.md` §9). `docs/idmap.md`.
 - For test results and branch or PR state, run `python -m pytest`, `git` and
   `gh` — a snapshot written into a doc is stale the next time anything merges.
   Setting up a machine is in `README.md` *Setup*.
@@ -116,11 +116,12 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
    Their call pages, sources, mic mutes and display states, which every
    designer improvised, are now the template's (spec item 11): redrawn so,
    Mach's, Shockwave's and Turbulence's translate clean on all four panels.
-   What is left is in §7: a plain modal that says more than the 320's one
-   screen, a Clock a designer places on a plain page of Shockwave's and
-   Turbulence's 320, a plain container there, a shared hub across a mid-size
-   panel's Groups, a left Rail on Afterburn, an icon on a group's button, and
-   the region frame's gaps below.
+   What is left is in §7: a plain container on the 320, a shared hub across
+   a mid-size panel's Groups, a left Rail on Afterburn, an icon on a group's
+   button, and the region frame's gaps below. A plain modal that says more
+   than the 320's one screen goes on over modals of its own, and a Clock on
+   Shockwave's and Turbulence's 320 is cloned from the theme's 525, each built
+   and verified there (`archive/job-e823df9b/small-panels/`).
    800x480 is two series in all three themes - the 520, tier B, and the 720,
    tier A, which take different layouts - where Afterburn has only the 520.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
@@ -151,32 +152,29 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   GUI Configurator and GUIC Video Conference 1a are read from the seed that
   carries them.
 
-- **A hub window renamed by the working pages' order loses its IDs.** A hub
-  names the window a later working page derives after that page
-  (`_one_name_each`), and a derived control is keyed by its window's name, so
-  a revision that draws the working pages in another order renames the windows
-  and retires the IDs of what the hub draws in them: 12 of 142 on round four's
-  Shockwave canvas with its boards reversed. translate notes each one and the
-  order that keeps them (`docs/idmap.md` §9); no `id` on the canvas can pin
-  them. Keying those controls by their host page and the template's window
-  name would keep them, with the window's new name still reported as a change.
-
-- **Behavior the format carries but the spec cannot yet say:** the Offline Page
-  and its enable flag (some seeds ship it enabled and the rest disabled), and
-  a popup's auto-hide timeout. The timeout is in the authoring graph only
-  (`PBPopupPage.timeoutField`, 0 on every popup in the seeds); the built
-  `layout.json` the panel loads has no timeout key. Both are applier work.
-- **A reference bound to one popup by its ID.** Nine of Extron's seeds show
-  their ungrouped Volume Level so (`docs/gdl-format.md` §5), but the applier
-  binds each reference it makes to a group, so `gdl.spec check` refuses a
-  standard popup with no group and a spec gives the strip one. Authoring the
-  seeds' own way needs the applier to write the reference's `PopupID` and
-  `IsPopupPageIdValid` and the popup's back-pointer to it, and a build to show
-  it reads back - `tests/verify_built.py` already holds such a reference to a
-  popup that is there. Until then every theme's hub shows its Volume Level
-  strip on every working page, where its template shows it only when the
-  program does - each README's *Differences* says so (the ledgers'
-  `afterburn-45`, `mach-54`, `shockwave-44`, `turbulence-47`).
+- **The Offline Page's words, not its layout.** A spec switches GUI Designer's
+  Offline Page on or off and replaces words on it (`offline`, built and
+  verified on 1.28.0.7 - `docs/gdl-format.md` §7), but the page stays the
+  seed's: one or two labels where the seed puts them, in its type and colors.
+  A Design canvas cannot draw the page, nor does the translator say
+  `offline` - a panel translated from a canvas ships its seed's
+  switch, so the panels of one canvas can differ (Shockwave's 525 on, its 1035
+  off), and `gdl.spec donors` says which way each ships it.
+- **A popup's auto-hide timeout is unreachable.** `PBPopupPage.timeoutField` is
+  authored (`timeout`) and kept by Save and Build, but nothing in GUI Designer
+  1.28.0.7 reads it and `layout.json` has no timeout, so no build can give a
+  panel one (`docs/gdl-format.md` §7). Extron's to change; until then the
+  program hides a timed popup. A version that exports the field would show it
+  in `layout.json`.
+- **The hubs' Volume Level strip is still bound to a group of its own.** A
+  spec binds a reference to one popup by its ID as the seeds bind theirs
+  (`popup`, built and verified on 1.28.0.7 - `docs/gdl-format.md` §5), but the
+  design systems' hubs (`gdl/designsys/bundle.js`) still give the strip a group
+  of its own, so every theme's hub shows it on every working page where its
+  template shows it only when the program does - each README's *Differences*
+  says so (the ledgers' `afterburn-45`, `mach-54`, `shockwave-44`,
+  `turbulence-47`). Emitting it bound by its ID changes the four ledgers and
+  needs the hubs rebuilt.
 - **A seed of a panel's other form.** `seeds/` holds one form per size - the
   725T, 525T, 320M, 1535M - so a TLP725M, 725C, 525M, 525C, 320C or 1535T spec
   has no seed, and is refused the other form's rather than built as it
@@ -249,23 +247,6 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   the row the Rail runs across the foot, and one past the 186 px main holds
   is refused, by name: the Rail's row holds the volume and three, which
   leaves no room for More and Back beside them.
-- **A row of loose controls does not re-space as its captions grow.** In a
-  free layout - a source popup's well, a window - each control grows about
-  its centre to its widest caption at the panel's type floor and its
-  neighbours stay where they are, so two drawn a 2 mm gap apart are refused
-  where they grow into it: round four's Mach Call popup, its Mic Mute's
-  'Mics Muted' on the 725 and the 525. The README asks for the room
-  (*Words*: a state's own `text` counts); a row could open its gaps where
-  its box has room for them.
-- **A window's body under its title is smaller than the window.** What is
-  put in a window maps from the body under its title into each panel's, so a
-  line clear of the 1035's title is clear of the 725's and the 525's - and
-  is laid out a little smaller than it was mapped window to window, since
-  their titles stand lower: round four's Shockwave and Turbulence Help, a
-  stack of one-line Labels sized at the 1035's type, overflows on the 525,
-  and Shockwave's on the 725 too. One Label with room for its words, as the
-  README asks, does not. These and the row's above are the `limit` entries
-  of `tests/data/round4-left.json`.
 - **The region frame, beyond tier A** (PR sequence in
   `docs/superpowers/specs/2026-10-22-region-frame-design.md`):
   - a region page, a source popup (`role="source"`) and a window (a modal
@@ -315,7 +296,11 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     is the footer's clock; two region pages on one canvas derive the
     same popups (Select Source, the options) on a hub once, and rename what
     differs (`_one_name_each`); Mach's Settings popup draws a fourth tile, Recording,
-    whose Main Recording page the regions do not draw. The hubs set their
+    whose Main Recording page the regions do not draw - the recording's
+    question is drawn now, but not the working page its tile opens, a page
+    of its own grammar (its record status in the left rail, Recording
+    Controls at the foot), which is more than the question's measurement
+    gives. The hubs set their
     menu glyphs, their Volume Level strip's speaker glyphs and Shockwave's
     Up and Down in icon faces (Extron-Lift, Extron GUI Configurator,
     Extron-Shockwave) the design systems do not carry - fonts stay out of
@@ -362,20 +347,25 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     (`kit.extract.only`, the two alone) and its `share` variant draws at a
     call page's header end - built and verified in round four's Shockwave
     call room (`tests/data/round4-shockwave-call`) on all four panels;
-  - a source popup's controls are mapped from the drawn panel's well into
-    each panel's at one scale, each grown about its centre: a column whose
-    captions need more than the scaled width on the 725 comes out ragged
-    (Mach's Doc Cam: Freeze 92 and Normal 101 among 76s), where the region
-    rail grows a column as one; and rows the template keeps at one pitch on
-    every panel overlap there - Mach's Doc Cam keys 70 apart on the 1035 come
-    out 52 apart, under the 725's 60 px keys - so the canvas draws them
-    100 apart, and its headings 20 px over them, where the template's
-    stand 9: at the 725's 16 pt floor a heading's words grow into the key
-    under it;
-  - only the power-down confirmation (`topic="power"`), the incoming call's
-    question (`"call"`) and the waits (`"up"`, `"down"`) have the template's
-    words; a recording or room-mode question is refused by topic until its
-    words are measured;
+  - the power-down confirmation (`topic="power"`), the incoming call's
+    question (`"call"`), a recording's (`"recording"`) and the waits
+    (`"up"`, `"down"`) have the template's words; a recording's stands in
+    its own window, measured off each series' seed (Afterburn's and Mach's
+    bar series, hubs and Afterburn's 300 Landscape), built and verified on
+    Mach's 1035 and 525 and Afterburn's 1035
+    (`archive/job-e823df9b/small-panels/recording/`), and is refused by name
+    on the 320, whose template asks none and whose power-down box cannot
+    hold its words. A room-mode question is still refused by topic: its
+    words and places are measured - Mach's, Shockwave's and Turbulence's
+    Room Mode VC page, 'Please select a room mode.' over Presentation and
+    Video Conference (Turbulence's 'Presentation Mode' and 'Video Conference
+    Mode'), in `recording/questions.json` - but the template draws it as a
+    page, not a modal question, and its two choices in looks of its own (Mach's
+    shade keys, Shockwave's and Turbulence's kit art) that no profile has yet,
+    so drawing it needs those looks measured into each profile's
+    `regions.window`, a `windows.mode` record per series and the choices'
+    seed IDs (8254, 8255); until then a canvas draws the template's mode
+    chooser as a splash page (the README's *Pages without regions*);
   - the call mode - a call page (`role="call"`, Main VC), its dialer
     (`role="dialer"`) and the incoming call's question (`topic="call"`) -
     and the page sources are chosen on (`role="select"`, Main Select
@@ -395,30 +385,43 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     hub's menu bar one ID per key on every working page, and every call room
     whose hub draws two working pages was built again and verified on the
     panels that changes (`archive/job-e823df9b/afterburn-regions/rebuild/`).
+    The call keys' lit captions and words past the glyph (below) were built
+    and verified where they change what a panel builds: Shockwave's design
+    call and both its round-four rooms on all four panels, Mach's design call
+    on the 1035 and the 725 (`archive/job-e823df9b/call-cosmetics/`).
+    A key whose template sets its words past its glyph (the dialer's Call
+    and Flash, Mach's Contacts, Shockwave's incoming answers) takes them the
+    gap its panel's template leaves between the kit's glyph and the first
+    letter - measured per key and panel off the seeds (the frame's `gap`;
+    the 1035's Shockwave Call 24 px, Flash 20, Accept Call 18, Ignore Call
+    25), to the nearest space and never closer than 4 px or the gap measured, if
+    that is less (Mach's Contacts, 0 to 3) - and the Header's
+    tabs and a key whose template sets none take 4 px; a lit caption is its
+    icon's color's dark on every Shockwave variant, as its template's are.
+    Both build differently from the passes above, which are not yet built
+    again.
     What it does not do yet: Mach's Share Content
     says Share, an incoming call's answers take IDs of their own, Turbulence's
     Select a Source tiles too, and Shockwave's 725 call page holds two of its
-    Main VC's three launchers (Differences); a key whose template sets its
-    words past its glyph (the dialer's Call, Flash and Contacts, Shockwave's
-    incoming answers) takes them 4 px past it, as the Header's tabs do,
-    where Shockwave's template leaves about 20 - and on a hub and the 320,
-    which draw no dialer of their template's, those keys say their words on
-    the key, Mach's without their 880x440 art; a hub draws a call page's
-    keys as a popup named for its Section's title, shown first, and leaves
-    its bar's Display Control off that page, whose first Section is no
-    display's - no hub template draws a call; the 320 shows a call page's
+    Main VC's three launchers (Differences) - it has not the room the
+    template gives a third, which at the template's 98 px would end 27 px
+    past the rail's foot under the VTC pills grown to the 725's touch
+    minimum (`archive/job-e823df9b/small-panels/launchers-725/`); on a hub
+    and the 320, which draw no dialer of their template's, the dialer's
+    Call, Flash and Contacts say their words on the key, Mach's without
+    their 880x440 art; a hub draws a
+    call page's keys as a popup named for its Section's title, shown first,
+    and leaves its bar's Display Control off that page, whose first Section
+    is no display's - no hub template draws a call; the 320 shows a call page's
     Select a Source keys first and its call keys on Main's later pages, and
     pages the dialer over four, each page filled before the next, so a last
     page can hold one control alone (Share Content on Video Call 4, Mach's
     Keyboard on VTC Dialer 4) where evening the pages out would not; what
     Share Content opens (Mach's 'Select a source to share', Shockwave's and
-    Turbulence's Main VC Share Content) is the designer's to draw; on the
-    725 the rail's foot launcher stands 1 px beside the Footer's first cell,
-    so a column its words widen (Initiate Call at the 16 pt floor) runs into
-    it and is named, where the footer could give way; and a room with more
-    sources than a Header holds is refused on Shockwave's bar panels, whose
-    templates draw no Main Select Source, with fewer tabs and a source popup
-    of keys as the remedy;
+    Turbulence's Main VC Share Content) is the designer's to draw; and a
+    room with more sources than a Header holds is refused on Shockwave's bar
+    panels, whose templates draw no Main Select Source, with fewer tabs and a
+    source popup of keys as the remedy;
   - the region page's seed IDs and mirrors (`docs/idmap.md` §7) translate
     and check clean on every panel the region canvases list, and are not yet
     built in GUI Designer but for Shockwave's tab twins - a caption-only
@@ -457,9 +460,7 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     tab captions stay on the tab (above); its 52 px volume slider is drawn
     53, the touch minimum, and the Screen and Lighting tiles its template
     stands 104 apart (110 deep) stand 110 apart, since two controls may not
-    overlap; and the lit caption of Room Mode VC's two choices (`action`)
-    and of a blue Flash is `ink` where the template's is #474747, which a
-    state's `color` sets. What Turbulence's
+    overlap. What Turbulence's
     records the system cannot draw: Open Sans Light (every label and
     caption, drawn in Open Sans); and
     where it differs for a gate: the 1035's 52 px volume slider is drawn 53
@@ -492,7 +493,17 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   - the footer's cells the template stands together (Mach's Help and Power,
     1 px apart; Turbulence's Help and Room Mode, 2) are a `joined` set, which
     goes past the owner's call 2 as written (a header tab row and a rail
-    group): the owner's word on it is awaited.
+    group): the owner's word on it is awaited;
+  - a column of keys a designer draws in a source popup at the template's
+    own row pitch (Mach's Doc Cam, 70 px apart on the 1035) is a `joined` set
+    on each panel that keeps the pitch, since the template itself stands
+    those keys 10 px apart, under the 2 mm the gap check keeps: past the
+    owner's call 2 as written too, and awaiting the owner's word. Overruled,
+    such a column stands at the 2 mm, a little longer than the template's;
+  - a column of kit-art keys in a source popup (Shockwave's `key`,
+    Turbulence's `button`) is not grown as one: Build fits the art to its
+    box, so each key keeps its own art's shape, and where one caption needs
+    more the column is ragged (Shockwave 725's Freeze 76x66 among 71x61).
 - **An icon on a group's button.** On a small panel a Group becomes one button
   that opens its pages; it carries the group's title, and no icon yet.
 - **Smaller gaps in translating for every panel**, each found in review and

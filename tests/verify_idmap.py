@@ -39,15 +39,18 @@ def _index(items, kind, problems):
 
 
 def _shows(page, popup):
-    """Can this built page display this built popup?"""
+    """Can this built page display this built popup? Through a reference
+    bound to it alone - a modal's, which Build makes, or a standard popup's in
+    no group, as nine seeds show their Volume Level - or, for a standard one,
+    through a reference bound to its group."""
     for x in page.get('Controls') or []:
         if x.get('Type') != REF_TYPE:
             continue
         r = x.get('PopupPageID') or {}
-        if popup.get('Modal'):
-            if r.get('IsPopupPageIdValid') and r.get('PopupID') == popup['ID']:
-                return True
-        elif r.get('IsPopupGroupIdValid') and r.get('GroupID') == popup.get('GroupID'):
+        if r.get('IsPopupPageIdValid') and r.get('PopupID') == popup['ID']:
+            return True
+        if not popup.get('Modal') and r.get('IsPopupGroupIdValid') \
+                and r.get('GroupID') == popup.get('GroupID'):
             return True
     return False
 

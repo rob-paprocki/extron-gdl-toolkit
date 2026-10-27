@@ -139,7 +139,11 @@ and on a panel that boots into the wrong page, carries a page or popup its plan
 does not name (the donor's, left in), or a control on a generated page or popup
 the plan did not put there, has a popup that built as the wrong kind or at another size than its plan's, a popup
 reference bound to another group than its plan's or to nothing (read off the
-reference, the popups and the built project's group registry), or a
+reference, the popups and the built project's group registry) or to another
+popup than the one its plan binds it to by ID, the Offline Page switched
+another way than its plan's, unreferenced on a page while on or not in its
+planned words, a popup whose timeout the built project does not hold as
+planned (the only place it is - `docs/gdl-format.md` §7), or a
 button whose states came back more, fewer, misnamed, drawn alike, or with a
 state built in another state's image. An edit plan's retarget is held to the
 build as well: the screen, the platform's resolution and part number, and each

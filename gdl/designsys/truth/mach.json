@@ -999,9 +999,30 @@
           "VTC Dialer"
         ]
       },
-      "status": "deviation",
-      "reason": "The word is set past the glyph by the kit's measured reach and the 14 pt type floor, which sets it larger than the template's, so the gap the template leaves shrinks.",
-      "here": "The dialer's Contacts key sets its word larger than the template's, nearly touching its glyph.",
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Mach 1220 Series",
+          "key": "call.center.dialer.keys.VC PhoneBook"
+        },
+        {
+          "series": "Mach 1020 Series",
+          "key": "call.center.dialer.keys.VC PhoneBook"
+        },
+        {
+          "series": "Mach 1520 Series",
+          "key": "call.center.dialer.keys.VC PhoneBook"
+        },
+        {
+          "series": "Mach 1720 Series",
+          "key": "call.center.dialer.keys.VC PhoneBook"
+        },
+        {
+          "series": "Mach 720 Series",
+          "key": "call.center.dialer.keys.VC PhoneBook"
+        }
+      ],
+      "builds": "The dialer's Contacts sets its word the gap the template leaves past the glyph, to the nearest space and never closer than 4 px or than the gap measured - 3 px past the kit's reach on the 1220 Series, none on the 1020 and 720 - where it stood 4 px past it.",
       "evidence": "VC PhoneBook (5250) at 744,461 128x60 on 880x440_contacts.png, on seeds/Mach 1035.gdl."
     },
     {
@@ -1037,9 +1058,87 @@
         ]
       },
       "status": "deviation",
-      "reason": "The applier binds each reference it makes to a group, never to one popup by its ID, so gdl.spec check refuses a standard popup with no group (docs/gdl-format.md section 5): the strip is the one popup of a Volume Level group of its own, which its reference shows on every working page. Binding it by its ID is applier work (docs/ROADMAP.md, A reference bound to one popup by its ID).",
+      "reason": "The design system gives the strip a Volume Level group of its own, which its reference shows on every working page. A spec binds a reference to one popup by its ID as the template does (docs/gdl-format.md section 5), and the hubs do not yet (docs/ROADMAP.md, The hubs' Volume Level strip is still bound to a group of its own).",
       "here": "On the 525 and the 535 the Volume Level strip, a popup at the menu bar's left (51x480, 81x720), shows on every working page: its reference is bound to a group of its own, where the template binds it to the popup by its ID and shows it only when the program does.",
       "evidence": "seeds/Mach 525.gdl's Main Page: Volume at 651,0 51x480, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; seeds/Mach 535.gdl's Main Page: Volume at 1041,0 81x720, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; docs/gdl-format.md section 5's survey, nine seeds' Volume Level placed so."
+    },
+    {
+      "id": "mach-55",
+      "claim": "regions.dialer: the dialer's Call and Flash set their words 4 px past the glyph.",
+      "where": [
+        "regions.dialer",
+        "kit.icon_right"
+      ],
+      "template": {
+        "does": "VTC Dialer's Call and Flash lead their words with spaces, left-aligned beside the 880x440 glyph, so the first letter stands a gap past the kit's reach that is the key's own on each panel: on the 1220 Series 15 px for both; on the 1020 Series 11 (Call) and 7 (Flash); the 1520's 19 and 14; the 1720's 33 and 27; the 720's 11 and 7.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "VTC Dialer"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Mach 1220 Series",
+          "key": "call.center.dialer.keys.VC Call"
+        },
+        {
+          "series": "Mach 1020 Series",
+          "key": "call.center.dialer.keys.VC Call"
+        },
+        {
+          "series": "Mach 1520 Series",
+          "key": "call.center.dialer.keys.VC Call"
+        },
+        {
+          "series": "Mach 1720 Series",
+          "key": "call.center.dialer.keys.VC Call"
+        },
+        {
+          "series": "Mach 720 Series",
+          "key": "call.center.dialer.keys.VC Call"
+        },
+        {
+          "series": "Mach 1220 Series",
+          "key": "call.center.dialer.keys.VC Flash"
+        },
+        {
+          "series": "Mach 1020 Series",
+          "key": "call.center.dialer.keys.VC Flash"
+        },
+        {
+          "series": "Mach 1520 Series",
+          "key": "call.center.dialer.keys.VC Flash"
+        },
+        {
+          "series": "Mach 1720 Series",
+          "key": "call.center.dialer.keys.VC Flash"
+        },
+        {
+          "series": "Mach 720 Series",
+          "key": "call.center.dialer.keys.VC Flash"
+        }
+      ],
+      "builds": "The dialer's Call and Flash build with their words the template's gap past the glyph, to the nearest space, where they were 4 px past it.",
+      "evidence": "VC Call and VC Flash on seeds/Mach 1035.gdl, 725, 1525, 1535 and 720, read with tests/measure_series.py words_gap: where the first letter stands in the key (the caption left-aligned, its leading spaces the face's own at the caption's size) less where the glyph ends (kit.icon_right across the art fitted in the key). The 1035's VC Flash is 128x60 on 880x440_flash with fifteen spaces before 'Flash' in Open Sans 11."
+    },
+    {
+      "id": "mach-56",
+      "claim": "The Page README's recording question: its answers as the template's.",
+      "where": [
+        "Page README"
+      ],
+      "template": {
+        "does": "Confirmation - Recording's Record and Record Cancel are 9244 and 9245 on every seed that asks it.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Confirmation - Recording"
+        ]
+      },
+      "status": "deviation",
+      "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
+      "here": "A recording's question asks Record and Cancel with IDs of their own, from 50001, where the template's are 9244 and 9245: a program written for the template's needs them told.",
+      "evidence": "Confirmation - Recording's Record (9244) and Record Cancel (9245) on seeds/Mach 1035.gdl, and on its 725, 1525, 1535, 535 and 525 (archive/job-e823df9b/small-panels/recording/questions.json)."
     }
   ]
 }

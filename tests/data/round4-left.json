@@ -15,16 +15,6 @@
   "TLP320M: 'Call' Camera Presets Heading: its words run into Camera Wide on this panel - give them room": [
    "readme",
    "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP525T: popup 'Call' Camera Privacy / Mic Mute: 6px horizontal gap is below the 15px minimum (2mm, p.56)": [
-   "limit",
-   "Mic Mute's 'Mics Muted' state caption grows about its centre past the gap drawn, its neighbours staying put - Words now counts a state's own caption; a row that opens its gaps where its box has room is the toolkit's, still to do",
-   "A row of loose controls does not re-space as its captions grow."
-  ],
-  "TLP725T: popup 'Call' Camera Privacy / Mic Mute: 9px horizontal gap is below the 13px minimum (2mm, p.56)": [
-   "limit",
-   "Mic Mute's 'Mics Muted' state caption grows about its centre past the gap drawn, its neighbours staying put - Words now counts a state's own caption; a row that opens its gaps where its box has room is the toolkit's, still to do",
-   "A row of loose controls does not re-space as its captions grow."
   ]
  },
  "shockwave": {
@@ -35,41 +25,6 @@
   "TLP320M: 'Teams' Camera Presets Heading: its words run into Camera Wide on this panel - give them room": [
    "readme",
    "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP525T: 'Help' Help Desk: its text does not fit its 333x55 box on this panel - give it room, or fewer words": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
-  ],
-  "TLP525T: 'Help' Share Heading: its words run into the words of Share Step 1 on this panel - give them room": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
-  ],
-  "TLP525T: 'Help' Share Step 1: its text does not fit its 333x33 box on this panel - give it room, or fewer words": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
-  ],
-  "TLP525T: 'Help' Share Step 1: its words run into the words of Share Step 2 on this panel - give them room": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
-  ],
-  "TLP525T: 'Help' Share Step 2: its text does not fit its 333x33 box on this panel - give it room, or fewer words": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
-  ],
-  "TLP525T: 'Help' Share Step 2: its words run into the words of Help Desk on this panel - give them room": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
-  ],
-  "TLP725T: 'Help' Share Step 2: its text does not fit its 420x41 box on this panel - give it room, or fewer words": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
   ],
   "TLP725T: MainSD.dc.html: Mic Mute takes the RightRail's audio place, which the TLP725T's template does not draw - it keeps it in its LeftRail's second Section, at Audio Control's place, where with it the Left Rail 2 Section holds 3, more than the TLP725T's rail has room for - take a launcher out of that Section (a page flip such as a call page is the Footer's mode launcher)": [
    "readme",
@@ -100,21 +55,6 @@
   "TLP320M: 'Lighting Control' Lighting Presets Heading: its words run into Lighting Full on this panel - give them room": [
    "readme",
    "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP525T: 'Help' Help Contact: its text does not fit its 382x42 box on this panel - give it room, or fewer words": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
-  ],
-  "TLP525T: 'Help' Help Step 1: its text does not fit its 382x36 box on this panel - give it room, or fewer words": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
-  ],
-  "TLP525T: 'Help' Help Step 1: its words run into the words of Help Step 2 on this panel - give them room": [
-   "limit",
-   "Help as a stack of one-line Labels sized at the 1035's type, laid out in the body under the window's title, which is smaller than the window - Words now asks for one Label of Help with room for its words; a body laid out as large as the window is the toolkit's, still to do",
-   "A window's body under its title is smaller than the window."
   ]
  },
  "afterburn": {

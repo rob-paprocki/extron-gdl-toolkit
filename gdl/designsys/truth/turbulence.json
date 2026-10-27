@@ -1501,7 +1501,7 @@
         ]
       },
       "status": "deviation",
-      "reason": "The applier binds each reference it makes to a group, never to one popup by its ID, so gdl.spec check refuses a standard popup with no group (docs/gdl-format.md section 5): the strip is the one popup of a Volume Level group of its own, which its reference shows on every working page. Binding it by its ID is applier work (docs/ROADMAP.md, A reference bound to one popup by its ID).",
+      "reason": "The design system gives the strip a Volume Level group of its own, which its reference shows on every working page. A spec binds a reference to one popup by its ID as the template does (docs/gdl-format.md section 5), and the hubs do not yet (docs/ROADMAP.md, The hubs' Volume Level strip is still bound to a group of its own).",
       "here": "On the 525 the Volume Level strip, a popup at the menu bar's left (51x480), shows on every working page: its reference is bound to a group of its own, where the template binds it to the popup by its ID and shows it only when the program does.",
       "evidence": "seeds/Turbulence 525.gdl's Main Page: Volume at 651,0 51x480, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; docs/gdl-format.md section 5's survey, nine seeds' Volume Level placed so."
     }

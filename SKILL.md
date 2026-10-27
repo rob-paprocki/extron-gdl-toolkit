@@ -42,8 +42,9 @@ what changed (`docs/idmap.md` §9).
 A canvas draws a bar panel's working page as **region pages** - Header,
 LeftRail, RightRail, Footer and Center - and says what a page or popup is for
 with a `role`: `source` and `dialer` popups; `call` and `select` pages;
-`help` and `settings` windows; `confirm` windows by `topic` (`power`, `call`),
-and waits (`up`, `down`). Their grammar, per template, is `docs/claude-design.md`
+`help` and `settings` windows; `confirm` windows by `topic` (`power`, `call`,
+and `recording` where the template asks one), and waits (`up`, `down`). Their
+grammar, per template, is `docs/claude-design.md`
 §3 and §4; read it before drawing or translating one, not from here.
 
 `New-GdlPanels.ps1` builds and verifies every panel and writes the one ID map;
@@ -157,10 +158,23 @@ made from it (`docs/claude-design.md` §1, *Build*). Neither replaces `tests/ver
    clock.
 
    **Popups are one of two kinds.** A *standard* popup sits in a `group` and
-   shows through a `popup_ref` bound to that group, at the reference's size. A
+   shows through a `popup_ref` bound to that group, at the reference's size -
+   or sits in no group and shows through a `popup_ref` bound to it alone,
+   `"popup": "<its name>"`, as Extron's hubs place their Volume Level strip. A
    *modal* one (`"modal": true`) covers the whole canvas - draw the confirmation
    card inside it - and needs no reference; Build places those. `check` rejects
-   anything else, since neither kind can otherwise be shown.
+   anything else, since neither kind can otherwise be shown. A popup's
+   `timeout` is written into the project, but nothing GUI Designer builds
+   carries it to the panel - `check` says so - so a popup that hides by itself
+   is the program's to hide (`docs/gdl-format.md` §7).
+
+   **Say what the panel shows when it loses its controller.** GUI Designer's
+   Offline Page is the seed's own, shown or not as the seed ships it - the
+   seeds go both ways - and every one says *call XXX.XXX.XXXX*. `"offline":
+   {"enabled": true, "replace": {"XXX.XXX.XXXX": "555.010.4567"}}` switches it
+   and replaces words on it; its layout and type stay the seed's. `donors` says
+   which way the seed ships it when the spec does not, and refuses a word its
+   page does not say.
 
    **Say what it does.** A brief describes functions as well as a layout - "the
    sources route to the display and show which is live; Help explains sharing".
@@ -171,8 +185,8 @@ made from it (`docs/claude-design.md` §1, *Build*). Neither replaces `tests/ver
    popup that cannot appear where it is shown, a page nothing reaches.
 4. **Check it**: `python -m gdl.spec check <spec.json>` — ids, off-canvas, sizes,
    a size the model does not have, unknown resources, a key nothing reads at
-   any level - the spec's, a page's or popup's, a control's, a state's, a
-   theme's that is neither a setting nor a color (a key starting `_` is the
+   any level - the spec's, a page's or popup's, a control's, a state's, the
+   Offline Page's, a theme's that is neither a setting nor a color (a key starting `_` is the
    translator's, or a note) -
    a `grid` or `stack` with more items than cells (the rest would not be laid out),
    and Extron's numeric standards on every page and popup (touch target, 2 mm
@@ -189,9 +203,11 @@ made from it (`docs/claude-design.md` §1, *Build*). Neither replaces `tests/ver
    and needs no GUI Designer.
 6. **Check it against the donor**: `python -m gdl.spec donors <spec.json>
    <donor.gdl>`. The donor supplies every cloned control, so a type it lacks is
-   unauthorable. A font family it lacks is appended from a seed that carries
+   unauthorable - but a clock, which is cloned from the smallest other seed of
+   its theme that has one (Shockwave's and Turbulence's 320s take their 525's;
+   `docs/gdl-format.md` §7). A font family it lacks is appended from a seed that carries
    the face, and a border it lacks is built as its own of the nearest shape -
-   both said by `donors` and written by `plan --donor` (`New-GdlPanel.ps1`
+   all three said by `donors` and written by `plan --donor` (`New-GdlPanel.ps1`
    passes the donor); only a face no seed carries, or a border of no shape near
    enough, is refused (`seeds/README.md`). A family is named as the donor or
    the seed spells it. Each takes seconds to find here - a face to append costs

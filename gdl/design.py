@@ -402,6 +402,7 @@ class Canvas:
             problems = problems + _spec_check(spec, self._seed_geometry(spec), problems)
         for item in (spec or {}).get('pages', []) + (spec or {}).get('popups', []):
             item.pop('_host', None)
+            item.pop('_hosts', None)
         return spec, problems, notes
 
     def translate_panels(self, rendered=None, previous=None):
@@ -508,6 +509,7 @@ class Canvas:
         for spec in specs.values():
             for item in (spec or {}).get('pages', []) + (spec or {}).get('popups', []):
                 item.pop('_host', None)
+                item.pop('_hosts', None)
         if any(problems.values()) or any(v is None for v in specs.values()):
             return None, problems, notes
         return specs, problems, notes
@@ -699,7 +701,12 @@ class Canvas:
             mine = [c for c in out['controls'] if c.get('part') is None]
             for i, prt in enumerate(out.get('parts') or []):
                 d = json.loads(prt['gdl'])
+                # `_window`: the page that derived it and the template's name
+                # for it, which its name need not stay - _one_name_each names
+                # a later page's after that page - and which what the layout
+                # draws in it keeps its IDs by (pin_ids), into the ID map.
                 sub = {'name': d['name'], 'controls': [], '_board': b, '_derived': True, '_host': name,
+                       '_window': {'page': name, 'name': d['name']},
                        '_raw': [c for c in out['controls'] if c.get('part') == i]}
                 if d.get('kind') == 'popup' and d.get('modal'):
                     # A modal the panel's layout derived - the 320's Volume,
@@ -1032,6 +1039,11 @@ def _one_name_each(pages, popups, notes, known=None):
     grid that shows it; where two pages' grids differ and both show it, the
     way back is the program's, as a window opened from two places is.
 
+    A part's name follows the pages' order, and what it is does not: each
+    keeps the page that derived it and the template's name for it
+    (`_window`), and one window of several pages lists them (`_hosts`) - what
+    the layout draws in it keeps its IDs by those (pin_ids).
+
     `known`: the design panel's identities() - another panel's copy of a
     control carries no seed ID of its own (a hub's level), so whether two are
     one control is read off the panel the canvas is drawn on.
@@ -1116,6 +1128,9 @@ def _one_name_each(pages, popups, notes, known=None):
             if rep is not None:
                 gone.add(id(d))
                 ways.setdefault(d['_host'], {})[name] = rep
+                # Every page it is the window of, in the canvas's order:
+                # which one's it is to the program, pin_ids decides.
+                rep.setdefault('_hosts', [rep['_host']]).append(d['_host'])
                 continue
             kept.append(d)
         for i, d in enumerate(kept):
@@ -1542,6 +1557,14 @@ def pin_ids(specs, order, previous=None):
     a hub's footer clock, which its template has no place for) may be absent
     there.
 
+    In a page or popup a panel's layout derived, a control is known by the
+    page that derived it and the template's name for it (`_window`), not by
+    the name, which a hub gives a later page's window after that page: the
+    pages drawn in another order rename the windows, and keep what is in
+    them. One window of several pages (`_hosts`) is the first's - or, as one
+    whose page is renamed or removed, the one the previous map knew it as
+    (_windows_as_known).
+
     `previous`, the previous delivery's ID map (gdl.idmap.load_previous), is a
     program already written: every control it knew - by page or popup name and
     control name (gdl.idmap.known), a derived one by the same key - keeps its
@@ -1559,6 +1582,21 @@ def pin_ids(specs, order, previous=None):
         known_canvas, known_derived, held = {}, {}, {}
     else:
         known_canvas, known_derived, held = gdlidmap.known(previous)
+        _windows_as_known(specs, previous)
+    # What a page or popup is to the program: its name - or, for one a
+    # panel's layout derived (`_window`), the page that derived it and the
+    # template's name for it. A hub names a later working page's Select
+    # Source after that page (_one_name_each), so a canvas drawing its pages
+    # in another order renamed the window and retired the IDs of everything
+    # the hub draws in it - 12 of 139 on round four's Shockwave canvas with
+    # its boards reversed, where no `id` on the canvas could pin them. By
+    # name only against a previous map that does not say which page derived
+    # each (gdl.idmap.windowed), as that map knows them.
+    by_window = previous is None or gdlidmap.windowed(previous)
+
+    def where(it):
+        w = it.get('_window')
+        return (w['page'], w['name']) if w and by_window else it['name']
 
     # A control is looked up by the name the map shows it by - an unnamed
     # one's caption, or its kind - on its page or popup, else on the canvas
@@ -1581,12 +1619,12 @@ def pin_ids(specs, order, previous=None):
             if not c.get('derived'):
                 nm = c.get('name') or c.get('text') or c['kind']
                 k = key(it, c, seen)
-                own[(it['name'], nm)].add(k)
+                own[(where(it), nm)].add(k)
                 family[(it['_host'], nm)].add(k)
 
     def lookup(it, c):
         nm = c.get('name') or c.get('text') or c['kind']
-        for k, holds in (((it['name'], nm), own), ((it['_host'], nm), family)):
+        for k, holds in (((where(it), nm), own), ((it['_host'], nm), family)):
             if k in known_canvas and len(holds[k]) < 2:
                 return known_canvas[k]
         return None
@@ -1597,7 +1635,7 @@ def pin_ids(specs, order, previous=None):
     def band_of(it, popup):
         got = collections.Counter()
         for (ct, _), v in known_canvas.items():
-            if ct != it['name'] or not isinstance(v, int):
+            if ct != where(it) or not isinstance(v, int):
                 continue
             if popup and 9000 <= v < 10000:
                 got[9000 + 100 * ((v - 9000) // 100) + 1] += 1
@@ -1705,10 +1743,13 @@ def pin_ids(specs, order, previous=None):
     # A mirror the layout drew (`_mirror`: Shockwave's tab twin) has its
     # control's ID, not one of its own.
     # A clock or a line has no ID to give.
-    derived = sorted({(it['name'], c['name']) for spec in specs.values()
-                      for it in spec['pages'] + spec['popups'] for c in it['controls']
-                      if c.get('derived') and c.get('name') and not c.get('_mirror') and c['kind'] not in NO_ID})
-    did, n = {}, DERIVED_IDS
+    # What the layout added is keyed by where it is to the program (where())
+    # and its name, and numbered in the name order of where it is drawn
+    # (`shown`), so a canvas numbers as it did when its windows were keyed by
+    # their names.
+    def dkey(it, c):
+        return (where(it), c['name'])
+    shown = {}
     # `at`: where each is first drawn - its page's place in the first panel's
     # spec, in the panels' order, that draws it - which decides which of
     # several keeps a seed ID only one can have.
@@ -1717,9 +1758,14 @@ def pin_ids(specs, order, previous=None):
         for pi, it in enumerate(spec['pages'] + spec['popups']):
             for c in it['controls']:
                 if c.get('derived') and c.get('name') and not c.get('_mirror') and c['kind'] not in NO_ID:
-                    carried.setdefault((it['name'], c['name']), set()).add(c.get('id'))
-                    does[(it['name'], c['name'])].add((json.dumps(c.get('nav')), c.get('does')))
-                    at.setdefault((it['name'], c['name']), (si, pi))
+                    k = dkey(it, c)
+                    shown.setdefault(k, set()).add((it['name'], c['name']))
+                    carried.setdefault(k, set()).add(c.get('id'))
+                    does[k].add((json.dumps(c.get('nav')), c.get('does')))
+                    at.setdefault(k, (si, pi))
+    derived = sorted(shown, key=lambda k: min(shown[k]))
+    rank = {k: i for i, k in enumerate(derived)}
+    did, n = {}, DERIVED_IDS
     canvas_ids = set(ids.values())
     # A name the layout draws in several pages or popups, doing one thing in
     # each and carrying one seed ID - a hub's Volume Up and Down on every
@@ -1758,8 +1804,8 @@ def pin_ids(specs, order, previous=None):
             continue
         if was in canvas_ids:
             holder = next(f'{h!r} {nm}' for (h, nm), v in ids.items() if v == was)
-            problems[order[0]].append(f'{holder}: its ID {was} is the one the previous map gave {k[0]!r} '
-                                      f'{k[1]}, which a panel still draws - give it another')
+            problems[order[0]].append(f'{holder}: its ID {was} is the one the previous map gave '
+                                      f'{min(shown[k])[0]!r} {k[1]}, which a panel still draws - give it another')
         elif free_for(k, was):
             did[k] = was
     for k0 in derived:
@@ -1773,7 +1819,7 @@ def pin_ids(specs, order, previous=None):
         # names keep the order they had (the 320's More and Back, a page's
         # own each), so a canvas with one working page numbers as it did.
         k = min((kk for kk in derived if kk[1] == k0[1] and kk not in did and carried.get(kk) == own),
-                key=lambda kk: (at.get(kk, (len(specs), 0)), kk))
+                key=lambda kk: (at.get(kk, (len(specs), 0)), rank[kk]))
         # One the previous map held is not free, unless it gave it a copy of
         # the one control this is (`one`): this one, on a page drawn since.
         mine = cid in held and k in one and str(held[cid]).split(' / ', 1)[-1] == k[1]
@@ -1827,7 +1873,7 @@ def pin_ids(specs, order, previous=None):
                     # A derived copy of an unnamed card has nothing to key an
                     # ID by, and a shape needs none; a clock or a line takes none.
                     if c.get('name') and c['kind'] not in NO_ID:
-                        c['id'] = did[(it['name'], c['name'])]
+                        c['id'] = did[dkey(it, c)]
                     continue
                 if not c.get('name') and c['kind'] in ('button', 'label', 'slider', 'level') and len(specs) > 1:
                     continue
@@ -1859,6 +1905,78 @@ def pin_ids(specs, order, previous=None):
             if previous.get('_sha256'):
                 spec['_previous'] = previous['_sha256']
     return problems
+
+
+def _canvas_renames(spec, view):
+    """(old, new, renames) - the pages and popups the canvas drew, in the
+    previous map's view `view` and in `spec` (gdl.idmap.containers), and
+    those of `view` gone where one of `spec`'s holds most of its controls by
+    name (gdl.idmap.renames): renamed, as far as the maps can tell. What a
+    layout derived is the layout's, never a designer's to rename."""
+    derived = set(gdlidmap.windows(view).values())
+    old = {k: v for k, v in gdlidmap.containers(view).items() if k not in derived}
+    popups = {id(x) for x in spec['popups']}
+    new = {it['name']: ('popup' if id(it) in popups else 'page',
+                        {c['name'] for c in it['controls'] if c.get('name') and not c.get('derived')})
+           for it in spec['pages'] + spec['popups'] if not it.get('_window')}
+    return old, new, gdlidmap.renames(old, new)
+
+
+def _windows_as_known(specs, previous):
+    """Each derived page and popup (`_window`) as the previous map knew it,
+    on each panel's view of that map (gdl.idmap.windows): its `_window` page
+    set to the page the map keyed it by, where that is not its own.
+
+    - One window of several pages (`_hosts`: a hub's Volume Level, the alike
+      Select Source of two working pages) is the window of the page the map
+      knew it by, whichever the canvas now draws first.
+    - One whose page and name the map lacks is the map's window of that
+      name that showed the name it shows - the window a map keyed by name
+      knew it as, so a page drawn where a removed one was, its window shown
+      by that name, takes that window's IDs as it always did. The strip of a
+      room whose first working page is gone is that; keyed by its page
+      alone, its Volume Up and Down were retired with the page, though the
+      strip stayed.
+    - Else, where the canvas renamed a page (_canvas_renames: its controls
+      drawn on one of another name, which the maps read as a rename and
+      translate notes), the one window of that name the renamed page's
+      derives is the one window of that name the gone page derived.
+
+    Anything else is new to the program, and a gone window's IDs are retired
+    with it: Presentation drawn where Main SD was removed, under a name of
+    its own, takes none of Main SD's. A key a window of the canvas holds as
+    its own, or one another took, is not taken again."""
+    first_model, first = next(iter(specs.items()))
+    view = gdlidmap.view_of(previous, first_model or _panel(first), True)
+    renamed = {g: c for g, c, kind in _canvas_renames(first, view)[2] if kind == 'page'} if view else {}
+    drawn = {it['_host'] for spec in specs.values() for it in spec['pages'] + spec['popups'] if it.get('_host')}
+    for i, (model, spec) in enumerate(specs.items()):
+        had = gdlidmap.windows(gdlidmap.view_of(previous, model or _panel(spec), i == 0))
+        if not had:
+            continue
+        items = [it for it in spec['pages'] + spec['popups'] if it.get('_window')]
+        for it in items:
+            w = it['_window']
+            if it.get('_hosts'):
+                w['page'] = next((h for h in it['_hosts'] if (h, w['name']) in had), w['page'])
+        taken = {(it['_window']['page'], it['_window']['name']) for it in items} & set(had)
+        lost = [it for it in items if (it['_window']['page'], it['_window']['name']) not in had]
+        # By the name it shows first, so a window of a page drawn since
+        # cannot take a gone page's that another window shows by its name.
+        for it in list(lost):
+            w = it['_window']
+            k = next((k for k, n in had.items() if k[1] == w['name'] and n == it['name'] and k not in taken), None)
+            if k is not None:
+                w['page'] = k[0]
+                taken.add(k)
+                lost.remove(it)
+        kinds = collections.Counter(it['_window']['name'] for it in lost)
+        for it in lost:
+            w = it['_window']
+            gone = [k for k in had if k[1] == w['name'] and k[0] not in drawn and k not in taken]
+            if len(gone) == 1 and kinds[w['name']] == 1 and renamed.get(gone[0][0]) == it['_host']:
+                w['page'] = gone[0][0]
+                taken.add(gone[0])
 
 
 def _yielded(specs, carried):
@@ -1902,38 +2020,50 @@ def revision_notes(spec, previous):
     every control the first panel's layout put elsewhere.
     """
     view = gdlidmap.view_of(previous, _panel(spec)) or next(iter(gdlidmap.views(previous).values()))
-    old = gdlidmap.containers(view)
-    items = spec['pages'] + spec['popups']
-    popups = {id(x) for x in spec['popups']}
-    new = {it['name']: ('popup' if id(it) in popups else 'page',
-                        {c['name'] for c in it['controls'] if c.get('name') and not c.get('derived')})
-           for it in items}
+    # A page or popup a layout derived (`_window`, and a map's windows) is
+    # the layout's, never a designer's to rename: a hub's window renamed by
+    # the pages' order is renamed_windows'.
+    wins = gdlidmap.windows(view)
+    old, new, renamed = _canvas_renames(spec, view)
     was = gdlidmap.known(previous)[0]
     out, pages = [], set()
-    for g, c, kind in gdlidmap.renames(old, new):
+    for g, c, kind in renamed:
         pages.add(c)
         both = sorted(old[g][1] & new[c][1])
         pins = ', '.join(f'{n} id={was[(g, n)]}' for n in both if (g, n) in was)
         out.append(f"{kind} {g!r} of the previous map is gone, and {c!r} holds {len(both)} of its controls - "
                    f"if it was renamed, a program shows it by its new name, and its controls are new to the "
                    f'program, their IDs retired' + (f'; to keep them, pin {pins}' if pins else ''))
-    rows = {(a['container'], a['name']): c for c in view.get('controls') or [] if not c.get('derived')
+    # A control in a page or popup a layout derived is known by the page
+    # that derived it and the layout's name for it, as known() keys it, where
+    # the map says them (pin_ids): a window renamed by the pages' order still
+    # holds what it held.
+    _windows_as_known({'': spec}, previous)
+    by = {n: k for k, n in wins.items()}
+    windowed = bool(wins)
+
+    def place(it):
+        w = it.get('_window')
+        return (w['page'], w['name']) if w and windowed else it['name']
+    rows = {(by.get(a['container'], a['container']), a['name']): (a['container'], c)
+            for c in view.get('controls') or [] if not c.get('derived')
             for a in c.get('at') or [] if not a.get('mirror')}
-    now = {(it['name'], c['name']) for it in items for c in it['controls'] if c.get('name') and not c.get('derived')}
+    now = {(place(it), c['name']) for it in spec['pages'] + spec['popups'] for c in it['controls']
+           if c.get('name') and not c.get('derived')}
     gone = {k: r for k, r in rows.items() if k not in now and k in was}
-    for it in items:
+    for it in spec['pages'] + spec['popups']:
         if it['name'] in pages:
             continue
         for c in it['controls']:
-            if c.get('derived') or not c.get('name') or c.get('id') or (it['name'], c['name']) in rows:
+            if c.get('derived') or not c.get('name') or c.get('id') or (place(it), c['name']) in rows:
                 continue
             kind = gdlidmap.CLASS_OF.get(c['kind'])
-            moved = [k for k, r in gone.items() if k[1] == c['name'] and r['type'] == kind]
-            same = [k for k, r in gone.items() if k[0] == it['name'] and r['type'] == kind and c.get('does')
+            moved = [k for k, (_, r) in gone.items() if k[1] == c['name'] and r['type'] == kind]
+            same = [k for k, (_, r) in gone.items() if k[0] == place(it) and r['type'] == kind and c.get('does')
                     and r.get('does') == c['does']]
             if len(moved) == 1:
                 k = moved[0]
-                out.append(f"{it['name']!r} {c['name']}: moved from {k[0]!r}, where the program knows it as "
+                out.append(f"{it['name']!r} {c['name']}: moved from {gone[k][0]!r}, where the program knows it as "
                            f'{was[k]} - a control is known by its page and its name, so here it is new to the '
                            f'program; pin id={was[k]} to keep the one it knows')
             elif len(same) == 1:
@@ -1951,48 +2081,79 @@ def renamed_windows(spec, view, retired):
     A hub names the window each working page derives (Select Source, More
     Options) by its template - and after its own page where an earlier page
     derives one too (Video Call Select Source, _one_name_each). So drawing the
-    working pages in another order, or removing the earlier one, renames it:
-    a program shows it by its new name, and what the hub draws in it, known
-    by the window's name as every derived control is, is new to the program,
-    its IDs retired. The layout draws those, so no `id` on the canvas pins
-    them; the previous order keeps them, and the note names it.
+    working pages in another order, or removing the earlier one, renames it,
+    and a program shows it by its new name. What the hub draws in it is known
+    by the page that derived it and the template's name (`_window`, pin_ids,
+    _windows_as_known) and keeps its IDs - where the previous map says which
+    page derived each window (gdl.idmap.windows); one it no longer draws is
+    retired, and the note says so. Against a map that does not, it is known
+    by the window's name as the map knew it, is new to the program and its
+    IDs retired; the layout draws those, so no `id` on the canvas pins them,
+    and the note names the previous order, which keeps them. The page to draw
+    first again is named only where both pages are on the canvas.
     """
     if not view:
         return []
     old = {p['name'] for p in view.get('popups') or []}
     pages = {p['name'] for p in view.get('pages') or []}
+    wins = gdlidmap.windows(view)
     out = []
     for it in spec['popups']:
-        host, name = it.get('_host'), it['name']
-        # A page drawn since derives a window new to the program, not renamed.
-        if not host or host == name or host not in pages:
+        host, name, w = it.get('_host'), it['name'], it.get('_window')
+        if not host or host == name:
             continue
-        base = name[len(host) + 1:] if name.startswith(host + ' ') else name
-        was = f'{host} {base}' if f'{host} {base}' in old else base if base in old else None
+        if wins and w:
+            # The map says what each window was: the one this page derived,
+            # or the one it is as the map knew it (_windows_as_known). One
+            # it has no window of is new to the program.
+            base, was = w['name'], wins.get((w['page'], w['name']))
+        elif host not in pages:
+            # A page drawn since derives a window new to the program.
+            continue
+        else:
+            base = name[len(host) + 1:] if name.startswith(host + ' ') else name
+            was = f'{host} {base}' if f'{host} {base}' in old else base if base in old else None
         if was is None or was == name:
             continue
         if was == base:
             # Named for its page now because another page's window took the
             # template's name - not where the name was a board of the
-            # designer's, which the map cannot tell from a window.
+            # designer's, which a map that names no windows cannot tell from
+            # a window.
             first = host
             later = next((x['_host'] for x in spec['popups'] if x['name'] == base
                           and x.get('_host') not in (None, base)), None)
-            if later is None:
+            if later is None and not wins:
                 continue
+        elif wins and w:
+            # The page whose window had the name, while it is still drawn: a
+            # page drawn since and named for itself held nothing.
+            first = next((k[0] for k, n in wins.items() if k[1] == base and n == base), None)
+            if first not in {p['name'] for p in spec['pages']} | {x.get('_host') for x in spec['popups']}:
+                first = None
+            later = host
         else:
             first = next((x['_host'] for x in spec['popups'] if x.get('_host') not in (None, host)
                           and x['name'] == f"{x['_host']} {base}"), None)
             later = host
-        ids = sorted(c['id'] for c in view.get('controls') or []
-                     if c['id'] in retired and any(a['container'] == was for a in c.get('at') or []))
+        # What the hub draws in it that is retired - not a control of the
+        # designer's that was there and is gone.
+        ids = sorted(c['id'] for c in view.get('controls') or [] if c.get('derived')
+                     and c['id'] in retired and any(a['container'] == was for a in c.get('at') or []))
         said = ', '.join(map(str, ids[:4])) + (f' and {len(ids) - 4} more' if len(ids) > 4 else '')
+        if wins:
+            what = (", and what the hub draws in it keeps its IDs"
+                    + (f" - but {said}, which it no longer draws, {'is' if len(ids) == 1 else 'are'} retired"
+                       if ids else ''))
+            keep = 'its name'
+        else:
+            what = (f", and the IDs of what the hub draws in it are retired ({said}) - the layout draws those, "
+                    f"so no id on the canvas pins them" if ids else '')
+            keep = 'them' if ids else 'its name'
         out.append(f"{host}'s {base} is {name!r} now, not {was!r} - a hub names a working page's {base} after the "
-                   f"page where an earlier page draws one too, so the pages' order renamed it: a program shows it by "
-                   f"its new name" + (f", and the IDs of what the hub draws in it are retired ({said}) - the layout "
-                                      f"draws those, so no id on the canvas pins them" if ids else '')
-                   + (f"; draw {first} ahead of {later} again to keep {'them' if ids else 'its name'}"
-                      if first and later else ''))
+                   f"page where an earlier page draws one too, so the pages drawn ahead of it - their order, or one "
+                   f"removed - renamed it: a program shows it by its new name" + what
+                   + (f"; draw {first} ahead of {later} again to keep {keep}" if first and later else ''))
     return out
 
 

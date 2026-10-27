@@ -1894,11 +1894,12 @@ class TestModalPopups(unittest.TestCase):
         self.assertEqual(p.check(), [])
 
     def test_a_standard_popup_with_no_group_is_reported(self):
-        # Only a reference can show a standard popup, and a spec's reference
-        # binds to a group - Extron's 525s bind one popup by its ID, which a
-        # spec does not author. With no group it can never appear.
+        # Only a reference can show a standard popup: one bound to its group,
+        # or one bound to it alone (TestPopupBoundById). With neither it can
+        # never appear.
         p = self._p({'name': 'Loose', 'size': [100, 100], 'controls': []})
-        self.assertTrue(any('group' in m for m in p.check()), p.check())
+        self.assertTrue(any('group' in m and 'no reference is bound to it' in m
+                            for m in p.check()), p.check())
 
     def test_an_authored_reference_is_never_modal(self):
         # PBPopupPageReference has its own modalField, True on the references
@@ -2359,6 +2360,190 @@ class TestPalette(unittest.TestCase):
         p = _project([dict({'name': 'P', 'controls': controls}, **self.BG)])
         self.assertEqual(len(p.palette()), 7)
         self.assertTrue(any('7 distinct colors' in m for m in p.check()), p.check())
+
+
+class TestOfflinePage(unittest.TestCase):
+    """GUI Designer's Offline Page (popup 65535) is the donor's, kept whole,
+    and the seeds ship it on and off - every Mach seed off, every Turbulence
+    seed on - so without `offline` a panel shows it as its seed does, and
+    says 'call XXX.XXX.XXXX' on it."""
+
+    REPLACE = {'It looks like this touchpanel has lost connection with the controller.':
+               'This panel has lost the room controller.',
+               'XXX.XXX.XXXX': '555.010.4567'}
+
+    def _p(self, offline):
+        return _project([{'name': 'Home', 'number': 1000, 'controls': [_label()]}],
+                        offline=offline)
+
+    def test_it_reaches_the_plan_in_the_specs_order(self):
+        plan = self._p({'enabled': True, 'replace': self.REPLACE}).plan()
+        self.assertEqual(plan['offline'], {'enabled': True, 'replace': [
+            {'old': k, 'new': v} for k, v in self.REPLACE.items()]})
+
+    def test_a_spec_that_says_nothing_leaves_the_donors(self):
+        self.assertIsNone(_project([{'name': 'Home', 'controls': [_label()]}]).plan()['offline'])
+        self.assertEqual(self._p({'replace': {'XXX.XXX.XXXX': '1'}}).plan()['offline']['enabled'],
+                         None)
+
+    def test_it_is_a_key_a_spec_takes(self):
+        p = self._p({'enabled': False})
+        self.assertEqual(p.check(), [])
+        self.assertFalse(p.plan()['offline']['enabled'])
+
+    def test_its_own_keys_are_held(self):
+        said = self._p({'enabled': True, 'text': 'Call us'}).check()
+        self.assertTrue(any("'text' is not a key the Offline Page takes" in m for m in said), said)
+        said = self._p({'enabled': 'yes'}).check()
+        self.assertTrue(any("enabled 'yes' is not true or false" in m for m in said), said)
+        said = self._p(True).check()
+        self.assertTrue(any('offline True is not an object' in m for m in said), said)
+        said = self._p({'replace': 'XXX.XXX.XXXX'}).check()
+        self.assertTrue(any('replace' in m and 'not an object' in m for m in said), said)
+        said = self._p({'replace': {'XXX.XXX.XXXX': 5550104567}}).check()
+        self.assertTrue(any('is not words to words' in m for m in said), said)
+
+    def _seed(self, name='Afterburn 320.gdl'):
+        donor = seed(name)
+        if not usable(donor):
+            self.skipTest(f'seeds/{name} is not here (an LFS pull fetches it)')
+        return donor
+
+    def test_words_the_donors_page_says_are_accepted(self):
+        donor = self._seed()
+        said = self._p({'enabled': False, 'replace': self.REPLACE}).check_donor(donor)
+        self.assertFalse([m for m in said if 'Offline' in m], said)
+
+    def test_words_the_donors_page_does_not_say_are_refused_by_name(self):
+        donor = self._seed()
+        said = self._p({'replace': {'Call the help desk': 'Call AV'}}).check_donor(donor)
+        self.assertTrue(any("replace 'Call the help desk'" in m and 'does not say it' in m
+                            and 'XXX.XXX.XXXX' in m for m in said), said)
+
+    def test_the_donors_switch_is_said_when_the_spec_does_not_say(self):
+        """Afterburn's 320 is the one Afterburn seed that ships it on."""
+        donor = self._seed()
+        notes = []
+        _project([{'name': 'Home', 'controls': [_label()]}]).check_donor(donor, notes=notes)
+        self.assertTrue(any('Offline Page is on' in n for n in notes), notes)
+        notes = []
+        self._p({'enabled': False}).check_donor(donor, notes=notes)
+        self.assertFalse(any('Offline Page' in n for n in notes), notes)
+
+
+class TestPopupTimeout(unittest.TestCase):
+    """PBPopupPage.timeoutField, 0 on every seed popup. The applier writes it
+    and Save and Build keeps it in the project, but nothing in GUI Designer
+    1.28.0.7 reads it, so the built panel has none - `check` says so."""
+
+    def _p(self, **pu):
+        return _project([{'name': 'Home', 'number': 1000, 'controls': [
+            {'kind': 'popup_ref', 'name': 'Ref', 'rect': [0, 0, 100, 100], 'group': 'G'}]}],
+            [dict({'name': 'Card', 'group': 'G', 'size': [100, 100], 'controls': []}, **pu),
+             {'name': 'Ask', 'modal': True, 'controls': []}])
+
+    def test_every_popup_is_planned_one_so_a_clone_keeps_none_of_its_donors(self):
+        ops = {op['name']: op for op in self._p(timeout=30).plan()['popups']}
+        self.assertEqual(ops['Card']['timeout'], 30)
+        self.assertEqual(ops['Ask']['timeout'], 0)
+
+    def test_it_is_a_key_a_popup_takes_and_check_says_it_reaches_no_panel(self):
+        p = self._p(timeout=30)
+        self.assertEqual(p.check(), [])
+        self.assertEqual(len(p.notes()), 1)
+        self.assertIn("'Card': timeout 30", p.notes()[0])
+        self.assertIn('the built panel has no timeout', p.notes()[0])
+        self.assertEqual(self._p(timeout=0).notes(), [])
+
+    def test_one_a_uint32_does_not_hold_is_refused(self):
+        for bad in (-1, 1.5, '30', True, 2 ** 32):
+            said = self._p(timeout=bad).check()
+            self.assertTrue(any('timeout' in m and 'UInt32' in m for m in said), (bad, said))
+
+    def test_a_page_does_not_take_one(self):
+        p = _project([{'name': 'Home', 'number': 1000, 'timeout': 5, 'controls': [_label()]}])
+        self.assertTrue(any("'timeout' is not a key a page takes" in m for m in p.check()),
+                        p.check())
+
+
+class TestPopupBoundById(unittest.TestCase):
+    """A reference bound to one popup by its ID, GroupID 0 - nine seeds show
+    their ungrouped Volume Level so (docs/gdl-format.md section 5). A spec's
+    popup_ref names the popup (`popup`) in place of a group."""
+
+    def _p(self, refs, popups=None):
+        return _project([{'name': 'Home', 'number': 1000, 'controls': refs}],
+                        popups if popups is not None else
+                        [{'name': 'Volume Level', 'size': [51, 480], 'controls': []}])
+
+    def _ref(self, **kw):
+        return dict({'kind': 'popup_ref', 'name': 'Volume', 'rect': [1200, 100, 51, 480],
+                     'popup': 'Volume Level'}, **kw)
+
+    def test_an_ungrouped_popup_with_its_reference_is_clean_and_planned(self):
+        p = self._p([self._ref()])
+        self.assertEqual(p.check(), [])
+        plan = p.plan()
+        op = plan['pages'][0]['controls'][0]
+        self.assertEqual((op['popup'], op['group']), ('Volume Level', None))
+        self.assertIs(op['fields']['modalField'], False)
+        self.assertEqual(plan['popup_groups'], [])
+        self.assertIsNone(plan['popups'][0]['group'])
+
+    def test_popup_is_a_popup_refs_alone(self):
+        p = self._p([self._ref(), _label(rect=[0, 0, 100, 40], popup='Volume Level')])
+        self.assertTrue(any("'popup' is a popup_ref's" in m for m in p.check()), p.check())
+        self.assertIsNone(p.plan()['pages'][0]['controls'][1]['popup'])
+
+    def test_a_reference_bound_both_ways_is_refused(self):
+        said = self._p([self._ref(group='G')], [
+            {'name': 'Volume Level', 'size': [51, 480], 'group': 'G', 'controls': []}]).check()
+        self.assertTrue(any('not both' in m for m in said), said)
+
+    def test_a_reference_bound_to_nothing_is_refused(self):
+        said = self._p([self._ref(popup=None)]).check()
+        self.assertTrue(any('must name a group, or the one popup' in m for m in said), said)
+
+    def test_a_popup_the_spec_has_not_is_refused(self):
+        said = self._p([self._ref(popup='Volume')]).check()
+        self.assertTrue(any("bound to popup 'Volume', which the spec has not" in m for m in said),
+                        said)
+
+    def test_a_modal_or_grouped_popup_is_refused(self):
+        said = self._p([self._ref()], [{'name': 'Volume Level', 'modal': True,
+                                        'controls': []}]).check()
+        self.assertTrue(any('which is modal' in m for m in said), said)
+        said = self._p([self._ref(), {'kind': 'popup_ref', 'name': 'G', 'group': 'G',
+                                      'rect': [0, 0, 51, 480]}],
+                       [{'name': 'Volume Level', 'size': [51, 480], 'group': 'G',
+                         'controls': []}]).check()
+        self.assertTrue(any("which is in group 'G'" in m for m in said), said)
+
+    def test_its_size_is_held_to_its_references(self):
+        said = self._p([self._ref(rect=[1200, 100, 60, 480])]).check()
+        self.assertTrue(any("'Volume Level' is 51x480 but its reference is 60x480" in m
+                            for m in said), said)
+        said = self._p([self._ref()], [{'name': 'Volume Level', 'controls': []}]).check()
+        self.assertTrue(any("'Volume Level' has no size" in m and '51x480' in m for m in said),
+                        said)
+
+    def test_the_id_map_shows_it_only_over_a_page_that_references_it(self):
+        from gdl.idmap import IdMap
+        spec = {'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+                'pages': [{'name': 'Home', 'number': 1000, 'controls': [
+                              self._ref(), {'kind': 'button', 'name': 'Go', 'text': 'Go',
+                                            'rect': [0, 0, 200, 100], 'nav': 'Bare'},
+                              {'kind': 'button', 'name': 'Vol', 'text': 'Vol',
+                               'rect': [0, 200, 200, 100], 'nav': 'Volume Level'}]},
+                          {'name': 'Bare', 'number': 1100, 'controls': [
+                              {'kind': 'button', 'name': 'Vol2', 'text': 'Vol',
+                               'rect': [0, 200, 200, 100], 'nav': 'Volume Level'}]}],
+                'popups': [{'name': 'Volume Level', 'size': [51, 480], 'controls': []}]}
+        problems, _ = IdMap(Panel(spec)).check()
+        said = [m for m in problems if 'Volume Level' in m]
+        self.assertEqual(len(said), 1, problems)
+        self.assertIn("'Bare'", said[0])
+        self.assertIn('no reference bound to it', said[0])
 
 
 if __name__ == '__main__':

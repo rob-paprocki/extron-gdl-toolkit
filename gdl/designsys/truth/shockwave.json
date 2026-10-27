@@ -682,7 +682,7 @@
     "_source (Colors)"
    ],
    "template": {
-    "does": "Lit kit images are pale tints (centre pixels: gray #E6E6E6, yellow #EDE0C5, red #E5C6C6, green #CAE0CA). Their captions take the family's dark: #946E06 for yellow (Help, Privacy, Start), #75063C for red (Off, Mute, End Call, Cancel, Ignore Call, Stop), #355424 for green (Call, Power Down on the confirmation, Accept Call). Gray lights #000000 on a working page, in the footer and in a modal's keys, and #474747 in a source popup, on Room Mode VC and on the 320's pages.",
+    "does": "Lit kit images are pale tints (centre pixels: gray #E6E6E6, yellow #EDE0C5, red #E5C6C6, green #CAE0CA). Their captions take the family's dark: #946E06 for yellow (Help, Privacy, Start), #75063C for red (Off, Mute, End Call, Cancel, Ignore Call, Stop), #355424 for green (Call, Power Down on the confirmation, Accept Call), #474747 for blue (the dialer's Flash). Gray lights #000000 on a working page, in the footer and in a modal's keys, and #474747 in a source popup, on Room Mode VC and on the 320's pages.",
     "seed": "seeds/Shockwave 1035.gdl",
     "pages": [
      "Main SD",
@@ -692,7 +692,7 @@
      "Room Mode VC"
     ]
    },
-   "status": "deviation",
+   "status": "fixed",
    "fix": [
     {
      "key": "iconography.intro",
@@ -725,17 +725,31 @@
     {
      "key": "buttons.key.states.On.color",
      "says": "text-secondary"
+    },
+    {
+     "key": "buttons.action.states",
+     "says": "text-secondary"
+    },
+    {
+     "key": "buttons.pill.lit.green",
+     "says": "go"
+    },
+    {
+     "key": "buttons.pill.lit.blue",
+     "says": "text-secondary"
+    },
+    {
+     "key": "buttons.action.lit.green",
+     "says": "go"
     }
    ],
-   "reason": "A variant has one lit caption. `key` carries the source popups' and the 320's #474747 and the colour tokens carry the family darks the regions draw, but `action` (Room Mode VC's Presentation and Video Conference) and a blue Flash light with `ink`, where the template's are #474747: a state's `color` sets the other.",
-   "here": "A lit caption is its colour's dark on the region chrome and in a source popup (`key`); an `action` button and a blue one light their captions `ink`, where the template's are #474747 - a state's `color` gives the other.",
    "gone": [
     "its caption turns `ink`",
     "yellow's and green's are left out",
     "`ink` for a lit button's caption"
    ],
-   "builds": "Help's lit caption is #946E06 and Power's (Off) #75063C, where both were #000000; the confirmation's Power Down is #355424 and Cancel #75063C; a source popup's and a 320 page's lit keys are #474747 (the new `key` variant) where the `tile` they were lit #000000.",
-   "evidence": "Lit gray captions over the seed's button states: #000000 on Main SD, Main VC, Start and the Camera Select, Display, Lighting and Screen Control modals; #474747 on Apple TV, Blu-ray, Camera Control, Doc Cam, Tuner and the VTC popups and on Room Mode VC; yellow #946E06 on 8 states, red #75063C on 27, green #355424 on 7; blue (VC Flash) #474747."
+   "builds": "Help's lit caption is #946E06 and Power's (Off) #75063C, where both were #000000; the confirmation's Power Down is #355424 and Cancel #75063C; a source popup's and a 320 page's lit keys are #474747 (the new `key` variant) where the `tile` they were lit #000000. The dialer's Call lights #355424 and its blue Flash #474747, and an `action` button its icon's dark - Room Mode VC's Presentation and Video Conference #474747, an Accept Call #355424, an End Call #75063C - where each was lit #000000 (`ink`).",
+   "evidence": "Lit gray captions over the seed's button states: #000000 on Main SD, Main VC, Start and the Camera Select, Display, Lighting and Screen Control modals; #474747 on Apple TV, Blu-ray, Camera Control, Doc Cam, Tuner and the VTC popups and on Room Mode VC; yellow #946E06 on 8 states, red #75063C on 27, green #355424 on 7; blue (VC Flash) #474747; the pill's green call_green_sel #355424 (VC Call), and on every Shockwave seed the Room Mode VC pair r_presentation_gray_sel and r_vid-conf_gray_sel #474747."
   },
   {
    "id": "shockwave-21",
@@ -1377,9 +1391,9 @@
     ]
    },
    "status": "deviation",
-   "reason": "The 725's touch minimum is 60 px: its pills grow to it and stand the Settings Section 30 px lower, past the rail's foot.",
-   "here": "On the 725, Shockwave's call page holds two launchers, where the template's holds three: its 60 px touch minimum deepens the 50 px call keys.",
-   "evidence": "Main VC on seeds/Shockwave 725.gdl: Initiate Call (5014), End Call (5215) and VC Privacy (5217) at y 126, 181 and 236, its launchers at 293, 393 and 493; the 725's 60 px touch minimum (gdl.spec touch_minimums); design-call-shockwave's call page refused with three on the TLP725T."
+   "reason": "The 725's touch minimum is 60 px: its pills grow to it and stand the Settings Section at 329, 36 px below the template's 293, so its three launchers would end past the rail's foot.",
+   "here": "On the 725, Shockwave's call page holds two launchers, where the template's holds three: its 60 px touch minimum deepens the 50 px call keys, so its Settings Section stands at 329, where a third launcher at the template's 98 px depth and seam ends at 627, 27 px past the rail's foot at 600. A third is refused by name there.",
+   "evidence": "Main VC on seeds/Shockwave 725.gdl: Initiate Call (5014), End Call (5215) and VC Privacy (5217) at y 126, 181 and 236, its launchers at 293, 393 and 493; the 725's 60 px touch minimum (gdl.spec touch_minimums); design-call-shockwave's call page drawn on the TLP725T with three launchers, Lighting, Audio and Screen at 329, 429 and 529, Screen ending at 627, 27 px past the rail's foot at 600, and refused (archive/job-e823df9b/small-panels/launchers-725/)."
   },
  {
   "id": "shockwave-42",
@@ -1432,9 +1446,112 @@
    ]
   },
   "status": "deviation",
-  "reason": "The applier binds each reference it makes to a group, never to one popup by its ID, so gdl.spec check refuses a standard popup with no group (docs/gdl-format.md section 5): the strip is the one popup of a Volume Level group of its own, which its reference shows on every working page. Binding it by its ID is applier work (docs/ROADMAP.md, A reference bound to one popup by its ID).",
+  "reason": "The design system gives the strip a Volume Level group of its own, which its reference shows on every working page. A spec binds a reference to one popup by its ID as the template does (docs/gdl-format.md section 5), and the hubs do not yet (docs/ROADMAP.md, The hubs' Volume Level strip is still bound to a group of its own).",
   "here": "On the 525 and the 535 the Volume Level strip, a popup at the menu bar's left (51x480, 81x720), shows on every working page: its reference is bound to a group of its own, where the template binds it to the popup by its ID and shows it only when the program does.",
   "evidence": "seeds/Shockwave 525.gdl's Main Page: Volume at 651,0 51x480, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; seeds/Shockwave 535.gdl's Main Page: Volume at 1041,0 81x720, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; docs/gdl-format.md section 5's survey, nine seeds' Volume Level placed so."
+ },
+ {
+  "id": "shockwave-45",
+  "claim": "regions.dialer and regions.window: the dialer's Call and Flash and the incoming call's answers set their words 4 px past the glyph.",
+  "where": [
+   "regions.dialer",
+   "regions.window.accept",
+   "regions.window.decline",
+   "kit.icon_right"
+  ],
+  "template": {
+   "does": "VTC Dialer's Call and Flash and Incoming Call's Accept Call and Ignore Call lead their words with spaces, centred, so the first letter stands a gap past the kit's glyph that is the key's own on each panel: on the 1220 Series 24 px (Call), 20 (Flash), 18 (Accept Call) and 25 (Ignore Call); on the 1020 Series 15, 11, 10 and 16; the 1520's 21, 19, 8 and 11; the 1720's 29, 26, 13 and 18; the 720's 10, 9, 6 and 11. Contacts and Delete have their words under their glyph.",
+   "seed": "seeds/Shockwave 1035.gdl",
+   "pages": [
+    "VTC Dialer",
+    "Incoming Call"
+   ]
+  },
+  "status": "frame",
+  "frame": [
+   {
+    "series": "Shockwave 1220 Series",
+    "key": "call.center.dialer.keys.VC Call.gap"
+   },
+   {
+    "series": "Shockwave 1220 Series",
+    "key": "call.center.dialer.keys.VC Flash.gap"
+   },
+   {
+    "series": "Shockwave 1220 Series",
+    "key": "windows.incoming.buttons.Accept Call.gap"
+   },
+   {
+    "series": "Shockwave 1220 Series",
+    "key": "windows.incoming.buttons.Ignore Call.gap"
+   },
+   {
+    "series": "Shockwave 1020 Series",
+    "key": "call.center.dialer.keys.VC Call.gap"
+   },
+   {
+    "series": "Shockwave 1020 Series",
+    "key": "call.center.dialer.keys.VC Flash.gap"
+   },
+   {
+    "series": "Shockwave 1020 Series",
+    "key": "windows.incoming.buttons.Accept Call.gap"
+   },
+   {
+    "series": "Shockwave 1020 Series",
+    "key": "windows.incoming.buttons.Ignore Call.gap"
+   },
+   {
+    "series": "Shockwave 1520 Series",
+    "key": "call.center.dialer.keys.VC Call.gap"
+   },
+   {
+    "series": "Shockwave 1520 Series",
+    "key": "call.center.dialer.keys.VC Flash.gap"
+   },
+   {
+    "series": "Shockwave 1520 Series",
+    "key": "windows.incoming.buttons.Accept Call.gap"
+   },
+   {
+    "series": "Shockwave 1520 Series",
+    "key": "windows.incoming.buttons.Ignore Call.gap"
+   },
+   {
+    "series": "Shockwave 1720 Series",
+    "key": "call.center.dialer.keys.VC Call.gap"
+   },
+   {
+    "series": "Shockwave 1720 Series",
+    "key": "call.center.dialer.keys.VC Flash.gap"
+   },
+   {
+    "series": "Shockwave 1720 Series",
+    "key": "windows.incoming.buttons.Accept Call.gap"
+   },
+   {
+    "series": "Shockwave 1720 Series",
+    "key": "windows.incoming.buttons.Ignore Call.gap"
+   },
+   {
+    "series": "Shockwave 720 Series",
+    "key": "call.center.dialer.keys.VC Call.gap"
+   },
+   {
+    "series": "Shockwave 720 Series",
+    "key": "call.center.dialer.keys.VC Flash.gap"
+   },
+   {
+    "series": "Shockwave 720 Series",
+    "key": "windows.incoming.buttons.Accept Call.gap"
+   },
+   {
+    "series": "Shockwave 720 Series",
+    "key": "windows.incoming.buttons.Ignore Call.gap"
+   }
+  ],
+  "builds": "The dialer's Call and Flash and the incoming call's answers build with their words the template's gap past the glyph, to the nearest space - on the 1035 the Call nine spaces in and the Flash ten, where they were one and four.",
+  "evidence": "VC Call, VC Flash, Accept Call and Ignore Call on seeds/Shockwave 1035.gdl, 725, 1525, 1535 and 720, read with tests/measure_series.py words_gap: where the first letter stands in the key (the caption centred, its leading spaces the face's own at the caption's size) less where the glyph ends (kit.icon_right across the art fitted in the key). The 1035's VC Call is 178x86 on 960x440_call_outline_green_nsel, its caption nine spaces and four letters in Open Sans 14."
  }
  ]
 }

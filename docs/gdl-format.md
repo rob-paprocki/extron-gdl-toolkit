@@ -137,10 +137,12 @@ Backing fields worth knowing:
 | `leftField` `topField` `widthField` `heightField` | `PBDrawObject` | |
 | `modalField`, `groupIDField`, `groupNameField` | `PBPopupPage` | |
 | `popupReferencesField`, `hasReferencesField` | `PBPopupPage` | back-pointers |
+| `timeoutField` | `PBPopupPage` | UInt32, 0 on every seed popup; nothing reads it - §7 |
 | `modalField` | `PBPopupPageReference` | the reference's **own** flag - see §5 |
-| `popupIDField`, `groupIDField` | `PBPopupPageID` | on the reference control |
+| `popupIDField`, `groupIDField`, `popupNameField`, `groupNameField` | `PBPopupPageID` | on the reference control - see §6 |
 | `popupPageGroupsField` | `PBProject` | the group registry |
 | `defaultPageField` | `PBProject` | the start page, as a page's `idField` - see §7 |
+| `enableOfflineField` | `PBProject` | the Offline Page shown or not - see §7 |
 | `nameField`, `familyNameField`, `styleNameField`, `windowsFamilyNameField`, `windowsStyleNameField`, `embeddedFileNameField`, `filenameField`, `sizeField`, `dataField`, `mIsDefault` | `PBFontResource` | a face: `dataField` its bytes, `sizeField` the size the project declares, which is not always theirs, `mIsDefault` set on a face GUI Designer supplies (Arial Black). A clone of the project's first, every field set from a project that carries the face, builds and is declared (`seeds/README.md`) |
 
 ## 5. Modal vs standard popups
@@ -161,9 +163,17 @@ aside: all 454 modals are the screen and none of the 442 standard popups is.
 Volume Level - the Afterburn, Mach, Shockwave and Turbulence 525s, Mach's and
 Shockwave's 535s, and the 300Ms - each placed by references bound to it alone,
 `PopupPageID.PopupID` its own ID with `IsPopupPageIdValid` true and `GroupID` 0,
-and an unreferenced `Popup Page1` in two of the client's archived projects. The
-toolkit authors group references only, so a spec's standard popup takes a
-group (`gdl.spec check`).
+and an unreferenced `Popup Page1` in two of the client's archived projects.
+
+A spec authors both kinds: a `popup_ref` names its `group`, or the one `popup`
+it shows, which is then a standard popup in no group (`gdl.spec check`), and
+the applier writes the binding the seeds' Volume Level has (§6). Built on GUI
+Designer 1.28.0.7 from the Mach 1035 seed, which places no popup so, a strip
+shown by such a reference on each of two pages, beside a group reference on
+the first: in `layout.json` both references are `IsPopupPageIdValid` with the
+built popup's `ID` and `PopupName`, `GroupID` 0 and `IsPopupGroupIdValid`
+false, and the popup is in no group with `HasReferences` true - the seeds'
+reading exactly (`archive/job-e823df9b/spec-22/`).
 
 **Build draws a modal's page at the modal's own `transparencyField`** over the
 page beneath: black, and its background image if it has one, but not its
@@ -183,6 +193,20 @@ popup, empty its `popupReferencesField` and set `hasReferencesField` false - the
 donor's back-pointers name references that belong to the donor - and let Build
 write the new popup's references. Flipping `modalField` on a standard clone is
 untested.
+
+**A modal's button can show another modal.** A modal carries no reference of
+its own - every one Build writes is on a page, and no seed's built popup
+holds one - so a modal shown from a modal is shown over whatever
+page is up, through that page's reference to it. Built on GUI Designer 1.28.0.7 from the Mach 320 seed:
+the round-three Mach room's Help, too deep for the 320, laid out as two modals,
+`Help` with a Next button and `Help 2` with a Previous, each `nav` the other
+(`docs/claude-design.md` §4). Both built as full-screen modals in no group,
+`HasReferences` true, and every one of the panel's 11 pages came back with a
+full-canvas reference to each of its four modals, in the popups' order -
+`Help 2`'s above `Help`'s. So the program shows either over any page, and
+hides the one it leaves: shown without that, a modal whose reference is lower
+comes up under the one still showing. `tests/verify_built.py` and the ID map's
+gate passed (`archive/job-e823df9b/small-panels/modal-mach/`).
 
 **A reference control carries its own `modalField`**, separate from the popup's.
 It is `True` on the references Build generates for modal popups - 126 of the
@@ -209,6 +233,14 @@ opens and builds, the binding just reads "Unassigned" in the UI:
    fifth place: Build keeps whatever it holds and builds the same panel (§7).
 
 A generator should assert all four agree rather than trusting the writes.
+
+A reference bound to **one popup** - the seeds' Volume Level (§5) - is the same
+places with no group: its `popupIDField` the popup's `idField`, `groupIDField`
+0 and `popupNameField` the popup's name; the popup's `groupIDField` 0 and
+`groupNameField` empty; back-pointers shaped as a group reference's; and no
+registry entry. `IsPopupPageIdValid` and `IsPopupGroupIdValid` are not fields:
+read off 1.28.0.7's IL, they are `PopupID != UInt64.MaxValue` and `GroupID >
+0`, so the two ids are the binding. `Test-GdlPopupBinding` checks either kind.
 
 ## 7. Gotchas
 
@@ -247,6 +279,42 @@ A generator should assert all four agree rather than trusting the writes.
   clone; the donor's own pages carry the same references. `tests/audit_corpus.py`
   checks the rule against every built project it can reach, the few seeds with
   the Offline Page on among them - each references it too.
+- **The Offline Page is GUI Designer's own popup, id 65535**, which every seed
+  has, and `PBProject.enableOfflineField` shows it or not (`EnableOfflinePage`
+  in `layout.json`; `OfflinePageID` is a property returning the constant). The
+  seeds ship the switch both ways - every Turbulence seed on, every Mach seed
+  off, Shockwave's and Afterburn's some of each - and Build follows it: with it
+  off the page builds with no artwork (`TLPImageID` -1), `HasReferences` false
+  and no reference on any page; on, with an asset and a full-canvas reference on
+  every page. It is a modal over a shape, saying *It looks like this touchpanel has
+  lost connection with the controller.* and *Please re-establish connection or
+  call XXX.XXX.XXXX immediately for assistance.* - in one label (Afterburn's,
+  Shockwave's, Mach's hubs and small panels, Turbulence's 525 and 320), or two
+  placed apart, the second's text opening on two newlines (Mach's and
+  Turbulence's other seeds); the Zoom Rooms seeds draw a page of their own. A
+  spec's `offline` writes the switch and replaces words on the page, which the
+  applier keeps whole, so its layout, type and colors stay the seed's. Built
+  from the Mach 1035 seed (off, two labels) switched on with both labels' words
+  replaced, `layout.json` read `EnableOfflinePage` true, a reference to 65535 on
+  both pages and the new words on each label, and the page had its asset
+  (`archive/job-e823df9b/spec-22/`). `tests/verify_built.py` holds all three to
+  the plan.
+- **A popup's `timeoutField` reaches no panel.** `PBPopupPage` serializes a
+  UInt32 `timeoutField`, 0 on every seed popup, and no code in GUI Designer
+  1.28.0.7 reads or writes it: no property wraps it, so the property grid never
+  shows it (feature-flag mode's hidden properties included), and it is no
+  `DataMember`, so `layout.json` - what the panel loads - has no timeout for
+  any popup. Scanned, the IL of all 41 assemblies the bridge loads touches only
+  a field of that name on the legacy `PanelBuilder.PBPopupPage`, whose
+  `Timeout` property the grid edited as a byte. A spec's
+  `timeout` is written by the applier, and Save and Build keeps it: built from
+  the Mach 1035 seed with 30 on a standard popup, 7 on a modal and 0 on a
+  third, the built project held 30, 7 and 0, and no member of the payload
+  carried a timeout - its only matches were the probe's own words, its file,
+  page and popup names and a caption (`archive/job-e823df9b/spec-22/`). `tests/verify_built.py` holds the
+  built project's field to the plan, which is all a build can show: what a
+  panel does with a popup that should hide by itself is the control program's
+  to do, and `gdl.spec check` says so.
 - **A built seed does not name the series template it came from.** A `.glt` is a
   `PBTemplate`: `mSeries`, its resolution and DPI, and the pages. `mSeries` is
   GUI Designer's `TLPSeries`, stored as its number: 1 `Series1020`, 2
@@ -399,6 +467,21 @@ A generator should assert all four agree rather than trusting the writes.
   reports the two as `Pattern` and `Text`. A cloned clock keeps its donor's
   pattern: a "date" clock cloned from the Afterburn 1035 seed built as
   `September 28, 12:00 AM`.
+- **A clock can be cloned from another project of the theme.** Shockwave's
+  and Turbulence's 320 seeds carry no `PBDateTime`; their 525s do. A clock
+  deep-cloned out of the 525's project into the 320's (`Apply-GdlPlan.ps1
+  -TypeDonors`, which `gdl.spec donors` and `plan --donor` name by
+  `gdl.seeds.carrier`, the theme's smallest seed with one), its pattern,
+  font, size, color and alignment written as any clone's, built on GUI
+  Designer 1.28.0.7 on each 320 as planned: `h:mm tt` as `12:00 AM` and
+  `MMMM d, yyyy` as `September 28, 1960`, in the 320's own Open Sans
+  resource, each with its artwork (`archive/job-e823df9b/small-panels/clock/`).
+  What the applier does not write rides along from the other seed - its time
+  zone (`Pacific Standard Time` in both themes' seeds) and its dynamic text -
+  and a font reference naming the other project's resource is pointed at the
+  project's own (`Set-GdlFont`). Only a clock crosses so (`gdl.spec
+  CROSS_SEED_TYPES`): an image or a slider draws art its own seed's
+  resources name, which no build has shown cloned across.
 - **A slider's thumb is an image, and its fill a color.** The Afterburn
   seeds' volume slider has `sliderThumbTypeField` 2 and its thumb in
   `sliderThumbImageField` - `440x440_thumb-1-periwinkle_sel.png`, the scheme-1

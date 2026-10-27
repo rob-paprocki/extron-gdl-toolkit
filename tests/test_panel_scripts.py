@@ -152,7 +152,9 @@ class TestAPlanProblemStopsTheApply(unittest.TestCase):
         script = _read('Apply-GdlPlan.ps1')
         for what in ('to clone - cannot author', 'returned null', ') failed:',
                      "default_page '", 'which was never registered', 'has no PopupPageID',
-                     'to clone for back-pointers', 'is not correctly bound'):
+                     'to clone for back-pointers', 'is not correctly bound',
+                     'does not make as a standard popup', 'Offline Page cannot be switched',
+                     "to say the plan's words on", 'so it cannot be replaced'):
             line = next(ln for ln in script.splitlines() if what in ln)
             self.assertIn('Note-Fatal', line, what)
         stop = script.index('if ($script:Fatal.Count) {')
@@ -163,6 +165,96 @@ class TestAPlanProblemStopsTheApply(unittest.TestCase):
     def test_a_font_or_border_the_donor_lacks_stays_a_warning(self):
         """Built as the donor's nearest, and said by `gdl.spec donors`."""
         self.assertNotIn('Note-Fatal', _read('GdlApply.ps1').split('function Add-GdlFontResource', 1)[1])
+
+
+class TestAReferenceBoundToOnePopup(unittest.TestCase):
+    """Nine seeds show their ungrouped Volume Level through references bound
+    to it by its ID: PopupID the popup's, GroupID 0, its name beside it, and
+    back-pointers on the popup as a group reference's. IsPopupPageIdValid is
+    PopupID != MaxValue, read off GUI Designer's IL - no field of its own."""
+
+    def _bind(self):
+        script = _read('Apply-GdlPlan.ps1')
+        m = re.search(r"if \(\$r\.Popup\) \{(.*?)\n            continue\n        \}", script, re.S)
+        self.assertIsNotNone(m)
+        return script, m.group(1)
+
+    def test_a_reference_naming_a_popup_waits_for_it(self):
+        script = _read('Apply-GdlPlan.ps1')
+        self.assertIn("-eq 'PBPopupPageReference' -and ($op.group -or $op.popup)", script)
+        self.assertIn('Popup = $op.popup', script)
+
+    def test_it_is_bound_to_the_id_of_the_popup_the_plan_made(self):
+        script, body = self._bind()
+        self.assertIn('$made | Where-Object { $_.Name -eq $r.Popup -and -not $_.Modal }', body)
+        self.assertIn("Set-GdlFieldIfPresent $binding 'popupIDField' ([uint64]$target[0].Id)", body)
+        self.assertIn("Set-GdlFieldIfPresent $binding 'groupIDField' 0", body)
+        self.assertIn("Set-GdlFieldIfPresent $binding 'popupNameField' $r.Popup", body)
+        # After the popups are made, which is what gives them their ids.
+        self.assertLess(script.index('$made += [pscustomobject]'), script.index('if ($r.Popup) {'))
+
+    def test_its_popup_is_written_in_no_group(self):
+        """Group 0 and an empty name, as the seeds' Volume Level. The first
+        build of one stopped the applier: the popup's group id was looked up
+        in the plan's groups by a null name."""
+        script = _read('Apply-GdlPlan.ps1')
+        m = re.search(r"\} elseif \(-not \$pu\.group\) \{(.*?)\n        \} else \{", script, re.S)
+        self.assertIsNotNone(m)
+        self.assertIn("Set-GdlFieldIfPresent $popup 'groupIDField' 0", m.group(1))
+        self.assertIn("Set-GdlFieldIfPresent $popup 'groupNameField' ''", m.group(1))
+        self.assertLess(m.start(), script.index("([int]$groupIds[$pu.group])"))
+
+    def test_its_popup_points_back_at_the_references_bound_to_it(self):
+        script = _read('Apply-GdlPlan.ps1')
+        self.assertIn('else { $script:PendingRefs | Where-Object { $_.Popup -eq $m.Name } }', script)
+
+    def test_the_binding_test_takes_an_ungrouped_popup_with_its_references(self):
+        body = _read('GdlProject.ps1').split('function Test-GdlPopupBinding', 1)[1]
+        self.assertNotIn("'standard popup has no group'", body)
+        self.assertIn("'standard popup has no group and no reference bound to it'", body)
+        self.assertRegex(body, r"-not \$popup\.Modal -and \$grp -eq 0 -and -not \$byId")
+        # A reference bound to it by ID names it, and no group.
+        self.assertIn("Get-GdlField $id 'popupNameField'", body)
+        self.assertIn('[int]$id.GroupID -ne 0', body)
+
+
+class TestAPopupsTimeout(unittest.TestCase):
+    def test_the_applier_writes_the_plans_timeout_on_every_popup(self):
+        """PBPopupPage.timeoutField, a UInt32, 0 on every seed popup: written
+        so a clone never keeps its donor's. Nothing in GUI Designer reads it
+        (docs/gdl-format.md section 7)."""
+        script = _read('Apply-GdlPlan.ps1')
+        self.assertIn("Set-GdlFieldIfPresent $popup 'timeoutField' ([uint32]$pu.timeout)", script)
+        self.assertLess(script.index("'timeoutField'"), script.index('$pops.Add($popup)'))
+
+
+class TestTheOfflinePage(unittest.TestCase):
+    """The donor's own Offline Page (popup 65535), kept whole: the plan
+    switches it and replaces words on it."""
+
+    def _block(self):
+        script = _read('Apply-GdlPlan.ps1')
+        start = script.index('if ($spec.offline) {')
+        return script, script[start:script.index('# -- the donor', start)]
+
+    def test_the_switch_is_the_projects_field(self):
+        _, body = self._block()
+        self.assertIn("Set-GdlFieldIfPresent $project 'enableOfflineField' ([bool]$spec.offline.enabled)",
+                      body)
+        self.assertIn('if ($null -ne $spec.offline.enabled)', body)
+
+    def test_words_are_replaced_literally_wherever_a_caption_lives(self):
+        """String.Replace is ordinal; -replace would read 'XXX.XXX.XXXX' as a
+        regex, its dots matching any character."""
+        _, body = self._block()
+        self.assertIn('.Replace([string]$r.old, [string]$r.new)', body)
+        self.assertNotIn('-replace', body)
+        self.assertIn("foreach ($f in 'textField', 'ftextField')", body)
+        self.assertIn('Get-GdlStates $c', body)
+
+    def test_it_is_applied_before_the_project_is_saved(self):
+        script, _ = self._block()
+        self.assertLess(script.index('if ($spec.offline) {'), script.index('if ($script:Fatal.Count) {'))
 
 
 class TestALevelKeepsItsArt(unittest.TestCase):

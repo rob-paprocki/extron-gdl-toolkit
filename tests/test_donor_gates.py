@@ -766,5 +766,80 @@ class TestAPopupTheDonorCannotSupply(unittest.TestCase):
         self.assertFalse(any('standard popup' in m for m in problems), problems)
 
 
+class TestAClockAnotherSeedOfTheThemeCarries(unittest.TestCase):
+    """Shockwave's and Turbulence's 320 seeds have no date and time control
+    (PBDateTime) to clone. Another seed of the theme does - the smallest that
+    carries one, its 525 - and the applier clones the clock from there
+    (Apply-GdlPlan.ps1 -TypeDonors), so a clock on those 320s is planned, not
+    refused. Built and verified on each (archive/job-e823df9b/small-panels/)."""
+
+    def _spec(self, family, kind='datetime'):
+        c = {'kind': kind, 'name': 'Clock', 'rect': [16, 60, 288, 40]}
+        c.update({'format': 'time'} if kind == 'datetime' else {'image': 'x.png'})
+        return {'name': 'T', 'model': 'TLP320M', 'size': [320, 240], 'family': family,
+                'theme': {'text': '#FFFFFF'}, 'pages': [{'name': 'P', 'number': 1000, 'controls': [c]}]}
+
+    def _need(self, *names):
+        for n in names:
+            if not usable(seed(n)):
+                self.skipTest(f'seeds/{n} is not pulled from Git LFS here')
+        return seed(names[0])
+
+    def test_the_clock_is_cloned_from_the_themes_smallest_seed_that_has_one(self):
+        for theme in ('Shockwave', 'Turbulence'):
+            with self.subTest(theme=theme):
+                donor = self._need(f'{theme} 320.gdl', f'{theme} 525.gdl')
+                controls = {}
+                problems = Panel(self._spec(theme)).check_donor(donor, controls=controls)
+                self.assertFalse(any('PBDateTime' in m for m in problems), problems)
+                self.assertEqual(controls, {'PBDateTime': f'seeds/{theme} 525.gdl'})
+
+    def test_a_seed_that_has_one_clones_its_own(self):
+        controls = {}
+        self.assertEqual(Panel(self._spec('Mach')).check_donor(self._need('Mach 320.gdl'), controls=controls), [])
+        self.assertEqual(controls, {})
+
+    def test_only_a_clock_crosses_seeds(self):
+        """An image is drawn from art its own seed's resources name, and no
+        build has shown one cloned from another seed: still refused."""
+        donor = self._need('Turbulence 320.gdl', 'Turbulence 525.gdl')
+        controls = {}
+        problems = Panel(self._spec('Turbulence', 'image')).check_donor(donor, controls=controls)
+        self.assertTrue(any('has no PBImage to clone' in m for m in problems), problems)
+        self.assertEqual(controls, {})
+
+    def test_plan_names_the_seed_the_applier_clones_from(self):
+        import contextlib
+        import io
+        import tempfile
+        from gdl.spec import main
+        donor = self._need('Shockwave 320.gdl', 'Shockwave 525.gdl')
+        d = tempfile.mkdtemp()
+        path, out_path = os.path.join(d, 'spec.json'), os.path.join(d, 'plan.json')
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(self._spec('Shockwave'), fh)
+        with contextlib.redirect_stdout(io.StringIO()) as said:
+            self.assertEqual(main(['spec', 'donors', path, donor]), 0)
+        self.assertIn("PBDateTime is not in", said.getvalue())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(main(['spec', 'plan', path, out_path, '--donor', donor]), 0)
+        with open(out_path, encoding='utf-8') as fh:
+            plan = json.load(fh)
+        self.assertEqual([(t['type'], t['seed']) for t in plan['type_donors']],
+                         [('PBDateTime', 'seeds/Shockwave 525.gdl')])
+        self.assertTrue(os.path.isfile(plan['type_donors'][0]['path']))
+
+    def test_the_applier_takes_them(self):
+        """New-GdlPanel.ps1 extracts each seed the plan names and hands its
+        project to Apply-GdlPlan.ps1, which clones a type its donor lacks
+        from it."""
+        new = open(os.path.join(ROOT, 'powershell', 'New-GdlPanel.ps1'), encoding='utf-8').read()
+        apply = open(os.path.join(ROOT, 'powershell', 'Apply-GdlPlan.ps1'), encoding='utf-8').read()
+        self.assertIn('type_donors', new)
+        self.assertIn("'-TypeDonors'", new)
+        self.assertIn('[string[]]$TypeDonors', apply)
+        self.assertIn('$script:TypeDonor[$op.donor_type]', apply)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -173,11 +173,28 @@ try {
     Step 'extract the donor'
     Run $Python @('-m', 'gdl.container', 'extract', $Donor, $Work) 'extract'
 
+    # A control type the donor has none of, which another seed of its theme
+    # carries (the plan's type_donors - a clock on Shockwave's and Turbulence's
+    # 320s, from their 525s): that seed's project too, each in a folder of its
+    # own, for the applier to clone the type from.
+    $typeDonors = @()
+    $i = 0
+    foreach ($td in @((Get-Content -Raw -Path $plan | ConvertFrom-Json).type_donors)) {
+        if ($null -eq $td) { continue }
+        $i++
+        $dir = Join-Path $Work "type-donor-$i"
+        if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
+        Run $Python @('-m', 'gdl.container', 'extract', $td.path, $dir) "extract $($td.seed)"
+        $typeDonors += "$($td.type)=$(Join-Path $dir 'ProjectGCP')"
+        Write-Output "  $($td.type) is cloned from $($td.seed)"
+    }
+    $typeArgs = @(if ($typeDonors.Count) { '-TypeDonors', ($typeDonors -join ';') })
+
     Step 'apply the plan (32-bit PowerShell, Extron assemblies are x86)'
-    Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-                (Join-Path $PSScriptRoot 'Apply-GdlPlan.ps1'),
-                '-DonorProject', $gcp, '-Plan', $plan, '-Output', $out,
-                '-InstallDir', $InstallDir) 'apply'
+    Run $ps32 (@('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+                 (Join-Path $PSScriptRoot 'Apply-GdlPlan.ps1'),
+                 '-DonorProject', $gcp, '-Plan', $plan, '-Output', $out,
+                 '-InstallDir', $InstallDir) + $typeArgs) 'apply'
 
     Step 'repack'
     Run $Python @('-m', 'gdl.container', 'pack', $Donor, $out, $Output) 'pack'

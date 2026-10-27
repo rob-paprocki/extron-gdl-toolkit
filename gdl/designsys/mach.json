@@ -574,11 +574,11 @@
   "writing": {
     "_source": "The template's own words, off the 1035's and 725's seeds (their Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help) and the grammar digest of every Mach page: the empty state of a source with no controls ({name} the popup's title), the power-down question, the waits, Help's message and the buttons' words. The 320 breaks the empty state over three lines; the bar series draw it in two. Help's title is its Help label's (`help_title`). A source page on the 320 says it over the three lines its template breaks it into (`page_empty`).",
     "empty": "{name} is currently selected.\nThere are no controls for this device.",
-    "confirm": {"power": "Do you want to power down the system?", "call": "Incoming call, do you wish to accept?"},
+    "confirm": {"power": "Do you want to power down the system?", "call": "Incoming call, do you wish to accept?", "recording": "You are about to start recording.\n\nPlease let attendees know they will be recorded."},
     "wait": {"up": "Please wait while the system starts up.", "down": "Please wait while the system is powering down."},
     "help": "For assistance, please call the help desk at:\n\nX.XXX.XXX.XXXX",
     "help_title": "Help",
-    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close", "accept": "Accept", "decline": "Decline"},
+    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close", "accept": "Accept", "decline": "Decline", "record": "Record"},
     "page_empty": "{name} is currently selected.\nThere are no controls\nfor this device."
 ,
     "column_labels_320": "caps",
@@ -610,7 +610,7 @@
     },
     "note": "Extron's Mach resource kit: white icons on transparent, one image each; a state that swaps its icon names its own. Its slider art lives only in the seed and is extracted (vendor/README.md).",
     "icon_right": {"1376x440": 0.232, "880x440": 0.332},
-    "icon_right_note": "How far across a kit image its icon reaches, where the icon is at the image's left and an indented caption is centred past it: the 1376x440 icons' alpha (> 40) ends at x 223 to 319 of 1376 - the pc glyph the furthest - in the install's kit and vendor/; the 880x440 icons' at x 273 to 292 of 880, the vid-conf glyph the furthest. The region Header gives a tab's caption the leading spaces that put it a space clear of that reach, and the dialer its Call's, Flash's and Contacts', as VTC Dialer sets them past the glyph.",
+    "icon_right_note": "How far across a kit image its icon reaches, where the icon is at the image's left and an indented caption is centred past it: the 1376x440 icons' alpha (> 40) ends at x 223 to 319 of 1376 - the pc glyph the furthest - in the install's kit and vendor/; the 880x440 icons' at x 273 to 292 of 880, the vid-conf glyph the furthest. The region Header gives a tab's caption the leading spaces that put it a space clear of that reach, and the dialer its Call's, Flash's and Contacts' the gap VTC Dialer leaves past the glyph (the frame's `gap`, in px, from this reach: tests/measure_series.py words_gap), to the nearest space and never closer than 4 px (or than the gap measured, if that is less).",
     "scale": {
       "440x440": 96,
       "1376x440": 300,
@@ -810,6 +810,7 @@
           "empty": [300, 287, 672, 280],
           "pt": {"title": 24, "empty": 16},
           "title_controls": [265, 185, 755, 58],
+          "pitch": [173, 70],
           "items": []
         },
         "windows": {
@@ -996,6 +997,44 @@
               }
             ],
             "text": "Incoming call, do you wish to accept?"
+          },
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 64, 1280, 681],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [0, 64, 1280, 681],
+                "kind": "shape",
+                "fill": "#303030FF",
+                "border": null,
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 20},
+            "message": [316, 230, 648, 156],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "record",
+                "name": "Record",
+                "kind": "button",
+                "rect": [372, 432, 258, 60],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [650, 432, 258, 60],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
         "call": {
@@ -1225,6 +1264,7 @@
                   "rect": [744, 321, 128, 60],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 15,
                   "art": "880x440_call.png"
                 },
                 {
@@ -1261,6 +1301,7 @@
                   "rect": [744, 391, 128, 60],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 15,
                   "art": "880x440_flash.png"
                 },
                 {
@@ -1297,6 +1338,7 @@
                   "rect": [744, 461, 128, 60],
                   "id": 5250,
                   "text": "Contacts",
+                  "gap": 3,
                   "art": "880x440_contacts.png"
                 },
                 {
@@ -1537,6 +1579,7 @@
           "empty": [308, 208, 403, 210],
           "pt": {"title": 20, "empty": 14},
           "title_controls": [245, 125, 527, 38],
+          "pitch": [138, 70],
           "items": []
         },
         "windows": {
@@ -1739,6 +1782,44 @@
               }
             ],
             "text": "Incoming call, do you wish to accept?"
+          },
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 48, 1024, 510],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [0, 48, 1024, 510],
+                "kind": "shape",
+                "fill": "#303030FF",
+                "border": null,
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 18},
+            "message": [208, 140, 607, 139],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "record",
+                "name": "Record",
+                "kind": "button",
+                "rect": [310, 304, 180, 60],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [533, 304, 180, 60],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
         "call": {
@@ -1954,6 +2035,7 @@
                   "rect": [637, 234, 103, 60],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 11,
                   "art": "880x440_call.png"
                 },
                 {
@@ -1990,6 +2072,7 @@
                   "rect": [637, 304, 103, 60],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 7,
                   "art": "880x440_flash.png"
                 },
                 {
@@ -2026,6 +2109,7 @@
                   "rect": [637, 374, 103, 60],
                   "id": 5250,
                   "text": "Contacts",
+                  "gap": 0,
                   "art": "880x440_contacts.png"
                 },
                 {
@@ -2262,6 +2346,7 @@
           "empty": [317, 275, 717, 268],
           "pt": {"title": 24, "empty": 16},
           "title_controls": [280, 177, 805, 55],
+          "pitch": [184, 70],
           "items": []
         },
         "windows": {
@@ -2448,6 +2533,44 @@
               }
             ],
             "text": "Incoming call, do you wish to accept?"
+          },
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 61, 1366, 653],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [0, 61, 1366, 653],
+                "kind": "shape",
+                "fill": "#303030FF",
+                "border": null,
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 20},
+            "message": [333, 218, 699, 151],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "record",
+                "name": "Record",
+                "kind": "button",
+                "rect": [405, 414, 258, 60],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [702, 414, 258, 60],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
         "call": {
@@ -2683,6 +2806,7 @@
                   "rect": [790, 309, 140, 60],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 19,
                   "art": "880x440_call.png"
                 },
                 {
@@ -2719,6 +2843,7 @@
                   "rect": [790, 379, 140, 60],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 14,
                   "art": "880x440_flash.png"
                 },
                 {
@@ -2755,6 +2880,7 @@
                   "rect": [790, 449, 140, 60],
                   "id": 5250,
                   "text": "Contacts",
+                  "gap": 2,
                   "art": "880x440_contacts.png"
                 },
                 {
@@ -2991,6 +3117,7 @@
           "empty": [443, 385, 1006, 376],
           "pt": {"title": 30, "empty": 22},
           "title_controls": [391, 247, 1131, 76],
+          "pitch": [260, 99],
           "items": []
         },
         "windows": {
@@ -3200,6 +3327,44 @@
               }
             ],
             "text": "Incoming call, do you wish to accept?"
+          },
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 85, 1920, 918],
+            "surfaces": [
+              {
+                "name": "Modal Window",
+                "rect": [0, 85, 1920, 918],
+                "kind": "shape",
+                "fill": "#303030FF",
+                "border": null,
+                "art": null
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 28},
+            "message": [468, 306, 982, 212],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "record",
+                "name": "Record",
+                "kind": "button",
+                "rect": [569, 582, 362, 84],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [986, 582, 362, 84],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
         "call": {
@@ -3436,6 +3601,7 @@
                   "rect": [1108, 432, 196, 84],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 33,
                   "art": "880x440_call.png"
                 },
                 {
@@ -3472,6 +3638,7 @@
                   "rect": [1108, 531, 196, 84],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 27,
                   "art": "880x440_flash.png"
                 },
                 {
@@ -3508,6 +3675,7 @@
                   "rect": [1108, 630, 196, 84],
                   "id": 5250,
                   "text": "Contacts",
+                  "gap": 7,
                   "art": "880x440_contacts.png"
                 },
                 {
@@ -3731,6 +3899,7 @@
           "empty": [239, 167, 314, 168],
           "pt": {"title": 18, "empty": 12},
           "title_controls": [190, 100, 411, 30],
+          "pitch": [108, 56],
           "items": []
         },
         "windows": {
@@ -4147,6 +4316,7 @@
                   "rect": [481, 187, 96, 48],
                   "id": 5214,
                   "text": "Call",
+                  "gap": 11,
                   "art": "880x440_call.png"
                 },
                 {
@@ -4183,6 +4353,7 @@
                   "rect": [481, 243, 96, 48],
                   "id": 5216,
                   "text": "Flash",
+                  "gap": 7,
                   "art": "880x440_flash.png"
                 },
                 {
@@ -4219,6 +4390,7 @@
                   "rect": [481, 299, 96, 48],
                   "id": 5250,
                   "text": "Contacts",
+                  "gap": 0,
                   "art": "880x440_contacts.png"
                 },
                 {
@@ -4351,6 +4523,7 @@
           "pt": {"title": 42, "empty": 28},
           "close": {"role": "close", "name": "Close Laptop", "kind": "button", "rect": [1001, 22, 97, 99], "id": 9102},
           "title_controls": [129, 22, 864, 99],
+          "pitch": [261, 144],
           "level": {
             "popup": "Volume Level",
             "fill": "#4B4B4CFF",
@@ -4454,7 +4627,36 @@
               },
               "pt": {"title": 42}
             }
-          ]
+          ],
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": null,
+            "surfaces": [],
+            "title": null,
+            "close": null,
+            "pt": {"message": 28},
+            "message": [123, 141, 1032, 171],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "record",
+                "name": "Record",
+                "kind": "button",
+                "rect": [328, 358, 288, 90],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [664, 358, 288, 90],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
+          }
         },
         "ids": {"help": 9103, "power": 8022, "mute": 8021, "volume-up": 8120, "volume-down": 8121, "settings": 8040},
         "note": "The popups fill main. Help is on the Select Source popup, not the bar."
@@ -4524,6 +4726,7 @@
           "pt": {"title": 30, "empty": 18},
           "close": {"role": "close", "name": "Close Laptop", "kind": "button", "rect": [626, 15, 61, 66], "id": 9102},
           "title_controls": [81, 15, 540, 66],
+          "pitch": [163, 96],
           "level": {
             "popup": "Volume Level",
             "fill": "#4B4B4CFF",
@@ -4628,7 +4831,36 @@
               },
               "pt": {"title": 30}
             }
-          ]
+          ],
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": null,
+            "surfaces": [],
+            "title": null,
+            "close": null,
+            "pt": {"message": 18},
+            "message": [77, 94, 645, 114],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "record",
+                "name": "Record",
+                "kind": "button",
+                "rect": [205, 239, 180, 60],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [415, 239, 180, 60],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
+          }
         },
         "ids": {"help": 9103, "power": 8022, "mute": 8021, "volume-up": 8120, "volume-down": 8121, "settings": 8040},
         "note": "The popups fill main. Help is on the Select Source popup, not the bar."

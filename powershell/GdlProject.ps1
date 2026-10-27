@@ -153,11 +153,6 @@ function Test-GdlPopupBinding {
     $grp = [int]$popup.GroupID
 
     if ($popup.Modal -and $grp -ne 0) { $problems += 'modal popup should not be grouped' }
-    # The applier binds every reference it makes to a group, so a standard
-    # popup it makes must have one. The format does not require it - nine of
-    # Extron's seeds show an ungrouped Volume Level through references bound
-    # to it by ID (docs/gdl-format.md section 5) - but the applier makes none.
-    if (-not $popup.Modal -and $grp -eq 0) { $problems += 'standard popup has no group' }
 
     if ($grp -ne 0) {
         $reg = $Project.PopupPageGroups | Where-Object { [int]$_.ID -eq $grp }
@@ -167,14 +162,34 @@ function Test-GdlPopupBinding {
         }
     }
     $refs = @()
+    $byId = 0
     foreach ($pg in @($Project.Pages) + @($Project.PopupPages)) {
         foreach ($c in $pg.Controls) {
             if ($c.GetType().Name -ne 'PBPopupPageReference') { continue }
             $id = $c.PopupPageID
-            if (([uint64]$id.PopupID -eq $PopupId) -or ($grp -ne 0 -and [int]$id.GroupID -eq $grp)) {
+            if ([uint64]$id.PopupID -eq $PopupId) {
+                # Bound to this popup alone, as nine seeds bind their ungrouped
+                # Volume Level: GroupID 0, and the popup's name beside its id.
+                $byId++
+                if ([int]$id.GroupID -ne 0) {
+                    $problems += "reference $($c.ID) on page $($pg.ID) is bound to this popup and to group $($id.GroupID)"
+                }
+                $want = Get-GdlField $popup 'nameField'
+                if ((Get-GdlField $id 'popupNameField') -ne $want) {
+                    $problems += "reference $($c.ID) on page $($pg.ID) names popup '$(Get-GdlField $id 'popupNameField')', not '$want'"
+                }
+                $refs += @{ page = [uint64]$pg.ID; obj = [uint64]$c.ID }
+            } elseif ($grp -ne 0 -and [int]$id.GroupID -eq $grp) {
                 $refs += @{ page = [uint64]$pg.ID; obj = [uint64]$c.ID }
             }
         }
+    }
+    # A standard popup shows through a reference to its group, or - in no
+    # group, as nine of Extron's seeds show their Volume Level - through
+    # references bound to it alone (docs/gdl-format.md section 5). With
+    # neither, nothing can show it.
+    if (-not $popup.Modal -and $grp -eq 0 -and -not $byId) {
+        $problems += 'standard popup has no group and no reference bound to it'
     }
     if (-not $refs) { $problems += 'no reference control points at this popup' }
     if (-not (Get-GdlField $popup 'hasReferencesField')) { $problems += 'hasReferencesField is false' }

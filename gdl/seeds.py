@@ -73,6 +73,32 @@ def facts(seed):
     return _FACTS[key]
 
 
+def carrier(type_name, theme):
+    """The seed of `theme` (a layout.json Skin) that carries a control of
+    `type_name` ('PBDateTime') for the applier to clone where a panel's own
+    seed has none - the smallest file that does, since the applier opens it
+    whole (Apply-GdlPlan.ps1 -TypeDonors): Shockwave's 525 for its 320, not
+    its 1035. Named as a profile names a seed ('seeds/<file>.gdl'), or None.
+    Read off each seed's layout.json, which names every control's type."""
+    if not isinstance(theme, str) or not theme.strip():
+        return None
+    from .container import open_payload
+    want, found = theme.strip().casefold(), []
+    for name in here():
+        got = facts(name)
+        if not got or got[0].casefold() != want:
+            continue
+        try:
+            j = json.loads(open_payload(path(name)).read('layout.json'))
+        except (KeyError, OSError, ValueError, zipfile.BadZipFile):
+            continue
+        if any((c.get('__type') or '').split(':')[0] == type_name
+               for pg in (j.get('Pages') or []) + (j.get('PopupPages') or [])
+               for c in pg.get('Controls') or []):
+            found.append((os.path.getsize(path(name)), name))
+    return min(found)[1] if found else None
+
+
 def models_of(part):
     """The model(s) a part number is - the 1035T and 1035M are one."""
     from . import spec

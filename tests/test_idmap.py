@@ -975,6 +975,121 @@ class TestDiff(unittest.TestCase):
         self.assertEqual(main(['x', 'diff', os.path.join(d, 'a'), os.path.join(d, 'nowhere')]), 2)
 
 
+class TestAHubWindowRenamedByThePagesOrder(unittest.TestCase):
+    """A hub names the window a later working page derives after that page
+    (gdl.design _one_name_each): drawn the other way round, Main SD's Select
+    Source is 'Main SD Select Source' and Video Call's 'Select Source'. Each
+    page and popup a layout derived says which page derived it and the
+    template's name for it (`window`, off the spec's `_window`), what the
+    layout drew in it is known by those (known()) - and the change is the
+    window's name, which a program shows it by."""
+
+    def maps(self, first, windows=True, drop=None):
+        """Every panel's map: a 1035 with no windows, and a 525 hub whose
+        working pages each derive a Select Source, `first` drawn first -
+        and with page `drop` and its window removed."""
+        from gdl.idmap import IdMap as M, combine
+
+        def window(host, *controls):
+            w = {'_window': {'page': host, 'name': 'Select Source'}} if windows else {}
+            return popup('Select Source' if host == first else f'{host} Select Source', *controls,
+                         group='Main', reached_by='program', **w)
+        msd = window('Main SD', btn('Laptop Label', id=50073, derived=True, does='Names the laptop.'))
+        vc = window('Video Call', btn('Laptop Label', id=50130, derived=True, does='Names the laptop.'),
+                    btn('Teams Label', x=200, id=50135, derived=True, does='Names Teams.'))
+
+        def pages(hub):
+            out = [page('Main SD', ref('Main'), btn('Laptop', x=400, id=1001, does='Routes it.'),
+                        *([btn('More', x=600, id=8040, derived=True, nav=msd['name'])] if hub else [])),
+                   page('Video Call', ref('Main'), btn('Teams', x=400, id=2001, does='Joins it.'),
+                        *([btn('More', x=600, id=50110, derived=True, nav=vc['name'])] if hub else []),
+                        number=2000)]
+            out = out if first == 'Main SD' else out[::-1]
+            return [p for p in out if p['name'] != drop]
+        big = panel_spec('TLP1035T', [1280, 800], pages(False))
+        hub = panel_spec('TLP525T', [800, 480], pages(True),
+                         [w for w, host in ((msd, 'Main SD'), (vc, 'Video Call')) if host != drop][::1 if first == 'Main SD' else -1])
+        for s in (big, hub):
+            s['start_page'] = 'Video Call' if drop == 'Main SD' else 'Main SD'
+        return combine({'TLP1035T': M(Panel(big)), 'TLP525T': M(Panel(hub))})
+
+    def test_the_map_says_which_page_derived_each_window(self):
+        m = self.maps('Video Call')
+        hub = next(p for p in m['panels'] if p['model'] == 'TLP525T')
+        self.assertEqual({p['name']: p.get('window') for p in hub['popups']},
+                         {'Select Source': {'page': 'Video Call', 'name': 'Select Source'},
+                          'Main SD Select Source': {'page': 'Main SD', 'name': 'Select Source'}})
+        # A page the canvas drew says none.
+        self.assertFalse([p for p in m['pages'] if 'window' in p])
+
+    def test_what_is_in_it_is_known_by_its_page_not_its_name(self):
+        from gdl.idmap import known, windowed
+        for first in ('Main SD', 'Video Call'):
+            m = self.maps(first)
+            self.assertTrue(windowed(m))
+            derived = known(m)[1]
+            self.assertEqual(derived[(('Main SD', 'Select Source'), 'Laptop Label')], 50073, first)
+            self.assertEqual(derived[(('Video Call', 'Select Source'), 'Laptop Label')], 50130, first)
+            self.assertNotIn(('Select Source', 'Laptop Label'), derived)
+            # The canvas's own controls are known as ever.
+            self.assertEqual(known(m)[0][('Main SD', 'Laptop')], 1001)
+
+    def test_a_map_that_names_no_windows_knows_them_by_name(self):
+        """As every map did before maps said which page derived a window."""
+        from gdl.idmap import known, windowed
+        m = self.maps('Main SD', windows=False)
+        self.assertFalse(windowed(m))
+        self.assertEqual(known(m)[1][('Select Source', 'Laptop Label')], 50073)
+
+    def test_the_change_is_the_windows_name_and_every_id_is_kept(self):
+        from gdl.idmap import changes_markdown, diff
+        ch = diff(self.maps('Main SD'), self.maps('Video Call'))
+        self.assertEqual(ch['pages']['renamed'],
+                         [{'from': 'Video Call Select Source', 'to': 'Select Source', 'kind': 'popup',
+                           'window': True, 'panels': ['TLP525T']},
+                          {'from': 'Select Source', 'to': 'Main SD Select Source', 'kind': 'popup',
+                           'window': True, 'panels': ['TLP525T']}])
+        self.assertEqual({k: v for k, v in ch['pages'].items() if v and k != 'renamed'}, {})
+        # The same window under its new name: what is in it is where it was.
+        self.assertEqual({k: v for k, v in ch['controls'].items() if v and k != 'changed'}, {})
+        # What shows a renamed window shows it by its new name.
+        self.assertEqual({r['id']: r['function'] for r in ch['controls']['changed']},
+                         {8040: ["Shows popup 'Select Source'", "Shows popup 'Main SD Select Source'"],
+                          50110: ["Shows popup 'Video Call Select Source'", "Shows popup 'Select Source'"]})
+        self.assertTrue(ch['needs_change'])
+        self.assertIn("popup 'Select Source' shown as 'Main SD Select Source'", ch['verdict'])
+        md = changes_markdown(ch, 'T')
+        self.assertIn('| renamed window | Select Source -> Main SD Select Source | popup | TLP525T |', md)
+        self.assertIn('every control in it keeps its ID', md)
+        self.assertFalse(diff(self.maps('Video Call'), self.maps('Video Call'))['needs_change'])
+
+    def test_a_window_whose_first_page_is_removed_is_renamed_not_replaced(self):
+        """Main SD removed: Video Call's Select Source takes the name Main SD's
+        had. It is Video Call's window renamed, its controls at their IDs;
+        Main SD's is gone, and said to be Main SD's, since its name is not."""
+        from gdl.idmap import changes_markdown, diff
+        ch = diff(self.maps('Main SD'), self.maps('Video Call', drop='Main SD'))
+        self.assertEqual([(r['from'], r['to'], r.get('window')) for r in ch['pages']['renamed']],
+                         [('Video Call Select Source', 'Select Source', True)])
+        self.assertEqual(sorted((r['name'], (r.get('window') or {}).get('page')) for r in ch['pages']['removed']),
+                         [('Main SD', None), ('Select Source', 'Main SD')])
+        self.assertEqual(sorted(r['id'] for r in ch['controls']['removed']), [1001, 8040, 50073])
+        self.assertEqual({k: v for k, v in ch['controls'].items() if v and k not in ('removed', 'changed')}, {})
+        md = changes_markdown(ch, 'T')
+        self.assertIn("| removed | Select Source (Main SD's window) | popup | TLP525T |", md)
+        # Only a window was renamed: nothing in it is new to the program.
+        self.assertNotIn('new to the program', md.split('## Pages and popups')[1].split('|')[0])
+        self.assertIn('every control in it keeps its ID', md)
+
+    def test_against_a_map_that_names_no_windows_the_names_are_compared(self):
+        """Its windows are known by their names, as before: Main SD's is a
+        popup gone and come, and Video Call's took its name."""
+        from gdl.idmap import diff
+        ch = diff(self.maps('Main SD', windows=False), self.maps('Video Call', windows=False))
+        self.assertFalse([r for r in ch['pages']['renamed'] if r.get('window')])
+        self.assertTrue(ch['controls']['relocated'])
+
+
 class TestChangesBesideTheMap(unittest.TestCase):
     """With the previous delivery's map, writing the map writes changes.md
     and changes.json beside it."""

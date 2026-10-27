@@ -469,7 +469,8 @@ class TestTheFrameOfEachSeries(unittest.TestCase):
                 self._frames[key] = None
             else:
                 self._frames[key] = measure_series.frame_of(seeds.path(seed), tuple(row['size']),
-                                                            art=measure_series.frame_art(p, row))
+                                                            art=measure_series.frame_art(p, row),
+                                                            reach=(p.get('kit') or {}).get('icon_right'))
         if self._frames[key] is None:
             self.skipTest(f'the {series} seed is not here (git lfs pull)')
         return self._frames[key]
