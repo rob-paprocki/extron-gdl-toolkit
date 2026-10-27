@@ -58,12 +58,12 @@ function Add-GdlControls {
     foreach ($op in $Ops) {
         $donor = Get-GdlDonor $Project $op.donor_type
         if (-not $donor) {
-            Note-Problem "donor project has no $($op.donor_type) to clone - cannot author '$($op.fields.nameField)'"
+            Note-Fatal "donor project has no $($op.donor_type) to clone - cannot author '$($op.fields.nameField)'"
             continue
         }
         $c = Copy-GdlObject $donor
         if ($null -eq $c) {
-            Note-Problem "clone of $($op.donor_type) returned null (donor was $(if($null -eq $donor){'null'}else{$donor.GetType().Name}))"
+            Note-Fatal "clone of $($op.donor_type) returned null (donor was $(if($null -eq $donor){'null'}else{$donor.GetType().Name}))"
             continue
         }
         # Fault-isolate per control: one bad op should name itself, not kill the
@@ -233,7 +233,7 @@ function Add-GdlControls {
                 Note-Problem "'$($op.fields.nameField)': no state was written, so it will render the donor's caption"
             }
         } catch {
-            Note-Problem "op '$($op.fields.nameField)' ($($op.donor_type)) failed: $($_.Exception.Message)"
+            Note-Fatal "op '$($op.fields.nameField)' ($($op.donor_type)) failed: $($_.Exception.Message)"
             ($_.ScriptStackTrace -split "`n") | Select-Object -First 4 | ForEach-Object { Write-Output "      $_" }
         }
         if ($op.donor_type -eq 'PBPopupPageReference' -and $op.group) {
@@ -350,7 +350,7 @@ foreach ($pg in $spec.pages) {
 if ($spec.default_page) {
     $startId = $pageIds[$spec.default_page]
     if ($null -eq $startId) {
-        Note-Problem "default_page '$($spec.default_page)' is not a page this plan authors"
+        Note-Fatal "default_page '$($spec.default_page)' is not a page this plan authors"
     } elseif (-not $WhatIf) {
         if (Set-GdlFieldIfPresent $project 'defaultPageField' $startId) {
             Write-Output "start page '$($spec.default_page)' -> id $startId"
@@ -468,12 +468,12 @@ if (@($spec.popups).Count) {
     foreach ($r in $script:PendingRefs) {
         $gid = $groupIds[$r.Group]
         if ($null -eq $gid) {
-            Note-Problem "reference names group '$($r.Group)' which was never registered"
+            Note-Fatal "reference names group '$($r.Group)' which was never registered"
             continue
         }
         $binding = Get-GdlField $r.Control 'popupPageIDField'
         if (-not $binding) { $binding = $r.Control.PopupPageID }
-        if (-not $binding) { Note-Problem 'popup reference has no PopupPageID'; continue }
+        if (-not $binding) { Note-Fatal 'popup reference has no PopupPageID'; continue }
         Set-GdlFieldIfPresent $binding 'popupIDField' $NONE | Out-Null
         Set-GdlFieldIfPresent $binding 'groupIDField' ([int]$gid) | Out-Null
         Set-GdlFieldIfPresent $binding 'popupNameField' '' | Out-Null
@@ -488,7 +488,7 @@ if (@($spec.popups).Count) {
         $refsFor = @($script:PendingRefs | Where-Object { $_.Group -eq $m.Group })
         if (-not $refsFor.Count) { continue }
         if (-not $backTemplate -or -not $backTemplate.Count) {
-            Note-Problem "no PBPopupReference to clone for back-pointers on '$($m.Name)'"
+            Note-Fatal "no PBPopupReference to clone for back-pointers on '$($m.Name)'"
             continue
         }
         $list = [Activator]::CreateInstance($backTemplate.GetType())
@@ -512,7 +512,7 @@ if (@($spec.popups).Count) {
             if ($m.Modal) { continue }
             $chk = Test-GdlPopupBinding $project $m.Id
             if ($chk.ok) { Write-Output "binding verified for '$($m.Name)': $($chk.references) reference(s)" }
-            else { Note-Problem "popup '$($m.Name)' is not correctly bound: $($chk.problems -join '; ')" }
+            else { Note-Fatal "popup '$($m.Name)' is not correctly bound: $($chk.problems -join '; ')" }
         }
     }
 }
@@ -595,6 +595,19 @@ if ($script:Problems.Count) {
     Write-Output ''
     Write-Output "$($script:Problems.Count) problem(s):"
     $script:Problems | Select-Object -Unique | ForEach-Object { Write-Output "  $_" }
+}
+
+# A plan problem - a control or popup with no donor to clone, an op that threw,
+# a popup binding that did not take, a start page the plan does not author - makes
+# the file wrong in a way that opens and builds cleanly, so it is not written
+# (Apply-GdlEdits does the same). The rest stay warnings: a font or border the
+# donor lacks is built as its nearest, and gdl.spec donors and verify_built say so.
+if ($script:Fatal.Count) {
+    Write-Output ''
+    Write-Output "NOT WRITING $($script:Fatal.Count) fatal problem(s) - the plan did not apply as written."
+    Write-Error "refusing to write: $(($script:Fatal | Select-Object -Unique) -join '; ')" -ErrorAction Continue
+    # `exit`, not `throw`: see Apply-GdlEdits.ps1.
+    exit 1
 }
 
 if ($WhatIf) {

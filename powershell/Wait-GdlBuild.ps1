@@ -13,14 +13,17 @@
         packed on disk and opened clean never has one, so the wait returns
         immediately.
 
-      * The Build Manager window. It is a child window, so Get-Process
-        MainWindowTitle cannot see it and you need EnumWindows - and having gone
-        to that trouble it still does not mean what it looks like. It appears
-        several seconds AFTER the keystroke, so a poll that starts immediately
-        sees "no dialog" and calls the build finished before it began. It then
-        closes about five seconds BEFORE the file is written, so even waiting
-        for it to disappear truncates the payload if you kill the process on
-        that signal. Both mistakes were made here.
+      * The Build Manager window. GUI Designer's main window owns it, so
+        Get-Process MainWindowTitle cannot see it and you need EnumWindows - and
+        having gone to that trouble it still does not mean what it looks like.
+        It appears several seconds AFTER the keystroke, so a poll that starts
+        immediately sees "no dialog" and calls the build finished before it
+        began. It then closes BEFORE the file is written - five seconds before
+        in the build first watched, under one to 35 in the format probes', a
+        "Wait..." window standing between - so even waiting for it to
+        disappear truncates the payload if you kill the process on that
+        signal. Both mistakes were made here. Nor does it report: on 1.28 it
+        shows no error or warning count (docs/from-scratch.md section 7).
 
       * The .gdl's own mtime. This is the one. The build rewrote the file at
         t+46.4s, and nothing before that moment distinguishes a finished build

@@ -123,6 +123,8 @@ BINARY_OK = {
     # Apache-2.0
     "gdl/fonts/opensans-light.ttf": "cf5f5184c1441a1660aa52526328e9d5c2793e77b6d8d3a3ad654bdb07ab8424",
     "gdl/fonts/opensans-regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+    # the format probes' horizontal slider rails and thumb, cropped from its build (2.1)
+    "tests/data/probe-hslider-128/crops.png": "cbefd4ed48c1b7294497afa6568b327a839fdda867834d71e2443b7eb9ff2620",
     # panels rendered from seeds
     "archive/gdlwork/CleanRoom/room.png": "11a3598393d1b6394dffc25d08afac96c51b254cf8fbc38e04e38426a4f05f85",
     "archive/gdlwork/clean/preview.png": "c9235802522b3898b6b0b6a89eab4a141eafa3ca0503365423e6dd6f5bd90eeb",

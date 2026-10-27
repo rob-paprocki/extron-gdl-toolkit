@@ -522,7 +522,7 @@ class TestTheFrameOfEachSeries(unittest.TestCase):
         from gdl import seeds
         from gdl.project import Project
         checked = 0
-        for theme in ('mach', 'shockwave', 'turbulence'):
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
             for series, row in _profile(theme)['panels'].items():
                 seed = measure_series.series_seed(row) if not series.startswith('_') else None
                 if not seeds.usable(seed):
@@ -538,7 +538,10 @@ class TestTheFrameOfEachSeries(unittest.TestCase):
                     drawn = {c['id']: list(c['rect']) for c in pages['Main VC']['controls'] if c['type'] == 'PBButton'}
                     for b in C['left']['groups'][0]['buttons']:
                         self.assertEqual(b['rect'], drawn[b['id']], b['name'])
-                    share = next(x for x in C['top']['end'] if x['role'] == 'share')
+                    # At the header's end - or, on Afterburn, which draws no
+                    # header, at the right rail's head.
+                    share = next(x for x in (C['top'] or {}).get('end', []) + C['right']['items']
+                                 if x['role'] == 'share')
                     self.assertEqual(share['rect'], drawn[8090])
                     at = C['center']['region'][:2]
                     keys = {c['id']: c['rect'] for c in pages['VTC Dialer']['controls'] if c['type'] == 'PBButton'}

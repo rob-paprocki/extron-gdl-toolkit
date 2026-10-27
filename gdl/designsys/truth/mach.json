@@ -434,6 +434,26 @@
       "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 12 pt to 14. The README now says the floor is the toolkit's.",
       "here": "Nothing is under 14 pt, the toolkit's floor: the template's rail and footer captions are 12 pt, and here they are 14.",
       "fix": [{"readme": "Nothing under 14 pt: that is the toolkit's floor, and a template's own smallest captions can be under it."}],
+      "bounds": [
+        {"region": "left", "what": "group 0 heading", "px": 2, "panels": ["TLP725T"]},
+        {"region": "left", "what": "group 1 heading", "px": 2, "panels": ["TLP725T"]},
+        {"region": "right", "what": "heading Volume Label", "px": 2, "panels": ["TLP725T"]},
+        {"region": "bottom", "what": "mode Room Mode", "px": 22, "panels": ["TLP725T"]},
+        {"region": "bottom", "what": "help Help", "px": 10, "panels": ["TLP725T"]},
+        {"region": "top", "what": "first tab", "px": 11, "panels": ["TLP720T"]},
+        {"region": "top", "what": "tab pitch", "px": 11, "panels": ["TLP720T"]},
+        {"region": "left", "what": "group 0 button 0", "px": 12, "panels": ["TLP720T"]},
+        {"region": "left", "what": "group 0 button 1", "px": 12, "panels": ["TLP720T"]},
+        {"region": "left", "what": "group 0 button 2", "px": 12, "panels": ["TLP720T"]},
+        {"region": "left", "what": "group 0 heading", "px": 5, "panels": ["TLP720T"]},
+        {"region": "left", "what": "group 1 button 0", "px": 12, "panels": ["TLP720T"]},
+        {"region": "left", "what": "group 1 button 1", "px": 12, "panels": ["TLP720T"]},
+        {"region": "left", "what": "group 1 heading", "px": 5, "panels": ["TLP720T"]},
+        {"region": "right", "what": "heading Volume Label", "px": 5, "panels": ["TLP720T"]},
+        {"region": "bottom", "what": "mode Room Mode", "px": 34, "panels": ["TLP720T"]},
+        {"region": "bottom", "what": "help Help", "px": 17, "panels": ["TLP720T"]},
+        {"region": "bottom", "what": "clock SD Date/Time", "px": 2, "panels": ["TLP720T"]}
+      ],
       "evidence": "Main SD's Display On/Off/Mute, Settings, Mute, Room Mode and Help captions: Open Sans 12."
     },
     {
@@ -1001,6 +1021,25 @@
       "reason": "A key meets the panel's touch minimum and the glyph is drawn at the size that minimum gives it, which is larger than the template's key holds.",
       "here": "The dialer's Delete key is taller than the template's and its glyph larger.",
       "evidence": "VC Delete (5237) at 614,260 60x46 on seeds/Mach 1035.gdl."
+    },
+    {
+      "id": "mach-54",
+      "claim": "A hub's region page shows its Volume Level strip as its template does.",
+      "where": [
+        "README The template's grammar"
+      ],
+      "template": {
+        "does": "Each hub's Main Page places its Volume Level - a standard popup in no group at the menu bar's left, 51x480 on the 525 and 81x720 on the 535 - by a Popup Page Reference named Volume bound to that popup by its ID (PopupID 24, GroupID 0): it is over main only while the program shows it.",
+        "seed": "seeds/Mach 525.gdl",
+        "pages": [
+          "Main Page",
+          "Volume Level"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The applier binds each reference it makes to a group, never to one popup by its ID, so gdl.spec check refuses a standard popup with no group (docs/gdl-format.md section 5): the strip is the one popup of a Volume Level group of its own, which its reference shows on every working page. Binding it by its ID is applier work (docs/ROADMAP.md, A reference bound to one popup by its ID).",
+      "here": "On the 525 and the 535 the Volume Level strip, a popup at the menu bar's left (51x480, 81x720), shows on every working page: its reference is bound to a group of its own, where the template binds it to the popup by its ID and shows it only when the program does.",
+      "evidence": "seeds/Mach 525.gdl's Main Page: Volume at 651,0 51x480, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; seeds/Mach 535.gdl's Main Page: Volume at 1041,0 81x720, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; docs/gdl-format.md section 5's survey, nine seeds' Volume Level placed so."
     }
   ]
 }

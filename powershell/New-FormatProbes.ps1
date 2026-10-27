@@ -2,9 +2,11 @@
 #
 # RESULTS: all three opened and built with 0 errors, 0 warnings on GUI Designer
 # 1.27.0.9, and all three still author, open and build on 1.28.0.7 - re-run
-# there against the same `_alt 2_0_0` fixture, each producing a payload, with
-# probe B's appended `Claude - 20 Radius 1 Thick` still present in the built
-# file (35 border resources against the fixture's 34). See
+# there by examples/probes-128 against the same `_alt 2_0_0` fixture, each
+# producing a payload: A's control still on `3D Capsule`, B's appended
+# `Claude - 20 Radius 1 Thick` defined, bound and at its geometry (35 border
+# resources against the fixture's 34), C's page holding the clone. 1.28's
+# Build Manager shows no error or warning count on a clean build. See
 # docs/from-scratch.md section 5.
 #
 # Each writes one ProjectGCP that answers one question when GUI Designer opens

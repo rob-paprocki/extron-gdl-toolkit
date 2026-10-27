@@ -94,26 +94,36 @@ _SEEDED = {}
 
 
 def seed_face(font):
-    """(bytes, seed) of an icon face read straight out of its family's seed, or
-    (None, None). Read, never recovered: recovering a Mach or Shockwave seed
-    into gdl/fonts/ also replaces the Monotype Arial the render baseline is
-    scored in with the Windows Arial those seeds embed (gdl/fonts/README.md)."""
+    """(bytes, seed) of a face read straight out of a seed, or (None, None): an
+    icon face out of its family's 1035 seed, the build its glyphs were measured
+    in, and any other face - Roboto, Extron GUI Configurator, Extron GUIC Video
+    Conference 1a, which no fixture carries - out of the first seed that
+    carries it (find_face). Read, never recovered: recovering a Mach or
+    Shockwave seed into gdl/fonts/ also replaces the Monotype Arial the render
+    baseline is scored in with the Windows Arial those seeds embed
+    (gdl/fonts/README.md)."""
     if font not in _SEEDED:
         from . import seeds
         family = next((k for k, f in ICON_FONTS.items() if f and f == font), None)
         seed = f'seeds/{family} 1035.gdl' if family else None
         got = (None, None)
         if seed and seeds.usable(seed):
-            face = next((f for f in carried(seeds.path(seed)) if f['family'] == font), None)
+            face = next((f for f in _carried_by(seeds.path(seed)) if f['family'] == font), None)
             if face:
                 got = (face['bytes'], seed)
+        if got == (None, None):
+            face = find_face(font)
+            # find_face matches a family whatever its case; a face is drawn
+            # in the family it is asked for by name, as GUI Designer does.
+            if face and face['family'] == font:
+                got = (face['bytes'], face['carrier'])
         _SEEDED[font] = got
     return _SEEDED[font]
 
 
 def icon_face(font):
-    """(bytes, where from) of an icon face, or (None, None): the file recovered
-    into gdl/fonts/, else its family's seed (seed_face)."""
+    """(bytes, where from) of a face, or (None, None): the file recovered into
+    gdl/fonts/, else a seed's (seed_face)."""
     path = face_path(font)
     if path:
         with open(path, 'rb') as fh:
@@ -312,6 +322,16 @@ _FOUND = {}
 _CARRIED = {}
 
 
+def _carried_by(path):
+    """carried(path), parsed once per file (and per edit of it): a seed is one
+    to five seconds to parse, and an icon face and a face find_face looks for
+    are often in the same one."""
+    key = (os.path.abspath(path), os.path.getmtime(path))
+    if key not in _CARRIED:
+        _CARRIED[key] = carried(path)
+    return _CARRIED[key]
+
+
 def find_face(family):
     """A face one of seeds/ carries, by family - {family, style, file, source,
     size, default, author, bytes, carrier}, `carrier` the seed's repo-relative
@@ -349,12 +369,10 @@ def find_face(family):
             arrays = _face_arrays(open_gdl(path).read('ProjectGCP')).values()
             if not any(0 <= (r.get('Size') or 0) - n <= SIZE_SLACK for r in declared for n in arrays):
                 continue
-            key = (os.path.abspath(path), os.path.getmtime(path))
-            if key not in _CARRIED:
-                _CARRIED[key] = carried(path)
+            faces = _carried_by(path)
         except (KeyError, OSError, ValueError, zipfile.BadZipFile):
             continue
-        face = next((f for f in _CARRIED[key] if (f['family'] or '').casefold() == want and f['bytes']),
+        face = next((f for f in faces if (f['family'] or '').casefold() == want and f['bytes']),
                     None)
         if face:
             got = dict(face, carrier=os.path.relpath(path, seeds.REPO).replace('\\', '/'))

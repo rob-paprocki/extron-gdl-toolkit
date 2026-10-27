@@ -45,12 +45,15 @@ need a template skip rather than fail.
 than copied: Turbulence's art, out of its seed and TouchLink templates (1.28
 has no kit for it beside the others - `docs/design-rules.md` §7), Mach's
 slider art, which lives only inside its seed, and Shockwave's Share Content,
-the seed's own two images with their words in them.
+the seed's own two images with their words in them. Afterburn's 520 draws its
+Select a Source tiles in its seed's own 756x688 art, in no kit folder, which
+its hub's tiles draw where the room's accent is the seed's orange.
 
 ```bash
 python -m gdl.designsys extract turbulence   # -> vendor/extron/Resources/Turbulence (267 images)
 python -m gdl.designsys extract mach         # -> vendor/extron/Resources/Mach/Extracted
 python -m gdl.designsys extract shockwave    # -> vendor/extron/Resources/Shockwave/Extracted (2 images)
+python -m gdl.designsys extract afterburn    # -> vendor/extron/Resources/Afterburn/Buttons/PNG/Extracted (14 images)
 ```
 
 A profile's `kit.extract` names the files to read (`seeds/...`, or a template

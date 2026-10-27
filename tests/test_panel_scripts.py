@@ -123,12 +123,46 @@ class TestAFaceThePlanBringsIsAppended(unittest.TestCase):
             self.assertRegex(body, rf"Set-GdlField \$new '{field}'", field)
 
 
+    def test_a_family_is_read_off_its_resource_not_stripped_from_its_name(self):
+        """'Arial Rounded MT Bold' read as Arial Rounded MT when every trailing
+        style word was stripped: both places the applier matches a family read
+        the resource's own family field, as Project.font_resource_names does."""
+        script = _read('GdlApply.ps1')
+        helper = script.split('function Get-GdlFontFamily', 1)[1].split('\nfunction ', 1)[0]
+        self.assertIn("'windowsFamilyNameField'", helper)
+        rest = script.replace(helper, '')
+        self.assertEqual(rest.count('Get-GdlFontFamily'), 3, 'the helper, and the two matches')
+        self.assertNotIn('(Regular|Bold|Italic)', rest)
+
+
 class TestThePlanKnowsItsDonor(unittest.TestCase):
     def test_the_plan_is_written_against_the_donor(self):
         """A border the donor lacks is built as the donor's own nearest only
         when the plan is told which donor (gdl.spec plan --donor)."""
         self.assertRegex(_read('New-GdlPanel.ps1'),
                          r"'plan', \$Spec, \$plan, '--donor', \$Donor")
+
+
+class TestAPlanProblemStopsTheApply(unittest.TestCase):
+    """Only Apply-GdlEdits used Note-Fatal, so a hand-run of Apply-GdlPlan on a
+    plan whose binding failed or whose donor had nothing to clone wrote the
+    file anyway, and only verify_built after a build said so."""
+
+    def test_each_plan_problem_is_fatal_and_the_file_is_not_written(self):
+        script = _read('Apply-GdlPlan.ps1')
+        for what in ('to clone - cannot author', 'returned null', ') failed:',
+                     "default_page '", 'which was never registered', 'has no PopupPageID',
+                     'to clone for back-pointers', 'is not correctly bound'):
+            line = next(ln for ln in script.splitlines() if what in ln)
+            self.assertIn('Note-Fatal', line, what)
+        stop = script.index('if ($script:Fatal.Count) {')
+        self.assertLess(stop, script.index('if ($WhatIf) {\n    Write-Output'))
+        self.assertLess(stop, script.index('Save-GdlProject $project $Output'))
+        self.assertIn('exit 1', script[stop:stop + 600])
+
+    def test_a_font_or_border_the_donor_lacks_stays_a_warning(self):
+        """Built as the donor's nearest, and said by `gdl.spec donors`."""
+        self.assertNotIn('Note-Fatal', _read('GdlApply.ps1').split('function Add-GdlFontResource', 1)[1])
 
 
 class TestALevelKeepsItsArt(unittest.TestCase):

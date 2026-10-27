@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- The call mode's page: the template's VTC keys with their IDs, the call's launchers, Presentation back to the working page. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Call" role="call" reached-by="program" does="Microsoft Teams call page on the room PC; the program shows it when a call comes in." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Header">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Laptop" icon="laptop" states="Off, On" nav="Laptop" does="Routes the table laptop to the display; On while it is on the display.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="ShareLink" icon="sharelink-1" states="Off, On" nav="ShareLink" does="Routes the wireless ShareLink share to the display; On while it is on the display.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="PC" icon="pc" states="Off, On" nav="PC" does="Routes the room PC to the display; On while it is on the display.">PC</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Doc Cam" icon="doc-cam" states="Off, On" nav="DocCam" does="Routes the document camera to the display; On while it is on the display.">Doc Cam</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.LeftRail">
+    <x-import component-from-global-scope="ExtronAfterburn.Section" title="VTC">
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Make Call" states='[{"name":"Ready","icon":"make-call_available"},{"name":"In Call","icon":"make-call_connected"}]' does="Joins the Teams meeting, or answers an incoming call, on the room PC; In Call while connected.">Make Call</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="End Call" states='[{"name":"No Call","icon":"end-call_disconnected"},{"name":"In Call","icon":"end-call_connected"}]' does="Ends the Teams call; In Call while a call is up.">End Call</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Privacy" icon="privacy" states="Off, On" does="Turns camera privacy on and off; On while the camera is covered.">Privacy</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Section" title="Settings">
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera Settings" icon="ptz-camera" nav="CameraSelect" does="Opens the camera presets.">Camera</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Audio Settings" icon="audio" nav="AudioSettings" does="Opens the audio settings: the mics' and the program's mutes.">Audio</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.RightRail">
+    <x-import component-from-global-scope="ExtronAfterburn.Slider" slot="volume" name="Volume" id="100" does="Sets the program volume."></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="mute" name="Mute" id="101" does="Mutes the program audio; On while muted."></x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="mode" name="Presentation" nav="MainSD" does="Goes back to the working page.">Present</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

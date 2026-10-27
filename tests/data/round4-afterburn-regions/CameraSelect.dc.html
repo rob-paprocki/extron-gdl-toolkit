@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Camera Presets</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Camera Select" kind="modal" role="settings" title="Camera Presets" does="Recalls the camera presets for the call." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Group" title="Presets" cell="110x110" gap="49" cap="3" style="position: absolute; left: 390px; top: 200px; width: 500px; height: 110px">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera Wide" variant="source" icon="ptz-camera" states="Off, On" does="Recalls the Wide camera preset; On while it is the active preset.">Wide</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera Table" variant="source" icon="ptz-camera" states="Off, On" does="Recalls the Table camera preset; On while it is the active preset.">Table</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera Presenter" variant="source" icon="ptz-camera" states="Off, On" does="Recalls the Presenter camera preset; On while it is the active preset.">Presenter</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Line" name="Camera Divider" style="position: absolute; left: 340px; top: 330px; width: 600px; height: 20px"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

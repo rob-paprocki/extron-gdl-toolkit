@@ -1,0 +1,108 @@
+{
+ "name": "Probe Border Geometry",
+ "model": "TLP1035T",
+ "family": "Afterburn",
+ "size": [
+  1280,
+  800
+ ],
+ "_why": "Six visible panels, each bound to a border resource the donor does not define (the runner appends them to a copy of the donor and rebinds the plan; examples/probes-128/borders.json is the table). The first is the corpus's own 10 Radius 2 Thick, the control. examples/probes-128/README.md says how the build is read.",
+ "theme": {
+  "background": "#12131C",
+  "surface": "#242634",
+  "raised": "#2E3142",
+  "danger": "#C0392B",
+  "text": "#FFFFFF",
+  "accent": "#3D8BFD",
+  "font": "Open Sans",
+  "size": 18,
+  "on": "accent"
+ },
+ "pages": [
+  {
+   "name": "Border Probe",
+   "number": 1000,
+   "controls": [
+    {
+     "kind": "panel",
+     "name": "Border Ref 10R 2T",
+     "rect": [
+      40,
+      60,
+      360,
+      260
+     ],
+     "fill": "raised",
+     "stroke": "#FFD400",
+     "border": "afterburn"
+    },
+    {
+     "kind": "panel",
+     "name": "Border 20R 1T",
+     "rect": [
+      440,
+      60,
+      360,
+      260
+     ],
+     "fill": "raised",
+     "stroke": "#FFD400",
+     "border": "afterburn"
+    },
+    {
+     "kind": "panel",
+     "name": "Border 40R 6T",
+     "rect": [
+      840,
+      60,
+      360,
+      260
+     ],
+     "fill": "raised",
+     "stroke": "#FFD400",
+     "border": "afterburn"
+    },
+    {
+     "kind": "panel",
+     "name": "Border 0R 12T",
+     "rect": [
+      40,
+      400,
+      360,
+      260
+     ],
+     "fill": "raised",
+     "stroke": "#FFD400",
+     "border": "afterburn"
+    },
+    {
+     "kind": "panel",
+     "name": "Border 60R 3T",
+     "rect": [
+      440,
+      400,
+      360,
+      260
+     ],
+     "fill": "raised",
+     "stroke": "#FFD400",
+     "border": "afterburn"
+    },
+    {
+     "kind": "panel",
+     "name": "Border 100R 9T",
+     "rect": [
+      840,
+      400,
+      360,
+      260
+     ],
+     "fill": "raised",
+     "stroke": "#FFD400",
+     "border": "afterburn"
+    }
+   ]
+  }
+ ],
+ "start_page": "Border Probe"
+}

@@ -42,10 +42,18 @@ class TestAfterburnsLedger(unittest.TestCase):
 
     def test_it_has_an_entry_for_every_disagreement(self):
         """The grammar measurement found 35 claims of Afterburn's profile and
-        README that its pages contradict, and the mic mute and display state's
-        one more (afterburn-35): one entry each, in its order."""
+        README that its pages contradict, the mic mute and display state's one
+        more (afterburn-35), the kit's drawings of its glyphs, fitted to their
+        buttons (afterburn-36), its hub's own grammar (37), the hub's Volume
+        Up giving way to the mode launcher's 8120 (38), and its regions'
+        README: the left rail in Sections (39), each panel's clocks (40), the
+        computed indents (41), and the gates' moves on the 725's rail (42), its
+        Help and Power (43) and the 320's rows (44), and the hub's Volume
+        Level strip, shown on every working page (45), its right column's
+        flex, which the region score measured (46), and its Mute's two glyphs
+        (47): one entry each, in its order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'afterburn-{i:02d}' for i in range(36)])
+        self.assertEqual(ids, [f'afterburn-{i:02d}' for i in range(48)])
 
     def test_afterburn_is_done(self):
         self.assertEqual(audit.audit('afterburn'), [])
@@ -53,27 +61,39 @@ class TestAfterburnsLedger(unittest.TestCase):
             self.assertEqual(designsys.main(['gdl.designsys', 'audit', 'afterburn']), 0)
 
     def test_what_it_keeps_differing_in_is_said_with_its_reason(self):
-        """The glyph font the design system does not carry, the Rail's stack,
-        the 14 pt floor, the spacing standards, the card a Page cannot place,
-        the Group's paging, the hubs' one background - and only those."""
+        """The 14 pt floor, the spacing standards, the Group's paging, the
+        hubs' one background, the kit's drawings of the glyph font fitted to
+        their buttons, the 8120 a launcher keeps, and the gates' moves on the
+        725's rail, its Help and Power and the 320's rows, the hub's Volume
+        Level strip on every working page and the right column's flex - and
+        only those. The
+        right column, the hub's carets, the left rail, the clocks, a window's
+        card and the 320's pages are the frame's now."""
         dev = {e['id']: e for e in self.ledger['entries'] if e['status'] == 'deviation'}
-        self.assertEqual(sorted(dev), [f'afterburn-{i:02d}' for i in (8, 9, 10, 11, 15, 23, 24, 32, 34)])
+        self.assertEqual(sorted(dev), [f'afterburn-{i:02d}' for i in (23, 24, 32, 34, 36, 38, 42, 43, 44, 45, 46)])
+        for i in ('afterburn-08', 'afterburn-09', 'afterburn-10', 'afterburn-11', 'afterburn-39', 'afterburn-40'):
+            self.assertEqual(next(e for e in self.ledger['entries'] if e['id'] == i)['status'], 'frame')
         for e in dev.values():
             self.assertGreater(len(e['reason'].split()), 12, e['id'])
 
-    def test_the_one_change_to_what_builds_is_named(self):
-        """Only the alert variant changes what a canvas builds."""
+    def test_what_changes_what_builds_is_named(self):
+        """The right column and the foot row, the hub's carets, the 320's
+        pages, a window's card drawn as the page's own art, a button naming a
+        kit drawing of a glyph, which now resolves to Icons/PNG, the alert
+        variant, a Group's chevrons, the 520's hub, the left rail in Sections
+        and each panel's own clocks, and the Mute's muted glyph."""
         built = [e['id'] for e in self.ledger['entries'] if e.get('builds')]
-        self.assertEqual(built, ['afterburn-25'])
+        self.assertEqual(built, [f'afterburn-{i:02d}' for i in (8, 9, 10, 11, 15, 25, 32, 37, 39, 40, 47)])
 
 
 class TestTheGlyphsTheKitDrawsAsImages(unittest.TestCase):
     """afterburn-09, -15 and -32: the template's Close, Back, More, scroll
     and volume triangles, minus and plus are glyphs of its icon font, and
     Afterburn's kit draws the same glyphs as images in Afterburn/Icons/PNG,
-    beside the Buttons/PNG the system's `icon` list is read from. The ledger
-    and the profile say those images are not wired yet - not that the kit
-    lacks them, or that the canvas cannot draw them."""
+    beside its Buttons/PNG. The system offers them by name (`kit.icons`);
+    the ledger and the profile say so, and say where they are not drawn by
+    default yet - not that the kit lacks them, or that the canvas cannot
+    draw them."""
 
     # Each the image of a glyph the template sets: Close U+E95C, Back U+E97B
     # and the 320's More U+E97C, Search Results' scroll and the 525's volume
@@ -97,20 +117,28 @@ class TestTheGlyphsTheKitDrawsAsImages(unittest.TestCase):
         self.assertEqual(self.p['kit']['root'], 'Afterburn/Buttons/PNG')
 
     def test_no_entry_says_the_kit_lacks_them_or_the_canvas_cannot_draw_them(self):
+        # The hub's carets are the frame's now, the kit's drawings by name.
+        self.assertEqual(self.ledger['afterburn-09']['status'], 'frame')
+        self.assertIn('caret-up-gray', self.ledger['afterburn-09']['builds'])
         for k in ('afterburn-09', 'afterburn-15', 'afterburn-32'):
             e = self.ledger[k]
-            self.assertIn('Afterburn/Icons/PNG', e['reason'], k)
-            said = ' '.join((e['reason'], e['template']['does']))
-            for wrong in ('cannot draw them', 'cannot be built', "`icon` list has no close", 'glyph arrows'):
+            said = ' '.join((e.get('reason', ''), e['template']['does']))
+            if k != 'afterburn-09':
+                self.assertIn('Afterburn/Icons/PNG', said, k)
+            for wrong in ('cannot draw them', 'cannot be built', "`icon` list has no close", 'glyph arrows',
+                          'does not reach yet', 'does not name them'):
                 self.assertNotIn(wrong, said, k)
+        self.assertEqual(self.ledger['afterburn-15']['status'], 'fixed')
 
-    def test_the_profile_says_the_images_are_not_wired_yet(self):
+    def test_the_profile_says_the_system_offers_the_images(self):
         for text in (self.p['iconography']['intro'], self.p['layout']['popups'], self.p['layout']['rail_note'],
                      self.p['examples']['group_note']):
             self.assertIn('Afterburn/Icons/PNG', text)
+            self.assertNotIn('does not name', text)
         text = designsys.readme(self.p) + '\n'.join(designsys.component_docs(self.p).values())
         self.assertNotIn('not kit images', text)
-        self.assertIn('the Close says Close', text)
+        self.assertNotIn('the Close says Close', text)
+        self.assertIn('icon="close"', text)
 
 
 class TestWhatTheProfileNowSays(unittest.TestCase):
@@ -170,18 +198,19 @@ class TestWhatTheProfileNowSays(unittest.TestCase):
         self.assertNotIn('(End Call, Swap)', text)
         self.assertIn('End Call', self.p['buttons']['list']['usage'])
 
-    def test_close_is_not_an_icon_the_kit_has(self):
-        """The system's `icon` list, read from Afterburn/Buttons/PNG, has no
-        close, back or arrow - the kit's images of them are in Icons/PNG,
-        which it does not read yet: the README stops calling Close an icon
-        button."""
+    def test_close_is_the_kits_drawing_of_the_templates_glyph(self):
+        """The template's Close, Back and arrows are glyphs of its icon font;
+        the kit draws them in Icons/PNG, which the system now reads beside
+        Buttons/PNG (`kit.icons`), so its `icon` list offers them by name."""
         names = designsys.icon_names(self.p).get('icon') or []
         if names:
-            for glyph in ('close', 'back', 'up', 'down'):
-                self.assertNotIn(glyph, names)
+            for glyph in ('close', 'back', 'chevron-left', 'chevron-right', 'caret-up-gray', 'plus', 'minus'):
+                self.assertIn(glyph, names)
         self.assertNotIn('close, mute', ' '.join(self.p['iconography']['rules']))
         self.assertNotIn('Close, mute', self.p['buttons']['icon']['usage'])
         self.assertIn('Extron-Afterburn icon font', self.p['iconography']['intro'])
+        self.assertIn('`variant="icon" icon="close"`', self.p['iconography']['intro'])
+        self.assertNotIn('does not name them yet', json.dumps(self.p))
 
     def test_the_icon_variant_says_what_the_template_draws_on_help_power_and_mute(self):
         usage = self.p['buttons']['icon']['usage']
@@ -207,17 +236,19 @@ class TestWhatTheProfileNowSays(unittest.TestCase):
         self.assertIn('draws nothing of its own', self.docs['Page'])
 
     def test_the_popups_line_says_what_flips_and_what_is_a_modal_where(self):
-        # The README's Windows says it first, in the profile's words (layout.popups).
+        # The profile's words (layout.popups); the README's Windows draws each
+        # window by its role, and a modal without one its card and its Close.
         windows = self.readme.split('\n## Windows\n', 1)[1].split('\n## ', 1)[0]
-        line = next(ln for ln in windows.splitlines() if "one source's controls" in ln)
+        line = self.p['layout']['popups']
         # The owner's rule, unchanged: nothing forces a confirmation.
         self.assertIn('not a rule', windows)
+        self.assertIn('with a Close at its top right where it has a title', windows)
         self.assertIn("one source's controls are a standard popup of its own group in that region (the template's group 1", line)
         self.assertIn('1020, 1220, 1230, 1520 and 1720 Series', line)
         self.assertIn('the 520 and 535 draw them as standard popups filling main', line)
         self.assertIn('the 300M as pages', line)
         self.assertIn('A confirmation has neither title nor Close', line)
-        self.assertIn('does="Closes this popup."', line)
+        self.assertIn('does="Closes this popup."', windows)
         self.assertNotIn('one source\'s controls.', line)
 
     def test_a_modals_card_is_a_panel_because_a_page_cannot_place_the_art(self):
@@ -240,10 +271,12 @@ class TestWhatTheProfileNowSays(unittest.TestCase):
             self.assertIn(words, regions)
         for gone in ('Nothing else goes outside', 'ghost, left-aligned', 'in the middle, and one outlined action'):
             self.assertNotIn(gone, regions)
-        # The generated Layout above it is the frame's, with the 1230's own region.
+        # The generated Layout above it is the frame's, with the 1230's own
+        # region, its Header the band of its source tabs over the Divider
+        # under them and its Footer its foot row.
         layout = self.readme.split('## Layout', 1)[1].split('\n## ', 1)[0]
-        self.assertIn('| 1230 | 1920x720 | Main SD | - | 185x720 at 0,0 | 184x720 at 1736,0 | - | '
-                      '1551x695 at 185,13 | 650x500 at 1028,149 |', layout)
+        self.assertIn('| 1230 | 1920x720 | Main SD | 608x139 at 1049,13 | 185x720 at 0,0 | 184x720 at 1736,0 | '
+                      '1920x85 at 0,635 | 1551x695 at 185,13 | 650x500 at 1028,149 |', layout)
 
     def test_the_example_is_the_start_page(self):
         """Start holds the room's name, Press to begin and one date-and-time
@@ -251,7 +284,7 @@ class TestWhatTheProfileNowSays(unittest.TestCase):
         only the working pages have."""
         working = self.readme.split('\n## The working page\n', 1)[1].split('\n## ', 1)[0]
         example = next(b for b in re.findall(r'```html\n(.*?)```', working, re.S) if 'name="Start"' in b)
-        self.assertIn('name="Start" start="true"', example)
+        self.assertIn('name="Start" splash="true" start="true"', example)
         for words in ('type="title"', 'size="17"', 'Press to begin', 'format="datetime"', 'color="text"'):
             self.assertIn(words, example)
         for gone in ('variant="source"', 'variant="icon"', 'format="date"', 'left: 1157px'):
@@ -269,9 +302,10 @@ class TestWhatTheProfileNowSays(unittest.TestCase):
         self.assertIn('cell="110x110" gap="49"', self.docs['Group'])
         self.assertIn('left: 322px; top: 291px', self.docs['MainArea'])
 
-    def test_a_group_pages_with_the_toolkits_words_not_extrons_glyphs(self):
-        self.assertIn("Previous and Next are the toolkit's own", self.docs['Group'])
+    def test_a_group_pages_with_the_kits_chevrons(self):
+        self.assertIn("A Group that pages draws its Previous and Next as the kit's chevrons", self.docs['Group'])
         self.assertIn('VTC Search Results', self.docs['Group'])
+        self.assertEqual(self.p['regions']['group']['next'], {'variant': 'icon', 'icon': 'chevron-right'})
 
     def test_the_start_page_is_named_start(self):
         regions = self.p['layout']['regions'][1]

@@ -284,6 +284,47 @@ them). A weight Windows names as part of the family is a family here
 *not* ship is ground truth: a template carries no built payload, so there are no
 snapshots to score against and one would have to be built first.
 
+## 8. Bold is the regular, emboldened - a model measured, not shipped
+
+GUI Designer has no bold file for the faces a panel draws bold. The fixtures
+embed Forma DJR Display Regular only; every seed carries Open Sans as Regular
+(and Light), none an Open Sans Bold. It emboldens the regular, as GDI+ does for
+a family with no bold face. `gdl.compose` draws a bold caption in the regular,
+unemboldened - and adding an Open Sans Bold file would draw a design the panel
+does not show.
+
+The scored pages hold 44 bold Forma captions, the only bold ground truth here:
+no seed flattens a bold caption into its art, and no seed has snapshots.
+Measured against them:
+
+- **Stems** are a whole pixel heavier, on the right: GDI's own simulated-bold
+  overstrike. Smearing the glyph's coverage 1 px rightward fits best; a
+  symmetric smear, a vertical one, one in em (2-5% of it) and anything past
+  1 px (1.1 already) all score worse.
+- **Advances** grow about 1/60 em a glyph - 0.016 to 0.0175 em score alike,
+  0.015 and 0.02 worse. In em, as GDI+'s fractional layout has it, not GDI's
+  whole pixel: every constant growth tried (0.3 to 1 px) scores worse, and
+  across 35 measured lines the growth fits within 1.8 px rms where any
+  whole-pixel rounding of the advances is 2.7 px or worse.
+
+`research/synthetic_bold.py` draws both and scores the 27 pages: mean 2.19% →
+2.13%, median 1.65% → 1.54%, worst 7.68% → 7.64%; 17 pages improve, 8 do not
+move, and 2 regress - 2210 Conference Volume +0.12% and 2220 CATV Volume
++0.02% - so it is not shipped. Aligned at each caption's best shift, so §7's
+size-dependent vertical residual does not count, the bold captions' own error
+falls from 51,656 differing pixels to 31,478.
+
+What the model misses is the advance on three captions, which GUI Designer
+emboldens and lays out at the regular's widths: every line of the two-line
+`Conference` / `Volume` and `Cable TV` / `Volume` on those two popups, and
+`Conference Volume` on 120 Audio Controls, which grown would fill its 167 px
+box to within GDI+'s default padding of 1/6 em a side. Nothing measured
+explains the two-line ones - both fit their box by these metrics - and a rule
+fitted on two captions of one design would be fitting noise. What would settle
+it is bold ground truth beyond these 44: the synthetic fixture
+(`docs/ROADMAP.md`), with bold Open Sans captions on one line and on two, near
+their box's edge and far from it.
+
 ## Where it stands
 
 | | mean | median | worst |
@@ -306,6 +347,7 @@ Not implemented, but **written and measured**:
 | ascent / line-height multipliers | mean 2.19% → 1.72%, but a degenerate fit | see above; `research/q_final.py` |
 | per-control RGBA layering | **rejected** — see below | `research/v3.py` |
 | modal scrim at 65% opacity | no observable effect in this corpus | `research/final_patch.py` |
+| synthetic bold: 1 px smear, 1/60 em advance | mean 2.19% → 2.13%, but two pages regress | finding 8; `research/synthetic_bold.py` |
 
 ### Why `research/v3.py`'s architecture was not adopted
 

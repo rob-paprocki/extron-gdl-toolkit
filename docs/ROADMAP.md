@@ -53,8 +53,37 @@ opening GUI Designer.**
    Down as their own `text` - since no template page draws a status field
    (`docs/claude-design.md` §4, each theme's README *The working page*, the
    ledgers' entries). Overruled, a slot for either is a region's to draw.
+3. **Confirm or overrule the ten assumptions Afterburn's regions are built
+   on** (`docs/superpowers/specs/2026-10-26-afterburn-regions-design.md` §7,
+   each taken at its recommended answer, §8): (1) the same component names on
+   Afterburn - Header, LeftRail, Section, RightRail, Footer, Center; (2) a
+   725 rail as full as the template's own closes up and lifts, refused only
+   past what the README's left-rail table says it holds; (3) more Sections
+   than Main SD draws, each a seam under the one above; (4) the kit's icons
+   drawn fitted to their buttons, Close 41 px where the glyph is 27; (5) a
+   Group's Previous and Next the kit's chevrons; (6) the 520's Select a
+   Source tiles its seed's own extracted art, orange scheme only - the seed
+   draws them in orange alone - and the `source` tile in the other schemes
+   and where it has none; (7) Start a region page measured off the template's Start, going on
+   by More on the 320 - not built: its stage waits for your word, and Start
+   stays a page without regions; (8) the mode launcher keeps 8120 and the
+   525's derived Volume Up takes a fresh ID; (9) a display's state kept in
+   Power's states and the toggle's own switch art, Power in every state, a
+   mic's Mute an uncaptioned icon key - and on the 320, whose keys draw no
+   switch, each middle state its name; (10) a toggle holds one short word,
+   a longer one named with the room it has. Overruled, each is the region
+   code's and the README's to change.
+
+4. **Load a built panel onto a touch panel.** No load is recorded: the proof
+   ends at the built file and its artwork (*Where things stand*), so what a
+   panel's firmware draws from `layout.json` - live captions, translucent
+   fills, a held button - has not been seen on hardware. Needs a panel, and
+   a person to read it.
 
 ## Mine, in order
+
+The order these and the backlog below are worked in, as pull requests, and
+where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
 
 1. **What a real-size build spends its time on.** `examples/boardroom-full.json`,
    23 pages, builds and verifies, but Save and Build's time varied threefold
@@ -88,8 +117,10 @@ opening GUI Designer.**
    designer improvised, are now the template's (spec item 11): redrawn so,
    Mach's, Shockwave's and Turbulence's translate clean on all four panels.
    What is left is in §7: a plain modal that says more than the 320's one
-   screen, a Clock on Shockwave's and Turbulence's 320, a plain container
-   there, and the region frame's gaps below.
+   screen, a Clock a designer places on a plain page of Shockwave's and
+   Turbulence's 320, a plain container there, a shared hub across a mid-size
+   panel's Groups, a left Rail on Afterburn, an icon on a group's button, and
+   the region frame's gaps below.
    800x480 is two series in all three themes - the 520, tier B, and the 720,
    tier A, which take different layouts - where Afterburn has only the 520.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
@@ -113,13 +144,12 @@ opening GUI Designer.**
 
 ## Backlog - real, not urgent
 
-- **A face with no recovered file previews in Arial**, now said aloud
-  (`gdl.design compare` and `gdl.spec render` print `compose.FALLBACKS`) but
-  not yet drawn right: Roboto (the Shockwave Start clock), Extron GUI
-  Configurator, Segoe UI and GUIC Video Conference 1a have no file in
-  `gdl/fonts/`. The sign-off draws them from the built file when it carries
-  them; the spec preview, with no built file, could read them from the seed
-  that does (`gdl.fonts.find_face`).
+- **Segoe UI, Segoe UI Semibold and FluentSystemIcons-Regular preview in
+  Arial**, said aloud (`gdl.design compare` and `gdl.spec render` print
+  `compose.FALLBACKS`): Extron's templates carry them and no seed does, so
+  there is nowhere to read them from (`gdl/fonts/README.md`). Roboto, Extron
+  GUI Configurator and GUIC Video Conference 1a are read from the seed that
+  carries them.
 
 - **A hub window renamed by the working pages' order loses its IDs.** A hub
   names the window a later working page derives after that page
@@ -131,10 +161,6 @@ opening GUI Designer.**
   them. Keying those controls by their host page and the template's window
   name would keep them, with the window's new name still reported as a change.
 
-- `renumber` is planned and checked but has never been through a build. Build
-  one and run `tests/verify_built.py` against it - which, until the behavior
-  work, never compared a built control's ID at all (it looked up `UserID`;
-  layout.json writes `UserId`).
 - **Behavior the format carries but the spec cannot yet say:** the Offline Page
   and its enable flag (some seeds ship it enabled and the rest disabled), and
   a popup's auto-hide timeout. The timeout is in the authoring graph only
@@ -147,7 +173,10 @@ opening GUI Designer.**
   seeds' own way needs the applier to write the reference's `PopupID` and
   `IsPopupPageIdValid` and the popup's back-pointer to it, and a build to show
   it reads back - `tests/verify_built.py` already holds such a reference to a
-  popup that is there.
+  popup that is there. Until then every theme's hub shows its Volume Level
+  strip on every working page, where its template shows it only when the
+  program does - each README's *Differences* says so (the ledgers'
+  `afterburn-45`, `mach-54`, `shockwave-44`, `turbulence-47`).
 - **A seed of a panel's other form.** `seeds/` holds one form per size - the
   725T, 525T, 320M, 1535M - so a TLP725M, 725C, 525M, 525C, 320C or 1535T spec
   has no seed, and is refused the other form's rather than built as it
@@ -165,64 +194,61 @@ opening GUI Designer.**
   title there, PRESETS and DISPLAY included, which no seed shows. Afterburn's
   320 seed uses capitals too, but its translation draws no Group heading there.
   Not an Extron requirement (`docs/design-rules.md` keeps extrapolated rules apart).
-- `docs/from-scratch.md` §6: an out-of-corpus border radius/thickness *builds*
-  but was never checked to *rasterize* correctly; preview fidelity on a fully synthetic page rests on
-  one control. Control IDs need not be unique: Extron's own built seeds repeat
-  them within a page and across pages, and `examples/boardroom-full.json`
-  mirrors its tabs under one ID on every page and builds with no problems. The
-  one unbuilt case is a twin the spec authors on the same page (Shockwave's
-  tab twins, below).
-- **`gdl.compose` draws bold Open Sans as regular.** `gdl/fonts/` carries Open
-  Sans Regular and Light only, and `face()` falls back to the regular file, so
-  a bold caption on a seed-built panel renders regular - the largest remaining
-  difference in `gdl.design compare`. Open Sans Bold is Apache 2.0 like the
-  others; adding it is a render change, so it needs `tests/score.py` before and
-  after.
-- **A horizontal slider in a template whose thumb is not square** (Shockwave's,
-  52 across and 34 along). The spec turns the thumb's box as the canvas does, as
-  Build keeps width and height literal: the Zoom Rooms seeds' two horizontal
-  sliders each (on the Lighting popup, 564x25) have a thumb 7 wide and 25 tall.
-  But the kit's thumb art is drawn for a vertical slider and goes into the
-  turned box as it is, and `verify_built`'s horizontal rail model mirrors the
-  vertical one, which is all that was measured; those Zoom seeds' built rails
-  are the ground truth to check it against. No Shockwave seed or canvas has a
-  horizontal slider yet; build one and measure both before relying on it.
+- The preview draws a border's corner as a circle of its
+  radius, where Build's is a little rounder - up to 3 px further in along the
+  diagonal at radius 100, 0.0% to 3.2% of a 360x260 panel's pixels
+  (`docs/from-scratch.md` §5, test 3); a render change, so `tests/score.py`
+  before and after.
+- **A border the donor lacks is built as its nearest** (`nearest_border`),
+  though a resource appended at the asked geometry builds and rasterizes as
+  asked (`docs/from-scratch.md` §5, tests 2 and 3). Appending it - as
+  `examples/probes-128/Add-BorderResources.ps1` does by hand - would end the
+  swap and the refusal of a border with no shape near enough; applier work,
+  with a build to show it.
+- **The spec preview draws a level whose art the donor keeps as its bare
+  bar** (`keep_art`: Shockwave's and Turbulence's volume levels), where Build
+  draws the donor's track and fill. It is most of what differs between the
+  preview and the build (`docs/from-scratch.md` §6) - all of the worst popup,
+  15.85%. The preview knows no donor, so it needs the theme's own level art.
+- **`gdl.compose` draws a bold caption regular** - on a seed-built panel the
+  largest remaining difference in `gdl.design compare`. GUI Designer has no
+  bold file either (no seed or fixture carries one): it emboldens the regular,
+  so adding Open Sans Bold would draw a design the panel does not show. A model
+  of the emboldening - a 1 px rightward smear and 1/60 em more advance a glyph -
+  takes the render baseline's mean from 2.19% to 2.13% but regresses two popups
+  whose two-line captions keep the regular's advances, so it is not shipped
+  (`docs/render-fidelity.md` §8). It needs bold ground truth beyond the
+  fixture's 44 Forma captions: the synthetic fixture above.
+- **A horizontal Shockwave slider's thumb is the vertical one squeezed.**
+  Build stretches a thumb's kit art into its box unturned, so on a slider
+  lying right or left Shockwave's 156x102 thumb is squeezed into 34x52, the
+  wide art made tall (`tests/verify_built.py` `check_thumbs`). The kit carries
+  a thumb drawn for it, `Shockwave/Slider/90x156_sw_horizontal_thumb.png`,
+  which no template and nothing here uses; a profile could name it for a
+  slider lying right or left (`defaults.slider`). The rail is right as it
+  is: Build turns its art to lie as the slider does. A slider whose
+  orientation is `down` was never built, and `verify_built` draws its rail
+  as `up`'s.
 - **A tier B hub shared by several groups.** On a mid-size panel (the 525)
   each `Group` pages as popups in its own box. The spec's hub - one region all
   the page's groups share, switched by a rail of group buttons - needs the Page
   to lay its groups out together; a page with several groups shows them all,
   each paged, until then.
-- **A left `Rail` on Afterburn.** Mach, Shockwave and Turbulence have a
-  `LeftRail` region (`docs/claude-design.md` §3). Afterburn's canvas has one
-  Rail, the right one: side controls on the left are the Page's own. On the 725
-  and the 525 they are scaled and grown with no band of their own, and refused,
-  by control name, only where they overlap another touch target or leave the
-  canvas (a Label or Group under a popup region passes); on the 320 the page is
-  refused as 'rows need N px'.
-- **Afterburn's working page on the room's other panels.** Drawn at the
-  template's own spacing it carries to the 1035's scale alone: its `list` and
-  `toggle` buttons are kit art, which keeps its shape as it grows to the touch
-  minimum, and an icon `list` button's caption needs 177 px of the 725's
-  145 px rail at 16 pt. The README's example room is drawn in the layout that
-  carries to the 1035, 725, 525 and 320 instead - its left rail one Group
-  under one heading, no date and time, a Rail with no Volume heading, sets
-  and windows with the 525's room - which departs from the template on the
-  1035 itself. A left region for Afterburn, or the 320 drawn as its own
-  template draws it (its foot strip with the page's name, More and Back;
-  each source is already a page of its own there), would keep the template's
-  look where a room allows it; and the kit's icon indent is a count of spaces
-  set for the 1035's 14 pt, which at a smaller panel's larger type is wider
-  than the icon needs. Round four shows it: its fresh designer's room builds
-  and verifies on all four panels, and its 1035 reads as the template, but
-  its 525 and 320 do not (`archive/job-e823df9b/round4/round4_vs_templates.png`).
-- **Afterburn's page on the 320 does not go on.** Its Page's own controls and
-  its MainArea's are one set of rows in main, over the row the Rail runs
-  across the foot (`docs/claude-design.md` §4), and a page past the 186 px
-  main holds is refused, by name, where a bar theme's goes on over pages
-  with Previous and Next. The Rail's row holds the volume and three, which
-  leaves no room for Previous and Next beside them: going on needs the
-  template's own foot strip, its More and Back where the Rail's row stands,
-  or the 320 drawn as its own template draws it (above).
+- **Afterburn's hub tiles in its 520 seed's own art are not built.** Its
+  region pages are built and verified on the 1035, 725, 525 and 320
+  (`archive/job-e823df9b/afterburn-regions/`, `docs/claude-design.md` §6),
+  but those rooms are blue-slate, so the 525's Select a Source drew the
+  fitted `source` tiles: the seed's extracted 756x688 tiles, which only the
+  orange scheme draws (`kit.extract`), want an orange room built on the 525
+  after `python -m gdl.designsys extract afterburn` on that host, and
+  `verify_built` at 0 there.
+- **Afterburn's page without regions on the 320 does not go on.** A region
+  page goes on over pages of its own by its foot strip's More and Back, as
+  its template does (`docs/claude-design.md` §4). A Page without regions is
+  still its own controls and its MainArea's in one set of rows in main, over
+  the row the Rail runs across the foot, and one past the 186 px main holds
+  is refused, by name: the Rail's row holds the volume and three, which
+  leaves no room for More and Back beside them.
 - **A row of loose controls does not re-space as its captions grow.** In a
   free layout - a source popup's well, a window - each control grows about
   its centre to its widest caption at the panel's type floor and its
@@ -308,9 +334,12 @@ opening GUI Designer.**
   - a popup in the Center's group without `role="source"` is still sized
     from main on another panel, while the Center is that panel's own region:
     it shows a little smaller or larger than its reference there (Mach 725:
-    710x392 in a 710x405 region). Larger is named as a warning; only a
-    popup in the Center's default group, `Sources`, is checked. A source's
-    popup says `role="source"`;
+    710x392 in a 710x405 region). Every grouped popup with no role is named
+    as a warning where it differs from the region by more than 2 px, either
+    way, in any group - a popup is laid out on its own board and cannot read
+    which group the Page's Center shows, so a popup in another group is named
+    too, and the warning says to ignore it if it is not the Center's. A
+    source's popup says `role="source"`, and is the region on every panel;
   - the template's own art - Turbulence's header and footer bars (a
     stretched `image`), its source popups' device pictures (a fitted one,
     by the source's `device`) and Shockwave's and Turbulence's hub popups
@@ -353,9 +382,20 @@ opening GUI Designer.**
     Source) translate and check clean, their ID maps too, on the TLP1035T,
     725T, 525T and 320M in all three themes (`tests/data/design-call-<theme>`)
     and in round four's rooms redrawn so (`tests/data/round4-<theme>-call`).
-    Those rooms and those canvases are built in GUI Designer and verified
-    on every panel, their ID maps too - the dialer's field, its keys' seed
-    IDs and art included (`archive/job-e823df9b/call/`). What it does not do yet: Mach's Share Content
+    Those rooms and those canvases were each built in GUI Designer and
+    verified on every panel, their ID maps too, in a first pass
+    (`archive/job-e823df9b/call/first-*`). After the call mode's review the
+    panels its fixes change were built again at 6111a7f and verified there
+    (`second-*`): all four panels of each theme's design-call canvas, Mach's
+    and Shockwave's round-four rooms on the 1035, 725 and 525, Turbulence's on
+    the 525. Mach's six on the 1035, 725 and 525 were
+    re-verified with the fixed verifier against those builds
+    (`reverify-mach.log`). The panels not rebuilt keep their first-pass
+    builds, whose specs the fixes do not change. Afterburn's review then gave a
+    hub's menu bar one ID per key on every working page, and every call room
+    whose hub draws two working pages was built again and verified on the
+    panels that changes (`archive/job-e823df9b/afterburn-regions/rebuild/`).
+    What it does not do yet: Mach's Share Content
     says Share, an incoming call's answers take IDs of their own, Turbulence's
     Select a Source tiles too, and Shockwave's 725 call page holds two of its
     Main VC's three launchers (Differences); a key whose template sets its
@@ -381,23 +421,28 @@ opening GUI Designer.**
     of keys as the remedy;
   - the region page's seed IDs and mirrors (`docs/idmap.md` §7) translate
     and check clean on every panel the region canvases list, and are not yet
-    built in GUI Designer: Shockwave's 1035 tab twins - a caption-only
+    built in GUI Designer but for Shockwave's tab twins - a caption-only
     button inside the tab with the tab's ID, as the template draws it, the
-    first spec mirror on one page - were built in round four's Shockwave 1035
-    room and verified clean (`archive/job-e823df9b/round4/shockwave/reverify.log`,
-    once the verifier's own limits were fixed), and the 1535's, which no
-    region canvas lists, waits for a probe;
+    first spec mirror on one page - built and verified on the 1035 in round
+    four's Shockwave room (`archive/job-e823df9b/round4/shockwave/reverify.log`,
+    once the verifier's own limits were fixed) and on the 1535M in the format
+    probes, its four twins as planned and the ID map 0 problems
+    (`archive/job-e823df9b/probes-128/`);
   - Shockwave's and Turbulence's region defaults (the profile's `regions`:
     their tabs, rail, launchers, Room Mode, Mute, Help and Power) are the
     looks those profiles measured off the 1035's seed, built and verified on
     every panel the region canvases list (`archive/job-e823df9b/center/`,
-    `hubs/`, `p320/`) and set beside each template by eye, not scored
-    against it;
+    `hubs/`, `p320/`). Where the working page stands each slot, and its
+    bars' fills and art, are scored against the template's frame within what
+    the ledger's deviations allow (`gdl.design.region_score`,
+    `docs/claude-design.md` §2 *Truth*); a slot's own look - its kit art and
+    caption - is still set beside the template by eye, and so are the hub
+    and 320 pages, which the score does not read yet;
   - Shockwave stands Audio Control in its right rail on the 1035's series
     only, and in its left rail's second group elsewhere: a RightRail
     `slot="audio"` is moved into the LeftRail's second Section on a panel whose
-    template does not draw it there, and refused by name only where that
-    Section is missing or full;
+    template does not draw it there, and refused by name where that Section
+    is missing or full;
   - the truth ledger (`gdl/designsys/truth/`, `docs/claude-design.md` §2
     *Truth*) covers a theme once its file is there: `python -m gdl.designsys
     audit <theme>` names a theme with none, and every entry or claim not yet
@@ -427,19 +472,20 @@ opening GUI Designer.**
     transport and zoom keys, and the 520's and 535's triangle Up and Down),
     a font it carries none of. The kit draws most of them as images in
     Afterburn/Icons/PNG - Close's X, the chevrons, the triangles (Carets),
-    minus, plus, the More dots and most of the transport keys - beside the
-    Buttons/PNG the profile's kit root reads, so the `icon` list does not
-    name them: wired in, as Mach's kit images stand in for its glyphs, they
-    would draw a Close, a level's steps and a Group's paging as the
-    template does. Until then a Close says Close, a level's steps say `-`
-    and `+` and a Group pages with Previous and Next; the squircle
-    card under a modal, a full-canvas `PBImage` (Help's Background), which
-    the spec's `image` kind could now carry - every Afterburn seed has a
-    `PBImage` - but Afterburn's system offers no Image and its modal draws
-    none, so a Panel stands in; the 520's and 535's Start page on its own `_start` art, since
-    every page of those panels is built on the Main art; and the 320's page
-    per source, title footer and Volume modal, which only the bar themes'
-    region pages build, so Afterburn's small panels re-lay a Page's controls
+    minus, plus, the More dots and most of the transport keys - which the
+    profile now indexes beside its Buttons/PNG (`kit.icons`), so a designer
+    can name each on a button, drawn fitted to it (afterburn-36), and a
+    window's Close draws the X, a Group pages with the chevrons
+    (afterburn-32) and a hub's Up and Down are the carets (afterburn-09); a
+    Rail's level, on a page without regions, still steps with `-` and `+`. The
+    squircle card under a modal with
+    no `role` (Help's Background), which a window with a role draws as the
+    page's own art but a plain modal cannot - Afterburn's system offers no
+    Image - so a Panel stands in there; the 520's and 535's Start page on its
+    own `_start` art, since every page of those panels is built on the Main
+    art; and the 320's page per source, title footer and Volume modal for a
+    page without regions, which Afterburn's small panels re-lay as a Page's
+    controls
     in rows over a Rail. Where it differs for a gate: its 50 px volume
     slider grows to the touch minimum, and the 14 pt floor lifts its 13 pt
     captions;
@@ -453,40 +499,39 @@ opening GUI Designer.**
   none met by the huddle canvas:
   - a canvas's own repeats (`sc-for`) in a main area are not laid out for
     other panels - they stay where they were drawn;
-  - a panel listed twice in a Page's `panels` is silently one panel;
-  - an empty Group draws an empty region on a mid-size panel and is refused
-    downstream, not by name where it is drawn (on a mid-size panel by
-    `gdl.spec`'s 'popup reference bound to group ... no popup is in that
-    group', on the 320 as a `nav` naming no page or popup);
-  - captions are measured with the fallback face until Open Sans has loaded
-    (the bundle allows 5% for it), and nothing waits for the face or checks
-    that Google Fonts was reachable, so a translation can differ between
-    hosts;
-  - `gdl.design compare` scores nothing for a page the built file lacks (the
-    sheet shows 'Not in the built file'; the command line says nothing);
+  - captions are measured before Open Sans has loaded - the components
+    measure as they render, and the face arrives after - so the bundle widens
+    each measure 5-6% for the fallback face. The probe now waits for the face
+    and translate says by name, once for the canvas, when it did not load, but the
+    measure itself is still the fallback's: making it wait would mean laying
+    the canvas out a second time once the face is there;
 - **ECP's phone and tablet canvases have no donor, and cannot have one.** The
   six themable combinations (Afterburn / Mach / Shockwave × 16-9 and 16-10) are
-  all seeded, but as seeds only: a spec for the 16-10 seeds (1280x800) fails
-  `Panel.check` ('size 1280x800 is not a canvas the VTLPEcp has'), since
-  `spec.sizes('VTLPEcp')` is 1920x1080 alone. The other five presets — iPhone,
-  Android Phone, iPad, Android Tablet and Custom — only offer Blank in the
-  wizard, and a blank ECP project is 1 page and 3 controls, so there is
-  nothing useful to clone from. A phone canvas cannot be authored either:
-  `retarget` and `check` refuse any ECP size but 1920x1080 (`docs/design-rules.md`
-  §1 calls 1920x1080 a default, which the code treats as the only size).
-- **The probes' error and warning counts are still 1.27.0.9 numbers.**
-  `New-FormatProbes.ps1` has been re-run on 1.28.0.7 and all three still author,
-  open and build, but the Build Manager's own 0-errors/0-warnings readout was not
-  re-read — only the resulting files were checked.
-- **A family whose own name ends in Regular, Bold or Italic** - Arial Rounded
-  MT Bold, Britannic Bold - reads as its sibling (`Arial Rounded MT`):
-  `font_resource_names()` and `Set-GdlFont` strip every trailing style word
-  from the resource's name, so `donors` refuses a face the donor defines.
-  Python matches the words' case and PowerShell does not. No project here
-  has such a face; reading each resource's own family field would end both.
-- `referenceCountField` semantics; the size-dependent vertical text residual
-  (`docs/render-fidelity.md` finding 7); every text finding validated against
-  one typeface.
+  all seeded, and a spec can target either TouchLink canvas (`spec.sizes('VTLPEcp')`
+  is 1920x1080 and 1280x800, the second named `VTLPEcp-1280x800`). The ECP
+  series themselves are in no profile's `panels` - the templates table lists
+  none for a soft client - so a Design canvas cannot list one yet. The other five
+  presets — iPhone, Android Phone, iPad, Android Tablet and Custom — only offer
+  Blank in the wizard, and a blank ECP project is 1 page and 3 controls, so
+  there is nothing useful to clone from. A phone canvas cannot be authored
+  either: `retarget` and `check` refuse any ECP size but the two TouchLink
+  ones (`docs/design-rules.md` §1).
+- **What a failed build shows on 1.28 is unread.** A clean build's Build
+  Manager has no count (`docs/from-scratch.md` §7), and none of the format
+  probes' builds failed. `GdlBlocker.ps1` reads GUI Designer's error boxes; a
+  build failing on purpose (a duplicate page name, `docs/from-scratch.md` §5)
+  with `examples/probes-128/Watch-BuildManager.ps1` beside it would show
+  whether a failure is one of those or a list in the Build Manager.
+- **CI cannot run what needs Extron's kit or GUI Designer.** The `lfs` job
+  pulls the seeds the suite reads (`.github/workflows/ci.yml` names them) and
+  the `chrome` job runs the translator in Chrome on the archive's pinned Design
+  runtime, but `vendor/` is not in git and no GUI Designer is installed, so
+  every test that reads Extron's kit (`needs_kit` in `tests/test_design.py`)
+  and everything that builds skips on the runner; the public copy, which holds
+  no runtime and fewer seeds, skips more. A green CI is therefore still not a
+  green suite on a provisioned machine.
+- The size-dependent vertical text residual (`docs/render-fidelity.md`
+  finding 7); every text finding validated against one typeface.
 
 `python tests/audit_corpus.py` checks the documented invariants against every
 project it can reach; `docs/gdl-format.md` §9 has what it checks and its last

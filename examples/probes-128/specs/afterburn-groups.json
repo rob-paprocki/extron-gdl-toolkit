@@ -1,0 +1,290 @@
+{
+ "name": "Probe Reference Counts",
+ "model": "TLP1035T",
+ "family": "Afterburn",
+ "size": [
+  1280,
+  800
+ ],
+ "_why": "Three popup groups with 1, 3 and 5 members, each shown by one reference, for the referenceCountField probe: the runner reads the registry after the build, rewrites each group's count (examples/probes-128/Set-ReferenceCounts.ps1), builds again and reads it again.",
+ "theme": {
+  "background": "#12131C",
+  "surface": "#242634",
+  "raised": "#2E3142",
+  "danger": "#C0392B",
+  "text": "#FFFFFF",
+  "accent": "#3D8BFD",
+  "font": "Open Sans",
+  "size": 18,
+  "on": "accent"
+ },
+ "start_page": "Groups Home",
+ "pages": [
+  {
+   "name": "Groups Home",
+   "number": 1000,
+   "controls": [
+    {
+     "kind": "popup_ref",
+     "name": "OneRef",
+     "rect": [
+      40,
+      40,
+      600,
+      120
+     ],
+     "group": "One"
+    },
+    {
+     "kind": "popup_ref",
+     "name": "ThreeRef",
+     "rect": [
+      40,
+      240,
+      600,
+      120
+     ],
+     "group": "Three"
+    },
+    {
+     "kind": "popup_ref",
+     "name": "FiveRef",
+     "rect": [
+      40,
+      440,
+      600,
+      120
+     ],
+     "group": "Five"
+    }
+   ]
+  }
+ ],
+ "popups": [
+  {
+   "name": "One Member 1",
+   "number": 9000,
+   "group": "One",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "One1Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "One 1",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "name": "Three Member 1",
+   "number": 9001,
+   "group": "Three",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Three1Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "Three 1",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "name": "Three Member 2",
+   "number": 9002,
+   "group": "Three",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Three2Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "Three 2",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "name": "Three Member 3",
+   "number": 9003,
+   "group": "Three",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Three3Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "Three 3",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "name": "Five Member 1",
+   "number": 9004,
+   "group": "Five",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Five1Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "Five 1",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "name": "Five Member 2",
+   "number": 9005,
+   "group": "Five",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Five2Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "Five 2",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "name": "Five Member 3",
+   "number": 9006,
+   "group": "Five",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Five3Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "Five 3",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "name": "Five Member 4",
+   "number": 9007,
+   "group": "Five",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Five4Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "Five 4",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  },
+  {
+   "name": "Five Member 5",
+   "number": 9008,
+   "group": "Five",
+   "size": [
+    600,
+    120
+   ],
+   "background": "surface",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Five5Label",
+     "rect": [
+      24,
+      0,
+      300,
+      120
+     ],
+     "text": "Five 5",
+     "align": "left",
+     "size": 20
+    }
+   ]
+  }
+ ]
+}

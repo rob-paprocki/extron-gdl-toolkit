@@ -1,4 +1,4 @@
-<#
+﻿<#
     Worked end-to-end authoring example.
 
     Takes an existing project and adds a page, a button, a standard popup in a

@@ -7,9 +7,13 @@ Afterburn would make the toolkit a one-theme tool, so there are two routes here:
   * `AFTERBURN` - the documented token set, transcribed from the Afterburn Theme
     Guide. Authoritative, and includes the four accent schemes.
   * `extract(path)` - read ANY `.glt` template or `.gdl` project and report the
-    colors, border resources and fonts it actually uses, ranked by frequency.
-    Empirical rather than documented, but it works for every theme, including
-    ones with no published guide, and for a client's own house style.
+    colors, border resources and fonts its controls actually use, ranked by
+    frequency. Empirical rather than documented, and only of control fills,
+    strokes, borders and fonts: a theme drawn from photographs does not
+    reduce to that. On Mach it reports the translucent scrim as the top fill
+    and reads no photograph, so its palette is not Mach's. It has been checked
+    on Afterburn alone; the other themes' palettes are surveyed off their
+    seeds (gdl/designsys/).
 
 `extract()` was checked against the theme it can be checked against: run it on
 Afterburn 1020 Series.glt and the top fills come back #BABCCE / #37394E /

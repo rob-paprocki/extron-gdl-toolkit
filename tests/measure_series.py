@@ -533,6 +533,15 @@ CALL_CHROME = ('call', 'end-call', 'privacy', 'share')
 # yet - Mach's and Turbulence's, which Shockwave's bar templates do not draw:
 # a title in the header and the sources as tiles in the centre.
 SELECT_PAGE = 'Main Select Source'
+# The number the program writes into a dialer's entry, on every seed.
+ENTRY_ID = 50000
+# The page an Afterburn bar series draws three rail groups on (Display,
+# Screen, Settings), whose seams say how a third group stacks.
+THREE_GROUPS = 'Main SD Screen Arrows'
+# The cells an Afterburn working page stands along the screen's foot, across
+# its three bands (`foot`): the mode launcher, the clocks, Preview, Help and
+# Power - the row a bar theme's Footer draws.
+FOOT_ROLES = ('mode', 'clock', 'preview', 'help', 'power')
 
 
 def series_seed(row):
@@ -670,7 +679,7 @@ def _item(c, at=(0, 0), role=None):
 
 
 def _surface_of(c, at=(0, 0), popup=None):
-    kind = {'PBShape': 'shape', 'PBImage': 'image'}.get(c['type'], 'label')
+    kind = {'PBShape': 'shape', 'PBImage': 'image', 'PBLine': 'line'}.get(c['type'], 'label')
     out = {'name': c['name'], 'rect': _offset(c['rect'], at), 'kind': kind, 'fill': c['paint'],
            'border': (c['border'] or {}).get('resource'), 'art': c['art']}
     if popup:
@@ -939,12 +948,18 @@ def frame_of(path, size, art=None):
     volume = _volume_modal(pages, size) if paged else None
     if volume:
         out['volume'] = volume
-    # A bar series' call mode and the page it chooses sources on, where its
-    # template draws them as controls (not Afterburn's, whose bars are art,
-    # and none of the hubs' or the 320's, which draw neither).
-    if not paged and 'options' not in out and not art:
+    # A bar series' call mode and the page it chooses sources on - Afterburn's
+    # too, whose bar-class templates draw all of them round the art's
+    # squircle - and none of the hubs' or the 320's, which draw neither.
+    if not paged and 'options' not in out:
+        # The seam a third group stands under the one above it at (`seam`),
+        # off the series' own three-group page.
+        if art and THREE_GROUPS in named:
+            seam = _rail_seam(named[THREE_GROUPS], out['left']['rect'])
+            if seam is not None:
+                out['left']['seam'] = seam
         if CALL_PAGE in named:
-            out['call'] = _call_frame(named[CALL_PAGE], pages, size)
+            out['call'] = _call_frame(named[CALL_PAGE], pages, size, art)
         if SELECT_PAGE in named:
             out['choose'] = _select_frame(named[SELECT_PAGE], out, size)
         incoming = next((pg for n in INCOMING for pg in pages
@@ -965,15 +980,17 @@ def _controls(page, size):
     return [c for c in page['controls'] if not (c['type'] == 'PBPopupPageReference' and _full(c['rect'], size))]
 
 
-def _call_frame(page, pages, size):
+def _call_frame(page, pages, size, art=None):
     """The call mode's working page (Main VC) as the working page is read: its
     four bars - the header's tabs with Share Content at its end, the left
     rail's VTC group (Make Call, End Call, Privacy) over its launchers, which
     hold one more than Main SD's on Mach (Display, Screen, Lighting, Audio) -
     and the centre's popup region and the page's own surfaces round it (a
     source's popup's are the working page's); the dialer that region shows
-    (VTC Dialer, `center.dialer`); and the seed IDs of the call's chrome."""
-    f = _bars_frame(page, pages, size, None)
+    (VTC Dialer, `center.dialer`); and the seed IDs of the call's chrome.
+    Afterburn's (`art`, its squircle) has no bars: its Share Content stands
+    at the right rail's head (1121,30 on the 1035), an item of `right`."""
+    f = _bars_frame(page, pages, size, art)
     c = f['center']
     rec = {'page': page['name']}
     for b in ('top', 'left', 'right', 'bottom'):
@@ -992,7 +1009,9 @@ def _call_frame(page, pages, size):
     if dialer is not None and region:
         rec['center']['dialer'] = _dialer(dialer, region[:2])
     ids = {}
-    for b in ('top', 'left'):
+    for b in ('top', 'left', 'right'):
+        if not rec[b]:
+            continue
         for it in (rec[b]['items'] + [x for e in ('start', 'end') for x in rec[b].get(e) or ()]
                    + [x for g in rec[b].get('groups') or () for x in g['buttons']]):
             if it['role'] in CALL_CHROME and it.get('id') and it['role'] not in ids:
@@ -1032,7 +1051,10 @@ def _dialer(pg, at):
     cs = pg['controls']
     labels = [c for c in cs if c['type'] == 'PBLabel']
     title = next((c for c in labels if (c['caption'] or '').strip().lower() == pg['name'].lower()), None)
-    entry = next((c for c in labels if c is not title), None)
+    # The entry is 50000 on every seed; Afterburn's dialer draws a label of
+    # letters under each digit too (Dialer Keypad 9 Letters Label), first.
+    entry = next((c for c in labels if c['id'] == ENTRY_ID), None) or next(
+        (c for c in labels if c is not title), None)
     keys = []
     for c in sorted((c for c in cs if c['type'] == 'PBButton'), key=lambda c: (c['rect'][1], c['rect'][0])):
         k = _item(c, at, _dial_role(c))
@@ -1061,11 +1083,20 @@ def _select_frame(page, bars, size):
     centre band (the working page's, `bars`), each with the label under it,
     as a hub's grid is read (_grid_of)."""
     centre = bars['center']['rect']
+    # Afterburn's centre is its squircle, whose foot holds the foot row
+    # (Preview): no tile. Its sources stand over the popup region, as wide as
+    # it - the 1230's squircle holds a preview pane beside it, with a row of
+    # source buttons of its own.
+    foot = (bars.get('foot') or {}).get('rect')
+    region = bars['center'].get('region')
+    if foot and region:
+        centre = [region[0], centre[1], region[2], centre[3]]
     cs = _controls(page, size)
     labels = sorted((c for c in cs if c['type'] == 'PBLabel'), key=lambda c: (c['rect'][1], c['rect'][0]))
     title = next((c for c in labels if 'select' in (c['caption'] or '').lower()), None)
     head = [c for c in cs if c['type'] in SURFACES and c['rect'][1] <= TOL and c['rect'][3] < size[1] / 4]
-    held = [c for c in cs if c['type'] in ('PBButton', 'PBLabel') and c is not title and _centre_in(c['rect'], centre)]
+    held = [c for c in cs if c['type'] in ('PBButton', 'PBLabel') and c is not title and _centre_in(c['rect'], centre)
+            and not (foot and _centre_in(c['rect'], foot))]
     out = _grid_of(([title] if title else []) + head + held, (0, 0), None)
     out = dict({'page': page['name']}, **{k: v for k, v in out.items() if k != 'popup'})
     return out
@@ -1163,6 +1194,10 @@ def _bars_frame(page, pages, size, art):
         out['center']['pictures'] = pictures
     if f['well'] and not out['center'].get('well'):
         out['center']['well'] = list(f['well'])
+    if art:
+        foot = _foot(out, size)
+        if foot:
+            out['foot'] = foot
     out['ids'] = _ids([it for b in BANDS if out[b] for it in out[b]['items']], [])
     # What the five bands do not say, from what was measured.
     if art:
@@ -1191,6 +1226,42 @@ def _bars_frame(page, pages, size, art):
         notes.append("The popup region fills only part of the centre; the page's own controls hold the rest.")
     out['note'] = ' '.join(notes) or None
     return out
+
+
+def _foot(out, size):
+    """Afterburn's foot row: no footer bar, but every working page stands a
+    row of cells along the screen's foot across its three bands - the mode
+    launcher in the left rail, the date, Preview and the time in the
+    squircle's foot, Help and Power in the right rail - which is the row a bar
+    theme's Footer draws. Its rect runs across the screen from the top of the
+    lowest-standing row of touch targets and clocks (the cells overlapping the
+    lowest one's span down), and its items are the row's mode, clocks,
+    Preview, Help and Power (FOOT_ROLES), in x order. Each stays an item of
+    its own band too."""
+    W, H = size
+    cells = [it for b in ('left', 'center', 'right') if out[b] for it in out[b]['items']
+             if it['kind'] in ('button', 'datetime')]
+    if not cells:
+        return None
+    low = max(cells, key=lambda it: (it['rect'][1] + it['rect'][3], it['rect'][1]))
+    y, h = low['rect'][1], low['rect'][3]
+    row = [it for it in cells if it['rect'][1] < y + h and y < it['rect'][1] + it['rect'][3]]
+    y0 = min(it['rect'][1] for it in row)
+    return {'rect': [0, y0, W, H - y0],
+            'items': [it for it in sorted(row, key=lambda it: it['rect'][0]) if it['role'] in FOOT_ROLES]}
+
+
+def _rail_seam(page, band):
+    """The seam a third rail group stands under the one above it at: on the
+    series' three-group page (THREE_GROUPS: Display, Screen, Settings), from
+    the first group's foot to the next group's heading - 21 px on the 1220,
+    12 on the 1020. None where the page draws fewer than three."""
+    groups, _ = _groups([c for c in page['controls'] if _centre_in(c['rect'], band)])
+    groups = [g for g in groups if g['heading'] and g['buttons']]
+    if len(groups) < 3:
+        return None
+    last = groups[0]['buttons'][-1]['rect']
+    return groups[1]['heading']['rect'][1] - (last[1] + last[3])
 
 
 def _hub_frame(page, popups, size, art):
@@ -1321,10 +1392,11 @@ def _windows_named(popups, opener):
 def _grid_of(cs, at, popup, strip=None):
     """A hub's grid in main, on the page at `at`: its title (the topmost
     label), its header strip (a shape across the top, or `strip`, the page's
-    header band, whose surfaces are its), its Help and Close, its tiles - the
-    buttons, in rows - each with the label under it, and the sizes it sets
-    them in. Shockwave's and Turbulence's Select a Source is the page's own
-    under the popups, Mach's a popup of its own."""
+    header band, whose surfaces are its) and its lines (Afterburn 520's
+    Divider under its tiles), its Help and Close, its tiles - the buttons, in
+    rows - each with the label under it, and the sizes it sets them in.
+    Shockwave's and Turbulence's Select a Source is the page's own under the
+    popups, Mach's a popup of its own."""
     labels = [c for c in cs if c['type'] == 'PBLabel']
     title = min(labels, key=lambda c: (c['rect'][1], c['rect'][0])) if labels else None
     W = max((c['rect'][0] + c['rect'][2] for c in cs), default=0)
@@ -1338,9 +1410,16 @@ def _grid_of(cs, at, popup, strip=None):
 
     def under(t):
         # Its name, below its middle - Turbulence's runs 7 px up into its
-        # tile's foot - and above the next row's.
+        # tile's foot - and above the next row's; or inside the tile's foot,
+        # its middle in the tile's lower half and within the tile's width, as
+        # Afterburn's hub sets its 13 pt caption at 194 in a tile from 147 to
+        # 247.
         r = t['rect']
-        below = [c for c in labels if c is not title and c['rect'][1] >= r[1] + r[3] / 2
+
+        def inside(c):
+            q = c['rect']
+            return q[1] + q[3] / 2 >= r[1] + r[3] / 2 and r[0] <= q[0] and q[0] + q[2] <= r[0] + r[2]
+        below = [c for c in labels if c is not title and (c['rect'][1] >= r[1] + r[3] / 2 or inside(c))
                  and r[0] <= c['rect'][0] + c['rect'][2] / 2 <= r[0] + r[2]
                  and not any(o is not t and o['rect'][1] > r[1] + r[3] / 2 and o['rect'][1] < c['rect'][1]
                              and o['rect'][0] < r[0] + r[2] and r[0] < o['rect'][0] + o['rect'][2]
@@ -1348,7 +1427,7 @@ def _grid_of(cs, at, popup, strip=None):
         return min(below, key=lambda c: c['rect'][1], default=None)
     out = {'popup': popup, 'title': _offset(title['rect'], at) if title else None,
            'text': title['caption'] if title else None,
-           'surfaces': [_surface_of(c, at) for c in head],
+           'surfaces': [_surface_of(c, at) for c in head + [c for c in cs if c['type'] == 'PBLine']],
            'help': _item(helps[0], at) if helps else None,
            'close': _item(closes[0], at) if closes else None, 'tiles': []}
     pt = {'title': title['pt'] if title else None}

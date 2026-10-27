@@ -1,4 +1,4 @@
-<#
+﻿<#
     A seed, made by GUI Designer's Project Create Wizard with nobody at the mouse.
 
         powershell\New-GdlSeed.ps1 -List

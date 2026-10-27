@@ -33,6 +33,7 @@ candidate improvement to it, with the numbers that justify it.
 | `final_patch.py` | the `borderFillColor` fill + modal scrim rule |
 | `compose2.py`, `q_final.py` | the bilevel-vs-antialiased text decision, fitted |
 | `v3.py`, `v2.py`, `frac.py`, `qlib.py`, `q46.py` | fractional glyph advances + per-control layering — the best result reached |
+| `synthetic_bold.py` | GUI Designer's emboldening of a bold caption, fitted on the fixture's 44 bold Forma captions; runs from the repo root (`docs/render-fidelity.md` finding 8) |
 
 ## 1. `final_patch.py` — the fill the payload cannot describe
 

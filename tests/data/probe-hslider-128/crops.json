@@ -1,0 +1,15 @@
+{
+ "from": "horizontal-slider/hslider.gdl, built by examples/probes-128/Run-Probes128.ps1 on GUI Designer 1.28.0.7 (2026-10-26)",
+ "kit": {"track": "Shockwave/Slider/156x1026_sw_track_bg.png", "fill": "Shockwave/Slider/156x1026_sw_fill.png", "thumb": "Shockwave/Slider/156x102_sw_thumb.png"},
+ "crops": [
+  {"control": "H Right 700", "part": "track", "asset": "TLPMinValueImageID", "asset_size": [700, 53], "crop": [0, 0, 120, 53], "at": [0, 0, 120, 53], "orientation": 0, "track": 52, "thumb": [34, 52]},
+  {"control": "H Right 700", "part": "track", "asset": "TLPMinValueImageID", "asset_size": [700, 53], "crop": [580, 0, 700, 53], "at": [0, 53, 120, 106], "orientation": 0, "track": 52, "thumb": [34, 52]},
+  {"control": "H Right 700", "part": "fill", "asset": "TLPMaxValueImageID", "asset_size": [700, 53], "crop": [0, 0, 120, 53], "at": [0, 106, 120, 159], "orientation": 0, "track": 52, "thumb": [34, 52]},
+  {"control": "H Right 700", "part": "fill", "asset": "TLPMaxValueImageID", "asset_size": [700, 53], "crop": [580, 0, 700, 53], "at": [0, 159, 120, 212], "orientation": 0, "track": 52, "thumb": [34, 52]},
+  {"control": "H Left 500", "part": "track", "asset": "TLPMinValueImageID", "asset_size": [500, 53], "crop": [0, 0, 120, 53], "at": [0, 212, 120, 265], "orientation": 1, "track": 52, "thumb": [34, 52]},
+  {"control": "H Left 500", "part": "track", "asset": "TLPMinValueImageID", "asset_size": [500, 53], "crop": [380, 0, 500, 53], "at": [0, 265, 120, 318], "orientation": 1, "track": 52, "thumb": [34, 52]},
+  {"control": "H Left 500", "part": "fill", "asset": "TLPMaxValueImageID", "asset_size": [500, 53], "crop": [0, 0, 120, 53], "at": [0, 318, 120, 371], "orientation": 1, "track": 52, "thumb": [34, 52]},
+  {"control": "H Left 500", "part": "fill", "asset": "TLPMaxValueImageID", "asset_size": [500, 53], "crop": [380, 0, 500, 53], "at": [0, 371, 120, 424], "orientation": 1, "track": 52, "thumb": [34, 52]},
+  {"control": "H Right 700", "part": "thumb", "asset": "SliderIndicatorImageID", "asset_size": [34, 52], "crop": null, "at": [0, 424, 34, 476], "orientation": 0, "track": 52, "thumb": [34, 52]}
+ ]
+}

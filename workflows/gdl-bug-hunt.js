@@ -177,6 +177,17 @@ const CLAIM_SOURCES = [
     key: 'docs-guides',
     where: 'docs/design-rules.md, docs/idmap.md, SKILL.md, CLAUDE.md, README.md',
   },
+  // docs/ROADMAP.md is read: its known gaps state measured template facts ("Mach has no
+  // X", "the 320 draws Y") that a gap's whole plan rests on, and a fact of that kind is
+  // what falsification is for. docs/history.md is NOT: it records beliefs that were
+  // retired, so its absolutes are false by design and every one would come back a finding.
+  // docs/superpowers/plans/ is NOT: a plan states what will be done, not what a file
+  // holds; the claims it makes about the code are the plan-inventory's to check, and
+  // the facts it quotes are copies of ones the docs above already carry.
+  {
+    key: 'docs-roadmap',
+    where: 'docs/ROADMAP.md (only its claims about what a template, a seed, Build or the code does; its backlog items are plans, not facts)',
+  },
   {
     key: 'docs-design',
     where: 'docs/claude-design.md and docs/superpowers/specs/*.md (the region-frame design, 2026-10-22, is the one that states measured template facts; the others are designs, so take only their claims about what the templates or Build do)',

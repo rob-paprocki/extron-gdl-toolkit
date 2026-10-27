@@ -54,6 +54,49 @@ def spec(path=PANEL, **over):
     return d
 
 
+class TestAPopupGroupNeedsOneToClone(unittest.TestCase):
+    """Register-GdlPopupGroup makes a group by cloning one of the registry's,
+    and the 320 and 300M seeds and one client fixture have none: a grouped
+    standard popup on them stopped at the apply step."""
+
+    def _spec(self, group):
+        return {'name': 'T', 'model': 'TLP300M', 'size': [480, 320], 'theme': {'text': '#FFFFFF'},
+                'popups': [{'name': 'Source', 'size': [200, 100], 'controls': [], **({'group': group} if group else {})}],
+                'pages': [{'name': 'P', 'number': 1000, 'controls': []}]}
+
+    def _donor(self):
+        donor = seed('Afterburn 300M Landscape.gdl')
+        if not usable(donor):
+            self.skipTest('seeds/Afterburn 300M Landscape.gdl is not pulled from Git LFS here')
+        return donor
+
+    def test_a_grouped_standard_popup_is_refused_on_a_donor_with_no_group(self):
+        donor = self._donor()
+        self.assertEqual(Project.open(donor).popup_group_count(), 0)
+        said = [m for m in Panel(self._spec('Sources')).check_donor(donor) if 'popup group' in m]
+        self.assertEqual(len(said), 1, said)
+        self.assertIn("'Sources'", said[0])
+        self.assertIn('Source', said[0])
+
+    def test_a_popup_in_no_group_is_not(self):
+        said = [m for m in Panel(self._spec(None)).check_donor(self._donor()) if 'popup group' in m]
+        self.assertEqual(said, [])
+
+    def test_a_donor_with_a_group_is_not_refused(self):
+        donor = seed('Afterburn 1035.gdl')
+        if not usable(donor):
+            self.skipTest('seeds/Afterburn 1035.gdl is not pulled from Git LFS here')
+        self.assertGreater(Project.open(donor).popup_group_count(), 0)
+        spec = self._spec('Sources')
+        spec.update(model='TLP1035T', size=[1280, 800])
+        self.assertEqual([m for m in Panel(spec).check_donor(donor) if 'popup group' in m], [])
+
+    def test_the_applier_says_why_it_cannot_make_one(self):
+        guard = open(os.path.join(ROOT, 'powershell', 'GdlProject.ps1'), encoding='utf-8').read()
+        body = guard.split('function Register-GdlPopupGroup', 1)[1].split('\nfunction ', 1)[0]
+        self.assertLess(body.index('$groups.Count -eq 0'), body.index('Copy-GdlObject $groups[0]'))
+
+
 class TestTheWorkedExampleStillFits(unittest.TestCase):
     """The regression guard. Every gate below must leave this clean. Its donor is a
     seed: the client's project, which it used to be, is not in the public copy."""
@@ -472,8 +515,8 @@ class TestFontResources(unittest.TestCase):
             def __init__(self, names):
                 self.names = names
 
-            def _resource_names(self, cls):
-                return set(self.names) if cls == 'PBFontResource' else set()
+            def _font_resources(self):
+                return [(n, None) for n in self.names]
 
         got = Named(['Arial Black Regular Bold Italic',
                      'Open Sans Light Regular Bold Italic',
@@ -483,6 +526,27 @@ class TestFontResources(unittest.TestCase):
                      'Open Sans Bold']).font_resource_names()
         self.assertEqual(got, {'Arial Black', 'Open Sans Light', 'Open Sans',
                                'Segoe UI Semibold', 'FluentSystemIcons-Regular'})
+
+    def test_a_family_whose_own_name_ends_in_a_style_word_is_read_by_its_family_field(self):
+        """Arial Rounded MT Bold is one family: its resource is 'Arial Rounded
+        MT Bold Regular Bold Italic', and stripping every trailing style word
+        read it as Arial Rounded MT, so a spec asking for the real name was
+        refused as missing and one asking for the stripped name was let through
+        into the donor's face. The resource's own family field is the family;
+        the stripping, case-insensitive like the applier's, is for a resource
+        that records none."""
+        class Named(Project):
+            def __init__(self, rows):
+                self.rows = rows
+
+            def _font_resources(self):
+                return self.rows
+
+        got = Named([('Arial Rounded MT Bold Regular Bold Italic', 'Arial Rounded MT Bold'),
+                     ('Arial Regular Bold Italic', 'Arial'),
+                     ('Georgia Italic Regular Bold Italic', 'Georgia Italic'),
+                     ('Calibri regular bold italic', None)]).font_resource_names()
+        self.assertEqual(got, {'Arial Rounded MT Bold', 'Arial', 'Georgia Italic', 'Calibri'})
 
     @needs_client(MAIN_CLIENT, 'client-boardroom-1.1.0.gdl')
     def test_a_face_the_donor_defines_is_not_reported_missing(self):

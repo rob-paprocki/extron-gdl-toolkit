@@ -1,0 +1,144 @@
+{
+ "name": "Probe Horizontal Slider",
+ "model": "TLP1035T",
+ "size": [
+  1280,
+  800
+ ],
+ "_seed": "seeds/Shockwave 1035.gdl",
+ "_why": "One horizontal slider with Shockwave's non-square thumb (52 across, 34 along) lying right and left, a short one with a smaller thumb, and the vertical slider the template draws as the control. examples/probes-128/README.md says how the build is read.",
+ "theme": {
+  "alert": "#75063C",
+  "caution": "#946E06",
+  "clock": "#C0C0C0",
+  "go": "#355424",
+  "ink": "#000000",
+  "page": "#3B2F2A",
+  "pressed": "#3CFFFFFF",
+  "raised": "#999999",
+  "text": "#FFFFFF",
+  "text-secondary": "#474747",
+  "well": "#26FFFFFF",
+  "font": "Open Sans"
+ },
+ "_template_colors": [
+  "#000000",
+  "#26FFFFFF",
+  "#355424",
+  "#3B2F2A",
+  "#3CFFFFFF",
+  "#474747",
+  "#73000000",
+  "#75063C",
+  "#946E06",
+  "#999999",
+  "#A6000000",
+  "#C0C0C0",
+  "#FF3B2F2A",
+  "#FF999999",
+  "#FFFFFF",
+  "#FFFFFFFF"
+ ],
+ "images": {
+  "156x1026_sw_fill.png": "Shockwave/Slider/156x1026_sw_fill.png",
+  "156x1026_sw_track_bg.png": "Shockwave/Slider/156x1026_sw_track_bg.png",
+  "156x102_sw_thumb.png": "Shockwave/Slider/156x102_sw_thumb.png"
+ },
+ "pages": [
+  {
+   "name": "Slider Probe",
+   "number": 1000,
+   "background": "page",
+   "does": "Probe page: sliders only.",
+   "controls": [
+    {
+     "kind": "slider",
+     "name": "H Right 700",
+     "rect": [
+      60,
+      120,
+      700,
+      53
+     ],
+     "fill": "ink",
+     "border": "rounded",
+     "orientation": "right",
+     "track": 52,
+     "thumb": 52,
+     "thumb_height": 34,
+     "does": "Probe: H Right 700.",
+     "thumb_image": "156x102_sw_thumb.png",
+     "track_image": "156x1026_sw_track_bg.png",
+     "fill_image": "156x1026_sw_fill.png",
+     "id": 8101
+    },
+    {
+     "kind": "slider",
+     "name": "H Left 500",
+     "rect": [
+      60,
+      240,
+      500,
+      53
+     ],
+     "fill": "ink",
+     "border": "rounded",
+     "orientation": "left",
+     "track": 52,
+     "thumb": 52,
+     "thumb_height": 34,
+     "does": "Probe: H Left 500.",
+     "thumb_image": "156x102_sw_thumb.png",
+     "track_image": "156x1026_sw_track_bg.png",
+     "fill_image": "156x1026_sw_fill.png",
+     "id": 8102
+    },
+    {
+     "kind": "slider",
+     "name": "H Right 600 small",
+     "rect": [
+      60,
+      360,
+      600,
+      53
+     ],
+     "fill": "ink",
+     "border": "rounded",
+     "orientation": "right",
+     "track": 40,
+     "thumb": 40,
+     "thumb_height": 26,
+     "does": "Probe: H Right 600 small.",
+     "thumb_image": "156x102_sw_thumb.png",
+     "track_image": "156x1026_sw_track_bg.png",
+     "fill_image": "156x1026_sw_fill.png",
+     "id": 8103
+    },
+    {
+     "kind": "slider",
+     "name": "V Up 400",
+     "rect": [
+      900,
+      100,
+      53,
+      400
+     ],
+     "fill": "ink",
+     "border": "rounded",
+     "orientation": "up",
+     "track": 52,
+     "thumb": 52,
+     "thumb_height": 34,
+     "does": "Probe: V Up 400.",
+     "thumb_image": "156x102_sw_thumb.png",
+     "track_image": "156x1026_sw_track_bg.png",
+     "fill_image": "156x1026_sw_fill.png",
+     "id": 8104
+    }
+   ]
+  }
+ ],
+ "popups": [],
+ "start_page": "Slider Probe",
+ "family": "Shockwave"
+}

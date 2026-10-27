@@ -26,7 +26,7 @@ PT = 1.375           # 99 DPI, per the glyph-outline measurements
 # face is embedded under, and where. One table, in gdl/fonts.py: a spec reads
 # its icons' glyph names from the same files without Pillow. FONTDIR is bound
 # here too, so a test can point the renderer elsewhere.
-from .fonts import ALIASES, FILES, FONTDIR, seed_face  # noqa: E402
+from .fonts import ALIASES, FILES, FONTDIR, face_path, seed_face  # noqa: E402
 # Fallback only. Arial and Arial Black ARE embedded in the .gdl - every fixture
 # and every Extron template carries Monotype Arial 5.10 and Arial Black 5.06 -
 # so `python -m gdl.fonts` puts them in FONTDIR and this list is never reached.
@@ -42,14 +42,21 @@ SYSFONTS = (
 WINFONTS = SYSFONTS[0]          # kept: referenced by name elsewhere
 _cache = {}
 _sysindex = None
-# Every face drawn in a stand-in - neither its own recovered file nor, for an
-# icon face, its seed's - for a caller to say so: on a checkout that never ran
+# Every face drawn in a stand-in - neither its own recovered file nor a seed's
+# (gdl.fonts.seed_face) - for a caller to say so: on a checkout that never ran
 # `python -m gdl.fonts`, every face falls back
 # to the host's Arial and the render baseline scores 2.81% for 2.19% - silently,
 # since a fallback is not an error - and after a partial recovery each missing
 # face draws in the recovered Arial instead. tests/score.py refuses to record
 # over one.
 FALLBACKS = set()
+# Every face read out of a seed because no file of it is recovered here
+# (gdl.fonts.seed_face), as '<face> from <seed>'. Right for a preview, which
+# has nothing better; wrong for the render baseline, which is scored in the
+# faces the fixtures embed - a seed's Arial Black is Windows', not their
+# Monotype 5.06 - and would then score by which seeds are pulled.
+# tests/score.py refuses to record over one, as over a stand-in.
+FROM_SEED = set()
 
 
 def _system_fonts():
@@ -151,21 +158,27 @@ def face(name, bold, italic, px):
     primary = FILES.get((name, bold, italic)) or FILES.get((name, 0, 0))
     own = [c for c in [primary] + ALIASES.get(primary or '', []) if c]
     candidates = own + [c for c in ['arial.ttf'] if c not in own]
-    for fn in candidates:
-        if fn not in own:
-            # Before anything stands in: an icon face no recovery put here,
-            # read straight out of its family's seed. Recovering a Mach or
-            # Shockwave seed would replace the Monotype Arial here with theirs.
-            data = seed_face(name)[0]
-            if data:
-                f = _cache[key] = ImageFont.truetype(io.BytesIO(data), size=px)
-                return f
+    for fn in own:
         p = os.path.join(FONTDIR, fn)
         if os.path.exists(p):
-            if fn not in own:
-                FALLBACKS.add(f'{name} as {fn}')
             f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
+    if not face_path(name, fontdir=FONTDIR):
+        # Before anything stands in: a face no recovery put here, read
+        # straight out of a seed that carries it - an icon face out of its
+        # family's, Roboto out of a Shockwave seed. Recovering a Mach or
+        # Shockwave seed would replace the Monotype Arial here with theirs.
+        # Only when no file of the family is here: Arial's bold has none
+        # anywhere, and parsing a seed for the Arial already here is seconds.
+        data, seed = seed_face(name)
+        if data:
+            FROM_SEED.add(f'{name} from {seed}')
+            f = _cache[key] = ImageFont.truetype(io.BytesIO(data), size=px)
+            return f
+    if 'arial.ttf' not in own and os.path.exists(os.path.join(FONTDIR, 'arial.ttf')):
+        FALLBACKS.add(f'{name} as arial.ttf')
+        f = _cache[key] = ImageFont.truetype(os.path.join(FONTDIR, 'arial.ttf'), size=px)
+        return f
     index = _system_fonts()
     for fn in candidates:
         p = index.get(fn.lower())

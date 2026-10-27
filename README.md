@@ -37,7 +37,7 @@ together.
 | `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
 | `gdl/edit.py` | change vocabulary for an existing panel: rename, restyle, states, retarget, renumber |
 | `gdl/idmap.py` | the ID map a programmer works from: every addressable control, where it is, what it does |
-| `gdl/designsys/` | an Extron template as a Design System artifact: its profile, the components every template shares, and the region components (Header, LeftRail, Section, RightRail, Footer, Center) of the templates that draw their bars as controls; and in `truth/`, each theme's ledger of what its profile once said that its template does not do, which `python -m gdl.designsys audit <theme>` checks |
+| `gdl/designsys/` | an Extron template as a Design System artifact: its profile, the components every template shares, and the region components (Header, LeftRail, Section, RightRail, Footer, Center), which draw each template's working page from its measured frames - Mach's, Shockwave's and Turbulence's bars as controls, Afterburn's round its squircle art; and in `truth/`, each theme's ledger of what its profile once said that its template does not do, which `python -m gdl.designsys audit <theme>` checks |
 | `gdl/design.py` | turns a Design canvas into a spec for each panel it lists, laying it out in headless Chrome with the canvas's own runtime, pinned in `gdl/dc_runtime.json` |
 | `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
 | `gdl/templates.py` | Extron's series templates, from GUI Designer's own table: which template a model takes |
@@ -50,13 +50,14 @@ together.
 | `powershell/New-GdlTurnedSeed.ps1` | a seed for a panel turned where its theme draws no template that way up: its own seed turned, built and verified |
 | `powershell/Get-GdlPlatforms.ps1` | every panel GUI Designer builds for, from its own assemblies: resolution, DPI, part number and the resolutions it runs at |
 | `viewer/` | builds a single-file HTML browser for every page and popup |
-| `tests/score.py` | scores the render against ground truth and fails on any regression |
+| `tests/score.py` | scores the render against ground truth and fails on any regression; `preview` scores a spec's preview against the panel built from it |
 | `tests/compare_snapshots.py` | the same comparison, printed per page |
 | `tests/verify_built.py` | diffs a built `layout.json` against the plan that produced it |
 | `tests/verify_idmap.py` | checks an ID map's page names and control IDs against the built panel |
 | `tests/verify_seed.py` | checks a seed is a themed project of its theme for its model, made from that model's series template, not a blank or the wrong panel |
 | `tests/type_probe.py` | measures how many pixels a point is on a panel, off captions Build bakes |
 | `examples/` | worked spec, edit set and authoring script, all of which run |
+| `examples/probes-128/` | the format probes of backlog package 2.1 - inputs, one runner for the Windows host, and the reader of what it leaves |
 | `SKILL.md` | the repeatable procedure. Start here to build or modify a panel |
 | `.claude/skills/extron-panel/` | registers `SKILL.md` as a Claude Code skill, so asking for a panel in this repo finds it |
 | `docs/gdl-format.md` | the format writeup. Read this first |
@@ -110,7 +111,9 @@ Then, from the repo root:
    any Design canvas with Claude Code's Artifact tool, or - in the private
    archive repository only - its copy under `archive/dc-runtime/`. It must be
    one `gdl/dc_runtime.json` pins
-   (`docs/claude-design.md` §5). Without it the Chrome tests skip.
+   (`docs/claude-design.md` §5). Without it the Chrome tests skip. Where Chrome
+   cannot make its sandbox (a root shell, a container), set
+   `GDL_CHROME_NO_SANDBOX=1`; unset, the sandbox stays on.
 6. `python -m pytest`, then `python tests/audit_corpus.py`. Any FAIL the audit
    reports should already be an open item in `docs/ROADMAP.md`. Before
    publishing a theme's design system, `python -m gdl.designsys audit <theme>`
@@ -162,8 +165,7 @@ Write the change as JSON, resolve it against the real project, then apply it.
 Five operations: `rename` captions and `restyle` colors, both state by state;
 `states` to add, remove or rename a button's states; `retarget` to another
 panel model, or the other way up for a panel that rotates, with optional
-rescaling; and `renumber` addressable IDs (planned and checked, never yet
-built). Selectors
+rescaling; and `renumber` addressable IDs. Selectors
 are ANDed and match exactly or by regex. `docs/editing.md` has the detail.
 
 ```bash
@@ -261,10 +263,12 @@ what the residual is. Known gaps, and everything left to do, are in
 
 ## Fonts
 
-The renderer resolves faces from `gdl/fonts/`, then an icon face from its
-family's seed, before the system font path. A face it cannot find in any draws
-in a stand-in - the host's copy, or Arial - and
-`tests/score.py record` refuses to score over one; a face found nowhere raises.
+The renderer resolves faces from `gdl/fonts/`, then a family with no file
+there from the seed that carries it, before the system font path. A face it
+cannot find in any draws in a stand-in - the host's copy, or Arial - and
+`tests/score.py record` refuses to score over one, or over a face read from a
+seed, which is another build than the fixtures embed; a face found nowhere
+raises.
 `gdl/fonts/README.md` has which faces are tracked and why, how the rest are
 recovered from the fixtures, and which projects declare faces they do not embed.
 

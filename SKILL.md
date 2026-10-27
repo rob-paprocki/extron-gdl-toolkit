@@ -39,10 +39,25 @@ programmer already has is translated with `--previous <that map>` and built
 with `-Previous`, so every ID the program uses is kept and `changes.md` says
 what changed (`docs/idmap.md` §9).
 
+A canvas draws a bar panel's working page as **region pages** - Header,
+LeftRail, RightRail, Footer and Center - and says what a page or popup is for
+with a `role`: `source` and `dialer` popups; `call` and `select` pages;
+`help` and `settings` windows; `confirm` windows by `topic` (`power`, `call`),
+and waits (`up`, `down`). Their grammar, per template, is `docs/claude-design.md`
+§3 and §4; read it before drawing or translating one, not from here.
+
+`New-GdlPanels.ps1` builds and verifies every panel and writes the one ID map;
+it needs a **Windows host with GUI Designer installed** (`CLAUDE.md`
+*Environment*), so on any other machine stop at the translated specs and
+`gdl.spec` / `gdl.design` checks and say the build is waiting for one.
+
 Before a canvas is built, run its **critique loop** - translate, `python -m
 gdl.design compare <canvas dir> --template <out dir>`, fix on the canvas, and
 again until nothing differs that the README's *Differences* does not list
-(`docs/claude-design.md` §1, step 3).
+(`docs/claude-design.md` §1, step 3). That is the critique, before the build.
+The **sign-off** is after it: `python -m gdl.design compare <canvas dir>
+<out dir or panel.gdl> <signoff dir>` puts each artboard beside the page Build
+made from it (`docs/claude-design.md` §1, *Build*). Neither replaces `tests/verify_built.py`.
 
 ### A. Generate a panel from a description
 
@@ -254,7 +269,7 @@ the real project, then apply:
    `rename` (captions), `restyle` (color remap), `states` (add, remove or
    rename a button's states), `retarget` (another panel model, or the other
    way up for one that rotates, optionally rescaling), `renumber` (addressable
-   `userId`s; planned and checked, never yet built). Selectors are ANDed and
+   `userId`s). Selectors are ANDed and
    support exact or regex match on name and caption.
 2. **Check it**: `python -m gdl.edit check <edits.json> <panel.gdl>`. Every
    selector resolves against the real file, so "matched nothing" is an error

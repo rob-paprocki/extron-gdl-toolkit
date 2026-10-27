@@ -15,16 +15,15 @@ where it was put, and captioned as asked.
 Exits non-zero on any mismatch, so it can gate an authoring run the way
 tests/score.py gates a render change.
 
-Two things it deliberately does NOT treat as failures:
+One thing it deliberately does NOT treat as a failure: Build's own popup
+references on a page. Build adds one full-canvas PBPopupPageReference per MODAL
+popup in the project, to every page, so every generated page comes back with one
+per modal the spec names - and one per donor modal too, where the spec keeps the
+donor's pages. Nobody authored them; that is Build doing its job.
 
-  * Build's own popup references on a page. Build adds one full-canvas
-    PBPopupPageReference per MODAL popup in the project, to every page, so
-    every generated page comes back with one per modal the spec names - and
-    one per donor modal too, where the spec keeps the donor's pages. Nobody
-    authored them; that is Build doing its job.
-  * a popup page larger than the spec's size. A popup inherits its displayed
-    dimensions from the reference that shows it; the page's own size only has
-    to be big enough to hold the controls.
+A popup's size is not exempt: it is the popup's own, authored, and not taken
+from the reference that shows it (docs/gdl-format.md section 5), so
+check_popup_size holds it to the plan's.
 """
 import collections
 import io
@@ -533,7 +532,12 @@ def check_thumbs(plan_items, table, assets, kind):
     donor's: an Afterburn slider built under the medium-blue scheme came back
     with the seed's scheme-1 periwinkle thumb while every field that names a
     color read right. Build draws the thumb as its own asset,
-    SliderIndicatorImageID, so that is what is compared.
+    SliderIndicatorImageID, so that is what is compared - the kit art
+    stretched into it, unturned whichever way the slider lies. On every
+    seed's sliders, stretched is 0% off their thumbs bar the Shockwave 725's
+    4.4%, and fitted up to 38%: the Afterburn 1035 Portrait's 31 px sliders
+    built their square thumb 30x50. The format probe's horizontal Shockwave
+    thumbs, 34x52 from the 156x102 art: 0% stretched, 58% fitted, 25% turned.
     """
     problems, checked = [], 0
     for item in plan_items:
@@ -558,7 +562,7 @@ def check_thumbs(plan_items, table, assets, kind):
                 problems += _gone(where, img)
                 continue
             w, h = Image.open(io.BytesIO(assets[tid])).size
-            off = image_mismatch(img['file'], assets[tid], w, h)
+            off = image_mismatch(img['file'], assets[tid], w, h, draw=stretch_image)
             if off > IMAGE_OFF:
                 problems.append(f"{where}: {off:.0%} of it differs from the planned "
                                 f"{img['name']!r} - it is not that image")
@@ -604,14 +608,15 @@ def check_rails(plan_items, table, assets, kind):
                     problems += _gone(where, img)
                     continue
                 w, h = Image.open(io.BytesIO(assets[tid])).size
-                vertical = c.get('Orientation') in (2, 3)   # up, down
+                orientation = c.get('Orientation')
+                vertical = orientation in (2, 3)   # up, down
                 thumb = c.get('SliderIndicatorHeight' if vertical else 'SliderIndicatorWidth')
                 # Full is the fill over the track.
                 under = (op.get('track_image') or {}).get('file') if part == 'fill' else None
                 under = under if under and os.path.exists(under) else None
 
                 def draw(file, w, h, tw=c.get('SliderTrackWidth'), thumb=thumb, under=under):
-                    return rail_image(file, w, h, tw, thumb, vertical, under)
+                    return rail_image(file, w, h, tw, thumb, orientation, under)
 
                 off = image_mismatch(img['file'], assets[tid], w, h, draw=draw)
                 if off > IMAGE_OFF:
@@ -731,25 +736,42 @@ def stretch_image(file, w, h):
     return Image.open(file).convert('RGBA').resize((w, h), Image.Resampling.LANCZOS)
 
 
-def rail_image(file, w, h, track, thumb, vertical, under=None):
-    """`file` as Build draws a slider's rail into a w x h control: stretched
-    into a box the track's width across and the slider's length less the thumb
-    along, centered - inset half the thumb at each end, where the thumb's
-    center stops - and cut to the control where the track is wider than it:
-    the Shockwave 720's 47 px slider with a 52 px track built its rail 52 wide. The full
-    asset is the fill drawn over the track (`under`). Measured on the seeds'
-    own built sliders against their kit files: every Turbulence, Mach and
-    Shockwave rail 0% off so; drawn alone, Shockwave's fill 6-9%, its track's
-    rim showing round it. Drawn the whole length instead, Turbulence's 10 px
-    stripes all land elsewhere and its own rails read 48-54%; fitted as a
-    button's image is, a narrow bar is a few pixels off along its whole
-    length. Only vertical sliders were measured; a horizontal one is assumed
-    to mirror them."""
+# A rail's kit art is drawn standing up. Build turns it to lie as the slider
+# does, its top at the full end: a quarter turn clockwise lying right (0),
+# anticlockwise lying left (1). The format probe's Shockwave sliders, against
+# their built rails: turned so, under a level off on average; turned the other
+# way, 2.3 to 8.6 times that, which the 25% gate cannot tell apart on
+# Shockwave's near-symmetric rail; laid on its side unturned, 45 to 82% off.
+# Down (3) was never built and is drawn as up is.
+RAIL_TURN = {0: Image.Transpose.ROTATE_270, 1: Image.Transpose.ROTATE_90}
+
+
+def rail_image(file, w, h, track, thumb, orientation, under=None):
+    """`file` as Build draws a slider's rail into a w x h control lying
+    `orientation` (layout.json's: 0 right, 1 left, 2 up, 3 down): turned to
+    lie as the slider does (RAIL_TURN), stretched into a box the track's width
+    across and the slider's length less the thumb along, centered - inset
+    half the thumb at each end, where the thumb's center stops - and cut to
+    the control where the track is wider than it: the Shockwave 720's 47 px
+    slider with a 52 px track built its rail 52 wide. The full asset is the
+    fill drawn over the track (`under`). Measured on the seeds' own built
+    sliders against their kit files, all standing up: every Turbulence, Mach
+    and Shockwave rail 0% off so; drawn alone, Shockwave's fill 6-9%, its
+    track's rim showing round it. Drawn the whole length instead,
+    Turbulence's 10 px stripes all land elsewhere and its own rails read
+    48-54%; fitted as a button's image is, a narrow bar is a few pixels off
+    along its whole length. Lying down, on the format probe's build
+    (tests/data/probe-hslider-128): the same inset and centring across the
+    turned art, every crop of its rails 0% off."""
+    vertical = orientation in (2, 3)
     across, along = (w, h) if vertical else (h, w)
     track = max(1, track or across)
     length = max(1, along - (thumb or 0))
-    out = rail_image(under, w, h, track, thumb, vertical) if under else Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    im = stretch_image(file, *((track, length) if vertical else (length, track)))
+    out = rail_image(under, w, h, track, thumb, orientation) if under else Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    im = Image.open(file).convert('RGBA')
+    if orientation in RAIL_TURN:
+        im = im.transpose(RAIL_TURN[orientation])
+    im = im.resize((track, length) if vertical else (length, track), Image.Resampling.LANCZOS)
     at = (across - track) // 2
     if at < 0:
         im = im.crop((-at, 0, -at + across, length) if vertical else (0, -at, length, -at + across))
@@ -1150,14 +1172,213 @@ def _edit_text_color(where, got, want):
     return None
 
 
-def check_edit_states(op, c, label, assets):
+# A formatted caption is baked into its state's art and layout.json reads it
+# back as '', so it is looked for in the art: each line, drawn by gdl.compose in
+# the state's face, where it fits best. A line's score is the lower of two
+# shares - of its ink within 1 px of text-colored art, and of the text-colored
+# art in its box, widened half an em a side, within 1 px of its ink - so a
+# word inside a longer one ('Camera' in 'Cameras') does not pass. Measured on
+# the client fixture's formatted captions of words, 22 states of 11 controls:
+# each scores 0.93 or more in its own art; of every other caption and some near
+# words in each, none scores over 0.89 but 'Camera' in Device / Comms, at 0.93.
+# The run of text a line lands in sets most others apart by its width - the
+# captions' own land within 3 px of theirs, another word mostly 4 to 100 px off
+# - but not that one, nor a word one letter off: the art cannot spell, so the
+# words are read off the built project (built_ftexts) and the art is asked only
+# where each line is. One face at one size is all the ground truth there is,
+# so a line between the two scores in a run its own width is not verifiable.
+CAPTION_FOUND = 0.93
+CAPTION_GONE = 0.85
+# Within this many pixels of the line's own width, the run of text it lands in
+# is that line - the fixture's own captions land within -3 to +1.
+CAPTION_WIDTH = 3
+# A pixel within this much of the caption's color, channel by channel, is text.
+CAPTION_TOLERANCE = 64
+
+
+def _caption_mask(art, color):
+    """The art's text-colored pixels: 255 where every channel is within
+    CAPTION_TOLERANCE of `color` and the art is not transparent."""
+    bands = [ch.point(lambda v, t=t: 255 if abs(v - t) <= CAPTION_TOLERANCE else 0)
+             for ch, t in zip(art.convert('RGB').split(), color[:3])]
+    m = ImageChops.multiply(ImageChops.multiply(bands[0], bands[1]), bands[2])
+    return ImageChops.multiply(m, art.getchannel('A').point(lambda v: 255 if v else 0))
+
+
+def _line_ink(line, fnt):
+    """`line` as gdl.compose draws it, its fractional advances included, cut to
+    its ink: 255 where a glyph covers more than half a pixel."""
+    from PIL import ImageDraw
+    from gdl import compose
+    asc, desc = compose.metrics(fnt)
+    im = Image.new('L', (int(compose.measure(line, fnt)) + 4, int(asc + desc) + 4), 0)
+    d = ImageDraw.Draw(im)
+    adv, x = compose.advances(fnt), 1.0
+    for ch in line:
+        d.text((x, 1 + asc), ch, font=fnt, fill=255, anchor='ls')
+        x += adv.advance(ch, fnt.size) if adv else d.textlength(ch, font=fnt)
+    ink = im.point(lambda v: 255 if v > 128 else 0)
+    box = ink.getbbox()
+    return ink.crop(box) if box else None
+
+
+def _find_line(text, line, fnt):
+    """(score, (x, y), width) of `line` where it best fits the art's text mask
+    `text`: `width` the run of text it lands in, letters and the gaps between
+    words joined, gaps of half an em and more not."""
+    from PIL import ImageFilter
+    ink = _line_ink(line, fnt)
+    if ink is None:
+        return 1.0, (0, 0), 0
+    near = text.filter(ImageFilter.MaxFilter(3))
+    fat = ink.filter(ImageFilter.MaxFilter(3))
+    n = ink.histogram()[255]
+    pad = max(1, round(fnt.size / 2))
+    best, at = 0.0, None
+    for y in range(-1, text.height - ink.height + 2):
+        for x in range(-1, text.width - ink.width + 2):
+            box = (x, y, x + ink.width, y + ink.height)
+            found = ImageChops.multiply(near.crop(box), ink).histogram()[255]
+            if found <= best * n:
+                continue
+            around = text.crop((x - pad, y - 2, x + ink.width + pad, y + ink.height + 2))
+            mine = Image.new('L', around.size, 0)
+            mine.paste(fat, (pad, 2))
+            told = ImageChops.multiply(around, mine).histogram()[255]
+            score = min(found / n, told / max(1, around.histogram()[255]))
+            if score > best:
+                best, at = score, (x, y)
+    if at is None:
+        return 0.0, (0, 0), 0
+    band = text.crop((0, at[1], text.width, at[1] + ink.height))
+    cols = [any(band.getpixel((c, r)) for r in range(band.height)) for c in range(band.width)]
+    inked = [c for c in range(max(0, at[0]), min(text.width, at[0] + ink.width)) if cols[c]]
+    if not inked:
+        return best, at, 0
+    lo, hi = inked[0], inked[-1]
+    while any(cols[c] for c in range(max(0, lo - pad), lo)):
+        lo = next(c for c in range(lo - 1, max(-1, lo - pad - 1), -1) if cols[c])
+    while any(cols[c] for c in range(hi + 1, min(text.width, hi + 1 + pad))):
+        hi = next(c for c in range(hi + 1, min(text.width, hi + 1 + pad)) if cols[c])
+    return best, at, hi - lo + 1 - ink.width
+
+
+def _plurality(art):
+    """The commonest color of the art's opaque pixels, or None."""
+    colors = [(n, c[:3]) for n, c in art.getcolors(art.width * art.height) or () if c[3]]
+    return max(colors)[1] if colors else None
+
+
+def _icon_line(line):
+    """Whether `line` holds a private-use code point: an icon glyph (the
+    `states` op writes '\\ue94e'), which Build draws in the icon face of its
+    run, not the state's own face, so it cannot be drawn here to look for."""
+    return any(0xE000 <= ord(ch) <= 0xF8FF for ch in line)
+
+
+def check_baked_caption(where, ftext, bs, assets):
+    """(problem, note) for a formatted caption an edit wrote: each line looked
+    for in the art Build baked it into. A line found nowhere is a problem - and
+    one whose words are found on two lines wrapped, which a formatted caption
+    does onto a line its tabs do not indent (docs/editing.md). A face drawn in
+    a stand-in, a fill within CAPTION_TOLERANCE of the text color, a line
+    holding an icon glyph, or a score between CAPTION_GONE and CAPTION_FOUND,
+    is a note: not verifiable here."""
+    from gdl import compose
+    tid = bs.get('TLPImageID')
+    if tid not in assets:
+        return f'{where}: its caption is baked into the art, but it built with none (TLPImageID {tid})', None
+    f = bs.get('Font') or {}
+    style = f.get('Style') or {}
+    try:
+        fnt = compose.face(f.get('Name', 'Arial'), int(bool(style.get('Bold'))),
+                           int(bool(style.get('Italic'))), f.get('PointSize', 12) * compose.PT)
+    except LookupError:
+        # No file for the face here at all (gdl/fonts/ not recovered): the
+        # caption cannot be drawn to look for, which says nothing of the build.
+        return None, f"{where} -> {ftext!r}: its face {f.get('Name')!r} has no file here, so it is not verifiable"
+    # By the face's own entry, not by what this call added: a face is cached,
+    # so only its first caption in a run would add one.
+    if any(e.split(' as ', 1)[0] == f.get('Name', 'Arial') for e in compose.FALLBACKS):
+        return None, f"{where} -> {ftext!r}: its face {f.get('Name')!r} is drawn in a stand-in here"
+    color = _rgb_of(bs.get('TextColor'))
+    art = Image.open(io.BytesIO(assets[tid])).convert('RGBA')
+    ground = _plurality(art)
+    if ground and all(abs(a - b) <= CAPTION_TOLERANCE for a, b in zip(ground, color)):
+        # Every pixel of such a fill is text-colored to the mask, so a caption
+        # Build baked right scores as one that is not there: white on
+        # (200, 200, 200), black on (60, 60, 60).
+        return None, (f'{where} -> {ftext!r}: its text color {_hex(color)} is within {CAPTION_TOLERANCE} a '
+                      f'channel of its art\'s {_hex(ground)}, so the art cannot tell its caption from its fill')
+    text = _caption_mask(art, color)
+    unsure, icons = [], []
+    for line in (ln.replace('\t', '').strip() for ln in ftext.split('\r\n')):
+        if not line:
+            continue
+        if _icon_line(line):
+            icons.append(line)
+            continue
+        score, _, width = _find_line(text, line, fnt)
+        if abs(width) <= CAPTION_WIDTH and score >= CAPTION_FOUND:
+            continue
+        if abs(width) <= CAPTION_WIDTH and score >= CAPTION_GONE:
+            unsure.append(f'{line!r} scores {score:.2f}')
+            continue
+        words = line.split(' ')
+        for k in range(1, len(words)):
+            head, tail = ' '.join(words[:k]), ' '.join(words[k:])
+            (s1, a1, w1), (s2, a2, w2) = _find_line(text, head, fnt), _find_line(text, tail, fnt)
+            if min(s1, s2) >= CAPTION_FOUND and max(abs(w1), abs(w2)) <= CAPTION_WIDTH and a2[1] > a1[1]:
+                return (f'{where}: {line!r} wrapped after {head!r} - a formatted caption longer '
+                        f'than its line goes on to one its tabs do not indent (docs/editing.md)'), None
+        return f'{where}: {line!r} is not in the art Build baked the caption into', None
+    said = []
+    if icons:
+        said.append(f"{', '.join(map(repr, icons))} holds an icon glyph, a private-use code point drawn in "
+                    f"its run's icon face, not {f.get('Name', 'Arial')!r}")
+    if unsure:
+        said.append(f"{', '.join(unsure)}, between {CAPTION_GONE} and {CAPTION_FOUND}")
+    return None, (f"{where} -> {ftext!r}: {'; '.join(said)}" if said else None)
+
+
+def _words(ftext):
+    """A formatted caption's words, without the tabs and line breaks that lay
+    it out."""
+    return ' '.join((ftext or '').replace('\t', ' ').replace('\r\n', ' ').split())
+
+
+def built_ftexts(built_path):
+    """{(page id, control id): [each state's formatted text, or None]} off the
+    built project - where a formatted caption's words are, since layout.json
+    reads them back as ''."""
+    P = _built_project(built_path)
+    out = {}
+    proj = next(P.instances('PBProject'), None)
+    for field in ('pagesField', 'popupPagesField') if proj is not None else ():
+        for pg in P.items(P.field(proj, field)):
+            for co in P.items(P.field(pg, 'controlsField')):
+                out[(P.field(pg, 'idField'), P.field(co, 'idField'))] = [
+                    P.deref(st.get('ftextField')) for st in P.states(co)]
+    return out
+
+
+def _rgb_of(c):
+    return (c.get('R', 255), c.get('G', 255), c.get('B', 255)) if isinstance(c, dict) else (255, 255, 255)
+
+
+def check_edit_states(op, c, label, assets, ftexts=None):
     """Each state an edit wrote, and - for the `states` op - every state.
 
     (problems, notes, unverifiable). A state is found by index, which is what
     the plan addressed and what the control program sets. Colors are read the
     way check_fills reads them: a fill off the state's own artwork, a text
-    color off the model, because the caption is drawn live.
+    color off the model, because the caption is drawn live. A formatted
+    caption's words are read off the built project, `ftexts` (built_ftexts),
+    and its lines looked for in its art (check_baked_caption), since
+    layout.json reads it back as ''; with no art given (`assets` None) it is
+    not verifiable here.
     """
+    art, assets = assets, assets or {}
     problems, notes, unverifiable = [], [], []
     built = c.get('States') or []
     fields = op.get('fields') or {}
@@ -1202,8 +1423,21 @@ def check_edit_states(op, c, label, assets):
             problems.append(f"{label} state {i}: named {bs.get('Name')!r}, the edit asked "
                             f"for {w['name']!r}")
         if 'ftext' in w:
-            # Formatted text is baked into the artwork and reads back as ''.
-            unverifiable.append(f"{where} -> {w['ftext']!r}")
+            # Formatted text is baked into the artwork and reads back as '':
+            # it is looked for in the art.
+            built_words = (ftexts or {}).get((op.get('page'), op.get('control')))
+            if built_words is not None and i < len(built_words) and \
+                    _words(built_words[i]) != _words(w['ftext']):
+                problems.append(f"{where}: its formatted caption is {_words(built_words[i])!r} in "
+                                f"the built project, the edit asked for {_words(w['ftext'])!r}")
+            elif art is None:
+                unverifiable.append(f"{where} -> {w['ftext']!r}: no art was read")
+            else:
+                p, n = check_baked_caption(where, w['ftext'], bs, art)
+                if p:
+                    problems.append(p)
+                if n:
+                    unverifiable.append(n)
         elif 'text' in w and not c.get('FlattenText') and \
                 (bs.get('Text') or '') != w['text']:
             problems.append(f"{where}: caption is {bs.get('Text')!r}, the edit asked for "
@@ -1235,7 +1469,7 @@ def check_edit_states(op, c, label, assets):
     return problems, notes, unverifiable
 
 
-def check_edits(plan, j, assets=None):
+def check_edits(plan, j, assets=None, ftexts=None):
     """An EDIT plan addresses existing controls by id, so verification is a
     direct lookup: did the field we asked for actually change?
 
@@ -1243,7 +1477,7 @@ def check_edits(plan, j, assets=None):
     that is how the plan writes them. A control's own caption, where it has no
     states, is compared with the merged caption layout.json reports.
     """
-    assets = assets or {}
+    art, assets = assets, assets or {}
     pages = {p['ID']: p for p in j['Pages'] + j['PopupPages']}
     problems, checked, unverifiable, notes = [], 0, [], []
     for op in plan['controls']:
@@ -1279,7 +1513,7 @@ def check_edits(plan, j, assets=None):
                 problems.append(p)
             if n:
                 notes.append(n)
-        p, n, u = check_edit_states(op, c, label, assets)
+        p, n, u = check_edit_states(op, c, label, art, ftexts)
         problems += p
         notes += n
         unverifiable += u
@@ -1296,10 +1530,9 @@ def check_edits(plan, j, assets=None):
                 problems.append(f"{pg['Name']!r} {c.get('Name')!r}: {key} is {c[key]}, "
                                 f'the edit asked for {want}')
     for u in unverifiable:
-        # A formatted-text caption is baked into the artwork, and layout.json
-        # reports it as '' both before and after the edit. There is nothing
-        # here to compare, so checking it would report a failure that is
-        # really a lookup in the wrong place. Say so instead.
+        # A formatted caption whose art could not settle it either way - its
+        # face a stand-in here, or a score between check_baked_caption's two:
+        # a failure would be a guess, so it is said instead.
         print(f'  NOT VERIFIABLE HERE (caption is baked into the artwork, '
               f'compare the asset PNG): {u}')
     for n in notes:
@@ -1437,6 +1670,28 @@ def check_modal(plan, j):
                        for c in built.get('Controls') or []):
                 out.append(f"page {pg['name']!r} has no reference to modal popup "
                            f"{pu['name']!r}, so it cannot be shown there")
+    return out
+
+
+def check_popup_size(plan, j):
+    """Did each popup build at the size the plan authored?
+
+    A popup's built size is its authored size in every project read (docs/
+    gdl-format.md section 5), not the reference's, so a clone that kept its
+    donor's Width and Height - which a failed write does - builds cleanly at
+    the wrong size and relocates the controls that no longer fit.
+    """
+    out = []
+    popups = {p['Name']: p for p in j.get('PopupPages') or []}
+    for pu in plan.get('popups') or []:
+        got = popups.get(pu['name'])
+        if got is None or not pu.get('size'):
+            continue                     # check_placed reports a popup that is not there
+        want = (int(pu['size'][0]), int(pu['size'][1]))
+        have = (got.get('Width'), got.get('Height'))
+        if have != want:
+            out.append(f"popup {pu['name']!r} built {have[0]}x{have[1]}, the plan authored "
+                       f'{want[0]}x{want[1]}')
     return out
 
 
@@ -1753,7 +2008,11 @@ def check(plan_path, built_path):
         plan = json.load(fh)
     j, assets = load(built_path)
     if plan.get('generated_by') == 'gdl.edit':
-        return check_edits(plan, j, assets)
+        # The built project only where a formatted caption needs its words:
+        # opening it is seconds on a large file.
+        formatted = any(ps.get('flattened') for op in plan.get('controls') or []
+                        for ps in op.get('per_state') or [])
+        return check_edits(plan, j, assets, built_ftexts(built_path) if formatted else None)
     pages = {p['Name']: p for p in j['Pages']}
     popups = {p['Name']: p for p in j['PopupPages']}
 
@@ -1801,6 +2060,7 @@ def check(plan_path, built_path):
     problems += check_start_page(plan, j)
     problems += check_only_planned(plan, j)
     problems += check_modal(plan, j)
+    problems += check_popup_size(plan, j)
 
     return problems, checked
 

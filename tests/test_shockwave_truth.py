@@ -55,7 +55,7 @@ class TestShockwavesLedger(unittest.TestCase):
         and the answers' art, the answers' IDs, and the 725's call page's
         launchers): one entry each, in order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'shockwave-{i:02d}' for i in range(44)])
+        self.assertEqual(ids, [f'shockwave-{i:02d}' for i in range(45)])
 
     def test_shockwave_is_done(self):
         self.assertEqual(audit.audit('shockwave'), [])
@@ -68,10 +68,11 @@ class TestShockwavesLedger(unittest.TestCase):
         2 mm (the PR8 review: Differences lacked the last two), and the
         incoming call's answers' IDs. The tab captions are the twin the region
         page draws, as the template does (shockwave-03); the call keys rest
-        ringed as the template's do (shockwave-38)."""
+        ringed as the template's do (shockwave-38); and the hub's Volume Level
+        strip, which a group binding shows on every page (shockwave-44)."""
         dev = {e['id']: e for e in self.ledger['entries'] if e['status'] == 'deviation'}
         self.assertEqual(sorted(dev), ['shockwave-20', 'shockwave-30', 'shockwave-31', 'shockwave-32', 'shockwave-40',
-                                     'shockwave-41', 'shockwave-42', 'shockwave-43'])
+                                     'shockwave-41', 'shockwave-42', 'shockwave-43', 'shockwave-44'])
         for e in dev.values():
             self.assertTrue(e['reason'].strip(), e['id'])
 

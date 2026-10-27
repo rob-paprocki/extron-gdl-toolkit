@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Doc Cam</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#242634}
+</style>
+</helmet>
+<div style="width: 880px; height: 525px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="DocCam" kind="popup" group="Sources" role="source" title="Document Camera" panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate" style="position: absolute; left: 0px; top: 0px; width: 880px; height: 525px">
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="Zoom Heading" align="center" style="position: absolute; left: 260px; top: 120px; width: 160px; height: 40px">ZOOM</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Doc Cam Zoom In" does="Zoom: In." style="position: absolute; left: 260px; top: 180px; width: 160px; height: 64px">In</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Doc Cam Zoom Out" does="Zoom: Out." style="position: absolute; left: 260px; top: 285px; width: 160px; height: 64px">Out</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Label" name="Focus Heading" align="center" style="position: absolute; left: 480px; top: 120px; width: 160px; height: 40px">FOCUS</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Doc Cam Focus Far" does="Focus: Far." style="position: absolute; left: 480px; top: 180px; width: 160px; height: 64px">Far</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Doc Cam Focus Near" does="Focus: Near." style="position: absolute; left: 480px; top: 285px; width: 160px; height: 64px">Near</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Doc Cam Focus Auto" does="Focus: Auto." style="position: absolute; left: 480px; top: 390px; width: 160px; height: 64px">Auto</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":525}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

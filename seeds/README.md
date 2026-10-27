@@ -194,7 +194,8 @@ seed is its default seed turned, by `New-GdlTurnedSeed.ps1` (above). Only the
 1035M has one: the 835M's is one run away, and the 520M's, 521M's and 535M's
 need their own seed made first - `gdl.seeds pick` prints both lines.
 
-ECP is complete: all three themes at both presets that can be themed. Its other
+ECP is complete: all three themes at both presets that can be themed, and a
+spec can target either (`spec.sizes('VTLPEcp')` is 1920x1080 and 1280x800). Its other
 five presets (iPhone, Android Phone, iPad, Android Tablet, Custom) are Blank-only
 and so cannot produce a useful donor — a blank ECP project is 1 page, 1 popup and
 3 controls.

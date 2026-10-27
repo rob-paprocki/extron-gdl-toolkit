@@ -792,7 +792,8 @@ class Edits:
                     f'rename {old!r} -> {newt!r}: this caption is FORMATTED text baked '
                     f'into the artwork with hand-placed line breaks. The new text is '
                     f'longer, so it will wrap onto an unindented second line over the '
-                    f"icon. Check the rasterized asset, don't trust the model.")
+                    f"icon. tests/verify_built.py looks for each line in the built art "
+                    f"and says if it wrapped.")
 
         # After the ops, does every control still fit its page? Build relocates
         # anything that does not to 0,0 - silently, with 0 errors reported - so

@@ -455,13 +455,24 @@ class Project:
                              'thickness': self.field(info, 'thicknessField')}
         return out
 
+    def popup_group_count(self):
+        """How many popup groups the project's registry (PBProject.
+        popupPageGroupsField) holds - 0 for the 320 and 300M seeds and one
+        client fixture, and for a page library with no PBProject."""
+        proj = next(self.instances('PBProject'), None)
+        if proj is None:
+            return 0
+        return sum(1 for _ in self.items(self.field(proj, 'popupPageGroupsField')))
+
     def font_resource_names(self):
         """Every font FAMILY the project defines a resource for.
 
         GUI Designer resolves a typeface through a named `PBFontResource`, and
         the resource name carries a style suffix the spec would never write -
         `Forma DJR Display Regular Bold Italic` for the family `Forma DJR
-        Display` - so the suffix is stripped here and matching is on the family.
+        Display` - so matching is on the family each resource records
+        (`windowsFamilyNameField`), the suffix stripped only from one that
+        records none.
 
         Only Regular, Bold and Italic are styles: they are what the suffix lists,
         in every project and template read. A weight Windows reports as part of
@@ -477,9 +488,23 @@ class Project:
         seed carries the face, which `plan --donor` appends (gdl.fonts.find_face).
         """
         out = set()
-        for name in self._resource_names('PBFontResource'):
-            fam = re.sub(r'(\s+(Regular|Bold|Italic))+$', '', name).strip()
+        for name, family in self._font_resources():
+            # The family a resource records for itself where it records one: a
+            # family whose own name ends in Regular, Bold or Italic (Arial
+            # Rounded MT Bold) is not its sibling. The suffix is stripped,
+            # case-insensitively as the applier does, only where it records none.
+            fam = (family or '').strip() or re.sub(r'(\s+(Regular|Bold|Italic))+$', '', name,
+                                                    flags=re.I).strip()
             out.add(fam or name)
+        return out
+
+    def _font_resources(self):
+        """[(resource name, the family it records or None)] of every PBFontResource."""
+        out = []
+        for obj in self.instances('PBFontResource'):
+            n = self.field(obj, 'PBResource+nameField') or self.field(obj, 'nameField')
+            if n:
+                out.append((n, self.field(obj, 'windowsFamilyNameField')))
         return out
 
     def _resource_names(self, cls):

@@ -52,7 +52,7 @@ System template has that combination: every System `style = 0` record has
 So a human, working in GUI Designer's own UI, produced border resources with
 parameter combinations that ship with no template. §5 confirms the stronger
 version: a **hand-appended** resource with out-of-corpus values also survives a
-build.
+build, and rasterizes at the geometry it asks for.
 
 **The consequence that matters:** a generator that only *references* resources
 already in a donor project needs no new resource appended.
@@ -112,6 +112,14 @@ project, and every one an entry of its project's popup group registry
 (`popupPageGroupsField`): a seed's one, where it has any (`Controls`,
 `Transport1`, `inputs`, `Room Controls`), as much as the client's four or five.
 
+It makes a group by cloning one of the registry's own, so a project with none -
+the 320 and 300M seeds and one client fixture - cannot take a grouped standard
+popup: `gdl.spec donors` refuses it, and the function stops with that reason
+rather than on an index out of range. A plan problem (a control with no donor
+to clone, an op that threw, a popup binding that did not take, a start page the
+plan does not author) stops `Apply-GdlPlan.ps1` from writing the file, as
+`Apply-GdlEdits.ps1` already stopped.
+
 ## 4. The preview is the point
 
 Building is the slow step — apply, pack, open, Save and Build, verify. The
@@ -143,21 +151,25 @@ Each test project was authored **headlessly** by PowerShell, packed with
 `gdl.container pack`, then opened and built in the real application. See §7 for
 how that was driven, which is fully scriptable.
 
-The error and warning counts below were read off 1.27.0.9. `New-FormatProbes.ps1`
-was re-run on 1.28.0.7 and all three still author, open and build, each producing
-a payload; probe 2's appended resource is still in the built file afterwards (35
-border resources against the fixture's 34). The counts themselves were not
-re-read from the Build Manager, so treat "0 errors, 0 warnings" as the 1.27
-measurement and "builds and keeps the resource" as the 1.28 one.
+The error and warning counts below were read off 1.27.0.9. On 1.28.0.7 the
+format probes (`examples/probes-128/`) built all three of `New-FormatProbes.ps1`'s
+tests again from the same fixture, each with a payload: test 1's control still
+on `3D Capsule`; test 2's 35 border resources against the fixture's 34, the new
+one defined, bound and at radius 20 and thickness 1; test 4's page holding the
+clone (10 controls built to 11). 1.28 shows no count to read: its Build Manager
+is a progress bar, the phase it is in and Cancel, and closes itself when a build
+succeeds (§7). So "0 errors, 0 warnings" is the 1.27 measurement, and a payload
+that `tests/verify_built.py` holds to its plan the 1.28 one. The probes' record
+is `archive/job-e823df9b/probes-128/`.
 
 | | Question | Answer |
 |---|---|---|
 | 1 | Reference an existing but never-referenced border resource? | **YES** |
 | 2 | Append a *new* `PBBorderResource` and bind to it? | **YES** |
-| 3 | Out-of-corpus `PBBorderInfo` values? | **Builds clean** (visual check still open) |
+| 3 | Out-of-corpus `PBBorderInfo` values? | **YES** — builds, and rasterizes as asked |
 | 4 | Cross-graph `Copy-GdlObject`? | **YES** |
-| 5 | ID / name uniqueness enforcement | **NAMES yes, hard error**; duplicate ids are legal to GUI Designer (`gdl.spec` still refuses a repeat on one page) |
-| 6 | `referenceCountField` semantics | not yet tested |
+| 5 | ID / name uniqueness enforcement | **NAMES yes, hard error**; duplicate ids are legal to GUI Designer (`gdl.spec` refuses a repeat on one page but a mirror inside its control - Shockwave's tab twin, built on the 1035 and the 1535) |
+| 6 | `referenceCountField` semantics | **none the panel sees** — Build keeps it as written |
 
 **1 — referencing an unused resource works.** A `PBShape` was repointed from
 `Afterburn - 10 Radius 0 Thick` to `3D Capsule`, a System template no control in
@@ -175,6 +187,21 @@ file** — still present, still bound, verified afterwards with `gdl/project.py`
 
 This was the biggest open question and it is the more permissive answer: a
 generator is not limited to a donor's existing resources.
+
+**3 — a border no template defines rasterizes as asked.** Five resources
+appended to the Afterburn 1035 seed at radius and thickness 20/1, 40/6, 0/12,
+60/3 and 100/9 - none in the corpus - and the seed's own 10/2 beside them, each
+on a filled and stroked 360x260 panel, built and verified clean. Each stroke is
+its thickness exactly off the built artwork, and each panel differs from
+`gdl.compose`'s drawing of the same geometry on 0.0% to 3.2% of its pixels, the
+corpus's own 0.1%. What differs is the corners: Build's arc is a little rounder
+than a circle of the radius - along the diagonal its stroke starts up to 2 px
+further in than the preview's and ends up to 3 px further in at radius 100,
+1 px at the corpus's own radius 10 - so the preview's corners are slightly
+tight on a large radius (`docs/ROADMAP.md`). So `gdl.spec` building a border the donor lacks as
+its nearest (`nearest_border`) is a choice, not a safety rule: a resource
+appended at the asked geometry would build as asked, and the applier does not
+append one yet.
 
 **4 — cross-graph cloning works.** A control was cloned out of one
 independently-deserialized project into another with `Copy-GdlObject`, and the
@@ -254,6 +281,17 @@ switched-off Offline Page. The applier now drops the donor's own pages and
 popups (§5c), so a page gets one reference per modal the spec names. The
 verifier allows a full-canvas popup reference, which is what those are, and
 fails a page or popup carrying any other control its plan did not author.
+
+**6 — `referenceCountField` reaches nothing Build makes.** Three popup groups
+of 1, 3 and 5 popups, each shown by one reference, were built from a spec - the
+applier writes 2 on each - then rewritten to 46, 0 and 1 and built again. Build
+kept 2, 2 and 2 the first time and 46, 0 and 1 the second, neither the groups'
+popups nor their references, and the second panel's `layout.json` and artwork
+are the first's bar the file's name, checksum and version stamps;
+`tests/verify_built.py` held both builds to the plan with 0 problems. So the
+count is GUI Designer's own bookkeeping, kept through open, Save and Build, and
+the panel never sees it: the applier's 2 is as good as any.
+`tests/audit_corpus.py` says what the corpus holds (`docs/gdl-format.md` §9).
 
 `Project > Verify` is not the build, and `BuildProject()` cannot be called
 headlessly — `docs/gdl-format.md` §2 has both. §7 is how the real build is
@@ -538,15 +576,10 @@ person. It still needs GUI Designer running and a desktop to draw on.
 
 ## 6. Honest limits of everything above
 
-- Question 6 is untested. Control-ID uniqueness (the other half of question 5)
-  is answered: duplicate IDs are legal and draw no complaint - Extron's own
-  built seeds repeat them within a page and across pages, and
-  `examples/boardroom-full.json` mirrors its tabs under one ID on every page
-  and builds with 0 problems (§5c).
-- Test 3 is only half-answered: an out-of-corpus radius/thickness *builds*, but
-  nobody has looked at whether it *rasterizes* correctly. The control used was
-  the Offline Window, which Build legitimately leaves unrasterized, so there is
-  no artwork to inspect. Redo it against a visible control.
+- Test 3's border was measured on one theme's seed, at six geometries on
+  360x260 panels; the preview's corners on a large radius are a few pixels
+  tight (§5). The 1.28 Build Manager's readout of a *failed* build was not
+  seen: every probe build succeeded, and a clean one shows no count (§7).
 - The resource counts are from the `_alt 2_0_0` fixture, which carries 34 border
   resources; the two archived fixtures carry 36. Across Extron's 50 installed
   templates the count runs **13 to 32**, so treat it as per-project and read it,
@@ -554,10 +587,28 @@ person. It still needs GUI Designer running and a desktop to draw on.
   borders, so a radius/thickness the target project has no resource for builds
   as its nearest shape, and is refused where it has none near enough
   (`seeds/README.md`).
-- The preview's fidelity is measured against pages made of *built* artwork. A
-  page of `TLPImageID = -1` controls is exercised by exactly one control in the
-  whole corpus (the Offline Window), so the preview's accuracy on a fully
-  synthetic page is inferred from that one data point, not measured.
+- The preview's fidelity to a build is measured, not inferred. `python
+  tests/score.py preview <spec.json> <built.gdl> ...` draws each page and popup
+  of a spec as the preview does and beside it the same one from the panel built
+  from that spec, each alone. Over five panels - the borders probe in
+  `archive/job-2419a20b/borders/` (three controls on a fully synthetic
+  Afterburn 320 page) and round four's boardroom in regions on Shockwave's 1035
+  and 525 and Turbulence's 1035 and 320 (`archive/job-e823df9b/round4/`), all
+  built on GUI Designer 1.28.0.7, the four rooms on 2026-10-25 - 70 pages and
+  popups, **0.57%** of pixels differ on average, median 0.02%, worst 15.85%.
+  Nearly all of it is one thing: a level whose art the donor keeps
+  (`keep_art`) is previewed as its bare bar; with every level and slider set
+  aside, **0.21%**, median 0.01%, worst 1.39%, the rest corner geometry - a
+  border Build takes as the donor's nearest radius, a window's edge.
+  `archive/job-e823df9b/preview-score/` has the five specs, the command, the
+  order of its pairs and the scorer's output page by page; the four rooms'
+  builds are not archived. The panel draws its captions at runtime, in the
+  faces its file embeds, and the scorer draws both sides in those faces: this
+  measures the fills, borders, art and places the preview synthesises, and how
+  true its text is is the render baseline's (`CLAUDE.md` *Verifying a
+  change*). The preview alone knows no donor and draws a face as `gdl/fonts/`
+  or a seed holds it (`gdl/fonts/README.md`); every caption of these five is
+  Open Sans, which their builds embed as `gdl/fonts/` holds it.
 
 ## 7. Driving GUI Designer
 
@@ -675,7 +726,10 @@ the default is not inside the repo.
   signals are wrong. The title's trailing `*` only means unsaved changes, so a
   freshly packed file opened clean never has one, and a wait on it returns at
   once onto the stale payload. The Build Manager window appears seconds *after*
-  the click and closes about five seconds *before* the file is written, so
+  the click and closes *before* the file is written - from under a second to 35
+  seconds before in the format probes' builds, the longer the larger the
+  project, GUI Designer's *Wait...* window (*Please wait while the project is
+  being saved*) standing between until a second or two after the write - so
   trusting it truncates the payload. The file's mtime is the real signal: wait
   for it to change, then to stop changing. How long to wait is whether GUI
   Designer is busy, and neither its writes nor its CPU alone says so. Idle, and
@@ -688,6 +742,15 @@ the default is not inside the repo.
   was. A 23-page panel built for 9 to 28 minutes, and a fixed 15-minute wait
   reported a failure while GUI Designer was still building. The measurements,
   on 1.28.0.7, are in `archive/job-2419a20b/wait/`.
+- **The Build Manager has no count to read.** On 1.28 a clean build's Build
+  Manager is a progress bar, the phase it is in (*Building Platform ...*, a
+  page's name, *Building Modal Popup Page References ...*, *Validating Popup
+  Page References ...*) and Cancel - no error or warning count - and it closes
+  itself. `WM_GETTEXT` reads the phase; UI Automation reads no name in it. So a
+  payload that `tests/verify_built.py` holds to its plan is the verdict, as it
+  is anyway. The format probes' watcher saw the Build Manager so in ten of the
+  eleven builds it watched (`archive/job-e823df9b/probes-128/`); none failed,
+  so what a failed build shows on 1.28 is unread.
 - **A build can run blind: leave it alone.** In the real-size build watched to
   its end (§5c), GUI Designer showed no Build Manager for 20 minutes - only for
   the last 25 seconds before the save - and the menu invoke's timeout looked

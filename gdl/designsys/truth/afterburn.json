@@ -138,72 +138,176 @@
     {
       "id": "afterburn-08",
       "claim": "The Rail README says its children stack 'down it in order', a Slider taking 'the length the others leave'.",
-      "where": ["Rail README"],
+      "where": [
+        "Rail README"
+      ],
       "template": {
         "does": "Afterburn's right rail is not one stack: the Volume heading is at 160 (level with the left rail's first heading), the slider runs 202-597, Mute overlaps the slider's foot at 594, an empty band follows, and Help and Power sit side by side in one row (1125,706 and 1197,706). An optional top slot is at 30. The column is centred on x 1193, not the rail's centre 1189.5.",
         "seed": "seeds/Afterburn 1035.gdl",
-        "pages": ["Main SD"]
+        "pages": [
+          "Main SD"
+        ]
       },
-      "status": "deviation",
-      "reason": "The Rail stacks its children on every panel (docs/claude-design.md section 4), which is how the 520, 320 and 300 columns fit a small screen; it cannot put Help and Power in one row or let Mute overlap the slider. On the panel the canvas is drawn on a Rail stands at the right rail's band, as the template's column does, and stacks there too: one rule for the column on every panel, where placing it by hand on the drawn panel left a designer two contradictory ones and the template's own 8 px pair under the 2 mm gate. The README says so, and what the template does.",
-      "here": "A Rail stacks its controls down the right rail on every panel, the drawn one too: the template's column does not - its Volume heading level with the left rail's first heading, Mute over the slider's foot, and Help and Power side by side.",
-      "fix": [
-        {"readme": "Afterburn's own right column is not one stack, which a Rail is"}
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Afterburn 1220 Series",
+          "key": "right.items"
+        },
+        {
+          "series": "Afterburn 1220 Series",
+          "key": "foot.items"
+        }
       ],
+      "fix": [
+        {
+          "readme": "Afterburn's own right column is not one stack, which a Rail is"
+        },
+        {
+          "key": "layout.rail_note",
+          "says": "A region page is not a Rail: its RightRail and Footer stand the column as the template does"
+        }
+      ],
+      "builds": "A region page's RightRail stands the Volume heading, the slider and Mute as the template's right column does, the slider ending at Mute, and its Footer Help and Power side by side in the foot row; a Rail, on a page without regions, still stacks them.",
       "evidence": "Main Volume Label 4052 at 1109,160; Main Volume Slider 8024 at 1168,202 50x395; Main Volume Mute 8021 at 1161,594 64x64; Help 8117 at 1125,706 and Power 8022 at 1197,706."
     },
     {
       "id": "afterburn-09",
       "claim": "The Rail and Slider READMEs say that on a panel without a slider the slider 'becomes a Level with Down and Up buttons at its ends', and the README says 'a level between - and +'.",
-      "where": ["Rail README", "Slider README", "README Every panel the room has"],
+      "where": [
+        "Rail README",
+        "Slider README",
+        "README Every panel the room has"
+      ],
       "template": {
         "does": "The 520 and 535 stand Up and Down together at the top of a column with Mute at the bottom, beside a full-height level (525 Start: level 670,113, 15x314; Up 705,113; Down 705,194; Mute 705,361). On Main the level is a separate 50x480 'Volume Level' popup at 637,0, left of a rail of Up, Down, Mute, Help, Settings and Power. The glyphs are up and down triangles, not - and +; only the 300M uses minus and plus, in a row with Mute under a horizontal level.",
         "seed": "seeds/Afterburn 525.gdl",
-        "pages": ["Start", "Main", "Volume Level"]
+        "pages": [
+          "Start",
+          "Main",
+          "Volume Level"
+        ]
       },
-      "status": "deviation",
-      "reason": "The Rail builds the volume of a panel whose seed has no slider as a level between two buttons of the panel's own look (bundle.js asLevel), with `-` and `+` as their words. Extron's triangles are glyphs of its Afterburn icon font, which a design system does not carry (the owner allows the kit's PNGs, not fonts); the kit draws the same triangles as images in Afterburn/Icons/PNG (Carets' caret-up-gray and caret-down-gray), and the 300M's minus and plus (minus, plus), but this system's kit root is Afterburn/Buttons/PNG, so its `icon` list does not name them and a level's `steps` cannot yet (docs/ROADMAP.md). The README says what the template does.",
-      "here": "On a panel with no slider the volume is a level between `-` and `+` buttons; the template's are up and down triangles, glyphs of a font the system does not carry.",
-      "fix": [
-        {"key": "layout.rail_note", "says": "with triangle glyphs from its icon font"},
-        {"key": "layout.rail_note", "says": "the kit draws those triangles as images too (Afterburn/Icons/PNG's Carets)"}
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Afterburn 520 Series",
+          "key": "right.items"
+        }
       ],
+      "fix": [
+        {
+          "key": "layout.rail_note",
+          "says": "with triangle glyphs from its icon font"
+        },
+        {
+          "key": "layout.rail_note",
+          "says": "the kit draws those triangles as images too (Afterburn/Icons/PNG's Carets)"
+        },
+        {
+          "key": "regions.hub.up.icon",
+          "says": "caret-up-gray"
+        },
+        {
+          "key": "regions.hub.down.icon",
+          "says": "caret-down-gray"
+        }
+      ],
+      "builds": "A region page on a hub draws its menu bar's Up and Down as outlined keys of the kit's caret-up-gray and caret-down-gray, at the template's places. A Rail's level, on a page without regions, still steps with `-` and `+`.",
       "evidence": "The 525's Start page level and Up, Down, Mute buttons; Main's Volume Level popup; the 300M Portrait's volume row (seeds/Afterburn 300M Portrait.gdl)."
     },
     {
       "id": "afterburn-10",
       "claim": "The Rail README's volume, mute, help and power, and the panels table's 320 rail [0,190,320,50], have the 320's rail take the volume, Help and Power.",
-      "where": ["Rail README", "panels.Afterburn 320 Series.rail"],
+      "where": [
+        "Rail README",
+        "panels.Afterburn 320 Series.rail"
+      ],
       "template": {
         "does": "The 320 template's footer is a title and paging bar, 50 px deep at 0,190 across its 320: the page name (17.5 pt at 12,197: 'Select Source', 'DVD', 'Doc Cam') with 'More' and a chevron (270,190) or a Back chevron (0,190). No volume, Help or Power is on screen; the volume is the modal 'Volume Level' (level 288,25, 15x190 on a #BABCCE strip at 270,0). The 300 Portrait's footer holds Settings, Help and Power on Main, with Back and the title elsewhere, and puts the volume in the main region; the 300 Landscape's right column holds Settings, Help and Power, not the volume. The 520 and 535 rails add a Settings gear.",
         "seed": "seeds/Afterburn 320.gdl",
-        "pages": ["Start", "Main", "Doc Cam 1", "Volume Level"]
+        "pages": [
+          "Start",
+          "Main",
+          "Doc Cam 1",
+          "Volume Level"
+        ]
       },
-      "status": "deviation",
-      "reason": "Afterburn draws its chrome as background art, not controls (`layout.bars` is not `controls`), so its system has no region components: its small panels re-lay a Page's controls in rows over a Rail across the foot. The 320's page per source under a title strip, More and Back, and its Volume modal are built for the bar themes only (the region frame spec, item 7). The README says what the template does.",
-      "here": "On the 320 a Page is laid out in rows over a Rail across the foot; the template gives each source a page of its own over a 50 px strip at its foot that holds the page's name, More and Back - the bar themes' region pages draw theirs under a strip at the top.",
-      "fix": [
-        {"key": "layout.rail_note", "says": "The 320 draws no volume, Help or Power on screen"}
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Afterburn 320 Series",
+          "key": "bottom.items"
+        },
+        {
+          "series": "Afterburn 320 Series",
+          "key": "second.bottom.items"
+        },
+        {
+          "series": "Afterburn 320 Series",
+          "key": "center.empty"
+        },
+        {
+          "series": "Afterburn 320 Series",
+          "key": "volume.level"
+        }
       ],
+      "fix": [
+        {
+          "key": "layout.rail_note",
+          "says": "The 320 draws no volume, Help or Power on screen"
+        },
+        {
+          "key": "regions._page",
+          "says": "a strip along the foot with no ground"
+        }
+      ],
+      "builds": "A region page on the 320 draws its template's pages: Main its Select Source, the Header's tabs its keys, and what it keeps off them on over further pages by More - the kit's chevron at the strip's right beside its More label - and back by Back, the chevron at its left; each source and window a page under the strip at the foot, a source with no controls the template's three lines, a Section's heading in capitals, the volume the template's Volume Level modal. A plain Page still lays its controls out in rows over a Rail across the foot.",
       "evidence": "The 320's Doc Cam 1 title strip and More; its Volume Level modal; seeds/Afterburn 300M Portrait.gdl's Main footer and seeds/Afterburn 300M Landscape.gdl's right column."
     },
     {
       "id": "afterburn-11",
       "claim": "The README's modal guidance says 'put its card inside as a Panel'.",
-      "where": ["README Designing a panel", "Page README"],
+      "where": [
+        "README Designing a panel",
+        "Page README"
+      ],
       "template": {
         "does": "Afterburn's modal card is the squircle art itself: a full-canvas PBImage 'Background' (opaque 182-1099 x 24-776) over the alpha-166 scrim. It is not a Panel (raised fill and a #6A6E89 stroke). Titles go at 485,36, 310x50 (21 pt white) and the Close at 1026,25.",
         "seed": "seeds/Afterburn 1035.gdl",
-        "pages": ["Help", "Audio Settings", "Camera Select"]
+        "pages": [
+          "Help",
+          "Audio Settings",
+          "Camera Select"
+        ]
       },
-      "status": "deviation",
-      "reason": "Build draws a modal as the page beneath under its own scrim and ignores a background (gdl/design.py), and a Panel draws a flat fill and a stroke - no gradient, no shadow - so the squircle over the scrim cannot be placed; the Panel is the nearest card the system draws, and the README says what the template's is.",
-      "here": "A modal's card is a Panel you draw: the template's is its squircle art, which a Page cannot place.",
+      "status": "frame",
       "fix": [
-        {"readme": "Afterburn's own card is its squircle art, which a Page cannot place"},
-        {"key": "layout.popups", "says": "A modal's own card is the template's squircle art"}
+        {
+          "key": "layout.popups",
+          "says": "A modal's own card is the template's squircle art"
+        },
+        {
+          "key": "layout.popups",
+          "says": "draws it itself, as the page's own background art"
+        }
       ],
-      "evidence": "Help's Background PBImage (TLPImageID 86) over the page's scrim (image 85, alpha 166), its Help Label 4008 at 485,36 and Close Help 9057 at 1026,25."
+      "evidence": "Help's Background PBImage (TLPImageID 86) over the page's scrim (image 85, alpha 166), its Help Label 4008 at 485,36 and Close Help 9057 at 1026,25.",
+      "frame": [
+        {
+          "series": "Afterburn 1220 Series",
+          "key": "windows.help.surfaces"
+        },
+        {
+          "series": "Afterburn 1220 Series",
+          "key": "windows.confirm.surfaces"
+        },
+        {
+          "series": "Afterburn 1020 Series",
+          "key": "windows.help.surfaces"
+        }
+      ],
+      "builds": "A window with a role draws the page's own background art as a derived image, `<name> Background` - a clone of the seed's PBImage with its art set - over the whole screen, where a Panel stood in."
     },
     {
       "id": "afterburn-12",
@@ -256,23 +360,55 @@
     {
       "id": "afterburn-15",
       "claim": "The icon variant and Iconography say 'a stand-alone control (help, power, close, mute) is variant=\"icon\"' and 'Every icon comes from Afterburn's own resource kit'.",
-      "where": ["buttons.icon.usage", "iconography.rules.1", "iconography.intro"],
-      "template": {
-        "does": "The template's Close, Back, More, d-pad, transport, zoom, scroll and screen arrows are glyphs in the 'Extron-Afterburn' icon font (25-90 pt, #BABCCE or #767789) on plain or outlined buttons. The kit draws most of them as images too, in Afterburn/Icons/PNG beside the Buttons/PNG the system reads: Close's X (440x440_close.png), Back's and the 320's More's chevrons (Chevron's chevron-left and chevron-right), the scroll and volume triangles (Carets, in #BABCCE and #767789), the More dots (more) and most of the transport keys. None is in the system's `icon` list, which is read from Buttons/PNG, so the Close the README called an icon button was not one it offers.",
-        "seed": "seeds/Afterburn 1035.gdl",
-        "pages": ["Help", "Search Results", "Camera Settings"]
-      },
-      "status": "deviation",
-      "reason": "The glyphs are characters of Extron's Afterburn icon font, which a design system does not carry (the owner allows the kit's PNGs, not fonts). The kit's own images of them sit in Afterburn/Icons/PNG, which this system's kit root (Afterburn/Buttons/PNG) does not reach, so its `icon` list does not name them yet (docs/ROADMAP.md); until it does, a button for one says what it does in words.",
-      "here": "Close, Back, More and the arrows are words or kit icons the system offers: the template draws them as glyphs of its Afterburn font, which the system does not carry.",
-      "fix": [
-        {"key": "iconography.intro", "says": "which the design system does not carry"},
-        {"key": "iconography.intro", "says": "The kit draws most of them as images too, in Afterburn/Icons/PNG"},
-        {"key": "layout.popups", "says": "the kit draws it as an image too (Afterburn/Icons/PNG's close)"},
-        {"key": "iconography.rules.1", "says": "a stand-alone control (Help, Power, mute) is"}
+      "where": [
+        "buttons.icon.usage",
+        "iconography.rules.1",
+        "iconography.intro"
       ],
-      "gone": ["a stand-alone control (help, power, close, mute) is", "are not kit images but glyphs"],
-      "evidence": "Close Help (9057) caption U+E95C; Search Back U+E97B; Search Result Scroll Up U+E94E and Down U+E91D; none a kit image. Drawn in Extron - Afterburn 1a.ttf, U+E95C is Icons/PNG's close, U+E97B and U+E97C Chevron's chevron-left and chevron-right, U+E94E and U+E91D Carets' caret-up and caret-down, U+E912 and U+E939 minus and plus, U+E933 more."
+      "template": {
+        "does": "The template's Close, Back, More, d-pad, transport, zoom, scroll and screen arrows are glyphs in the 'Extron-Afterburn' icon font (25-90 pt, #BABCCE or #767789) on plain or outlined buttons. The kit draws most of them as images too, in Afterburn/Icons/PNG beside the Buttons/PNG the system read: Close's X (440x440_close.png), Back's and the 320's More's chevrons (Chevron's chevron-left and chevron-right), the scroll and volume triangles (Carets, in #BABCCE and #767789), the More dots (more) and most of the transport keys. None was in the system's `icon` list, which was read from Buttons/PNG alone, so the Close the README called an icon button was not one it offered.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": [
+          "Help",
+          "Search Results",
+          "Camera Settings"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "iconography.intro",
+          "says": "which the design system does not carry"
+        },
+        {
+          "key": "iconography.intro",
+          "says": "The kit draws most of them as images too, in Afterburn/Icons/PNG"
+        },
+        {
+          "key": "iconography.intro",
+          "says": "the system offers those drawings by their file's name (`kit.icons`)"
+        },
+        {
+          "key": "kit.icons_note",
+          "says": "the system draws the kit's drawing of each, fitted to its button"
+        },
+        {
+          "key": "layout.popups",
+          "says": "the kit draws it as an image too (Afterburn/Icons/PNG's close), which this system offers"
+        },
+        {
+          "key": "iconography.rules.1",
+          "says": "a stand-alone control (Help, Power, mute) is"
+        }
+      ],
+      "gone": [
+        "a stand-alone control (help, power, close, mute) is",
+        "are not kit images but glyphs",
+        "this system's `icon` list does not name",
+        "does not name them yet"
+      ],
+      "evidence": "Close Help (9057) caption U+E95C; Search Back U+E97B; Search Result Scroll Up U+E94E and Down U+E91D; none a kit image. Drawn in Extron - Afterburn 1a.ttf, U+E95C is Icons/PNG's close, U+E97B and U+E97C Chevron's chevron-left and chevron-right, U+E94E and U+E91D Carets' caret-up and caret-down, U+E912 and U+E939 minus and plus, U+E933 more.",
+      "builds": "A button may name a kit drawing of the template's glyphs (`close`, `chevron-left`, `caret-up-gray`...): the spec takes its kit path under Afterburn/Icons/PNG."
     },
     {
       "id": "afterburn-16",
@@ -394,35 +530,53 @@
       "claim": "The README type floor says 'Nothing under 14 pt'.",
       "where": ["README Visual foundations", "type.button.usage"],
       "template": {
-        "does": "94 template buttons caption at 13 pt (the profile acknowledges this), the labels 'ZOOM', 'CHANNEL' and 'LAST' are 13 pt, and the dialer's letter labels are 10.5 pt.",
+        "does": "94 of the 1035's template buttons caption at 13 pt (the profile acknowledges this), the labels 'ZOOM', 'CHANNEL' and 'LAST' are 13 pt, and the dialer's letter labels are 10.5 pt. The 725's buttons caption at 10.5 pt (seeds/Afterburn 725.gdl: 368 states), its mode launcher among them - Video Conference (8120), 115x60 at 15,528 - and the 525's at 13 pt (seeds/Afterburn 525.gdl: 192 states).",
         "seed": "seeds/Afterburn 1035.gdl",
         "pages": ["Main Select Source", "Camera Settings", "TV", "VTC Dialer"]
       },
       "status": "deviation",
-      "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 13 pt to 14. The README says the template's own go under it.",
-      "here": "Nothing is under 14 pt, the toolkit's floor: the template's captions go down to 13 pt.",
+      "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2), which each panel scales - 16 pt on the 725, 18 on the 525 (gdl.designsys.models' `floor`): a caption under it is refused, so the profile lifts the template's 13 pt to 14, and a region page lifts each panel's captions to its floor, growing the control that holds them. The README says the template's own go under it.",
+      "here": "Nothing is under each panel's type floor, the toolkit's - 14 pt on the 1035, 16 on the 725, 18 on the 525 - where the template's captions go down to 13 pt on the 1035, 10.5 on the 725 and 13 on the 525: a caption there grows its control, the 725's mode launcher 143 wide where the template's is 115.",
       "fix": [
         {"readme": "Nothing under 14 pt: that is the toolkit's floor, and a template's own smallest captions can be under it"},
         {"key": "type.button.usage", "says": "Afterburn's own small buttons use 13 pt"}
       ],
-      "evidence": "PBButton survey: 13 pt on 94 states; PBLabel survey: 13 bold on 3, 10.5 bold on 8."
+      "bounds": [
+        {"region": "bottom", "what": "mode Video Conference", "px": 28, "panels": ["TLP725T"]}
+      ],
+      "evidence": "PBButton survey: 13 pt on 94 states; PBLabel survey: 13 bold on 3, 10.5 bold on 8. gdl.design.region_score on the region canvas (tests/test_design.py TestRegionPagesAgainstTheirTemplates) draws the 725's Video Conference 143x60 at 1,528, its two lines at the 16 pt floor."
     },
     {
       "id": "afterburn-24",
       "claim": "The README size rules say 'at least 53 px each way', 'at least 12 px between touchable controls', 'no more than nine buttons in one group' and 'GUI Designer's 10 px nudge'.",
-      "where": ["README Visual foundations"],
+      "where": [
+        "README Visual foundations"
+      ],
       "template": {
         "does": "The template's rail buttons are 50 tall and 8 px apart, the slider is 50 wide, search rows are 42 tall, Window 1 and Window 2 are 7 px apart, keyboard keys are 6 px apart, Window Layout holds 12 presets in one grid, positions such as 1168,202, 1161,594 and 527,384 are off a 10 px grid, and the 725's Help and Power are 48x60.",
         "seed": "seeds/Afterburn 1035.gdl",
-        "pages": ["Main SD", "Main Multi-Window", "VTC Keyboard", "Window Layout"]
+        "pages": [
+          "Main SD",
+          "Main Multi-Window",
+          "VTC Keyboard",
+          "Window Layout"
+        ]
       },
       "status": "deviation",
-      "reason": "The 2 mm gap and the 9 mm touch minimum (53 px on the 1035) the toolkit checks between and on touch targets, and Extron's documented nine-button and 10 px standards (docs/design-rules.md section 2), which a designer's own controls keep. The Layout grows the 50 px slider to 54; the README now says the template does not always keep them.",
-      "here": "Controls are at least 53 px each way and 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards; the template's rail buttons are 50 tall and 8 px apart. The slider is drawn 54 wide where the template's is 50.",
+      "reason": "The 2 mm gap and the 9 mm touch minimum (53 px on the 1035) the toolkit checks between and on touch targets, and Extron's documented nine-button and 10 px standards (docs/design-rules.md section 2), which a designer's own controls keep. The RightRail grows the 50 px slider to the 53 px minimum (a Rail to 54) and stands Help and Power 12 px apart about their pair's middle, 62 wide; the README now says the template does not always keep them.",
+      "here": "Controls are at least 53 px each way and 2 mm apart, nine to a group, on the 10 px nudge - Extron's Design Standards; the template's rail buttons are 50 tall and 8 px apart. The slider is drawn 53 wide where the template's is 50, and Help and Power 62 wide and 12 apart where the template's are 64 and 8.",
       "fix": [
-        {"readme": "Extron's Design Standards, which its own templates do not always keep"}
+        {
+          "readme": "Extron's Design Standards, which its own templates do not always keep"
+        }
       ],
-      "evidence": "Rail rows 178x50 on a 58 pitch; Main Volume Slider 50x395; Window 1 and 2 at 1104 and 1193 (82 wide); VTC Keyboard's 62 keys; Window Layout's 12 presets."
+      "bounds": [
+        {"region": "left", "what": "group 0 button 1", "px": 4, "panels": ["TLP1035T"]},
+        {"region": "left", "what": "group 1 button 1", "px": 4, "panels": ["TLP1035T"]},
+        {"region": "right", "what": "help Help", "px": 2, "panels": ["TLP1035T"]},
+        {"region": "right", "what": "power Power", "px": 2, "panels": ["TLP1035T"]}
+      ],
+      "evidence": "Rail rows 178x50 on a 58 pitch; Main Volume Slider 50x395; Window 1 and 2 at 1104 and 1193 (82 wide); VTC Keyboard's 62 keys; Window Layout's 12 presets; Help (8117) 64x64 at 1125,706 and Power (8022) at 1197,706, 8 apart, drawn 62x64 at 1125 and 1199. gdl.design.region_score on the region canvas (tests/test_design.py TestRegionPagesAgainstTheirTemplates) draws each Section's second button 4 px lower, at the template's 8 px seam under a first grown to 53."
     },
     {
       "id": "afterburn-25",
@@ -515,19 +669,38 @@
     {
       "id": "afterburn-30",
       "claim": "The README Example (examples.source / examples.help) builds the start page with a title, a Laptop source button, a date-only clock bottom-left and Help at 1157,706.",
-      "where": ["examples.source", "examples.help", "README Example"],
+      "where": [
+        "examples.source",
+        "examples.help",
+        "README Example"
+      ],
       "template": {
         "does": "The template's Start has the room name, 'Press to begin' and one centred date-and-time clock, with no sources and no Help or Power. On the working pages Help is at 1125,706 beside Power at 1197,706; 1157 is the rail's centre, not a template position.",
         "seed": "seeds/Afterburn 1035.gdl",
-        "pages": ["Start", "Main Select Source", "Main SD"]
+        "pages": [
+          "Start",
+          "Main Select Source",
+          "Main SD"
+        ]
       },
       "status": "fixed",
       "fix": [
-        {"key": "examples.source.rect", "says": "505 315 110 110"},
-        {"key": "examples.help.rect", "says": "1125 706 64 64"},
-        {"readme": "<x-import component-from-global-scope=\"ExtronAfterburn.Page\" name=\"Start\" start=\"true\""}
+        {
+          "key": "examples.source.rect",
+          "says": "505 315 110 110"
+        },
+        {
+          "key": "examples.help.rect",
+          "says": "1125 706 64 64"
+        },
+        {
+          "readme": "<x-import component-from-global-scope=\"ExtronAfterburn.Page\" name=\"Start\" splash=\"true\" start=\"true\""
+        }
       ],
-      "gone": ["left: 1157px", "left: 403px"],
+      "gone": [
+        "left: 1157px",
+        "left: 403px"
+      ],
       "evidence": "Start's Room Title Label 475,136 330x50, Start 527,384 228x64 and Current Date & Time 415,714 450x60; Help (8117) 1125,706; Main Select Source's Laptop Select Source (8101) 505,315 110x110."
     },
     {
@@ -548,20 +721,33 @@
     {
       "id": "afterburn-32",
       "claim": "The Group component pages with 'Previous and Next under them ... arrows'.",
-      "where": ["Group README"],
+      "where": [
+        "Group README"
+      ],
       "template": {
         "does": "The template's only paged list (VTC Search Results) uses up and down triangle glyphs beside the list (444,73 and 444,398, #767789). The 320 pages a device with 'More' and a chevron in the footer and a Back chevron. The words Previous and Next never appear.",
         "seed": "seeds/Afterburn 1035.gdl",
-        "pages": ["VTC Search Results"]
+        "pages": [
+          "VTC Search Results"
+        ]
       },
       "status": "deviation",
-      "reason": "A Group fits its members on every panel by paging them under the touch minimum and nine-button standards. Extron's triangles and chevrons are glyphs of its Afterburn icon font, which a design system does not carry; the kit draws them as images in Afterburn/Icons/PNG (Carets, Chevron), which this system's kit root (Afterburn/Buttons/PNG) does not reach yet (docs/ROADMAP.md), so the toolkit's paging says Previous and Next. The README says what the template does.",
-      "here": "A Group that pages says Previous and Next; the template pages with triangle and chevron glyphs of its font, which the system does not carry.",
+      "reason": "A Group fits its members on every panel by paging them under the touch minimum and nine-button standards. Its Previous and Next are the kit's drawings of the template's chevrons (`regions.group`: Afterburn/Icons/PNG's chevron-left and chevron-right, afterburn-15), the glyph its 320 pages a device with, each a touch-minimum key under the Group's cells; the template's one paged list scrolls with up and down triangles beside it instead, which a Group's paging, across a row of cells, does not draw. The README says what the template does.",
+      "here": "A Group that pages draws Previous and Next as the kit's left and right chevrons under its cells; the template's one paged list scrolls with up and down triangles beside it.",
       "fix": [
-        {"key": "examples.group_note", "says": "a Group's Previous and Next are the toolkit's own"},
-        {"key": "examples.group_note", "says": "which the kit draws as images too (Afterburn/Icons/PNG's Carets and Chevron)"}
+        {
+          "key": "examples.group_note",
+          "says": "A Group that pages draws its Previous and Next as the kit's chevrons"
+        },
+        {
+          "key": "examples.group_note",
+          "says": "which the kit draws as images too (Afterburn/Icons/PNG's Carets and Chevron)"
+        }
       ],
-      "gone": ["scrolls with up and down arrows beside it"],
+      "gone": [
+        "scrolls with up and down arrows beside it"
+      ],
+      "builds": "A Group that pages on an Afterburn panel draws Previous and Next as icon keys of the kit's chevron-left and chevron-right, where it said the words.",
       "evidence": "Search Result Scroll Up (10048) and Scroll Down (10049), captions U+E94E and U+E91D, #767789."
     },
     {
@@ -627,6 +813,353 @@
         }
       ],
       "evidence": "Audio Settings' Mic Label (4050), Mic Slider (9018) and Mic Mute (9017) on seeds/Afterburn 1035.gdl; Main SD's Display Power (8112) and Display Mute (8114); no control named for a display's state on any page."
+    },
+    {
+      "id": "afterburn-36",
+      "claim": "Wired in as the kit's drawings (afterburn-15), Close, Back, More and the carets would draw as the template draws them.",
+      "where": [
+        "kit.icons_note"
+      ],
+      "template": {
+        "does": "The template sets them as glyphs of its icon font at a point size: Close Help's X is 27x27 px in its 64x64 box at 30 pt on the 1035, the 525's Volume Up caret 24x22 in 66x66 at 50 pt, the 320's More chevron 20x34 in 50x50 at 70 pt.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": [
+          "Help",
+          "Main",
+          "Doc Cam 1"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The kit carries the drawings as 440x440 art, not the font (which carries no license field, so a design system draws no glyph), and a kit image is drawn fitted to its button, as every other Afterburn icon button's art is: inset art would put the touch target and the drawing in two controls.",
+      "here": "Close, Back, More and the carets are the kit's drawings fitted to their buttons, larger than the template's glyphs: Close draws 41 px in its 64 px box where the template's X is 27, as large as the Help and Power icons beside it.",
+      "evidence": "Close Help (9057) on seeds/Afterburn 1035.gdl, caption U+E95C at 30 pt in 64x64, drawn 27x27 in Extron - Afterburn 1a.ttf; 440x440_close.png's X spans 279 of its 440 px, 41 of 64 fitted; the 525's Volume Up (8120) U+E94E at 50 pt in 66x66 and the 320's Doc Cam More (8010) U+E97C at 70 pt in 50x50."
+    },
+    {
+      "id": "afterburn-37",
+      "claim": "The README's hub drew a room's sources as the 1035's `source` tiles (756x756 art), each caption under its icon in the art's own room, a Group of the left rail beside them.",
+      "where": [
+        "README The template's grammar"
+      ],
+      "template": {
+        "does": "The 520's Select a Source draws four tiles 110x100 at y 147 (x 57, 210, 363, 518) in its seed's own 756x688 art - the kit's 756x756 with its top 68 rows cut off, its selected plate redrawn, in orange alone - each caption a 13 pt Label 110x36 at 194, inside the tile's foot; its Settings a column of the left rail's `list` launchers at 52,83 every 58 px (Audio, Display, Screen, Lighting, Recording); its Display Settings the display group's toggles at 123,145 under DISPLAY 1 at 133,83; its menu bar's Up and Down outlined 66x66 keys with the icon font's carets, its Back the chevron.",
+        "seed": "seeds/Afterburn 525.gdl",
+        "pages": [
+          "Main",
+          "Select Source",
+          "Settings",
+          "Display Settings"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Afterburn 520 Series",
+          "key": "select.tiles"
+        },
+        {
+          "series": "Afterburn 520 Series",
+          "key": "options.tiles"
+        }
+      ],
+      "fix": [
+        {
+          "key": "regions._hub",
+          "says": "Select a Source's tiles its own 756x688 art (extracted, `kit.extract`"
+        },
+        {
+          "key": "kit.extract_note",
+          "says": "The 520's Select a Source tiles are its seed's own art"
+        }
+      ],
+      "builds": "A region page on the 525 draws the hub's own grammar: its menu bar with the kit's carets, Select a Source's tiles in its seed's art where the scheme has it (else the source tile) with each caption inside the tile, Settings a column of the rail's list launchers, Display Settings the display Section's column, every popup's Back the chevron.",
+      "evidence": "Select Source's PC Select Source (8100) at 57,147 110x100 over PC Label (7038) at 57,194 110x36, 13 pt; Settings' Audio Settings (8020) at 52,83 178x50 and Display Settings (8214) at 52,141; Display Settings' Display 1 Label (4057) at 133,83 and Display 1 Power (8203) at 123,145; Lighting Settings' columns at 123 and 385; the seed's image resources 756x688_<source>_nsel and -orange_sel."
+    },
+    {
+      "id": "afterburn-38",
+      "claim": "A region page's fixed chrome keeps the template's seed ID on every panel that draws it.",
+      "where": [
+        "README Every panel the room has"
+      ],
+      "template": {
+        "does": "Afterburn's mode launcher (Video Conference) is 8120 on the 1220, 1020, 1720 and 1230 templates' working pages, and its 520's Main Volume Up is 8120 too: two controls of one ID in a room with a 1035 and a 525.",
+        "seed": "seeds/Afterburn 525.gdl",
+        "pages": [
+          "Main"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The ID map holds one ID per control across every panel a room has (gdl.idmap check_panels): the mode launcher, the room's own on every panel, keeps 8120, as a designer's own control always wins over a layout's, and the hub's derived Volume Up takes the next free ID from 50001, which the translate report says.",
+      "here": "On the 525 the menu bar's Volume Up takes an ID from 50001 where the room has a mode launcher: the template's 8120 is the launcher's on every panel.",
+      "evidence": "Main Volume Up (8120) on seeds/Afterburn 525.gdl's Main; Video Conference (8120) on seeds/Afterburn 1035.gdl's Main SD and seeds/Afterburn 725.gdl's Main SD."
+    },
+    {
+      "id": "afterburn-39",
+      "claim": "The README's working page drew the left rail as one `Group` under one heading, its buttons in cells 80 px deep and 18 apart in a 500 px box, for a room with a 725, a hub or the 320.",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "The left rail is headed groups: Display (Display Power, Display Mute) under its heading at 14,160 and Settings (Screen, Lighting, Audio) at 14,403, their buttons 178x50 every 58 px from 0,208 and 0,451; a third group, on Main SD Screen Arrows, stands 21 px under the second.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": [
+          "Main SD",
+          "Main SD Screen Arrows"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Afterburn 1220 Series",
+          "key": "left.groups"
+        },
+        {
+          "series": "Afterburn 1220 Series",
+          "key": "left.seam"
+        }
+      ],
+      "fix": [
+        {
+          "readme": "`ExtronAfterburn.LeftRail` (titled `ExtronAfterburn.Section`s)"
+        }
+      ],
+      "gone": [
+        "is one `Group` under one heading",
+        "in cells 80 px deep and 18 apart"
+      ],
+      "builds": "A working page's LeftRail stands its Sections at the template's group places, closing up and lifting where a panel's touch minimum needs it, on every panel the room lists.",
+      "evidence": "Main SD's Display Label (7033) at 14,160 over Display Power (8112) and Display Mute (8114) at 0,208 and 0,266; Settings Label (7013) at 14,403 over Screen, Lighting and Audio Settings (8115, 8116, 8020) from 0,451; Main SD Screen Arrows' third group."
+    },
+    {
+      "id": "afterburn-40",
+      "claim": "The README said a room with a 525 leaves the date and time off the working page: drawn in the template's boxes, the 525 refused both clocks.",
+      "where": [
+        "README The working page"
+      ],
+      "template": {
+        "does": "The 1220's working page draws Current Date 208x60 at 200,710 and Time 148x60 at 932,710, the 1020's one Current Date & Time 450x45 at 287,545; the 520's Main draws no clock.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "frame",
+      "frame": [
+        {
+          "series": "Afterburn 1220 Series",
+          "key": "foot.items"
+        },
+        {
+          "series": "Afterburn 1020 Series",
+          "key": "foot.items"
+        }
+      ],
+      "fix": [
+        {
+          "key": "regions.clocks",
+          "says": "MMMM d"
+        }
+      ],
+      "gone": [
+        "A room with a 525 leaves the date and time off the working page"
+      ],
+      "builds": "The Footer draws each panel's own clocks as its template does - the 1035's date and time apart, the 725's one - derived, so no other panel need carry them; a hub and the 320, whose templates draw none, name theirs as left.",
+      "evidence": "Main SD's Current Date and Time on seeds/Afterburn 1035.gdl; the 725's Current Date & Time on seeds/Afterburn 725.gdl; seeds/Afterburn 525.gdl's Main, with none."
+    },
+    {
+      "id": "afterburn-41",
+      "claim": "The `list` and `toggle` variants start a caption a fixed 15 and 4 spaces in, so an icon `list` button's caption needed 177 px of the 725's 145 px rail at 16 pt.",
+      "where": [
+        "buttons.list.indent",
+        "buttons.toggle.indent",
+        "README The working page"
+      ],
+      "template": {
+        "does": "The template counts 15 leading spaces on a `list` caption and 4 on a `toggle`'s, at its own 13 pt; a list's icon reaches x 399 of its 1224x344 art at most, and a toggle's switch starts at x 637.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "kit.icon_right_note",
+          "says": "A region gives a `list` button's caption the leading spaces that start it 4 px clear of that reach"
+        },
+        {
+          "key": "kit.switch_left_note",
+          "says": "A region starts a toggle's caption 8 px in and ends it 4 px before the switch"
+        }
+      ],
+      "gone": [
+        "an icon `list` button's caption needs 177 px"
+      ],
+      "evidence": "buttons.list's indent 15 and buttons.toggle's 4, the leading spaces the template's own captions take (Main SD's Lighting Settings, 8116, and Display Power, 8112); kit.icon_right (0.326 of 1224x344) and kit.switch_left (0.5204, 0.5727), measured off the install's kit."
+    },
+    {
+      "id": "afterburn-42",
+      "claim": "A region page's LeftRail stands its Sections at the template's group places on every panel.",
+      "where": [
+        "regions.rail",
+        "README Every panel the room has"
+      ],
+      "template": {
+        "does": "The 725's template stands its Display heading at 11,100 and its Settings heading at 11,289, its launchers 132x37 every 46 px from 326 - under the 725's 60 px touch minimum.",
+        "seed": "seeds/Afterburn 725.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "deviation",
+      "reason": "Grown to the 725's 60 px touch minimum at its 13 px gap, the template's own two groups end 9 px past the gap above the mode launcher at 528, so each Section closes up a seam under the one above (the panel's gap, or the template's three-group seam where that is more); where that still does not hold - its Main VC's six - the column lifts to main's top. The README's left-rail table says what each panel holds.",
+      "here": "On the 725 the left rail's buttons grow to its 60 px touch minimum down from each heading, at the template's seams, and its Sections close up where the template's places do not hold them: the template stands its second group at 289, its launchers 37 tall every 46 px.",
+      "bounds": [
+        {"region": "left", "what": "group 0 button 0", "px": 9, "panels": ["TLP725T"]},
+        {"region": "left", "what": "group 0 button 1", "px": 15, "panels": ["TLP725T"]},
+        {"region": "left", "what": "group 1 button 0", "px": 11, "panels": ["TLP725T"]},
+        {"region": "left", "what": "group 1 button 1", "px": 34, "panels": ["TLP725T"]}
+      ],
+      "evidence": "seeds/Afterburn 725.gdl's Main SD: Display Label (7033) at 11,100, Settings Label (7013) at 11,289, Screen, Lighting and Audio Settings 132x37 at 0,326, 0,372 and 0,418, Video Conference (8120) 115x60 at 15,528. gdl.design.region_score on the region canvas (tests/test_design.py TestRegionPagesAgainstTheirTemplates) draws two toggles and two launchers 141 wide from the headings' template places, each grown down from its heading, so 9 to 34 px from the rects grown about their middles."
+    },
+    {
+      "id": "afterburn-43",
+      "claim": "A region page's Footer stands Help and Power where the template stands them.",
+      "where": [
+        "regions.help",
+        "regions.power"
+      ],
+      "template": {
+        "does": "The 725's Help and Power are 48x60 at 899,528 and 958,528, 11 px apart; the 1035's 64x64 at 1125,706 and 1197,706, 8 px apart.",
+        "seed": "seeds/Afterburn 725.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "deviation",
+      "reason": "Each grows to the panel's touch minimum (60 px on the 725) and the pair re-spaces about its middle at the panel's 2 mm gap (13 px on the 725, 12 on the 1035), inside the right band: two touch targets 11 or 8 px apart are under the gap the toolkit checks.",
+      "here": "On the 725 Help and Power are 60 px and 13 apart about the template's pair's middle, where the template's are 48 wide and 11 apart.",
+      "bounds": [
+        {"region": "right", "what": "help Help", "px": 7, "panels": ["TLP725T"]},
+        {"region": "right", "what": "power Power", "px": 7, "panels": ["TLP725T"]}
+      ],
+      "evidence": "seeds/Afterburn 725.gdl's Help (8117) and Power (8022); drawn at 886,528 and 959,528, 60x60."
+    },
+    {
+      "id": "afterburn-44",
+      "claim": "A region page on the 320 stands its keys in the template's rows: three under its headings, at its 54 px pitch.",
+      "where": [
+        "regions.page"
+      ],
+      "template": {
+        "does": "The 320's Doc Cam 1 stands its keys 108x45 in rows at 29, 83 and 137, two to a row at 35 and 176, the third row ending 8 px over the strip at 190, where More stands at its right and Back, on Doc Cam 2, at its left.",
+        "seed": "seeds/Afterburn 320.gdl",
+        "pages": [
+          "Doc Cam 1",
+          "Doc Cam 2"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The panel's 2 mm gap between touch targets (9 px on the 320): the keys' rows end that gap above the strip's More and Back, so a page holds two rows of keys, and what is left goes on by More.",
+      "here": "On the 320 a page holds two rows of keys over its strip, where the template stands a third 8 px above it.",
+      "evidence": "seeds/Afterburn 320.gdl's Doc Cam 1: its keys 108x45 from 35,29 and 176,29, every 54 px down; Doc Cam More (8010) 50x50 at 270,190; Doc Cam 2's Back (8011) at 0,190."
+    },
+    {
+      "id": "afterburn-45",
+      "claim": "A hub's region page shows its Volume Level strip as its template does.",
+      "where": [
+        "README The template's grammar"
+      ],
+      "template": {
+        "does": "The 520's Main, the 525's, places its Volume Level - a standard popup in no group, 50x480 at 637,0, at the menu bar's left - by a Popup Page Reference bound to that popup by its ID (PopupID 2, GroupID 0): it is over main only while the program shows it.",
+        "seed": "seeds/Afterburn 525.gdl",
+        "pages": [
+          "Main",
+          "Volume Level"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The applier binds each reference it makes to a group, never to one popup by its ID, so gdl.spec check refuses a standard popup with no group (docs/gdl-format.md section 5): the strip is the one popup of a Volume Level group of its own, which its reference shows on every working page. Binding it by its ID is applier work (docs/ROADMAP.md, A reference bound to one popup by its ID).",
+      "here": "On the 525 the Volume Level strip, a 50x480 popup at the menu bar's left, shows on every working page: its reference is bound to a group of its own, where the template binds it to the popup by its ID and shows it only when the program does.",
+      "evidence": "seeds/Afterburn 525.gdl's Main: Volume Level at 637,0 50x480, a PBPopupPageReference whose popupPageIDField names popup 2 (Volume Level) and group 0; docs/gdl-format.md section 5's survey, nine seeds' Volume Level placed so."
+    },
+    {
+      "id": "afterburn-46",
+      "claim": "A region page's RightRail stands the slider and Mute where the template stands them.",
+      "where": [
+        "regions.volume",
+        "regions.mute"
+      ],
+      "template": {
+        "does": "The 725's slider is 50x338 at 927,131 and its Mute 60x48 at 922,469 flush under it, 469-517, 11 px above Help and Power at 528; the 1035's slider, 50x395 at 1168,202, runs 3 px under Mute at 1161,594, and the 1535's 5 px under its Mute at 1746,814.",
+        "seed": "seeds/Afterburn 725.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "deviation",
+      "reason": "Two touch targets may not overlap, and Mute grown to the 725's 60 px touch minimum would end within its 13 px gap of Help and Power: the RightRail's column flexes (bundle.js flexColumn) - Mute rises to end a gap above them, and the slider runs from its template top to Mute, flush where the template runs it under Mute.",
+      "here": "On the 725 Mute rises to 455-515, a gap above Help and Power, and the slider runs from 131 to it, 324 px long, where the template's Mute is 469-517 and its slider 338; on the 1035 and the 1535 the slider ends where Mute starts, where the template's runs 3 and 5 px under it.",
+      "bounds": [
+        {
+          "region": "right",
+          "what": "volume Main Volume Slider",
+          "px": 3,
+          "panels": [
+            "TLP1035T"
+          ]
+        },
+        {
+          "region": "right",
+          "what": "volume Main Volume Slider",
+          "px": 14,
+          "panels": [
+            "TLP725T"
+          ]
+        },
+        {
+          "region": "right",
+          "what": "volume Main Volume Slider",
+          "px": 5,
+          "panels": [
+            "TLP1535T"
+          ]
+        },
+        {
+          "region": "right",
+          "what": "mute Main Volume Mute",
+          "px": 8,
+          "panels": [
+            "TLP725T"
+          ]
+        }
+      ],
+      "evidence": "seeds/Afterburn 725.gdl's Main SD: Main Volume Slider (8024) 50x338 at 927,131, Main Volume Mute (8021) 60x48 at 922,469, Help (8117) at 899,528. gdl.design.region_score on the region canvas (tests/test_design.py TestRegionPagesAgainstTheirTemplates) draws the 725's Mute 62x60 at 921,455, to 515, and its slider from 131 to it, 324 long; the 1035's slider 392 long to Mute at 594, the 1535's 550 long to Mute at 814."
+    },
+    {
+      "id": "afterburn-47",
+      "claim": "regions.mute drew the kit's speaker-volume_3 as the RightRail's Mute in both its states.",
+      "where": [
+        "regions.mute"
+      ],
+      "template": {
+        "does": "The 1035's Main Volume Mute (8021) opens on its Muted state, 440x440_speaker-mute-1-orange_sel, then Level 1 to Level 3, speaker-volume-periwinkle_1 to _3; the 725's alike (speaker-mute-1_sel, speaker-volume_1 to _3); the 525's Not Muted and Muted, speaker-mute-2_nsel and speaker-mute-2-orange_sel.",
+        "seed": "seeds/Afterburn 1035.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {
+          "key": "regions.mute.icon",
+          "says": "speaker-mute-1"
+        },
+        {
+          "readme": "lit while muted, as `regions.mute` draws it"
+        }
+      ],
+      "builds": "The RightRail's Mute draws the volume glyph in the secondary accent while live and the mute glyph lit in the primary while muted, and the hub's Mute its speaker-mute-2 in each state, where a designer's Mute in its slot gives no look of its own.",
+      "evidence": "seeds/Afterburn 1035.gdl's, seeds/Afterburn 725.gdl's and seeds/Afterburn 525.gdl's Main Volume Mute states' button images."
     }
   ]
 }

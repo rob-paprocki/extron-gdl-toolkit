@@ -1,0 +1,27 @@
+{
+  "_comment": [
+    "The renumber probe's edit, run against seeds/Afterburn 1035.gdl: one popup's buttons renumbered",
+    "as a contiguous band, and one button that two popups share an ID for (a mirror) renumbered by name, so",
+    "both take the one new ID. A selector resolves against the real project when `python -m gdl.edit check`",
+    "runs."
+  ],
+  "edits": [
+    {
+      "op": "renumber",
+      "_why": "A contiguous band on one popup: the plain case.",
+      "select": {
+        "page": "Doc Cam",
+        "type": "PBButton"
+      },
+      "start": 20000
+    },
+    {
+      "op": "renumber",
+      "_why": "A mirror: 'TV Preset 1' is on 'TV' and on 'TV Channels' under one ID, and both must take the one new one.",
+      "select": {
+        "name": "TV Preset 1"
+      },
+      "start": 20100
+    }
+  ]
+}

@@ -34,7 +34,11 @@ survive deduplication.
 
 The Python and PowerShell sources are globs with a catch-all, so a new module
 is read by default. The docs are named: a new doc that states format facts has
-to be added to `CLAIM_SOURCES`.
+to be added to `CLAIM_SOURCES`. `docs/ROADMAP.md` is a source (its measured
+facts about templates and Build); `docs/history.md` is not, because it records
+beliefs that were retired, and `docs/superpowers/plans/` is not, because a plan
+states what will be done rather than what a file holds - the script's comment
+says so beside `docs-roadmap`.
 
 ### Before running it
 
@@ -66,5 +70,35 @@ Findings over `MAX_VERIFY` come back unverified: verify them in a second,
 smaller workflow with the same two lenses rather than raising the cap, and
 deduplicate them first.
 
+## gdl-verify-findings.js
+
+That second workflow. It takes a JSON file of findings and runs the hunt's two
+lenses (reproduce; already-handled), default-refuted, on sonnet, over each.
+
+```
+Workflow scriptPath: workflows/gdl-verify-findings.js
+         args: {"findings": "<path to the findings file>", "repo": "<absolute path of the checkout>"}
+```
+
+`ids` (a list) limits it to those entries; without it a haiku agent lists the
+file's. The file is a JSON list of findings, each with an `id`, `title`,
+`file`, `severity`, `confidence` and `impact`, and `assumption`, `reality`,
+`evidence_command` and `evidence_output` where the reporter had them - the
+shape of `archive/job-e823df9b/bug-hunt/hunt-unverified-distinct.json`, which
+is what the first hunt's second pass ran on. That path is in the private archive
+only; `tools/public_sync.py` leaves `archive/job-e823df9b/` out of the public
+copy, where the shape is the one this paragraph describes. A script cannot read files, so each
+verifier opens its own entry by id. Deduplicate first: two entries for one bug
+are two verifications spent on it. The result has the shape of that run's
+`hunt-verify2.json` - `confirmed`, `refuted`, `unjudged` (ids a lens never
+judged) and `counts` - each entry whole: `id`, `title`, `file`, `impact`,
+`original_severity` (the reporter's), `severity` (the verifiers' correction, or
+null), `reproduced` (any lens ran it and saw the behavior) and each lens's
+verdict. An empty file is an error, not a clean run, and so is an `ids` value
+the file does not hold. The reproduce lens refutes a claim about a `.gdl` file
+that no corpus file demonstrates; a PowerShell or documentation finding is
+judged on its own evidence.
+
 `docs/history.md` records why the first two runs did not finish and what the
-first complete one found; its results are in `archive/job-e823df9b/bug-hunt/`.
+first complete one found; its results are in `archive/job-e823df9b/bug-hunt/` (the private archive only;
+the public copy leaves that folder out, and holds the history entry alone).

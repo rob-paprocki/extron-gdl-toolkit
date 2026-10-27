@@ -262,6 +262,10 @@
       "gone": [
         "Help 12 px in from its end (x 152) to clear the left rail's dock beside it"
       ],
+      "bounds": [
+        {"region": "bottom", "what": "help Help", "px": 11, "panels": ["TLP1035T"]},
+        {"region": "bottom", "what": "help Help", "px": 12, "panels": ["TLP725T"]}
+      ],
       "evidence": "Main SD's Help (8117) at 141,690, Room Mode (8118) at 246,690 and Lighting Control (8116) at 0,690; Main Select Source's Help at 140,690; Main Multi-Window's Preset Selection (8119) at 246,690; tests/test_design.py's test_help_gives_way_to_the_rail_launcher_beside_it."
     },
     {
@@ -1453,6 +1457,53 @@
     "reason": "The frame measures no bevel for the field (its border is none): a Label's paint is its fill alone.",
     "here": "The dialer's number field is flat #DCDCDC where the template's is bevelled.",
     "evidence": "Dialer Feedback Label (50000) filled #DCDCDCFF, no border resource, on seeds/Turbulence 1035.gdl."
-  }
+  },
+    {
+      "id": "turbulence-46",
+      "claim": "The README's Layout gives the 725's and 720's source tabs as the template stands them - 102 and 80 px wide, 113 and 88 apart - and its footer as deep as the template's, while Visual foundations holds every caption to the type floor.",
+      "where": [
+        "README Layout",
+        "README Visual foundations"
+      ],
+      "template": {
+        "does": "The 725's and 720's Main SD tabs caption their glyphs in Open Sans Light 12: SD PC 102x100 at 113, each next tab 113 on, on the 725, whose footer is 83 deep; 80x80 at 89, each next 88 on, on the 720, whose footer is 67 deep. The 1035's tab captions are 16.",
+        "seed": "seeds/Turbulence 725.gdl",
+        "pages": [
+          "Main SD"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The type floor the toolkit checks (gdl.spec.type_floor: 14 pt as it reads on a 1035, 16 at the 725's density): a caption under it is refused, so a tab's caption is 16 pt on the 725 and 14 on the 720, and the row of tabs, one width, is as wide as its longest caption needs under its glyph. The 725's and 720's footers deepen for their docks' captions the same way.",
+      "here": "Nothing is under the toolkit's type floor: the 725's and 720's tab captions are 12 pt in the template and 16 and 14 here, so a source tab there is as wide as its caption needs - 113 and 100 px where the template's are 102 and 80 - and the 725's and 720's footers are 85 and 76 deep where the template's are 83 and 67.",
+      "bounds": [
+        {"region": "top", "what": "first tab", "px": 11, "panels": ["TLP725T"]},
+        {"region": "top", "what": "tab pitch", "px": 11, "panels": ["TLP725T"]},
+        {"region": "bottom", "what": "surface Bottom bar", "px": 2, "panels": ["TLP725T"]},
+        {"region": "top", "what": "first tab", "px": 20, "panels": ["TLP720T"]},
+        {"region": "top", "what": "tab pitch", "px": 20, "panels": ["TLP720T"]},
+        {"region": "bottom", "what": "help Help", "px": 11, "panels": ["TLP720T"]},
+        {"region": "bottom", "what": "surface Bottom bar", "px": 9, "panels": ["TLP720T"]}
+      ],
+      "evidence": "Turbulence 725's Main SD: SD PC at 113,0 102x100 in Open Sans Light 12, its Bottom bar 83 deep; Turbulence 720's at 89,0 80x80, also 12, its Bottom bar 67 deep. gdl.design.region_score on the region canvas (tests/test_design.py TestRegionPagesAgainstTheirTemplates) draws the 725's tabs 113x100, 124 apart, in 16 pt, the 720's 100x80, 108 apart, in 14 pt, and the 725's and 720's footers 85 and 76 deep, the 720's Help 11 px higher."
+    },
+    {
+      "id": "turbulence-47",
+      "claim": "A hub's region page shows its Volume Level strip as its template does.",
+      "where": [
+        "README The template's grammar"
+      ],
+      "template": {
+        "does": "Each hub's Main Page places its Volume Level - a standard popup in no group at the menu bar's left, 51x480 on the 525 - by a Popup Page Reference named Volume bound to that popup by its ID (PopupID 24, GroupID 0): it is over main only while the program shows it.",
+        "seed": "seeds/Turbulence 525.gdl",
+        "pages": [
+          "Main Page",
+          "Volume Level"
+        ]
+      },
+      "status": "deviation",
+      "reason": "The applier binds each reference it makes to a group, never to one popup by its ID, so gdl.spec check refuses a standard popup with no group (docs/gdl-format.md section 5): the strip is the one popup of a Volume Level group of its own, which its reference shows on every working page. Binding it by its ID is applier work (docs/ROADMAP.md, A reference bound to one popup by its ID).",
+      "here": "On the 525 the Volume Level strip, a popup at the menu bar's left (51x480), shows on every working page: its reference is bound to a group of its own, where the template binds it to the popup by its ID and shows it only when the program does.",
+      "evidence": "seeds/Turbulence 525.gdl's Main Page: Volume at 651,0 51x480, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; docs/gdl-format.md section 5's survey, nine seeds' Volume Level placed so."
+    }
   ]
 }

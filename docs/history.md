@@ -368,7 +368,8 @@ statement is in the live docs; this is the record that it changed.
   where 10 of 29 are authored — and built — at 880x525.
 - **`renumber` was described as verified end to end** alongside the other three
   edit operations. Its own table in `docs/editing.md` always said "planned +
-  checked"; it has never been through a build.
+  checked"; it had never been through a build until the format probes built
+  two on 1.28.0.7 on 2026-10-26 (`docs/editing.md`).
 - **"Eight resolutions across 63 panel models"** stood in `CLAUDE.md` while
   `MODELS_FULL` held 55 and a seed built at 1920x720, a resolution the table
   lacked. `docs/design-rules.md` §1 is now the one list.
@@ -597,6 +598,28 @@ statement is in the live docs; this is the record that it changed.
   out truncates, twice, with a third pass inside an image drawn over the fill,
   and a channel can come back high (`docs/gdl-format.md`). The tolerance takes
   one more under an image.
+- **Afterburn was thought to have no working-page grammar of its own**
+  (until 2026-10-26): its chrome is its background art, so its design system
+  had no region components, and its README drew the room by hand in a layout
+  that carried to four panels - the left rail one `Group` under one heading
+  in 80 px cells 18 apart, no date and time, a `Rail` with no Volume
+  heading, every window on a `Panel` card - which departed from the template
+  on the 1035 itself. Measured, its working page is the bar themes' grammar
+  round its squircle (`docs/superpowers/specs/2026-10-26-afterburn-regions-design.md`),
+  and its region components draw it from its frames.
+- **A horizontal slider's rail was assumed to mirror a vertical one's**, and a
+  thumb's art to be fitted into its box as a button's image is (until
+  2026-10-26). Nothing had built a horizontal slider from kit art. The format
+  probes built Shockwave's lying right and left on 1.28.0.7, and
+  `verify_built` failed all three on their own art, 45 to 82% off: Build turns
+  the rail art a quarter turn to lie as the slider does, and stretches the
+  thumb's art unturned. Fitted, the Afterburn 1035 Portrait seed's own 30x50
+  thumbs read 38% off their square file; nothing had checked a seed thumb
+  against it (`tests/verify_built.py` `RAIL_TURN`, `check_thumbs`).
+- **The format probes' "0 errors, 0 warnings" was read as the Build Manager's
+  readout to re-read on 1.28** (until 2026-10-26). On 1.28.0.7 a clean
+  build's Build Manager shows its phase and no count at all
+  (`docs/from-scratch.md` §7).
 
 ## Dated facts moved out of the live docs
 
@@ -617,14 +640,24 @@ statement is in the live docs; this is the record that it changed.
   (8 threads, 31 GB), refreshed first to reach the translator and the region
   frame: 62 agents, none dead. It confirmed 15 findings, refuted 1, and left
   69 unverified over `MAX_VERIFY`; a second verification workflow
-  deduplicated those to 61 and confirmed 26 with both lenses, refuting 35. All
-  41 confirmed were fixed in #62 - among them a `verify_built` popup-group
+  deduplicated those to 61 and confirmed 26 with both lenses, refuting 35. 40
+  of the 41 confirmed were fixed in #62 - among them a `verify_built` popup-group
   check that read a key no file has and could never fire, `gdl.spec` and
   `gdl.edit` ignoring misspelt keys (a typo'd `start_page` booted the wrong
   page), and a retarget scaling from the largest control rather than the
-  screen. Its first launch on that box died about ten minutes in, when the
-  headless session that started it ended its turn. Results, triage and both
+  screen. The 41st, U43 (`spec.sizes('VTLPEcp')` was 1920x1080 alone, so the
+  three 1280x800 ECP seeds could not be targeted), was left and fixed on
+  2026-10-26 with a batch of the hunt's refuted findings that were real
+  refusals the toolkit lacked (a panel listed twice, an empty Group, a
+  page-level `modal`, a popup's size unchecked by `verify_built`, the popup
+  group guard, `Apply-GdlPlan.ps1` writing a file past a plan problem). Its
+  first launch on that box died about ten minutes in, when the headless
+  session that started it ended its turn. Results, triage and both
   verification passes: `archive/job-e823df9b/bug-hunt/`.
+- **`verify_built` did not compare a built control's ID** until the behavior
+  work: it looked up `UserID`, and `layout.json` writes `UserId`. It compares
+  IDs now (`tests/test_verify_built.py`), so `renumber`'s open item in
+  `docs/ROADMAP.md` is only the missing real build.
 - **The bug hunt's script and README were a month stale** (until 2026-10-07):
   they counted 19 projects and 13 seeds, read none of the modules or docs
   written since (`design.py`, `designsys/`, `idmap.py`, `templates.py`,

@@ -352,6 +352,19 @@ class TestUnknownKeys(unittest.TestCase):
         self.assertEqual(len(odd), 1, odd)
         self.assertIn("'start_pag'", odd[0])
 
+    def test_a_modal_page_is_refused_and_says_what_a_modal_is(self):
+        """`modal` is a popup's: the applier never writes it on a page, so a
+        hand-written page that carried it was ordinary on the panel while the
+        colour count treated it as modal."""
+        spec = self._base()
+        spec['pages'][0]['modal'] = True
+        odd = self._odd(spec)
+        self.assertEqual(len(odd), 1, odd)
+        self.assertIn("'modal'", odd[0])
+        self.assertIn('popup', odd[0].split("'modal'", 1)[1])
+        spec = self._base(popups=[{'name': 'Ask', 'modal': True, 'controls': []}])
+        self.assertEqual(self._odd(spec), [])
+
     def test_a_typo_on_a_page_is_named(self):
         spec = self._base()
         spec['pages'][0]['nmuber'] = 2000
@@ -961,6 +974,20 @@ class TestExtronRules(unittest.TestCase):
         spec['model'] = 'TLP1035T'
         self.assertTrue(any('is not a canvas the TLP1035T has' in x for x in Panel(spec).check()))
 
+    def test_ecp_runs_at_both_touchlink_presets(self):
+        """ECP's two themable canvases are 1920x1080 and 1280x800 (the wizard's
+        TouchLink Panel presets), so the three 16:10 seeds can be targeted; its
+        phone and tablet presets stay out, having no donor."""
+        from gdl.spec import Panel, panel_id, panel_of, sizes
+        self.assertEqual(sizes('VTLPEcp'), ((1920, 1080), (1280, 800)))
+        self.assertEqual(panel_id('VTLPEcp', (1280, 800)), 'VTLPEcp-1280x800')
+        self.assertEqual(panel_of('VTLPEcp-1280x800'), ('VTLPEcp', (1280, 800)))
+        spec = {'name': 'T', 'model': 'VTLPEcp', 'size': [1280, 800], 'popups': [],
+                'pages': [{'name': 'P', 'number': 1000, 'controls': []}]}
+        self.assertFalse(any('is not a canvas the' in x for x in Panel(spec).check()))
+        spec['size'] = [2560, 1600]
+        self.assertTrue(any('is not a canvas the VTLPEcp has' in x for x in Panel(spec).check()))
+
     def test_a_landscape_300m_has_a_minimum(self):
         """The 300M runs both ways up; a size-only spec at 480x320 had no row
         to find, so no touch check at all."""
@@ -1502,6 +1529,24 @@ class TestIconsCommand(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertIn('U+E95E', out)
         self.assertIn('95 glyph(s) in Extron-Lift, none named', out)
+
+    def test_a_face_named_outright_is_read_from_the_seed_that_carries_it(self):
+        """No fixture carries Extron GUIC Video Conference 1a; a Shockwave
+        seed does."""
+        from gdl.seeds import usable
+        if not usable('seeds/Shockwave 1035.gdl'):
+            self.skipTest('seeds/Shockwave 1035.gdl is not pulled from Git LFS here')
+        code, out = self._run('Extron GUIC Video Conference 1a')
+        self.assertEqual(code, 0, out)
+        self.assertIn('from seeds/Shockwave 1035.gdl', out)
+
+    def test_a_face_no_seed_carries_says_so(self):
+        from unittest import mock
+        from gdl import fonts
+        with mock.patch.object(fonts, 'icon_face', lambda font: (None, None)):
+            code, out = self._run('Segoe UI')
+        self.assertEqual(code, 1)
+        self.assertIn('no seed here carries it', out)
 
     def test_a_family_with_no_icon_font_says_so(self):
         code, out = self._run('Turbulence')
@@ -2158,7 +2203,9 @@ class TestButtonImages(unittest.TestCase):
         """A profile's `thumb` is across the rail and `thumb_height` along it.
         Build keeps width and height literal - the Zoom Rooms seed's horizontal
         slider has a thumb 7 wide and 25 tall - so lying down, the two swap, as
-        the canvas draws them: Shockwave's 52 by 34 thumb is 34 wide."""
+        the canvas draws them: Shockwave's 52 by 34 thumb is 34 wide. Built so
+        lying right and left (examples/probes-128, horizontal-slider), each
+        came back 34x52, its thumb asset that size."""
         from gdl.spec import _type_fields
         up = _type_fields('slider', {'orientation': 'up', 'thumb': 52, 'thumb_height': 34})
         right = _type_fields('slider', {'orientation': 'right', 'thumb': 52, 'thumb_height': 34})

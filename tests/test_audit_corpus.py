@@ -71,6 +71,45 @@ class TestTheFactsOfARealSeed(unittest.TestCase):
         self.assertEqual(f['fonts_not_declared'], [])
 
 
+class TestReferenceCounts(unittest.TestCase):
+    """A popup group's referenceCountField is kept by Build as written and
+    reaches nothing it builds (the format probe, docs/gdl-format.md §6), so
+    the corpus's counts are said, not judged: how many are the group's
+    popups, its references, or neither."""
+
+    def test_each_group_is_counted_by_what_its_count_matches(self):
+        F = [fact('client.gdl', group_counts=[('Presentation', 46, 11, 3), ('Volume', 2, 2, 2),
+                                              ('Tech', 1, 1, 4)]),
+             fact('seed.gdl', group_counts=[('Main', 8, 1, 5), ('Doc Cam', 5, 2, 5)]),
+             fact('template.glt', group_counts=[])]
+        verdict, lines = audit_corpus.inv_reference_counts(F)
+        self.assertEqual(verdict, 'INFO')
+        self.assertEqual(lines, [
+            '5 group(s) in 2 project(s): the count is its popups in 2, its references alone '
+            'in 1, neither in 2',
+            "client.gdl 'Presentation': 46 against 11 popup(s), 3 reference(s)",
+            "seed.gdl 'Main': 8 against 1 popup(s), 5 reference(s)"])
+
+    def test_a_corpus_with_no_group_says_so(self):
+        self.assertEqual(audit_corpus.inv_reference_counts([fact('t.glt', group_counts=[])]),
+                         ('INFO', ['no built project with a popup group']))
+
+    def test_it_is_on_the_list(self):
+        self.assertIn('popup group reference counts', [n for n, _ in audit_corpus.INVARIANTS])
+
+    def test_facts_read_the_registry_off_a_seed(self):
+        from _corpus import seed, usable
+        path = seed('Afterburn 1035.gdl')
+        if not usable(path):
+            self.skipTest('seeds/Afterburn 1035.gdl is not here (an LFS pull fetches it)')
+        rows = audit_corpus.facts(path)['group_counts']
+        self.assertTrue(rows)
+        for name, count, popups, refs in rows:
+            self.assertIsInstance(name, str)
+            self.assertTrue(all(isinstance(v, int) for v in (count, popups, refs)), rows)
+        self.assertTrue(any(popups and refs for _, _, popups, refs in rows), rows)
+
+
 class TestCanvas(unittest.TestCase):
     def test_a_panel_turned_the_other_way_up_is_known(self):
         # The 300M builds at 320x480 and 480x320; the landscape seed is one.

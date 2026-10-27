@@ -25,8 +25,8 @@ name: ci
 #          Pillow, so it runs in `fidelity`, and so do test_states and
 #          test_spec a second time: their artwork and preview tests need
 #          Pillow and skip in `test`. test_palette, test_templates and
-#          test_verify_seed run in `test` too; what they assert of the one
-#          seed CI pulls runs, and what reads another seed or Extron's
+#          test_verify_seed run in `test` too; what they assert of the
+#          seeds CI pulls runs, and what reads another seed or Extron's
 #          template table skips (below).
 #   CAN  - what the scripts that need GUI Designer promise their callers, as
 #          text (tests/test_seed_script.py, test_panel_scripts.py,
@@ -39,14 +39,49 @@ name: ci
 #   CANNOT - anything that reads files a plain checkout lacks. Those tests skip
 #          here, and only a provisioned machine running `python -m pytest`
 #          exercises them:
-#            - the seeds: Git LFS, which actions/checkout does not pull - but
-#              both jobs pull seeds/Afterburn 1035.gdl, about 3 MB: the worked
-#              examples' donor, and a source of the faces.
+#            - the seeds this file does not pull. Git LFS is not pulled by
+#              actions/checkout, so each job pulls the seeds the suite reads:
+#              all of Afterburn's, the 320, 525, 725 and 1035 of Mach, the 320,
+#              525 and 1035 of Shockwave and Turbulence's 320 and 1035 - 190 MB of
+#              the 570 the 41 seeds hold, enough that the region frame, the call
+#              mode, the hubs and the 320 of each theme run here.
+#              Turbulence's 525, 720, 725 and 1525 (37 to 67 MB each, 225 MB
+#              together) and the Mach, Shockwave and
+#              Turbulence 535, 720 and 1535 and ECP seeds are left out, and what
+#              reads them skips. The cost is LFS bandwidth, which a private
+#              repository's plan meters (1 GiB a month on the free one):
+#              pulling every seed would spend it in two runs, so the objects are
+#              cached (.git/lfs). One job, `lfs`, restores the cache or pulls and
+#              saves it, and the jobs that read the seeds need it, so a miss is
+#              fetched once, not once per job. The key hashes only the pointers of
+#              the seeds pulled, so a change to a seed CI does not pull misses
+#              nothing; and restore-keys lets a changed seed start from the last
+#              cache, so only what is missing is fetched. Whatever the cache has
+#              evicted (7 days unused) is pulled again, once. A pull request
+#              restores only a cache saved on its base branch or its own, so the
+#              first one after a seed change pays for it.
 #            - Extron's templates and kit: vendor/ is not in git, and no GUI
-#              Designer is installed.
-#            - test_design's Chrome tests: Chrome is on the runner, but they
-#              also need the Design type's runtime ($GDL_DC_RUNTIME), which is
-#              not in the repo.
+#              Designer is installed. A seed carries only the images its own
+#              pages use, so the tests that need the whole kit or the template
+#              table skip rather than read a seed (the extraction tests, which
+#              do read a seed's art, run). In test_design that is each test
+#              marked needs_kit, or skip_without_kit, for the theme it lays
+#              out: without the kit a theme's system draws no icons, so what
+#              its template draws as kit art comes out as a caption at another
+#              size (Mach's 100 px source tiles 101 wide) or as no image.
+#            - test_design's Chrome tests, in the public copy: they need the
+#              Design type's runtime ($GDL_DC_RUNTIME), which is Anthropic's and
+#              excluded from the public copy (tools/public_sync.py). In the
+#              archive archive/dc-runtime/ holds it; the `chrome` job, a job of
+#              its own so the quick tests are not held up by it, exports the
+#              runtime the repository pins and the runner's Chrome does the rest.
+#              That job runs the file under pytest with -n 4, as it was timed
+#              here: 78 tests in 37 minutes on a shared 8-core box, which gave the
+#              four workers about one core between them (2271 s of CPU in 2229 s of
+#              wall), so the bound is 90 minutes, a little over twice that.
+#
+# Every job has a timeout-minutes; a hung Chrome would otherwise hold a runner for
+# GitHub's default six hours.
 
 on:
   push:
@@ -55,7 +90,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  lfs:
+    # The one job that spends LFS bandwidth: it restores the cache (the newest
+    # one for another set of seeds, if this exact key misses), pulls what is
+    # missing, and the cache is saved when it ends. See the header.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: restore the seeds' LFS objects
+        uses: actions/cache@v4
+        with:
+          path: .git/lfs
+          key: lfs-seeds-v2-${{ hashFiles('seeds/Afterburn*.gdl', 'seeds/Mach 320.gdl', 'seeds/Mach 525.gdl', 'seeds/Mach 725.gdl', 'seeds/Mach 1035.gdl', 'seeds/Shockwave 320.gdl', 'seeds/Shockwave 525.gdl', 'seeds/Shockwave 1035.gdl', 'seeds/Turbulence 320.gdl', 'seeds/Turbulence 1035.gdl') }}
+          restore-keys: |
+            lfs-seeds-v2-
+
+      - name: the seeds the suite reads (Git LFS, 190 MB of the 570)
+        # Every Afterburn seed, the 320, 525, 725 and 1035 of Mach and the 320, 525
+        # and 1035 of Shockwave, and Turbulence's 320 and 1035. See the header: what
+        # is left out, and why.
+        run: git lfs pull --include "seeds/Afterburn*.gdl,seeds/Mach 320.gdl,seeds/Mach 525.gdl,seeds/Mach 725.gdl,seeds/Mach 1035.gdl,seeds/Shockwave 320.gdl,seeds/Shockwave 525.gdl,seeds/Shockwave 1035.gdl,seeds/Turbulence 320.gdl,seeds/Turbulence 1035.gdl"
+
   test:
+    needs: lfs
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,8 +124,16 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: the seed the examples build on and the faces come from (Git LFS, about 3 MB)
-        run: git lfs pull --include "seeds/Afterburn 1035.gdl"
+      - name: the seeds' LFS objects, from the `lfs` job's cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .git/lfs
+          key: lfs-seeds-v2-${{ hashFiles('seeds/Afterburn*.gdl', 'seeds/Mach 320.gdl', 'seeds/Mach 525.gdl', 'seeds/Mach 725.gdl', 'seeds/Mach 1035.gdl', 'seeds/Shockwave 320.gdl', 'seeds/Shockwave 525.gdl', 'seeds/Shockwave 1035.gdl', 'seeds/Turbulence 320.gdl', 'seeds/Turbulence 1035.gdl') }}
+          fail-on-cache-miss: true
+
+      - name: check out the seeds the suite reads from them
+        # The objects are local, so this fetches nothing from GitHub.
+        run: git lfs pull --include "seeds/Afterburn*.gdl,seeds/Mach 320.gdl,seeds/Mach 525.gdl,seeds/Mach 725.gdl,seeds/Mach 1035.gdl,seeds/Shockwave 320.gdl,seeds/Shockwave 525.gdl,seeds/Shockwave 1035.gdl,seeds/Turbulence 320.gdl,seeds/Turbulence 1035.gdl"
 
       - name: spec tests (layout, IDs, Extron design rules)
         run: python tests/test_spec.py
@@ -242,8 +310,8 @@ jobs:
         run: python tests/test_templates.py
 
       - name: a seed is checked for its model
-        # Every case reads a seed from Git LFS: those on Afterburn 1035, which
-        # both jobs pull, run; those on another seed skip.
+        # Every case reads a seed from Git LFS: those on a seed both jobs
+        # pull (the header lists them) run; those on another seed skip.
         run: python tests/test_verify_seed.py
 
       - name: the design systems read as the Design System page reads them
@@ -260,10 +328,9 @@ jobs:
           python tests/test_shockwave_truth.py
           python tests/test_afterburn_truth.py
 
-      - name: the Claude Design translator, on the probe's output
-        # The Chrome tests skip: Chrome is on the runner, but they also need the
-        # Design type's runtime ($GDL_DC_RUNTIME), which is not in the repo.
-        # What needs the seeds or Extron's art skips too.
+      - name: the Claude Design translator's rules, on the probe's output
+        # No runtime here ($GDL_DC_RUNTIME unset), so the Chrome classes skip; the
+        # `chrome` job runs them. What needs Extron's art skips too.
         run: python tests/test_design.py
 
       - name: the seed script's contract with its caller
@@ -299,6 +366,54 @@ jobs:
       - name: the skill Claude Code loads triggers as SKILL.md says
         run: python tests/test_skill.py
 
+      - name: the format probes' inputs, runner and reader
+        # Text and parse pins on examples/probes-128: running it needs GUI
+        # Designer. What needs the seeds, pwsh or Chrome skips.
+        run: python tests/test_probes_128.py
+
+      - name: every Python file parses as the Windows host's 3.11 does
+        # This job runs 3.12, which accepts f-strings 3.11 refuses (PEP 701);
+        # one stopped the probe reader on the host.
+        run: python tests/test_py311.py
+
+      - name: every PowerShell script is ASCII or has a UTF-8 BOM
+        # Windows PowerShell 5.1 reads a script with no BOM as the ANSI code page,
+        # not UTF-8, so a non-ASCII character in one (a dash in a comment, the
+        # multiplication sign in a regex class) reads as other characters there.
+        # pwsh reads UTF-8 whatever the BOM, so the parse step below cannot see
+        # this; the BOM makes 5.1 read the characters the file holds.
+        run: |
+          python - <<'PY'
+          import glob
+          bad = []
+          for f in sorted(glob.glob('powershell/**/*.ps1', recursive=True) + glob.glob('examples/**/*.ps1', recursive=True)):
+              b = open(f, 'rb').read()
+              if not b.startswith(b'\xef\xbb\xbf') and any(c > 127 for c in b):
+                  bad.append(f)
+                  print(f'::error file={f}::non-ASCII bytes and no UTF-8 BOM: Windows PowerShell 5.1 reads it as ANSI')
+          assert not bad, bad
+          print('  every script is ASCII or has a BOM')
+          PY
+
+      - name: every PowerShell script parses
+        # Nothing here runs them (they need GUI Designer), so a syntax error in
+        # one would reach a Windows host first. pwsh is on the runner; its parser
+        # is PowerShell 7's, a superset of 5.1's grammar for what these scripts
+        # use, so it catches a syntax break but not a 5.1-only quirk, nor how 5.1
+        # decodes the file (the step above covers that).
+        shell: pwsh
+        run: |
+          $bad = 0
+          foreach ($f in Get-ChildItem -Path powershell, examples -Recurse -Filter *.ps1) {
+            $errs = $null; $tokens = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$tokens, [ref]$errs)
+            if ($errs) {
+              $bad++
+              foreach ($e in $errs) { Write-Host "::error file=$($f.FullName),line=$($e.Extent.StartLineNumber)::$($e.Message)" }
+            } else { Write-Host "  ok $($f.Name)" }
+          }
+          if ($bad) { exit 1 }
+
       - name: every tests/test_*.py is run by a job in this file
         # A test file added and not named here would run nowhere, and nothing
         # else would fail.
@@ -313,6 +428,8 @@ jobs:
           exit $missing
 
   fidelity:
+    needs: lfs
+    timeout-minutes: 30
     # The render harness, against GUI Designer's own snapshot exports. Runs here
     # only because every face is recoverable from the tracked fixtures; see the
     # note at the top of this file before assuming it can be simplified.
@@ -324,16 +441,19 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: the seed the examples build on and the faces come from (Git LFS, about 3 MB)
-        run: git lfs pull --include "seeds/Afterburn 1035.gdl"
+      - name: the seeds' LFS objects, from the `lfs` job's cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .git/lfs
+          key: lfs-seeds-v2-${{ hashFiles('seeds/Afterburn*.gdl', 'seeds/Mach 320.gdl', 'seeds/Mach 525.gdl', 'seeds/Mach 725.gdl', 'seeds/Mach 1035.gdl', 'seeds/Shockwave 320.gdl', 'seeds/Shockwave 525.gdl', 'seeds/Shockwave 1035.gdl', 'seeds/Turbulence 320.gdl', 'seeds/Turbulence 1035.gdl') }}
+          fail-on-cache-miss: true
+
+      - name: check out the seeds the suite reads from them
+        # The objects are local, so this fetches nothing from GitHub.
+        run: git lfs pull --include "seeds/Afterburn*.gdl,seeds/Mach 320.gdl,seeds/Mach 525.gdl,seeds/Mach 725.gdl,seeds/Mach 1035.gdl,seeds/Shockwave 320.gdl,seeds/Shockwave 525.gdl,seeds/Shockwave 1035.gdl,seeds/Turbulence 320.gdl,seeds/Turbulence 1035.gdl"
 
       - name: install Pillow
         run: pip install -r requirements.txt
-
-      - name: the layout verifier checks start page, modal popups and IDs
-        # Here rather than in `test`: verify_built imports the compositor, so
-        # these skip without Pillow.
-        run: python tests/test_verify_built.py
 
       - name: the type probe measures baked captions
         # Here rather than in `test`: tests/test_type_probe.py imports Pillow at
@@ -351,6 +471,12 @@ jobs:
             python -m gdl.fonts "seeds/Afterburn 1035.gdl" gdl/fonts/
           fi
           ls -1 gdl/fonts/
+
+      - name: the layout verifier checks start page, modal popups and IDs
+        # Here rather than in `test`: verify_built imports the compositor, so
+        # these skip without Pillow. After the recovery: a formatted caption is
+        # looked for in its art drawn in the fixture's own face.
+        run: python tests/test_verify_built.py
 
       - name: a face drawn in a stand-in is said aloud
         # Here as well as in `test`, where its compositor tests skip without
@@ -374,8 +500,9 @@ jobs:
         # After the recovery: the preview draws its captions in the faces.
         run: python tests/test_spec.py
 
-      - name: the render harness refuses another project's snapshots
-        # After the recovery: it renders a page to score it.
+      - name: the render harness refuses another project's snapshots, and scores a preview against its build
+        # After the recovery: it renders a page to score it. The preview's
+        # build is archived in Git LFS, and skipped where it is a pointer.
         run: python tests/test_score.py
 
       - name: score the render against ground truth
@@ -388,3 +515,62 @@ jobs:
       - name: no page may regress against the shipped baseline
         if: hashFiles('fixtures/gdl/*.gdl') != ''
         run: python tests/score.py diff tests/baseline.json /tmp/after.json
+
+  chrome:
+    # The Claude Design translator's Chrome tests, in a job of their own so a slow
+    # or hung Chrome holds up nothing else. Archive only: archive/dc-runtime/ is
+    # excluded from the public copy (tools/public_sync.py), and without it every
+    # class here skips.
+    needs: lfs
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      # Whether the runner lets Chrome make a user namespace for its sandbox is
+      # unverified; if not, every render fails with "did not render". A throwaway
+      # VM laying out our own test pages loses nothing by opting out; a desktop
+      # run, which leaves this unset, keeps the sandbox.
+      GDL_CHROME_NO_SANDBOX: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: the seeds' LFS objects, from the `lfs` job's cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .git/lfs
+          key: lfs-seeds-v2-${{ hashFiles('seeds/Afterburn*.gdl', 'seeds/Mach 320.gdl', 'seeds/Mach 525.gdl', 'seeds/Mach 725.gdl', 'seeds/Mach 1035.gdl', 'seeds/Shockwave 320.gdl', 'seeds/Shockwave 525.gdl', 'seeds/Shockwave 1035.gdl', 'seeds/Turbulence 320.gdl', 'seeds/Turbulence 1035.gdl') }}
+          fail-on-cache-miss: true
+
+      - name: check out the seeds the suite reads from them
+        # The objects are local, so this fetches nothing from GitHub.
+        run: git lfs pull --include "seeds/Afterburn*.gdl,seeds/Mach 320.gdl,seeds/Mach 525.gdl,seeds/Mach 725.gdl,seeds/Mach 1035.gdl,seeds/Shockwave 320.gdl,seeds/Shockwave 525.gdl,seeds/Shockwave 1035.gdl,seeds/Turbulence 320.gdl,seeds/Turbulence 1035.gdl"
+
+      - name: install Pillow, pytest and its parallel runner
+        run: pip install -r requirements.txt pytest pytest-xdist
+
+      - name: the Design type's runtime the repository pins
+        # Chosen by the SHA-256 gdl/dc_runtime.json lists, newest proven first,
+        # not by directory order: a second runtime in archive/dc-runtime/ must not
+        # become the one tested by sorting before the pinned one.
+        if: hashFiles('archive/dc-runtime/*/dc-runtime.js') != ''
+        run: |
+          python - <<'PY' >> "$GITHUB_ENV"
+          import glob, hashlib, json, os, sys
+          pinned = [p['sha256'] for p in reversed(json.load(open('gdl/dc_runtime.json'))['proven'])]
+          have = {hashlib.sha256(open(f, 'rb').read()).hexdigest(): f
+                  for f in glob.glob('archive/dc-runtime/*/dc-runtime.js')}
+          for sha in pinned:
+              if sha in have:
+                  print('GDL_DC_RUNTIME=' + os.path.abspath(have[sha]))
+                  break
+          else:
+              sys.exit('no archive/dc-runtime/*/dc-runtime.js matches a SHA-256 in gdl/dc_runtime.json')
+          PY
+
+      - name: the Claude Design translator, in Chrome
+        # -n 4, as timed (see the header: 37 minutes). The file's non-Chrome tests run too;
+        # what reads Extron's kit skips, as the header says.
+        run: python -m pytest -q -n 4 tests/test_design.py

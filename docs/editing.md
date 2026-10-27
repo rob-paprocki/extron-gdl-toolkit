@@ -5,16 +5,16 @@ the impressive demo; changing one that already exists is the job. A client says
 "rename those three buttons, and we're moving to the bigger panel" and the
 question is whether that can be done reliably rather than by hand.
 
-It can. Four of the five operations are verified end to end against GUI
-Designer 1.28.0.7 on the real client project; `renumber` is planned and
-checked, but has not been through a build.
+It can. All five operations are verified end to end against GUI Designer
+1.28.0.7: four on the real client project, and `renumber` on Extron's own
+Afterburn 1035 seed and on a panel generated from a spec.
 
 | Op | What it does | Verified |
 |---|---|---|
 | `rename` | captions, state by state, wherever they actually live | 12 controls built: 9 plain captions correct on both states; 3 formatted ones are in the artwork (below) |
 | `restyle` | remap colors on each control and each state, text color included | 5 sliders built, 5/5 off the artwork; a fill held only on a state and a text color, built and correct |
 | `states` | give a button the states it should have: add, remove, rename or reorder them, and set each one's look | grown 2 to 3, trimmed 3 to 2, and a state inserted before On; built, every state and press state correct |
-| `renumber` | reassign the IDs of the addressable controls it selects - each button, label, level or slider that has one - from `start`, `step` apart, within 1 to 65535; controls sharing an ID (mirrors) take one new one, a mirror the selector leaves is a warning, and a band per page is a renumber per page | planned + checked |
+| `renumber` | reassign the IDs of the addressable controls it selects - each button, label, level or slider that has one - from `start`, `step` apart, within 1 to 65535; controls sharing an ID (mirrors) take one new one, a mirror the selector leaves is a warning, and a band per page is a renumber per page | **26/26 on two builds**: a seed popup's 12 buttons from 20000 and a mirror on two popups to one new ID, and 12 of a generated panel's controls from 30000 - each on its new ID, no other ID moved, `verify_built` 0 problems; the ID map made off each build verifies, and the one from before fails on exactly the controls renumbered (`archive/job-e823df9b/probes-128/`) |
 | `retarget` | move to another panel model, or turn one that rotates, optionally rescaling | **654/654 on the fixture; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved; 650/650 on the same seed turned to a portrait 1035M** |
 
 ## The shape
@@ -67,9 +67,25 @@ Formatted text is the awkward one. It carries its layout inline —
   on a second, unindented, over the icon.
 
 The hand-placed tabs indent line one only. `check` warns whenever a formatted
-caption is replaced by something longer, and `verify_built` reports these as
-*not verifiable here* rather than passing or failing them — the only real check
-is looking at the asset PNG.
+caption is replaced by something longer. `verify_built` reads the words off the
+built project, where Build reads them, and looks for each line in the art:
+drawn by `gdl.compose` in the state's face, where it fits best, a line must
+cover the art's text there and be covered by it, and land in a run of text its
+own width. A line found nowhere is a failure, and one whose words are found on
+two lines is said to have wrapped. The art cannot tell one letter from another,
+which is why the words come from the project. Measured on the client
+fixture's formatted captions of words - 11 controls, 22 states; its other 12
+are icon glyphs - each scores 0.93 or more in its own art and none over 0.89
+in another's but `Camera` in Device / Comms, at 0.93 - a near word the project's
+words catch and the art does not. A line between 0.85 and 0.93 that lands in a
+run its own width, or one in a face drawn in a stand-in, is still reported *not
+verifiable here*. So is a line holding an icon glyph - a private-use code point
+(U+E000 to U+F8FF), which Build draws in its run's icon face, not the state's -
+and a caption whose text color is within the text mask's 64 a channel of its
+art's commonest color, where the whole fill reads as text: white on
+(200, 200, 200), or the fixture's grey #767789 on #37394E. The fixture's other
+12 controls, 24 states, are all one or the other. That is one face at one size
+of ground truth.
 
 ## A button is its states
 

@@ -1050,6 +1050,9 @@
    "gone": [
     "make it 54 wide"
    ],
+   "bounds": [
+     {"region": "left", "what": "group 1 button 1", "px": 6, "panels": ["TLP1035T"]}
+   ],
    "evidence": "Main SD's Display On, Off and Mute at y 170, 254 and 338 (80 deep); Screen Control and Lighting Control at 469 and 573 (110 deep); SD Volume Slider at 1163,163 52x315. The region page's probe on the 1035 draws the tabs 1 px apart, the Display buttons 4 apart, the tiles at 469 and 579 and the slider 53x315."
   },
   {
@@ -1076,6 +1079,15 @@
      "says": "the seed's 12 pt lifted to the 14 pt floor"
     }
    ],
+   "bounds": [
+     {"region": "top", "what": "surface Shape1", "px": 10, "panels": ["TLP725T"]},
+     {"region": "top", "what": "surface Shape1 (2)", "px": 10, "panels": ["TLP725T"]},
+     {"region": "top", "what": "first tab", "px": 10, "panels": ["TLP725T"]},
+     {"region": "top", "what": "surface Shape1", "px": 16, "panels": ["TLP720T"]},
+     {"region": "top", "what": "surface Shape1 (2)", "px": 16, "panels": ["TLP720T"]},
+     {"region": "top", "what": "first tab", "px": 16, "panels": ["TLP720T"]},
+     {"region": "top", "what": "tab pitch", "px": 6, "panels": ["TLP720T"]}
+   ],
    "evidence": "Main SD's buttons: PointSize 12 on SD PC to SD AUX, Display On/Off/Mute, Screen Control, Lighting Control, Audio Control, Volume Mute, Room Mode, Help and Power Down; Display Label and Volume Label 18; Date/Time 14."
   },
   {
@@ -1098,6 +1110,11 @@
     {
      "readme": "Extron's Design Standards, which its own templates do not always keep"
     }
+   ],
+   "bounds": [
+     {"region": "right", "what": "mute Volume Mute", "px": 3, "panels": ["TLP725T"]},
+     {"region": "bottom", "what": "mode Room Mode", "px": 5, "panels": ["TLP725T"]},
+     {"region": "bottom", "what": "mode Room Mode", "px": 3, "panels": ["TLP720T"]}
    ],
    "evidence": "Main SD's SD PC, SD Laptop and SD Blu-ray at x 169, 322 and 475 (152 wide); Display On, Off and Mute at 29,170, 29,254 and 29,338 (120x80)."
   },
@@ -1399,6 +1416,25 @@
   "reason": "The key grows to the panel's touch minimum about its centre, which moves it from the template's place.",
   "here": "The dialer's Delete key stands higher and further from the field than the template's.",
   "evidence": "VC Delete (5237) at 703,248 84x84, the field at 293,258 398x63, on seeds/Shockwave 1035.gdl."
+ },
+ {
+  "id": "shockwave-44",
+  "claim": "A hub's region page shows its Volume Level strip as its template does.",
+  "where": [
+   "README The template's grammar"
+  ],
+  "template": {
+   "does": "Each hub's Main Page places its Volume Level - a standard popup in no group at the menu bar's left, 51x480 on the 525 and 81x720 on the 535 - by a Popup Page Reference named Volume bound to that popup by its ID (PopupID 24, GroupID 0): it is over main only while the program shows it.",
+   "seed": "seeds/Shockwave 525.gdl",
+   "pages": [
+    "Main Page",
+    "Volume Level"
+   ]
+  },
+  "status": "deviation",
+  "reason": "The applier binds each reference it makes to a group, never to one popup by its ID, so gdl.spec check refuses a standard popup with no group (docs/gdl-format.md section 5): the strip is the one popup of a Volume Level group of its own, which its reference shows on every working page. Binding it by its ID is applier work (docs/ROADMAP.md, A reference bound to one popup by its ID).",
+  "here": "On the 525 and the 535 the Volume Level strip, a popup at the menu bar's left (51x480, 81x720), shows on every working page: its reference is bound to a group of its own, where the template binds it to the popup by its ID and shows it only when the program does.",
+  "evidence": "seeds/Shockwave 525.gdl's Main Page: Volume at 651,0 51x480, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; seeds/Shockwave 535.gdl's Main Page: Volume at 1041,0 81x720, a PBPopupPageReference whose popupPageIDField names popup 24 (Volume Level) and group 0; docs/gdl-format.md section 5's survey, nine seeds' Volume Level placed so."
  }
  ]
 }

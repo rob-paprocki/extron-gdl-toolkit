@@ -235,6 +235,11 @@ def audit_ledger(p, ledger, text=None):
     words = text + ' ' + _flat({k: v for k, v in p.items() if k != 'panels'})
     frames = _series_frames(p)
     seen = set()
+    # Each bound held to what is checkable without Chrome: the region test
+    # that measures one (tests/test_design.py
+    # TestRegionPagesAgainstTheirTemplates) needs Chrome and the Design
+    # runtime, which the public copy has not.
+    served, slots, bounded = None, {}, {}
     for e in ledger['entries']:
         tag = e['id']
         if tag in seen:
@@ -247,6 +252,35 @@ def audit_ledger(p, ledger, text=None):
             out.append(f'{tag}: `frame`, but names no frame key that draws it')
         if st == 'deviation' and not (e.get('reason') or '').strip():
             out.append(f'{tag}: a `deviation` without a reason')
+        if e.get('bounds') and st != 'deviation':
+            # A bound lets a region page stand off its template; only a
+            # deviation is a reason it may.
+            out.append(f'{tag}: bounds a region, but is not a `deviation`')
+        for bd in e.get('bounds') or ():
+            if served is None:
+                from . import models
+                served = models(p)
+            slot = f"{bd['region']} {bd['what']!r}"
+            if bd['px'] < 1:
+                out.append(f'{tag}: bounds {slot} by {bd["px"]} px, where a bound lets a slot stand a positive '
+                           'number of px off')
+            for m in bd['panels']:
+                if m not in served:
+                    out.append(f'{tag}: bounds {m}, which is no panel {theme} serves')
+                    continue
+                if m not in slots:
+                    from ..design import region_slots
+                    slots[m] = region_slots(served[m].get('frame') or {})
+                if bd['what'] not in slots[m].get(bd['region'], ()):
+                    out.append(f"{tag}: bounds {slot} on {m}, which that panel's frame has no such slot in")
+                # One entry allows a slot, so a drift names the one deviation
+                # that lets it stand off.
+                key = (m, bd['region'], bd['what'])
+                if key in bounded:
+                    out.append(f'{tag}: bounds {slot} on {m}, which '
+                               + ('it bounds twice' if bounded[key] == tag else
+                                  f'{bounded[key]} bounds too - one entry allows a slot'))
+                bounded.setdefault(key, tag)
         if st == 'deviation' and not (e.get('here') or '').strip():
             out.append(f"{tag}: a `deviation` that says nothing to the designer - its `here` is the README's "
                        'Differences')

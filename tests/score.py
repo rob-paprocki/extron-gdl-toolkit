@@ -18,6 +18,11 @@ render change lands, so any working change can be diffed against it directly.
 The diff exits non-zero if any page regressed by more than --tol (default
 0.01%), so it can gate a commit. Scores come from the same `diff_stats` the
 harness uses, so the numbers are directly comparable to its output.
+
+The snapshots score the renderer on built artwork. What the spec preview draws
+in place of artwork Build has not made yet is scored against a build instead:
+
+    python tests/score.py preview <spec.json> <built.gdl> [<spec.json> <built.gdl> ...]
 """
 import argparse
 import json
@@ -29,8 +34,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PIL import Image  # noqa: E402
 
-from gdl.compose import (FALLBACKS, diff_stats, fill_index, group_members,  # noqa: E402
-                         load, render_page)
+from gdl.compose import (FALLBACKS, FROM_SEED, diff_stats, fill_index,  # noqa: E402
+                         group_members, load, render_page)
 
 ID_RE = re.compile(r'_Id(\d+)\.png$')
 
@@ -70,6 +75,59 @@ def record(gdl_path, snapshot_dir):
         raise SystemExit('snapshots of pages by another name - these snapshots are not from '
                          'this .gdl:\n  ' + '\n  '.join(renamed))
     return scores
+
+
+def preview(spec_path, built_path):
+    """The spec preview against the panel built from that spec.
+
+    Each page and popup of the spec, drawn by gdl.spec's preview, beside the
+    same one drawn from the built file's own artwork - both as the panel shows
+    them (compose.as_the_panel) and each alone, no popup shown in a group's
+    region, since the preview draws none. Returns [(name, 'page' or 'popup',
+    % differing, % differing with every level and slider set aside)], the two
+    None where the build has nothing of that name.
+
+    The panel draws a caption at runtime, in the faces the built file embeds,
+    so text is drawn by the same code in those faces on both sides - the
+    preview alone knows no donor, and would draw a seed's Roboto Thin where a
+    320 embeds Light: this measures what the preview synthesises in place of
+    Build's artwork - fills, borders, art and where each lies."""
+    import copy
+
+    from gdl.compose import as_the_panel, popup_groups, render_snapshot
+    from gdl.spec import Panel
+    panel = Panel.load(spec_path)
+    layout, assets = load(built_path)
+    fills = fill_index(built_path)
+    built = {p['Name']: p for p in layout['Pages'] + layout['PopupPages']}
+    hide = {g: None for g in popup_groups(layout)}
+    # The preview lays out pages; a popup is laid out the same way.
+    popups = copy.copy(panel)
+    popups.pages = panel.popups
+    rows = []
+    for who, kind in ((panel, 'page'), (popups, 'popup')):
+        for i, pg in enumerate(who.pages):
+            b = built.get(pg['name'])
+            if b is None:
+                rows.append((pg['name'], kind, None, None))
+                continue
+            size = (b.get('Width') or panel.size[0], b.get('Height') or panel.size[1])
+            with as_the_panel(built_path):
+                # The preview's own as_the_panel() inside keeps these faces.
+                mine = who.render(i).convert('RGB').crop((0, 0) + size)
+                theirs = render_snapshot(layout, b['ID'], assets, size, shown=hide,
+                                         fills=fills).convert('RGB')
+            pct = diff_stats(mine, theirs)['pct_bad']
+            # A level whose art the donor keeps (plan: keep_art) is previewed
+            # as its bare bar, which is most of what differs where there is
+            # one: the figure without them says what the rest is worth.
+            for c in b.get('Controls') or []:
+                if c['__type'].split(':')[0] in ('PBLevel', 'PBSlider'):
+                    box = (c['Left'], c['Top'], c['Left'] + c['Width'], c['Top'] + c['Height'])
+                    mine.paste((255, 0, 255), box)
+                    theirs.paste((255, 0, 255), box)
+            rows.append((pg['name'], kind, pct, diff_stats(mine, theirs)['pct_bad']))
+    return rows
 
 
 def summarise(scores):
@@ -144,15 +202,43 @@ def main():
     d.add_argument('--tol', type=float, default=0.01,
                    help='percentage points of regression to tolerate (default 0.01)')
 
+    p = sub.add_parser('preview', help='score the spec preview against the panel built from it')
+    p.add_argument('pairs', nargs='+', metavar='spec.json built.gdl',
+                   help='a spec and the panel built from it, as many pairs as you like')
+
     args = ap.parse_args()
+
+    if args.cmd == 'preview':
+        if len(args.pairs) % 2:
+            ap.error('preview takes a spec and its built panel, in pairs')
+        rows = []
+        for spec, built in zip(args.pairs[::2], args.pairs[1::2]):
+            print(built)
+            for name, kind, pct, rest in preview(spec, built):
+                print(f'  {kind:<5}  {name:<40}  ' + ('not in the built file' if pct is None else
+                                                    f'{pct:6.2f}%  {rest:6.2f}% with levels and sliders aside'))
+                if pct is not None:
+                    rows.append((pct, rest))
+        for col, what in ((0, 'all of it'), (1, 'levels and sliders aside')):
+            vals = sorted(r[col] for r in rows)
+            if vals:
+                print(f'{len(vals)} page(s) and popup(s), {what}: mean {sum(vals) / len(vals):.2f}%   '
+                      f'median {vals[len(vals) // 2]:.2f}%   worst {vals[-1]:.2f}%')
+        if FALLBACKS:
+            print(f"drawn in a stand-in on both sides - {'; '.join(sorted(FALLBACKS))}")
+        if FROM_SEED:
+            print(f"read from a seed on both sides, not carried by the build - {'; '.join(sorted(FROM_SEED))}")
+        return 0
 
     if args.cmd == 'record':
         scores = record(args.gdl, args.snapshots)
-        if FALLBACKS:
+        if FALLBACKS or FROM_SEED:
             # Not comparable with tests/baseline.json, which was scored on the
-            # faces the project embeds: the host's Arial costs every page.
-            print(f"scored on stand-ins - {'; '.join(sorted(FALLBACKS))} - for want of "
-                  f'the recovered faces, nothing written. Recover them first:\n'
+            # faces the project embeds: the host's Arial costs every page, and
+            # a seed's face is another build of it, so the score would turn
+            # on which seeds are pulled.
+            print(f"scored on faces the fixtures do not embed - {'; '.join(sorted(FALLBACKS | FROM_SEED))} - "
+                  f'for want of the recovered faces, nothing written. Recover them first:\n'
                   f'  for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done')
             return 2
         with open(args.out, 'w', encoding='utf-8') as fh:

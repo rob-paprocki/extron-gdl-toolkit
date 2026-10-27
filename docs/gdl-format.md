@@ -205,7 +205,8 @@ opens and builds, the binding just reads "Unassigned" in the UI:
    objectTypeField}` back-pointers — plus `hasReferencesField`
 4. `PBProject.popupPageGroupsField`, the group registry: a
    `List<PBControlGroup>` of `{nameField, idField, referenceCountField}`.
-   **An unregistered group id renders as "Unassigned."**
+   **An unregistered group id renders as "Unassigned."** The count is not a
+   fifth place: Build keeps whatever it holds and builds the same panel (§7).
 
 A generator should assert all four agree rather than trusting the writes.
 
@@ -214,9 +215,12 @@ A generator should assert all four agree rather than trusting the writes.
 - PowerShell **unrolls a single-element list** returned from a function. Use
   `return ,$x`, or a `List<T>` reads back as a bare element and misleads you.
 - `$HOME` and `$PID` are reserved PowerShell variables.
-- `referenceCountField` semantics are still unknown: stored 46 / 8 / 13 / 2
-  against member counts 11 / 1 / 2 / 2. Setting it to a plausible number caused
-  no visible problem.
+- `referenceCountField` reaches nothing Build makes. The client project stores
+  46 / 8 / 13 / 2 against groups of 11 / 1 / 2 / 2 popups. Groups of 1, 3 and 5
+  popups built at the applier's constant 2, rewritten to 46, 0 and 1 and built
+  again, kept each value, and the second build's `layout.json` and artwork were
+  the first's (`docs/from-scratch.md` §5, question 6). Any value builds the
+  same panel.
 - Cloned controls keep the source's `UserId` and per-page `ID`. Duplicate IDs
   are legal (Extron uses them for feedback mirrors) but allocate fresh ones
   unless a mirror is what you want.
@@ -313,7 +317,8 @@ A generator should assert all four agree rather than trusting the writes.
   Designer's formatted text, which carries tab and CRLF layout markers inline
   (`"\t\tDevice\r\nComms"`). 23 controls against 336 in the client
   fixture. Formatted captions are **flattened into the artwork**, so they read
-  as `''` in `layout.json` and can only be checked by looking at the asset - and
+  as `''` in `layout.json`: their words are in the built project and their
+  lines only in the asset (`docs/editing.md` has how both are checked) - and
   because their line breaks are hand-placed, a longer replacement wraps onto an
   unindented second line over the icon. Renaming one works; renaming one to
   something longer quietly ruins it.
@@ -400,7 +405,11 @@ A generator should assert all four agree rather than trusting the writes.
   secondary accent, from the kit's `Sliders & Toggles` - and the filled part in
   `sliderFillColorField`, `#BABCCE`. Build draws the thumb as its own asset,
   `SliderIndicatorImageID`, so a clone under another scheme keeps the
-  periwinkle thumb until the image is set.
+  periwinkle thumb until the image is set. The art is stretched into that
+  asset, not fitted and never turned: the Afterburn 1035 Portrait's 31 px
+  sliders draw the square file 30x50, and a Shockwave slider lying right or
+  left its 156x102 file 34x52 - `sliderThumbWidth` and `sliderThumbHeight`
+  being literal on the page whichever way the slider lies.
 - **A slider's rail can be images too, and a border hides them.** The
   Shockwave, Mach and Turbulence seeds' sliders draw the rail from the kit: the
   track shown empty in `backgroundImageField`, the fill shown full in
@@ -413,11 +422,17 @@ A generator should assert all four agree rather than trusting the writes.
   rim shows round it - and a track wider than its slider is still drawn
   `sliderTrackWidth` across, centered and cut to the control: a 47 px slider
   with a 52 px track. So drawn, every rail of the three themes' seeds reads 0%
-  off its kit files (`rail_image` in `tests/verify_built.py`). Those sliders author
-  no border and a Transparent fill; one with a border resource and a fill builds
-  that bordered fill in place of the art, so a Shockwave slider planned with
-  the rounded border and black fill builds an opaque black block with the right
-  images on the model. The applier clears every clone's `backgroundImageField`
+  off its kit files (`rail_image` in `tests/verify_built.py`). The art is drawn
+  standing up, and on a slider lying right or left Build turns it a quarter
+  turn first, its top to the slider's full end - clockwise lying right,
+  anticlockwise lying left - and lays it out the same way along the slider's
+  width: Shockwave's, built so in the format probes, reads 0% off turned and
+  45 to 82% laid on its side unturned (`examples/probes-128/`; no seed draws a
+  horizontal rail from art, and none a slider whose orientation is `down`).
+  Those sliders author no border and a Transparent fill; one with a border
+  resource and a fill builds that bordered fill in place of the art, so a
+  Shockwave slider planned with the rounded border and black fill builds an
+  opaque black block with the right images on the model. The applier clears every clone's `backgroundImageField`
   - on a slider, its track - but an art-drawn level's (below), so the plan
   writes the rail and the verifier reads it back off the two assets.
 - **A Level's `TLPImageID` is its full bar; a Slider's is its empty track.**
@@ -600,5 +615,6 @@ invariants looked like and are not today's totals:
 | Every canvas is a model the table can target, either way up | **FAIL** - 1920x1200 and 986x740, the Teams Rooms and Zoom Rooms control templates, whose platforms the table does not list (`spec.MODELS_FULL` has no model with those canvases, and neither is a design-system theme); a known gap, not a regression |
 | Border resources shared across themes | INFO - none common to all 79 projects; Afterburn 17-32, Mach 13-15, Shockwave 13-14, Turbulence 13, Zoom Rooms 16-17 |
 | Controls Build leaves unrasterized | INFO - 2 to 187 per project, in all 29 built; the baseline to compare a suspect build against |
+| Popup group reference counts | INFO - added after that run, and read over the fixtures and seeds alone: 58 groups in the 39 that have one, the stored count its group's popups in one (2 and 2) and its references in none, 2 to 112 - the seeds' 41 to 112 against 10 to 15 popups. Build keeps it as written (§7), so this says, not judges |
 
 A FAIL is either that known gap or a new finding.

@@ -270,6 +270,13 @@ MODELS_FULL['TLP1230WTG'] = (1920, 720, 166.0, MODELS_FULL['TLP1230WTG'][3])
 ORIENTATIONS = {m: ((MODELS_FULL[m][0], MODELS_FULL[m][1]), (MODELS_FULL[m][1], MODELS_FULL[m][0]))
                 for m in ('TLP300M', 'TLP520M', 'TLC521M', 'TLP535M', 'TLP835M', 'TLP1035M')}
 
+# Extron Control Pro's wizard offers two themable presets, TouchLink 1920x1080
+# (16:9) and 1280x800 (16:10); its phone and tablet presets are Blank-only and
+# have no donor, so they are no canvas here (seeds/README.md). Both are the
+# panel's own screen rather than a turned one, so panel_id names the second by
+# its size, not by a way up.
+PRESETS = {'VTLPEcp': ((1920, 1080), (1280, 800))}
+
 # name -> (width, height). The common case; the rest of MODELS_FULL is there
 # when you need the DPI or the part number.
 MODELS = {k: (v[0], v[1]) for k, v in MODELS_FULL.items()}
@@ -288,13 +295,15 @@ def part_number(model):
 
 
 def sizes(model):
-    """Every canvas a model runs at: its one resolution, or both orientations."""
-    return ORIENTATIONS.get(model) or ((MODELS_FULL[model][0], MODELS_FULL[model][1]),)
+    """Every canvas a model runs at: its one resolution, both orientations, or
+    the presets of a soft client that has them."""
+    return ORIENTATIONS.get(model) or PRESETS.get(model) or ((MODELS_FULL[model][0], MODELS_FULL[model][1]),)
 
 
 def panel_id(model, size=None):
     """A panel by name: its model on the model's own canvas (sizes()[0]), and
-    model-Portrait or model-Landscape the other way up of one that rotates - a
+    model-Portrait or model-Landscape the other way up of one that rotates, or
+    model-<w>x<h> for another preset of a soft client (VTLPEcp-1280x800) - a
     canvas's `panels`, a design system's table, a folder of specs. No model's
     name has a hyphen. ValueError for a canvas the model does not run at."""
     own = sizes(model)
@@ -304,6 +313,8 @@ def panel_id(model, size=None):
                          f'not {size[0]}x{size[1]}')
     if size == own[0]:
         return model
+    if model in PRESETS:
+        return f'{model}-{size[0]}x{size[1]}'
     return f"{model}-{'Portrait' if size[1] > size[0] else 'Landscape'}"
 
 
@@ -483,14 +494,15 @@ SPEC_KEYS = frozenset((
     'does',
 ))
 PAGE_KEYS = frozenset((
-    'name', 'number', 'id_base', 'modal', 'controls', 'background', 'background_image',
+    'name', 'number', 'id_base', 'controls', 'background', 'background_image',
     'background_layout',
     # For the ID map: shown by the program rather than a control, what the
     # page is for, and the template's place a panel's layout named rather than
     # drew.
     'reached_by', 'does', 'left',
 ))
-POPUP_KEYS = PAGE_KEYS | {'group', 'size'}
+# `modal` is a popup's: the applier never writes it on a page.
+POPUP_KEYS = PAGE_KEYS | {'group', 'size', 'modal'}
 # What a grid or stack lays out by. Any other key is shared by its items, and
 # held to CONTROL_KEYS there.
 LAYOUT_KEYS = frozenset(('rect', 'cols', 'rows', 'gap', 'gap_y', 'pad', 'items', 'count',
@@ -666,8 +678,11 @@ def _type_fields(kind, c):
             # `thumb` is across the rail and `thumb_height` along it - square
             # unless the template's thumb is not: Shockwave's is 52 across and
             # 34 along. Build keeps width and height literal (the Zoom Rooms
-            # seed's horizontal slider has a thumb 7 wide and 25 tall), so a
-            # slider lying down swaps them, as the canvas draws it.
+            # seed's horizontal slider has a thumb 7 wide and 25 tall, and the
+            # format probe's Shockwave sliders lying right and left built the
+            # 34x52 thumbs this writes), so a slider lying down swaps them, as
+            # the canvas draws it. The thumb's art goes into that box
+            # stretched, unturned (tests/verify_built.py check_thumbs).
             across = c.get('thumb', 50)
             along = c.get('thumb_height', across)
             if c.get('orientation') in ('right', 'left'):
@@ -1571,7 +1586,9 @@ class Panel:
                 where = f"{kind} {it.get('name') or i!r}"
                 odd = _odd_keys(it, keys)
                 if odd:
-                    out.append(f"{where}: {', '.join(map(repr, odd))}" + say(f'a {kind}'))
+                    out.append(f"{where}: {', '.join(map(repr, odd))}" + say(f'a {kind}')
+                               + (" - a modal is a popup: put it in `popups` with modal true"
+                                  if kind == 'page' and 'modal' in odd else ''))
                 out += self._directive_keys(it.get('controls') or [], where)
         return out
 
@@ -2250,6 +2267,18 @@ class Panel:
                            + ('make it a modal, or a page, or build from a seed that has a standard popup'
                               if not modal else 'build from a seed that has a modal popup'))
 
+        # A group is registered by cloning one of the project's own (Register-
+        # GdlPopupGroup), so a grouped standard popup needs a donor that has
+        # one: the 320 and 300M seeds and one client fixture have none, and it
+        # stopped at the apply step.
+        grouped = [pu for pu in self.popups if not pu['modal'] and pu['group']]
+        if grouped and next(proj.instances('PBProject'), None) is not None \
+                and not proj.popup_group_count():
+            out.append(f"donor {path} has no popup group to clone, and the spec has "
+                       + ', '.join(f"{pu['name']!r} in group {pu['group']!r}" for pu in grouped)
+                       + ' - build from a seed that has a popup group (the 320 and 300M seeds have none), '
+                       'or make it a modal')
+
         # Border resources, for the same clone-never-construct reason and with a
         # much wider spread than control types. Missed here it costs a whole
         # Windows round trip: Set-GdlBorder reports it per control at apply time,
@@ -2572,7 +2601,7 @@ def _icons_command(family, sheet=None):
     if not data:
         print(f'no {font} face here: it is not recovered into gdl/fonts/'
               + (f', and seeds/{key} 1035.gdl is not pulled - git lfs pull --include '
-                 f'"seeds/{key} 1035.gdl"' if key else ''))
+                 f'"seeds/{key} 1035.gdl"' if key else ', and no seed here carries it'))
         return 1
     face = Advances(data)
     names = {cp: n for n, cp in face.glyph_names().items()}

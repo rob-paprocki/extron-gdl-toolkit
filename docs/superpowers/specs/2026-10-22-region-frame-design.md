@@ -217,7 +217,9 @@ build at a time.
    names. Inside its control and sharing its ID, `gdl.spec` holds it to its
    control's touch target, gaps and states, not its own; the ID map lists
    it as the tab's mirror, and its check across panels still holds the tab
-   to every panel.
+   to every panel. Built and verified on both: the 1035's in round four's
+   Shockwave room, the 1535's in the format probes
+   (`archive/job-e823df9b/probes-128/`).
 4. **Regions on tier A**: the components, placement from each series' frame,
    joined stacks, surfaces and default chrome; missing-region warnings.
 5. **Center and windows.** Decided in the making (2026-10-22): a source's
@@ -378,8 +380,9 @@ build at a time.
    profile says what its template draws with one (`examples.image`:
    Turbulence's window pictures). Shockwave's seeds have no `PBImage`, so
    its round art stays the kit's gray_round, which it is pixel for pixel,
-   and its Share Content art, the seed's own and in no kit, waits for an
-   extraction filter (`docs/ROADMAP.md`). The README of 8 says each where a
+   and its Share Content art, the seed's own and in no kit, is taken from
+   the seed by the profile's `kit.extract.only` filter (`gdl.designsys
+   extract shockwave`). The README of 8 says each where a
    designer reads it - the grammar's bars as the template's art (and the
    Header's and Footer's READMEs), the center's picture and `device`, a
    hub's popups on its photo in the grammar, the center and the windows, and
@@ -502,5 +505,34 @@ build at a time.
     and verified on each; the call mode's review then changed what they
     build (the call keys' lit states and looks, Share Content's), so they
     were built again, with the dialer, which none of them holds
-    (`tests/data/design-call-<theme>`): every panel built and verified,
-    its ID map too (`archive/job-e823df9b/call/`).
+    (`tests/data/design-call-<theme>`). Each was built and verified on every
+    panel in a first pass (`archive/job-e823df9b/call/first-*`); after the
+    review the panels its fixes change were built again at 6111a7f and
+    verified there (`second-*`) - all four panels of each theme's design call,
+    Mach's and Shockwave's round-four rooms on the 1035, 725 and 525,
+    Turbulence's on the 525 - and Mach's six on the 1035, 725 and 525
+    were re-verified with the fixed verifier (`reverify-mach.log`). The
+    panels not rebuilt keep their first-pass builds, whose specs the fixes do
+    not change. Item 12's review then gave a hub's menu bar one ID per key on
+    every working page, which changed what the call rooms build on their 525
+    and the IDs numbered after it: built again and verified, all four panels
+    of Mach's and Turbulence's, Shockwave's 525 and 320
+    (`archive/job-e823df9b/afterburn-regions/rebuild/`).
+12. **Afterburn in its regions.** Decided in the making (2026-10-26,
+    `2026-10-26-afterburn-regions-design.md`, its ten questions taken at their
+    recommended answers until the owner says otherwise): Afterburn's chrome
+    is its art, and its working page is this grammar all the same.
+    `frame_of` measures its foot row (`foot`), its third group's seam
+    (`left.seam`), its hub's in-tile captions and its call mode;
+    `layout.region_frame` gives it the region components, which draw from its
+    frames round the squircle and paint no bar - the Header the row of sources
+    over its Divider, the LeftRail its headed groups closing up and lifting
+    where a panel's touch minimum needs it, the RightRail its volume, the
+    Footer its foot row with each panel's own clocks, the Center its popup
+    region; its windows on the template's own background art, its hub its
+    Settings column and Display Settings with the kit's chevrons and carets,
+    its 320 its pages over a strip at their foot, going on by More and Back.
+    Proved on round four's room redrawn so (`tests/data/round4-afterburn-
+    regions`) and on its region canvas, clean on the 1035, 725, 525 and 320
+    with their ID maps, and built in GUI Designer and verified on all four,
+    their ID maps too (`archive/job-e823df9b/afterburn-regions/`).

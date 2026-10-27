@@ -345,6 +345,18 @@ function Add-GdlImageResource {
     return $use
 }
 
+function Get-GdlFontFamily {
+    <#  The family a PBFontResource records for itself (windowsFamilyNameField),
+        as Project.font_resource_names reads it: a family whose own name ends in
+        Regular, Bold or Italic (Arial Rounded MT Bold) is not its sibling. The
+        trailing style words of the resource name are stripped only where it
+        records none. #>
+    param($Resource)
+    $family = Get-GdlField $Resource 'windowsFamilyNameField'
+    if ($family -is [string] -and $family.Trim()) { return $family.Trim() }
+    return ([string](Get-GdlField $Resource 'nameField') -replace '(\s+(Regular|Bold|Italic))+$', '').Trim()
+}
+
 function Add-GdlFontResource {
     <#  Give the project a font resource for a family it defines none for: a
         clone of one of its own, filled with the face a seed carries and
@@ -358,8 +370,7 @@ function Add-GdlFontResource {
     $donor = $null
     foreach ($r in $resources) {
         if ($r.GetType().Name -ne 'PBFontResource') { continue }
-        $name = Get-GdlField $r 'nameField'
-        if (($name -replace '(\s+(Regular|Bold|Italic))+$', '') -ieq $Font.family) { return }
+        if ((Get-GdlFontFamily $r) -ieq $Font.family) { return }
         if (-not $donor) { $donor = $r }
     }
     if (-not $donor) { Note-Problem "font '$($Font.family)': no PBFontResource in the project to clone"; return }
@@ -533,9 +544,9 @@ function Set-GdlFont {
     $f = Copy-GdlObject $existing
 
     if ($Font.name) {
-        $have = @($Project.ResourceSet.Resources |
-            Where-Object { $_.GetType().Name -eq 'PBFontResource' } |
-            ForEach-Object { $_.Name })
+        $fontResources = @($Project.ResourceSet.Resources |
+            Where-Object { $_.GetType().Name -eq 'PBFontResource' })
+        $have = @($fontResources | ForEach-Object { $_.Name })
         $current = Get-GdlField $f 'nameField'
         if ($Font.name -ne $current) {
             # Match on the family the resource declares, not on the resource
@@ -544,9 +555,8 @@ function Set-GdlFont {
             # Project.font_resource_names reads it: only Regular, Bold and
             # Italic are styles, and a prefix let "Open Sans" through on a
             # donor that has only Open Sans Light.
-            $ok = @($have | Where-Object {
-                $_ -and (($_ -replace '(\s+(Regular|Bold|Italic))+$', '') -ieq $Font.name)
-            })
+            $ok = @($fontResources | Where-Object { (Get-GdlFontFamily $_) -ieq $Font.name } |
+                ForEach-Object { $_.Name } | Where-Object { $_ })
             if ($ok) {
                 Set-GdlFieldIfPresent $f 'nameField' $Font.name | Out-Null
                 # The face is also named by its resource, and a clone keeps its

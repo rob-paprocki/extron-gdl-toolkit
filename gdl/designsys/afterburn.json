@@ -344,6 +344,13 @@
         }
       ]
     },
+    "tile": {
+      "usage": "A hub's Select a Source tile: its seed's own 756x688 art - the source's icon over a plate a little shorter than the `source` tile's - with no caption of its own, its name a 13 pt label inside its foot. The 520's template draws it in orange alone, so on another accent, or for a source its seed draws none of, the hub takes the `source` tile. Drawn by the hub; not one to draw yourself.",
+      "kit": "756x688",
+      "caption": "none",
+      "look": {"border": "none", "color": "text"},
+      "states": [{"name": "Off", "look": "off"}, {"name": "On", "look": "on", "fill": "pressed"}]
+    },
     "toggle": {
       "usage": "A toggle: its label at the left and the switch at the right, for turning one thing on or off (a display's power, a mute). The thumb moves and takes the secondary accent when On. The seed's are 178x50.",
       "icons": "toggle",
@@ -390,6 +397,21 @@
     "root": "Afterburn/Buttons/PNG",
     "thumbs": "Afterburn/Sliders & Toggles",
     "note": "Extron's Afterburn resource kit. Each icon comes unselected (`off`) and selected in each accent's color; a family drawn in the primary accents (orange, light-blue, gold, med-blue) selects in the scheme's primary, one drawn in the secondary accents (periwinkle, light-green, gold) - toggles, volume levels - in its secondary.",
+    "extract": {"from": ["seeds/Afterburn 525.gdl"], "to": "Afterburn/Buttons/PNG/Extracted", "only": ["756x688_dual-display-1-orange_sel.png", "756x688_dual-display-1_nsel.png", "756x688_dual-display-2-orange_sel.png", "756x688_dual-display-2_nsel.png", "756x688_dual-display-both-orange_sel.png", "756x688_dual-display-both_nsel.png", "756x688_laptop-orange_sel.png", "756x688_laptop_nsel.png", "756x688_pc-orange_sel.png", "756x688_pc_nsel.png", "756x688_streaming-orange_sel.png", "756x688_streaming_nsel.png", "756x688_tv-orange_sel.png", "756x688_tv_nsel.png"]},
+    "extract_note": "The 520's Select a Source tiles are its seed's own art, in no kit folder: 756x688_<source>_nsel is the kit's 756x756 with its top 68 rows cut off, and 756x688_<source>-orange_sel a redrawn plate, in orange alone (seeds/Afterburn 525.gdl's Select Source). `python -m gdl.designsys extract afterburn` writes them beside the kit's buttons.",
+    "icons": {
+      "root": "Afterburn/Icons/PNG",
+      "families": ["close", "back", "more", "plus", "minus", "dot", "select-source", "chevron-left", "chevron-right",
+                   "chevron-up", "chevron-down", "caret-up-gray", "caret-down-gray", "caret-left-gray",
+                   "caret-right-gray", "caret-up-dark-gray", "caret-down-dark-gray", "caret-left-dark-gray",
+                   "caret-right-dark-gray", "rewind", "fast-forward", "pause", "stop", "next-chapter",
+                   "previous-chapter"]
+    },
+    "icons_note": "The kit's Icons/PNG, beside its Buttons/PNG (no file name is in both): 440x440 drawings of the template's icon font (Font/Extron - Afterburn 1a.ttf, whose glyphs `close`, `chevron_left`, `caret_up`, `plus` draw the same), each one file, named here by its stem - a caret in a gray and a dark-gray file, `caret-up-gray` and `caret-up-dark-gray`. The seeds draw them as that font's glyphs - seeds/Afterburn 1035.gdl's Close Help in #BABCCE, seeds/Afterburn 525.gdl's Help Back chevron and its Main page's Volume Up and Down carets, seeds/Afterburn 320.gdl's Doc Cam 1 More and Doc Cam 2 Back, and its Doc Cam 1 zoom minus and plus; the system draws the kit's drawing of each, fitted to its button, since the font carries no license field. Only these families are indexed, so the bundle carries a few dozen of the 657.",
+    "icon_right": {"1224x344": 0.326},
+    "icon_right_note": "How far across a 1224x344 `list` image its icon reaches: the icons' light pixels end at x 399 of 1224 at most - privacy the furthest, the median 366 - over the 278 files in the install's kit. The screen-up and screen-down arrows (from x 968) and the recording keys' play, stop, record, mark and pause glyphs (from 918) stand at the art's right, past any caption, and are left out. A region gives a `list` button's caption the leading spaces that start it 4 px clear of that reach, at the cell's own width and the panel's type, where the template counts a fixed 15 at its own 13 pt.",
+    "switch_left": {"1224x344": 0.5204, "1224x464": 0.5727},
+    "switch_left_note": "Where a `toggle` image's switch starts: x 637 of 1224 on 1224x344 and 701 of 1224 on 1224x464 (the 1020's 132x50 cells), its light pixels at rest (toggle-1_nsel, toggle-2_nsel). A region starts a toggle's caption 8 px in and ends it 4 px before the switch, where the template counts 4 leading spaces.",
     "primary": {
       "orange": "orange",
       "light-blue": "light-blue",
@@ -466,7 +488,7 @@
   },
   "iconography": {
     "icon_prop": "The kit draws each icon unselected and selected in every accent, with the selection line where the variant has one, so the button's states show themselves: state 0 unselected, the rest selected in the page's accent.",
-    "intro": "Afterburn shows state with icons, not with colored text. Every icon the kit has comes from Afterburn's own resource kit through a Button's `icon` - never draw one, and never color a caption red. The template's Close, Back, More, d-pad, transport, zoom, scroll and screen arrows are glyphs in its Extron-Afterburn icon font, which the design system does not carry. The kit draws most of them as images too, in Afterburn/Icons/PNG - Close's X, Back's and More's chevrons, the scroll and volume triangles (Carets), minus, plus, the More dots and most of the transport keys - but this system's `icon` list is read from Afterburn/Buttons/PNG and does not name them yet, so a button for one of those says what it does in words.",
+    "intro": "Afterburn shows state with icons, not with colored text. Every icon the kit has comes from Afterburn's own resource kit through a Button's `icon` - never draw one, and never color a caption red. The template's Close, Back, More, d-pad, transport, zoom, scroll and screen arrows are glyphs in its Extron-Afterburn icon font, which the design system does not carry. The kit draws most of them as images too, in Afterburn/Icons/PNG - Close's X, Back's and More's chevrons, the scroll and volume triangles (Carets), minus, plus, the More dots and most of the transport keys - and the system offers those drawings by their file's name (`kit.icons`) - `close`, `back`, `more`, `chevron-left` and `chevron-right`, the carets in their gray and dark gray (`caret-up-gray`, `caret-down-dark-gray`), `plus`, `minus`, `dot` and the transport keys - each fitted to its button: a Close is `variant=\"icon\" icon=\"close\"`.",
     "rules": [
       "**Anatomy** (the guide's p.4): a `text-secondary` (#BABCCE) stroke and primary elements, `text-subtle` (#767789) secondary elements, an `icon-ground` (#414459) background inside the icon, and - selected - the supporting element in the accent. The kit already draws all of this, for every accent scheme.",
       "**Which button**: a stand-alone control (Help, Power, mute) is `variant=\"icon\"`, 64x64. Sources and cameras are `source`, a row of squares with the label under the icon. Options down the left rail are `list`, a selection line at the left when chosen - Make Call, End Call and Privacy among them. On and off is `toggle`. An important action with a label is `outlined` with an `icon` (Make Call, Swap).",
@@ -486,7 +508,10 @@
     "states": "[{\"name\":\"No Signal\",\"look\":\"off\",\"color\":\"text-secondary\"},{\"name\":\"Ready\",\"look\":\"off\"},{\"name\":\"Live\",\"look\":\"on\",\"fill\":\"pressed\"}]",
     "states_note": "In Afterburn a state shows itself with its icon: the kit's selected image draws the icon in the accent, with the selection line for a list button, and the button takes the pressed fill. A text-only button that is selected shows its caption in `accent`. Never color a caption red.",
     "on_off": "[\"Off\",{\"name\":\"On\",\"color\":\"accent\"}]",
-    "group_note": "Both defaults are Afterburn's own source row: four 110x110 buttons, 49 px apart. Extron's own paged list, VTC Search Results, scrolls with up and down triangles beside it, and its 320 pages a device with More and a Back chevron in the footer - glyphs of its icon font, which the kit draws as images too (Afterburn/Icons/PNG's Carets and Chevron) and this system's `icon` list does not name yet; a Group's Previous and Next are the toolkit's own.",
+    "camera": {"heading": [279, 73, 120, 50], "text": "ZOOM", "key": [262, 135, 154, 64], "step": 79,
+               "box": [262, 135, 154, 200], "icons": ["plus", "minus"],
+               "_source": "seeds/Afterburn 1035.gdl's Doc Cam popup: its ZOOM Label 120x50 at 279,73 over Zoom Tele and Zoom Wide, 154x64 at 262,135 and 262,214; the kit's plus and minus stand for its zoom glyphs."},
+    "group_note": "Both defaults are Afterburn's own source row: four 110x110 buttons, 49 px apart. Extron's own paged list, VTC Search Results, scrolls with up and down triangles beside it, and its 320 pages a device with More and a Back chevron in the footer - glyphs of its icon font, which the kit draws as images too (Afterburn/Icons/PNG's Carets and Chevron) and this system offers by name. A Group that pages draws its Previous and Next as the kit's chevrons (`regions.group`: chevron-left and chevron-right), each a touch-minimum key under its cells - the glyph the 320 pages with, in the toolkit's place for it.",
     "color_rule": "`page` behind everything; `raised` for idle buttons and the one list card the template draws, with `shape` outlining it (the squircle itself is the background image); `pressed` and a `text` border for On; `text` for titles, headings and captions and `text-secondary` for the date and time and a popup's group labels; `accent` only through the kit's selected icons and selection lines, and the caption of a selected text-only button; `alert` only as the red stroke of a live action, never a fill or a caption; `accent-2` is the slider thumb, a level's fill and a toggle's thumb."
   },
   "themes": [
@@ -524,31 +549,108 @@
     }
   ],
   "layout": {
+    "region_frame": true,
+    "region_frame_note": "Afterburn's chrome is its background art (no `bars`), and its working page is the bar themes' grammar all the same (docs/superpowers/specs/2026-10-26-afterburn-regions-design.md): its region components draw from each series' measured frame - the sources over the Divider at the squircle's top as the Header, the left rail's groups as the LeftRail, the right column's volume as the RightRail, the foot row (`foot`) as the Footer, the popup region as the Center - painting no surfaces, since the art draws the squircle round them.",
     "main": [
       183,
       24,
       916,
       752
     ],
+    "start": "Afterburn's panel boots to Start, its seed's DefaultPage: a splash page in the squircle - the room's name, Press to begin and one centred date and time - with lighting presets under a Lights heading in the left rail and the volume in the right, from which its working pages are reached. Draw its words and Start in the squircle's `MainArea`, and its presets as a `Group`.",
     "main_note": "The central squircle: the card the background image draws - a vertical gradient from #4F4C6B to #3A364D with a drop shadow, art rather than a panel - 183-1099 across and 24-776 down on a 1280x800 page (the image's opaque body, measured).",
     "regions": [
-      "**A working page is the squircle between two rails.** Across the top of the squircle runs the row of sources (`source` buttons, 110x110) over a `Line` divider. Under it the `PopupRegion` shows the selected source's controls, each source a standard popup of its own group. At the foot are the date at the left, the one outlined Preview in the middle and the time at the right, in `text-secondary`; Preview opens the room's video preview, so draw it only where the room has one. The page has no title of its own: each popup carries its source's name as a centred `subheading` Label at its top, and a source with no controls says `PC is currently selected.` and `There are no controls for this device.` The 1020 Series draws no Preview and one combined date-and-time Clock at its foot.",
+      "**A working page is the squircle between two rails.** Across the top of the squircle runs the row of sources (`source` buttons, 110x110: the Header's tabs) over a divider, which the Header draws. Under it the popup region (the Center) shows the selected source's controls, each source a standard popup of its own group (`role=\"source\"`). At the foot are the date at the left, the one outlined Preview in the middle and the time at the right, in `text-secondary`; Preview opens the room's video preview, so draw it only where the room has one. The page has no title of its own: each popup carries its source's name as a centred `subheading` Label at its top - the Center draws it, and the empty state - and a source with no controls says `PC is currently selected.` and `There are no controls for this device.` The 1020 Series draws no Preview and one combined date-and-time Clock at its foot.",
       "**Start and Main Select Source are not working pages.** Start is the page the panel boots into, so name it `Start` and mark it `start=\"true\"` (its file is still `Main.dc.html`, as the canvas names its entry): the room's name (`title`) above the squircle's middle, `Press to begin` in its vertical middle (an outlined button, 17 pt), lighting presets under a `Lights` heading in the left rail and the Volume heading, slider and Mute in the right rail (no Help or Power), and one combined date-and-time Clock, in `text`, at its foot. Main Select Source, the hub that follows it, puts the four sources in the middle of the squircle under a centred `subheading`, `Select a Source`. On the 520 and 535 the template's Start draws its squircle too, between a Lights rail and a Volume rail; the system builds every page of those panels on their Main art, so there a Start page is laid out in the hub's main region.",
       "**The left rail (x 0-183) holds groups:** a `body` Label heading per group in Title case (Display, Settings, Lights, VTC, Screen, Recording) at x 14, and under it `list` and `toggle` buttons 178x50 at x 0, one every 58 px - the kit's art fills each button, so the rail has no ghost button. Its foot holds the page's own outlined button, 144x64 at 20,706, only where the room has a mode or a window for it: Video Conference and Presentation switch the room's mode; Window Layout (Multi-Window) and Recording Controls (Recording) open a window; Start has none. Main Recording also keeps its record status, the record icon and the elapsed time, in the rail's top-left corner.",
-      "**The right rail (x 1099-1280) holds the volume and the system controls**, its column centred on x 1193: a `Volume` heading level with the left rail's first heading, the vertical slider (Afterburn draws it 50x395 at 1168,202; a Rail draws it 54 wide, since 50 is under the 53 px touch minimum the toolkit checks) with Mute at its foot, and Help and Power side by side below, Help at 1125,706 and Power at 1197,706 (Start has neither). The slot at the top, y 30, is the page's own: Start Sharing (outlined, 144x64 at 1121,30) on a video-conference page, Window 1 and Window 2 (82x64) on a multi-window page, empty on the others.",
+      "**The right rail (x 1099-1280) holds the volume and the system controls**, its column centred on x 1193: a `Volume` heading level with the left rail's first heading, the vertical slider (Afterburn draws it 50x395 at 1168,202; the RightRail draws it at the 53 px touch minimum the toolkit checks, and a Rail 54 wide) with Mute at its foot, and Help and Power side by side below, Help at 1125,706 and Power at 1197,706 (Start has neither). The slot at the top, y 30, is the page's own: Start Sharing (outlined, 144x64 at 1121,30) on a video-conference page, Window 1 and Window 2 (82x64) on a multi-window page, empty on the others.",
       "The 1230 Series splits its squircle with a vertical divider: a Preview half at the left (the preview tabs, the video and Send to Display) and, at the right, the source tabs and the popup region the Layout gives. A full-page grid of controls is a working panel but not an Afterburn one."
     ],
-    "popups": "On Afterburn's working page one source's controls are a standard popup of its own group in that region (the template's group 1; `Sources` here, the `PopupRegion`'s `group`), swapped in by the source buttons while the page stays; a page flip is for a mode of the room (a call) and for Start to the hub. A modal popup (`kind=\"modal\"`) shows the page beneath, dimmed: Help, the confirmations and a set of settings opened from a page - Screen, Lighting, Audio and Display Settings, Camera Select, Window Layout, Recording Controls, presets - are modals on the 1020, 1220, 1230, 1520 and 1720 Series, as the templates draw them there; the 520 and 535 draw them as standard popups filling main, each with a Back chevron, and the 300M as pages. A modal's own card is the template's squircle art, a full-canvas image under its title that a Page cannot place, so put a `Panel` inside as the nearest card the system draws - the squircle's own 916x752 at 183,24, in the Panel's default look - and its words and buttons on it, where the Layout's windows give them. A card with a title (Help, a set of settings) has a Close at its top right: `nav` back to the page that opens it, or, where more than one page opens it, no `nav` and `does=\"Closes this popup.\"` - the program hides it and the page beneath shows again; the template's Close is a glyph of its icon font, which the design system does not carry, and the kit draws it as an image too (Afterburn/Icons/PNG's close), which this system's `icon` list does not name yet, so the Close says Close. A confirmation has neither title nor Close, only its question and two outlined buttons, the affirmative first (Power Down, Cancel; Accept, Decline), and a wait (Starting Up, Powering Down) is one sentence with no buttons.",
-    "rail_note": "Afterburn's own right column is not one stack, which a Rail is: its Volume heading stands level with the left rail's first heading, the slider runs under it, Mute overlaps the slider's foot, an empty band follows, and Help and Power sit side by side in one row. A Rail stacks them on every panel, the one the canvas is drawn on too: put the column's controls in it in the template's order - the Volume heading, the Slider, Mute, Help and Power - with no positions, and it stands them down the right rail, Help and Power one over the other where the template sets them side by side (the README's Differences). Where a panel's seed has no slider, Extron arranges the volume its own way: the 520 and 535 stand Up and Down together at the top of a column with Mute at its foot, beside a full-height level (on Main the level is a separate Volume Level popup, 50x480 at 637,0), with triangle glyphs from its icon font, which the design system does not carry - the kit draws those triangles as images too (Afterburn/Icons/PNG's Carets), which this system's `icon` list does not name yet; only the 300M uses minus and plus, in a row with Mute under a horizontal level. A Rail builds the level between Down and Up buttons that say `-` and `+`. The 320 draws no volume, Help or Power on screen: its footer is the page's name with More and a Back chevron, and its volume a modal Volume Level; the 300 Portrait's footer holds Settings, Help and Power with the volume in the main region, and the 300 Landscape's right column holds Settings, Help and Power. A Rail across the 320's foot is the toolkit's, not the template's."
+    "popups": "On Afterburn's working page one source's controls are a standard popup of its own group in that region (the template's group 1; `Sources` here, the `PopupRegion`'s `group`), swapped in by the source buttons while the page stays; a page flip is for a mode of the room (a call) and for Start to the hub. A modal popup (`kind=\"modal\"`) shows the page beneath, dimmed: Help, the confirmations and a set of settings opened from a page - Screen, Lighting, Audio and Display Settings, Camera Select, Window Layout, Recording Controls, presets - are modals on the 1020, 1220, 1230, 1520 and 1720 Series, as the templates draw them there; the 520 and 535 draw them as standard popups filling main, each with a Back chevron, and the 300M as pages. A modal's own card is the template's squircle art, a full-canvas image under its title: a window with a `role` (`settings`, `help`, `confirm`, `wait`) draws it itself, as the page's own background art for its panel and theme (`<name> Background`), with the template's title, Close, message and answers where its frame has them; for a modal without a role, which a Page cannot give that art, put a `Panel` inside as the nearest card the system draws - the squircle's own 916x752 at 183,24, in the Panel's default look - and its words and buttons on it, where the Layout's windows give them. A card with a title (Help, a set of settings) has a Close at its top right: `nav` back to the page that opens it, or, where more than one page opens it, no `nav` and `does=\"Closes this popup.\"` - the program hides it and the page beneath shows again; the template's Close is a glyph of its icon font, which the design system does not carry, and the kit draws it as an image too (Afterburn/Icons/PNG's close), which this system offers: a Close is `variant=\"icon\" icon=\"close\"`, the X fitted to its button. A confirmation has neither title nor Close, only its question and two outlined buttons, the affirmative first (Power Down, Cancel; Accept, Decline), and a wait (Starting Up, Powering Down) is one sentence with no buttons.",
+    "rail_note": "Afterburn's own right column is not one stack, which a Rail is: its Volume heading stands level with the left rail's first heading, the slider runs under it, Mute overlaps the slider's foot, an empty band follows, and Help and Power sit side by side in one row. A Rail stacks them on every panel, the one the canvas is drawn on too: put the column's controls in it in the template's order - the Volume heading, the Slider, Mute, Help and Power - with no positions, and it stands them down the right rail, Help and Power one over the other where the template sets them side by side (the README's Differences). Where a panel's seed has no slider, Extron arranges the volume its own way: the 520 and 535 stand Up and Down together at the top of a column with Mute at its foot, beside a full-height level (on Main the level is a separate Volume Level popup, 50x480 at 637,0), with triangle glyphs from its icon font, which the design system does not carry - the kit draws those triangles as images too (Afterburn/Icons/PNG's Carets), which this system offers by name (`caret-up-gray`, `caret-down-gray`), though a Rail's level still steps with `-` and `+`; only the 300M uses minus and plus, in a row with Mute under a horizontal level. A Rail builds the level between Down and Up buttons that say `-` and `+`. A region page is not a Rail: its RightRail and Footer stand the column as the template does - the Volume heading level with the left rail's first, Mute at the slider's foot, Help and Power side by side in the foot row - and a hub's region page draws its menu bar's Up and Down with the kit's carets. The 320 draws no volume, Help or Power on screen: its footer is the page's name with More and a Back chevron, and its volume a modal Volume Level; the 300 Portrait's footer holds Settings, Help and Power with the volume in the main region, and the 300 Landscape's right column holds Settings, Help and Power. A Rail across the 320's foot is the toolkit's, not the template's."
+  },
+  "regions": {
+    "_source": "What the region components draw by default on Afterburn (docs/superpowers/specs/2026-10-26-afterburn-regions-design.md), off seeds/Afterburn 1035.gdl's Main SD as its built layout.json draws it: its sources `source` tiles over the Divider; its left rail's first group `toggle`s (Display Power, Display Mute) and its later groups `list` launchers (Screen, Lighting, Audio), each group's heading a white 16 pt Label set left (TextAlignment 4) at the group's left; the Volume heading centred over its column (TextAlignment 3); Mute, Help and Power the kit's 440x440 icons on no fill, Mute (Main Volume Mute, 8021) its speaker-volume glyph in the scheme's secondary accent while live (its Level 3 state) and its speaker-mute-1 glyph in the primary while muted (its Muted state, the first); the foot row's mode launcher (Video Conference) and Preview outlined, 13 pt; the date set left and the time right in #BABCCE (`text-secondary`), 16 pt - 'MMMM d' and 'h:mm tt' - and on the 725 one date and time centred, 'MMMM d, yyyy h:mm:ss tt'. `rail` is a LeftRail's first group's, `launcher` its later groups', `mode` the Footer's mode slot's, `preview` its Preview's, `clocks` each clock the panel's template draws, by its name there.",
+    "heading": {"type": "body", "align": "left", "color": "text"},
+    "volume_heading": {"type": "body", "align": "center", "color": "text"},
+    "tab": {"variant": "source"},
+    "rail": {"variant": "toggle"},
+    "launcher": {"variant": "list"},
+    "mode": {"variant": "outlined", "__lines": 2},
+    "preview": {"variant": "outlined"},
+    "volume": {"does": "Sets the program volume."},
+    "mute": {"variant": "icon", "icon": "speaker-mute-1", "states": [{"name": "Off", "icon": "speaker-volume_3", "look": "on"}, {"name": "On"}], "does": "Mutes the program audio; On while muted."},
+    "help": {"variant": "icon", "icon": "help"},
+    "power": {"variant": "icon", "icon": "power"},
+    "clocks": {
+      "Current Date": {"format": "MMMM d", "align": "left"},
+      "Time": {"format": "h:mm tt", "align": "right"},
+      "Current Date & Time": {"format": "MMMM d, yyyy h:mm:ss tt", "align": "center"}
+    },
+    "_call": "What a call page (role=\"call\"), its dialer (role=\"dialer\"), the incoming call's question (topic=\"call\") and the page sources are chosen on (role=\"select\") draw, off seeds/Afterburn 1035.gdl's Main VC, VTC Dialer, Incoming Call and Main Select Source: Make Call and End Call `list` art whose lit state is another drawing (make-call_unavailable to make-call_available, end-call_disconnected to end-call_connected), Privacy the `list` privacy; Share Content (Start Sharing) outlined at the right rail's head, its On stroke red (`alert`); the dialer's digits keys with no fill until pressed (#242634, `pressed`), its Call, Swap and Contacts outlined with their 1059x440 icons, Keyboard outlined with its 440x440 icon and Delete the bare 440x440 icon; the question's Accept and Decline outlined; a source's tile the `source` tile it is on the working page, under the centred 21 pt 'Select a Source'.",
+    "call": {
+      "call": {"variant": "list", "icon": "make-call_unavailable", "states": [{"name": "Off", "icon": "make-call_unavailable"}, {"name": "On", "icon": "make-call_available"}]},
+      "end-call": {"variant": "list", "icon": "end-call_disconnected", "states": [{"name": "Off", "icon": "end-call_disconnected"}, {"name": "On", "icon": "end-call_connected"}]},
+      "privacy": {"variant": "list", "icon": "privacy"}
+    },
+    "share": {"variant": "alert"},
+    "dialer": {
+      "key": {"variant": "ghost", "type": "button-large", "states": [{"name": "Off"}, {"name": "On", "fill": "pressed", "border": "afterburn-ellipse"}]},
+      "call": {"variant": "outlined", "icon": "call_unavailable", "states": [{"name": "Off", "icon": "call_unavailable"}, {"name": "On", "icon": "call_ready"}]},
+      "swap": {"variant": "outlined", "icon": "swap"},
+      "contacts": {"variant": "outlined", "icon": "contacts"},
+      "keyboard": {"variant": "outlined", "icon": "keyboard", "text": ""},
+      "delete": {"variant": "icon", "icon": "delete"},
+      "entry": {"color": "text", "align": "center"}
+    },
+    "select": {"tile": {"variant": "source"}, "title": {"color": "text", "align": "center"}},
+    "group": {"previous": {"variant": "icon", "icon": "chevron-left"}, "next": {"variant": "icon", "icon": "chevron-right"}, "back": {"variant": "icon", "icon": "chevron-left"}},
+    "_hub": "What the 525's region page, its source popups and its windows draw in its hub's grammar, off seeds/Afterburn 525.gdl's Main, Select Source, Settings, Display Settings, Lighting Settings, Help and a source's popup (its built layout.json): the menu bar's Volume heading 16 pt bold and centred, its Up and Down outlined 66x66 keys with the icon font's carets (here the kit's caret-up-gray and caret-down-gray), Mute outlined with its speaker-mute-2 art, Help, Settings and Power the kit's 440x440 icons; every popup's Back the icon font's chevron at 0,13 (here the kit's chevron-left) and its title after it, 21 pt white set left; Select a Source's tiles its own 756x688 art (extracted, `kit.extract`; in orange alone, so another accent or a family it lacks takes the source tile), each caption a 13 pt label inside the tile's foot; Settings a column of its rail's `list` launchers at 52,83 every 58 px, Lighting Settings two columns 262 px apart (123 and 385); Display Settings its members down the column at 123,145 under a 16 pt bold #BABCCE heading in capitals at 133,83 (DISPLAY 1), opened from Settings' Display (8214); Help a popup in main, its message 68,147; the Volume Level strip's level filled in the scheme's accent-2 (`level.bar`), as the seed's #626ACF is its orange scheme's.",
+    "hub": {
+      "level": {"bar": "accent-2"},
+      "heading": {"type": "body", "bold": true, "align": "center", "color": "text"},
+      "title": {"size": 21, "align": "left", "color": "text"},
+      "select_title": {"align": "center"},
+      "label": {"size": 13, "align": "center", "color": "text"},
+      "message": {"align": "center", "color": "text"},
+      "tile": {"variant": "tile"},
+      "menu": {"variant": "icon"},
+      "up": {"variant": "outlined", "icon": "caret-up-gray"},
+      "down": {"variant": "outlined", "icon": "caret-down-gray"},
+      "mute": {"variant": "outlined", "icon": "speaker-mute-2", "text": "", "states": [{"name": "Off"}, {"name": "On"}]},
+      "help": {"variant": "icon", "icon": "help"},
+      "settings": {"variant": "icon", "icon": "settings"},
+      "power": {"variant": "icon", "icon": "power"},
+      "close": {"variant": "icon", "icon": "chevron-left"},
+      "options": {"layout": "column", "step": 262, "title": {"size": 21, "align": "left", "color": "text"}, "close": {"variant": "icon", "icon": "chevron-left"}, "glyphs": {"video": "video-conference-1", "conference": "video-conference-1", "call": "video-conference-1", "teams": "microsoft-teams", "light": "lights", "audio": "audio", "camera": "camera", "screen": "screen", "display": "display", "record": "record", "blind": "blinds"}},
+      "display": {"opener": {"variant": "list", "icon": "display", "id": 8214}, "heading": [133, 83, 152, 50], "column": [123, 145, 178, 50], "pitch": 58, "label": {"type": "body-strong", "color": "text-secondary", "align": "left"}}
+    },
+    "_page": "What the 320's region page, its source pages and its windows draw, off seeds/Afterburn 320.gdl's Main, Doc Cam 1, Doc Cam 2, Laptop, Confirmation and Powering Down (its built layout.json): a strip along the foot with no ground, the page's title in it 17.5 pt white set left, its More the icon font's chevron (here the kit's chevron-right) at the strip's right with a 'More' label beside it set right, its Back the chevron left at the strip's left with the title moved past it; the column headings 10 pt bold #BABCCE capitals centred over outlined keys 108x45; a source with no controls one label of three lines, 12 pt white centred; the question and the wait on the page's own ground, their words 12 pt white centred, Power Down and Cancel outlined.",
+    "page": {
+      "strip": {"align": "left", "color": "text"},
+      "more_label": {"align": "right", "color": "text"},
+      "heading": {"type": "body-strong", "align": "center", "color": "text-secondary"},
+      "heading_caps": true,
+      "empty": {"align": "center", "color": "text"},
+      "button": {"variant": "outlined"},
+      "more": {"variant": "icon", "icon": "chevron-right"},
+      "back": {"variant": "icon", "icon": "chevron-left"},
+      "message": {"align": "center", "color": "text"}
+    },
+    "_center": "What a source popup (role=\"source\") and a window draw, off seeds/Afterburn 1035.gdl's Laptop and Doc Cam popups, Help, Confirmation, Powering Down and Lighting Settings: a source's title centred at the popup's top, white, 21 pt, over no well and no fill, the labels over its keys 16 pt bold #BABCCE capitals (ZOOM, FOCUS), and with nothing in it the template's two-line empty state centred, 16 pt; a window's card the page's own background art over the whole screen (its `Background` image), its title centred at the squircle's top, 21 pt, the labels over a group in it 16 pt bold #BABCCE capitals (MIC, PROGRAM), its Close the icon font's X at the squircle's top right - drawn as the kit's 440x440 close on no fill, pressed round on `pressed` - its message centred, 16 pt (the question 21), Power Down and Cancel outlined. Those sizes are the 1035's: each panel's own template's are its frame's `pt`.",
+    "source": {"title": {"align": "center", "color": "text"}, "empty": {"align": "center", "color": "text"}, "label": {"type": "body-strong", "color": "text-secondary"}, "button": {"variant": "outlined"}},
+    "window": {"title": {"align": "center", "color": "text"}, "message": {"align": "center", "color": "text"}, "label": {"type": "body-strong", "color": "text-secondary"}, "close": {"variant": "icon", "icon": "close"}, "power": {"variant": "outlined"}, "cancel": {"variant": "outlined"}, "button": {"variant": "outlined"}, "accept": {"variant": "outlined"}, "decline": {"variant": "outlined"}}
   },
   "writing": {
-    "_source": "The template's own words, off seeds/Afterburn 1035.gdl's Laptop and PC popups, Confirmation, Starting Up, Powering Down and Help, and the grammar digest of every Afterburn page: the empty state of a source with no controls ({name} the popup's title), the power-down question, the waits, Help's message and title and the buttons' words. Its system draws no region, so these are the words a designer writes.",
+    "_source": "The template's own words, off seeds/Afterburn 1035.gdl's Laptop and PC popups, Confirmation, Incoming Call, Starting Up, Powering Down and Help, and the grammar digest of every Afterburn page: the empty state of a source with no controls ({name} the popup's title), the power-down question and an incoming call's, the waits, Help's message and title and the buttons' words; and off seeds/Afterburn 320.gdl's Laptop, the 320's empty state, its first sentence a paragraph apart in one label (`page_empty`). Its region components say them where a region page's Center or a window by `role` draws them; on a page without regions they are the words a designer writes.",
     "empty": "{name} is currently selected.\nThere are no controls for this device.",
-    "confirm": {"power": "Do you want to power down the system?"},
+    "page_empty": "{name} is currently selected.\n\nThere are no controls\nfor this device.",
+    "column_labels_320": "caps",
+    "confirm": {"power": "Do you want to power down the system?", "call": "Incoming call, do you wish to accept?"},
     "wait": {"up": "Please wait while the system starts up.", "down": "Please wait while the system is powering down."},
     "help": "For assistance, please call the help desk at:\n\nX.XXX.XXX.XXXX",
     "help_title": "Help",
-    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close"},
+    "buttons": {"power": "Power Down", "cancel": "Cancel", "close": "Close", "accept": "Accept", "decline": "Decline"},
     "voice": {
       "_source": "Off seeds/Afterburn 1035.gdl's working pages, popups and windows - Main SD, Main VC, Main Recording, the Laptop and PC popups, Lighting Settings, Camera Settings, Confirmation, Starting Up, Powering Down and Help - and the grammar digest of every Afterburn page: its captions, rail headings, titles and messages. Press to begin is its one sentence-case button; the group labels inside its popups and windows are capitals, 16 pt bold Labels, not captions.",
       "rules": [
@@ -651,6 +753,7 @@
               "pitch": 58
             }
           ],
+          "seam": 21,
           "items": [
             {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [20, 706, 144, 64], "id": 8120}
           ]
@@ -704,6 +807,17 @@
             {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [568, 701, 144, 64], "id": 8301},
             {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [200, 710, 208, 60]},
             {"role": "clock", "name": "Time", "kind": "datetime", "rect": [932, 710, 148, 60]}
+          ]
+        },
+        "foot": {
+          "rect": [0, 701, 1280, 99],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [20, 706, 144, 64], "id": 8120},
+            {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [200, 710, 208, 60]},
+            {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [568, 701, 144, 64], "id": 8301},
+            {"role": "clock", "name": "Time", "kind": "datetime", "rect": [932, 710, 148, 60]},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1125, 706, 64, 64], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [1197, 706, 64, 64], "id": 8022}
           ]
         },
         "windows": {
@@ -811,7 +925,326 @@
               },
               "pt": {"title": 21}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [0, 0, 1280, 800],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1280, 800],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6400x4000_bg1.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 21},
+            "message": [290, 223, 700, 50],
+            "lines": 1,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [462, 325, 154, 64],
+                "id": 9032,
+                "text": "Accept"
+              },
+              {
+                "role": "decline",
+                "name": "Decline Call",
+                "kind": "button",
+                "rect": [664, 325, 154, 64],
+                "id": 9033,
+                "text": "Decline"
+              }
+            ],
+            "text": "Incoming call, do you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": null,
+          "left": {
+            "rect": [0, 0, 183, 800],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [14, 160, 152, 50], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Call",
+                    "kind": "button",
+                    "rect": [0, 208, 178, 50],
+                    "id": 5014,
+                    "text": "Make Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [0, 266, 178, 50],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "Call Privacy",
+                    "kind": "button",
+                    "rect": [0, 324, 178, 50],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 58
+              },
+              {
+                "heading": {"rect": [14, 403, 152, 50], "text": "Settings"},
+                "buttons": [
+                  {
+                    "role": "display",
+                    "name": "Display Settings",
+                    "kind": "button",
+                    "rect": [0, 451, 178, 50],
+                    "id": 8214
+                  },
+                  {"role": "screen", "name": "Screen Settings", "kind": "button", "rect": [0, 509, 178, 50], "id": 8115},
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Settings",
+                    "kind": "button",
+                    "rect": [0, 567, 178, 50],
+                    "id": 8116
+                  },
+                  {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 625, 178, 50], "id": 8020}
+                ],
+                "pitch": 58
+              }
+            ],
+            "items": [
+              {"role": "presentation", "name": "Presentation", "kind": "button", "rect": [20, 706, 144, 64], "id": 8118}
+            ]
+          },
+          "right": {
+            "rect": [1099, 0, 181, 800],
+            "surfaces": [],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1121, 30, 144, 64], "id": 8090},
+              {
+                "role": "heading",
+                "name": "Main Volume Label",
+                "kind": "label",
+                "rect": [1109, 160, 168, 50],
+                "id": 4052,
+                "text": "Volume"
+              },
+              {
+                "role": "volume",
+                "name": "Main Volume Slider",
+                "kind": "slider",
+                "rect": [1168, 202, 50, 395],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1161, 594, 64, 64], "id": 8021},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [1125, 706, 64, 64], "id": 8117},
+              {"role": "power", "name": "Power", "kind": "button", "rect": [1197, 706, 64, 64], "id": 8022}
+            ]
+          },
+          "bottom": null,
+          "center": {
+            "rect": [183, 24, 916, 752],
+            "region": [200, 175, 880, 525],
+            "surfaces": [],
+            "items": [
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [260, 137, 760, 20]},
+              {
+                "role": "share",
+                "name": "Preview Source Share",
+                "kind": "button",
+                "rect": [568, 701, 144, 64],
+                "id": 8304
+              },
+              {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [200, 710, 208, 60]},
+              {"role": "clock", "name": "Time", "kind": "datetime", "rect": [932, 710, 148, 60]}
+            ],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [559, 175, 162, 50],
+              "text": "VTC Dialer",
+              "pt": {"title": 21, "entry": 20},
+              "entry": {
+                "role": "entry",
+                "name": "Phone Number Label",
+                "kind": "label",
+                "rect": [361, 244, 226, 50],
+                "id": 50000,
+                "text": "123 - 456 - 7890"
+              },
+              "surfaces": [],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "Phone Number Delete",
+                  "kind": "button",
+                  "rect": [587, 236, 64, 64],
+                  "id": 5237,
+                  "art": "440x440_delete.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [361, 301, 64, 64],
+                  "id": 5203,
+                  "text": "1"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [455, 301, 64, 64],
+                  "id": 5204,
+                  "text": "2"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [549, 301, 64, 64],
+                  "id": 5205,
+                  "text": "3"
+                },
+                {
+                  "role": "call",
+                  "name": "Call",
+                  "kind": "button",
+                  "rect": [764, 301, 154, 64],
+                  "id": 5214,
+                  "text": "Make Call",
+                  "art": "1059x440_call_unavailable.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [361, 380, 64, 64],
+                  "id": 5206,
+                  "text": "4"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [455, 380, 64, 64],
+                  "id": 5207,
+                  "text": "5"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [549, 380, 64, 64],
+                  "id": 5208,
+                  "text": "6"
+                },
+                {
+                  "role": "swap",
+                  "name": "Swap",
+                  "kind": "button",
+                  "rect": [764, 380, 154, 64],
+                  "id": 5251,
+                  "text": "Swap",
+                  "art": "1059x440_swap.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [361, 459, 64, 64],
+                  "id": 5209,
+                  "text": "7"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [455, 459, 64, 64],
+                  "id": 5210,
+                  "text": "8"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [549, 459, 64, 64],
+                  "id": 5211,
+                  "text": "9"
+                },
+                {
+                  "role": "contacts",
+                  "name": "Contacts",
+                  "kind": "button",
+                  "rect": [764, 459, 154, 64],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "1059x440_contacts.png"
+                },
+                {"role": "star", "name": "Dialer Keypad *", "kind": "button", "rect": [361, 538, 64, 64], "id": 5212},
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [455, 538, 64, 64],
+                  "id": 5202,
+                  "text": "0"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [549, 538, 64, 64],
+                  "id": 5213,
+                  "text": "#"
+                },
+                {
+                  "role": "period",
+                  "name": "Dialer Keypad Period",
+                  "kind": "button",
+                  "rect": [627, 538, 64, 64],
+                  "id": 5228,
+                  "text": "."
+                },
+                {
+                  "role": "keyboard",
+                  "name": "Keyboard",
+                  "kind": "button",
+                  "rect": [764, 538, 154, 64],
+                  "id": 5229,
+                  "art": "440x440_keyboard.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
+        },
+        "choose": {
+          "page": "Main Select Source",
+          "title": [515, 223, 250, 50],
+          "text": "Select a Source",
+          "surfaces": [],
+          "help": null,
+          "close": null,
+          "tiles": [
+            {"rect": [346, 315, 110, 110], "label": null},
+            {"rect": [505, 315, 110, 110], "label": null},
+            {"rect": [664, 315, 110, 110], "label": null},
+            {"rect": [823, 315, 110, 110], "label": null}
+          ],
+          "pt": {"title": 21}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
         "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot."
@@ -889,6 +1322,7 @@
               "pitch": 46
             }
           ],
+          "seam": 12,
           "items": [
             {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [15, 528, 115, 60], "id": 8120}
           ]
@@ -940,6 +1374,15 @@
           "items": [
             {"role": "divider", "name": "Divider", "kind": "line", "rect": [208, 93, 608, 15]},
             {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [287, 545, 450, 45]}
+          ]
+        },
+        "foot": {
+          "rect": [0, 528, 1024, 72],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [15, 528, 115, 60], "id": 8120},
+            {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [287, 545, 450, 45]},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [899, 528, 48, 60], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [958, 528, 48, 60], "id": 8022}
           ]
         },
         "windows": {
@@ -1044,7 +1487,317 @@
               },
               "pt": {"title": 17.5}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [0, 0, 1024, 600],
+            "surfaces": [
+              {
+                "name": "Modal Background",
+                "rect": [0, 0, 1024, 600],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "5120x3000_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 17.5},
+            "message": [252, 184, 520, 50],
+            "lines": 1,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [346, 275, 144, 60],
+                "id": 9032,
+                "text": "Accept"
+              },
+              {
+                "role": "decline",
+                "name": "Decline Call",
+                "kind": "button",
+                "rect": [533, 275, 144, 60],
+                "id": 9033,
+                "text": "Decline"
+              }
+            ],
+            "text": "Incoming call, do you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": null,
+          "left": {
+            "rect": [0, 0, 145, 600],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [11, 100, 114, 37], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Call",
+                    "kind": "button",
+                    "rect": [0, 136, 132, 37],
+                    "id": 5014,
+                    "text": "Make Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [0, 182, 132, 37],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "Call Privacy",
+                    "kind": "button",
+                    "rect": [0, 228, 132, 37],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 46
+              },
+              {
+                "heading": {"rect": [11, 289, 114, 37], "text": "Settings"},
+                "buttons": [
+                  {
+                    "role": "display",
+                    "name": "Display Settings",
+                    "kind": "button",
+                    "rect": [0, 326, 132, 37],
+                    "id": 8214
+                  },
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Settings",
+                    "kind": "button",
+                    "rect": [0, 372, 132, 37],
+                    "id": 8116
+                  },
+                  {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 418, 132, 37], "id": 8020}
+                ],
+                "pitch": 46
+              }
+            ],
+            "items": [
+              {"role": "presentation", "name": "Presentation", "kind": "button", "rect": [15, 528, 115, 60], "id": 8118}
+            ]
+          },
+          "right": {
+            "rect": [878, 0, 146, 600],
+            "surfaces": [],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [895, 8, 115, 60], "id": 8090},
+              {
+                "role": "heading",
+                "name": "Main Volume Label",
+                "kind": "label",
+                "rect": [887, 100, 130, 37],
+                "id": 4052,
+                "text": "Volume"
+              },
+              {
+                "role": "volume",
+                "name": "Main Volume Slider",
+                "kind": "slider",
+                "rect": [927, 131, 50, 338],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [922, 469, 60, 48], "id": 8021},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [899, 528, 48, 60], "id": 8117},
+              {"role": "power", "name": "Power", "kind": "button", "rect": [958, 528, 48, 60], "id": 8022}
+            ]
+          },
+          "bottom": null,
+          "center": {
+            "rect": [145, 10, 733, 581],
+            "region": [166, 120, 692, 406],
+            "surfaces": [],
+            "items": [
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [208, 93, 608, 15]},
+              {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [287, 545, 450, 45]}
+            ],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [431, 120, 162, 37],
+              "text": "VTC Dialer",
+              "pt": {"title": 17.5, "entry": 18.5},
+              "entry": {
+                "role": "entry",
+                "name": "Phone Number Label",
+                "kind": "label",
+                "rect": [270, 172, 200, 37],
+                "id": 50000,
+                "text": "123 - 456 - 7890"
+              },
+              "surfaces": [],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "Phone Number Delete",
+                  "kind": "button",
+                  "rect": [470, 166, 60, 48],
+                  "id": 5237,
+                  "art": "440x440_delete.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [256, 220, 60, 60],
+                  "id": 5203,
+                  "text": "1"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [340, 220, 60, 60],
+                  "id": 5204,
+                  "text": "2"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [424, 220, 60, 60],
+                  "id": 5205,
+                  "text": "3"
+                },
+                {
+                  "role": "call",
+                  "name": "Call",
+                  "kind": "button",
+                  "rect": [624, 220, 144, 60],
+                  "id": 5214,
+                  "text": "Make Call",
+                  "art": "1059x440_call_unavailable.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [256, 290, 60, 60],
+                  "id": 5206,
+                  "text": "4"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [340, 290, 60, 60],
+                  "id": 5207,
+                  "text": "5"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [424, 290, 60, 60],
+                  "id": 5208,
+                  "text": "6"
+                },
+                {
+                  "role": "swap",
+                  "name": "Swap",
+                  "kind": "button",
+                  "rect": [624, 290, 144, 60],
+                  "id": 5251,
+                  "text": "Swap",
+                  "art": "1059x440_swap.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [256, 360, 60, 60],
+                  "id": 5209,
+                  "text": "7"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [340, 360, 60, 60],
+                  "id": 5210,
+                  "text": "8"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [424, 360, 60, 60],
+                  "id": 5211,
+                  "text": "9"
+                },
+                {
+                  "role": "contacts",
+                  "name": "Contacts",
+                  "kind": "button",
+                  "rect": [624, 360, 144, 60],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "1059x440_contacts.png"
+                },
+                {"role": "star", "name": "Dialer Keypad *", "kind": "button", "rect": [256, 430, 60, 60], "id": 5212},
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [340, 430, 60, 60],
+                  "id": 5202,
+                  "text": "0"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [424, 430, 60, 60],
+                  "id": 5213,
+                  "text": "#"
+                },
+                {
+                  "role": "period",
+                  "name": "Dialer Keypad Period",
+                  "kind": "button",
+                  "rect": [495, 430, 60, 60],
+                  "id": 5228,
+                  "text": "."
+                },
+                {
+                  "role": "keyboard",
+                  "name": "Keyboard",
+                  "kind": "button",
+                  "rect": [624, 430, 144, 60],
+                  "id": 5229,
+                  "art": "440x440_keyboard.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
+        },
+        "choose": {
+          "page": "Main Select Source",
+          "title": [387, 167, 250, 37],
+          "text": "Select a Source",
+          "surfaces": [],
+          "help": null,
+          "close": null,
+          "tiles": [
+            {"rect": [279, 236, 85, 85], "label": null},
+            {"rect": [406, 236, 85, 85], "label": null},
+            {"rect": [533, 236, 85, 85], "label": null},
+            {"rect": [660, 236, 85, 85], "label": null}
+          ],
+          "pt": {"title": 17.5}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
         "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot."
@@ -1129,6 +1882,7 @@
               "pitch": 83
             }
           ],
+          "seam": 30,
           "items": [
             {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [27, 961, 201, 90], "id": 8120}
           ]
@@ -1182,6 +1936,17 @@
             {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [858, 954, 201, 90], "id": 8301},
             {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [285, 967, 291, 84]},
             {"role": "clock", "name": "Time", "kind": "datetime", "rect": [1426, 967, 207, 84]}
+          ]
+        },
+        "foot": {
+          "rect": [0, 954, 1920, 126],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [27, 961, 201, 90], "id": 8120},
+            {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [285, 967, 291, 84]},
+            {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [858, 954, 201, 90], "id": 8301},
+            {"role": "clock", "name": "Time", "kind": "datetime", "rect": [1426, 967, 207, 84]},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1698, 961, 88, 90], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [1803, 961, 88, 90], "id": 8022}
           ]
         },
         "windows": {
@@ -1311,7 +2076,326 @@
               },
               "pt": {"title": 30}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [0, 0, 1920, 1080],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 1080],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 30},
+            "message": [468, 301, 982, 69],
+            "lines": 1,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [709, 445, 216, 90],
+                "id": 9032,
+                "text": "Accept"
+              },
+              {
+                "role": "decline",
+                "name": "Decline Call",
+                "kind": "button",
+                "rect": [993, 445, 216, 90],
+                "id": 9033,
+                "text": "Decline"
+              }
+            ],
+            "text": "Incoming call, do you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": null,
+          "left": {
+            "rect": [0, 0, 252, 1080],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [19, 204, 213, 69], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Call",
+                    "kind": "button",
+                    "rect": [0, 271, 249, 69],
+                    "id": 5014,
+                    "text": "Make Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [0, 354, 249, 69],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "Call Privacy",
+                    "kind": "button",
+                    "rect": [0, 435, 249, 69],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 83
+              },
+              {
+                "heading": {"rect": [19, 546, 213, 69], "text": "Settings"},
+                "buttons": [
+                  {
+                    "role": "display",
+                    "name": "Display Settings",
+                    "kind": "button",
+                    "rect": [0, 612, 249, 69],
+                    "id": 8214
+                  },
+                  {"role": "screen", "name": "Screen Settings", "kind": "button", "rect": [0, 696, 249, 69], "id": 8115},
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Settings",
+                    "kind": "button",
+                    "rect": [0, 777, 249, 69],
+                    "id": 8116
+                  },
+                  {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 858, 249, 69], "id": 8020}
+                ],
+                "pitch": 81
+              }
+            ],
+            "items": [
+              {"role": "presentation", "name": "Presentation", "kind": "button", "rect": [27, 961, 201, 90], "id": 8118}
+            ]
+          },
+          "right": {
+            "rect": [1668, 0, 252, 1080],
+            "surfaces": [],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1696, 22, 201, 90], "id": 8090},
+              {
+                "role": "heading",
+                "name": "Main Volume Label",
+                "kind": "label",
+                "rect": [1672, 204, 240, 69],
+                "id": 4052,
+                "text": "Volume"
+              },
+              {
+                "role": "volume",
+                "name": "Main Volume Slider",
+                "kind": "slider",
+                "rect": [1756, 264, 69, 555],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1746, 814, 88, 90], "id": 8021},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [1698, 961, 88, 90], "id": 8117},
+              {"role": "power", "name": "Power", "kind": "button", "rect": [1803, 961, 88, 90], "id": 8022}
+            ]
+          },
+          "bottom": null,
+          "center": {
+            "rect": [252, 23, 1416, 1033],
+            "region": [340, 225, 1236, 726],
+            "surfaces": [],
+            "items": [
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [424, 180, 1068, 27]},
+              {
+                "role": "share",
+                "name": "Preview Source Share",
+                "kind": "button",
+                "rect": [858, 954, 201, 90],
+                "id": 8301
+              },
+              {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [285, 967, 291, 84]},
+              {"role": "clock", "name": "Time", "kind": "datetime", "rect": [1426, 967, 207, 84]}
+            ],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [844, 225, 226, 69],
+              "text": "VTC Dialer",
+              "pt": {"title": 30, "entry": 28},
+              "entry": {
+                "role": "entry",
+                "name": "Phone Number Label",
+                "kind": "label",
+                "rect": [566, 319, 315, 69],
+                "id": 50000,
+                "text": "123 - 456 - 7890"
+              },
+              "surfaces": [],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "Phone Number Delete",
+                  "kind": "button",
+                  "rect": [883, 310, 88, 90],
+                  "id": 5237,
+                  "art": "440x440_delete.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [565, 402, 88, 90],
+                  "id": 5203,
+                  "text": "1"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [697, 402, 88, 90],
+                  "id": 5204,
+                  "text": "2"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [830, 402, 88, 90],
+                  "id": 5205,
+                  "text": "3"
+                },
+                {
+                  "role": "call",
+                  "name": "Call",
+                  "kind": "button",
+                  "rect": [1132, 402, 216, 90],
+                  "id": 5214,
+                  "text": "Make Call",
+                  "art": "1059x440_call_unavailable.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [565, 513, 88, 90],
+                  "id": 5206,
+                  "text": "4"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [697, 513, 88, 90],
+                  "id": 5207,
+                  "text": "5"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [830, 513, 88, 90],
+                  "id": 5208,
+                  "text": "6"
+                },
+                {
+                  "role": "swap",
+                  "name": "Swap",
+                  "kind": "button",
+                  "rect": [1132, 513, 216, 90],
+                  "id": 5251,
+                  "text": "Swap",
+                  "art": "1059x440_swap.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [565, 624, 88, 90],
+                  "id": 5209,
+                  "text": "7"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [697, 624, 88, 90],
+                  "id": 5210,
+                  "text": "8"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [830, 624, 88, 90],
+                  "id": 5211,
+                  "text": "9"
+                },
+                {
+                  "role": "contacts",
+                  "name": "Contacts",
+                  "kind": "button",
+                  "rect": [1132, 624, 216, 90],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "1059x440_contacts.png"
+                },
+                {"role": "star", "name": "Dialer Keypad *", "kind": "button", "rect": [565, 735, 88, 90], "id": 5212},
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [697, 735, 88, 90],
+                  "id": 5202,
+                  "text": "0"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [830, 735, 88, 90],
+                  "id": 5213,
+                  "text": "#"
+                },
+                {
+                  "role": "period",
+                  "name": "Dialer Keypad Period",
+                  "kind": "button",
+                  "rect": [940, 735, 88, 90],
+                  "id": 5228,
+                  "text": "."
+                },
+                {
+                  "role": "keyboard",
+                  "name": "Keyboard",
+                  "kind": "button",
+                  "rect": [1132, 735, 216, 90],
+                  "id": 5229,
+                  "art": "440x440_keyboard.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
+        },
+        "choose": {
+          "page": "Main Select Source",
+          "title": [783, 292, 351, 69],
+          "text": "Select a Source",
+          "surfaces": [],
+          "help": null,
+          "close": null,
+          "tiles": [
+            {"rect": [546, 423, 154, 154], "label": null},
+            {"rect": [769, 423, 154, 154], "label": null},
+            {"rect": [993, 423, 154, 154], "label": null},
+            {"rect": [1216, 423, 154, 154], "label": null}
+          ],
+          "pt": {"title": 30}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
         "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot."
@@ -1378,6 +2462,7 @@
               "pitch": 49
             }
           ],
+          "seam": 22,
           "items": [
             {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [15, 635, 140, 73], "id": 8120}
           ]
@@ -1468,6 +2553,15 @@
             },
             {"role": "display", "name": "Send to Display", "kind": "button", "rect": [473, 635, 194, 64], "id": 8370},
             {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [760, 655, 400, 45]}
+          ]
+        },
+        "foot": {
+          "rect": [0, 635, 1920, 85],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [15, 635, 140, 73], "id": 8120},
+            {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [760, 655, 400, 45]},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1768, 635, 60, 73], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [1837, 635, 60, 73], "id": 8022}
           ]
         },
         "windows": {
@@ -1616,7 +2710,354 @@
               },
               "pt": {"title": 21}
             }
-          ]
+          ],
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [0, 0, 1920, 720],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1920, 720],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "9600x3600_bg1_default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 20},
+            "message": [700, 194, 520, 50],
+            "lines": 1,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [764, 295, 175, 72],
+                "id": 9032,
+                "text": "Accept"
+              },
+              {
+                "role": "decline",
+                "name": "Decline Call",
+                "kind": "button",
+                "rect": [981, 295, 175, 72],
+                "id": 9033,
+                "text": "Decline"
+              }
+            ],
+            "text": "Incoming call, do you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": null,
+          "left": {
+            "rect": [0, 0, 185, 720],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [11, 100, 114, 37], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Call",
+                    "kind": "button",
+                    "rect": [0, 142, 160, 60],
+                    "id": 5014,
+                    "text": "Make Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [0, 202, 160, 60],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "Call Privacy",
+                    "kind": "button",
+                    "rect": [0, 262, 160, 60],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 60
+              },
+              {
+                "heading": {"rect": [11, 409, 114, 37], "text": "Settings"},
+                "buttons": [
+                  {
+                    "role": "display",
+                    "name": "Display Settings",
+                    "kind": "button",
+                    "rect": [0, 449, 160, 45],
+                    "id": 8214
+                  },
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Settings",
+                    "kind": "button",
+                    "rect": [0, 498, 160, 45],
+                    "id": 8116
+                  },
+                  {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 547, 160, 45], "id": 8020}
+                ],
+                "pitch": 49
+              }
+            ],
+            "items": [
+              {"role": "presentation", "name": "Presentation", "kind": "button", "rect": [15, 635, 140, 73], "id": 8118}
+            ]
+          },
+          "right": {
+            "rect": [1736, 0, 184, 720],
+            "surfaces": [],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1760, 19, 140, 73], "id": 8090},
+              {
+                "role": "heading",
+                "name": "Main Volume Label",
+                "kind": "label",
+                "rect": [1762, 110, 138, 37],
+                "id": 4052,
+                "text": "Volume"
+              },
+              {
+                "role": "volume",
+                "name": "Main Volume Slider",
+                "kind": "slider",
+                "rect": [1806, 141, 50, 338],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1801, 479, 60, 48], "id": 8021},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [1768, 635, 60, 73], "id": 8117},
+              {"role": "power", "name": "Power", "kind": "button", "rect": [1837, 635, 60, 73], "id": 8022}
+            ]
+          },
+          "bottom": null,
+          "center": {
+            "rect": [185, 13, 1551, 695],
+            "region": [1028, 149, 650, 500],
+            "surfaces": [
+              {
+                "name": "Video Footer Shape",
+                "rect": [248, 574, 644, 45],
+                "kind": "shape",
+                "fill": "#000000FF",
+                "border": null,
+                "art": null
+              }
+            ],
+            "items": [
+              {"role": "preview", "name": "Preview PC", "kind": "button", "rect": [453, 19, 125, 125], "id": 8352},
+              {"role": "preview", "name": "Preview Laptop", "kind": "button", "rect": [580, 19, 125, 125], "id": 8350},
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [950, 50, 19, 599]},
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [274, 137, 608, 15]},
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [1049, 137, 608, 15]},
+              {
+                "role": "heading",
+                "name": "Preview Source",
+                "kind": "label",
+                "rect": [213, 168, 714, 37],
+                "id": 4019,
+                "text": "Preview Source"
+              },
+              {"role": "video", "name": "Video", "kind": "video", "rect": [248, 212, 644, 362]},
+              {
+                "role": "fullscreen",
+                "name": "Main VC Full Screen",
+                "kind": "button",
+                "rect": [719, 574, 140, 45],
+                "id": 8304
+              },
+              {
+                "role": "fullscreen",
+                "name": "Main VC Full Screen",
+                "kind": "button",
+                "rect": [848, 574, 30, 45],
+                "id": 8304
+              },
+              {"role": "display", "name": "Send to Display", "kind": "button", "rect": [473, 635, 194, 64], "id": 8370},
+              {"role": "clock", "name": "Current Date & Time", "kind": "datetime", "rect": [760, 655, 400, 45]}
+            ],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [1272, 169, 162, 37],
+              "text": "VTC Dialer",
+              "pt": {"title": 21, "entry": 18.5},
+              "entry": {
+                "role": "entry",
+                "name": "Phone Number Label",
+                "kind": "label",
+                "rect": [1087, 210, 240, 48],
+                "id": 50000,
+                "text": "123 - 456 - 7890"
+              },
+              "surfaces": [],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "Phone Number Delete",
+                  "kind": "button",
+                  "rect": [1327, 210, 60, 48],
+                  "id": 5237,
+                  "art": "440x440_delete.png"
+                },
+                {
+                  "role": "call",
+                  "name": "Call",
+                  "kind": "button",
+                  "rect": [1455, 249, 164, 72],
+                  "id": 5214,
+                  "text": "Make Call",
+                  "art": "1059x440_call_unavailable.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [1087, 269, 72, 72],
+                  "id": 5203,
+                  "text": "1"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [1171, 269, 72, 72],
+                  "id": 5204,
+                  "text": "2"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [1255, 269, 72, 72],
+                  "id": 5205,
+                  "text": "3"
+                },
+                {
+                  "role": "swap",
+                  "name": "Swap",
+                  "kind": "button",
+                  "rect": [1455, 329, 164, 72],
+                  "id": 5251,
+                  "text": "Swap",
+                  "art": "1059x440_swap.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [1087, 349, 72, 72],
+                  "id": 5206,
+                  "text": "4"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [1171, 349, 72, 72],
+                  "id": 5207,
+                  "text": "5"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [1255, 349, 72, 72],
+                  "id": 5208,
+                  "text": "6"
+                },
+                {
+                  "role": "contacts",
+                  "name": "Contacts",
+                  "kind": "button",
+                  "rect": [1455, 409, 164, 72],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "1059x440_contacts.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [1087, 429, 72, 72],
+                  "id": 5209,
+                  "text": "7"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [1171, 429, 72, 72],
+                  "id": 5210,
+                  "text": "8"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [1255, 429, 72, 72],
+                  "id": 5211,
+                  "text": "9"
+                },
+                {
+                  "role": "keyboard",
+                  "name": "Keyboard",
+                  "kind": "button",
+                  "rect": [1455, 489, 164, 72],
+                  "id": 5229,
+                  "art": "440x440_keyboard.png"
+                },
+                {"role": "star", "name": "Dialer Keypad *", "kind": "button", "rect": [1087, 509, 72, 72], "id": 5212},
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [1171, 509, 72, 72],
+                  "id": 5202,
+                  "text": "0"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [1255, 509, 72, 72],
+                  "id": 5213,
+                  "text": "#"
+                },
+                {
+                  "role": "period",
+                  "name": "Dialer Keypad Period",
+                  "kind": "button",
+                  "rect": [1341, 509, 72, 72],
+                  "id": 5228,
+                  "text": "."
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
+        },
+        "choose": {
+          "page": "Main Select Source",
+          "title": [1221, 237, 250, 37],
+          "text": "Select a Source",
+          "surfaces": [],
+          "help": null,
+          "close": null,
+          "tiles": [
+            {"rect": [1093, 319, 125, 125], "label": null},
+            {"rect": [1220, 319, 125, 125], "label": null},
+            {"rect": [1347, 319, 125, 125], "label": null},
+            {"rect": [1474, 319, 125, 125], "label": null}
+          ],
+          "pt": {"title": 17.5}
         },
         "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
         "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot. The popup region fills only part of the centre; the page's own controls hold the rest."
@@ -1682,7 +3123,6 @@
           "pt": {"title": 21, "empty": 16},
           "close": {"role": "back", "name": "Laptop Back", "kind": "button", "rect": [0, 13, 66, 66], "id": 9102},
           "title_controls": [66, 21, 284, 50],
-          "items": [{"role": "popup", "name": "Volume Level", "kind": "popup_ref", "rect": [637, 0, 50, 480]}],
           "level": {
             "popup": "Volume Level",
             "fill": "#BABCCEFF",
@@ -1692,22 +3132,23 @@
             "bar": "#626ACFFF",
             "art": null,
             "labels": []
-          }
+          },
+          "items": [{"role": "popup", "name": "Volume Level", "kind": "popup_ref", "rect": [637, 0, 50, 480]}]
         },
         "select": {
           "popup": "Select Source",
           "title": [199, 21, 290, 50],
           "text": "Select a Source",
-          "surfaces": [],
+          "surfaces": [{"name": "Divider", "rect": [32, 238, 621, 20], "kind": "line", "fill": "#BABCCEFF", "border": null, "art": null}],
           "help": null,
           "close": null,
           "tiles": [
-            {"rect": [57, 147, 110, 100], "label": null},
-            {"rect": [210, 147, 110, 100], "label": null},
-            {"rect": [363, 147, 110, 100], "label": null},
-            {"rect": [518, 147, 110, 100], "label": null}
+            {"rect": [57, 147, 110, 100], "label": [57, 194, 110, 36]},
+            {"rect": [210, 147, 110, 100], "label": [210, 194, 110, 36]},
+            {"rect": [363, 147, 110, 100], "label": [363, 194, 110, 36]},
+            {"rect": [518, 147, 110, 100], "label": [518, 194, 110, 36]}
           ],
-          "pt": {"title": 21}
+          "pt": {"title": 21, "label": 13}
         },
         "options": {
           "popup": "Settings",

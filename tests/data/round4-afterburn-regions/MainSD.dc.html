@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Main SD</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- The working page in Afterburn's regions: its sources across the squircle's top, the display and settings in the left rail, the volume in the right, the foot row's Video Conference, Help and Power, and the selected source's popup in the Center. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Main SD" does="The room's working page: shares a source to the display and sets the display, lighting and audio." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Header">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Laptop" icon="laptop" states="Off, On" nav="Laptop" does="Routes the table laptop to the display; On while it is on the display.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="ShareLink" icon="sharelink-1" states="Off, On" nav="ShareLink" does="Routes the wireless ShareLink share to the display; On while it is on the display.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="PC" icon="pc" states="Off, On" nav="PC" does="Routes the room PC to the display; On while it is on the display.">PC</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Doc Cam" icon="doc-cam" states="Off, On" nav="DocCam" does="Routes the document camera to the display; On while it is on the display.">Doc Cam</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.LeftRail">
+    <x-import component-from-global-scope="ExtronAfterburn.Section" title="Display">
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Display Power" states='[{"name":"Off"},{"name":"Warming Up","icon":"toggle-2","look":"on"},{"name":"On"},{"name":"Cooling Down","icon":"toggle-2","look":"off"}]' does="Turns the display on and off; the program shows Warming Up and Cooling Down while it changes, the switch lit while it warms and is on and trackless while it changes.">Power</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Section" title="Settings">
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Lighting Settings" icon="lights" nav="LightingSettings" does="Opens the lighting presets.">Lighting</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Audio Settings" icon="audio" nav="AudioSettings" does="Opens the audio settings: the mics' and the program's mutes.">Audio</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.RightRail">
+    <x-import component-from-global-scope="ExtronAfterburn.Slider" slot="volume" name="Volume" id="100" does="Sets the program volume."></x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="mute" name="Mute" id="101" does="Mutes the program audio; On while muted."></x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="mode" name="Video Conference" nav="Call" does="Goes to the Teams call page.">Video Conference</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

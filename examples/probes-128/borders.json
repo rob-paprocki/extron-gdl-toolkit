@@ -1,0 +1,48 @@
+{
+ "_why": "Each row: the panel in specs/afterburn-borders.json that is rebound, the resource it is bound to (appended to the donor when absent), and its geometry. 'Afterburn - 20 Radius 1 Thick' is not in the corpus or the Afterburn seed; New-FormatProbes.ps1 appended 'Claude - 20 Radius 1 Thick' (the same geometry) on 1.27 and 1.28.",
+ "family": "Afterburn",
+ "rows": [
+  {
+   "control": "Border Ref 10R 2T",
+   "resource": "Afterburn - 10 Radius 2 Thick",
+   "radius": 10,
+   "thickness": 2,
+   "in_corpus": true
+  },
+  {
+   "control": "Border 20R 1T",
+   "resource": "Afterburn - 20 Radius 1 Thick",
+   "radius": 20,
+   "thickness": 1,
+   "in_corpus": false
+  },
+  {
+   "control": "Border 40R 6T",
+   "resource": "Afterburn - 40 Radius 6 Thick",
+   "radius": 40,
+   "thickness": 6,
+   "in_corpus": false
+  },
+  {
+   "control": "Border 0R 12T",
+   "resource": "Afterburn - 0 Radius 12 Thick",
+   "radius": 0,
+   "thickness": 12,
+   "in_corpus": false
+  },
+  {
+   "control": "Border 60R 3T",
+   "resource": "Afterburn - 60 Radius 3 Thick",
+   "radius": 60,
+   "thickness": 3,
+   "in_corpus": false
+  },
+  {
+   "control": "Border 100R 9T",
+   "resource": "Afterburn - 100 Radius 9 Thick",
+   "radius": 100,
+   "thickness": 9,
+   "in_corpus": false
+  }
+ ]
+}

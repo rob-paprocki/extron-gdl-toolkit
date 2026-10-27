@@ -97,10 +97,17 @@ def _canvases(model, size):
     return (tuple(size) if size else default), default
 
 
+# An ECP seed is named for the preset it was made in, by hand (seeds/README.md),
+# not for a size and a way up.
+_ECP = {(1920, 1080): 'ECP 16-9', (1280, 800): 'ECP 16-10'}
+
+
 def default_path(theme, model, size=None):
     """Where a new seed is kept, as a profile names it: 'seeds/<Theme> <size>.gdl',
     with the way up where it is not the panel's default - or, for the 300M,
     always. `size` is the canvas, the model's default without one."""
+    if model == 'VTLPEcp':
+        return f"seeds/{theme} {_ECP[_canvases(model, size)[0]]}.gdl"
     m = _SIZE.match(model)
     name = _WHOLE.get(model) or (m.group(1) if m else model)
     return f"seeds/{theme} {name}{_way_up(model, size)}.gdl"

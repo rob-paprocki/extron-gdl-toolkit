@@ -1,0 +1,1755 @@
+{
+  "name": "Shockwave Working Page in Regions",
+  "model": "TLP1535M",
+  "size": [
+    1920,
+    1080
+  ],
+  "_seed": "seeds/Shockwave 1535.gdl",
+  "_from": "Design canvas, Shockwave (default)",
+  "_panels": [
+    "TLP1535M"
+  ],
+  "theme": {
+    "alert": "#75063C",
+    "caution": "#946E06",
+    "clock": "#C0C0C0",
+    "go": "#355424",
+    "ink": "#000000",
+    "page": "#3B2F2A",
+    "pressed": "#3CFFFFFF",
+    "raised": "#999999",
+    "text": "#FFFFFF",
+    "text-secondary": "#474747",
+    "well": "#26FFFFFF",
+    "font": "Open Sans"
+  },
+  "_template_colors": [
+    "#000000",
+    "#26FFFFFF",
+    "#355424",
+    "#3B2F2A",
+    "#3CFFFFFF",
+    "#474747",
+    "#73000000",
+    "#75063C",
+    "#946E06",
+    "#999999",
+    "#A6000000",
+    "#C0C0C0",
+    "#FF3B2F2A",
+    "#FF999999",
+    "#FFFFFF",
+    "#FFFFFFFF"
+  ],
+  "pages": [
+    {
+      "name": "Main",
+      "controls": [
+        {
+          "kind": "panel",
+          "name": "Header Left",
+          "rect": [
+            0,
+            0,
+            278,
+            127
+          ],
+          "fill": "page",
+          "border": "rect",
+          "derived": true,
+          "id": 50021
+        },
+        {
+          "kind": "panel",
+          "name": "Header Right",
+          "rect": [
+            1187,
+            0,
+            733,
+            127
+          ],
+          "fill": "page",
+          "border": "rect",
+          "derived": true,
+          "id": 50022
+        },
+        {
+          "kind": "button",
+          "name": "PC",
+          "rect": [
+            279,
+            0,
+            226,
+            127
+          ],
+          "fill": "page",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "744x456_pc_white.png"
+            },
+            {
+              "name": "On",
+              "fill": "pressed",
+              "image": "744x456_pc_white.png"
+            }
+          ],
+          "nav": "PC",
+          "does": "Routes the pc to the display and shows its controls.",
+          "joined": "region:header",
+          "id": 1001
+        },
+        {
+          "kind": "button",
+          "name": "Laptop",
+          "rect": [
+            506,
+            0,
+            226,
+            127
+          ],
+          "fill": "page",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "744x456_laptop_white.png"
+            },
+            {
+              "name": "On",
+              "fill": "pressed",
+              "image": "744x456_laptop_white.png"
+            }
+          ],
+          "nav": "Laptop",
+          "does": "Routes the laptop to the display and shows its controls.",
+          "joined": "region:header",
+          "id": 1002
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam",
+          "rect": [
+            733,
+            0,
+            226,
+            127
+          ],
+          "fill": "page",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "744x456_doc-cam_white.png"
+            },
+            {
+              "name": "On",
+              "fill": "pressed",
+              "image": "744x456_doc-cam_white.png"
+            }
+          ],
+          "nav": "DocCam",
+          "does": "Routes the doc cam to the display and shows its controls.",
+          "joined": "region:header",
+          "id": 1003
+        },
+        {
+          "kind": "button",
+          "name": "Streaming",
+          "rect": [
+            960,
+            0,
+            226,
+            127
+          ],
+          "fill": "page",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "744x456_sharelink_white.png"
+            },
+            {
+              "name": "On",
+              "fill": "pressed",
+              "image": "744x456_sharelink_white.png"
+            }
+          ],
+          "nav": "Streaming",
+          "does": "Routes the streaming to the display and shows its controls.",
+          "joined": "region:header",
+          "id": 1004
+        },
+        {
+          "kind": "button",
+          "name": "PC Caption",
+          "rect": [
+            279,
+            75,
+            226,
+            52
+          ],
+          "text": "PC",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "fill": "none",
+              "color": "text"
+            },
+            {
+              "name": "On",
+              "fill": "none",
+              "color": "text"
+            }
+          ],
+          "nav": "PC",
+          "does": "Routes the pc to the display and shows its controls.",
+          "derived": true,
+          "id": 1001
+        },
+        {
+          "kind": "button",
+          "name": "Laptop Caption",
+          "rect": [
+            506,
+            75,
+            226,
+            52
+          ],
+          "text": "Laptop",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "fill": "none",
+              "color": "text"
+            },
+            {
+              "name": "On",
+              "fill": "none",
+              "color": "text"
+            }
+          ],
+          "nav": "Laptop",
+          "does": "Routes the laptop to the display and shows its controls.",
+          "derived": true,
+          "id": 1002
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Caption",
+          "rect": [
+            733,
+            75,
+            226,
+            52
+          ],
+          "text": "Doc Cam",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "fill": "none",
+              "color": "text"
+            },
+            {
+              "name": "On",
+              "fill": "none",
+              "color": "text"
+            }
+          ],
+          "nav": "DocCam",
+          "does": "Routes the doc cam to the display and shows its controls.",
+          "derived": true,
+          "id": 1003
+        },
+        {
+          "kind": "button",
+          "name": "Streaming Caption",
+          "rect": [
+            960,
+            75,
+            226,
+            52
+          ],
+          "text": "Streaming",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "fill": "none",
+              "color": "text"
+            },
+            {
+              "name": "On",
+              "fill": "none",
+              "color": "text"
+            }
+          ],
+          "nav": "Streaming",
+          "does": "Routes the streaming to the display and shows its controls.",
+          "derived": true,
+          "id": 1004
+        },
+        {
+          "kind": "label",
+          "name": "Display Heading",
+          "rect": [
+            24,
+            142,
+            211,
+            85
+          ],
+          "text": "Display",
+          "color": "text",
+          "size": 16,
+          "bold": false,
+          "align": "center",
+          "id": 1005
+        },
+        {
+          "kind": "button",
+          "name": "Display On",
+          "rect": [
+            45,
+            220,
+            168,
+            112
+          ],
+          "text": "On",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "712x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "712x440_gray_sel.png"
+            }
+          ],
+          "does": "Turns the display on.",
+          "joined": "region:left:0",
+          "id": 1006
+        },
+        {
+          "kind": "button",
+          "name": "Display Off",
+          "rect": [
+            45,
+            336,
+            168,
+            112
+          ],
+          "text": "Off",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "712x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "712x440_gray_sel.png"
+            }
+          ],
+          "does": "Turns the display off.",
+          "joined": "region:left:0",
+          "id": 1007
+        },
+        {
+          "kind": "button",
+          "name": "Display Mute",
+          "rect": [
+            45,
+            453,
+            168,
+            112
+          ],
+          "text": "Mute",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "712x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "712x440_gray_sel.png"
+            }
+          ],
+          "does": "Blanks the picture; On while blanked.",
+          "joined": "region:left:0",
+          "id": 1008
+        },
+        {
+          "kind": "button",
+          "name": "Lighting Settings",
+          "rect": [
+            45,
+            612,
+            168,
+            154
+          ],
+          "text": "Lighting",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "nav": "Lighting",
+          "does": "Opens lighting settings.",
+          "joined": "region:left:1",
+          "id": 1009
+        },
+        {
+          "kind": "button",
+          "name": "Audio Settings",
+          "rect": [
+            45,
+            766,
+            168,
+            154
+          ],
+          "text": "Audio",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "nav": "Audio",
+          "does": "Opens audio settings.",
+          "joined": "region:left:1",
+          "id": 1010
+        },
+        {
+          "kind": "label",
+          "name": "Volume Heading",
+          "rect": [
+            1678,
+            142,
+            211,
+            85
+          ],
+          "text": "Volume",
+          "color": "text",
+          "size": 16,
+          "bold": false,
+          "align": "center",
+          "id": 1011
+        },
+        {
+          "kind": "slider",
+          "name": "Volume",
+          "rect": [
+            1749,
+            226,
+            72,
+            565
+          ],
+          "fill": "ink",
+          "border": "rounded",
+          "orientation": "up",
+          "track": 52,
+          "thumb": 52,
+          "thumb_height": 34,
+          "does": "Sets the program volume.",
+          "joined": "region:right",
+          "thumb_image": "156x102_sw_thumb.png",
+          "track_image": "156x1026_sw_track_bg.png",
+          "fill_image": "156x1026_sw_fill.png",
+          "id": 8024
+        },
+        {
+          "kind": "button",
+          "name": "Volume Mute",
+          "rect": [
+            1731,
+            825,
+            111,
+            112
+          ],
+          "text": "Mute",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "440x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "alert",
+              "image": "440x440_red_sel.png"
+            }
+          ],
+          "does": "Mutes the program audio; On while muted.",
+          "joined": "region:right",
+          "id": 8021
+        },
+        {
+          "kind": "panel",
+          "name": "Footer Bar",
+          "rect": [
+            264,
+            967,
+            1390,
+            87
+          ],
+          "fill": "page",
+          "border": "capsule",
+          "derived": true,
+          "id": 50020
+        },
+        {
+          "kind": "button",
+          "name": "Room Mode",
+          "rect": [
+            265,
+            969,
+            237,
+            82
+          ],
+          "text": "Room Mode",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "1248x440_gray_round_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "1248x440_gray_round_sel.png"
+            }
+          ],
+          "does": "Changes the room mode.",
+          "id": 8118
+        },
+        {
+          "kind": "button",
+          "name": "Help",
+          "rect": [
+            1461,
+            969,
+            199,
+            82
+          ],
+          "text": "Help",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "960x440_yellow_outline_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "caution",
+              "image": "960x440_yellow_sel.png"
+            }
+          ],
+          "nav": "Help",
+          "id": 8117
+        },
+        {
+          "kind": "datetime",
+          "name": "Date Time",
+          "rect": [
+            622,
+            979,
+            711,
+            66
+          ],
+          "color": "clock",
+          "size": 14,
+          "bold": false,
+          "align": "center",
+          "format": "M/d/yyyy h:mm tt",
+          "id": 1012
+        },
+        {
+          "kind": "button",
+          "name": "Power",
+          "rect": [
+            1683,
+            969,
+            199,
+            82
+          ],
+          "text": "Off",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "960x440_red_outline_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "alert",
+              "image": "960x440_red_sel.png"
+            }
+          ],
+          "nav": "ConfirmPower",
+          "id": 8022
+        },
+        {
+          "kind": "panel",
+          "name": "Center Well",
+          "rect": [
+            265,
+            162,
+            1387,
+            774
+          ],
+          "fill": "well",
+          "border": "rounded",
+          "derived": true,
+          "id": 50019
+        },
+        {
+          "kind": "popup_ref",
+          "name": "Controls",
+          "rect": [
+            268,
+            162,
+            1380,
+            774
+          ],
+          "group": "Sources",
+          "id": 1013
+        }
+      ],
+      "background": "page",
+      "background_image": "5464x3072_bkgd.png",
+      "background_layout": "stretch",
+      "does": "The working page: sources across the top, display and settings left, volume right, the selected source's controls in the middle."
+    }
+  ],
+  "popups": [
+    {
+      "name": "Laptop",
+      "controls": [
+        {
+          "kind": "label",
+          "name": "Laptop Title",
+          "rect": [
+            276,
+            19,
+            825,
+            120
+          ],
+          "text": "Laptop",
+          "color": "text",
+          "size": 40,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50015
+        },
+        {
+          "kind": "label",
+          "name": "Laptop Empty",
+          "rect": [
+            208,
+            216,
+            960,
+            224
+          ],
+          "text": "Please connect your laptop.",
+          "color": "text",
+          "size": 30,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50013
+        },
+        {
+          "kind": "label",
+          "name": "Laptop Status",
+          "rect": [
+            544,
+            528,
+            286,
+            135
+          ],
+          "text": "Disconnected",
+          "color": "text",
+          "size": 22,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50014
+        }
+      ],
+      "background": "none",
+      "modal": false,
+      "group": "Sources",
+      "size": [
+        1380,
+        774
+      ]
+    },
+    {
+      "name": "PC",
+      "controls": [
+        {
+          "kind": "label",
+          "name": "PC Title",
+          "rect": [
+            276,
+            19,
+            825,
+            120
+          ],
+          "text": "PC",
+          "color": "text",
+          "size": 40,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50025
+        },
+        {
+          "kind": "label",
+          "name": "PC Empty",
+          "rect": [
+            208,
+            216,
+            960,
+            224
+          ],
+          "text": "Please connect your PC.",
+          "color": "text",
+          "size": 30,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50023
+        },
+        {
+          "kind": "label",
+          "name": "PC Status",
+          "rect": [
+            544,
+            528,
+            286,
+            135
+          ],
+          "text": "Disconnected",
+          "color": "text",
+          "size": 22,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50024
+        }
+      ],
+      "background": "none",
+      "modal": false,
+      "group": "Sources",
+      "size": [
+        1380,
+        774
+      ]
+    },
+    {
+      "name": "Streaming",
+      "controls": [
+        {
+          "kind": "label",
+          "name": "Streaming Title",
+          "rect": [
+            276,
+            19,
+            825,
+            120
+          ],
+          "text": "Streaming",
+          "color": "text",
+          "size": 40,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50028
+        },
+        {
+          "kind": "label",
+          "name": "Streaming Empty",
+          "rect": [
+            208,
+            216,
+            960,
+            224
+          ],
+          "text": "Please connect your streaming.",
+          "color": "text",
+          "size": 30,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50026
+        },
+        {
+          "kind": "label",
+          "name": "Streaming Status",
+          "rect": [
+            544,
+            528,
+            286,
+            135
+          ],
+          "text": "Disconnected",
+          "color": "text",
+          "size": 22,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50027
+        }
+      ],
+      "background": "none",
+      "modal": false,
+      "group": "Sources",
+      "size": [
+        1380,
+        774
+      ]
+    },
+    {
+      "name": "DocCam",
+      "controls": [
+        {
+          "kind": "label",
+          "name": "DocCam Title",
+          "rect": [
+            276,
+            19,
+            825,
+            120
+          ],
+          "text": "Document Camera",
+          "color": "text",
+          "size": 40,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50008
+        },
+        {
+          "kind": "label",
+          "name": "Inputs Heading",
+          "rect": [
+            132,
+            130,
+            106,
+            57
+          ],
+          "text": "Inputs",
+          "color": "text",
+          "size": 18,
+          "bold": false,
+          "align": "center",
+          "id": 9301
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Inputs 1",
+          "rect": [
+            138,
+            196,
+            95,
+            82
+          ],
+          "text": "1",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Inputs: 1.",
+          "id": 9302
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Inputs 2",
+          "rect": [
+            138,
+            312,
+            95,
+            82
+          ],
+          "text": "2",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Inputs: 2.",
+          "id": 9303
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Inputs 3",
+          "rect": [
+            138,
+            428,
+            95,
+            82
+          ],
+          "text": "3",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Inputs: 3.",
+          "id": 9304
+        },
+        {
+          "kind": "label",
+          "name": "Zoom Heading",
+          "rect": [
+            321,
+            130,
+            106,
+            57
+          ],
+          "text": "Zoom",
+          "color": "text",
+          "size": 18,
+          "bold": false,
+          "align": "center",
+          "id": 9305
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Zoom In",
+          "rect": [
+            327,
+            196,
+            95,
+            82
+          ],
+          "text": "In",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Zoom: In.",
+          "id": 9306
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Zoom Out",
+          "rect": [
+            327,
+            312,
+            95,
+            82
+          ],
+          "text": "Out",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Zoom: Out.",
+          "id": 9307
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Zoom Freeze",
+          "rect": [
+            327,
+            428,
+            95,
+            82
+          ],
+          "text": "Freeze",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Zoom: Freeze.",
+          "id": 9308
+        },
+        {
+          "kind": "label",
+          "name": "Focus Heading",
+          "rect": [
+            504,
+            130,
+            106,
+            57
+          ],
+          "text": "Focus",
+          "color": "text",
+          "size": 18,
+          "bold": false,
+          "align": "center",
+          "id": 9309
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Focus Far",
+          "rect": [
+            510,
+            196,
+            95,
+            82
+          ],
+          "text": "Far",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Focus: Far.",
+          "id": 9310
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Focus Near",
+          "rect": [
+            510,
+            312,
+            95,
+            82
+          ],
+          "text": "Near",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Focus: Near.",
+          "id": 9311
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Focus Auto",
+          "rect": [
+            510,
+            428,
+            95,
+            82
+          ],
+          "text": "Auto",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Focus: Auto.",
+          "id": 9312
+        },
+        {
+          "kind": "label",
+          "name": "Iris Heading",
+          "rect": [
+            677,
+            130,
+            106,
+            57
+          ],
+          "text": "Iris",
+          "color": "text",
+          "size": 18,
+          "bold": false,
+          "align": "center",
+          "id": 9313
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Iris Open",
+          "rect": [
+            683,
+            196,
+            95,
+            82
+          ],
+          "text": "Open",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Iris: Open.",
+          "id": 9314
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Iris Close",
+          "rect": [
+            683,
+            312,
+            95,
+            82
+          ],
+          "text": "Close",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Iris: Close.",
+          "id": 9315
+        },
+        {
+          "kind": "button",
+          "name": "Doc Cam Iris Normal",
+          "rect": [
+            683,
+            428,
+            95,
+            82
+          ],
+          "text": "Normal",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "504x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "text-secondary",
+              "image": "504x440_gray_sel.png"
+            }
+          ],
+          "does": "Iris: Normal.",
+          "id": 9316
+        }
+      ],
+      "background": "none",
+      "modal": false,
+      "group": "Sources",
+      "size": [
+        1380,
+        774
+      ]
+    },
+    {
+      "name": "Lighting",
+      "controls": [
+        {
+          "kind": "panel",
+          "name": "Lighting Window",
+          "rect": [
+            313,
+            105,
+            1288,
+            867
+          ],
+          "fill": "raised",
+          "border": "rounded",
+          "derived": true,
+          "id": 50018
+        },
+        {
+          "kind": "label",
+          "name": "Lighting Title",
+          "rect": [
+            348,
+            141,
+            1222,
+            114
+          ],
+          "text": "Lighting Settings",
+          "color": "text-secondary",
+          "size": 40,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50017
+        },
+        {
+          "kind": "button",
+          "name": "Lighting Close",
+          "rect": [
+            1525,
+            112,
+            69,
+            69
+          ],
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "black_close.png"
+            },
+            {
+              "name": "On",
+              "border": "rounded-3d-selected",
+              "image": "white_close.png"
+            }
+          ],
+          "does": "Closes the window - back to the page that opened it.",
+          "derived": true,
+          "id": 50016
+        },
+        {
+          "kind": "button",
+          "name": "Lights Preset 1",
+          "rect": [
+            380,
+            360,
+            160,
+            80
+          ],
+          "text": "Preset 1",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "712x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "712x440_gray_sel.png"
+            }
+          ],
+          "does": "Recalls lighting preset 1.",
+          "id": 9401
+        },
+        {
+          "kind": "button",
+          "name": "Lights Preset 2",
+          "rect": [
+            740,
+            360,
+            160,
+            80
+          ],
+          "text": "Preset 2",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "712x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "712x440_gray_sel.png"
+            }
+          ],
+          "does": "Recalls lighting preset 2.",
+          "id": 9402
+        }
+      ],
+      "modal": true
+    },
+    {
+      "name": "Audio",
+      "controls": [
+        {
+          "kind": "panel",
+          "name": "Audio Window",
+          "rect": [
+            159,
+            105,
+            1597,
+            867
+          ],
+          "fill": "raised",
+          "border": "rounded",
+          "derived": true,
+          "id": 50003
+        },
+        {
+          "kind": "label",
+          "name": "Audio Title",
+          "rect": [
+            345,
+            141,
+            1222,
+            114
+          ],
+          "text": "Audio Settings",
+          "color": "text-secondary",
+          "size": 40,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50002
+        },
+        {
+          "kind": "button",
+          "name": "Audio Close",
+          "rect": [
+            1677,
+            112,
+            69,
+            69
+          ],
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "black_close.png"
+            },
+            {
+              "name": "On",
+              "border": "rounded-3d-selected",
+              "image": "white_close.png"
+            }
+          ],
+          "does": "Closes the window - back to the page that opened it.",
+          "derived": true,
+          "id": 50001
+        },
+        {
+          "kind": "label",
+          "name": "Mic Heading",
+          "rect": [
+            588,
+            300,
+            104,
+            40
+          ],
+          "text": "Mic",
+          "color": "text-secondary",
+          "size": 18,
+          "bold": false,
+          "align": "center",
+          "id": 9501
+        },
+        {
+          "kind": "button",
+          "name": "Mic Mute",
+          "rect": [
+            590,
+            350,
+            100,
+            80
+          ],
+          "text": "Mute",
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "712x440_gray_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "ink",
+              "image": "712x440_gray_sel.png"
+            }
+          ],
+          "does": "Mutes the room microphones; On while muted.",
+          "id": 9502
+        }
+      ],
+      "modal": true
+    },
+    {
+      "name": "Help",
+      "controls": [
+        {
+          "kind": "panel",
+          "name": "Help Window",
+          "rect": [
+            376,
+            240,
+            1168,
+            597
+          ],
+          "fill": "raised",
+          "border": "rounded",
+          "derived": true,
+          "id": 50012
+        },
+        {
+          "kind": "label",
+          "name": "Help Title",
+          "rect": [
+            670,
+            243,
+            573,
+            187
+          ],
+          "text": "HELP",
+          "color": "text-secondary",
+          "size": 40,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50011
+        },
+        {
+          "kind": "button",
+          "name": "Help Close",
+          "rect": [
+            1465,
+            249,
+            69,
+            69
+          ],
+          "color": "text",
+          "border": "none",
+          "size": 14,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "black_close.png"
+            },
+            {
+              "name": "On",
+              "border": "rounded-3d-selected",
+              "image": "white_close.png"
+            }
+          ],
+          "does": "Closes the window - back to the page that opened it.",
+          "derived": true,
+          "id": 50009
+        },
+        {
+          "kind": "label",
+          "name": "Help Message",
+          "rect": [
+            483,
+            490,
+            952,
+            187
+          ],
+          "text": "For assistance, please call the help desk at:\nX.XXX.XXX.XXXX",
+          "color": "text-secondary",
+          "size": 30,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50010
+        }
+      ],
+      "modal": true
+    },
+    {
+      "name": "ConfirmPower",
+      "controls": [
+        {
+          "kind": "panel",
+          "name": "ConfirmPower Window",
+          "rect": [
+            483,
+            276,
+            952,
+            523
+          ],
+          "fill": "raised",
+          "border": "rounded",
+          "derived": true,
+          "id": 50007
+        },
+        {
+          "kind": "label",
+          "name": "ConfirmPower Message",
+          "rect": [
+            503,
+            331,
+            912,
+            220
+          ],
+          "text": "Do you want to\npower down the system?",
+          "color": "text-secondary",
+          "size": 30,
+          "bold": false,
+          "align": "center",
+          "derived": true,
+          "id": 50005
+        },
+        {
+          "kind": "button",
+          "name": "ConfirmPower Cancel",
+          "rect": [
+            642,
+            612,
+            280,
+            112
+          ],
+          "text": "Cancel",
+          "color": "text",
+          "border": "none",
+          "size": 18,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "1248x440_red_round_outline_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "alert",
+              "image": "1248x440_red_round_sel.png"
+            }
+          ],
+          "does": "Closes the window - back to the page that opened it.",
+          "derived": true,
+          "id": 50004
+        },
+        {
+          "kind": "button",
+          "name": "ConfirmPower Power Down",
+          "rect": [
+            996,
+            612,
+            280,
+            112
+          ],
+          "text": "Power Down",
+          "color": "text",
+          "border": "none",
+          "size": 18,
+          "bold": false,
+          "states": [
+            {
+              "name": "Off",
+              "image": "1248x440_green_round_outline_nsel.png"
+            },
+            {
+              "name": "On",
+              "color": "go",
+              "image": "1248x440_green_round_sel.png"
+            }
+          ],
+          "does": "Powers the room down.",
+          "derived": true,
+          "id": 50006
+        }
+      ],
+      "does": "Powers the room down.",
+      "modal": true
+    }
+  ],
+  "images": {
+    "1248x440_gray_round_nsel.png": "Shockwave/buttons/1248x440/1248x440_gray_round_nsel.png",
+    "1248x440_gray_round_sel.png": "Shockwave/buttons/1248x440/1248x440_gray_round_sel.png",
+    "1248x440_green_round_outline_nsel.png": "Shockwave/buttons/1248x440/1248x440_green_round_outline_nsel.png",
+    "1248x440_green_round_sel.png": "Shockwave/buttons/1248x440/1248x440_green_round_sel.png",
+    "1248x440_red_round_outline_nsel.png": "Shockwave/buttons/1248x440/1248x440_red_round_outline_nsel.png",
+    "1248x440_red_round_sel.png": "Shockwave/buttons/1248x440/1248x440_red_round_sel.png",
+    "156x1026_sw_fill.png": "Shockwave/Slider/156x1026_sw_fill.png",
+    "156x1026_sw_track_bg.png": "Shockwave/Slider/156x1026_sw_track_bg.png",
+    "156x102_sw_thumb.png": "Shockwave/Slider/156x102_sw_thumb.png",
+    "440x440_gray_nsel.png": "Shockwave/buttons/440x440/440x440_gray_nsel.png",
+    "440x440_red_sel.png": "Shockwave/buttons/440x440/440x440_red_sel.png",
+    "504x440_gray_nsel.png": "Shockwave/buttons/504x440/504x440_gray_nsel.png",
+    "504x440_gray_sel.png": "Shockwave/buttons/504x440/504x440_gray_sel.png",
+    "5464x3072_bkgd.png": "Shockwave/backgrounds/5464x3072_bkgd.png",
+    "712x440_gray_nsel.png": "Shockwave/buttons/712x440/712x440_gray_nsel.png",
+    "712x440_gray_sel.png": "Shockwave/buttons/712x440/712x440_gray_sel.png",
+    "744x456_doc-cam_white.png": "Shockwave/buttons/744x456 Inputs/744x456_doc-cam_white.png",
+    "744x456_laptop_white.png": "Shockwave/buttons/744x456 Inputs/744x456_laptop_white.png",
+    "744x456_pc_white.png": "Shockwave/buttons/744x456 Inputs/744x456_pc_white.png",
+    "744x456_sharelink_white.png": "Shockwave/buttons/744x456 Inputs/744x456_sharelink_white.png",
+    "960x440_red_outline_nsel.png": "Shockwave/buttons/960x440/960x440_red_outline_nsel.png",
+    "960x440_red_sel.png": "Shockwave/buttons/960x440/960x440_red_sel.png",
+    "960x440_yellow_outline_nsel.png": "Shockwave/buttons/960x440/960x440_yellow_outline_nsel.png",
+    "960x440_yellow_sel.png": "Shockwave/buttons/960x440/960x440_yellow_sel.png",
+    "black_close.png": "Shockwave/icons/440x440 Black/black_close.png",
+    "white_close.png": "Shockwave/icons/440x440 White/white_close.png"
+  },
+  "start_page": "Main"
+}

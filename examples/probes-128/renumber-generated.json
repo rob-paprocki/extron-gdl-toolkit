@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "The renumber probe's second edit, run against the panel the runner builds from",
+    "examples/huddle-functions.json: a panel generated from a spec and built, then renumbered.",
+    "The runner checks it against that built file before applying it; a page name the build",
+    "did not keep shows up there, as an error, not as a no-op."
+  ],
+  "edits": [
+    {
+      "op": "renumber",
+      "_why": "Every button on the home page from 30000: a band per page is a renumber per page.",
+      "select": { "page": "Huddle Home", "type": "PBButton" },
+      "start": 30000
+    },
+    {
+      "op": "renumber",
+      "_why": "A popup's buttons, ten apart.",
+      "select": { "page": "Confirm Room Off", "type": "PBButton" },
+      "start": 30100,
+      "step": 10
+    }
+  ]
+}

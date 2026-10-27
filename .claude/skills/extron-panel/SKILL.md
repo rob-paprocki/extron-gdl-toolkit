@@ -15,6 +15,12 @@ and follow it:
   built page for sign-off. A revision of a canvas already handed to a
   programmer is translated against the previous ID map (`--previous`,
   `docs/idmap.md` §9), so the program's IDs are kept.
+  A canvas may draw region pages (Header, LeftRail, RightRail, Footer,
+  Center) and give pages and popups a `role` (`source`, `call`, `dialer`,
+  `select`, `help`, `settings`, `confirm` by `topic`): `docs/claude-design.md`
+  §3 and §4. `gdl.design compare --template` is the critique, `gdl.design
+  compare <canvas> <built> <dir>` the sign-off, and `New-GdlPanels.ps1`, which
+  builds and verifies every panel, needs a Windows host with GUI Designer.
 - **A description, or a spec**: `SKILL.md` workflow A.
 - **An existing panel**: `SKILL.md` workflow B.
 

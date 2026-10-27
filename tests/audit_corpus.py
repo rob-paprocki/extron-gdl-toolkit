@@ -124,6 +124,26 @@ def facts(path):
                  and tuple(c['rect']) == (0, 0) + tuple(g['size']))] += 1
     f['fullcanvas_refs'] = full
 
+    # Each popup group's stored referenceCountField beside its popups and the
+    # references bound to it, both read off the build. Build keeps whatever
+    # the field holds and builds the same panel (the format probe,
+    # docs/gdl-format.md §6), so inv_reference_counts says these, not judges.
+    f['group_counts'] = []
+    proj = next(p.instances('PBProject'), None)
+    if proj is not None and lay:
+        members = collections.Counter(g.get('GroupID') for g in lay.get('PopupPages') or [])
+        refs = collections.Counter()
+        for coll in ('Pages', 'PopupPages'):
+            for g in lay.get(coll) or []:
+                for c in g.get('Controls') or []:
+                    ref = c.get('PopupPageID')
+                    if isinstance(ref, dict) and ref.get('IsPopupGroupIdValid'):
+                        refs[ref.get('GroupID')] += 1
+        for grp in p.items(p.field(proj, 'popupPageGroupsField')):
+            gid = p.field(grp, 'idField')
+            f['group_counts'].append((p.field(grp, 'nameField'), p.field(grp, 'referenceCountField'),
+                                      members.get(gid, 0), refs.get(gid, 0)))
+
     f['borders'] = sorted(p.border_resource_names())
     f['fonts'] = sorted(p.font_resource_names())
 
@@ -331,6 +351,25 @@ def inv_borders(F):
     return 'INFO', lines
 
 
+def inv_reference_counts(F):
+    """What each popup group's referenceCountField holds, against its popups
+    and the references bound to it. Build keeps the field as written - 46, 0
+    and 1 on groups of 1, 3 and 5 popups each shown by one reference - and the
+    panel it builds is the same (the format probe; docs/gdl-format.md §6), so
+    this says the corpus's values and judges none; the applier writes 2."""
+    rows = [(f['name'],) + tuple(g) for f in F for g in f.get('group_counts') or []]
+    if not rows:
+        return 'INFO', ['no built project with a popup group']
+    popups = [r for r in rows if r[2] == r[3]]
+    refs = [r for r in rows if r[2] != r[3] and r[2] == r[4]]
+    neither = [r for r in rows if r[2] not in (r[3], r[4])]
+    lines = [f'{len(rows)} group(s) in {len({r[0] for r in rows})} project(s): the count is its '
+             f'popups in {len(popups)}, its references alone in {len(refs)}, neither in {len(neither)}']
+    lines += _cap([f'{name} {g!r}: {count} against {m} popup(s), {k} reference(s)'
+                   for name, g, count, m, k in neither], 12)
+    return 'INFO', lines
+
+
 def inv_press_state(F):
     """Every button shows one of its own states while held. The applier sets
     this pointer rather than inheriting it, because a resized clone may no
@@ -374,6 +413,7 @@ INVARIANTS = [
     ('one full-canvas ref per shown modal popup per page', inv_modal_refs),
     ('border resources shared across themes', inv_borders),
     ('controls left unrasterized by Build', inv_unrasterized),
+    ('popup group reference counts', inv_reference_counts),
 ]
 
 

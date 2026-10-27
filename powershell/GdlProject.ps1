@@ -1,4 +1,4 @@
-<#
+﻿<#
     Authoring bridge for Extron GUI Designer project graphs.
 
     MUST be run under 32-bit Windows PowerShell 5.1:
@@ -122,10 +122,20 @@ function Register-GdlPopupGroup {
         popup or reference pointing at the group id shows as "Unassigned". #>
     param([Parameter(Mandatory)]$Project, [Parameter(Mandatory)][string]$Name)
     $groups = Get-GdlField $Project 'popupPageGroupsField'
+    # A group is a clone of one of the registry's own (clone, never construct),
+    # so a project that has none - the 320 and 300M seeds, and one client
+    # fixture - has nothing to make one from. gdl.spec check_donor refuses the
+    # grouped standard popup before it gets here; this stops a hand-run apply
+    # with the reason, not on an index out of range.
+    if (-not $groups -or $groups.Count -eq 0) {
+        throw "popup group '$Name': the project has no popup group registry entry to clone, so it cannot make one - build from a donor that has a popup group (gdl.spec check_donor says which)"
+    }
     $id = [uint16](($groups | ForEach-Object { [int]$_.ID } | Measure-Object -Maximum).Maximum + 1)
     $g = Copy-GdlObject $groups[0]
     Set-GdlField $g 'nameField' $Name
     Set-GdlField $g 'idField' $id
+    # Any value builds the same panel: Build keeps the count as written and
+    # nothing it builds reads it (docs/from-scratch.md section 5, question 6).
     Set-GdlField $g 'referenceCountField' 2
     Set-GdlField $g 'indexField' 0
     $groups.Add($g)

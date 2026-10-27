@@ -6,6 +6,7 @@ standard popup that nothing could show. Both builds reported 0 errors.
 
     python tests/test_verify_built.py
 """
+import io
 import json
 import os
 import sys
@@ -118,6 +119,32 @@ class TestModalPopups(unittest.TestCase):
         plan = {'pages': [], 'popups': [{'name': 'Confirm', 'modal': False}]}
         problems = vb.check_modal(plan, self._layout(modal=True))
         self.assertTrue(any('modal' in p for p in problems), problems)
+
+
+class TestPopupSize(unittest.TestCase):
+    """A popup's built size is its authored size (docs/gdl-format.md section 5):
+    the applier writes the plan's, and the built page says it."""
+    PLAN = {'pages': [], 'popups': [{'name': 'Sources', 'size': [800, 400]},
+                                    {'name': 'Confirm', 'modal': True, 'size': None}]}
+
+    def _layout(self, w, h):
+        return {'PopupPages': [{'ID': 52, 'Name': 'Sources', 'Width': w, 'Height': h},
+                               {'ID': 53, 'Name': 'Confirm', 'Width': 1, 'Height': 1}]}
+
+    def test_a_popup_built_at_another_size_is_reported(self):
+        vb = _vb(self)
+        problems = vb.check_popup_size(self.PLAN, self._layout(995, 549))
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("'Sources'", problems[0])
+        self.assertIn('995x549', problems[0])
+        self.assertIn('800x400', problems[0])
+
+    def test_a_popup_built_as_planned_passes(self):
+        vb = _vb(self)
+        self.assertEqual(vb.check_popup_size(self.PLAN, self._layout(800, 400)), [])
+
+    def test_check_runs_it(self):
+        self.assertIn('check_popup_size(plan, j)', open(_vb(self).__file__, encoding='utf-8').read())
 
 
 class TestClockPattern(unittest.TestCase):
@@ -1500,10 +1527,10 @@ class TestStateImage(unittest.TestCase):
 
         # Build draws a rail the track's width across and the slider's length
         # less the thumb along, centered - see rail_image.
-        right = {1: art(self.vb.rail_image(files['track.png'], 60, 391, 24, 52, True)),
-                 2: art(self.vb.rail_image(files['fill.png'], 60, 391, 24, 52, True))}
+        right = {1: art(self.vb.rail_image(files['track.png'], 60, 391, 24, 52, 2)),
+                 2: art(self.vb.rail_image(files['fill.png'], 60, 391, 24, 52, 2))}
         wide = {1: art(self.vb.stretch_image(files['track.png'], 60, 391)), 2: right[2]}
-        long = {1: art(self.vb.rail_image(files['track.png'], 60, 391, 24, 0, True)), 2: right[2]}
+        long = {1: art(self.vb.rail_image(files['track.png'], 60, 391, 24, 0, 2)), 2: right[2]}
         black = {1: art(Image.new('RGBA', (60, 391), (0, 0, 0, 255))), 2: right[2]}
         op = {'fields': {'nameField': 'Volume'},
               'track_image': {'name': 'track.png', 'file': files['track.png']},
@@ -1685,6 +1712,168 @@ class TestTranslucentFillUnderAnImageOnTheSeed(unittest.TestCase):
         self.assertTrue(bare and all('#629645 at alpha 220' in p for p in bare), bare)
 
 
+def _png_of(im):
+    import io
+    buf = io.BytesIO()
+    im.save(buf, 'PNG')
+    return buf.getvalue()
+
+
+def _mean_off(a, b):
+    """Mean difference per channel, 0-255, of two same-size RGBA images, each
+    over one opaque key color so a transparent pixel compares as itself."""
+    from PIL import Image, ImageChops, ImageStat
+
+    def keyed(im):
+        k = Image.new('RGBA', im.size, (255, 0, 255, 255))
+        k.alpha_composite(im.convert('RGBA'))
+        return k.convert('RGB')
+    return sum(ImageStat.Stat(ImageChops.difference(keyed(a), keyed(b))).mean) / 3
+
+
+class TestHorizontalSliderOnTheProbe(unittest.TestCase):
+    """What Build does with a horizontal slider's kit art, off GUI Designer's
+    own build: crops of the format probe's Shockwave sliders lying right and
+    left - each rail's two ends, empty and full, and a thumb - cut from the
+    built file (tests/data/probe-hslider-128, crops.json says which). Build
+    turns the rail art, drawn standing up, a quarter turn so its top is the
+    slider's full end, and lays it as it lays a vertical one; the thumb it
+    stretches into its box unturned. The verifier drew the standing art on
+    its side, and failed every horizontal slider the probe built, 45 to 82%
+    off, on a panel that was right."""
+    DATA = os.path.join(HERE, 'data', 'probe-hslider-128')
+
+    def setUp(self):
+        self.vb = _vb(self)
+        from PIL import Image
+        from gdl.spec import resolve_image
+        with open(os.path.join(self.DATA, 'crops.json'), encoding='utf-8') as fh:
+            self.meta = json.load(fh)
+        self.kit = {k: resolve_image(v) for k, v in self.meta['kit'].items()}
+        if not all(self.kit.values()):
+            self.skipTest("Shockwave's slider art is not here (vendor/README.md)")
+        self.sheet = Image.open(os.path.join(self.DATA, 'crops.png')).convert('RGBA')
+        self.crops = [(r, self.sheet.crop(tuple(r['at']))) for r in self.meta['crops']]
+
+    def rail(self, r, orientation, turned=True):
+        """The rail the verifier expects for crop `r`, drawn at the asset's
+        whole size and cut as the crop was; `turned=False` the standing art
+        stretched on its side, as the verifier drew it."""
+        from PIL import Image
+        w, h = r['asset_size']
+        under = self.kit['track'] if r['part'] == 'fill' else None
+        if turned:
+            im = self.vb.rail_image(self.kit[r['part']], w, h, r['track'], r['thumb'][0],
+                                    orientation, under)
+        else:
+            im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+            for f in ([under] if under else []) + [self.kit[r['part']]]:
+                art = self.vb.stretch_image(f, w - r['thumb'][0], r['track'])
+                im.alpha_composite(art, (r['thumb'][0] // 2, (h - r['track']) // 2))
+        return im.crop(tuple(r['crop']))
+
+    def test_a_rail_lying_down_is_its_art_turned(self):
+        n = 0
+        for r, built in self.crops:
+            if r['part'] == 'thumb':
+                continue
+            n += 1
+            where = (r['control'], r['part'], r['crop'])
+            want = self.rail(r, r['orientation'])
+            off = self.vb.image_mismatch(self.kit[r['part']], _png_of(built), *built.size,
+                                         draw=lambda f, w, h, want=want: want)
+            self.assertLess(off, 0.02, where)
+            # Within a level of Build's own pixels, and an order of magnitude
+            # nearer than the standing art laid on its side.
+            near = _mean_off(want, built)
+            self.assertLess(near, 1.0, where)
+            self.assertGreater(_mean_off(self.rail(r, r['orientation'], turned=False), built),
+                               10 * near, where)
+        self.assertEqual(n, 8)
+
+    def test_the_turn_puts_the_arts_top_at_the_full_end(self):
+        """Lying right, a quarter turn clockwise; lying left, anticlockwise.
+        The gate cannot tell them apart on Shockwave's near-symmetric rail,
+        so this is measured: the other turn is over twice as far off on every
+        crop, the full rail's ends the nearest (2.8 times)."""
+        for r, built in self.crops:
+            if r['part'] == 'thumb':
+                continue
+            own = _mean_off(self.rail(r, r['orientation']), built)
+            other = _mean_off(self.rail(r, 1 - r['orientation']), built)
+            self.assertLess(2 * own, other, (r['control'], r['part'], r['crop'], own, other))
+
+    def test_a_thumb_is_its_art_stretched_unturned(self):
+        """The probe's 34x52 thumb is the kit's 156x102 landscape art squeezed
+        into it, as it lies on a vertical slider: 0% off. Fitted, as a
+        button's image is, 58%."""
+        r, built = next((r, im) for r, im in self.crops if r['part'] == 'thumb')
+        art = _png_of(built)
+        op = {'fields': {'nameField': r['control']},
+              'thumb_image': {'name': os.path.basename(self.kit['thumb']), 'file': self.kit['thumb']}}
+        table = {'Slider Probe': {'Name': 'Slider Probe', 'Controls': [
+            {'ID': 1, 'Name': r['control'], 'Orientation': r['orientation'],
+             'SliderIndicatorWidth': r['thumb'][0], 'SliderIndicatorHeight': r['thumb'][1],
+             'SliderIndicatorImageID': 7}]}}
+        problems, n = self.vb.check_thumbs([{'name': 'Slider Probe', 'controls': [op]}], table,
+                                           {7: art}, 'page')
+        self.assertEqual((n, problems), (1, []))
+        self.assertGreater(self.vb.image_mismatch(self.kit['thumb'], art, *built.size),
+                           self.vb.IMAGE_OFF)
+
+    def test_check_rails_draws_a_horizontal_rail_turned(self):
+        """check_rails hands the slider's orientation to the model: a built
+        rail turned as Build turns it passes, the standing art on its side
+        fails. Drawn whole here from the probe's sizes."""
+        r = next(r for r, _ in self.crops if r['control'] == 'H Right 700' and r['part'] == 'track')
+        w, h = r['asset_size']
+        op = {'fields': {'nameField': 'H Right 700'},
+              'track_image': {'name': 'track.png', 'file': self.kit['track']},
+              'fill_image': {'name': 'fill.png', 'file': self.kit['fill']}}
+        c = {'ID': 1, 'Name': 'H Right 700', 'Width': w, 'Height': h, 'Orientation': 0,
+             'SliderTrackWidth': r['track'], 'SliderIndicatorWidth': r['thumb'][0],
+             'SliderIndicatorHeight': r['thumb'][1], 'TLPMinValueImageID': 1,
+             'TLPMaxValueImageID': 2}
+        table = {'Slider Probe': {'Name': 'Slider Probe', 'Controls': [c]}}
+        whole = dict(r, crop=[0, 0, w, h])
+        turned = {1: _png_of(self.rail(whole, 0)), 2: _png_of(self.rail(dict(whole, part='fill'), 0))}
+        flat = {1: _png_of(self.rail(whole, 0, turned=False)),
+                2: _png_of(self.rail(dict(whole, part='fill'), 0, turned=False))}
+        plan = [{'name': 'Slider Probe', 'controls': [op]}]
+        self.assertEqual(self.vb.check_rails(plan, table, turned, 'page'), ([], 2))
+        problems, _ = self.vb.check_rails(plan, table, flat, 'page')
+        self.assertEqual(len(problems), 2, problems)
+
+
+class TestSliderThumbOnTheSeed(unittest.TestCase):
+    """Build stretches a thumb's kit art into its asset, whatever the art's
+    shape: the Afterburn 1035 Portrait seed's 31 px wide sliders built their
+    square 440x440 thumb as a 30x50 asset - 0% off stretched, 38% fitted, which
+    failed the seed's own slider."""
+    SEED = os.path.join(os.path.dirname(HERE), 'seeds', 'Afterburn 1035 Portrait.gdl')
+
+    def test_the_seeds_narrow_thumb_verifies(self):
+        vb = _vb(self)
+        from PIL import Image
+        import io
+        from gdl.spec import resolve_image
+        if not usable(self.SEED):
+            self.skipTest('seeds/Afterburn 1035 Portrait.gdl is not here (git lfs pull)')
+        f = resolve_image('Afterburn/Sliders & Toggles/440x440_thumb-1-periwinkle_sel.png')
+        if not f:
+            self.skipTest("Afterburn's slider art is not here (vendor/README.md)")
+        from gdl.compose import load
+        layout, assets = load(self.SEED)
+        page = next(pg for pg in layout['PopupPages'] if pg['Name'] == 'Audio Settings')
+        c = next(c for c in page['Controls'] if c.get('Name') == 'Mic Slider')
+        self.assertEqual(Image.open(io.BytesIO(assets[c['SliderIndicatorImageID']])).size, (30, 50))
+        op = {'fields': {'nameField': 'Mic Slider'},
+              'thumb_image': {'name': os.path.basename(f), 'file': f}}
+        table = {'Audio Settings': {'Name': 'Audio Settings', 'Controls': [c]}}
+        self.assertEqual(vb.check_thumbs([{'name': 'Audio Settings', 'controls': [op]}], table,
+                                         assets, 'page'), ([], 1))
+
+
 class TestEditStates(unittest.TestCase):
     """An edit writes each state by index, so each is verified by index -
     captions and names off the model, fills off that state's own artwork."""
@@ -1762,6 +1951,205 @@ class TestEditStates(unittest.TestCase):
         problems = self._check({'states': {'textField': 'x'}},
                                _built(_bst('Off', 'x', 90)))
         self.assertTrue(any('re-plan' in p for p in problems), problems)
+
+
+class TestBakedCaption(unittest.TestCase):
+    """A renamed formatted caption is baked into its state's art and reads back
+    as '' from layout.json, so verify_built looked nothing up and called it not
+    verifiable. It is looked for in the art instead: each line the edit wrote,
+    drawn by gdl.compose in the state's face, where it best fits."""
+
+    FONT = {'Name': 'Arial', 'PointSize': 13, 'Style': {'Bold': False, 'Italic': False}}
+
+    def setUp(self):
+        self.vb = _vb(self)
+
+    def _baked(self, ftext, size=(160, 62), ground=(0x37, 0x39, 0x4E), ink=(255, 255, 255)):
+        """Art with `ftext` drawn into it as Build bakes a left-aligned
+        caption: dark ground, white words, two tabs of indent."""
+        import io
+        from PIL import Image
+        from gdl import compose
+        img = Image.new('RGBA', size, ground + (255,))
+        fnt = compose.face('Arial', 0, 0, 13 * compose.PT)
+        compose.draw_text(img, (74, 0, size[0] - 74, size[1]), ftext.replace('\t', ''), fnt,
+                          ink + (255,), 4)
+        buf = io.BytesIO()
+        img.save(buf, 'PNG')
+        return buf.getvalue()
+
+    def _state(self, ink=(255, 255, 255)):
+        return dict(_bst('Off', '', 90, {'A': 255, 'R': ink[0], 'G': ink[1], 'B': ink[2]}),
+                    Font=self.FONT, TextAlignment=4)
+
+    def test_a_caption_as_light_as_its_fill_is_not_verifiable_not_failed(self):
+        """A pixel within CAPTION_TOLERANCE of the text color is text, so on a
+        fill that close to it the whole fill is - white on (200, 200, 200) and
+        black on (60, 60, 60) failed a correct build. The art cannot tell the
+        caption from its fill there: not verifiable, as with a stand-in face."""
+        for ground, ink in (((200, 200, 200), (255, 255, 255)), ((60, 60, 60), (0, 0, 0))):
+            with self.subTest(ground=ground, ink=ink):
+                art = self._baked('\t\tScreens', ground=ground, ink=ink)
+                problem, note = self.vb.check_baked_caption('x', '\t\tScreens', self._state(ink), {90: art})
+                self.assertIsNone(problem)
+                self.assertIn('cannot tell its caption from its fill', note)
+        # Outside the tolerance it is still looked for, and a wrong one found.
+        art = self._baked('\t\tAudio', ground=(120, 120, 120), ink=(255, 255, 255))
+        problem, note = self.vb.check_baked_caption('x', '\t\tScreens', self._state(), {90: art})
+        self.assertIn("'Screens' is not in the art", problem or '')
+
+    def test_an_icon_line_is_not_verifiable_not_failed(self):
+        """The `states` op can write an icon glyph ('\\ue94e'), a private-use
+        code point the state's own face does not draw - Build draws it in the
+        icon face of its run - so a line holding one cannot be drawn to look
+        for: not verifiable. The lines of words beside it still are."""
+        art = self._baked('\t\tScreens')
+        problem, note = self.vb.check_baked_caption('x', '', self._state(), {90: art})
+        self.assertIsNone(problem)
+        self.assertIn('private-use', note)
+        problem, note = self.vb.check_baked_caption('x', '\r\n\t\tAudio', self._state(), {90: art})
+        self.assertIn("'Audio' is not in the art", problem or '')
+        problem, note = self.vb.check_baked_caption('x', '\r\n\t\tScreens', self._state(), {90: art})
+        self.assertIsNone(problem)
+        self.assertIn('private-use', note)
+
+    def _check(self, ftext, art, built=None):
+        op = {'page': 51, 'control': 3, 'why': 'test',
+              'per_state': [{'index': 0, 'was': 'Displays', 'ftext': ftext, 'flattened': True}]}
+        st = dict(_bst('Off', '', 90), Font=self.FONT, TextAlignment=4)
+        return self.vb.check_edits({'controls': [op]}, _built(st, FlattenText=True), {90: art},
+                                   {(51, 3): [built]} if built else None)[0]
+
+    def test_a_caption_in_its_art_passes(self):
+        self.assertEqual(self._check('Screens', self._baked('\t\tScreens'), '\t\tScreens'), [])
+
+    def test_words_that_did_not_take_are_read_off_the_built_project(self):
+        """The art cannot tell one letter from another - 'Diaplays' scores
+        0.96 in Displays' - so the words are read where Build read them."""
+        problems = self._check('Screens', self._baked('\t\tDisplays'), '\t\tDisplays')
+        self.assertTrue(any("is 'Displays' in the built project" in p for p in problems), problems)
+
+    def test_a_caption_not_in_its_art_is_reported(self):
+        problems = self._check('\t\tScreens', self._baked('\t\tAudio'))
+        self.assertTrue(any("'Screens' is not in the art" in p for p in problems), problems)
+
+    def test_with_no_art_it_is_not_verifiable_not_a_problem(self):
+        op = {'page': 51, 'control': 3, 'why': 'test',
+              'per_state': [{'index': 0, 'was': 'Displays', 'ftext': 'Screens', 'flattened': True}]}
+        st = dict(_bst('Off', '', 90), Font=self.FONT, TextAlignment=4)
+        self.assertEqual(self.vb.check_edits({'controls': [op]}, _built(st))[0], [])
+
+    def test_a_caption_that_wrapped_is_said_to_have(self):
+        """Cameras -> Camera Control came out as 'Camera' over 'Control',
+        the second line unindented (docs/editing.md)."""
+        problems = self._check('\t\tCamera Control', self._baked('\t\tCamera\r\nControl'))
+        self.assertTrue(any("wrapped after 'Camera'" in p for p in problems), problems)
+
+    def test_each_line_of_a_two_line_caption_is_found(self):
+        self.assertEqual(self._check('\t\tDevice\r\n\t\tComms', self._baked('\t\tDevice\r\n\t\tComms')), [])
+        problems = self._check('\t\tDevice\r\n\t\tRouting', self._baked('\t\tDevice\r\n\t\tComms'))
+        self.assertTrue(any("'Routing' is not in the art" in p for p in problems), problems)
+
+
+class TestBakedCaptionInAStandIn(unittest.TestCase):
+    """A face drawn in a stand-in leaves every caption in it unverifiable, not
+    just the first: the face is cached, so only its first draw in a run adds
+    its entry to compose.FALLBACKS."""
+
+    def test_every_caption_in_a_stand_in_face_is_a_note(self):
+        vb = _vb(self)
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow is not here')
+        buf = io.BytesIO()
+        Image.new('RGBA', (120, 40), (40, 40, 40, 255)).save(buf, 'PNG')
+        bs = {'TLPImageID': 1, 'TextColor': '#FFFFFFFF',
+              'Font': {'Name': 'No Face By This Name', 'PointSize': 13, 'Style': {}}}
+        for word in ('Audio', 'Video'):
+            problem, note = vb.check_baked_caption('x', word, bs, {1: buf.getvalue()})
+            self.assertIsNone(problem, word)
+            self.assertIn('stand-in', note or '', word)
+
+
+@unittest.skipUnless(usable(FIXTURE), 'client fixture not present')
+class TestBakedCaptionOnTheFixture(unittest.TestCase):
+    """Against GUI Designer's own baking: the client fixture's formatted
+    captions, every one found in its art in the fixture's own face, and none
+    found where another caption was baked."""
+
+    def setUp(self):
+        self.vb = _vb(self)
+        from gdl import compose
+        from gdl.compose import load
+        from gdl.project import Project
+        from gdl.fonts import FILES
+        if not os.path.exists(os.path.join(compose.FONTDIR, FILES[('Forma DJR Display', 0, 0)])):
+            # The fixture's face comes out of the fixtures by `python -m
+            # gdl.fonts` (CI recovers it before this file runs); drawn in a
+            # stand-in, every caption is only 'not verifiable'.
+            self.skipTest("the fixture's face is not recovered into gdl/fonts/")
+        self.j, self.assets = load(FIXTURE)
+        P = Project.open(FIXTURE)
+        built = {(pg['ID'], c['ID']): c for pg in self.j['Pages'] + self.j['PopupPages']
+                 for c in pg.get('Controls') or []}
+        self.baked, self.icons = [], []
+        proj = next(P.instances('PBProject'))
+        for field in ('pagesField', 'popupPagesField'):
+            for pg in P.items(P.field(proj, field)):
+                for co in P.items(P.field(pg, 'controlsField')):
+                    c = built.get((P.field(pg, 'idField'), P.field(co, 'idField')))
+                    for i, st in enumerate(P.states(co)):
+                        ft = P.deref(st.get('ftextField'))
+                        # The formatted glyphs (U+E9xx) are icons, not words.
+                        if c and ft:
+                            (self.icons if any(0xE000 <= ord(ch) <= 0xF8FF for ch in ft) else
+                             self.baked).append((ft, c['States'][i]))
+
+    def test_an_icon_caption_is_never_failed(self):
+        """Half the fixture's icon-bearing states failed as 'not in the art':
+        their glyph drawn in the state's own face, which has none. Each is not
+        verifiable here, none a problem - some for their icon, the rest for
+        their grey text (#767789) on a fill (#37394E) within the tolerance."""
+        self.assertTrue(self.icons)
+        for ft, bs in self.icons:
+            problem, note = self.vb.check_baked_caption('x', ft, bs, self.assets)
+            self.assertIsNone(problem, ft)
+            self.assertRegex(note or '', 'private-use|cannot tell its caption from its fill', ft)
+
+    def test_every_formatted_caption_is_found_in_its_own_art(self):
+        self.assertTrue(self.baked)
+        for ft, bs in self.baked:
+            problem, note = self.vb.check_baked_caption('x', ft, bs, self.assets)
+            self.assertEqual((problem, note), (None, None), ft)
+
+    def test_a_rename_checked_against_a_build_that_never_had_it(self):
+        """The whole path: gdl.edit plans Displays -> Screens on the fixture,
+        and the fixture itself, unedited, is the 'build' - its project says
+        Displays, and so does its art."""
+        import tempfile
+        from gdl.edit import Edits
+        plan, errors, _ = Edits({'edits': [{'op': 'rename', 'map': {'Displays': 'Screens'}}]},
+                                FIXTURE).check()
+        self.assertEqual(errors, [])
+        self.assertTrue(any(ps.get('flattened') for op in plan['controls']
+                            for ps in op.get('per_state') or []), plan['controls'])
+        path = os.path.join(tempfile.mkdtemp(), 'plan.json')
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(plan, fh)
+        problems, _ = self.vb.check(path, FIXTURE)
+        self.assertTrue(any("is 'Displays' in the built project, the edit asked for 'Screens'" in p
+                            for p in problems), problems)
+
+    def test_another_caption_is_never_found_in_it(self):
+        words = sorted({ln.replace('\t', '').strip() for ft, _ in self.baked for ln in ft.split('\r\n')})
+        for ft, bs in self.baked[::4]:
+            own = {ln.replace('\t', '').strip() for ln in ft.split('\r\n')}
+            for w in words:
+                if w in own:
+                    continue
+                problem, note = self.vb.check_baked_caption('x', '\t\t' + w, bs, self.assets)
+                self.assertFalse(problem is None and note is None, (w, ft))
 
 
 class TestTypeNames(unittest.TestCase):

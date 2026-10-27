@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Main</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&amp;display=swap">
+<style>
+body{margin:0;background:#242634}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Main" start="true" does="The working page: sources across the squircle's top, display and settings left, volume right, the selected source's controls in the middle." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronAfterburn.Header">
+<x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="PC" variant="source" icon="pc" states="Off, On" nav="PC" does="Routes the pc to the display and shows its controls; On while it is shown.">PC</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Laptop" variant="source" icon="laptop" states="Off, On" nav="Laptop" does="Routes the laptop to the display and shows its controls; On while it is shown.">Laptop</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Doc Cam" variant="source" icon="doc-cam" states="Off, On" nav="DocCam" does="Routes the doc cam to the display and shows its controls; On while it is shown.">Doc Cam</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Streaming" variant="source" icon="streaming" states="Off, On" nav="Streaming" does="Routes the streaming to the display and shows its controls; On while it is shown.">Streaming</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.LeftRail">
+<x-import component-from-global-scope="ExtronAfterburn.Section" title="Display">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Display Power" states="Off, On" does="Turns the display on and off; On while it is on.">Power</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Display Mute" states="Off, On" does="Blanks the picture; On while blanked.">Mute</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Section" title="Settings">
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Lighting Settings" icon="lights" nav="Lighting" does="Opens lighting settings.">Lighting</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Button" name="Audio Settings" icon="audio" nav="Audio" does="Opens audio settings.">Audio</x-import>
+</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.RightRail"></x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Footer" help="Help" power="ConfirmPower">
+<x-import component-from-global-scope="ExtronAfterburn.Button" slot="mode" name="Video Conference" does="Changes the room to its video conference mode.">Video Conference</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronAfterburn.Center" group="Sources"></x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

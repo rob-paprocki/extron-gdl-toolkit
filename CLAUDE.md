@@ -59,7 +59,7 @@ author, build and verify in one session.
 | Runs anywhere | Needs GUI Designer installed |
 |---|---|
 | `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` / `templates` | every `powershell/*.ps1` but `GdlBlocker.ps1`, which the others share and which needs Windows alone |
-| `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` (the last two score against the client fixtures, so in the archive) | File > Save and Build |
+| `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` (the last two score against the client fixtures, so in the archive - but `score.py preview`, given a spec and its build) | File > Save and Build |
 | `gdl.spec` check / render / plan / donors / icons | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
 | `gdl.idmap` check / write / write-panels / from-built / diff | |
@@ -137,13 +137,15 @@ another text color or text alignment, or - a slider or level - lying another
 way or with another track or thumb -
 and on a panel that boots into the wrong page, carries a page or popup its plan
 does not name (the donor's, left in), or a control on a generated page or popup
-the plan did not put there, has a popup that built as the wrong kind, a popup
+the plan did not put there, has a popup that built as the wrong kind or at another size than its plan's, a popup
 reference bound to another group than its plan's or to nothing (read off the
 reference, the popups and the built project's group registry), or a
 button whose states came back more, fewer, misnamed, drawn alike, or with a
 state built in another state's image. An edit plan's retarget is held to the
 build as well: the screen, the platform's resolution and part number, and each
-page's and popup's canvas.
+page's and popup's canvas - and a renamed formatted caption, which layout.json
+reads back as '', to the built project's words and to its art, line by line
+(`docs/editing.md`).
 
 It also checks **color, off the artwork rather than the model.** That
 distinction is the whole point: a built control's `BackgroundFillColor` reads
@@ -193,6 +195,9 @@ you time* has the fix.
 - Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`).
 - Python: stdlib-only outside `gdl/compose.py`. Keep it that way — reading a
   `.gdl` on a machine with nothing installed is a feature.
+- Python 3.11's syntax: the Windows host runs 3.11 and hosted CI 3.12, whose
+  f-strings take what 3.11 refuses. `tests/test_py311.py` holds every file to
+  it.
 - Comments explain *why*, particularly where the code encodes a
   reverse-engineered rule that looks arbitrary. Those comments are the only
   record that a rule was measured rather than guessed.
@@ -272,9 +277,10 @@ were updated. So:
 
 - **Most of `gdl/fonts/`** — retail and unlicensed faces, recovered from the
   tracked fixtures during setup. Skip that and the renderer falls back to the
-  host's Arial and scores worse, and `tests/score.py` refuses to record over a
-  fallback. `gdl/fonts/README.md` has the per-file licensing, and which projects
-  declare faces they do not embed. The bytes are still inside the tracked `.gdl`
+  host's Arial, or a seed's copy of a face, and scores worse, and
+  `tests/score.py` refuses to record over either. `gdl/fonts/README.md` has
+  the per-file licensing, and which projects declare faces they do not
+  embed. The bytes are still inside the tracked `.gdl`
   fixtures, so if the concern is distribution, `fixtures/` is the thing to look
   at.
 - `out/`, `__pycache__/`, built viewer HTML.

@@ -274,13 +274,21 @@
     var T = L.panel, p = it.props || {};
     if (it.kind === 'button') {
       var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
+      // A look that breaks its caption (`__lines`: Afterburn's mode launcher,
+      // 'Video' over 'Conference' as its template sets it) is as wide as its
+      // widest line.
+      if (p.__lines) V = Object.assign({}, V, { lines: p.__lines });
       var f = font(p, P.defaults.button.type, L);
       var words_ = [captionOf(V, p)];
       (list(p.states) || []).forEach(function (s) { if (s && s.text) words_.push(twoWords(V, s.text)); });
       var img = imageOf(V, p, words_[0]);
+      function across(t) {
+        return p.__lines ? Math.max.apply(null, String(t).split(/\r?\n/).map(function (ln) { return textWidth(ln, f.css); }))
+                         : textWidth(t, f.css);
+      }
       // As drawn: an indented caption carries the spaces that clear its icon.
       var wide = Math.max.apply(null, words_.map(function (t) {
-        return textWidth(img && img.caption === 'indent' ? placed(img, t) : t, f.css);
+        return across(img && img.caption === 'indent' ? placed(img, t) : t);
       }));
       var lines = img && img.caption === 'below' && words_[0]
         ? (belowBreaks(img) ? belowBreaks(img) + 1 : words_[0].split(/\r?\n/).length)
@@ -980,7 +988,7 @@
   // source one (its frame's note) and the bar themes' 320 draws a source
   // popup (pagePart). What is put in it stands in rows in main, laid out from
   // the popup's own box as a page's are (rowsPage), and a Back stands at the
-  // foot's left, where a Group's pages stand theirs and in their words, going
+  // foot's left, where a Group's pages stand theirs and in their look, going
   // back to the page whose button shows it - which only the translator knows
   // (`back`). Kept a popup, round four's revised Afterburn room showed its
   // sources from the Sources Group's own pages, which hold no reference to
@@ -990,10 +998,15 @@
     var out = rowsPage(items, Object.assign({}, D, { main: [0, 0, size[0], size[1]] }), T, L, name, true);
     var M = T.main, foot = T.rail || [0, M[1] + M[3], T.size[0], T.size[1] - M[1] - M[3]];
     var f = font({}, P.defaults.button.type, Object.assign({}, L, { k: out.k }));
-    var w = Math.max(T.touch, Math.ceil(textWidth('Back', f.css) + 24));
+    // In the Group's pages' look too: Afterburn's the kit's chevron
+    // (`regions.group`), the touch minimum square.
+    var look = pagingLook('Back');
+    var w = look ? T.touch : Math.max(T.touch, Math.ceil(textWidth('Back', f.css) + 24));
     var r = [foot[0] + T.gap, foot[1] + Math.round((foot[3] - T.touch) / 2), w, T.touch];
-    out.els = out.els.concat([drawnAt(Button, { name: name + ' Back', derived: true, text: 'Back', back: true,
-                                                does: 'Goes back to the page that shows ' + name + '.' }, r, 'back')]);
+    out.els = out.els.concat([drawnAt(Button, Object.assign({ name: name + ' Back', derived: true, text: look ? '' : 'Back',
+                                                              back: true,
+                                                              does: 'Goes back to the page that shows ' + name + '.' },
+                                                            look || {}), r, 'back')]);
     return out;
   }
   // A bar theme's page on a tier C panel (the 320), as Extron's own 320
@@ -1109,7 +1122,9 @@
     }
     function partName(p) { return p ? name + ' ' + (p + 1) : name; }
     var navFont = font({}, P.defaults.button.type, Lk);
-    function navW(word) { return Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24)); }
+    function navW(word) {
+      return pagingLook(word) ? T.touch : Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24));
+    }
     // The strip on each page: the header and its labels, on a later page a
     // copy the layout derived.
     function stripOf(p) {
@@ -1139,14 +1154,16 @@
         var ny = M[1] + M[3] - R.tight - nav;
         if (p > 0) {
           els.push(h('div', { key: 'prev' + p, style: cell([M[0] + T.gap, ny, navW('Previous'), nav]) },
-                     h(Button, { name: partName(p) + ' Previous', derived: true, text: 'Previous', goes: partName(p - 1),
-                                 onPress: shower(p - 1) })));
+                     h(Button, Object.assign({ name: partName(p) + ' Previous', derived: true,
+                                               text: pagingLook('Previous') ? '' : 'Previous', goes: partName(p - 1),
+                                               onPress: shower(p - 1) }, pagingLook('Previous') || {}))));
         }
         if (p < parts.length - 1) {
           var wn = navW('Next');
           els.push(h('div', { key: 'next' + p, style: cell([M[0] + M[2] - T.gap - wn, ny, wn, nav]) },
-                     h(Button, { name: partName(p) + ' Next', derived: true, text: 'Next', goes: partName(p + 1),
-                                 onPress: shower(p + 1) })));
+                     h(Button, Object.assign({ name: partName(p) + ' Next', derived: true,
+                                               text: pagingLook('Next') ? '' : 'Next', goes: partName(p + 1),
+                                               onPress: shower(p + 1) }, pagingLook('Next') || {}))));
         }
       }
       return els;
@@ -1203,7 +1220,7 @@
     // none listed, a source popup came out at the system's popup size with no
     // title, and a window with no band, title or Close.
     var asked = listed.length || props.preview || forcedPanel() || regionsIn(props.children).length
-      || barFrames() && (props.role != null && String(props.role) !== '' || framedRole(props, kind));
+      || regionFrames() && (props.role != null && String(props.role) !== '' || framedRole(props, kind));
     if (asked) {
       var designModel = listed[0] || P.model;
       var model = forcedPanel() || props.preview || designModel;
@@ -1270,11 +1287,11 @@
     // title and the well a role draws, and a typo drew a window with no way
     // out.
     var role = String(props.role || '').toLowerCase(), part = null;
-    var framed = barFrames() && framedRole(props, kind);
+    var framed = regionFrames() && framedRole(props, kind);
     // A working page's own roles: the call mode (Main VC) and the page its
     // sources are chosen on (Main Select Source).
     var paged = kind === 'page' && PAGE_ROLES[role];
-    if (barFrames() && role && !framed && !paged) {
+    if (regionFrames() && role && !framed && !paged) {
       problems.push((props.name || 'Page') + "'s role=\"" + props.role + '" is not one a kind="' + kind + '" takes - '
                     + 'say role="source" on a kind="popup" (or "dialer", the call\'s dialer), role="call" or '
                     + '"select" on a page with regions, or role="settings", "help", "confirm" or "wait" on a '
@@ -1301,7 +1318,7 @@
     // stop at "donor project has no standard popup to clone" on Windows.
     if (kind === 'popup' && !part && !alone && (T.kinds || {}).popup === false) {
       problems.push((props.name || 'Page') + ' is a standard popup, which the ' + T.model + "'s seed cannot build - "
-                    + (barFrames() ? 'say role="source" and the ' + T.model + ' draws it as a page, as it draws every source'
+                    + (P.layout.bars === 'controls' ? 'say role="source" and the ' + T.model + ' draws it as a page, as it draws every source'
                                    : 'make it a kind="modal" or a kind="page"'));
     }
     if (part && part.size) {
@@ -1321,18 +1338,22 @@
     // One missing a region the template always draws is named, never
     // refused (the owner's call, 2026-10-22); a splash page needs none.
     var regs = regionsIn(props.children), warnings = [], pname = props.name || 'Page';
-    // A popup in the Center's group (Sources, its default) with no role
-    // scales with main (above), where the Center is each panel's own region:
-    // on another panel it can come out larger than the region it shows in -
-    // Mach's 720 drew a 564x311 Doc Cam in its 554x324 region.
-    var CF = barFrames() && kind === 'popup' && !role ? frameFor(T) : null;
-    if (CF && String(props.group || '').toLowerCase() === 'sources'
-        && (tw > CF.center.region[2] || th > CF.center.region[3])) {
-      warnings.push(pname + ' comes out ' + tw + 'x' + th + ' on a ' + model + ', larger than the '
-                    + CF.center.region[2] + 'x' + CF.center.region[3] + ' popup region its group shows in - say '
+    // A popup with no role in any group scales with main (above), where the
+    // Center is each panel's own region: on another panel it can come out
+    // larger than the region it shows in - Mach's 720 drew a 564x311 Doc Cam
+    // in its 554x324 region - or smaller (710x392 in the 725's 710x405). The
+    // Center's group is the Page's to name, which a popup, laid out on its own
+    // board, cannot read, so any grouped one is held to the region: a
+    // warning, since a group that is not the Center's is no fault.
+    var CF = regionFrames() && kind === 'popup' && !role && props.group ? frameFor(T) : null;
+    if (CF && (Math.abs(tw - CF.center.region[2]) > 2 || Math.abs(th - CF.center.region[3]) > 2)) {
+      warnings.push(pname + ' comes out ' + tw + 'x' + th + ' on a ' + model + ', '
+                    + (tw > CF.center.region[2] || th > CF.center.region[3] ? 'larger' : 'smaller')
+                    + ' than the ' + CF.center.region[2] + 'x' + CF.center.region[3] + ' popup region '
+                    + 'the Center shows its group in - if it is the Center\'s group (' + props.group + '), say '
                     + 'role="source" and it is that region on every panel');
     }
-    if (barFrames() && paged && !regs.length) {
+    if (regionFrames() && paged && !regs.length) {
       problems.push(pname + "'s role=\"" + role + '" is a working page\'s - draw it in its regions (Header, LeftRail, '
                     + 'RightRail, Footer, Center)');
     }
@@ -1542,7 +1563,7 @@
       background_image: bgArt ? bgArt.image : null, background_file: bgArt ? bgArt.file : null,
       template: P.template, size: [tw, th], does: props.does,
       panel: model, panels: listed.length ? listed
-        : (regs.length || barFrames() && (role || framed)) && !props.preview && !forcedPanel() ? null : [designModel],
+        : (regs.length || regionFrames() && (role || framed)) && !props.preview && !forcedPanel() ? null : [designModel],
       tier: T.tier, seed: T.seed,
       borders: T.borders && Object.keys(T.borders).length ? T.borders : null,
       derived: true
@@ -1723,6 +1744,14 @@
   // left band: a region page is refused there by name until it is drawn.
   var FRAMES = P.frames || {};
   var RD = P.regions || {};
+  // A theme whose template pages with glyphs draws Previous, Next and Back as
+  // its kit's (`regions.group`: Afterburn's chevrons, as its 320 goes on by
+  // More and comes back by Back), each a key the touch minimum square; the ID
+  // map still names them Previous, Next and Back.
+  function pagingLook(word) {
+    var G = RD.group || {};
+    return { 'Previous': G.previous, '\u2039': G.previous, 'Next': G.next, '\u203a': G.next, 'Back': G.back }[word];
+  }
   var REGION_NAMES = { header: 'Header', leftrail: 'LeftRail', rightrail: 'RightRail', footer: 'Footer',
                        center: 'Center' };
   var REGION_ORDER = ['header', 'leftrail', 'rightrail', 'footer', 'center'];
@@ -1730,9 +1759,11 @@
     return itemsOf(children).filter(function (it) { return REGION_NAMES[it.kind]; });
   }
   // Whether this system draws a working page from its series' frames: a
-  // theme whose bars are controls (Afterburn's are its art).
-  function barFrames() {
-    return P.layout.bars === 'controls' && Object.keys(FRAMES).length > 0;
+  // theme whose bars are controls, or one whose chrome is its art and draws
+  // the same grammar round it (`layout.region_frame`: Afterburn's squircle
+  // between its rails, whose frames are packed as a bar series' are).
+  function regionFrames() {
+    return (P.layout.bars === 'controls' || !!P.layout.region_frame) && Object.keys(FRAMES).length > 0;
   }
   function frameFor(T, role) {
     var F = FRAMES[T.series];
@@ -2010,6 +2041,12 @@
     var call = R.role === 'call', select = R.role === 'select' ? R.F.choose : null;
     var items = itemsOf(props.children), probs = [];
     var tabs = [], starts = [], ends = [], share = null;
+    // Afterburn's (`apart`): no bar - its sources stand across the squircle's
+    // top over its Divider, 49 px apart on the 1035, a set at the template's
+    // step and not a joined one, and a row of other than the template's
+    // count centred on the template's own row; its art draws nothing at the
+    // ends (no start or end slot).
+    var apart = !!F.apart;
     // Share Content, at the header's end where the call mode's template
     // stands it (the frame's `end`, role share): Main VC's, which only a
     // call page draws.
@@ -2017,6 +2054,10 @@
     items.forEach(function (it) {
       var s = slotOf(it);
       if (s === 'source') tabs.push(it);
+      else if (apart && (s === 'start' || s === 'end')) {
+        probs.push(nameOf(it) + " takes the Header's " + s + ' place, which ' + P.template + "'s header does not draw - "
+                   + 'its sources stand alone across the squircle\'s top: put it in a LeftRail Section or a source\'s popup');
+      }
       else if (s === 'start') starts.push(it);
       else if (s === 'end') ends.push(it);
       else if (s === 'share' && place && !share) share = it;
@@ -2043,6 +2084,12 @@
     // then on at its step.
     var first = TB && TB.items ? TB.items : [];
     function tabRect(i) {
+      // Centred on the template's row, at its size and step, where the row is
+      // other than its count.
+      if (apart && first.length && tabs.length !== first.length) {
+        var f0 = first[0].rect, fl = first[first.length - 1].rect, mid = (f0[0] + fl[0] + fl[2]) / 2;
+        return [Math.round(mid - ((tabs.length - 1) * TB.pitch + f0[2]) / 2 + i * TB.pitch), f0[1], f0[2], f0[3]];
+      }
       if (i < first.length) return first[i].rect.slice();
       var last = first[first.length - 1].rect;
       return [last[0] + (i - first.length + 1) * TB.pitch, last[1], last[2], last[3]];
@@ -2063,7 +2110,7 @@
         // map numbers a control's states once for every panel.
         if (onT && onT !== offT) d.states = [{ name: 'Off' }, { name: 'On', fill: onT }];
       }
-      var extra = Object.assign(unset(p, d), { joined: set });
+      var extra = Object.assign(unset(p, d), apart ? {} : { joined: set });
       // Where the template names its tabs by a twin (Shockwave's 1035 and
       // 1535), the tab draws no caption: its twin, drawn under its glyph
       // with its ID, says it (render).
@@ -2071,14 +2118,32 @@
         s0 = { caption: textOf(p.children, p.text), states: list(p.states) || V.states };
         extra.children = ''; extra.text = '';
       }
-      var s = { r: tabRect(i), kind: it.kind, props: Object.assign({}, p, extra), it: it, extra: extra, set: set,
-                touch: isTouch(it.kind), role: 'tab', twin: twins ? s0 : null };
+      var s = { r: tabRect(i), kind: it.kind, props: Object.assign({}, p, extra), it: it, extra: extra,
+                set: apart ? null : set, touch: isTouch(it.kind), role: 'tab', twin: twins ? s0 : null };
       s.need = needOf(s.kind, s.props, L);
       var fit = indentFit(s.props, Math.max(s.r[2], s.need[0]), Math.max(s.r[3], s.need[1]), L);
       if (fit) s.need[0] = Math.max(s.need[0], fit.w);
       return s;
     });
     probs = probs.concat(settleSet(slots, band, L, 'the Header', 0));
+    // Afterburn's row: one size, at the template's step where the band (its
+    // Divider's span) holds the row so, its seams closing toward the panel's
+    // gap where the tabs grew - the 725's 85 px tiles grow to their captions
+    // at its 16 pt floor - and centred on the template's row; at the
+    // template's own places where the row is the template's.
+    var row = null;
+    if (apart && slots.length && first.length) {
+      var tw = Math.max.apply(null, slots.map(function (s) { return s.at[2]; })), n = slots.length;
+      var f0 = first[0].rect, fl = first[first.length - 1].rect, mid = (f0[0] + fl[0] + fl[2]) / 2;
+      var seam = TB.pitch - f0[2];
+      if (n * tw + (n - 1) * seam > band[2]) {
+        seam = Math.max(L.panel.gap, Math.floor((band[2] - n * tw) / Math.max(1, n - 1)));
+      }
+      row = { w: tw, total: n * tw + (n - 1) * seam, seam: seam };
+      if (!(n === first.length && tw === f0[2])) {
+        slots.forEach(function (s, i) { s.at[0] = Math.round(mid - row.total / 2 + i * (tw + seam)); s.at[2] = tw; });
+      }
+    }
     // Each caption clears its icon at the width its tab came out.
     slots.forEach(function (s) {
       var fit = indentFit(s.props, s.at[2], s.at[3], L);
@@ -2089,10 +2154,14 @@
     // than this panel's does, and the template's answer is named - Mach's
     // and Turbulence's choose among more on their Main Select Source
     // (role="select"); Shockwave's bar templates draw no such page.
-    var limit = share && place ? place.rect[0] : band[0] + band[2];
+    // On Afterburn the row is the template's span: Share Content stands in
+    // the right rail, past it.
+    var limit = share && place ? Math.min(place.rect[0], band[0] + band[2]) : band[0] + band[2];
     var lastAt = slots.length ? slots[slots.length - 1].at : null;
-    if (lastAt && lastAt[0] + lastAt[2] > limit) {
-      var fit = slots.filter(function (s) { return s.at[0] + s.at[2] <= limit; }).length;
+    if (lastAt && (row ? row.total > band[2] : lastAt[0] + lastAt[2] > limit)) {
+      // A centred row holds as many as its band does, a gap apart.
+      var fit = row ? Math.floor((band[2] + L.panel.gap) / (row.w + L.panel.gap))
+        : slots.filter(function (s) { return s.at[0] + s.at[2] <= limit; }).length;
       probs.push('the Header holds ' + slots.length + ' tabs, more than the ' + L.model + "'s holds across ("
                  + fit + (share && place ? ' before its Share Content' : '') + ')' + (R.F.choose
         ? ' - choose among more on the page ' + P.template + "'s template chooses sources on: draw a Page with "
@@ -2128,13 +2197,21 @@
       var sst = statesOver((share.props || {}).states, RD.share);
       if (sst) sx.states = sst;
       var sp = Object.assign({}, share.props || {}, sx), sneed = needOf(share.kind, sp, L);
-      var sat = settle(place.rect, sneed, band, L.panel.size, [false, false, false, false]);
+      // Afterburn's stands at the right rail's head, in that band - its
+      // words on two lines where one is wider than the band: the 725's
+      // Start Sharing, 115 px in its template at 10.5 pt, at its 16 pt floor.
+      var sband = apart ? R.F.right.rect : band;
+      if (apart && sneed[0] > sband[2] && / /.test(textOf(sp.children, sp.text) || '')) {
+        sx.__lines = sp.__lines = 2;
+        sneed = needOf(share.kind, sp, L);
+      }
+      var sat = settle(place.rect, sneed, sband, L.panel.size, [false, false, false, false]);
       if (lastAt && overlaps(sat, lastAt)) {
         probs.push(nameOf(share) + " at the Header's share place runs into its tabs on a " + L.model);
       }
       others.push({ r: place.rect.slice(), at: sat, kind: share.kind, props: sp, it: share, set: null, need: sneed,
                     touch: isTouch(share.kind), key: 'share', extra: sx, role: 'share' });
-      band = [band[0], band[1], Math.max(0, sat[0] - band[0]), band[3]];
+      if (!apart) band = [band[0], band[1], Math.max(0, sat[0] - band[0]), band[3]];
     }
     along(ends, true);
     // A tab's twin, as the template draws it: a caption-only button across
@@ -2185,6 +2262,16 @@
         }
         return { rect: r, name: name };
       });
+      // Afterburn's Divider under its sources, where the template draws it:
+      // through its box's middle (lineBand).
+      if (apart) {
+        (F.items || []).forEach(function (x, i) {
+          if (x.role === 'divider') {
+            els.push(drawnAt(Line, { name: 'Header Divider', derived: true, color: 'text-secondary' },
+                             lineBand(x.rect, P.defaults.line.thickness), 'divider' + i));
+          }
+        });
+      }
       slots.forEach(function (s, i) { els.push(hostAt(s.it, s.at, 'tab' + i, s.extra)); });
       slots.forEach(function (s, i) { if (s.twin) els.push(twinOf(s, i)); });
       others.forEach(function (s) { els.push(hostAt(s.it, s.at, s.key, s.extra)); });
@@ -2318,6 +2405,230 @@
       return regionBox('LeftRail', els, probs);
     } };
   }
+  // A rail button whose caption its template indents past its art
+  // (Afterburn's `list` and `toggle`, 1224x344): where its icon ends or its
+  // switch starts in a `w` x `ht` cell (the kit's `icon_right` and
+  // `switch_left`, the art drawn fitted), and so the leading spaces that
+  // start its caption - 4 px clear of a list's icon, 8 px in on a toggle -
+  // and the room it has to the cell's right less 4 px, or to 4 px before the
+  // switch. Null for any other button.
+  function railArt(p) {
+    var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
+    var img = imageOf(V, Object.assign({}, p, { __indent: null }), 'x');
+    if (!img || img.caption !== 'indent' || !img.kit || !KIT) return null;
+    var toggle = String(img.icon || '').indexOf('toggle') === 0;
+    var frac = ((toggle ? KIT.switch_left : KIT.icon_right) || {})[img.kit];
+    return frac == null ? null : { kit: img.kit, toggle: toggle, frac: frac };
+  }
+  function railRoom(p, w, ht, L) {
+    var A = railArt(p);
+    if (!A) return null;
+    var dims = String(A.kit).split('x').map(Number), f = font(p, P.defaults.button.type, L);
+    var sp = textWidth('          ', f.css) / 10;
+    var s = Math.min(w / dims[0], ht / dims[1]), aw = dims[0] * s, x0 = (w - aw) / 2;
+    var start = A.toggle ? 8 : x0 + A.frac * aw + 4;
+    var n = Math.max(0, Math.ceil(start / sp));
+    var end = A.toggle ? x0 + A.frac * aw - 4 : w - 4;
+    return { n: n, room: end - n * sp, css: f.css, lh: lineHeight(f.size) };
+  }
+  // A rail caption at a cell's width: one line where it fits, else two -
+  // a caption of two words or more, broken where its longer line is least
+  // wide, each line indented, as the 320's keys and Turbulence's docks put
+  // theirs on two - else null.
+  function railLines(p, w, ht, L) {
+    var R = railRoom(p, w, ht, L), caption = textOf(p.children, p.text);
+    if (!R || !caption) return R ? { n: R.n, lines: [caption || ''] } : null;
+    var said = [caption].concat((list(p.states) || []).filter(function (s) { return s && s.text; })
+                                .map(function (s) { return s.text; }));
+    function fits(t) { return textWidth(t, R.css) <= R.room; }
+    if (said.every(fits)) return { n: R.n, lines: [caption] };
+    var parts = String(caption).split(' '), best = null;
+    for (var i = 1; i < parts.length; i++) {
+      var two = [parts.slice(0, i).join(' '), parts.slice(i).join(' ')];
+      var wide = Math.max(textWidth(two[0], R.css), textWidth(two[1], R.css));
+      if (wide <= R.room && 2 * R.lh + 4 <= ht && (!best || wide < best.wide)) best = { wide: wide, lines: two };
+    }
+    if (best && said.slice(1).every(fits)) return { n: R.n, lines: best.lines };
+    return null;
+  }
+
+  // Afterburn's left rail (§4.4 rule 1): headed groups down the column left
+  // of the squircle, over the mode launcher at its foot. A Section stands at
+  // its template group's place, a later one past the frame's groups a seam
+  // under the one above (`seam`, the template's three-group page's, or the
+  // panel's gap where that is more), one grown past the next one's top
+  // moving it down. Where the column then ends within the gap of the mode
+  // launcher, every Section stands a seam under the one above; where that
+  // still does not hold, the first heading lifts to main's top, keeping its
+  // offset; only then is the rail refused, by name, with how many buttons
+  // it holds there. A column is one width; a `list` or `toggle` caption
+  // starts clear of its art (railLines), on two lines where one does not
+  // hold it, and one that fits neither is named with the room it has.
+  function planArtRail(props, L) {
+    var R = L.region, F = R.F.left, band = F.rect, probs = [], secs = [], T = L.panel;
+    itemsOf(props.children).forEach(function (it) {
+      if (it.kind === 'section') secs.push(it);
+      else probs.push(nameOf(it) + ' in the LeftRail is not in a Section - put the rail\'s controls in titled Sections');
+    });
+    var groups = F.groups || [], seam = Math.max(F.seam || 0, T.gap), sets = [];
+    var callKeys = R.role === 'call';
+    secs.forEach(function (sec, gi) {
+      var G = groups[Math.min(gi, groups.length - 1)], sp = propsOf(sec);
+      if (!G || !G.buttons || !G.buttons.length) return;
+      var title = sp.title || null, set = setName('left', gi), shown = title || 'Left Rail ' + (gi + 1);
+      var d = gi ? RD.launcher || RD.rail : RD.rail, keys = callKeys && gi === 0;
+      // Past the frame's groups: the last group's shape, placed later.
+      var later = gi >= groups.length;
+      var head = title && G.heading ? G.heading.rect.slice() : null;
+      var b0 = G.buttons[0].rect, pitch = G.pitch || b0[3] + 1;
+      var slots = itemsOf(sp.children).map(function (it, j) {
+        var r = j < G.buttons.length && !later ? G.buttons[j].rect.slice()
+          : [b0[0], b0[1] + j * pitch, b0[2], b0[3]];
+        var touch = it.kind === 'button';
+        var cr = keys && touch ? callRoleOf(it) : null;
+        var lk = cr ? Object.assign({}, d || {}, (RD.call || {})[cr] || {}) : d;
+        var extra = touch ? Object.assign(unset(it.props, lk), { joined: set },
+                                          cr && (it.props || {}).id == null ? seedIn(G.buttons, cr) : {}) : {};
+        var cst = cr ? statesOver((it.props || {}).states, lk) : null;
+        if (cst) extra.states = cst;
+        var s = { r: r, kind: it.kind, props: Object.assign({}, it.props || {}, extra), it: it, extra: extra,
+                  set: touch ? set : null, touch: touch, key: 'l' + gi + '-' + j };
+        s.need = needOf(s.kind, s.props, L);
+        return s;
+      });
+      sets.push({ G: G, gi: gi, later: later, slots: slots, shown: shown, head: head,
+                  hp: head ? Object.assign({ name: title + ' Heading', text: title }, RD.heading || {}) : null });
+    });
+    // The column's width: the template's cell, wider only where a caption
+    // needs it, up to the band; every button of the column one width.
+    var ht = T.touch, w = 0;
+    sets.forEach(function (a) {
+      a.slots.forEach(function (s) {
+        if (!s.touch) return;
+        ht = Math.max(ht, s.r[3]);
+        w = Math.max(w, s.r[2]);
+      });
+    });
+    var widest = band[2];
+    // A toggle takes the kit's art nearest its cell's shape: the 1020's
+    // 132x50 toggles draw 1224x464, where the 1220's 178x50 draw 1224x344 -
+    // at the 725's 60 px the wider switch art left Power no room before it.
+    sets.forEach(function (a) {
+      a.slots.forEach(function (s) {
+        var A = s.touch ? railArt(s.props) : null;
+        if (!A || !A.toggle || !KIT || !KIT.files) return;
+        var V = P.buttons[s.props.variant] || {}, icon = s.props.icon || V.icon, want = Math.log(s.r[2] / ht), best = null;
+        Object.keys(KIT.files).forEach(function (size) {
+          var d = size.split('x').map(Number);
+          if (!KIT.files[size][icon] || (KIT.switch_left || {})[size] == null) return;
+          var off = Math.abs(Math.log(d[0] / d[1]) - want);
+          if (!best || off < best.off) best = { size: size, off: off };
+        });
+        if (best && best.size !== A.kit) s.extra.__kit = s.props.__kit = best.size;
+      });
+    });
+    sets.forEach(function (a) {
+      a.slots.forEach(function (s) {
+        if (!s.touch) return;
+        if (!railArt(s.props)) { w = Math.max(w, s.need[0]); return; }
+        for (var W = w; W <= widest; W++) {
+          var got = railLines(s.props, W, ht, L);
+          if (got && got.lines.length === 1) { w = Math.max(w, W); return; }
+        }
+        s.twoLines = true;
+      });
+    });
+    w = Math.min(Math.max(w, T.touch), widest);
+    sets.forEach(function (a) {
+      a.slots.forEach(function (s) {
+        if (!s.touch) return;
+        s.need = [w, Math.max(ht, s.need[1])];
+        if (!railArt(s.props)) return;
+        var got = railLines(s.props, w, s.need[1], L);
+        if (!got) {
+          var R0 = railRoom(s.props, w, s.need[1], L);
+          probs.push(slotName(s) + "'s caption needs more room than the " + L.model + "'s " + w + ' px rail gives it - '
+                     + Math.floor(R0.room) + ' px ' + (railArt(s.props).toggle ? 'before its switch' : 'past its icon')
+                     + ' at the panel\'s type, on one line or two: shorten it');
+          return;
+        }
+        s.extra.__indent = s.props.__indent = got.n;
+        if (got.lines.length > 1) {
+          s.extra.children = s.props.children = got.lines.join('\r\n');
+          s.extra.__each = s.props.__each = true;
+        }
+      });
+    });
+    // Each set at its template place, grown - one width, down its step.
+    sets.forEach(function (a) {
+      a.slots.forEach(function (s) {
+        s.at = s.touch ? [Math.round(Math.min(Math.max(s.r[0] + (s.r[2] - w) / 2, band[0]), band[0] + band[2] - w)),
+                          s.r[1], w, s.need[1]] : s.r.slice();
+      });
+      a.slots.slice().sort(function (p, q) { return p.r[1] - q.r[1]; }).forEach(function (s, i, order) {
+        if (!i) return;
+        var prev = order[i - 1], gap0 = Math.max(0, s.r[1] - (prev.r[1] + prev.r[3]));
+        s.at[1] = Math.max(s.r[1], prev.at[1] + prev.at[3] + gap0);
+      });
+      if (a.hp) {
+        var need = needOf('label', a.hp, L);
+        a.headAt = [a.head[0], a.head[1], a.head[2], Math.max(a.head[3], Math.ceil(need[1]))];
+      }
+      // The block, relative to its top: the heading's offset over its first
+      // button as the template draws it.
+      a.top = a.headAt ? a.headAt[1] : a.slots.length ? Math.min.apply(null, a.slots.map(function (s) { return s.at[1]; })) : 0;
+    });
+    function foot(a) {
+      return Math.max.apply(null, a.slots.map(function (s) { return s.at[1] + s.at[3]; })
+                                .concat(a.headAt ? [a.headAt[1] + a.headAt[3]] : [a.top]));
+    }
+    function move(a, to) {
+      var by = to - a.top;
+      a.slots.forEach(function (s) { s.at[1] += by; });
+      if (a.headAt) a.headAt[1] += by;
+      a.top = to;
+    }
+    // Where the column must end: a gap above the mode launcher, as this
+    // panel's template stands it (the foot row's, grown), else its band.
+    var mode = ((R.F.bottom || {}).items || []).filter(function (x) { return x.role === 'mode'; })[0];
+    var limit = (mode ? Math.min((mode.legal || mode.rect)[1], mode.rect[1]) : band[1] + band[3]) - T.gap;
+    var tops0 = sets.map(function (a) { return a.top; });
+    function lay(how) {
+      sets.forEach(function (a, i) {
+        var at = how === 'lifted' && i === 0 ? L.panel.main[1]
+          : how === 'template' && !a.later ? tops0[i]
+          : i === 0 ? tops0[0] : foot(sets[i - 1]) + seam;
+        if (how === 'template' && i && foot(sets[i - 1]) + T.gap > at) at = foot(sets[i - 1]) + T.gap;
+        move(a, at);
+      });
+      return sets.length ? foot(sets[sets.length - 1]) : 0;
+    }
+    var how = 'template';
+    if (lay('template') > limit) {
+      how = 'closed';
+      if (lay('closed') > limit) {
+        how = 'lifted';
+        if (lay('lifted') > limit) {
+          var all = [].concat.apply([], sets.map(function (a) { return a.slots; })).filter(function (s) { return s.touch; });
+          var held = all.filter(function (s) { return s.at[1] + s.at[3] <= limit; }).length;
+          probs.push('the LeftRail holds ' + all.length + ' buttons in ' + sets.length + ' Sections, more than the '
+                     + L.model + "'s rail holds at its " + T.touch + ' px touch minimum (' + held + ', the column '
+                     + 'closed up and lifted to the top of its main) - move a launcher into a later Section\'s Group, '
+                     + 'which pages there');
+        }
+      }
+    }
+    var all = [].concat.apply([], sets.map(function (a) { return a.slots; }));
+    return { slots: all, how: how, render: function () {
+      var els = [];
+      sets.forEach(function (a, i) { if (a.hp) els.push(drawnAt(Label, a.hp, a.headAt, 'lh' + a.gi)); });
+      all.forEach(function (s) {
+        els.push(s.it.comp ? hostAt(s.it, s.at, s.key, s.extra)
+                           : React.cloneElement(s.it.host, { key: s.key, style: cell(s.at) }));
+      });
+      return regionBox('LeftRail', els, probs);
+    } };
+  }
   // Drawn by its LeftRail; on its own, named.
   function Section(props) {
     var L = useLook();
@@ -2330,7 +2641,7 @@
   // gave none and no canvas control has it (gdl.design pin_ids), so a
   // program written against Extron's template finds Help at 8117 on every
   // panel. A heading's label keeps none: it is not chrome a program drives.
-  var SEED_ROLES = { help: true, power: true, volume: true, mute: true, mode: true };
+  var SEED_ROLES = { help: true, power: true, volume: true, mute: true, mode: true, preview: true };
   function seedOf(role, item) {
     return SEED_ROLES[role] && item && item.id != null ? { __seed: item.id } : {};
   }
@@ -2355,7 +2666,15 @@
   // The roles a right rail or a footer draws by default, and how.
   function chrome(role, item, L, nav) {
     var ids = seedOf(role, item);
-    if (role === 'heading') return [Label, Object.assign({ name: (item.text || 'Volume') + ' Heading', text: item.text || 'Volume' }, RD.heading || {}, ids)];
+    // Afterburn's Volume heading is centred over its column, where its rail's
+    // group headings are set left (`volume_heading`).
+    if (role === 'heading') return [Label, Object.assign({ name: (item.text || 'Volume') + ' Heading', text: item.text || 'Volume' }, RD.volume_heading || RD.heading || {}, ids)];
+    // Each clock the panel's template draws, by its name there (Afterburn's
+    // 1035 draws the date and the time apart, its 725 one centred): the
+    // panel's own chrome, derived, as the clocks differ by panel.
+    if (role === 'clock' && RD.clocks && item.name) {
+      return [Clock, Object.assign({ name: item.name, derived: true }, RD.clocks[item.name] || {})];
+    }
     if (role === 'volume') return [Slider, Object.assign({ name: 'Volume' }, RD.volume || {}, ids)];
     if (role === 'mute') return [Button, Object.assign({ name: 'Volume Mute', text: 'Mute' }, RD.mute || {}, ids)];
     if (role === 'help') return [Button, Object.assign({ name: 'Help', text: 'Help' }, RD.help || {}, ids, nav ? { nav: nav } : {})];
@@ -2372,10 +2691,16 @@
   // Lay out a band's roles: the designer's child in a slot wins; else the
   // template's own where it is drawn by default. `cells`: [{ item, band }];
   // `setOf(cell)`: the joined set a touchable cell is one of, or null.
-  function roles(cells, over, L, navs, setOf, where) {
-    var probs = [], slots = [];
+  // `adjust(slots)`: a theme's own rule for the band, run on where they came
+  // out before they are checked (Afterburn's flexColumn, capMode and
+  // respacePairs).
+  function roles(cells, over, L, navs, setOf, where, adjust) {
+    var probs = [], slots = [], used = {};
     cells.forEach(function (c, i) {
-      var role = c.item.role, it = over[role], def = it ? null : chrome(role, c.item, L, navs[role]);
+      // A designer's child takes the first cell of its role: Afterburn's 1035
+      // draws two clocks, the date and the time.
+      var role = c.item.role, it = used[role] ? null : over[role], def = it ? null : chrome(role, c.item, L, navs[role]);
+      if (it) used[role] = true;
       if (!it && !def) return;
       var kind = it ? it.kind : KIND_OF[role], touch = isTouch(kind), set = touch ? setOf(c) : null;
       var extra = Object.assign(it ? unset(it.props, roleLook(role)) : {}, set ? { joined: set } : {},
@@ -2389,6 +2714,7 @@
       var mates = slots.filter(function (m) { return s.set && m.set === s.set; }).map(function (m) { return m.r; });
       s.at = settle(s.r, s.need, s.band, L.panel.size, seamsOf(s.r, s.band, mates));
     });
+    if (adjust) probs = probs.concat(adjust(slots));
     for (var i = 0; i < slots.length; i++) {
       for (var j = i + 1; j < slots.length; j++) {
         if (slots[i].touch && slots[j].touch && overlaps(slots[i].at, slots[j].at)) {
@@ -2430,6 +2756,53 @@
       });
       return els;
     } };
+  }
+  // Afterburn's mode launcher no wider than its left rail: its caption breaks
+  // into two lines where it has two words (the look's `__lines`: Video over
+  // Conference), and one wider than a line there - a word wider than the
+  // rail at the panel's type floor, the template's own Presentation on the
+  // 725 - is named with the room it has, the cell kept inside the rail.
+  function capMode(slots, L) {
+    var probs = [];
+    slots.forEach(function (s) {
+      if (s.role !== 'mode' || s.need[0] <= s.band[2]) return;
+      probs.push(slotName(s) + "'s caption needs " + Math.ceil(s.need[0]) + ' px across on the ' + L.model + ', '
+                 + "and its mode launcher has the " + s.band[2] + ' px left rail - a caption of two words goes on '
+                 + 'two lines: shorten it');
+      s.at = [s.band[0], s.at[1], s.band[2], s.at[3]];
+    });
+    return probs;
+  }
+  // Afterburn's foot row (§4.4 rule 3): two cells of one band side by side
+  // that the template stands nearer than the panel's gap give way first,
+  // where they can spare it (openSeams: the 1035's Help and Power, 8 px
+  // apart, 64 wide over its 53 px minimum); where they cannot - the 725's,
+  // 48 wide and 11 apart, both grown to its 60 px minimum and into each
+  // other - they move apart about the pair's middle to the gap, kept inside
+  // their band, and are named only where the band cannot hold them so.
+  function respacePairs(slots, L, where) {
+    var gap = L.panel.gap, probs = [];
+    slots.forEach(function (a) {
+      slots.forEach(function (b) {
+        if (a === b || !a.touch || !b.touch || a.band !== b.band || a.at[0] >= b.at[0]) return;
+        if (Math.min(a.at[1] + a.at[3], b.at[1] + b.at[3]) - Math.max(a.at[1], b.at[1]) <= 0) return;
+        var g = b.at[0] - (a.at[0] + a.at[2]);
+        if (g >= gap) return;
+        var spare = Math.max(0, Math.floor(a.at[2] - a.need[0])) + Math.max(0, Math.floor(b.at[2] - b.need[0]));
+        if (spare >= gap - g) return;
+        var band = a.band, total = a.at[2] + gap + b.at[2];
+        if (total > band[2]) {
+          probs.push(where + "'s " + slotName(a) + ' and ' + slotName(b) + ' need ' + total + ' px across, '
+                     + gap + ' px apart, and the ' + L.model + "'s band holds " + band[2]);
+          return;
+        }
+        var mid = (a.at[0] + b.at[0] + b.at[2]) / 2;
+        var x = Math.min(Math.max(Math.round(mid - total / 2), band[0]), band[0] + band[2] - total);
+        a.at[0] = x;
+        b.at[0] = x + a.at[2] + gap;
+      });
+    });
+    return probs;
   }
   // A region's children by slot. One whose slot the region draws on
   // another panel but not this one (Shockwave's Audio Control: in the 1035's
@@ -2476,11 +2849,37 @@
     // the template stands them (Shockwave 725's Mute flush under the slider).
     var out = roles(cells, sl.over, L, {}, function (c) {
       return ['heading', 'volume', 'mute'].indexOf(c.item.role) >= 0 ? setName('right') : null;
-    }, 'the RightRail');
+    }, 'the RightRail', (L.region.F.top || {}).apart ? function (slots) { return flexColumn(slots, F, L); } : null);
     return { slots: out.slots, render: function () {
       return regionBox('RightRail', surfacesOf(L, F.surfaces, 'Right Rail', fitTo(out.slots)).concat(out.els()),
                        sl.probs.concat(out.probs));
     } };
+  }
+  // Afterburn's right column flexes (§4.4 rule 2): the heading and the
+  // slider's top keep their places; Mute keeps its place unless the foot
+  // row's Help and Power, grown to the panel's minimum, stand within a gap of
+  // it, and then it rises - the 725's to 455-515, where its template's is
+  // 469-517 over Help at 528 - and the slider ends where Mute starts, so the
+  // template's 3 px overlap on the 1035 comes out flush. A slider shorter than
+  // the touch minimum is named.
+  function flexColumn(slots, F, L) {
+    var gap = L.panel.gap, probs = [];
+    var mute = slots.filter(function (s) { return s.role === 'mute'; })[0];
+    var vol = slots.filter(function (s) { return s.role === 'volume'; })[0];
+    var foot = (F.items || []).filter(function (x) { return x.role === 'help' || x.role === 'power'; })
+      .map(function (x) { return (x.legal || x.rect)[1]; });
+    if (mute && foot.length) {
+      var top = Math.min.apply(null, foot);
+      if (mute.at[1] + mute.at[3] > top - gap) mute.at[1] = top - gap - mute.at[3];
+    }
+    if (vol && mute) {
+      vol.at[3] = Math.max(0, mute.at[1] - vol.at[1]);
+      if (vol.at[3] < L.panel.touch) {
+        probs.push(slotName(vol) + ' comes out ' + vol.at[3] + ' px long on the ' + L.model + ', under its '
+                   + L.panel.touch + ' px touch minimum, between the Volume heading and Mute');
+      }
+    }
+    return probs;
   }
 
   // The footer's sets: the touchable cells the template stands together,
@@ -2508,19 +2907,31 @@
   }
 
   function planFooter(props, L) {
-    var R = L.region, F = R.F.bottom;
-    var cells = (F.items || []).map(function (x) { return { item: x, band: F.rect }; });
+    var R = L.region, F = R.F.bottom, apart = (R.F.top || {}).apart;
+    // Afterburn's mode launcher stands in its left rail's foot, so its cell
+    // keeps to that rail's width: placed against the whole foot row, the
+    // 725's Presentation came out 156 px wide from x 0 in a 145 px rail,
+    // over its edge into the squircle.
+    var lr = apart && R.F.left && R.F.left.rect;
+    var modeBand = lr ? [lr[0], F.rect[1], lr[2], F.rect[3]] : F.rect;
+    var cells = (F.items || []).map(function (x) { return { item: x, band: x.role === 'mode' ? modeBand : F.rect }; });
     (R.F.right.items || []).forEach(function (x) {
       if (x.role === 'power' || x.role === 'help') cells.push({ item: x, band: R.F.right.rect });
     });
     var sl = slotted(props.children, cells.map(function (c) { return c.item.role; }), 'Footer', 'bottom', L);
-    // The mode launcher is the room's own: drawn only when given.
-    cells = cells.filter(function (c) { return c.item.role !== 'mode' || sl.over.mode; });
+    // The mode launcher is the room's own: drawn only when given - and so is
+    // Afterburn's Preview, which opens the room's video preview.
+    cells = cells.filter(function (c) {
+      return (c.item.role !== 'mode' || sl.over.mode) && (c.item.role !== 'preview' || sl.over.preview);
+    });
     var sets = meetingSets(cells, function (c) {
       var it = sl.over[c.item.role];
       return isTouch(it ? it.kind : c.item.role === 'mode' ? 'button' : KIND_OF[c.item.role]);
     }, 'footer');
-    var out = roles(cells, sl.over, L, { help: props.help, power: props.power }, sets, 'the Footer');
+    var out = roles(cells, sl.over, L, { help: props.help, power: props.power }, sets, 'the Footer',
+                    apart ? function (slots) {
+                      return capMode(slots, L).concat(respacePairs(slots, L, 'the Footer'));
+                    } : null);
     return { slots: out.slots, render: function () {
       return regionBox('Footer', surfacesOf(L, F.surfaces, 'Footer', fitTo(out.slots)).concat(out.els()),
                        sl.probs.concat(out.probs));
@@ -2597,7 +3008,12 @@
     } };
   }
 
-  var PLANS = { header: planHeader, leftrail: planLeftRail, rightrail: planRightRail, footer: planFooter,
+  // Afterburn's left rail is its own (planArtRail): its column closes up and
+  // lifts where the template's places do not hold.
+  function planRail(props, L) {
+    return ((L.region.F.top || {}).apart ? planArtRail : planLeftRail)(props, L);
+  }
+  var PLANS = { header: planHeader, leftrail: planRail, rightrail: planRightRail, footer: planFooter,
                 center: planCenter };
   // Two touch targets of different sets nearer than the panel's 2 mm gap
   // (gdl.spec's spacing rule; owner's call 2: unrelated controls keep it).
@@ -2977,6 +3393,45 @@
     var x = Math.min(Math.max(r[0] + (r[2] - w) / 2, win[0] + gap), win[0] + win[2] - gap - w);
     return [Math.round(x), r[1], Math.round(w), r[3]];
   }
+  // A label's box widened about its middle to hold its words on one line
+  // (measured 6% wide, as messageBox measures), inside [0, width].
+  function widened(L, look, text, r, width, pt) {
+    var f = font(Object.assign({}, look || {}, { size: pt != null ? pt : (look || {}).size }), P.defaults.label.type,
+                 Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+    var w = Math.ceil(textWidth(text, f.css) * 1.06) + 8;
+    if (w <= r[2]) return r;
+    w = Math.min(w, width);
+    var x = Math.min(Math.max(Math.round(r[0] + (r[2] - w) / 2), 0), width - w);
+    return [x, r[1], w, r[3]];
+  }
+  // A left-set label's box widened rightward to hold its words on one line,
+  // to `right` at most: Afterburn 520's popup titles, 162 px where its
+  // 'Lighting Settings' at 21 pt is 190.
+  function rightward(L, look, text, r, right, pt) {
+    var f = font(Object.assign({}, look || {}, { size: pt != null ? pt : (look || {}).size }), P.defaults.label.type,
+                 Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+    var w = Math.ceil(textWidth(text, f.css) * 1.06) + 8;
+    return w <= r[2] ? r : [r[0], r[1], Math.max(r[2], Math.min(w, right - r[0])), r[3]];
+  }
+  // A window's art surfaces (Afterburn's Background, the template's own
+  // background art over the whole screen) as a derived Image of the panel's
+  // own art for the page's theme - where its seed can clone a PBImage - named
+  // `<name> Background`. The file goes with it to the translator (`file`),
+  // which a modal, with no art of its own, does not otherwise carry.
+  function windowArt(L, list, name, themeId, T) {
+    // Afterburn's alone: Mach's Share Content lays its band over a photo,
+    // which its windows draw as their shapes.
+    if (!P.layout.region_frame || !imagesOn(L)) return [];
+    var th = themeOf(themeId), bg = (T.backgrounds || {})[th.id] || null;
+    if (!bg || !bg.image) return [];
+    var n = 0;
+    return (list || []).filter(function (s) { return s.kind === 'image'; }).map(function (s, i) {
+      n += 1;
+      return drawnAt(ImageArt, { name: name + ' Background' + (n > 1 ? ' ' + n : ''), image: bg.image, file: bg.file,
+                                 derived: true, __art: P.backdrops ? P.backdrops[T.series + '|' + th.id] : null },
+                     s.r || s.rect, 'art' + i);
+    });
+  }
   // A source popup or a window on this panel: what it is drawn in (`T`, in
   // the page's coordinates) and from (`D`, the drawn panel's), its size, and
   // its chrome - or why the panel does not draw it.
@@ -2998,7 +3453,7 @@
     // Help with no title says the template's own: Shockwave's and
     // Turbulence's HELP.
     var title = given ? String(props.title) : role === 'help' && WD.help_title || name;
-    if (HT && (role === 'source' || !WINDOW_ROLES[role] || role === 'settings')) {
+    if (HT && (role === 'source' || !WINDOW_ROLES[role] || role === 'settings' || role === 'help' && HUB_COLUMN)) {
       return hubPart(role, FD, HT, name, title, D.model, props.group, props);
     }
     if (HT) FT = HT;
@@ -3017,6 +3472,10 @@
                    return { kind: 'shape', fill: x.s.fill, border: x.s.border, r: x.r };
                  }), name + ' Well', 'well'));
                  var at = content ? ST.titleControls : ST.title;
+                 // Afterburn's is a 162 px box centred at the popup's top, its
+                 // template's words a source's short name: longer words widen
+                 // it about its middle, inside the popup.
+                 if (at && (FT.top || {}).apart) at = widened(L, RS.title, title, at, ST.size[0], pt.title);
                  if (at) els.push(chromeLabel(L, RS.title, name + ' Title', title, at, 'title', pt.title));
                  if (!content && WD.empty) {
                    var e = ST.empty, s = ST.status;
@@ -3071,6 +3530,10 @@
              chrome: function (L, content) {
                var B = WD.buttons || {}, els = [], probs = [], pt = rt.pt || {};
                var plain = role !== 'confirm' && role !== 'wait';
+               // Afterburn's card is the page's own background art over the
+               // whole screen (its `Background` image): the panel's own art
+               // for the page's theme, a derived Image of the seed's PBImage.
+               els = els.concat(windowArt(L, rt.surfaces, name, props.theme, T));
                els = els.concat(chromePanels(L, rt.surfaces, name + ' Window', 'win'));
                if (plain && rt.title) els.push(chromeLabel(L, RW.title, name + ' Title', title, rt.title, 'title', pt.title));
                if (plain && rt.close) {
@@ -3258,6 +3721,7 @@
                  els = els.concat(hubPanels(L, bars, name + ' Title Bar', 'bar', at));
                  var tr = content ? c.title_controls || c.title : c.title;
                  var tat = tr ? [tr[0] - at[0], tr[1] - at[1], tr[2], tr[3]] : null;
+                 if (tat && HUB_COLUMN) tat = rightward(L, titleLook, title, tat, g[2] - L.panel.gap, pt.title);
                  if (tat) els.push(chromeLabel(L, titleLook, name + ' Title', title, tat, 'title', pt.title));
                  if (c.close) els.push(hubClose(L, F, name, at, c.close.rect, names.select, does));
                  var words_ = WD.hub_empty || WD.empty;
@@ -3280,11 +3744,20 @@
              // which the translator binds it to (`main_group`) - a settings
              // window is a modal on the 1035, and names none.
              popup: { group: group || 'Sources', main: !group, background: O.background || null },
-             chrome: function (L) {
+             chrome: function (L, content) {
                var els = hubPanels(L, rec.surfaces, name + ' Header', 'head', at), pt = rec.pt || {};
                var tat = rec.title ? [rec.title[0] - at[0], rec.title[1] - at[1], rec.title[2], rec.title[3]] : null;
-               if (tat) els.push(chromeLabel(L, Object.assign({}, titleLook, O.title || {}), name + ' Title', title, tat, 'title', pt.title));
+               var tlk = Object.assign({}, titleLook, O.title || {});
+               if (tat && HUB_COLUMN) tat = rightward(L, tlk, title, tat, g[2] - L.panel.gap, pt.title);
+               if (tat) els.push(chromeLabel(L, tlk, name + ' Title', title, tat, 'title', pt.title));
                if (rec.close) els.push(hubClose(L, F, name, at, rec.close.rect, names.select, does, O.close));
+               // Afterburn's Help is a popup in main: with nothing put in it,
+               // the template's message where it sets it.
+               if (role === 'help' && !content && WD.help && rec.message) {
+                 var m = rec.message;
+                 els.push(chromeLabel(L, Object.assign({}, (RD.window || {}).message || {}, HD.message || {}), name + ' Message',
+                                      WD.help, [m[0] - at[0], m[1] - at[1], m[2], m[3]], 'message', pt.message));
+               }
                return { els: els, problems: [], title: tat };
              } };
   }
@@ -3371,6 +3844,11 @@
   // labels, the openers, Up and Down, every Close - is derived; Up, Down and
   // the openers keep the hub's own seed IDs (gdl.design.pin_ids).
   var HD = RD.hub || {};
+  // Afterburn's hub (`regions.hub.options.layout: "column"`): its Settings is
+  // a column of its rail's own `list` launchers, its tiles' captions stand
+  // inside their foot, its menu bar stands Help, and its Help is a popup in
+  // main with a Back, as its 520 template draws them.
+  var HUB_COLUMN = (HD.options || {}).layout === 'column';
   function hubFor(T) {
     var F = FRAMES[T.series];
     return F && F.hub && !T.turned && T.tier !== 'C' ? F : null;
@@ -3415,11 +3893,20 @@
     var c = hex8(v);
     return /^#[0-9A-F]{6}FF$/.test(c) ? c.slice(0, 7) : tokenClose(colors, v);
   }
+  // A hub grid's surfaces: its header strip's shapes, each a derived Panel,
+  // and its lines - Afterburn 520's Divider under its Select a Source tiles
+  // - each a derived Line where the template's draws, through its box's
+  // middle, named for the grid (`<grid> Divider`) as the Header's is.
   function hubPanels(L, list, name, key, at) {
-    var n = 0;
-    return (list || []).filter(function (s) { return s.kind === 'shape'; }).map(function (s, i) {
-      n += 1;
+    var n = 0, grid = name.replace(/ Header$/, '');
+    return (list || []).filter(function (s) { return s.kind === 'shape' || s.kind === 'line'; }).map(function (s, i) {
       var r = at ? [s.rect[0] - at[0], s.rect[1] - at[1], s.rect[2], s.rect[3]] : s.rect;
+      if (s.kind === 'line') {
+        return drawnAt(Line, { name: grid + ' ' + (s.name || 'Divider'), derived: true,
+                               color: asMeasured(L.colors, s.fill) || P.defaults.line.color },
+                       lineBand(r, P.defaults.line.thickness), key + i);
+      }
+      n += 1;
       return drawnAt(Panel, { name: name + (n > 1 ? ' ' + n : ''), fill: tokenClose(L.colors, s.fill) || P.defaults.panel.fill,
                               border: borderOf(s.border), stroke: 'none', derived: true }, r, key + i);
     });
@@ -3457,8 +3944,8 @@
     return [Math.round(g[2] / 2 - half), foot, Math.round(2 * half), g[3] - foot];
   }
   // A popup's Close on a hub: back to the grid its group starts from.
-  function hubClose(L, F, name, at, rect, to, does, own) {
-    var look = Object.assign({}, own || HD.close || RD.window && RD.window.close || {});
+  function hubClose(L, F, name, at, rect, to, does, own, set) {
+    var look = Object.assign({}, own || HD.close || RD.window && RD.window.close || {}, set ? { joined: set } : {});
     var icon = iconHere(look, look.icon);
     var r = [rect[0] - at[0], rect[1] - at[1], rect[2], rect[3]];
     var p = Object.assign({ name: name + ' Close', derived: true, nav: to, does: does }, look);
@@ -3490,7 +3977,7 @@
   // than its pitch but a gap apart, and else wrap into rows centred on it -
   // Shockwave's More Options draws two in one centred row, and three wrapped
   // 2+1 from under its header.
-  function gridSpots(G, n, T, H, top, room) {
+  function gridSpots(G, n, T, H, top, room, inside) {
     var t = (G && G.tiles) || [];
     if (!t.length || !n) return [];
     var first = t[0].rect, rows = [], cols = 0;
@@ -3538,10 +4025,113 @@
       var x = Math.round(cx - ((cnt - 1) * px) / 2 + c * px - w / 2);
       var y = r < rows.length ? rows[r] : (rows.length ? rows[0] : y0) + r * py;
       var tile = [x, y, w, ht];
-      out.push({ tile: tile, label: off ? [Math.round(x + (w - lwide) / 2), y + Math.max(off[0], ht),
-                                           lwide, off[1]] : null });
+      // A caption the template sets inside its tile's foot (Afterburn's
+      // 520, at 194 in a tile from 147 to 247) stays there.
+      var ly = inside && off && off[0] < first[3] ? y + off[0] + (ht - first[3]) : y + Math.max(off ? off[0] : 0, ht);
+      out.push({ tile: tile, label: off ? [Math.round(x + (w - lwide) / 2), ly, lwide, off[1]] : null,
+                 inside: !!(inside && off && off[0] < first[3]) });
     }
     return out;
+  }
+  // Whether a tile look's art is in the kit for an icon in a scheme, off and
+  // lit: Afterburn's 520 seed draws its 756x688 tiles in orange alone.
+  function tileHere(look, icon, scheme) {
+    var V = P.buttons[look.variant] || {}, fam = V.kit && KIT && KIT.files && KIT.files[V.kit] && KIT.files[V.kit][icon];
+    if (!fam) return false;
+    var acc = (KIT.primary || {})[scheme];
+    return !!(fam.off && (fam[acc] || fam.sel || fam.plain));
+  }
+  // Afterburn's Settings: a column of its rail's own `list` launchers at the
+  // template's places (52,83, every 58 px on the 520), each grown to the
+  // panel's touch minimum down the template's seam, its caption inside -
+  // clear of its icon, on two lines where one does not hold it - as many as
+  // main holds, then a second column at the template's step
+  // (`regions.hub.options.step`: 262, its Lighting Settings' two columns).
+  function columnTiles(L, G, list, at, where, probs) {
+    var g = L.region.F.center.region, T = L.panel, t = (G && G.tiles) || [], els = [];
+    if (!t.length || !list.length) return els;
+    var first = t[0].rect, seam = t[1] ? Math.max(0, t[1].rect[1] - first[1] - first[3]) : T.gap;
+    var ht = Math.max(first[3], T.touch), step = (HD.options || {}).step || first[2] + T.gap;
+    var per = Math.max(1, Math.floor((g[1] + g[3] - first[1] + seam) / (ht + seam)));
+    var w = first[2];
+    var props = list.map(function (x) {
+      var p = x.it ? propsOf(x.it) : x.props;
+      return Object.assign({}, p, x.it ? unset(p, x.look || RD.launcher || {}) : x.look || {});
+    });
+    props.forEach(function (q) {
+      if (railArt(q)) {
+        // One line where the column's step holds it, else two.
+        for (var lines = 1; lines <= 2; lines++) {
+          for (var W = w; W <= step - T.gap; W++) {
+            var got = railLines(q, W, ht, L);
+            if (got && got.lines.length <= lines) { w = Math.max(w, W); return; }
+          }
+        }
+      } else {
+        w = Math.max(w, needOf('button', q, L)[0]);
+      }
+    });
+    list.forEach(function (x, i) {
+      var col = Math.floor(i / per), row = i % per;
+      var r = [first[0] + col * step - at[0], first[1] + row * (ht + seam) - at[1], w, ht];
+      var q = props[i], extra = x.it ? unset(propsOf(x.it), x.look || RD.launcher || {}) : {}, got = null;
+      extra.joined = setName('options');
+      if (railArt(q)) {
+        got = railLines(q, w, ht, L);
+        if (got) {
+          extra.__indent = got.n;
+          if (got.lines.length > 1) { extra.children = got.lines.join('\r\n'); extra.__each = true; }
+        } else {
+          probs.push(nameOf(x.it || { props: q }) + "'s caption needs more room than the " + L.model + "'s " + w
+                     + ' px Settings column gives it: shorten it');
+        }
+      }
+      if (r[0] + r[2] > g[2]) {
+        probs.push(where + ' holds ' + list.length + ', more than the ' + L.model + "'s main has room for");
+      }
+      if (x.it) els.push(hubHost(x.it, r, where + 't' + i, extra));
+      else {
+        var dp = Object.assign({}, x.props, x.look || {}, extra);
+        if (got && got.lines.length > 1) dp.text = got.lines.join('\r\n');
+        els.push(drawnAt(Button, Object.assign({ text: x.caption }, dp), r, where + 't' + i));
+      }
+    });
+    return els;
+  }
+  // Afterburn's Display Settings: the display Section's members down the
+  // template's first column (`regions.hub.display`: 123,145 every 58 px on
+  // the 520), under its title as a heading in capitals (DISPLAY, as its
+  // template heads its DISPLAY 1 column), in the rail's toggle look.
+  function sectionColumn(L, sec, at, where, probs) {
+    var DD = HD.display || {}, T = L.panel, els = [], sp = propsOf(sec), members = itemsOf(sp.children);
+    var col = DD.column || [123, 145, 178, 50], ht = Math.max(col[3], T.touch);
+    var seam = Math.max(0, (DD.pitch || col[3] + 8) - col[3]);
+    if (sp.title && DD.heading) {
+      var hp = Object.assign({ name: sp.title + ' Heading', text: String(sp.title).toUpperCase() }, DD.label || {});
+      els.push(drawnAt(Label, hp, [DD.heading[0] - at[0], DD.heading[1] - at[1], DD.heading[2], DD.heading[3]], where + 'h'));
+    }
+    var w = col[2];
+    members.forEach(function (it, i) {
+      var extra = it.kind === 'button' ? unset(it.props, RD.rail || {}) : {};
+      if (it.kind === 'button') extra.joined = setName('display');
+      var q = Object.assign({}, it.props || {}, extra);
+      if (railArt(q)) {
+        var got = railLines(q, w, ht, L);
+        if (got) {
+          extra.__indent = got.n;
+          if (got.lines.length > 1) { extra.children = got.lines.join('\r\n'); extra.__each = true; }
+        } else {
+          probs.push(nameOf(it) + "'s caption needs more room than the " + L.model + "'s " + w + ' px display column '
+                     + 'gives it: shorten it');
+        }
+      }
+      var r = [col[0] - at[0], col[1] + i * (ht + seam) - at[1], w, ht];
+      if (r[1] + r[3] > L.region.F.center.region[3]) {
+        probs.push((sp.title || 'A Section') + ' holds more than the ' + L.model + "'s display popup has room for");
+      }
+      els.push(hubHost(it, r, where + i, extra));
+    });
+    return els;
   }
   // A grid's tiles: each designer control at its place in `look`, its
   // caption in a label under it where it draws an icon alone - or always,
@@ -3554,7 +4144,7 @@
     var g = L.region.F.center.region, S = L.region.F.center.strip, right = S ? S[0] : g[0] + g[2];
     var spots = gridSpots(G, list.length, L.panel, g[1] + g[3],
                           G && G.title ? G.title[1] + G.title[3] + L.panel.gap : 0,
-                          [g[0] + Math.max(0, g[0] + g[2] - right), right]), els = [], placed = [];
+                          [g[0] + Math.max(0, g[0] + g[2] - right), right], HUB_COLUMN), els = [], placed = [];
     list.forEach(function (x, i) {
       var sp = spots[i];
       if (!sp) return;
@@ -3579,6 +4169,12 @@
         if (iconHere(Object.assign({}, p, extra), dev)) want = extra.icon = dev;
         else extra.variant = undefined;
       }
+      // Afterburn's hub tile is its seed's own art (756x688, extracted),
+      // which it draws for some sources in one accent: a family or a scheme
+      // it lacks keeps the tab's own source tile, fitted.
+      if (HUB_COLUMN && x.strip && extra.variant && !tileHere(Object.assign({}, p, extra), want, L.scheme)) {
+        extra.variant = p.variant || (RD.tab || {}).variant;
+      }
       var icon = iconHere(Object.assign({}, p, extra), want);
       var alone = (!!icon || !!x.under) && !!sp.label;
       if (alone) extra.text = '';
@@ -3589,8 +4185,13 @@
                     : drawnAt(Button, Object.assign({}, x.props, extra, { text: alone ? '' : caption }), tile, where + 't' + i));
       placed.push(tile);
       if (alone && caption) {
-        var lr = [sp.label[0] - at[0], Math.max(sp.label[1] - at[1], tile[1] + tile[3]), sp.label[2], sp.label[3]];
-        els.push(chromeLabel(L, labelLook, (p.name || caption) + ' Label', caption, lr, where + 'l' + i, pt));
+        var lr = [sp.label[0] - at[0], sp.inside ? sp.label[1] - at[1] : Math.max(sp.label[1] - at[1], tile[1] + tile[3]),
+                  sp.label[2], sp.label[3]];
+        // Inside its tile, wider words widen it about its middle into the
+        // gaps beside: Streaming at the 525's 18 pt is 118 px of 110.
+        if (sp.inside) lr = widened(L, labelLook, caption, lr, g[2], pt);
+        els.push(chromeLabel(L, sp.inside ? Object.assign({}, labelLook, { __caption_of: p.name || caption }) : labelLook,
+                             (p.name || caption) + ' Label', caption, lr, where + 'l' + i, pt));
       }
       if (tile[1] + tile[3] > g[3] || (sp.label && sp.label[1] + sp.label[3] - at[1] > g[3])) {
         probs.push(where + ' holds ' + list.length + ', more than the ' + L.model + "'s template has room for");
@@ -3781,9 +4382,18 @@
     }
     // The footer's clock: no hub template draws one.
     if (by.footer) {
-      var clockName = ft.over.clock ? nameOf(ft.over.clock) : 'Date Time';
-      left.push(clockName);
-      warns.push(pname + "'s " + clockName + ' is left off the ' + L.model + ' - its template draws no clock');
+      var clockNames = ft.over.clock ? [nameOf(ft.over.clock)] : ['Date Time'];
+      // Afterburn's are each panel's own, by the template's names there.
+      if (!ft.over.clock && RD.clocks) {
+        var DF = frameFor(L.design);
+        var own = ((DF && DF.bottom || {}).items || []).filter(function (x) { return x.role === 'clock'; })
+          .map(function (x) { return x.name; });
+        if (own.length) clockNames = own;
+      }
+      clockNames.forEach(function (clockName) {
+        left.push(clockName);
+        warns.push(pname + "'s " + clockName + ' is left off the ' + L.model + ' - its template draws no clock');
+      });
     }
     // The options its settings opener shows: the display group's popup
     // (Mach's, from a tile there), the later Sections' launchers, Audio
@@ -3797,6 +4407,17 @@
     var tileLook = Object.assign({}, HD.tile || {}, O.tile || {});
     var blankLook = Object.assign({}, O.blank || RD.launcher || RD.rail || {});
     function launcher(it) {
+      // Afterburn's: a `list` launcher, captioned inside - its own icon, else
+      // the kit's for what its caption names (`glyphs`: Video Conference's
+      // video-conference-1), else its own look.
+      if (HUB_COLUMN) {
+        var q = propsOf(it), said = String(textOf(q.children, q.text) || q.name || '').toLowerCase();
+        var lk = Object.assign({}, RD.launcher || {});
+        var gk = Object.keys(O.glyphs || {}).filter(function (k) { return said.indexOf(k) >= 0; })[0];
+        if (!q.icon && !lk.icon && gk && iconHere(lk, O.glyphs[gk])) lk.icon = O.glyphs[gk];
+        if (!q.icon && !lk.icon && q.variant == null) lk = {};
+        return { it: it, look: lk };
+      }
       var p = propsOf(it), cap = String(textOf(p.children, p.text) || p.name || '').toLowerCase();
       var mine = p.icon && iconHere(Object.assign({}, p, tileLook), p.icon);
       var key = Object.keys(O.glyphs || {}).filter(function (k) { return cap.indexOf(k) >= 0; })[0];
@@ -3807,20 +4428,32 @@
     // popup of its own (below), titled with its heading.
     var callSec = callPage ? secs[0] || null : null;
     var display = callPage ? null : secs[0] || null, displayTitle = display ? (R.display ? R.display.name : names.display) : null;
+    if (display && HUB_COLUMN) displayTitle = propsOf(display).title || displayTitle;
     var callName = callSec ? propsOf(callSec).title || 'Call' : null;
     var options = [];
     if (callSec) {
+      // Afterburn's: a `list` launcher of the column's, the kit's glyph for
+      // what its caption names, else the call's own.
+      var cl = Object.assign({}, tileLook);
+      if (HUB_COLUMN) {
+        var cs = String(callName).toLowerCase(), gl = O.glyphs || {};
+        var ck = Object.keys(gl).filter(function (k) { return cs.indexOf(k) >= 0; })[0] || 'call';
+        cl = Object.assign({}, RD.launcher || {});
+        if (gl[ck] && iconHere(cl, gl[ck])) cl.icon = gl[ck];
+      }
       options.push({ it: null, caption: callName, under: true,
                      props: { name: callName, derived: true, nav: callName, does: 'Opens ' + callName + '.',
                               onPress: opener(callName) },
-                     look: Object.assign({}, tileLook) });
+                     look: cl });
     }
     if (display && !R.display) {
       options.push({ it: null, caption: propsOf(display).title || 'Display', under: true,
                      props: { name: names.display, derived: true, nav: names.display,
                               does: 'Opens ' + names.display + '.', icon: (HD.display || {}).icon,
                               onPress: opener(names.display) },
-                     look: Object.assign({}, tileLook) });
+                     // Afterburn's is a `list` launcher of its own, with its
+                     // template's ID (8214).
+                     look: HUB_COLUMN ? Object.assign({}, (HD.display || {}).opener || {}) : Object.assign({}, tileLook) });
     }
     // A later Section's heading, which the drawn panel's rail draws over its
     // group (Mach's Settings), has no place among the options: named.
@@ -3896,6 +4529,10 @@
         } else if (role === 'settings' && options.length) {
           props = openerProps(x, Object.assign({}, look, HD.settings || {}), names.options,
                               'Opens ' + ((F.options || {}).text || names.options) + '.');
+        } else if (role === 'help' && by.footer && HUB_COLUMN) {
+          // Afterburn's menu bar stands Help, between Mute and Settings.
+          it = ft.over.help || null;
+          props = it ? null : hubLook(chrome('help', x, L, by.footer.help)[1], HD.help);
         } else if (role === 'power' && by.footer) {
           it = ft.over.power || null;
           props = it ? null : hubLook(chrome('power', x, L, by.footer.power)[1], HD.power);
@@ -3934,7 +4571,10 @@
           lv.track = lr[2];
           lv.border = SL.border ? borderOf(SL.border) : 'none';
           if (SL.track) lv.fill = tokenClose(L.colors, SL.track) || lv.fill;
-          if (SL.bar) lv.bar = tokenClose(L.colors, SL.bar) || null;
+          // The fill as the template's scheme names it, where the profile
+          // says (Afterburn's accent-2: its seed's #626ACF is its orange
+          // scheme's), not the token nearest that colour in this one.
+          if (SL.bar) lv.bar = (HD.level || {}).bar || tokenClose(L.colors, SL.bar) || null;
           if (SL.art) lv.art = SL.art;
         }
         parts.push({ name: names.level, group: names.level, size: [S[2], S[3]], at: [S[0], S[1]], alone: true,
@@ -3960,7 +4600,7 @@
       var sel = [];
       sel = sel.concat(hubPanels(L, S2.surfaces, names.select + ' Header', 'sh', at));
       if (S2.title) {
-        sel.push(chromeLabel(L, titleLook, names.select + ' Title', S2.text || 'Select a Source',
+        sel.push(chromeLabel(L, Object.assign({}, titleLook, HD.select_title || {}), names.select + ' Title', S2.text || 'Select a Source',
                              [S2.title[0] - at[0], S2.title[1] - at[1], S2.title[2], S2.title[3]], 'st',
                              (S2.pt || {}).title));
       }
@@ -3974,7 +4614,7 @@
         var hneed = needOf('button', help ? help.props || {} : hprops, L);
         var hat2 = settle(hr2, hneed, [0, 0, g[2], g[3]], [g[2], g[3]], [false, false, false, false]);
         sel.push(help ? hubHost(help, hat2, 'help', unset(help.props, hl)) : drawnAt(Button, hprops, hat2, 'help'));
-      } else if (help || hdef2) {
+      } else if ((help || hdef2) && !(HUB_COLUMN && R.help)) {
         left.push(help ? nameOf(help) : 'Help');
         warns.push(pname + "'s Help is left off the " + L.model + ' - its template stands no Help on its grid');
       }
@@ -3992,9 +4632,10 @@
       if (O2.close) {
         opt.push(hubClose(L, F, names.options, at, O2.close.rect, names.select,
                           'Closes ' + (O2.text || names.options) + ' - back to ' + (S2.text || 'Select a Source') + '.',
-                          O.close));
+                          O.close, HUB_COLUMN ? setName('options') : null));
       }
-      opt = opt.concat(gridTiles(L, O2, options, at, null, optLabel, (O2.pt || {}).label, names.options, probs));
+      opt = opt.concat(HUB_COLUMN ? columnTiles(L, O2, options, at, names.options, probs)
+                                  : gridTiles(L, O2, options, at, null, optLabel, (O2.pt || {}).label, names.options, probs));
       parts.push({ name: names.options, group: group, size: [g[2], g[3]], at: at, els: opt, background: O.background,
                    photo: !!(HD.popup || {}).photo });
     }
@@ -4013,10 +4654,11 @@
       if (dc) {
         dsp.push(hubClose(L, F, names.display, at, dc, back,
                           'Closes ' + displayTitle + ' - back to ' + (R.display ? S2.text || 'Select a Source' : O2.text || names.options) + '.',
-                          O.close));
+                          O.close, HUB_COLUMN ? setName('display') : null));
       }
       var box = hubHead(F, dt, dc, rec.surfaces);
-      dsp = dsp.concat(sectionIn(L, display, box, names.display, optLabel, probs, O.button));
+      dsp = dsp.concat(HUB_COLUMN ? sectionColumn(L, display, at, names.display, probs)
+                                  : sectionIn(L, display, box, names.display, optLabel, probs, O.button));
       parts.push({ name: names.display, group: group, size: [g[2], g[3]], at: at, els: dsp, background: O.background,
                    photo: !!(HD.popup || {}).photo });
     }
@@ -4109,6 +4751,18 @@
     });
     return out;
   }
+  // The label a page's strip is titled in: its heading, else its title -
+  // but on a strip at the foot (Afterburn's) the heading is More's label
+  // (6010), and the title is the page's (6008).
+  function moreItem(rec) {
+    return ((rec && rec.top || {}).items || []).filter(function (i) {
+      return i.role === 'heading' && /^more$/i.test(i.text || '');
+    })[0] || null;
+  }
+  function titleRole(rec) {
+    var hd = roleIn(rec, 'heading');
+    return (hd && hd !== moreItem(rec) ? hd : null) || roleIn(rec, 'title');
+  }
   // Where a page's More and Back stand: More where the template's first
   // page stands it; Back where its second page does - and where More stands
   // there too (Shockwave's and Turbulence's foot's right), at the strip's
@@ -4120,7 +4774,9 @@
     var out = { more: more && M ? M : null, back: null, strip: false };
     if (back && B) {
       var r = B.rect.slice(), sh = F.top.rect[3];
-      out.strip = r[1] + r[3] <= F.center.rect[1] + 1;
+      // Afterburn's strip is at the foot (`foot`): Back stands in it, at its
+      // left, the title moved past it as the template's second page draws.
+      out.strip = r[1] + r[3] <= F.center.rect[1] + 1 || !!F.foot && overlaps(r, F.top.rect);
       if (!out.strip && out.more && overlaps(r, out.more.rect)) {
         r = [W - sh, 0, sh, sh];
         out.strip = true;
@@ -4141,7 +4797,7 @@
   // titles joined, then the first's), and words that fit neither way are
   // named in `probs` - the label drawn the full 320 across ran 'Display and
   // Room Settings' under Back unremarked.
-  function stripEls(L, F, rec, name, title, id, back, probs) {
+  function stripEls(L, F, rec, name, title, id, back, probs, more) {
     var els = [], gap = L.panel.gap;
     var deep = back && back[1] === 0 ? back[3] : 0;
     function taller(r) { return deep > r[3] && r[1] === 0 ? [r[0], r[1], r[2], deep] : r; }
@@ -4153,6 +4809,19 @@
     var t = roleIn(rec, 'title') || roleIn(rec, 'heading');
     var p = Object.assign({}, PD.strip || {}, id != null ? { id: id } : {});
     var pt = (F.center.pt || {}).title, r = taller(t ? t.rect : rec.top.rect), tries = [].concat(title);
+    var ml = F.foot && more ? moreItem(F) : null, mk = more ? roleIn(F, 'more') : null;
+    if (F.foot && t) {
+      var end = ml ? ml.rect[0] : mk ? mk.rect[0] : L.panel.size[0] - gap;
+      r = [r[0], r[1], Math.max(r[2], end - r[0]), r[3]];
+      if (ml && mk) {
+        var fm = font(Object.assign({}, p, pt != null ? { size: pt } : {}), P.defaults.label.type,
+                      Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+        if (textWidth(tries[tries.length - 1], fm.css) * 1.06 + 8 > r[2]) {
+          r = [r[0], r[1], Math.max(r[2], mk.rect[0] - r[0]), r[3]];
+          ml = null;
+        }
+      }
+    }
     var words_ = tries[0], at = r;
     if (deep && overlaps(back, r)) {
       var f = font(Object.assign({}, p, pt != null ? { size: pt } : {}), P.defaults.label.type,
@@ -4177,8 +4846,18 @@
                      + Math.floor(lean[2] - 2 * gap) + ' px beside Back: shorten it');
         }
       }
+    } else if (F.foot && tries.length > 1) {
+      // Afterburn's strip at the foot: the first of the words that fits its
+      // box (past Back on a later page), else the last.
+      var ff = font(Object.assign({}, p, pt != null ? { size: pt } : {}), P.defaults.label.type,
+                    Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+      words_ = tries.filter(function (s) { return textWidth(s, ff.css) * 1.06 <= r[2]; })[0] || tries[tries.length - 1];
     }
     els.push(chromeLabel(L, p, name + ' Title', words_, at, 'title', pt));
+    if (ml) {
+      els.push(chromeLabel(L, Object.assign({}, PD.more_label || PD.strip || {}, ml.id != null ? { id: ml.id } : {}),
+                           name + ' More Label', ml.text, ml.rect, 'morel', (F.center.pt || {}).more));
+    }
     return els;
   }
   function navButton(L, look, name, r, id, extra, key) {
@@ -4203,6 +4882,40 @@
         if (look.variant) extra.variant = look.variant;
       }
       if (kind === 'label') extra = unset(p, PD.heading);
+      // An icon the key's look does not draw is left off it (a `list`
+      // launcher's 1224x344 art on Afterburn's outlined key), with the indent
+      // that would have cleared it: it stood a missing icon.
+      if (kind === 'button' && !tab && p.icon) {
+        var pq = Object.assign({}, p, extra), PV = P.buttons[pq.variant] || P.buttons[P.defaults.button.variant];
+        var pi = imageOf(PV, pq, textOf(p.children, p.text));
+        if (!pi || !pi.kit || !((KIT && KIT.files || {})[pi.kit] || {})[p.icon]) {
+          extra.icon = undefined;
+          extra.__indent = undefined;
+        }
+      }
+      // A state's icon the key's look does not draw (Afterburn's toggle-2 on
+      // its Display Power, its call keys' make-call_connected) is left off
+      // it, and the state kept apart as its name says: its `look` the key's
+      // own state of that name, and a later state its name for its words -
+      // the icon was all that told Warming Up from Off.
+      if (kind === 'button' && !tab && P.layout.region_frame && p.states) {
+        var sq = Object.assign({}, p, extra), SV = P.buttons[sq.variant] || P.buttons[P.defaults.button.variant];
+        var si = imageOf(SV, sq, textOf(p.children, p.text));
+        var sk = si && si.kit ? ((KIT && KIT.files || {})[si.kit] || {}) : {};
+        var ss = list(p.states) || [];
+        if (ss.some(function (s) { return s && s.icon && !sk[s.icon]; })) {
+          extra.states = ss.map(function (s, i) {
+            s = typeof s === 'string' ? { name: s } : Object.assign({}, s);
+            if (!s.icon || sk[s.icon]) return s;
+            var lk = !si && s.look ? find(SV.states, s.look === 'on' ? 'On' : 'Off') : null;
+            var o = Object.assign({}, lk || {}, s, { name: s.name });
+            delete o.icon;
+            if (!si) delete o.look;
+            if (i > 0 && o.text == null) o.text = s.name;
+            return o;
+          });
+        }
+      }
       // `auto`: in the page's key look, which a wider caption widens (paginate).
       return { it: it, kind: kind, props: Object.assign({}, p, extra), extra: extra,
                auto: kind === 'button' && (tab || p.variant == null) };
@@ -4212,6 +4925,13 @@
       var keep = q.icon && iconHere(Object.assign({}, q, look), q.icon);
       q = Object.assign(q, look, { icon: keep || undefined });
       if (!keep && !q.text) q.text = q.name === 'Volume Mute' ? 'Mute' : q.name;
+      // Kept, and captioned where the look's captioned art has no such icon
+      // (Afterburn's outlined key carries 440x440 icons alone): the icon
+      // alone, as the template's Help and Mute are.
+      if (keep && q.text) {
+        var QV = P.buttons[q.variant] || P.buttons[P.defaults.button.variant], qi = imageOf(QV, q, q.text);
+        if (qi && qi.kit && !((KIT && KIT.files || {})[qi.kit] || {})[keep]) q.text = '';
+      }
       if (q.states) q.states = list(q.states).map(function (s) { return { name: s.name }; });
     }
     return { it: null, kind: kind, props: q, extra: null, auto: kind === 'button' };
@@ -4313,7 +5033,10 @@
   // the page draws them, as many as its column holds, each as deep as the
   // template's and no less than what is in it needs.
   function pageGrid(L, F, heads, needH, headNeed) {
-    var C = F.center, row = C.row, T = L.panel, H = T.size[1];
+    // Afterburn's strip at the foot holds More and Back: its rows stop a gap
+    // above it, as deep as the touch minimum grows the template's 45 px keys.
+    var C = F.center, row = C.row, T = L.panel;
+    var H = F.foot ? F.top.rect[1] - T.gap - Math.max(0, T.touch - row[0][3]) : T.size[1];
     var rowH = row[0][3], py = (C.pitch || [])[1] || rowH + T.gap, seam = Math.max(1, py - rowH);
     var n = 0;
     while (row[0][1] + n * py + rowH <= H) n += 1;
@@ -4372,6 +5095,22 @@
     blocks.forEach(function (b) {
       var auto = b.members.filter(function (m) { return m.auto; });
       var a0 = auto.length ? aspect(auto[0].props.variant || P.defaults.button.variant) : 0;
+      if (!a0 && P.layout.region_frame) {
+        auto.forEach(function (m) {
+          var c = textOf(m.props.children, m.props.text), room = pitchX - gap;
+          if (m.need[0] <= room || !c || c.indexOf(' ') < 0 || /\n/.test(c)) return;
+          var at = -1;
+          for (var i = 0; i < c.length; i++) {
+            if (c.charAt(i) === ' ' && (at < 0 || Math.abs(i - c.length / 2) < Math.abs(at - c.length / 2))) at = i;
+          }
+          var two = c.slice(0, at) + '\n' + c.slice(at + 1);
+          var q = Object.assign({}, m.props, { children: two, text: two, __lines: 2 });
+          var n2 = needOf(m.kind, q, L);
+          if (n2[0] <= room) { m.caption = two; m.need = n2; }
+        });
+        b.w = Math.max.apply(null, b.members.map(function (m) { return m.need[0]; }));
+        return;
+      }
       if (!a0) return;
       var want = Math.max.apply(null, auto.map(function (m) { return m.need[0]; }));
       if (G.h * a0 >= want) return;
@@ -4559,6 +5298,7 @@
       var f = L.panel.size[1];
       if (nav.more) f = Math.min(f, nav.more.rect[1]);
       if (nav.back && !nav.strip) f = Math.min(f, nav.back.rect[1]);
+      if (F.foot) f = Math.min(f, F.top.rect[1]);
       return f - gap;
     }
     function fill(i, nav) {
@@ -4586,12 +5326,12 @@
     var shown = { set: null };
     function partName(p) { return p ? name + ' ' + (p + 1) : name; }
     function shower(p) { return function () { if (shown.set) shown.set(p); }; }
-    var homeT = roleIn(F, 'heading') || roleIn(F, 'title'), secondT = roleIn(F.second, 'title');
+    var homeT = titleRole(F), secondT = roleIn(F.second, 'title');
     var drawn = pages.map(function (pg, p) {
       var nav = pg.nav, bk = backAt(L, nav);
       var rec = nav.strip ? F.second : F;
       var els = stripEls(L, F, rec, partName(p), title, p === 0 ? (homeT || {}).id : (secondT || {}).id,
-                         nav.strip ? bk.rect : null, probs);
+                         nav.strip ? bk.rect : null, probs, !!nav.more);
       var y = top;
       pg.items.forEach(function (x, j) {
         els.push(hostAt(x.it, [gap, y, w, x.h], 'prose' + p + '-' + j));
@@ -4620,13 +5360,14 @@
     var G = laid.G, shown = { set: null }, gap = L.panel.gap;
     function partName(p) { return p ? name + ' ' + (p + 1) : name; }
     function shower(p) { return function () { if (shown.set) shown.set(p); }; }
-    var homeT = roleIn(firstRec, 'heading') || roleIn(firstRec, 'title'), secondT = roleIn(F.second, 'title');
+    var homeT = titleRole(firstRec), secondT = roleIn(F.second, 'title');
     var pages = laid.pages.map(function (pg, p) {
       var els = [], nav = pg.nav;
       var rec = nav.back && nav.strip ? F.second : p === 0 ? firstRec : F;
       var tid = p === 0 ? (homeT || {}).id : (secondT || {}).id;
       var bk = nav.back && (p || back0) ? backAt(L, nav) : null;
-      els = els.concat(stripEls(L, F, rec, partName(p), title(p, pg), tid, bk && nav.strip ? bk.rect : null, probs));
+      els = els.concat(stripEls(L, F, rec, partName(p), title(p, pg), tid, bk && nav.strip ? bk.rect : null, probs,
+                                !!nav.more));
       pg.slots.forEach(function (s, si) {
         var b = blocks[s.b != null ? s.b : s.cells[0].c.b];
         if (s.head && b.head && G.head) {
@@ -4723,8 +5464,10 @@
         // block of its own, so not blocks.length).
         var sp = propsOf(sec), gi = secs.length, G = FDL && FDL.groups ? FDL.groups[gi] : null;
         secs.push(sec);
-        var head = sp.title && (!FDL || G && G.heading)
-          ? pageMember(null, Object.assign({ name: sp.title + ' Heading', text: sp.title }, RD.heading || {}, PD.heading || {}), 'label')
+        var head = sp.title && (!FDL || G && G.heading || FDL.seam != null && !G)
+          ? pageMember(null, Object.assign({ name: sp.title + ' Heading',
+                                             text: PD.heading_caps ? String(sp.title).toUpperCase() : sp.title },
+                                           RD.heading || {}, PD.heading || {}), 'label')
           : null;
         var mem = [], lv = [];
         itemsOf(sp.children).forEach(function (it) {
@@ -4747,8 +5490,11 @@
       else if (drawn('mute', RR)) vm.push(pageMember(null, chrome('mute', RR.mute || {}, L)[1], 'button'));
       if (rr.over.audio) vm.push(pageMember(rr.over.audio, null, rr.over.audio.kind));
       var head2 = hd ? pageMember(hd, null, 'label')
-        : hdef ? pageMember(null, Object.assign({}, hdef[1], PD.heading || {}), 'label') : null;
-      if (vm.length) blocks.push({ head: head2, title: head2 ? head2.props.text || textOf(head2.props.children) : null, members: vm });
+        : hdef ? pageMember(null, Object.assign({}, hdef[1], PD.heading || {},
+                                                PD.heading_caps ? { text: String(hdef[1].text || '').toUpperCase() } : {}),
+                            'label') : null;
+      var said2 = hd ? textOf((hd.props || {}).children, (hd.props || {}).text) : hdef ? hdef[1].text : null;
+      if (vm.length) blocks.push({ head: head2, title: head2 ? said2 || head2.props.text : null, members: vm });
       else if (head2) blocks.push({ head: null, title: null, members: [head2] });
       if (rr.over.volume) vol = Object.assign({}, rr.over.volume.props || {});
       else if (drawn('volume', RR)) vol = chrome('volume', RR.volume || {}, L)[1];
@@ -4765,9 +5511,15 @@
       });
       if (fm.length) blocks.push({ head: null, title: null, members: fm });
       if (ft.over.clock || drawn('clock', RB)) {
-        var cn = ft.over.clock ? nameOf(ft.over.clock) : 'Date Time';
-        left.push(cn);
-        warns.push(pname + "'s " + cn + ' is left off the ' + L.model + ' - its template draws no clock');
+        var cns = ft.over.clock ? [nameOf(ft.over.clock)] : ['Date Time'];
+        if (!ft.over.clock && RD.clocks && FD) {
+          var own = (FD.bottom.items || []).filter(function (x) { return x.role === 'clock'; }).map(function (x) { return x.name; });
+          if (own.length) cns = own;
+        }
+        cns.forEach(function (cn) {
+          left.push(cn);
+          warns.push(pname + "'s " + cn + ' is left off the ' + L.model + ' - its template draws no clock');
+        });
       }
     }
     // A Header's start and end controls: on with the rest.
@@ -4902,7 +5654,10 @@
     if (role === 'confirm' || role === 'wait') {
       var W = role === 'confirm' && String(props.topic || '') === 'call' && (F.windows || {}).incoming
         || (F.windows || {})[role];
-      if (!W || !W.rect) return { problem: name + ' is a ' + role + ' window, which the ' + T.model + "'s template does not draw" };
+      if (!W || !W.rect && !W.message) {
+        return { problem: name + ' is a ' + role + ' window, which the ' + T.model + "'s template does not draw" };
+      }
+      var WR = W.rect || [0, 0, T.size[0], T.size[1]];
       return { page: true, art: !!W.art, size: T.size.slice(), dsize: null, lay: function (kids, L) {
         var B = WD.buttons || {}, els = [], probs = [], RW = RD.window || {};
         (W.surfaces || []).forEach(function (s, i) {
@@ -4920,7 +5675,7 @@
         } else if (W.message) {
           var look = Object.assign({}, RW.message || {}, PD.message || {});
           els.push(chromeLabel(L, look, name + ' Message', words_,
-                               messageBox(L, look, words_, W.message, W.rect, W.lines, (W.pt || {}).message),
+                               messageBox(L, look, words_, W.message, WR, W.lines, (W.pt || {}).message),
                                'message', (W.pt || {}).message));
         }
         if (role === 'confirm' && words_ != null) {
@@ -4975,12 +5730,12 @@
       } else {
         var nav = navPlaces(L, F, false, true), bk = nav.back ? backAt(L, nav) : null;
         els = stripEls(L, F, nav.strip ? F.second : F, name, title, (roleIn(F, 'title') || {}).id,
-                       bk && nav.strip ? bk.rect : null, probs);
+                       bk && nav.strip ? bk.rect : null, probs, !!nav.more);
         var said_ = role === 'source' ? WD.page_empty || WD.hub_empty || WD.empty : role === 'help' ? WD.help : null;
         var lines_ = said_ != null ? said(said_, title).split('\n') : [], EL = C.empty_lines || [];
         // Help's message under the strip, clear of Back.
         var gap = L.panel.gap, top = C.rect[1] + gap;
-        var foot = nav.back && !nav.strip ? nav.back.rect[1] - gap : L.panel.size[1] - gap;
+        var foot = nav.back && !nav.strip ? nav.back.rect[1] - gap : (F.foot ? F.top.rect[1] : L.panel.size[1]) - gap;
         if (role === 'source' && EL.length > 1 && lines_.length === EL.length) {
           // A label a line, where the template sets its empty state so (the
           // 320's Laptop Label 1-3): its first sentence a paragraph apart
@@ -5007,6 +5762,36 @@
         } else if (said_ != null) {
           var e = C.empty;
           if (role === 'help') e = [gap, top, L.panel.size[0] - 2 * gap, foot - top];
+          else if (F.foot && e) {
+            // Afterburn's: set at 12 pt in the template, at the floor its
+            // lines are wider and deeper than its box. Wider first - 'Laptop
+            // is currently selected.' is 254 px at the 320's 14 pt, and in
+            // the 250 px box its three lines wrapped into four - so the box
+            // widens about its middle to its widest line, up to the screen
+            // less a gap each side; a line wider still wraps, and is named.
+            // Then it grows about its middle, between the top and the strip.
+            var fe = font(Object.assign({}, PD.empty || {}, { size: (C.pt || {}).empty }), P.defaults.label.type,
+                          Object.assign({}, L, { k: (C.pt || {}).empty != null ? 1 : L.k }));
+            var etext = said(said_, title), most = L.panel.size[0] - 2 * gap;
+            var widest = etext.split('\n').reduce(function (w, ln) {
+              return textWidth(ln, fe.css) > textWidth(w, fe.css) ? ln : w;
+            }, '');
+            var need = Math.ceil(textWidth(widest, fe.css) * 1.06);
+            if (need > e[2]) {
+              var ew = Math.min(need, most);
+              e = [Math.max(gap, Math.round(e[0] + (e[2] - ew) / 2)), e[1], ew, e[3]];
+              if (need > most) {
+                warns.push(name + "'s empty state says '" + widest + "', " + need + ' px at the ' + L.model + "'s "
+                           + fe.size + ' pt floor where its screen holds ' + most + ': it wraps - a shorter '
+                           + 'title keeps its three lines');
+              }
+            }
+            var ne = wrapWords(etext, fe.css, e[2] / 1.06).length * lineHeight(fe.size) + 2 * gap;
+            if (ne > e[3]) {
+              var ey = Math.min(Math.max(gap, Math.round(e[1] + (e[3] - ne) / 2)), foot - ne);
+              e = [e[0], Math.max(gap, ey), e[2], Math.min(ne, foot - gap)];
+            }
+          }
           els.push(chromeLabel(L, PD.empty, name + (role === 'help' ? ' Message' : ' Empty'), said(said_, title), e,
                                'empty', (C.pt || {}).empty));
         }
@@ -5088,6 +5873,15 @@
       return title + ' holds a ' + (typeof it.host.type === 'string' ? it.host.type : 'repeat')
         + ' - a Group lays out components, each in a cell; put the components in it directly';
     });
+    // Nothing to lay out: refused here, at the Group by name, on every panel -
+    // elsewhere it was an empty region on a mid-size panel, a popup group no
+    // popup is in and a nav naming nothing on the 320.
+    if (!items.length) {
+      var none = [title + ' holds nothing - a Group lays out the components in it; put its components in it, or '
+                  + 'remove the Group'];
+      return h('div', { className: 'xgdl-group', style: outlined({ position: 'absolute', inset: 0 }, none) },
+               none.map(problem));
+    }
     if (!(L && L.aware && props.__box)) {
       var gg = joined ? 0 : gapD;
       return h('div', { className: 'xgdl-group',
@@ -5109,10 +5903,14 @@
     function partName(i) { return i ? groupName + ' ' + (i + 1) : groupName; }
     var forced = typeof window !== 'undefined' && window.__GDL_SHOW ? String(window.__GDL_SHOW) : null;
     var navFont = font({}, P.defaults.button.type, Lk);
-    function navW(word) { return Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24)); }
+    function navW(word) {
+      return pagingLook(word) ? T.touch : Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24));
+    }
     function navButton(suffix, word, to, onPress, r, key) {
+      var look = pagingLook(suffix) || pagingLook(word);
       return h('div', { key: key, style: cell(r) },
-               h(Button, { name: title + ' ' + suffix, derived: true, text: word, goes: to, onPress: onPress }));
+               h(Button, Object.assign({ name: title + ' ' + suffix, derived: true, text: look ? '' : word, goes: to,
+                                         onPress: onPress }, look || {})));
     }
     // Grown past its box, it keeps to the page as any control does
     // (scaleLayout's `__room`: its box's place and the frame's size) - Build
@@ -5352,8 +6150,11 @@
   function imageOf(V, props, caption) {
     function indent(d) { return props.__indent != null ? Number(props.__indent) : d; }
     function breaks(d) { return props.__breaks != null ? Number(props.__breaks) : d; }
-    if (V.kit) return { kit: V.kit, caption: props.__caption || V.caption, indent: indent(V.indent),
-                        breaks: breaks(V.breaks), icon: props.icon || V.icon };
+    // `__each`: an indented caption on two lines, each line indented (a
+    // region's rail button, railLines), since the build's leading spaces
+    // start its first line only.
+    if (V.kit) return { kit: props.__kit || V.kit, caption: props.__caption || V.caption, indent: indent(V.indent),
+                        breaks: breaks(V.breaks), icon: props.icon || V.icon, each: !!props.__each };
     if (props.icon && V.with_icon) {
       var W = V.with_icon;
       return caption ? { kit: props.__kit || W.kit, caption: props.__caption || W.caption, indent: indent(W.indent),
@@ -5371,7 +6172,11 @@
     if (!img || text == null) return text;
     if (img.caption === 'none') return '';
     if (img.caption === 'below') return text ? new Array(belowBreaks(img) + 1).join('\r\n') + text : text;
-    if (img.caption === 'indent') return text ? new Array((img.indent || 0) + 1).join(' ') + text : text;
+    if (img.caption === 'indent') {
+      var pad = new Array((img.indent || 0) + 1).join(' ');
+      if (!text) return text;
+      return img.each ? String(text).split(/\r?\n/).map(function (ln) { return pad + ln; }).join('\r\n') : pad + text;
+    }
     return text;
   }
 
@@ -5380,7 +6185,7 @@
   // seed's Screen Control, Lighting Control and Room Mode are - on one line
   // the 720's Room Mode grew 23 px into the date beside it.
   function captionOf(V, p) {
-    return twoWords(V, textOf(p.children, p.text));
+    return twoWords(p.__lines ? Object.assign({}, V, { lines: p.__lines }) : V, textOf(p.children, p.text));
   }
   // And a state's own caption, which is the caption in that state: Mic
   // Mute's 'Mics Muted' drawn on one line in its dock ran past its 112 px
@@ -5531,7 +6336,9 @@
                         text: words_, color: color, size: f.size,
                         bold: f.bold, align: align, does: props.does, fill: fill, border: border,
                         // A copy a panel's layout repeats (overPages' title strip).
-                        derived: truthy(props.derived) || null })
+                        derived: truthy(props.derived) || null,
+                        // The tile it captions, inside it (Afterburn's hub).
+                        caption_of: props.__caption_of || null })
     }, words_);
   }
 
@@ -5585,8 +6392,10 @@
     var L = useLook();
     var stretch = props.layout === 'stretch';
     var file = props.image || null;
-    var art = file && KIT && KIT.art ? KIT.art[file] : null;
-    var missing = file && !kitHas(file) ? file : null;
+    // A page's own background art (a window's Background) is the panel's
+    // backdrop, not the kit's.
+    var art = props.__art || (file && KIT && KIT.art ? KIT.art[file] : null);
+    var missing = file && !kitHas(file) && !props.file ? file : null;
     var panel = L.panel || (L.page && P.models && P.models[P.model]);
     var lacks = !imagesOn(L)
       ? (props.name || 'Image') + " is an image, which the " + ((panel && panel.model) || P.model)
@@ -5601,11 +6410,22 @@
       style: lacks ? outlined(box, [lacks]) : box,
       'data-gdl': gdl({ kind: 'image', name: props.name, image: file,
                         layout: stretch ? 'stretch' : null, fill: props.fill,
-                        derived: truthy(props.derived) || null })
+                        derived: truthy(props.derived) || null,
+                        // Where the art is (a theme's background), for the
+                        // translator's `images`; not a spec field.
+                        file: props.file || null })
     }, lacks ? problem(lacks, 'image') : null);
   }
 
   // -- Line: a divider ------------------------------------------------------
+  // The band a template's line draws in its box: every divider a seed holds
+  // is a PBLine from MiddleLeft to MiddleRight (TopCenter to BottomCenter
+  // upright) through its box's middle - Afterburn 1035's Divider, in a 20 px
+  // box at 137, draws at 146 - where a Line's box is the band it draws.
+  function lineBand(r, t) {
+    return r[2] >= r[3] ? [r[0], r[1] + Math.floor((r[3] - t) / 2), r[2], t]
+                        : [r[0] + Math.floor((r[2] - t) / 2), r[1], t, r[3]];
+  }
   function Line(props) {
     var L = useLook();
     var color = props.color || P.defaults.line.color;
@@ -5617,7 +6437,9 @@
                height: vertical ? '100%' : t + 'px', background: paint(L.colors, color) },
       'data-gdl': gdl({ kind: 'line', name: props.name, fill: color, thickness: t,
                         from: vertical ? 'TopCenter' : 'MiddleLeft',
-                        to: vertical ? 'BottomCenter' : 'MiddleRight' })
+                        to: vertical ? 'BottomCenter' : 'MiddleRight',
+                        // One a region draws (Afterburn's Header Divider).
+                        derived: truthy(props.derived) || null })
     });
   }
 
@@ -5761,7 +6583,12 @@
       'data-gdl': gdl({ kind: 'datetime', name: props.name, color: color, size: f.size,
                         // Always: the spec's own default is center, so a
                         // left clock that said nothing built centered.
-                        bold: f.bold, align: align, format: fmt })
+                        bold: f.bold, align: align, format: fmt,
+                        // One a region draws as the panel's template does
+                        // (Afterburn's Footer: the 1035's date and time apart,
+                        // the 725's one): chrome of that panel, not a control
+                        // of the canvas the other panels must carry.
+                        derived: truthy(props.derived) || null })
     }, sample, lacks ? problem(lacks, 'clock') : null);
   }
 
@@ -5794,9 +6621,10 @@
   // Where the design panel's seed can clone a PBImage (gdl.designsys
   // components): no Shockwave seed has one.
   if (P.image_kind) api.Image = ImageArt;
-  // The region frame's, where the template draws its bars (gdl.designsys
-  // components): Afterburn's system has none.
-  if (P.layout && P.layout.bars === 'controls') {
+  // The region frame's, where the template draws its working page in
+  // regions (gdl.designsys components): its bars as controls, or round its
+  // art (Afterburn's `layout.region_frame`).
+  if (P.layout && (P.layout.bars === 'controls' || P.layout.region_frame)) {
     Object.assign(api, { Header: Header, LeftRail: LeftRail, Section: Section, RightRail: RightRail, Footer: Footer,
                          Center: Center });
   }

@@ -103,7 +103,9 @@ class TestASystemFaceIsSaidAloud(unittest.TestCase):
             self.skipTest('Pillow not installed; compose draws with it')
 
     def test_a_fallback_is_recorded(self):
+        """Nothing recovered, and no seed to read Arial from."""
         import tempfile
+        from unittest import mock
         from gdl import compose
         saved = compose.FONTDIR, dict(compose._cache), set(compose.FALLBACKS)
         try:
@@ -111,7 +113,8 @@ class TestASystemFaceIsSaidAloud(unittest.TestCase):
             compose._cache.clear()
             compose.FALLBACKS.clear()
             try:
-                compose.face('Arial', 0, 0, 14)
+                with mock.patch.object(compose, 'seed_face', lambda font: (None, None)):
+                    compose.face('Arial', 0, 0, 14)
             except LookupError:
                 self.skipTest('no system Arial on this host either')
             self.assertEqual(compose.FALLBACKS, {"Arial as the host's arial.ttf"})
@@ -134,6 +137,7 @@ class TestASystemFaceIsSaidAloud(unittest.TestCase):
                     if os.path.exists(p)), None)
         if not src:
             self.skipTest('no Arial to recover from on this host')
+        from unittest import mock
         saved = compose.FONTDIR, dict(compose._cache), set(compose.FALLBACKS)
         try:
             compose.FONTDIR = tempfile.mkdtemp()
@@ -142,7 +146,9 @@ class TestASystemFaceIsSaidAloud(unittest.TestCase):
             compose.FALLBACKS.clear()
             compose.face('Arial', 0, 0, 14)
             self.assertEqual(compose.FALLBACKS, set())
-            compose.face('Open Sans', 0, 0, 14)
+            # No seed here carries it either (a public checkout without LFS).
+            with mock.patch.object(compose, 'seed_face', lambda font: (None, None)):
+                compose.face('Open Sans', 0, 0, 14)
             self.assertEqual(compose.FALLBACKS, {'Open Sans as arial.ttf'})
         finally:
             compose.FONTDIR = saved[0]
@@ -185,6 +191,97 @@ class TestAnIconFaceIsReadFromItsSeed(unittest.TestCase):
             compose._cache.update(saved[1])
             compose.FALLBACKS.clear()
             compose.FALLBACKS.update(saved[2])
+
+
+class TestAnyFaceIsReadFromTheSeedThatCarriesIt(unittest.TestCase):
+    """No fixture carries Roboto (the Shockwave Start clock), Extron GUI
+    Configurator or Extron GUIC Video Conference 1a, so a spec's preview drew
+    each in Arial and said so. A seed carries each: the renderer reads one
+    from the first seed that does (gdl.fonts.find_face), as it reads an icon
+    face from its family's - and names a stand-in only for a face no seed
+    carries either."""
+
+    def setUp(self):
+        try:
+            from PIL import Image  # noqa: F401
+        except ImportError:
+            self.skipTest('Pillow not installed; compose draws with it')
+        import tempfile
+        from gdl import compose
+        saved = compose.FONTDIR, dict(compose._cache), set(compose.FALLBACKS)
+
+        def restore():
+            compose.FONTDIR = saved[0]
+            compose._cache.clear()
+            compose._cache.update(saved[1])
+            compose.FALLBACKS.clear()
+            compose.FALLBACKS.update(saved[2])
+        self.addCleanup(restore)
+        compose.FONTDIR = tempfile.mkdtemp()
+        compose._cache.clear()
+        compose.FALLBACKS.clear()
+        self.compose = compose
+
+    def test_a_face_no_fixture_carries_is_drawn_from_a_seed(self):
+        from gdl.seeds import usable
+        if not usable('seeds/Shockwave 1035.gdl'):
+            self.skipTest('seeds/Shockwave 1035.gdl is not pulled from Git LFS here')
+        for family in ('Roboto', 'Extron GUIC Video Conference 1a'):
+            f = self.compose.face(family, 0, 0, 30)
+            self.assertEqual(f.getname()[0], family)
+            self.assertIsNotNone(self.compose.advances(f))
+        self.assertEqual(self.compose.FALLBACKS, set())
+
+    def test_a_face_no_seed_carries_is_named_as_its_stand_in(self):
+        import shutil
+        from unittest import mock
+        src = os.path.join(self.saved_fontdir(), 'arial.ttf')
+        if not os.path.exists(src):
+            self.skipTest('the faces are not recovered here')
+        shutil.copy(src, os.path.join(self.compose.FONTDIR, 'arial.ttf'))
+        with mock.patch.object(self.compose, 'seed_face', lambda font: (None, None)):
+            self.compose.face('Segoe UI', 0, 0, 14)
+        self.assertEqual(self.compose.FALLBACKS, {'Segoe UI as arial.ttf'})
+
+    def test_a_family_recovered_here_is_never_looked_for_in_a_seed(self):
+        """Arial's bold has no file anywhere here, and stands in as the
+        recovered Arial, as before: parsing a seed for the Arial already here
+        would cost seconds for the same face."""
+        import shutil
+        from unittest import mock
+        src = os.path.join(self.saved_fontdir(), 'arial.ttf')
+        if not os.path.exists(src):
+            self.skipTest('the faces are not recovered here')
+        shutil.copy(src, os.path.join(self.compose.FONTDIR, 'arial.ttf'))
+
+        def seed_face(font):
+            raise AssertionError(f'looked for {font} in a seed')
+        with mock.patch.object(self.compose, 'seed_face', seed_face):
+            self.compose.face('Arial', 1, 0, 14)
+        self.assertEqual(self.compose.FALLBACKS, {'Arial as arial.ttf'})
+
+    @staticmethod
+    def saved_fontdir():
+        from gdl import fonts
+        return fonts.FONTDIR
+
+
+class TestASeedFace(unittest.TestCase):
+    """gdl.fonts.seed_face, which needs no Pillow: an icon face from its
+    family's 1035 seed, any other from the first seed that carries it."""
+
+    def test_a_face_that_is_no_icon_face_comes_from_the_seed_that_carries_it(self):
+        from gdl import fonts
+        from gdl.seeds import usable
+        if not usable('seeds/Mach 1035.gdl'):
+            self.skipTest('seeds/Mach 1035.gdl is not pulled from Git LFS here')
+        data, where = fonts.seed_face('Extron GUI Configurator')
+        self.assertEqual(where, 'seeds/Mach 1035.gdl')
+        self.assertIn(data[:4], SFNT_MAGIC)
+
+    def test_a_face_no_seed_carries_is_none(self):
+        from gdl import fonts
+        self.assertEqual(fonts.seed_face('No Such Face'), (None, None))
 
 
 class TestASmallFaceIsRecovered(unittest.TestCase):

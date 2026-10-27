@@ -219,12 +219,22 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   menu bar's Volume Up and Down (8120, 8121), its settings opener (8040) and
   Shockwave's and Turbulence's Display Control (8115) are derived - the 1035
   draws none - and keep the seed's ID where no canvas control has it, rather
-  than one from 50001. So does the 320's (`docs/claude-design.md` §3): its
+  than one from 50001. A hub draws its menu bar on every working page, and
+  Volume Up and Down, doing one thing on each, are one control there: one ID
+  on every page - the seed's, or where a canvas control holds it (Afterburn's
+  mode launcher, 8120) one from 50001. The settings opener and Display
+  Control open each page's own window (`_one_name_each`), which the map
+  refuses one ID for, so each page's is its own: the seed's on the first
+  working page in the canvas's order, one from 50001 on the others. So does the 320's (`docs/claude-design.md` §3): its
   title strips (6075 on Main, 6008 on a source's first page, 6009 on a
   later one), More (8010), Back (8011), the Volume modal's glyphs (7023,
   7026) and Cancel (8001) and the empty state's lines (6060 to 6062) - each
-  seed ID on the first control that carries it, by page and name, the rest
-  from 50001. What the 1035 draws too (a source's `<name> Title`, the
+  seed ID on the first control that carries it, in name order, the rest
+  from 50001. Each page's More and Back go to pages of their own, so they
+  are as many controls - one in the frame's `ids` would give every page's
+  one ID doing several things, which the map refuses - and the template
+  has one of each, its Doc Cam's: which of a room's keeps it is the first
+  in name order, not a place the template gives it. What the 1035 draws too (a source's `<name> Title`, the
   question's Power Down and Cancel) has one ID on every panel, from 50001,
   not the 320 seed's (the question's 9028 and 9029). The Volume modal's
   level has the template's glyphs over and under it, not Up and Down: the

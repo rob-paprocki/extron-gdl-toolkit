@@ -76,6 +76,11 @@ like Extron Control for Web. Extron ships six templates for it (Afterburn / Mach
 / Shockwave × ECP 16-9 and ECP 16-10), and the wizard offers only those three
 themes when ECP is the panel type.
 
+The ECP 1280 × 800 canvas has no DPI of its own here: its touch-target and
+type-floor gates reuse the 1920 × 1080 canvas's 220 DPI (extrapolated - not
+read off an Extron document or a built 1280 × 800 file), so the 78 × 78 px
+touch minimum on it is ours.
+
 **A soft client's canvas is a choice, not a property**, and so is which way up
 one of the panels that rotate (below) is: for both, the wizard adds a
 *Resolution* dropdown once the panel type is chosen. Every other row in this
@@ -84,8 +89,9 @@ table is one fixed resolution. Each soft client's presets are in
 `MODELS_FULL` carries 1920 × 1080 because that is what `GetDefaultResolutionDpi`
 reports, but that is a default, not a constraint of the panel type. The real
 list, read from a built project's `Platform.SupportedResolutions` (this
-toolkit's `spec.sizes` knows 1920 × 1080 alone, so a spec at any other ECP size
-is refused until the table carries them):
+toolkit's `spec.sizes` knows the two TouchLink presets, 1920 × 1080 and
+1280 × 800 - the second panel is `VTLPEcp-1280x800` - so a spec at any other
+ECP size is refused until the table carries them):
 
 | Preset | Canvas |
 |---|---|
@@ -245,8 +251,13 @@ palette, borders and fonts a `.glt` template or `.gdl` project actually uses.
 `extract()` is validated against the one theme that can be: run on
 `Afterburn 1020 Series.glt` it returns `#BABCCE`, `#37394E`, `#242634` and
 `#6A6E89` — every one in the published guide, and nothing spurious — without
-reading the guide. So it can be trusted on the three undocumented themes, and on
-a client's own house style read off a panel they already have.
+reading the guide. It reads control fills, strokes, borders and fonts, and only
+those: on Mach, whose look is photographs, it reports the translucent scrim as
+the top fill and reads no photograph, so it does not give Mach's palette. It has
+been checked on Afterburn alone: elsewhere it is a report of the control fills
+a project uses, to read beside the template, and not a theme. Mach's,
+Shockwave's and Turbulence's palettes in `gdl/designsys/` are surveyed off
+their seeds instead.
 
 ### The Afterburn color system — fully encodable
 

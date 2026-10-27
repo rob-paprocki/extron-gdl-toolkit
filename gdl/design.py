@@ -49,6 +49,17 @@ CHROME = (r'C:\Program Files\Google\Chrome\Application\chrome.exe',
           '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
           '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser')
 
+
+
+def sandbox_flags():
+    """['--no-sandbox'] only when $GDL_CHROME_NO_SANDBOX is set, else [].
+    Chrome refuses its sandbox where it cannot make a user namespace (a root
+    shell, a container, a CI runner whose image forbids it) and then renders
+    nothing, so a run there opts out explicitly; a desktop run keeps the
+    sandbox, which is what protects it from the page it is laying out."""
+    return ['--no-sandbox'] if os.environ.get('GDL_CHROME_NO_SANDBOX') else []
+
+
 # What each kind carries into the spec, beyond kind, name and rect.
 FIELDS = {
     'button': ('id', 'text', 'fill', 'stroke', 'color', 'border', 'size', 'bold', 'align',
@@ -56,18 +67,25 @@ FIELDS = {
     # A label's `fill` and `border`: the field it paints itself (the dialer's).
     'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does', 'derived', 'fill', 'border'),
     'panel': ('fill', 'stroke', 'border', 'derived'),
-    'line': ('fill', 'thickness', 'from', 'to'),
+    # A line's `derived`: one a region draws (Afterburn's Header Divider, on
+    # the panels whose template draws it).
+    'line': ('fill', 'thickness', 'from', 'to', 'derived'),
     # A slider's `joined`: the right rail's volume group, heading, slider and
     # Mute, is one set as the template stands it (gdl.spec's gap rule).
     'slider': ('id', 'fill', 'border', 'orientation', 'track', 'thumb', 'thumb_height', 'does', 'joined'),
     'level': ('id', 'fill', 'border', 'orientation', 'track', 'bar', 'does'),
-    'datetime': ('color', 'size', 'bold', 'align', 'format'),
+    # A clock's `derived`: one a region draws as its panel's template does
+    # (Afterburn's Footer: the 1035's date and time apart, the 725's one) is
+    # that panel's chrome, which no other panel need carry.
+    'datetime': ('color', 'size', 'bold', 'align', 'format', 'derived'),
     'popup_ref': ('group', 'derived'),
     # The template's own art (bundle.js's Image, and the art a region draws:
     # Turbulence's bars, a source's device picture), by its kit file.
     'image': ('image', 'layout', 'fill', 'derived'),
 }
 COLOR_KEYS = ('fill', 'stroke', 'color', 'bar')
+# Derived kinds no program addresses, which take no ID (pin_ids).
+NO_ID = ('datetime', 'line')
 # The kinds a program addresses by ID (gdl.idmap): those a seed ID is kept on.
 ID_KINDS = ('button', 'label', 'slider', 'level')
 STATE_LOOK = ('fill', 'stroke', 'color', 'text', 'border', 'image')
@@ -118,11 +136,39 @@ PROBE = r"""
     rg.selectNodeContents(el);
     return rg.getBoundingClientRect().height > box.height + s * line / 2;
   }
-  function done() {
+  // The face the page is set in: waited for, then measured. A face that
+  // never arrives (no network to Google Fonts, no link in the helmet) leaves
+  // Arial, 5% narrower, and the layout was fitted to that - said, not silent.
+  // Present is told by width, not by the FontFace API, which answers true for
+  // a family it holds no face for: the family set against a bare monospace.
+  function settle() {
+    var pages = document.querySelectorAll('[data-gdl]');
+    var fam = null;
+    for (var p of pages) {
+      var k = JSON.parse(p.getAttribute('data-gdl')).kind;
+      if (k === 'page' || k === 'popup') {
+        fam = (getComputedStyle(p).fontFamily.split(',')[0] || '').replace(/["']/g, '').trim();
+        break;
+      }
+    }
+    var fs = document.fonts;
+    if (!fam || !fs || !fs.load) return done(null);
+    var want = ['400 16px "' + fam + '"', '700 16px "' + fam + '"'];
+    var ctx = document.createElement('canvas').getContext('2d');
+    function width(face, w) { ctx.font = w + ' 16px ' + face; return ctx.measureText('mmmmmmmmmmlli').width; }
+    var stop = new Promise(function (res) { setTimeout(res, 4000); });
+    var loading = Promise.all(want.map(function (w) { return fs.load(w).catch(function () {}); })).then(function () { return fs.ready; });
+    Promise.race([loading, stop]).then(function () {
+      var here = [400, 700].every(function (w) { return width('"' + fam + '", monospace', w) !== width('monospace', w); });
+      done({ family: fam, loaded: here });
+    }, function () { done({ family: fam, loaded: false }); });
+  }
+  function done(font) {
     var pages = document.querySelectorAll('[data-gdl]');
     var page = null;
     for (var p of pages) { var k = JSON.parse(p.getAttribute('data-gdl')).kind; if (k === 'page' || k === 'popup') { page = p; break; } }
     var out = { pages: 0, controls: [], stray: [], parts: [], problems: [], warnings: [] };
+    if (font) out.font = font;
     for (var p of pages) { var k = JSON.parse(p.getAttribute('data-gdl')).kind; if (k === 'page' || k === 'popup') out.pages++; }
     // What the components found they could not lay out on this panel.
     for (var q of document.querySelectorAll('[data-gdl-problem]')) out.problems.push(q.getAttribute('data-gdl-problem'));
@@ -176,7 +222,7 @@ PROBE = r"""
   var n = 0, last = -1;
   var t = setInterval(function () {
     var k = document.querySelectorAll('[data-gdl]').length;
-    if ((k && k === last) || ++n > 80) { clearInterval(t); done(); }
+    if ((k && k === last) || ++n > 80) { clearInterval(t); settle(); }
     last = k;
   }, 100);
 })();
@@ -220,8 +266,8 @@ def render(board_path, chrome, size, timeout=90, panel=None):
         fh.write(src.replace('</body>', PROBE + '</body>', 1))
     try:
         r = subprocess.run(
-            [chrome, '--headless=new', '--disable-gpu', '--allow-file-access-from-files',
-             '--virtual-time-budget=15000', f'--window-size={size[0]},{size[1]}',
+            [chrome, '--headless=new', '--disable-gpu', *sandbox_flags(),
+             '--allow-file-access-from-files', '--virtual-time-budget=15000', f'--window-size={size[0]},{size[1]}',
              '--enable-logging=stderr', '--v=0', '--dump-dom',
              'file:///' + os.path.abspath(probe).replace('\\', '/').lstrip('/')],
             capture_output=True, text=True, encoding='utf-8', errors='replace',
@@ -301,6 +347,11 @@ def pin_runtime(path, seen, suite=None):
 
 class Canvas:
     """A canvas folder, read and laid out."""
+
+    # What is true of the canvas, not of a panel's layout of it: `_spec` runs
+    # once per panel, so it files these here ({kind: {text: None}}, in order)
+    # for translate_panels to say once. None outside translate_panels.
+    _shared = None
 
     def __init__(self, folder, chrome=None):
         self.folder = folder
@@ -391,6 +442,7 @@ class Canvas:
         # there was drawn so.
         drawn = next(iter(rendered.values()), {})
         self._known = None
+        self._shared = {'problems': {}, 'notes': {}}
         for m, boards in rendered.items():
             self.problems, self.notes = [], []
             spec, probs, nts = self._spec(boards)
@@ -413,6 +465,15 @@ class Canvas:
             problems[key] = [f'{key}: {q}' if key else q for q in probs]
             notes[key] = [f'{key}: {q}' if key else q for q in nts]
             specs[key] = spec
+        # The canvas's own, said once, on the first panel and under the canvas's
+        # name: it is the same on every panel, so a panel's prefix would blame
+        # that panel for it.
+        shared, self._shared = self._shared, None
+        canvas = os.path.basename(os.path.normpath(self.folder)) if self.folder else 'the canvas'
+        first_key = next(iter(specs), None)
+        if first_key is not None:
+            problems[first_key] += [f'{canvas}: {x}' for x in shared['problems']]
+            notes[first_key] += [f'{canvas}: {x}' for x in shared['notes']]
         # Before the IDs are pinned, which number unnamed controls by kind.
         for model, q in lines_everywhere(specs, self._seed_has_line).items():
             notes[model] += [f'{model}: {x}' if model else x for x in q]
@@ -421,8 +482,13 @@ class Canvas:
         if previous is not None and specs.get(first) is not None:
             notes[first] += [f'{first}: {x}' if first else x for x in revision_notes(specs[first], previous)]
         if not any(problems.values()) and all(v is not None for v in specs.values()):
+            carried = {(model, it['name'], c['name']): c['id'] for model, spec in specs.items()
+                       for it in spec['pages'] + spec['popups'] for c in it['controls']
+                       if c.get('derived') and c.get('name') and c.get('id')}
             for model, q in pin_ids(specs, list(specs), previous).items():
                 problems[model] += [f'{model}: {x}' if model else x for x in q]
+            for model, q in _yielded(specs, carried).items():
+                notes[model] += [f'{model}: {x}' if model else x for x in q]
             # Before `_host` goes: a hub's window is its page's.
             if previous is not None:
                 retired = {r['id'] for r in specs[first].get('_retired') or []}
@@ -516,12 +582,20 @@ class Canvas:
                                 'keeps - rename it, or Build refuses the duplicate')
 
     # -- building the spec ---------------------------------------------------
+    def _say(self, kind, text):
+        """A problem or note about the canvas itself: once, by translate_panels,
+        which runs `_spec` for each panel; at once in `translate`."""
+        if self._shared is not None:
+            self._shared[kind][text] = None
+        else:
+            getattr(self, kind).append(text)
+
     def _spec(self, rendered):
         problems, notes = self.problems, self.notes
         profile, scheme, first, names_first = None, None, {}, None
         art = {}
         pages, popups, names, start = [], [], {}, None
-        stems = {}
+        stems, unloaded = {}, set()
         for b in self.boards():
             out = rendered[b]
             for e in out.get('errors') or []:
@@ -533,8 +607,20 @@ class Canvas:
             pg = json.loads(out['page']['gdl'])
             for q in out.get('problems') or []:
                 problems.append(f'{b}: {q}')
+            for m in sorted({m for m in pg.get('panels') or [] if pg['panels'].count(m) > 1}):
+                self._say('problems', f'{b}: lists the panel {m} twice - name each panel once')
             for q in out.get('warnings') or []:
                 notes.append(f'{b}: {q}')
+            face = out.get('font')
+            if face and not face.get('loaded') and face['family'] not in unloaded:
+                # The layout allows for the fallback (the bundle measures
+                # captions 5-6% wide) but cannot wait for the face, which loads
+                # after the components measure.
+                unloaded.add(face['family'])
+                self._say('notes', f"{b}: {face['family']} did not load in this render (no network to Google "
+                          f"Fonts, or no link in the artboard's helmet), so captions were measured in "
+                          f"the fallback face, narrower than {face['family']} - the layout allows for "
+                          f"that, but a caption that only just fits is not proof it fits on the panel")
             if profile is None:
                 profile = self._profile(pg.get('template'))
                 self.template = profile['template']
@@ -747,8 +833,13 @@ class Canvas:
         # rest. Background images are the themes'; button images the kit's.
         files = {th['image']: th['file'] for th in designsys.themes(profile)
                  if th.get('image') and th.get('file')}
-        # A panel's own background art, named by its Page.
+        # A panel's own background art, named by its Page - and by a window's
+        # Background image, which carries where its art is (`_file`).
         files.update(art)
+        for item in pages + popups:
+            for c in item['controls']:
+                if c.get('_file'):
+                    files.setdefault(c['image'], c.pop('_file'))
         used = {pg['background_image'] for pg in pages + popups if pg.get('background_image')}
         buttons = {s['image'] for item in pages + popups for c in item['controls']
                    for s in c.get('states') or [] if isinstance(s, dict) and s.get('image')}
@@ -875,6 +966,10 @@ class Canvas:
             c['_seed_id'] = g['seed_id']
         if kind == 'button' and g.get('mirror'):
             c['_mirror'] = str(g['mirror'])
+        # Where an image's art is, where it is no kit's (a window's Background,
+        # the page's own background art on Afterburn): the spec's `images`.
+        if kind == 'image' and g.get('file'):
+            c['_file'] = str(g['file'])
         if kind == 'button':
             for m in g.get('missing_icon') or []:
                 size, icon = m.split(' ', 1)
@@ -884,6 +979,11 @@ class Canvas:
                 # read as drawing another icon.
                 ex = ((self._profile(self.template).get('kit') or {}).get('extract')
                       if self.template else None)
+                # Where the extract takes only some files (`only`), only an
+                # icon of their size may be one of them: Afterburn's is its
+                # hub's 756x688 tiles, and its 440x440 kit is all installed.
+                if ex and ex.get('only') and not any(str(f).startswith(size + '_') for f in ex['only']):
+                    ex = None
                 self.problems.append(f"{where}: icon {icon!r} is not in {self.template}'s "
                                      f'{size} kit'
                                      + (f' - where its art comes out of Extron\'s files, run `python -m '
@@ -1153,6 +1253,9 @@ def lines_as_shapes(spec):
             shape = {'kind': 'panel', 'rect': c['rect'], 'fill': c.get('fill'), 'border': 'none'}
             if c.get('name'):
                 shape['name'] = c['name']
+            # One a region drew (Afterburn's Header Divider) stays its panel's.
+            if c.get('derived'):
+                shape['derived'] = True
             item['controls'][i] = shape
             who = f"{item['name']!r} {c['name']}" if c.get('name') else repr(item['name'])
             notes.append(f"{who}: a Line, built as a filled shape - a panel's seed has no line to clone")
@@ -1223,6 +1326,11 @@ def _collisions(drawn, laid):
     Shockwave 720, the huddle's clock box ran 6 px into Help and nothing said
     whether its date did.
 
+    A label set in the tile it captions (`caption_of`: Afterburn 520's hub
+    sets its sources' names in their tiles' feet, over art that draws none -
+    Streaming's at 18 pt a few px wider than its tile) is that tile's words,
+    not words run into it; the tiles beside it are held against them.
+
     A Group's cells, where it pages them, are a popup over the page in its
     region (a part of kind popup), reported in the popup's own coordinates:
     they are held against the page's in the page's, and two popups of one
@@ -1245,7 +1353,7 @@ def _collisions(drawn, laid):
             dx, dy = (d['rect'][0], d['rect'][1]) if d and d.get('kind') == 'popup' else (0, 0)
             r = c['rect']
             cs.append((name, g.get('kind'), p, d, [r[0] + dx, r[1] + dy, r[2], r[3]],
-                       _ink(c, g, dx, dy) if c.get('text_rect') else None))
+                       _ink(c, g, dx, dy) if c.get('text_rect') else None, g.get('caption_of')))
 
         def together(p1, d1, p2, d2):
             if p1 == p2:
@@ -1259,11 +1367,11 @@ def _collisions(drawn, laid):
             return d1 is None or d2 is None or d1.get('group') != d2.get('group')
 
         found = {}
-        for i, (n1, _, p1, d1, _, t1) in enumerate(cs):
+        for i, (n1, _, p1, d1, _, t1, of) in enumerate(cs):
             if not t1:
                 continue
-            for j, (n2, k2, p2, d2, r2, t2) in enumerate(cs):
-                if j == i or not together(p1, d1, p2, d2):
+            for j, (n2, k2, p2, d2, r2, t2, _) in enumerate(cs):
+                if j == i or not together(p1, d1, p2, d2) or (of and n2 == of):
                     continue
                 if k2 in TOUCH:
                     deep = _meet(t1, r2)
@@ -1419,7 +1527,12 @@ def pin_ids(specs, order, previous=None):
     its container and name, the same on every panel it is on - or the ID it
     carries, where it carries one on every panel it is on and no canvas
     control has it: a hub's Volume Up and Down and its settings opener are
-    chrome the 1035 does not draw, and keep the hub's own seed IDs.
+    chrome the 1035 does not draw, and keep the hub's own seed IDs. A seed ID
+    goes to the first control that carries it in name order - of copies of
+    one name (a hub's Settings on each working page), the first the canvas
+    draws - except that a name drawn on several pages, carrying one seed ID
+    and doing one thing on each - a hub's Volume Up and Down on every working
+    page - is one control, with one ID on all of them.
     A region page's fixed chrome (`_seed_id`: the Footer's Help, Power and
     mode launcher, the RightRail's Volume and Mute) keeps the template's seed
     ID on every page that draws it, where it has no ID of its own and no
@@ -1591,20 +1704,54 @@ def pin_ids(specs, order, previous=None):
                 f"canvas - a program addressing {c['id']} would reach both; give it another")
     # A mirror the layout drew (`_mirror`: Shockwave's tab twin) has its
     # control's ID, not one of its own.
+    # A clock or a line has no ID to give.
     derived = sorted({(it['name'], c['name']) for spec in specs.values()
                       for it in spec['pages'] + spec['popups'] for c in it['controls']
-                      if c.get('derived') and c.get('name') and not c.get('_mirror')})
+                      if c.get('derived') and c.get('name') and not c.get('_mirror') and c['kind'] not in NO_ID})
     did, n = {}, DERIVED_IDS
-    carried = {}
-    for spec in specs.values():
-        for it in spec['pages'] + spec['popups']:
+    # `at`: where each is first drawn - its page's place in the first panel's
+    # spec, in the panels' order, that draws it - which decides which of
+    # several keeps a seed ID only one can have.
+    carried, does, at = {}, collections.defaultdict(set), {}
+    for si, spec in enumerate(specs.values()):
+        for pi, it in enumerate(spec['pages'] + spec['popups']):
             for c in it['controls']:
-                if c.get('derived') and c.get('name') and not c.get('_mirror'):
+                if c.get('derived') and c.get('name') and not c.get('_mirror') and c['kind'] not in NO_ID:
                     carried.setdefault((it['name'], c['name']), set()).add(c.get('id'))
+                    does[(it['name'], c['name'])].add((json.dumps(c.get('nav')), c.get('does')))
+                    at.setdefault((it['name'], c['name']), (si, pi))
     canvas_ids = set(ids.values())
+    # A name the layout draws in several pages or popups, doing one thing in
+    # each and carrying one seed ID - a hub's Volume Up and Down on every
+    # working page - is one control a program drives from any of them, as the
+    # chrome pinned above is: it takes one ID on all of them, that seed ID
+    # where it is free, else one number. Keyed by page alone, the first page
+    # in name order kept the seed's and each other took one of its own: round
+    # four's Afterburn 525 had Volume Down 8121 on Call and 50057 on Main SD.
+    # A copy that carries none is that control where it does the same (round
+    # four's Afterburn Start steps the room's Volume with Up and Down of its
+    # own level). One that opens each page's own window - a hub's Settings,
+    # its page's options: the ID map refuses one ID doing two things - is each
+    # page's, and the seed's ID the first page's in the canvas's order, the
+    # page the room is drawn from, not the first in the alphabet.
+    alike = collections.defaultdict(list)
+    for k in carried:
+        alike[(k[1], frozenset(does[k]))].append(k)
+    one = {}
+    for cls, ks in alike.items():
+        if len(ks) > 1 and len(set().union(*(carried[k] for k in ks)) - {None}) == 1:
+            one.update((k, cls) for k in ks)
+
+    def free_for(k, i):
+        """Whether derived ID `i` may be `k`'s: no other derived control has
+        it, or only copies of the one control `k` is (`one`)."""
+        holders = [kk for kk, v in did.items() if v == i]
+        return not holders or k in one and all(one.get(kk) == one[k] for kk in holders)
+
     # What a layout added is numbered in name order, so one added since - a
     # page's Back sorting ahead of another's - renumbered every one after it:
-    # what the previous map knew keeps its ID first.
+    # what the previous map knew keeps its ID first - two pages' of one name
+    # each its own where the map gave them two.
     for k in derived:
         was = known_derived.get(k)
         if was is None:
@@ -1613,16 +1760,36 @@ def pin_ids(specs, order, previous=None):
             holder = next(f'{h!r} {nm}' for (h, nm), v in ids.items() if v == was)
             problems[order[0]].append(f'{holder}: its ID {was} is the one the previous map gave {k[0]!r} '
                                       f'{k[1]}, which a panel still draws - give it another')
-        elif was not in did.values():
+        elif free_for(k, was):
             did[k] = was
-    for k in derived:
-        own = carried.get(k, set())
+    for k0 in derived:
+        own = carried.get(k0, set())
         cid = next(iter(own)) if len(own) == 1 else None
-        if k not in did and cid is not None and cid not in canvas_ids and cid not in did.values() \
-                and cid not in held:
+        if k0 in did or cid is None:
+            continue
+        # In name order, as ever - but of the copies of one name carrying
+        # that seed ID (a hub's Settings on each working page), the first
+        # drawn takes it, not the first in the alphabet. Controls of other
+        # names keep the order they had (the 320's More and Back, a page's
+        # own each), so a canvas with one working page numbers as it did.
+        k = min((kk for kk in derived if kk[1] == k0[1] and kk not in did and carried.get(kk) == own),
+                key=lambda kk: (at.get(kk, (len(specs), 0)), kk))
+        # One the previous map held is not free, unless it gave it a copy of
+        # the one control this is (`one`): this one, on a page drawn since.
+        mine = cid in held and k in one and str(held[cid]).split(' / ', 1)[-1] == k[1]
+        if cid not in canvas_ids and free_for(k, cid) and (cid not in held or mine):
             did[k] = cid
+            # Its other copies, where they are that one control.
+            for kk in derived:
+                if kk not in did and kk in one and one.get(kk) == one.get(k) and carried.get(kk) == own:
+                    did[kk] = cid
     for k in derived:
         if k in did:
+            continue
+        # A copy of one control takes the number its first copy took.
+        mate = next((v for kk, v in did.items() if k in one and one.get(kk) == one[k]), None)
+        if mate is not None:
+            did[k] = mate
             continue
         while n in taken:
             n += 1
@@ -1658,8 +1825,8 @@ def pin_ids(specs, order, previous=None):
                     continue
                 if c.get('derived'):
                     # A derived copy of an unnamed card has nothing to key an
-                    # ID by, and a shape needs none.
-                    if c.get('name'):
+                    # ID by, and a shape needs none; a clock or a line takes none.
+                    if c.get('name') and c['kind'] not in NO_ID:
                         c['id'] = did[(it['name'], c['name'])]
                     continue
                 if not c.get('name') and c['kind'] in ('button', 'label', 'slider', 'level') and len(specs) > 1:
@@ -1692,6 +1859,28 @@ def pin_ids(specs, order, previous=None):
             if previous.get('_sha256'):
                 spec['_previous'] = previous['_sha256']
     return problems
+
+
+def _yielded(specs, carried):
+    """{panel: [notes]} - each control a panel's layout added whose
+    template's own ID a canvas control has, which pin_ids gives a fresh one:
+    Afterburn's 520 Volume Up is 8120, which its 1035's mode launcher is, and
+    the launcher - the room's own, on every panel - keeps it."""
+    holders = {}
+    for spec in specs.values():
+        for it in spec['pages'] + spec['popups']:
+            for c in it['controls']:
+                if not c.get('derived') and c.get('id') and c.get('name'):
+                    holders.setdefault(c['id'], f"{it['name']!r} {c['name']}")
+    out = {}
+    for (model, item, name), was in sorted(carried.items()):
+        spec = specs[model]
+        c = next((c for it in spec['pages'] + spec['popups'] if it['name'] == item
+                  for c in it['controls'] if c.get('derived') and c.get('name') == name), None)
+        if c is not None and c.get('id') != was and was in holders:
+            out.setdefault(model, []).append(
+                f"{item!r} {name} takes {c['id']}: its template's {was} is {holders[was]}, which keeps it")
+    return out
 
 
 def revision_notes(spec, previous):
@@ -1852,8 +2041,8 @@ def write_panels(specs, out_dir):
 def screenshot(board_path, chrome, size, png, timeout=90):
     """The artboard as the designer sees it, at its own size."""
     subprocess.run(
-        [chrome, '--headless=new', '--disable-gpu', '--allow-file-access-from-files',
-         '--hide-scrollbars', '--virtual-time-budget=15000',
+        [chrome, '--headless=new', '--disable-gpu', *sandbox_flags(),
+         '--allow-file-access-from-files', '--hide-scrollbars', '--virtual-time-budget=15000',
          f'--window-size={size[0]},{size[1]}', f'--screenshot={os.path.abspath(png)}',
          'file:///' + os.path.abspath(board_path).replace('\\', '/').lstrip('/')],
         capture_output=True, timeout=timeout)
@@ -2007,7 +2196,10 @@ def compare(folder, built, out_dir, chrome=None, notes=None):
         name = json.loads(out['page']['gdl']).get('name') if out.get('page') else None
         design_png = os.path.join(out_dir, f'{stem}-design.png')
         screenshot(path, canvas.chrome, size, design_png)
-        _pair(rows, scores, out_dir, stem, name or b, design_png, b_.image(name, size) if name else None)
+        img = b_.image(name, size) if name else None
+        _pair(rows, scores, out_dir, stem, name or b, design_png, img)
+        if img is None and notes is not None:
+            notes.append((name or b, 'the built file has no page of that name'))
     body = ''.join(f'<section>{_cells([r])}</section>' for r in rows)
     with open(os.path.join(out_dir, 'index.html'), 'w', encoding='utf-8') as fh:
         fh.write(_page(canvas.index.get('title') or 'Panel', body))
@@ -2169,6 +2361,300 @@ def template_counterparts(frame):
     return out
 
 
+REGION_BANDS = ('top', 'left', 'right', 'bottom', 'center')
+# A scaled panel's layout comes back in whole pixels: a slot the frame puts at
+# 715,356 59x60 can come out 59x59. That much is no drift.
+REGION_SLACK = 1
+
+
+def _overlap(a, b):
+    """Intersection over union of two [x, y, w, h] rects."""
+    x0, y0 = max(a[0], b[0]), max(a[1], b[1])
+    x1, y1 = min(a[0] + a[2], b[0] + b[2]), min(a[1] + a[3], b[1] + b[3])
+    inter = max(0, x1 - x0) * max(0, y1 - y0)
+    return inter / float(a[2] * a[3] + b[2] * b[3] - inter) if inter else 0.0
+
+
+def _scored_bands(frame):
+    """`frame` in the bands its regions draw from, each slot in one of them.
+    An art-chrome series' (Afterburn's) is designsys._squircle_bands', whose
+    Header takes the Divider and whose Footer the foot row - which the frame
+    also keeps as items of `center` and `left`, where the components do not
+    draw them: scored there too, the mode launcher was missing from one band
+    and the Preview the Footer leaves out was matched to a source's tab. A
+    line's slot is the band it draws: every template divider is a 2 px
+    PBLine from MiddleLeft to MiddleRight (or TopCenter to BottomCenter)
+    through its box's middle - the 1035's Divider at 137 in a 20 px box
+    draws at 146 - and its box is not its place."""
+    out = designsys._squircle_bands(frame)
+    if out is not frame and out:
+        moved = {(it.get('role'), tuple(it['rect'])) for b in ('top', 'bottom')
+                 for it in (out.get(b) or {}).get('items') or ()}
+        for b in ('left', 'center', 'right'):
+            band = out.get(b)
+            if band and band.get('items'):
+                out[b] = dict(band, items=[it for it in band['items']
+                                           if (it.get('role'), tuple(it['rect'])) not in moved])
+    out = dict(out)
+    for b in REGION_BANDS:
+        band = out.get(b)
+        if band and any(it.get('kind') == 'line' for it in band.get('items') or ()):
+            out[b] = dict(band, items=[dict(it, rect=_line_band(it['rect'])) if it.get('kind') == 'line' else it
+                                       for it in band['items']])
+    return out
+
+
+def _line_band(r, thickness=2):
+    """The band a line through box `r`'s middle draws: level where the box is
+    wider than tall, else upright."""
+    x, y, w, h = r
+    if w >= h:
+        return [x, y + (h - thickness) // 2, w, thickness]
+    return [x + (w - thickness) // 2, y, thickness, h]
+
+
+def region_score(frame, controls, colors=None):
+    """A region page against its template's frame (tests/measure_series.py
+    frame_of; gdl.designsys.models): {band: {worst, rows, missing, art}}.
+
+    `controls` are the page's [(data-gdl, [x, y, w, h])], as `render` gives
+    them. Each slot the frame records is found on the page - fixed chrome by
+    the seed ID it keeps (`seed_id`), the rest by kind where it overlaps most,
+    tabs and a rail's groups by the region they are joined to - and `rows`
+    holds (what, the frame's place, the page's, px): the most any edge moved.
+    A slot found by kind that overlaps nothing of its kind is the nearest of
+    it in its band that no other slot was found at, once every slot that does
+    overlap has its own: moved clear of its place, it is drift by as far as it
+    went, not a slot the page leaves out. A slot under the panel's touch
+    minimum is held to its `legal` rect, as the components grow it. A derived
+    bar is held to its band's depth - as deep as the slots on its edges grow
+    it - and to the screen edge it stands on - its length is what the
+    canvas's own slots leave, four tabs where the template has six - and a
+    surface a source's popup draws is no page's. Two slots of one name in a
+    band are `what` and `what (2)`, so a ledger bound names one. `missing` is
+    what the frame records and the page does not draw - by seed ID, or of its
+    kind anywhere in its band: the canvas's content, not drift. `art` is a
+    surface drawn in another fill or file than the template's; `colors`
+    resolves the page's tokens (Canvas._colors). An art-chrome series' frame
+    (Afterburn's: its tabs in `center`, its foot row `foot`) is scored in the
+    bands its regions draw from (_scored_bands), and a line - its Divider -
+    where it draws: the template's runs through its box's middle, 2 px
+    thick, as the canvas draws it."""
+    frame = _scored_bands(frame)
+    colors = colors or {}
+    used = set()
+    width = max((b['rect'][0] + b['rect'][2] for b in (frame.get(k) for k in REGION_BANDS)
+                 if b and b.get('rect')), default=0)
+    # (band key, band, what, want, ok, found): a kind slot that overlapped
+    # nothing, given the nearest of its kind only after every band's overlaps
+    # are taken, so it cannot take a control another slot stands on.
+    pending = []
+
+    def best(rect, ok):
+        hits = [(_overlap(rect, r), i) for i, (g, r) in enumerate(controls) if i not in used and ok(g)]
+        hits = [h for h in hits if h[0] > 0]
+        return max(hits)[1] if hits else None
+
+    def nearest(band, rect, ok):
+        """The control of the kind `ok` nearest `rect` (px) whose centre is in
+        `band`'s rect, or None."""
+        bx, by, bw, bh = band.get('rect') or (0, 0, 0, 0)
+        hits = [(px(rect, r), i) for i, (g, r) in enumerate(controls) if i not in used and ok(g)
+                and bx <= r[0] + r[2] / 2 < bx + bw and by <= r[1] + r[3] / 2 < by + bh]
+        return min(hits)[1] if hits else None
+
+    def px(a, b):
+        return max(abs(a[i] - b[i]) for i in range(4))
+
+    def argb(v):
+        """A colour as #AARRGGBB, from the page's token or #RRGGBB."""
+        v = colors.get(v, v) if isinstance(v, str) else v
+        if not isinstance(v, str) or not v.startswith('#'):
+            return None
+        return v.upper() if len(v) == 9 else '#FF' + v[1:].upper()
+
+    out = {}
+    for b in REGION_BANDS:
+        band = frame.get(b)
+        if not band:
+            continue
+        rows, missing, art = [], [], []
+        out[b] = {'rows': rows, 'missing': missing, 'art': art}
+        seen = {}
+
+        def named(what, seen=seen):
+            """`what`, or the second of that name in the band `what (2)`: a
+            ledger bound names one slot (Shockwave's header is two Shape1s)."""
+            seen[what] = seen.get(what, 0) + 1
+            return what if seen[what] == 1 else f'{what} ({seen[what]})'
+
+        def take(what, want, i, rows=rows, missing=missing):
+            if i is None:
+                missing.append(what)
+                return
+            used.add(i)
+            rows.append((what, want, controls[i][1], px(want, controls[i][1])))
+
+        def by_kind(what, want, ok, found, b=b, band=band):
+            """`found(i)` of the control of the kind `ok` that overlaps `want`
+            most, or later the nearest in the band (pending)."""
+            i = best(want, ok)
+            if i is None:
+                pending.append((b, band, what, want, ok, found))
+            else:
+                found(i)
+
+        def surface(what, s, i, rows=rows, art=art, band=band):
+            g, r = controls[i]
+            used.add(i)
+            want = s['rect']
+            if g.get('derived'):
+                # The bar holds its band's slots: one standing on its top or
+                # bottom edge that grows to its legal rect there takes the
+                # edge with it (Mach's 725 footer, 57 deep, holds buttons
+                # grown to the touch minimum's 60) - the growth the slot is
+                # allowed, not the bar's drift.
+                y0, y1 = want[1], want[1] + want[3]
+                for it in band.get('items') or []:
+                    lg, ir = it.get('legal'), it['rect']
+                    if lg and ir[1] == want[1]:
+                        y0 = min(y0, lg[1])
+                    if lg and ir[1] + ir[3] == want[1] + want[3]:
+                        y1 = max(y1, lg[1] + lg[3])
+                want = [want[0], y0, want[2], y1 - y0]
+                d = max(abs(want[1] - r[1]), abs(want[3] - r[3]))
+                if want[0] == 0:
+                    d = max(d, abs(r[0]))
+                if want[0] + want[2] == width:
+                    d = max(d, abs(r[0] + r[2] - width))
+            else:
+                d = px(want, r)
+            rows.append((what, want, r, d))
+            if s.get('art'):
+                if (g.get('file') or g.get('image')) != s['art']:
+                    art.append(f"{g.get('name')} is drawn in {g.get('file') or g.get('image')!r}, the "
+                               f"template's {s.get('name')} in {s['art']!r}")
+            elif s.get('fill'):
+                css = s['fill'].upper()
+                theirs = '#' + css[7:9] + css[1:7] if len(css) == 9 else '#FF' + css[1:]
+                mine = argb(g.get('fill'))
+                if mine != theirs:
+                    art.append(f"{g.get('name')} is {mine or g.get('fill')!r}, the template's "
+                               f"{s.get('name')} {theirs}")
+
+        for it in band.get('items') or []:
+            want = it.get('legal') or it['rect']
+            what = named(f"{it.get('role')} {it.get('name')}")
+            i = next((k for k, (g, r) in enumerate(controls)
+                      if it.get('id') and g.get('seed_id') == it['id'] and k not in used), None)
+            if i is None:
+                # A label keeps no seed ID on the page: Mach's Volume Label
+                # (7035) is the page's Volume Heading.
+                by_kind(what, want, lambda g, k=it.get('kind'): g.get('kind') == k,
+                        lambda i, what=what, want=want, take=take: take(what, want, i))
+            else:
+                take(what, want, i)
+        for s in band.get('surfaces') or []:
+            if s.get('popup'):
+                continue
+            what = named(f"surface {s.get('name')}")
+            by_kind(what, s['rect'], lambda g: g.get('kind') in ('panel', 'image'),
+                    lambda i, what=what, s=s, surface=surface: surface(what, s, i))
+        if b == 'top' and band.get('tabs'):
+            tabs = sorted((r[0], k) for k, (g, r) in enumerate(controls) if g.get('joined') == 'region:header')
+            if tabs:
+                take('first tab', band['tabs']['first'], tabs[0][1])
+            if len(tabs) > 1:
+                pitch = controls[tabs[1][1]][1][0] - controls[tabs[0][1]][1][0]
+                rows.append(('tab pitch', band['tabs']['pitch'], pitch, abs(pitch - band['tabs']['pitch'])))
+        if b == 'left':
+            for n, grp in enumerate(band.get('groups') or []):
+                btns = sorted((r[1], k) for k, (g, r) in enumerate(controls)
+                              if g.get('joined') == f'region:left:{n}')
+                for j, fb in enumerate(grp.get('buttons') or []):
+                    if j < len(btns):
+                        take(f'group {n} button {j}', fb.get('legal') or fb['rect'], btns[j][1])
+                if (grp.get('heading') or {}).get('rect'):
+                    want = grp['heading']['rect']
+                    by_kind(f'group {n} heading', want, lambda g: g.get('kind') == 'label',
+                            lambda i, n=n, want=want, take=take: take(f'group {n} heading', want, i))
+        if b == 'center' and band.get('region'):
+            by_kind('popup region', band['region'], lambda g: g.get('kind') == 'popup_ref',
+                    lambda i, want=band['region'], take=take: take('popup region', want, i))
+    for b, band, what, want, ok, found in pending:
+        i = nearest(band, want, ok)
+        if i is None:
+            out[b]['missing'].append(what)
+        else:
+            found(i)
+    for s in out.values():
+        s['worst'] = max((r[3] for r in s['rows']), default=0)
+    return out
+
+
+def region_slots(frame):
+    """{band: [what]}: every slot region_score names on `frame` - the frame
+    drawn as its template draws it and scored against itself - which is what
+    a ledger bound may name (gdl.designsys.audit holds each `what` to it),
+    in the bands region_score scores it in."""
+    frame = _scored_bands(frame)
+    controls = []
+    for b in REGION_BANDS:
+        band = frame.get(b)
+        if not band:
+            continue
+        for it in band.get('items') or []:
+            controls.append(({'kind': it.get('kind'), 'seed_id': it.get('id')}, it.get('legal') or it['rect']))
+        controls += [({'kind': 'panel'}, s['rect']) for s in band.get('surfaces') or [] if not s.get('popup')]
+        tabs = band.get('tabs') if b == 'top' else None
+        if tabs:
+            x, y, w, h = tabs['first']
+            controls += [({'kind': 'button', 'joined': 'region:header'}, [x + n * tabs['pitch'], y, w, h])
+                         for n in range(max(2, tabs.get('count') or 0))]
+        for n, grp in enumerate(band.get('groups') or [] if b == 'left' else []):
+            controls += [({'kind': 'button', 'joined': f'region:left:{n}'}, fb.get('legal') or fb['rect'])
+                         for fb in grp.get('buttons') or []]
+            if (grp.get('heading') or {}).get('rect'):
+                controls.append(({'kind': 'label'}, grp['heading']['rect']))
+        if b == 'center' and band.get('region'):
+            controls.append(({'kind': 'popup_ref'}, band['region']))
+    return {b: [r[0] for r in s['rows']] + s['missing'] for b, s in region_score(frame, controls).items()}
+
+
+def region_bounds(theme, panel):
+    """{(band, what): (px, ledger id)}: how far each slot of a region page may
+    stand from its template's frame on `panel` - the `bounds` the theme's
+    ledger records on its deviations (gdl/designsys/truth/<theme>.json), each
+    one slot's, as far as the region canvas measures it standing off. A slot
+    no deviation names is allowed nothing but REGION_SLACK. The audit lets
+    one entry alone bound a slot; were two to, the wider would stand."""
+    from .designsys import audit
+    out = {}
+    for e in (audit.load_ledger(theme) or {}).get('entries') or []:
+        for bd in e.get('bounds') or ():
+            key = (bd['region'], bd['what'])
+            if panel in bd['panels'] and bd['px'] > out.get(key, (0, None))[0]:
+                out[key] = (bd['px'], e['id'])
+    return out
+
+
+def region_drift(score, bounds):
+    """[problem] of a region_score past what `bounds` (region_bounds) allow:
+    each slot that stands further from the template's place than its own
+    bound and REGION_SLACK, naming the entry that allows it as far as it does,
+    and each surface in another fill or file."""
+    out = []
+    for b, s in score.items():
+        for what, want, got, px in s['rows']:
+            allowed, entry = bounds.get((b, what), (0, None))
+            if px > max(allowed, REGION_SLACK):
+                out.append(f"{b}: {what} stands {px} px from the template's {want} (at {got}); "
+                           + (f'the ledger allows it {allowed} px ({entry})' if entry else
+                              'no deviation the ledger records allows it'))
+        out += [f'{b}: {a}' for a in s['art']]
+    return out
+
+
 def _same_name(built, *names):
     """The built file's page or popup named as one of `names`, letters and
     digits alone and in any case: exactly ('DocCam' is 'Doc Cam'), or as its
@@ -2238,9 +2724,12 @@ def compare_template(folder, out_dir, chrome=None):
     of that role (template_counterparts) - for the designer's critique loop
     (SKILL.md): region by region, what differs from the template that the
     README's Differences does not list is a fix. A free page has no
-    counterpart and stands alone. Writes <out_dir>/index.html, a PNG pair per
-    artboard and panel, and sheet.png, every pair on one sheet; returns
-    [(panel, page, the seed page beside it or None)]."""
+    counterpart and stands alone. A bar panel's working page is scored too
+    (region_score): its label says how many of the frame's slots it draws and
+    whether each is within the ledger's bounds, or each drift. Writes
+    <out_dir>/index.html, a PNG pair per artboard and panel, and sheet.png,
+    every pair on one sheet; returns [(panel, page, the seed page beside it
+    or None)]."""
     canvas = Canvas(folder, chrome)
     if not canvas.chrome:
         raise RuntimeError('no Chrome found - pass --chrome or set CHROME')
@@ -2290,6 +2779,23 @@ def compare_template(folder, out_dir, chrome=None):
                     template_png = os.path.join(sub, f'{stem}-template.png')
                     img.save(template_png)
             label = f"{seed}'s {target[0]}" if target else None
+            if role == 'page' and label and designsys._region_frame(profile) and \
+                    all(_scored_bands(frame or {}).get(b) for b in REGION_BANDS):
+                # The working page scored, not only set beside: each region
+                # against the frame, within what the ledger allows - on a bar
+                # panel, the frames the score is measured on (a hub's and the
+                # 320's have other bands), Afterburn's round its squircle.
+                controls = [(json.loads(c['gdl']), [round(v) for v in c['rect']])
+                            for c in out.get('controls') or []]
+                score = region_score(frame, controls, Canvas._colors(profile, pg.get('scheme')))
+                drift = region_drift(score, region_bounds(profile['template'].lower(), m))
+                # What the page leaves out is its content, not drift - but a
+                # page that draws none of the frame is no page within bounds.
+                drawn = sum(1 for v in score.values() for r in v['rows'] if r[0] != 'tab pitch')
+                slots = drawn + sum(len(v['missing']) for v in score.values())
+                label += (f" - {drawn} of the template's {slots} region slots drawn, "
+                          + ("each within the ledger's bounds" if not drift else
+                             f"{len(drift)} drift(s): " + '; '.join(drift)))
             pairs.append((m, name, target[0] if target else None))
             rows.append((name, design_png, template_png, label))
         size = T.get('size') or canvas._size(boards[0])

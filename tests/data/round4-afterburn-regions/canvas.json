@@ -1,0 +1,138 @@
+{
+ "v": 3,
+ "title": "Boardroom in Afterburn's regions",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1280,
+   "h": 800,
+   "title": "Start",
+   "is_interactive": true
+  },
+  "MainSD.dc.html": {
+   "x": 1360,
+   "y": 0,
+   "w": 1280,
+   "h": 800,
+   "title": "Main SD",
+   "is_interactive": true
+  },
+  "Call.dc.html": {
+   "x": 2720,
+   "y": 0,
+   "w": 1280,
+   "h": 800,
+   "title": "Call",
+   "is_interactive": true
+  },
+  "Help.dc.html": {
+   "x": 4080,
+   "y": 0,
+   "w": 1280,
+   "h": 800,
+   "title": "Help",
+   "is_interactive": true
+  },
+  "LightingSettings.dc.html": {
+   "x": 0,
+   "y": 900,
+   "w": 1280,
+   "h": 800,
+   "title": "Lighting Settings",
+   "is_interactive": true
+  },
+  "CameraSelect.dc.html": {
+   "x": 1360,
+   "y": 900,
+   "w": 1280,
+   "h": 800,
+   "title": "Camera Presets",
+   "is_interactive": true
+  },
+  "AudioSettings.dc.html": {
+   "x": 2720,
+   "y": 900,
+   "w": 1280,
+   "h": 800,
+   "title": "Audio Settings",
+   "is_interactive": true
+  },
+  "PowerDown.dc.html": {
+   "x": 4080,
+   "y": 900,
+   "w": 1280,
+   "h": 800,
+   "title": "Power Down",
+   "is_interactive": true
+  },
+  "PoweringDown.dc.html": {
+   "x": 0,
+   "y": 1800,
+   "w": 1280,
+   "h": 800,
+   "title": "Powering Down",
+   "is_interactive": true
+  },
+  "Laptop.dc.html": {
+   "x": 1360,
+   "y": 1800,
+   "w": 880,
+   "h": 525,
+   "title": "Laptop",
+   "is_interactive": true
+  },
+  "ShareLink.dc.html": {
+   "x": 2720,
+   "y": 1800,
+   "w": 880,
+   "h": 525,
+   "title": "ShareLink",
+   "is_interactive": true
+  },
+  "PC.dc.html": {
+   "x": 4080,
+   "y": 1800,
+   "w": 880,
+   "h": 525,
+   "title": "PC",
+   "is_interactive": true
+  },
+  "DocCam.dc.html": {
+   "x": 0,
+   "y": 2700,
+   "w": 880,
+   "h": 525,
+   "title": "Doc Cam",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "MainSD.dc.html",
+  "Call.dc.html",
+  "Help.dc.html",
+  "LightingSettings.dc.html",
+  "CameraSelect.dc.html",
+  "AudioSettings.dc.html",
+  "PowerDown.dc.html",
+  "PoweringDown.dc.html",
+  "Laptop.dc.html",
+  "ShareLink.dc.html",
+  "PC.dc.html",
+  "DocCam.dc.html"
+ ],
+ "notes": {},
+ "designSystems": [
+  {
+   "title": "Extron Afterburn",
+   "namespace": "extronafterburn",
+   "artifact": null,
+   "version": null
+  }
+ ]
+}

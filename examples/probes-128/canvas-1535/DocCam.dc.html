@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Doc Cam</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&amp;display=swap">
+<style>
+body{margin:0;background:#303030}
+</style>
+</helmet>
+<div style="width: 921px; height: 574px; position: relative">
+<x-import component-from-global-scope="ExtronShockwave.Page" name="DocCam" panels="TLP1535M" kind="popup" group="Sources" role="source" title="Document Camera" style="position: absolute; left: 0px; top: 0px; width: 921px; height: 574px">
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Inputs Heading" align="center" style="position: absolute; left: 132px; top: 130px; width: 106px; height: 57px">Inputs</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Inputs 1" does="Inputs: 1." style="position: absolute; left: 138px; top: 196px; width: 95px; height: 82px">1</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Inputs 2" does="Inputs: 2." style="position: absolute; left: 138px; top: 312px; width: 95px; height: 82px">2</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Inputs 3" does="Inputs: 3." style="position: absolute; left: 138px; top: 428px; width: 95px; height: 82px">3</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Zoom Heading" align="center" style="position: absolute; left: 321px; top: 130px; width: 106px; height: 57px">Zoom</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Zoom In" does="Zoom: In." style="position: absolute; left: 327px; top: 196px; width: 95px; height: 82px">In</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Zoom Out" does="Zoom: Out." style="position: absolute; left: 327px; top: 312px; width: 95px; height: 82px">Out</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Zoom Freeze" does="Zoom: Freeze." style="position: absolute; left: 327px; top: 428px; width: 95px; height: 82px">Freeze</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Focus Heading" align="center" style="position: absolute; left: 504px; top: 130px; width: 106px; height: 57px">Focus</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Focus Far" does="Focus: Far." style="position: absolute; left: 510px; top: 196px; width: 95px; height: 82px">Far</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Focus Near" does="Focus: Near." style="position: absolute; left: 510px; top: 312px; width: 95px; height: 82px">Near</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Focus Auto" does="Focus: Auto." style="position: absolute; left: 510px; top: 428px; width: 95px; height: 82px">Auto</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Label" name="Iris Heading" align="center" style="position: absolute; left: 677px; top: 130px; width: 106px; height: 57px">Iris</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Iris Open" does="Iris: Open." style="position: absolute; left: 683px; top: 196px; width: 95px; height: 82px">Open</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Iris Close" does="Iris: Close." style="position: absolute; left: 683px; top: 312px; width: 95px; height: 82px">Close</x-import>
+<x-import component-from-global-scope="ExtronShockwave.Button" name="Doc Cam Iris Normal" does="Iris: Normal." style="position: absolute; left: 683px; top: 428px; width: 95px; height: 82px">Normal</x-import></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":921,"height":574}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -43,7 +43,21 @@
         "gone": {"type": "array", "items": {"type": "string", "minLength": 1},
                  "description": "Words of the old claim that must no longer appear in the profile or the README."},
         "builds": {"type": "string", "minLength": 1, "description": "What the fix changes in what builds, where it does."},
+        "bounds": {"type": "array", "items": {"$ref": "#/definitions/bound"},
+                   "description": "How far a region page stands from its template's frame because of this deviation, measured by gdl.design.region_score on the theme's region canvas: per slot the frame records, the most any edge of it moves or grows, in px, on the panels named. gdl.design.region_drift allows that slot that much and nothing more, and any other slot nothing; tests/test_design.py holds each bound to what the region canvas measures. Only on a `deviation`."},
         "evidence": {"type": "string", "minLength": 1}
+      }
+    },
+    "bound": {
+      "type": "object",
+      "required": ["region", "what", "px", "panels"],
+      "additionalProperties": false,
+      "properties": {
+        "region": {"type": "string", "enum": ["top", "left", "right", "bottom", "center"]},
+        "what": {"type": "string", "minLength": 1,
+                 "description": "The slot, as gdl.design.region_score names it in its rows and region_slots lists it: an item's role and name ('help Help'), a surface's ('surface Bottom bar', a second of one name 'surface Shape1 (2)'), 'first tab', 'tab pitch', 'group 0 button 1', 'group 0 heading', 'popup region'."},
+        "px": {"type": "integer", "description": "How far the slot stands off, as the region canvas measures it: a positive number."},
+        "panels": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
       }
     },
     "fix": {

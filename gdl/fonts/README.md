@@ -104,11 +104,20 @@ over `seeds/`:
   rather than recovered (below).
 
 Recovering from a seed that embeds a Windows Arial replaces the Monotype
-`arial.ttf` here; the fixtures all embed the Monotype one. So the icon faces
-only the Mach and Shockwave seeds carry - Extron-Lift and Extron-Shockwave - are
-not recovered at all: the renderer and a spec's `icon` read each straight out of
-its family's 1035 seed (`gdl.fonts.seed_face`), and leave this directory alone.
-Arial and Arial Black they read from here, which the fixtures supply. A face is
+`arial.ttf` here; the fixtures all embed the Monotype one. So the faces only
+the seeds carry are not recovered at all: the renderer and a spec's `icon` read
+each straight out of a seed (`gdl.fonts.seed_face`), and leave this directory
+alone - an icon face, Extron-Lift or Extron-Shockwave, out of its family's 1035
+seed; any other out of the first seed that carries it (`gdl.fonts.find_face`):
+Roboto and Extron GUIC Video Conference 1a out of the Shockwave 1035, Extron
+GUI Configurator out of the Mach 1035. That Roboto is Roboto Thin, as most
+Shockwave seeds' `Roboto` resource holds; the 320's, 525's and 535's holds
+Roboto Light, so a spec preview, which knows no donor, draws their clock
+thinner than the panel does - the sign-off draws the built file's own. Segoe
+UI, Segoe UI Semibold and
+FluentSystemIcons-Regular are in Extron's templates and in no seed, so they
+stand in. Arial and Arial Black the renderer reads from here, which the
+fixtures supply. A face is
 drawn in the one build found, whichever build the panel embeds: Extron-Afterburn
 is the kit's, which the 1035 seeds embed, and the 320, 525, 725 and 300M
 Portrait seeds embed one of their own whose glyphs sit 6% of an em higher
@@ -126,13 +135,20 @@ with; the system copy is whatever build the OS happens to ship. Windows' own
 
 ## A missing face is said aloud
 
-`face()` takes a face from its own file recovered here first; then, for an
-icon face no recovery put here, from its family's seed (above); then from a
-stand-in - the recovered Arial, after a partial recovery, or the host's copy of
-the face or of Arial - and raises `LookupError` only when none has it. On a host
+`face()` takes a face from its own file recovered here first; then, for a
+family no recovery put here at all, from a seed (above); then from a stand-in -
+the recovered Arial, after a partial recovery, or the host's copy of the face or
+of Arial - and raises `LookupError` only when none has it. A family with a file
+here is never looked for in a seed: Arial's bold, which nothing carries, stands
+in as the recovered Arial. On a host
 with Arial installed (Windows, macOS) the host's Arial stands in for every face
 missing here, so a checkout that skipped recovery renders on it and scores
 worse - the render baseline reads 2.81% instead of 2.19%.
 `gdl.compose.FALLBACKS` records every face drawn in a stand-in, and
-`tests/score.py record` refuses to write a score over one, naming the recovery
-loop above.
+`gdl.compose.FROM_SEED` every face read from a seed: right for a preview, and
+for the render baseline another build than the fixtures embed - with
+`ariblk.ttf` and the Open Sans files missing here, Arial Black and Open Sans
+come out of `seeds/Afterburn 1035 Portrait.gdl`, Windows' Arial Black, not the
+fixtures' Monotype 5.06, so the score would turn on which seeds are pulled.
+`tests/score.py record` refuses to write a score over either, naming the
+recovery loop above.
