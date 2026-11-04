@@ -2,25 +2,18 @@
 
 The renderer resolves faces from this directory before falling back to the
 system font path, so a `.gdl` renders the same on a machine with nothing
-installed. Recover the untracked faces with:
+installed. Recover the untracked faces from the synthetic fixture's build,
+which carries Monotype Arial and Arial Black, the Afterburn icon face and both
+Open Sans files - every face the render baseline is scored in:
 
 ```bash
-for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
-```
-
-All six fixtures are needed — no single one embeds every face. The public copy
-holds the fixtures back; there, recover the faces from a seed, which carries
-the same Monotype Arial (the render baseline itself is scored only where the
-fixtures are):
-
-```bash
-python -m gdl.fonts "seeds/Afterburn 1035.gdl" gdl/fonts/
+python -m gdl.fonts tests/data/synthetic/synthetic.gdl gdl/fonts/
 ```
 
 ## What is tracked, and why it varies
 
-The nine files do **not** share a license, so they are not treated as one
-class. Each row below is read from the font's own `name` table, not assumed:
+The files do **not** share a license, so they are not treated as one class.
+Each row below is read from the font's own `name` table, not assumed:
 
 | file | declares | tracked |
 |---|---|---|
@@ -28,33 +21,57 @@ class. Each row below is read from the font's own `name` table, not assumed:
 | `ariblk.ttf` | © 2008 The Monotype Corporation, Arial Black 5.06 | no |
 | `opensans-regular.ttf` | Apache License 2.0 (nameID 13), Google / Ascender | **yes** |
 | `opensans-light.ttf` | Apache License 2.0 (nameID 13), Google / Ascender | **yes** |
-| `formadjrdisplay-regular_1.otf` | David Jonathan Ross, all rights reserved, djr.com/license | no |
 | `afterburn_modified.ttf` | Copyright (c) 2021, Extron — no license field | no |
-| `extron_-_afterburn_1a.ttf` | same bytes as above, different embedded name | no |
-| `extron_guic_video_conference_1.ttf` | Extron — no license field | no |
-| `crestron_general.ttf` | "Typeface © (your company). 2011" — an unedited template | no |
 
 Open Sans is tracked because Apache 2.0 permits redistribution and the font
 says so itself; `LICENSE-OpenSans.txt` is the license text that condition
-requires. Arial, Arial Black and Forma DJR Display are retail typefaces. The
-four vendor icon fonts carry no grant of any kind, which is more restrictive
-than "commercial", not less.
+requires. Arial and Arial Black are retail typefaces. The vendor icon font
+carries no grant of any kind, which is more restrictive than "commercial", not
+less.
+
+**Four faces are no longer recoverable here.** They came only out of a client
+project, which is no longer in the repo (`docs/history.md`): Forma DJR Display
+(`formadjrdisplay-regular_1.otf`, a retail face - David Jonathan Ross, all
+rights reserved), the client's Extron-Afterburn under another file name
+(`extron_-_afterburn_1a.ttf`, the same bytes as `afterburn_modified.ttf`),
+`extron_guic_video_conference_1.ttf` (Extron, no license field) and
+`crestron_general.ttf` (an unedited font template's "Typeface © (your
+company). 2011"). Nothing needs them: no template, example or test names
+Forma or Crestron General - only builds in `archive/gdlwork/` made with the
+client's project do - and a spec that names a face no seed carries is refused
+before it builds (`gdl.spec donors`). `gdl.fonts.FILES`
+still maps Forma to its file, so a checkout that recovered it before keeps
+drawing it; one that did not draws it in a stand-in and says so.
+
+One more face is tracked, and it is not recovered from anything:
+`opensans-latin.woff2` is Google Fonts' own Latin cut of Open Sans 3.003 -
+the file its stylesheet serves for both weights, one variable font - which
+declares "Copyright 2020 The Open Sans Project Authors" and the SIL Open Font
+License (nameID 0 and 14). Each design system carries it in its bundle, and
+`gdl.design` adds it to every artboard it lays out, so a canvas's captions are
+measured in it from the first (`gdl.designsys.face_js`, `docs/claude-design.md`
+§2). The OFL lets it be bundled with software provided each copy carries the
+copyright and the license: `LICENSE-OpenSans-OFL.txt` is that text, from the
+Open Sans project, and `face_js` writes it above the bytes in every bundle.
+It is not the face a build draws - that is the seed's Open Sans 1.10, the
+Apache file above - and the renderer never reads it.
 
 ## What the ignore does and does not do
 
 It does **not** keep the font binaries out of git. Every one of these faces is
-embedded in the `.gdl` fixtures, which are tracked, and `python -m gdl.fonts`
-reproduces each one from them with no other input (byte for byte, but for the
-28-byte tail on Arial and Arial Black below). What the ignore prevents is a
-second, more conveniently redistributable copy.
+embedded in the synthetic fixture's build, which is tracked, and `python -m
+gdl.fonts` reproduces each one from it with no other input (byte for byte, but
+for the 28-byte tail on Arial and Arial Black below). What the ignore prevents
+is a second, more conveniently redistributable copy.
 
-If the concern is distribution rather than convenience, the thing to look at is
-`fixtures/` — see *Working on the fixtures* in `CLAUDE.md`.
+If the concern is distribution rather than convenience, the things to look at
+are `tests/data/synthetic/synthetic.gdl` and the seeds, which embed them.
 
 ## Arial is embedded too
 
-Genuine Monotype Arial 5.10 and Arial Black 5.06 are embedded in every fixture
-and in all 50 of Extron's installed templates, and `python -m gdl.fonts`
+Genuine Monotype Arial 5.10 and Arial Black 5.06 are embedded in the synthetic
+fixture's build, in each of the client project's six files the toolkit was first
+read off, and in all 50 of Extron's installed templates, and `python -m gdl.fonts`
 recovers them with everything else — so never substitute a system copy. They
 are easy to miss: the declared size runs past the far edge of their last sfnt
 table (28 bytes for Arial, 30 for Arial Black), so an extractor that matches
@@ -76,7 +93,7 @@ every declaration it carries nothing for (`DECLARED, NOT CARRIED`) and every
 face no declaration names (`CARRIED, NOT DECLARED`). A face declared and
 carried that the stream scan cannot find is written from its resource, and the
 line says so. When every declaration is found and every face the stream carries
-is declared - every fixture - there is nothing to say, and the command answers
+is declared - the synthetic fixture's build - there is nothing to say, and the command answers
 without parsing the project, which takes a large seed most of a minute. Run
 over `seeds/`:
 
@@ -104,7 +121,7 @@ over `seeds/`:
   rather than recovered (below).
 
 Recovering from a seed that embeds a Windows Arial replaces the Monotype
-`arial.ttf` here; the fixtures all embed the Monotype one. So the faces only
+`arial.ttf` here; the synthetic fixture's build embeds the Monotype one. So the faces only
 the seeds carry are not recovered at all: the renderer and a spec's `icon` read
 each straight out of a seed (`gdl.fonts.seed_face`), and leave this directory
 alone - an icon face, Extron-Lift or Extron-Shockwave, out of its family's 1035
@@ -117,7 +134,7 @@ thinner than the panel does - the sign-off draws the built file's own. Segoe
 UI, Segoe UI Semibold and
 FluentSystemIcons-Regular are in Extron's templates and in no seed, so they
 stand in. Arial and Arial Black the renderer reads from here, which the
-fixtures supply. A face is
+synthetic fixture's build supplies. A face is
 drawn in the one build found, whichever build the panel embeds: Extron-Afterburn
 is the kit's, which the 1035 seeds embed, and the 320, 525, 725 and 300M
 Portrait seeds embed one of their own whose glyphs sit 6% of an em higher
@@ -131,7 +148,7 @@ for the System faces, whose resources in a template name no file.
 Prefer the embedded copy over an installed one even on a host that has Arial.
 The embedded face is the one GUI Designer rasterized the ground-truth snapshots
 with; the system copy is whatever build the OS happens to ship. Windows' own
-`arial.ttf` is 1,016,724 or 1,045,720 bytes against the fixtures' 778,580.
+`arial.ttf` is 1,016,724 or 1,045,720 bytes against the embedded 778,580.
 
 ## A missing face is said aloud
 
@@ -143,12 +160,14 @@ here is never looked for in a seed: Arial's bold, which nothing carries, stands
 in as the recovered Arial. On a host
 with Arial installed (Windows, macOS) the host's Arial stands in for every face
 missing here, so a checkout that skipped recovery renders on it and scores
-worse - the render baseline reads 2.81% instead of 2.19%.
+worse - the client project's render baseline read 2.81% for 2.19% so.
 `gdl.compose.FALLBACKS` records every face drawn in a stand-in, and
 `gdl.compose.FROM_SEED` every face read from a seed: right for a preview, and
-for the render baseline another build than the fixtures embed - with
+for a render baseline, which is scored in the faces its project embeds - with
 `ariblk.ttf` and the Open Sans files missing here, Arial Black and Open Sans
-come out of `seeds/Afterburn 1035 Portrait.gdl`, Windows' Arial Black, not the
-fixtures' Monotype 5.06, so the score would turn on which seeds are pulled.
+come out of `seeds/Afterburn 1035 Portrait.gdl`; its Arial Black is the
+synthetic fixture's Monotype 5.06 (the same 119,876 bytes, the recovered one
+28 longer by the tail above), but a seed's face can be another build - the Mach seeds' Arial
+is Windows' - so the score would turn on which seeds are pulled.
 `tests/score.py record` refuses to write a score over either, naming the
-recovery loop above.
+recovery above.

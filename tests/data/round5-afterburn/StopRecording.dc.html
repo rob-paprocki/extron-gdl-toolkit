@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stop Recording</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- Our own question: the template only asks before a recording starts. Its answers close it, so no Close. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Stop Recording" kind="modal" does="Asks before a recording is stopped." panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Panel" name="Stop Card" fill="raised" border="afterburn" style="position: absolute; left: 340px; top: 250px; width: 600px; height: 300px"></x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Stop Question" type="subheading" align="center" style="position: absolute; left: 380px; top: 290px; width: 520px; height: 100px">Do you want to stop recording?</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Stop Recording Confirm" variant="inverse" does="Stops the recording and closes this question." style="position: absolute; left: 380px; top: 440px; width: 220px; height: 64px">Stop Recording</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Button" name="Stop Recording Cancel" variant="inverse" does="Closes this popup." style="position: absolute; left: 680px; top: 440px; width: 220px; height: 64px">Cancel</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

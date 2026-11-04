@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Display Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Display Control" kind="modal" role="settings" title="Display Control" does="Power and source for the projector and the confidence monitor, and the projector screen." panels="TLP1035T TLP725T TLP525T TLP320M" theme="office">
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="Projector Source" does="Shows the projector and the source on it, as Projector: PC; the program writes it." style="position: absolute; left: 120px; top: 205px; width: 420px; height: 60px">Projector: PC</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Group" title="Projector" cell="110x110" gap="20" cap="2" style="position: absolute; left: 560px; top: 180px; width: 260px; height: 130px">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Projector On" states='[{"name":"Off"},{"name":"Warming Up","text":"Warming","look":"off","color":"accent"},{"name":"On","look":"on"}]' does="Turns on the projector; shows Warming while it warms up and On when it is on.">On</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Projector Off" states='[{"name":"Off"},{"name":"Cooling Down","text":"Cooling","look":"off","color":"accent"},{"name":"On","look":"on"}]' does="Turns off the projector; shows Cooling while it cools down and On when it is off.">Off</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Group" title="Screen" cell="110x110" gap="20" cap="2" style="position: absolute; left: 850px; top: 180px; width: 260px; height: 130px">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Screen Up" states="Off, On" does="Raises the projector screen; On while it is up.">Screen Up</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Screen Down" states="Off, On" does="Lowers the projector screen; On while it is down.">Screen Down</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="Monitor Status" does="Shows the confidence monitor and the source on it, as Monitor: Laptop; the program writes it." style="position: absolute; left: 120px; top: 355px; width: 420px; height: 60px">Monitor: Laptop</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Group" title="Monitor" cell="110x110" gap="20" cap="2" style="position: absolute; left: 560px; top: 330px; width: 260px; height: 130px">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Monitor On" states='[{"name":"Off"},{"name":"Warming Up","text":"Warming","look":"off","color":"accent"},{"name":"On","look":"on"}]' does="Turns on the confidence monitor; shows Warming while it warms up and On when it is on.">On</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Monitor Off" states='[{"name":"Off"},{"name":"Cooling Down","text":"Cooling","look":"off","color":"accent"},{"name":"On","look":"on"}]' does="Turns off the confidence monitor; shows Cooling while it cools down and On when it is off.">Off</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="Monitor Source Label" style="position: absolute; left: 120px; top: 545px; width: 260px; height: 60px">Monitor Source</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Group" title="Source" cell="130x130" gap="20" cap="5" style="position: absolute; left: 400px; top: 490px; width: 740px; height: 170px">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Monitor PC" states="Off, On" does="Routes the instructor's PC to the confidence monitor; On while it is there.">PC</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Monitor Laptop" states="Off, On" does="Routes the lectern laptop to the confidence monitor; On while it is there.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Monitor ShareLink" states="Off, On" does="Routes ShareLink to the confidence monitor; On while it is there.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Monitor Doc Cam" states="Off, On" does="Routes the document camera to the confidence monitor; On while it is there.">Doc Cam</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" name="Monitor Blu-ray" states="Off, On" does="Routes the Blu-ray player to the confidence monitor; On while it is there.">Blu-ray</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

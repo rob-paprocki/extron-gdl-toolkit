@@ -860,6 +860,53 @@ def _squircle_bands(f):
     return out
 
 
+# The face every system is set in, carried rather than linked: Google Fonts'
+# own Latin cut of Open Sans 3.003 (SIL OFL 1.1, gdl/fonts/README.md) - the
+# bytes its stylesheet serves for both weights, one variable file. Linked, it
+# arrives while the components lay a canvas out: they measure every caption
+# as they render, and the runtime lays a canvas out twice, the second time at
+# the very moment the face lands, so which face the layout kept is measured in
+# is down to the order of two tasks - in headless Chrome as in a designer's
+# browser. A 320's three 160 px buttons come out 81 px wide (Open Sans) or 79
+# (the fallback) by that order alone, and a canvas with no link (a README
+# room) is measured in whatever the host has for Arial.
+FACE = os.path.join(os.path.dirname(HERE), 'fonts', 'opensans-latin.woff2')
+FACE_LICENSE = os.path.join(os.path.dirname(HERE), 'fonts', 'LICENSE-OpenSans-OFL.txt')
+FACE_FAMILY, FACE_WEIGHTS = 'Open Sans', ('400', '700')
+
+
+def face_js():
+    """A classic script that adds FACE to the document as FACE_FAMILY, at each
+    of FACE_WEIGHTS, before anything is drawn: a FontFace made from bytes is
+    loaded the moment it is made (from a URL - a data: URL too - it loads
+    later), so the first caption measured is measured in it, on any host, with
+    or without a network. The bundle runs it as it loads, and gdl.design.render
+    first in each artboard's head, so a canvas on an older install of its
+    system is measured in it too; whichever runs first adds it. A face Chrome
+    will not take is left out, and the probe then says it did not load. The
+    copyright and license go with the bytes, as the OFL asks of every copy."""
+    import base64
+    with open(FACE, 'rb') as fh:
+        data = base64.b64encode(fh.read()).decode('ascii')
+    with open(FACE_LICENSE, encoding='utf-8') as fh:
+        notice = fh.read().strip()
+    return ('/*\n * ' + os.path.basename(FACE) + ':\n *\n'
+            + '\n'.join((' * ' + ln).rstrip() for ln in notice.splitlines()) + '\n */\n'
+            + '(function () {\n'
+            + '  if (typeof window === "undefined" || window.__GDL_FACE || typeof FontFace === "undefined"'
+              ' || !document.fonts) return;\n'
+            + '  window.__GDL_FACE = true;\n'
+            + '  try {\n'
+            + f'    var s = atob("{data}"), b = new Uint8Array(s.length);\n'
+            + '    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);\n'
+            + f'    {json.dumps(list(FACE_WEIGHTS))}.forEach(function (w) {{\n'
+            + f'      var f = new FontFace({json.dumps(FACE_FAMILY)}, b.buffer, {{ weight: w }});\n'
+            + '      if (f.status !== "error") document.fonts.add(f);\n'
+            + '    });\n'
+            + '  } catch (e) {}\n'
+            + '})();\n')
+
+
 def bundle(p, art=True):
     header = json.dumps({'format': 4, 'namespace': p['namespace'],
                          'components': [{'name': n} for n, _, _ in components(p)]},
@@ -918,17 +965,20 @@ def bundle(p, art=True):
     # A hub's (the 520s and 535s): its right menu bar and the header strip
     # over main where it draws one, the popup region filling main with what
     # a source's popup draws and the Volume Level strip beside the bar (its
-    # rect, `strip`, and what it shows, `level`), its Select a Source and
-    # options grids, and its windows - which the region
+    # rect, `strip`, and what it shows, `level`) and the picture each settings
+    # popup pins (`settings_pictures`), its Select a Source and options grids,
+    # the popup its display group opens as it lays two displays out (`display`:
+    # a card each), and its windows - which the region
     # page, a source popup and a window draw there in the hub's grammar.
     profile['frames'].update({
         series: {'hub': True, 'top': s['frame']['top'], 'right': s['frame']['right'],
                  'center': dict({k: s['frame']['center'].get(k)
                                  for k in ('region', 'title', 'title_controls', 'empty', 'status', 'pt',
-                                           'surfaces', 'pictures', 'close', 'level', 'pitch')},
+                                           'surfaces', 'pictures', 'settings_pictures', 'close', 'level', 'pitch')},
                                 strip=next((it['rect'] for it in s['frame']['center'].get('items') or []
                                             if it['role'] == 'popup'), None)),
                  'select': s['frame'].get('select'), 'options': s['frame'].get('options'),
+                 'display': s['frame'].get('display'),
                  'windows': _slim_windows(s['frame'].get('windows'))}
         for series, s in (p.get('panels') or {}).items()
         if (bars or framed) and series in drawn and series not in profile['frames'] and s.get('frame')
@@ -993,6 +1043,7 @@ def bundle(p, art=True):
                               rail_art=rail_art(p) if art else {})
     js = _read('bundle.js')
     for mark, value in (('__HEADER__', header),
+                        ('__FACE__', face_js() if p['font']['family'] == FACE_FAMILY else ''),
                         ('__PROFILE__', json.dumps(profile, separators=(',', ':')))):
         if js.count(mark) != 1:
             raise ValueError(f'bundle.js must hold {mark} exactly once')
@@ -1320,6 +1371,87 @@ def _rail_room(p, T):
             0.55 * em, int(w - 20 - 2 * edge))
 
 
+def _section_slots(G, n, touch):
+    """[(top, depth)] of a bar rail's Section of `n` buttons on its template's
+    group `G`, as bundle.js planLeftRail sets them (settleSet): the template's
+    places, then on at its step, each the template's depth or `touch` where
+    that is deeper - grown away from a key it meets, else about its middle -
+    and each kept its seam under the one before."""
+    bs = [b['rect'] for b in G['buttons']]
+    pitch = G.get('pitch') or (bs[1][1] - bs[0][1] if len(bs) > 1 else bs[0][3] + 1)
+    rs = [bs[i] if i < len(bs) else [bs[-1][0], bs[-1][1] + (i - len(bs) + 1) * pitch, bs[-1][2], bs[-1][3]]
+          for i in range(n)]
+    out = []
+    for i, r in enumerate(rs):
+        h = max(r[3], touch)
+        if i:
+            seam = max(0, r[1] - (rs[i - 1][1] + rs[i - 1][3]))
+            out.append((max(r[1], out[-1][0] + out[-1][1] + seam), h))
+        else:
+            meets = len(rs) > 1 and abs(rs[1][1] - (r[1] + r[3])) <= 2
+            out.append((r[1] - (h - r[3]) if meets else r[1] - (h - r[3]) // 2, h))
+    return out
+
+
+def _second_holds(groups, band, touch, gap):
+    """How many buttons a bar rail's second Section holds before the rail's
+    foot, under its first as the template draws it - moved down the rail where
+    the first, grown to `touch`, reaches past its top (bundle.js planLeftRail)."""
+    a, b = groups[0], groups[1]
+    foot = max(y + h for y, h in _section_slots(a, len(a['buttons']), touch))
+    top = min([b['buttons'][0]['rect'][1]] + ([b['heading']['rect'][1]] if b.get('heading') else []))
+    shift = foot + gap - top if foot > top else 0
+    end = band[1] + band[3]
+    return max((n for n in range(1, 13)
+                if all(y + shift + h <= end for y, h in _section_slots(b, n, touch))), default=0)
+
+
+def _bar_rail_md(p):
+    """*Every panel the room has*'s left rail on a theme whose bars are
+    controls: how many launchers each bar panel's second Section holds, on a
+    working page and on a call page, Audio Control counted where the panel's
+    template keeps it there. The README said 'as many as that panel's rail
+    holds' and never how many: round five's Mach designer put four in a
+    Section the 725 holds two of, and its Shockwave one two the 725's Audio
+    Control made three."""
+    if not _regions(p):
+        return ''
+    rows = {}
+    for m, T in sorted(models(p).items(), key=lambda kv: kv[0] != p['model']):
+        F = T.get('frame') or {}
+        left = F.get('left') or {}
+        groups = [G for G in left.get('groups') or () if G.get('buttons')]
+        if T['tier'] != 'A' or T.get('turned') or len(groups) < 2 or not left.get('rect'):
+            continue
+        sd = _second_holds(groups, left['rect'], T['touch'], T['gap'])
+        audio = any(b.get('role') == 'audio' for b in groups[1]['buttons'])
+        cg = [G for G in ((F.get('call') or {}).get('left') or {}).get('groups') or () if G.get('buttons')]
+        call = _second_holds(cg, left['rect'], T['touch'], T['gap']) if len(cg) > 1 else None
+        rows.setdefault((len(groups[0]['buttons']), sd, audio, call), []).append(m)
+    if not rows:
+        return ''
+    # Audio Control is counted where the RightRail's goes into the rail on
+    # some series and not on others (Shockwave's, Turbulence's): on Mach's,
+    # which has no audio place on its right, it is a launcher like any.
+    moved = bool(_audio_left(p)) and bool(_series_named(p, lambda s: any(
+        i['role'] == 'audio' for i in ((s.get('frame') or {}).get('right') or {}).get('items') or [])))
+    lines = [f"| {_model_names(ms)} | {sd} | {'-' if call is None else call} |"
+             + ((' one of them |' if audio else ' the RightRail |') if moved else '')
+             for (first, sd, audio, call), ms in rows.items()]
+    first = sorted({k[0] for k in rows})
+    return (f"- **The left rail.** A Section's launchers stand at the template's places and go on at its step, "
+            f"each at the depth the template gives it or the panel's touch minimum where that is deeper; a Section that "
+            f"grows past the next one's top moves it down the rail, and a launcher past the rail's foot is refused, "
+            f"by name. Under a first Section of {_say([str(n) for n in first])} keys, the "
+            f"second holds what the table says, on a working page and on a call page under its VTC keys: keep it "
+            f"to what the smallest bar panel the room lists holds, and put a display's or the room's other keys "
+            f"in the first Section where it has a place free."
+            + (" Where the table says so, the RightRail's Audio Control goes into that Section, on a call page "
+               "too, and is one of what it holds." if moved else '')
+            + "\n\n| Panels | The second Section holds | On a call page |" + (' Audio Control |' if moved else '')
+            + "\n|---|---|---|" + ('---|' if moved else '') + "\n" + '\n'.join(lines) + '\n\n')
+
+
 def _left_rail_md(p):
     """*Every panel the room has*'s left rail, where its chrome is art
     (Afterburn's): how many buttons each bar panel's LeftRail holds and the
@@ -1400,6 +1532,11 @@ def _panels_section(p):
                         + (' - fewer beside a heading' if headed and not col else ''))
         else:
             kind = 'scaled'
+        # The series whose template a bar panel is drawn from: the README says
+        # what each series' rail and Main VC hold, and round five's Mach and
+        # Shockwave designers could not tell the 725 was a 1020 Series panel.
+        if T['tier'] == 'A' and _region_frame(p) and T.get('series', '').startswith(p['template'] + ' '):
+            kind += f" - the {T['series'][len(p['template']) + 1:]}"
         # A panel that lays its controls out again, in rows, sizes each to what
         # it holds there (bundle.js flowLayout): no distance or room to keep.
         room = ('- | -' if kind.startswith('rows') else
@@ -1421,23 +1558,31 @@ def _panels_section(p):
             f"its box with room for them at the room's largest *Words*. In a window or a source's popup a "
             f"Label whose words need more room on a panel takes it - wider from the edge it is set from, else deeper, the "
             f"lines under it moving down - and a row of buttons grown nearer than the panel's gap opens its gaps, as far as "
-            f"the window's body or the well holds them; past that they are refused.\n"
+            f"the window's body or the well holds them; past that they are refused. A plain modal - a question you "
+            f"draw on a Panel card - re-spaces so on its card.\n"
             f"- **Sets.** Put a set of like controls - sources, presets - in a `Group`: its members share one "
             f"cell on every panel, and it pages them where they do not fit, its Previous and Next under them "
             f"or, in a box one cell deep, at the row's ends - "
             + ("the kit's chevrons" if ((p.get('regions') or {}).get('group') or {}).get('next')
                else "as arrows where their words leave no room") + f". In a "
-            f"modal or a popup a Group cannot page - its "
-            f"pages would be popups, which only a page shows - so give its box room for all its members on "
-            f"every large and mid-size panel there. The `Rail` stacks its controls at each panel's gap. Loose controls "
-            f"scale, and re-space only in a window or a source's popup (above).\n"
-            + _sources_md(p) + _left_rail_md(p) +
+            f"modal or a popup a Group cannot page - its pages would be popups, which only a page shows - so "
+            f"there it takes the room its window leaves round its box: wider about its middle, then in more rows, "
+            f"clear of what stands beside, over and under it; only what that room cannot hold is refused. Its "
+            f"cells grow to the touch minimum and to their widest caption at the panel's type floor (*Words*), so "
+            f"a set that needs more room than its window has - five worded transport keys, a row of long preset "
+            f"names - is drawn with fewer words (icon keys) or in rows (`cap`), or goes on a page, where it pages: "
+            f"in place on a large panel, as popups in its own box on a hub, and as pages of its own on the 320, "
+            f"wherever the page stands it. The `Rail` stacks its controls at each panel's gap. Loose controls "
+            f"scale, and re-space only in a window, a source's popup or a plain modal's card (above).\n"
+            + _sources_md(p) + _left_rail_md(p) + _bar_rail_md(p) +
             f"- **Hubs** are one page of main controls beside a rail. Where the seed has no slider, a slider "
             f"is a level between `-` and `+`, and the rail holds what the table says - a heading over the "
             f"volume counted in a column rail where the template heads it, and in a row rail a heading takes "
             f"its word's width - and a button there fills the rail across, its caption needing only the "
             f"button's own padding and border; a "
-            f"`Group` on a page shows in a popup in its own box, which the control program shows."
+            f"`Group` on a page shows in a popup in its own box, which the control program shows - and several "
+            f"in a page's `MainArea` share one region where they stood, switched by a rail of their titles (the "
+            f"Group README)."
             + (" The header, footer and side column drawn beside main here are cut from a hub's main, and "
                "its rail keeps between them; a bar that holds a button is at least the touch minimum deep, "
                "and one that holds a Group as deep as its cells - the table assumes a button in each"
@@ -1509,7 +1654,8 @@ def _rows_md(p):
         "right of main - each top to bottom in the order you placed it. Where a control stands in its column "
         "decides only its order there, so Start's button stands where the Layout puts it. A heading - a Label "
         f"whose foot meets the `Group` under it, within {p['spacing']} px - stands at that Group's left, in its "
-        "row, since the Group there is the one button that opens its pages, captioned with its `title`; a "
+        "row, since the Group there is the one button that opens its pages, captioned with its `title` and "
+        "carrying its `icon`; a "
         "heading over loose controls keeps its own row over theirs. A `Line` stands across the gap between the "
         "rows it was drawn between, 2 px clear of each. Where the rows need more than main holds, a row of a "
         "side column stands beside the first earlier row of another column it fits beside. Past that the page "
@@ -1814,12 +1960,29 @@ def _group_title_320(p):
     button that opens its pages, with the heading over it at its left
     (bundle.js rowsPage)."""
     if not _region_frame(p):
-        return (" On a page on the 320 it is the button that opens its pages, captioned with it, and a Label "
+        return (" On a page on the 320 it is the button that opens its pages, captioned with it (and carrying its "
+                "`icon`), and a Label "
                 "heading the group - its foot at the group's top - stands at that button's left, in its row "
                 "(the README's *Every panel the room has*, Rows)." if models(p) else '')
     return (" In a source popup or a window it is drawn on the 320 alone, as its column's heading, whose room "
             "the system's README gives (*Words on the 320*): make it one short word (Presets, not Camera "
-            "Presets), and put no Label over the group for it.")
+            "Presets). The other panels draw no title: a Label just over the group saying its title, as the "
+            "system's README's Doc Cam heads its Zoom keys, is its heading there, and is left off the 320, where "
+            "the title heads the column; a Label of other words stands in a column of its own beside it there.")
+
+
+def _group_icon(p):
+    """The Group README's `icon` line: the icon on the button a small panel
+    makes of a Group (bundle.js Group, tier C), named and drawn as a Button's."""
+    if not models(p):
+        return ''
+    own = p['defaults']['button']['variant']
+    cols = (" In a source popup or a window the 320 draws the group's members as its columns, so there it has "
+            "no button." if _region_frame(p) else '')
+    return (f"\n- `icon`: a kit icon for the button that opens the group's pages on a small panel (the 320's). "
+            f"It is named as a Button's `icon` is (the Button's README lists the names) and drawn as "
+            f"{p['template']} draws an icon button of the default variant, `{own}`, the caption its `title`. "
+            f"Default: none.{cols} A panel that shows the cells in place or in a popup has no button to carry it.")
 
 
 def _panels_group(p):
@@ -1830,8 +1993,14 @@ def _panels_group(p):
             "the panel's size: on a large screen in place, or, if its members do not fit, as pages in its box "
             "with Previous and Next - under its cells, or at the row's ends where its box is one cell deep, "
             "arrows there where their words leave no room; on "
-            "a mid-size one (the 525's) always as popups in its box, the region the program shows them in; on "
-            "a small one (the 320's) as one button that opens pages of their own, each with Back - a joined "
+            "a mid-size one (the 525's) always as popups in its box, the region the program shows them in - "
+            "and where a page's `MainArea` holds several Groups that page (not `joined`), they share one region "
+            "there, the bounds of their boxes: a rail across its top of a button per Group, its `title`, that "
+            "shows the Group's first page, and under it each Group's pages in turn, the first Group's shown on "
+            "arrival - so leave nothing else of the page between them or close enough to grow into them there, "
+            "or each keeps its own box and the canvas says what is in the way, and give each its own title, "
+            "not another's with a number after it; on "
+            "a small one (the 320's) as one button that opens pages of their own, each with Back (the button carries the group's `icon`, where it names one) - a joined "
             "group too, where its one row is wider than the screen. In a modal "
             "or a popup on a large or mid-size panel it is laid out in place, since a popup shows no popups. Previous, Next, "
             "Back and that button are navigation the program handles - the ID map lists them. A group that "
@@ -1898,7 +2067,7 @@ Props:
 - `theme`: {', '.join(f'`{th["id"]}`' for th in themes(p))} - {('the background image and accent scheme pairing, ' if len(p['schemes']) > 1 else 'the background photograph, ') if p.get('themes') else ''}{p.get('themes_note') or 'the same on every artboard'}. `scheme` swaps the accent scheme alone: {', '.join(f'`{s["id"]}`' for s in p['schemes'])}.
 - `does`: what the page is for, in a sentence, for the programmer. The ID map shows it beside the page.
 {_panels_props(p)}{_roles_props(p)}
-Place controls inside it with absolute positions or with flex and grid containers: containers that paint nothing are fine, except on a small panel (the 300s and the 320), whose pages reflow into rows and columns of their own: a sized container there is refused, so put its controls on the Page directly, or in a `Group`. Anything that paints and is not one of these components is not built.
+Place controls inside it with absolute positions or with flex and grid containers: containers that paint nothing are fine, except on a small panel (the 300s and the 320), whose pages reflow into rows and columns of their own: a sized container there is refused, so put its controls on the Page directly, or in a `Group`. A repeat of your own (`sc-for`) or a condition (`sc-if`) is its controls: what it makes is laid out on every panel as if you had written each control out, its names, captions and places read from your list. Anything that paints and is not one of these components is not built.
 
 ```html
 {_x(p, 'Page', ' name="Home" start="true"', '...')}
@@ -1928,7 +2097,7 @@ Props:
 - `title`: what the group is called. On a panel too small to show it in place, its pages and the button that opens them take this name.{_group_title_320(p)}
 - `cell`: the cell's size, `"110x110"` - its members' drawn size. Default: the first member's.
 - `gap`: the space between cells, in px (default 49, the toolkit's). `cap`: the most to a row (default 4). {p['examples']['group_note']}
-- `joined="true"`: a segmented control - one row of segments that touch, never paged.{_panels_group(p)}
+- `joined="true"`: a segmented control - one row of segments that touch, never paged.{_group_icon(p)}{_panels_group(p)}
 
 ```html
 {_x(p, 'Group', ' title="Sources" cell="{}" gap="{}"'.format(*_group_example(p)), chr(10) + '  ' + _example_button(p, 'source', 'Laptop') + chr(10), 'position: absolute; left: 0px; top: 210px; width: 916px; height: 250px')}
@@ -1944,7 +2113,7 @@ Props:
 {variants}
 - `icon`: {_icon_prop(p)} The names, by variant:
 {_icons_md(p)}
-- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own image, from the variant's list). A state changes only what it names: the rest - fill, stroke, color, border and, on an image button, its icon - stays as the variant draws it. A state named `Off` or `On` first takes the variant's own Off or On look; on an image button the first state shows the `off` image and the others `on`, unless the state sets `look`. Every state must look different. {p['examples']['states_note']}
+- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own image, from the variant's list). A state changes only what it names: the rest - fill, stroke, color, border and, on an image button, its icon - stays as the variant draws it. A state named `Off` or `On` first takes the variant's own Off or On look, and one of another name with a `look` the variant's state of that look (a lit Mics Muted its On); on an image button the first state shows the `off` image and the others `on`, unless the state sets `look`. Every state must look different. {p['examples']['states_note']}
 - `press`: the state shown while the button is held. Default: On, else the second state. The canvas draws it while you hold the button in Play, as the panel does, so give it a look that reads as pressed. It cannot be the state the button rests in, and a button with a single state has nothing to show - give it a second.
 - `nav`: the artboard this button shows, by its file name without `.dc.html` - `nav="Help"` shows `Help.dc.html`. The button becomes that link, so Play follows it.
 - `does`: anything else it does, in a sentence for the programmer: "Routes the laptop to the display; Live while it is routed."
@@ -2182,7 +2351,7 @@ Its children are Sections, the template's groups in order: the first Section sta
 """,
         'Section': f"""# Section
 
-A titled group in the LeftRail. `title` is drawn as the group's heading Label (named `<title> Heading`) where the template draws one; its children need no positions - they stand at the frame's places for that group, down its step as the Layout gives it, as one set, with 2 mm kept between the set and anything else. The set is one width: where one caption needs more room on a panel, every button of the column grows with it. More than the rail holds is named. A Section anywhere but in a LeftRail is named.
+A titled group in the LeftRail. `title` is drawn as the group's heading Label (named `<title> Heading`) where the template draws one; its children need no positions - they stand at the frame's places for that group, down its step as the Layout gives it, as one set, with 2 mm kept between the set and anything else. The set is one width: where one caption needs more room on a panel, every button of the column grows with it. More than the rail holds is named. A Section anywhere but in a LeftRail is named.{_display_words(p)}
 
 ```html
 {ex('Section', f' title="{g2}"' if heads[1:2] and heads[1] else '', chr(10) + '  ' + btn(f' name="{launcher}" nav="{_stem(launcher)}"', launcher) + chr(10))}
@@ -2312,17 +2481,65 @@ def _device_pictures(p):
 
 def _device_words(p):
     """The Page README's `device`, where the template pins a device picture
-    on its source popups (Turbulence)."""
+    on its source popups (Turbulence) - and, on its hub, on its settings
+    popups (_settings_pictures)."""
     pics = _device_pictures(p)
     if not pics:
         return ''
     aliases = ((p.get('regions') or {}).get('source') or {}).get('devices') or {}
     said = ', '.join(f"{k.title()} the {v}'s" for k, v in sorted(aliases.items()))
+    sets = _settings_pictures(p)
     return (f" `device` names the device it pictures - {', '.join(f'`{f}`' for f in sorted(pics))}; by default "
             f"its `name` or `title` where it is one of those (Laptop, PC, Doc Cam){' or ' + said if said else ''}. "
             f"Each is drawn at its own size, where that panel's seed draws that device in a source's popup (the "
             f"Layout's device pictures), and one its seed pictures for no source where it draws the Laptop's. "
-            f"With none, the place stays empty and the canvas says so.")
+            f"With none, the place stays empty and the canvas says so."
+            # Said without "as the template's ... do", which the claim lint
+            # holds to a ledger fix: the popups it names are the frame's.
+            + (f" On a hub a settings window pictures what it is too - by its title's or its name's first word, "
+               f"{_say([f'{_a(k.split()[0])} window the {v}' for k, v in sets.items()])}, the pictures its hub's own "
+               f"{_say(sorted(sets))} pin - and `device` names another; a window naming none draws none there, and "
+               f"the bar panels' windows, which their templates draw without one, draw none." if sets else ''))
+
+
+def _a(word):
+    """`word` after its indefinite article: 'an Audio', 'a Lighting'."""
+    return ('an ' if word[:1].lower() in 'aeiou' else 'a ') + word
+
+
+def _settings_pictures(p):
+    """{popup: device} - the picture each of a hub's settings popups pins
+    (the frames' `settings_pictures`: Turbulence 525's Lighting Control the
+    lightbulb), where the kit has it; {} where none does."""
+    pics = _device_pictures(p)
+    return {k: v['device'] for row in (p.get('panels') or {}).values() if isinstance(row, dict) and row.get('frame')
+            for k, v in sorted(((row['frame'].get('center') or {}).get('settings_pictures') or {}).items())
+            if v['device'] in pics}
+
+
+def _hub_display(p):
+    """The popup a hub's display group opens as it lays two displays out (a
+    hub frame's `display`: a card each), or None where no hub series of the
+    profile has one."""
+    return next((row['frame']['display'] for row in (p.get('panels') or {}).values()
+                 if isinstance(row, dict) and (row.get('frame') or {}).get('display')), None)
+
+
+def _display_words(p):
+    """The Section README's `display`: how a first Section's buttons say
+    which display each drives, which a hub draws as a card per display."""
+    D = _hub_display(p)
+    if not D:
+        return ''
+    card = 'a card' if any(c.get('surface') for c in D['cards']) else 'a column'
+    return (f"\n\nIn the first Section, each button may say which display it drives - `display=\"Display 1\"`, "
+            f"`display=\"Display 2\"`: on a hub the popup its display group opens ({D['popup']}) draws {card} per "
+            f"display, as {p['template']}'s draws Display 1 and Display 2 - each display's buttons in its own, in "
+            f"your order, under the display's words at the template's places"
+            + (", the Section's title over them all where the template heads its displays" if D.get('heading')
+               else ", the Section's title the popup's") +
+            ". Every button of the Section says one, or none does. Elsewhere they stand in the Section as any do, "
+            "in order - as many as that panel's rail holds (the system's README, *Every panel the room has*).")
 
 
 def _art_bars(p):
@@ -2372,6 +2589,13 @@ def _window_image(p):
     the system offers the Image (offers_image), or ''."""
     if not offers_image(p):
         return ''
+    sets = _settings_pictures(p)
+    if sets:
+        # On its hub the window draws its own (_settings_pictures), and its
+        # bar panels' templates draw none: an Image there would be twice.
+        return (f"; {p['template']}'s hub draws the window's own picture of what it controls behind them - "
+                f"{_say([f'{_a(k.split()[0])} window the {v}' for k, v in sets.items()])} - so put none there (the "
+                f"Page README's `device`)")
     ex = p['examples']['image']
     return (f", and where {p['template']} pictures what it controls, that picture as an `{p['namespace']}.Image` "
             f"before them - `{ex['image']}` in a {ex['name'].split()[0].lower()} window (the Image README)")
@@ -2435,9 +2659,13 @@ def _audio_left(p):
         places.setdefault(n, []).append(series)
     room = ' and '.join(f"{n} on the {_say(ss)}" for n, ss in sorted(places.items()))
     which = ' or '.join(_ORDINAL[gi] for gi in gis)
+    # 'its place among them' read to round five's Shockwave designer as
+    # either how many the group holds or where Audio stands in it.
     return (f"; {_the_series([x for x, _, _ in found])} keep Audio Control in the left rail's {which} group "
-            f"instead ({room}, its place among them), and it goes there, into the LeftRail's {which} Section: "
-            f"leave that Section room for it, or the page is refused on those panels")
+            f"instead, as one of the template's keys there ({room}), and it goes there, into the LeftRail's "
+            f"{which} Section at its place among them: leave that Section room for it, or the page is refused on "
+            f"those panels (*Every panel the room has* says how many each panel's holds, and which series each "
+            f"panel is)")
 
 
 def _audio_where(p):
@@ -2671,8 +2899,10 @@ def index_dts(p):
               "export declare function Image(props: ImageProps): React.ReactElement;\n"),
              '; Image: typeof Image') if offers_image(p) else ('', '')
     # A region places a control by its `slot`, and a splash page says it has
-    # none: props of the systems that have regions.
+    # none: props of the systems that have regions. A first Section's button
+    # says which display it drives (`display`), a hub's card per display.
     slot = ' slot?: string;' if regions[0] else ''
+    shown = ' display?: string;' if regions[0] and _hub_display(p) else ''
     splash = ' splash?: boolean | string;' if regions[0] else ''
     # A source popup and a window say what they are (docs/claude-design.md section 4).
     role = (" role?: 'source' | 'settings' | 'help' | 'confirm' | 'wait'; topic?: string; title?: string;"
@@ -2686,9 +2916,9 @@ export interface MainAreaProps {{ style?: React.CSSProperties; children?: React.
 export declare function MainArea(props: MainAreaProps): React.ReactElement;
 export interface RailProps {{ children?: React.ReactNode }}
 export declare function Rail(props: RailProps): React.ReactElement;
-export interface GroupProps {{ title: string; cap?: number | string; cell?: string; gap?: number | string; joined?: boolean | string; children?: React.ReactNode }}
+export interface GroupProps {{ title: string; cap?: number | string; cell?: string; gap?: number | string; joined?: boolean | string; icon?: string; children?: React.ReactNode }}
 export declare function Group(props: GroupProps): React.ReactElement;
-export interface ButtonProps {{ name?: string; id?: number; variant?: {' | '.join(repr(k) for k in p['buttons'])}; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; states?: {states}; press?: string; nav?: string; does?: string; show?: string; fill?: Token; stroke?: Token; color?: Token; border?: {' | '.join(repr(k) for k in p['borders'])}; icon?: string;{slot} children?: React.ReactNode }}
+export interface ButtonProps {{ name?: string; id?: number; variant?: {' | '.join(repr(k) for k in p['buttons'])}; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; states?: {states}; press?: string; nav?: string; does?: string; show?: string; fill?: Token; stroke?: Token; color?: Token; border?: {' | '.join(repr(k) for k in p['borders'])}; icon?: string;{slot}{shown} children?: React.ReactNode }}
 export declare function Button(props: ButtonProps): React.ReactElement;
 export interface LabelProps {{ name?: string; id?: number; type?: {' | '.join(repr(t['name']) for t in p['type'])}; size?: number; bold?: boolean; align?: 'left' | 'center' | 'right'; color?: Token; does?: string;{slot} children?: React.ReactNode }}
 export declare function Label(props: LabelProps): React.ReactElement;
@@ -2743,6 +2973,12 @@ def readme(p, renders=None):
     type_line = ', '.join(f"`{s['name']}` {s['pt']:g}{' bold' if s['weight'] >= 600 else ''}"
                           for s in p['type'])
     border_line = ', '.join(f"`{k}` ({b['usage'].rstrip('.').lower()})" for k, b in p['borders'].items())
+    # Where the type comes from: carried in the bundle (face_js), or linked.
+    font_link = f"`<link rel=\"stylesheet\" href=\"{p['font']['google']}\">` in each artboard's `<helmet>`"
+    type_from = (f"The type is {p['font']['family']}, which the bundle carries and draws every caption in from "
+                 f"its first render, network or none; {font_link} brings Google Fonts' for any letter outside its Latin."
+                 if p['font']['family'] == FACE_FAMILY else
+                 f"The type is {p['font']['family']}, from Google Fonts: {font_link}.")
     drawn = (f"one page or popup of the room's Extron touch panels in Extron's {t} template, drawn at the "
              f"{p['model']}'s {w}x{ht}" if models(p) else
              f"one page or popup of an Extron {p['model']} touch panel ({w}x{ht}) in Extron's {t} template")
@@ -2776,7 +3012,7 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 
 ## Consuming this system
 
-The components are `window.{ns}` - `{ns}.Page`, `{ns}.Button` and the rest - each mounted with `<x-import component-from-global-scope="{ns}.Button">`. Install the system on the canvas, then load in each artboard's `<head>`, after the `support.js` line, `components/bundle.css` and then `components/bundle.js` from the installed copy (`ds/<folder>/components/`). Each component's props, with an example, are in `components/<Name>/README.md`. The type is {p['font']['family']}, from Google Fonts: `<link rel="stylesheet" href="{p['font']['google']}">` in each artboard's `<helmet>`.
+The components are `window.{ns}` - `{ns}.Page`, `{ns}.Button` and the rest - each mounted with `<x-import component-from-global-scope="{ns}.Button">`. Install the system on the canvas, then load in each artboard's `<head>`, after the `support.js` line, `components/bundle.css` and then `components/bundle.js` from the installed copy (`ds/<folder>/components/`). Each component's props, with an example, are in `components/<Name>/README.md`. {type_from}
 """
 
 
@@ -3051,9 +3287,24 @@ def _foot_words(p, right, bottom):
             + (_audio_left(p) if audio else '') + ".\n"
             + f"- **Footer** (`{ns}.Footer`): {_roles_said(foot)}"
             + (f"; the mode launcher ({named}) and Preview only where you give them (`slot=\"mode\"`, "
-               f"`slot=\"preview\"`)" if mode and named and preview else
+               f"`slot=\"preview\"`)" + _preview_where(p) if mode and named and preview else
                "; the mode launcher (Room Mode) only where you give it one (`slot=\"mode\"`)" if mode else '')
             + "." + (power if any(i['role'] == 'power' for i in foot) else '') + "\n")
+
+
+def _preview_where(p):
+    """Which series' templates draw the Footer's Preview, and what it is for:
+    round five's Afterburn designer put a Sources button in its place on a
+    room of four panels, two of which draw none, and the README said only
+    that Preview opens the room's video preview."""
+    have = _series_named(p, lambda s: any(i.get('role') == 'preview' for i in (
+        ((s.get('frame') or {}).get('foot') or (s.get('frame') or {}).get('bottom') or {}).get('items') or ())))
+    if not have:
+        return ''
+    return (f" - Preview {_the_series(have)} alone draw, so a room that lists another panel has none, and it opens "
+            f"the room's video preview and nothing else. A working page leads back to a Main Select Source "
+            f"(`role=\"select\"`), where the room needs one, by a launcher of the LeftRail's second Section with a "
+            f"`nav` to it: the template's own is the page Start leads to and the program shows")
 
 
 def _grammar_md(p, renders):
@@ -3121,12 +3372,14 @@ def _grammar_md(p, renders):
                   f"IDs - each caption inside its tile's foot, in its seed's own tile art where the room's scheme "
                   f"has it (`kit.extract`). The settings opener shows '{opt.get('text')}': a column of `list` "
                   f"launchers, each captioned inside - first the display's opener, which shows 'Display Settings', "
-                  f"the first Section down its column under its title in capitals; then the later Sections' "
-                  f"launchers and the Footer's mode launcher. Every popup's Back is the kit's chevron, its title set "
+                  f"the first Section down its column under its title in capitals, or a column per display where "
+                  f"its buttons say which display each drives (`display`, the Section README); then the later "
+                  f"Sections' launchers and the Footer's mode launcher, titled in a later Section's heading's "
+                  f"words - past what its columns hold, on over pages of it, a More launcher at a full page's end "
+                  f"and one back to it first on the next. Every popup's Back is the kit's chevron, its title set "
                   f"left after it. A source's popup fills main under its title, and so do a settings window and "
                   f"Help, with the template's message where you put none; the question and the wait stay windows. "
-                  f"The clock, which no hub draws, and the later Sections' headings, which its options draw none "
-                  f"of, are named and left.\n\n"
+                  f"The clock, which a hub's template draws on its Start page alone, is named and left.\n\n"
                 + _hub_derived_md(p, hub))
     elif hub:
         sel, opt = hub.get('select') or {}, hub.get('options') or {}
@@ -3144,15 +3397,22 @@ def _grammar_md(p, renders):
                   f"every popup fills. The program shows '{sel.get('text')}' first: the Header's source tabs as its "
                   f"tiles - the same controls, so the same IDs - under its title"
                 + (", with Help at its top" if sel.get('help') else '')
-                + f". {opened} shows '{opt.get('text')}': the later Sections' launchers, an Audio Control "
-                  f"and the Footer's mode launcher, as its tiles. The first Section is a popup of its own, opened "
+                + f". {opened} shows '{opt.get('text')}': the later Sections' launchers, a button at the "
+                  f"Header's start or end, an Audio Control and the Footer's mode launcher, as its tiles - titled "
+                  f"in a later Section's heading's words where your rail draws one." + _options_room_md(p)
+                + " The first Section is a popup of its own, opened "
                 + ("by the bar's Display Control" if display else "from a Display tile among the options")
+                + (f": its buttons in a row under its heading, or {'a card' if any(c.get('surface') for c in hub['display']['cards']) else 'a column'} "
+                   f"per display where they say which display each drives (`display`, the Section README)"
+                   if hub.get('display') else '')
                 + f". A source's popup fills main under its title, with a Close back to '{sel.get('text')}'; a "
                   f"settings window is a popup there too; Help, the question and the wait stay windows."
                 + (f" The source and settings popups, the options and the first Section's popup stand on the page's "
                    f"photo, stretched to the popup" + (", a source's with its device picture under its title" if _device_pictures(p) else '')
+                   + (", a settings popup's with its own" if _settings_pictures(p) else '')
                    + f"; '{sel.get('text')}' is the page's own grid, on the photo itself." if _hub_photo(p) else '')
-                + " The clock, which no hub draws, is named and left.\n\n"
+                + " The clock, which a hub's template draws on its Start page alone, and anything but a button at "
+                  "the Header's start or end are named and left.\n\n"
                 + _hub_derived_md(p, hub))
     if small and _foot_strip(p):
         home = next((i.get('text') for i in ((small.get('home') or {}).get('bottom') or {}).get('items') or ()
@@ -3368,7 +3628,8 @@ def _call_md(p):
             f"On a hub, whose template has no call mode, the call page's first Section and its Share Content are a "
             f"popup of their own in main, titled with the Section's heading, which the program shows first and an "
             f"option tile shows again; the dialer fills main as a source's popup does. On the 320 the Section is a "
-            f"column on Main's later pages, as any Section is, and the dialer a page that goes on by More.\n\n")
+            f"column on Main's later pages, as any Section is, and the dialer a page that goes on by More - the "
+            f"pages shared out so that none holds a control alone, wherever there are two to a page.\n\n")
 
 
 def _mic_display_md(p):
@@ -3398,6 +3659,58 @@ def _mic_display_md(p):
             f"status Label or a fourth key. Keep that `text` to a word (Warming, Cooling) where the key stands in "
             f"a rail: the rail's column takes its widest caption, and on a small panel a wider column runs into "
             f"the footer beside it.\n\n")
+
+
+# The transport keys a disc player's popup holds, and the kit's names for
+# each, in the order a theme's kit might name it.
+_TRANSPORT = (('Play', ('play', 'transport_play')), ('Pause', ('pause', 'transport_pause')),
+              ('Stop', ('stop', 'transport_stop')),
+              ('Previous', ('previous', 'previous-chapter', 'prev', 'transport_prev')),
+              ('Next', ('next', 'next-chapter', 'transport_next')))
+
+
+def _room_parts_md(p):
+    """What round five's training room asked of every designer that the
+    README left them to guess: two displays, a disc player's transport, and
+    a recording - its state and the question before it stops. Each in the
+    template's grammar, with nothing of the toolkit's own."""
+    t = p['template']
+    regions = _region_frame(p)
+    toggle = regions and ((p.get('regions') or {}).get('rail') or {}).get('variant') == 'toggle'
+    look = (((p.get('regions') or {}).get('source') or {}).get('button') or {}).get('variant')
+    have = set(icon_names(p).get(look) or ())
+    glyphs = [next((n for n in names if n in have), None) for _, names in _TRANSPORT]
+    if all(glyphs):
+        keys = (f"each an icon key in the popup's own look with the kit's glyph - "
+                + _say([f'`icon="{g}"`' for g in glyphs]) + " - which keeps its cell on every panel, where a "
+                f"worded key grows for its words at the panel's type floor")
+    else:
+        keys = (f"each a worded key, {t}'s kit having no glyph for "
+                + _say([w for (w, _), g in zip(_TRANSPORT, glyphs) if not g]) + " in a source popup's look: "
+                f"worded keys grow for their words at each panel's type floor, so give the Group a box of two "
+                f"rows (`cap=\"3\"`) where the room lists a 725 or a 525 - five in a row fit neither's popup")
+    two = ("a toggle per display, captioned in one short word for it (Front, Back - a toggle holds one), its "
+           "states the display's Power recipe above" if toggle else
+           "a key per display, named for it (Projector, Monitor), its states Off, Warming, On and Cooling - the "
+           "middle two with their own one-word `text` - which the program sets, turning the display on or off "
+           "by the state it is in")
+    return (f"**Two displays** - a projector and a monitor - have no place of their own in {t}'s templates, which "
+            f"draw one display's keys. Give the first Section {two}, and each its `display` naming it "
+            f"(`display=\"Projector\"`), so a hub draws each display's apart - every key of the Section says one, "
+            f"or none does: an On and an Off for each are four keys, more than the template's three places. Which source each display shows is a source popup's to say: a "
+            f"Group of a key per display in each source's popup, lit where that source is on it, and a status "
+            f"Label in a window only where the room has a window for its displays.\n\n"
+            f"**A disc player's transport** - Play, Pause, Stop, Previous and Next - is a `Group` in its source "
+            f"popup, {keys}.\n\n"
+            f"**A recording** is the room's to show: give its launcher `states` whose lit state says so in its "
+            f"own `text` (Recording) in the `alert` colour, on every working page that opens it. "
+            + (f"{t}'s templates ask before a recording starts (a confirm window with `topic=\"recording\"`, the "
+               f"Page README), not before it stops: " if _recording_words(p) else
+               f"{t}'s templates ask nothing about a recording: ")
+            + "a question before it stops is a plain modal you draw - a Panel card, its words in one Label and "
+              "two keys, Stop Recording and Cancel, on the card - which the program shows "
+              "(`reached-by=\"program\"`) when Stop is pressed while recording; on every panel it re-spaces "
+              "what grows on its card as a window's body does, and on the 320 it is laid out in rows.\n\n")
 
 
 def _toggle_mic_display_md(p):
@@ -3434,6 +3747,58 @@ def _toggle_mic_display_md(p):
                f"window's own.\n\n" if mute else ''))
 
 
+def _options_holds(T):
+    """How many tiles a hub's options popup holds on panel row `T`, as
+    bundle.js gridSpots lays them: in one row while they fit between its
+    room's ends a gap apart, else as many to a row as that room holds, in as
+    many rows as stand between its title and main's foot - each the
+    template's tile at the panel's touch minimum (a wider caption widens
+    them all, and holds fewer). None where the hub draws no options grid."""
+    F = T.get('frame') or {}
+    O, C = F.get('options') or {}, F.get('center') or {}
+    t = O.get('tiles') or []
+    if not t or not C or T.get('turned'):
+        return None
+    first, touch, gap = t[0]['rect'], T['touch'], T['gap']
+    cols = sum(1 for x in t if abs(x['rect'][1] - first[1]) <= 20)
+    w, ht = max(first[2], touch), max(first[3], touch)
+    lab = t[0].get('label')
+    cell = max(lab[1] - first[1], ht) + lab[3] if lab else ht
+    lw = max([x['label'][2] for x in t if x.get('label')] + [0])
+    g = C.get('region') or C['rect']
+    strip = next((i['rect'] for i in C.get('items') or () if i.get('role') == 'popup'), None)
+    right = strip[0] if strip else g[0] + g[2]
+    across = right - (g[0] + max(0, g[0] + g[2] - right)) - 2 * gap - w
+    top = O['title'][1] + O['title'][3] + gap if O.get('title') else 0
+    one = max([n for n in range(2, 30) if across / (n - 1) >= w + gap] + [1])
+    per = max(cols, math.floor(across / (max(w, lw) + gap)) + 1)
+    rows = max(1, math.floor((g[1] + g[3] - gap - top - cell) / (cell + gap)) + 1)
+    return max(one, per * rows)
+
+
+def _options_room_md(p):
+    """The options' room on each hub, for *What a hub makes of your page*:
+    round five's Shockwave and Turbulence call pages gave the 525 five and
+    six options - its Sections' launchers, Audio Control, the mode launcher
+    and the call's own popup - where the README said no number."""
+    rows = {}
+    for m, T in sorted(models(p).items(), key=lambda kv: kv[0] != p['model']):
+        if T['tier'] == 'B':
+            n = _options_holds(T)
+            if n:
+                rows.setdefault(n, []).append(m)
+    if not rows:
+        return ''
+    # Past that they go on over pages of it (bundle.js optionPages): round
+    # five's final Turbulence room made five on its 525 with its Header's
+    # Record.
+    return (f" It holds {_say([f'{n} on the {_model_names(ms)}' for n, ms in rows.items()])} at most, fewer where a "
+            f"caption at the hub's type floor widens its tiles; a call page's are its later Sections' launchers, "
+            f"the Header's buttons, Audio Control, the mode launcher and its call's own popup together. Past that "
+            f"they go on over pages of it - a More tile at a full page's end, a Back at the next one's start - so "
+            f"leave it room for them all where one page should show them.")
+
+
 def _hub_derived_md(p, hub):
     """What a hub's region page draws by itself, by the template's names, and
     what a designer may draw in their place (gdl.design._one_name_each)."""
@@ -3463,20 +3828,47 @@ def _small_derived_md(p, small):
     floor = next((T['floor'] for m, T in models(p).items() if T.get('frame') is small), 14)
     vol = (small.get('volume') or {}).get('popup') or 'Volume'
 
-    def letters(w):
+    def letters(w, em=0.55):
         # Open Sans averages about 0.55 em a letter; 8 px for the key's edges.
-        return max(1, int((w - 8) / (0.55 * floor * p['pt'])))
+        return max(1, int((w - 8) / (em * floor * p['pt'])))
+    # A heading the 320 sets in capitals (writing.column_labels_320) is
+    # counted in capitals, 0.63 em each in Open Sans: counted as letters, the
+    # README gave Afterburn's 107 px heading about 9, and round five's
+    # TRANSPORT, nine capitals, was 109 px.
+    caps = (p.get('writing') or {}).get('column_labels_320') == 'caps'
+    heads = (f"about {letters(head[2], 0.63)} capitals, as the 320 sets it" if caps
+             else f"about {letters(head[2])} letters")
     return (f"**What it draws by itself.** Main's later pages (`Main SD 2` and on) and the '{vol}' window the "
             f"program shows are the 320's, drawn from your working page - one '{vol}' for every working page; "
             f"draw none of them.\n\n"
             f"**Words on the 320.** What you put in a source or a window stands in the 320's columns, as its "
             f"frame measures them: each key {key[2]}x{key[3]}, room for a word of about {letters(key[2])} letters at its {floor} pt floor "
-            f"(two words go on two lines), each column's heading {head[2]} px wide - about {letters(head[2])} "
-            f"letters. A `Group`'s `title` is drawn on the 320 alone, as its column's heading: make it one short "
-            f"word (Presets, not Camera Presets). A Label over a Group stands at the top of the column beside it "
-            f"on the 320, as that column's heading - leave the heading to the Group's `title`. Words alone - Help "
+            f"(two words go on two lines), each column's heading {head[2]} px wide - {heads}. A `Group`'s `title` is drawn on the 320 alone, as its column's heading: make it one short "
+            f"word (Presets, not Camera Presets). A Label just over a Group saying its title - the Doc Cam's Zoom, "
+            f"the heading the other panels draw for it - is left off the 320, the title heading the column there; "
+            f"a Label of other words over a Group stands at the top of a column of its own beside it. Words alone - Help "
             f"in your own words - are set across the page {_strip_side(p)} instead, going on over a second page "
-            f"by More and Back.\n\n")
+            f"by More and Back" + _prose_room(p, small, floor) + ".\n\n")
+
+
+def _prose_room(p, small, floor):
+    """How much of one Label a 320 page of words holds (bundle.js
+    prosePages): under the strip to More's top, a gap clear each way, in
+    lines at the type floor - a Label does not break across pages. Round
+    five's Shockwave and Turbulence Help were 146 px and 122 px of 125 and
+    117, and the README said only that a Label too long was refused."""
+    C = small.get('center') or {}
+    gap = next((T['gap'] for T in models(p).values() if T.get('frame') is small), 9)
+    more = next((i['rect'] for i in C.get('items') or () if i.get('role') == 'more'), None)
+    if not C.get('rect') or (not more and not small.get('foot')):
+        return ''
+    top = C['rect'][1] + gap
+    foot = (more[1] if more else small['top']['rect'][1]) - gap
+    line = math.ceil(floor * p['pt'] * 1.2)
+    lines = (foot - top - 2) // line
+    across = int((small['center']['rect'][2] - 2 * gap) / 1.06 / (0.55 * floor * p['pt']))
+    return (f"; a Label does not break across pages, so keep each to what one holds - {foot - top} px under the "
+            f"strip, {lines} lines of about {across} letters at its {floor} pt floor")
 
 
 # -- the working page -----------------------------------------------------------
@@ -3625,7 +4017,7 @@ def _working_md(p):
             + room + " Extron's own Start also holds the volume: leave it to the working page's RightRail, or give "
               "a Slider there and the RightRail's `slot=\"volume\"` Slider one `id` of your own (Designing a "
               "panel).\n\n"
-            + _mic_display_md(p)
+            + _mic_display_md(p) + _room_parts_md(p)
             + ''.join(f"`{name}.dc.html`:\n\n```html\n{code}\n```\n\n" for name, code in _working_example(p)))
 
 
@@ -3706,6 +4098,10 @@ def _working_example(p):
         # rail, and Shockwave's 725 holds two of its Main VC's three.
         light = next((lw for lw in launchers if 'Lighting' in lw), launchers[0])
         one = '\n      ' + x('Button', f' name="{light}"{launch_icon(light)} nav="{_stem(light)}"', light)
+        # The mode launcher back says Present: the template's own Presentation
+        # is one word wider than the 725's 145 px rail at its 16 pt floor (156
+        # px with its margins, in Open Sans), which capMode names - as the
+        # left rail's section above says - so a room listing a 725 says less.
         call_page = ('<!-- The call page: the program shows it when a call comes in. -->\n'
                      + x('Page', f' name="Call" role="call" reached-by="program"{room}', '\n  ' + '\n  '.join([
                          x('Header', '', '\n    ' + '\n    '.join((src('Laptop', 'laptop'), src('PC', 'pc'),
@@ -3718,8 +4114,8 @@ def _working_example(p):
                            + x('Section', f' title="{second}"' if second else '', one + '\n    ') + '\n  '),
                          x('RightRail'),
                          x('Footer', ' help="Help" power="PowerDown"',
-                           '\n    ' + x('Button', ' slot="mode" name="Presentation" nav="MainSD" '
-                                       'does="Shows the working page."', 'Presentation') + '\n  '),
+                           '\n    ' + x('Button', ' slot="mode" name="Present" nav="MainSD" '
+                                       'does="Shows the working page."', 'Present') + '\n  '),
                          x('Center', ' group="Sources"')]) + '\n'))
     # A camera as the template draws one in its source popup: a heading over
     # its zoom keys, the in-well look's own glyphs on them where the kit has

@@ -1,0 +1,68 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-01T12:00:00Z"
+ },
+ "title": "Training Room",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 800, "title": "Start", "is_interactive": true},
+  "MainSD.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Main SD", "is_interactive": true},
+  "Call.dc.html": {"x": 2720, "y": 0, "w": 1280, "h": 800, "title": "Call", "is_interactive": true},
+  "CallShare.dc.html": {"x": 4080, "y": 0, "w": 1280, "h": 800, "title": "Call Share", "is_interactive": true},
+  "PC.dc.html": {"x": 0, "y": 920, "w": 921, "h": 574, "title": "Instructor PC"},
+  "Laptop.dc.html": {"x": 1001, "y": 920, "w": 921, "h": 574, "title": "Laptop"},
+  "ShareLink.dc.html": {"x": 2002, "y": 920, "w": 921, "h": 574, "title": "ShareLink"},
+  "DocCam.dc.html": {"x": 3003, "y": 920, "w": 921, "h": 574, "title": "Document Camera"},
+  "BluRay.dc.html": {"x": 4004, "y": 920, "w": 921, "h": 574, "title": "Blu-ray"},
+  "VTCDialer.dc.html": {"x": 5005, "y": 920, "w": 921, "h": 574, "title": "VTC Dialer"},
+  "Help.dc.html": {"x": 0, "y": 1614, "w": 1280, "h": 800, "title": "Help"},
+  "PowerDown.dc.html": {"x": 1360, "y": 1614, "w": 1280, "h": 800, "title": "Power Down"},
+  "PoweringDown.dc.html": {"x": 2720, "y": 1614, "w": 1280, "h": 800, "title": "Powering Down"},
+  "PoweringUp.dc.html": {"x": 4080, "y": 1614, "w": 1280, "h": 800, "title": "Powering Up"},
+  "IncomingCall.dc.html": {"x": 5440, "y": 1614, "w": 1280, "h": 800, "title": "Incoming Call"},
+  "ScreenControl.dc.html": {"x": 0, "y": 2534, "w": 1280, "h": 800, "title": "Screen Control"},
+  "LightingControl.dc.html": {"x": 1360, "y": 2534, "w": 1280, "h": 800, "title": "Lighting Control"},
+  "AudioControl.dc.html": {"x": 2720, "y": 2534, "w": 1280, "h": 800, "title": "Audio Control"},
+  "Recording.dc.html": {"x": 4080, "y": 2534, "w": 1280, "h": 800, "title": "Recording", "is_interactive": true},
+  "StopRecording.dc.html": {"x": 5440, "y": 2534, "w": 1280, "h": 800, "title": "Stop Recording"}
+ },
+ "order": [
+  "Main.dc.html",
+  "MainSD.dc.html",
+  "Call.dc.html",
+  "CallShare.dc.html",
+  "PC.dc.html",
+  "Laptop.dc.html",
+  "ShareLink.dc.html",
+  "DocCam.dc.html",
+  "BluRay.dc.html",
+  "VTCDialer.dc.html",
+  "Help.dc.html",
+  "PowerDown.dc.html",
+  "PoweringDown.dc.html",
+  "PoweringUp.dc.html",
+  "IncomingCall.dc.html",
+  "ScreenControl.dc.html",
+  "LightingControl.dc.html",
+  "AudioControl.dc.html",
+  "Recording.dc.html",
+  "StopRecording.dc.html"
+ ],
+ "notes": {
+  "title-room": {"x": 0, "y": -300, "text": "Training Room: TLP 1035T, 725T, 525T and 320M", "kind": "title1", "maxW": 5360}
+ },
+ "designSystems": [
+  {
+   "title": "Extron Shockwave",
+   "namespace": "extronshockwave",
+   "artifact": "https://claude.ai/artifact/JBQ1ua2m8MvcyQ2qJrtoRo",
+   "version": null,
+   "copiedAt": "2026-11-01T12:00:00Z"
+  }
+ ]
+}

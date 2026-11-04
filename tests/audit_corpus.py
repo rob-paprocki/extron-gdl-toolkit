@@ -1,8 +1,9 @@
 """Test this repo's documented beliefs against every .gdl it can reach.
 
-Almost everything this toolkit knows about the format was inferred from ONE
-project - the client fixture. Two bugs on 2026-09-10 came from exactly
-that: a rule that is true of that project and false in general.
+Almost everything this toolkit knows about the format was first inferred from
+ONE project - a client's, since deleted (docs/history.md). Two bugs on
+2026-09-10 came from exactly that: a rule that is true of that project and
+false in general.
 
   * "a popup's authored size is always the whole canvas" - true of the client project,
     false in Extron's Afterburn template, where 10 of 29 popups are 880x525.
@@ -13,7 +14,7 @@ that: a rule that is true of that project and false in general.
 Both were found by measuring rather than reasoning. This runs that measurement
 over the whole corpus, so the next one is found before it ships.
 
-    python tests/audit_corpus.py                  # fixtures + seeds + templates
+    python tests/audit_corpus.py                  # synthetic, seeds, templates
     python tests/audit_corpus.py --no-templates   # skip Extron's 50 .glt (faster)
     python tests/audit_corpus.py <dir> [<dir>..]  # anywhere else
 
@@ -271,7 +272,7 @@ def inv_caption(F):
 
 def inv_fonts(F):
     """Every face a project declares and carries comes back out of it
-    (tests/test_fonts.py gates fixtures/). One it declares and does not carry
+    (tests/test_fonts.py gates the synthetic fixture). One it declares and does not carry
     is the project's, not a fault: inv_fonts_not_carried lists those."""
     bad = [f"{f['name']}: extract raised {f['fonts_error']}" for f in F if f['fonts_error']]
     bad += [f"{f['name']}: not recovered {f['fonts_missing'][:4]}"
@@ -422,7 +423,8 @@ def main(argv):
     if args:
         dirs = args
     else:
-        dirs = [os.path.join(REPO, 'fixtures', 'gdl'), SEEDS_DIR]
+        # The synthetic fixture (tests/data/synthetic/) and the seeds.
+        dirs = [os.path.join(REPO, 'tests', 'data', 'synthetic'), SEEDS_DIR]
         if '--no-templates' not in argv:
             dirs.append(TEMPLATES_DIR)
     paths = [p for p in discover(dirs) if usable(p)]

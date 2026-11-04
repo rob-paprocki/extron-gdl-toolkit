@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stop Recording</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Stop Recording" kind="modal" does="Asks before the recording is stopped." panels="TLP1035T TLP725T TLP525T TLP320M" theme="saturn">
+  <x-import component-from-global-scope="ExtronShockwave.Panel" name="Stop Recording Card" fill="raised" border="rounded" style="position: absolute; left: 288px; top: 205px; width: 703px; height: 389px"></x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Label" name="Stop Recording Question" type="heading" align="center" color="text-secondary" style="position: absolute; left: 335px; top: 240px; width: 610px; height: 164px">Do you want to stop recording?</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Cancel" variant="wide" icon="red_round" does="Closes this popup." style="position: absolute; left: 348px; top: 449px; width: 272px; height: 110px">Cancel</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Stop Recording Confirm" variant="wide" icon="green_round" does="Stops the recording; the program then hides this popup." style="position: absolute; left: 659px; top: 449px; width: 272px; height: 110px">Stop Recording</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

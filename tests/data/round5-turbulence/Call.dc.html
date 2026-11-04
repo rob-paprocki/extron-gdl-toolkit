@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Call" role="call" reached-by="program" does="The Zoom call page; the program shows it when a call comes in." panels="TLP1035T TLP725T TLP525T TLP320M" theme="office">
+  <x-import component-from-global-scope="ExtronTurbulence.Header">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="111" name="PC" icon="input_pc" nav="PC" states="Off, On" does="Shows the PC and routes the instructor's PC to the projector; On while it is on the projector.">PC</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="112" name="Laptop" icon="input_laptop" nav="Laptop" states="Off, On" does="Shows the laptop and routes the lectern laptop to the projector; On while it is on the projector.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="113" name="ShareLink" icon="blank" nav="ShareLink" states="Off, On" does="Shows ShareLink and routes wireless sharing to the projector; On while it is on the projector.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="114" name="Doc Cam" icon="input_doc-cam" nav="DocCam" states="Off, On" does="Shows the document camera and routes it to the projector; On while it is on the projector.">Doc Cam</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="115" name="Blu-ray" icon="input_bluray" nav="BluRay" states="Off, On" does="Shows the Blu-ray controls and routes the player to the projector; On while it is on the projector.">Blu-ray</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="source" id="116" name="Camera" icon="input_vc-cam" nav="Camera" does="Shows the Zoom camera presets.">Camera</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="share" name="Share Content" states="Off, On" does="Shares the room's source into the Zoom call; On while it is shared."></x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.LeftRail">
+    <x-import component-from-global-scope="ExtronTurbulence.Section" title="VTC">
+      <x-import component-from-global-scope="ExtronTurbulence.Button" name="Make Call" nav="VTCDialer" states="Off, On" does="Shows the dialer for a Zoom call on the instructor's PC; On while in a call.">Initiate Call</x-import>
+      <x-import component-from-global-scope="ExtronTurbulence.Button" name="End Call" does="Ends the Zoom call.">End Call</x-import>
+      <x-import component-from-global-scope="ExtronTurbulence.Button" name="Privacy" states='[{"name":"Off"},{"name":"On","color":"alert"}]' does="Covers the camera; On while privacy is on.">Privacy</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Section">
+      <x-import component-from-global-scope="ExtronTurbulence.Button" id="121" variant="dock" name="Display Control" nav="DisplayControl">Display Control</x-import>
+      <x-import component-from-global-scope="ExtronTurbulence.Button" id="122" variant="dock" name="Lighting Control" nav="LightingControl">Lighting Control</x-import>
+      <x-import component-from-global-scope="ExtronTurbulence.Button" id="123" variant="dock" name="Record" states='[{"name":"Off"},{"name":"Recording","text":"Recording","look":"on","color":"alert"}]' does="Starts recording the lecture; lit and reading Recording while the room records. Pressed while recording, the program shows the Stop Recording question.">Record</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.RightRail">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="audio" id="131" variant="dock" name="Audio Control" nav="AudioControl" states='[{"name":"Off"},{"name":"Mics Muted","text":"Mics Muted","look":"on","color":"lime"}]' does="Shows the audio window; lit and reading Mics Muted while the wireless microphones are muted.">Audio Control</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" slot="mode" name="Presentation" variant="dock" nav="MainSD" does="Shows the working page.">Presentation</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

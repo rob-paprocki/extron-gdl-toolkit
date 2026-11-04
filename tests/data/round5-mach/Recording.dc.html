@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Recording Controls</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Recording" kind="modal" role="settings" title="Recording Controls" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Label" name="Recording Length Label" align="right" color="text-secondary" style="position: absolute; left: 330px; top: 170px; width: 330px; height: 40px">RECORDING LENGTH:</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Recording Length" align="left" color="text" does="Shows how long the current recording has run." style="position: absolute; left: 680px; top: 170px; width: 270px; height: 40px">00:00:00</x-import>
+  <x-import component-from-global-scope="ExtronMach.Group" title="Record" cell="200x60" gap="40" cap="2" style="position: absolute; left: 420px; top: 260px; width: 440px; height: 140px">
+    <x-import component-from-global-scope="ExtronMach.Button" variant="alert" name="Record" nav="RecordConfirm" states='[{"name":"Off"},{"name":"Recording","text":"Recording","fill":"alert"}]' does="Asks attendees to be told, then starts recording; lit Recording while the room is recording.">Record</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" variant="alert" name="Stop" nav="StopConfirm" does="Asks before stopping the recording.">Stop</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -139,7 +139,8 @@ made from it (`docs/claude-design.md` §1, *Build*). Neither replaces `tests/ver
    aspect, over the page's `background`; `"background_layout": "stretch"` stretches
    it instead, as Mach's pages lay out their photo. One the donor lacks needs `"images": {"<name>": "<path>"}`,
    the path relative to the theme resource kits (`vendor/extron/Resources`, or
-   the install), and the applier appends it. A standard popup takes a
+   the install) - or, written `./<path>`, to the spec's own folder, for art
+   of the spec's own (`tests/data/synthetic/`) - and the applier appends it. A standard popup takes a
    `background_image` and `background_layout` too - Shockwave's and
    Turbulence's hubs draw their popups on the page's photo, stretched; a
    modal takes none - Build draws a modal's page, photo too, at the modal's
@@ -218,7 +219,7 @@ made from it (`docs/claude-design.md` §1, *Build*). Neither replaces `tests/ver
    The applier drops the donor's own pages and popups once it has cloned what
    it needs (`"keep_donor_pages": true` keeps them), but every border, font and
    image a generated control draws with is the donor's: a panel cloned from a
-   client fixture draws in that client's retail fonts and artwork. For anything
+   client's project draws in that client's retail fonts and artwork. For anything
    going to a client, use a
    *seed* from `seeds/` — themed projects made through the Project Create
    Wizard (`powershell/New-GdlSeed.ps1`), across several theme families and sizes (`seeds/README.md` lists them; `git
@@ -432,7 +433,7 @@ wrong. What to do is here; why is in `docs/gdl-format.md` §7 unless noted.
 ## Where the design authority lives
 
 `docs/design-rules.md` separates three things and you must keep them separate:
-what Extron **documents**, what the client fixture happens to **do**, and
+what Extron **documents**, what one client project happened to **do**, and
 what we **extrapolated**. Never quote an extrapolated number to a client as an
 Extron requirement — the touch-target formula in particular reproduces Extron's
 published table but is our derivation, not their stated rule.

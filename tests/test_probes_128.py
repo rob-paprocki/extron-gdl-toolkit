@@ -88,8 +88,6 @@ def _kit_here(name):
 class TestTheInputs(unittest.TestCase):
     def test_every_path_the_runner_names_is_in_the_repo(self):
         for key, rel in _runner_inputs().items():
-            if key == 'FormatFixtureSeed':
-                continue
             path = os.path.join(REPO, *rel.split('\\'))
             # A seed is Git LFS: a pointer file is there, and is enough to name.
             self.assertTrue(os.path.exists(path), f'{key}: {rel}')
@@ -280,8 +278,7 @@ class TestTheRunner(unittest.TestCase):
         for p in probes:
             self.assertIn(f'`{p}`', readme, p)
         for key, rel in _runner_inputs().items():
-            if key != 'FormatFixtureSeed':
-                self.assertIn(rel.replace('\\', '/').rsplit('/', 1)[-1], readme, rel)
+            self.assertIn(rel.replace('\\', '/').rsplit('/', 1)[-1], readme, rel)
 
     def test_it_keeps_the_scripts_conventions(self):
         s = _read('Run-Probes128.ps1')

@@ -248,9 +248,12 @@ class IdMap:
                 else popup['name'] in ct['popup_refs'])
 
     # -- checks --------------------------------------------------------------
-    def check(self):
-        """(problems, notes). Problems block `write`, the way they block `plan`."""
-        problems = list(self.panel.check()) + list(self._problems)
+    def check(self, spec=True):
+        """(problems, notes). Problems block `write`, the way they block `plan`.
+        `spec=False` leaves out gdl.spec check's own, for a caller that runs
+        them itself: gdl.design translate does, on a copy that stands in a
+        mirror's ID where pin_ids has not given it one (`_spec_check`)."""
+        problems = (list(self.panel.check()) if spec else []) + list(self._problems)
         notes = []
         problems += self._mirror_rules()
         problems += self._showability_rules()
@@ -263,6 +266,14 @@ class IdMap:
                     notes.append(f"{r['where']}: its function is not described - the ID map "
                                  f'will list it with none')
         return problems, notes
+
+    def nav_rules(self):
+        """The problems navigation alone decides, which no ID does: a popup
+        shown over a page with no reference to it, a page or popup nothing
+        shows. What a spec whose IDs are not yet the ones it is built with
+        can be held to - gdl.design translate's, where another problem
+        stopped the IDs being pinned."""
+        return self._showability_rules() + self._graph_rules()[0]
 
     def _mirror_rules(self):
         """Controls sharing an ID are ONE control to the program.
@@ -757,16 +768,24 @@ def _tier(model):
         return None
 
 
-def check_panels(maps):
-    """Problems across the panels: each panel's own checks, and one ID meaning
-    one control on every panel. A control the canvas drew is on every panel -
-    nothing is dropped - but where that panel's layout named it as left off
-    (a page's `left`: a hub's footer clock, which its template has no place
-    for); what a layout added is on the panels that added it."""
+def check_panels(maps, spec=True):
+    """Problems across the panels: each panel's own checks (`spec`, as
+    IdMap.check's), and one ID meaning one control on every panel
+    (across_panels)."""
+    out = []
+    for m in maps:
+        out += [f'{m}: {p}' for p in maps[m].check(spec)[0]]
+    return out + across_panels(maps)
+
+
+def across_panels(maps):
+    """One ID meaning one control on every panel. A control the canvas drew
+    is on every panel - nothing is dropped - but where that panel's layout
+    named it as left off (a page's `left`: a hub's footer clock, which its
+    template has no place for); what a layout added is on the panels that
+    added it."""
     models = list(maps)
     out = []
-    for m in models:
-        out += [f'{m}: {p}' for p in maps[m].check()[0]]
     seen = collections.OrderedDict()
     for m in models:
         for uid, recs in maps[m].addressed().items():

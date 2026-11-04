@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- The call page (Zoom on the instructor's PC): the program shows it when a call comes in. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Call" role="call" reached-by="program" panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate" does="Zoom call page on the instructor's PC; the program shows it when a call comes in.">
+  <x-import component-from-global-scope="ExtronAfterburn.Header">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="PC" id="211" icon="pc" nav="PC" does="Shows the instructor's PC controls in the Center.">PC</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Laptop" id="212" icon="laptop" nav="Laptop" does="Shows the lectern laptop's controls in the Center.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="ShareLink" id="213" icon="streaming" nav="ShareLink" does="Shows the ShareLink wireless sharing controls in the Center.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="source" name="Doc Cam" id="214" icon="camera" nav="DocCam" does="Shows the document camera controls in the Center.">Doc Cam</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.LeftRail">
+    <x-import component-from-global-scope="ExtronAfterburn.Section" title="VTC">
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Make Call" nav="VTCDialer" states="Off, On" does="Shows the dialer, where a number is dialed and a Zoom call joined; On while a call is connected.">Make Call</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="End Call" does="Ends the Zoom call.">End Call</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Privacy" states="Off, On" does="Turns camera privacy on and off; On while the camera is covered.">Privacy</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Section" title="Settings">
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera" icon="camera" nav="Camera">Camera</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Audio" id="205" icon="audio" nav="Audio" states='[{"name":"Mics Live"},{"name":"Mics Muted","look":"on"}]' does="Opens the audio settings; lit while the wireless mics are muted.">Audio</x-import>
+      <x-import component-from-global-scope="ExtronAfterburn.Button" name="Recording" id="206" icon="record" nav="Recording" states='[{"name":"Idle"},{"name":"Recording","look":"on"}]' does="Opens the recording settings; lit, with the red record icon, while the room is recording.">Recording</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.RightRail"></x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="mode" name="Presentation" nav="MainSD" does="Shows the working page.">Presentation</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" slot="preview" name="Sources" id="221" nav="SelectSource" does="Shows all five sources, including the Blu-ray player.">Sources</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

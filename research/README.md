@@ -33,7 +33,8 @@ candidate improvement to it, with the numbers that justify it.
 | `final_patch.py` | the `borderFillColor` fill + modal scrim rule |
 | `compose2.py`, `q_final.py` | the bilevel-vs-antialiased text decision, fitted |
 | `v3.py`, `v2.py`, `frac.py`, `qlib.py`, `q46.py` | fractional glyph advances + per-control layering — the best result reached |
-| `synthetic_bold.py` | GUI Designer's emboldening of a bold caption, fitted on the fixture's 44 bold Forma captions; runs from the repo root (`docs/render-fidelity.md` finding 8) |
+| `synthetic_bold.py` | GUI Designer's emboldening of a bold caption, fitted on a client project's 44 bold Forma captions; runs from the repo root on the synthetic fixture (`docs/render-fidelity.md` finding 8) |
+| `gdi_padding.py` | GDI+'s padding of a left- or right-aligned caption; runs from the repo root on the synthetic fixture (`docs/render-fidelity.md` §9) |
 
 ## 1. `final_patch.py` — the fill the payload cannot describe
 
@@ -52,7 +53,7 @@ Measured: **Offline Page 40.22% → 1.28%**, no other page changed. Against the
 currently shipped compositor that takes the corpus mean to roughly 2.6%.
 
 The toolkit currently sidesteps this by honouring `EnableOfflinePage`, which is
-`false` in all six fixtures. That is correct for a viewer and wrong for anything
+`false` in all six of the client project's files. That is correct for a viewer and wrong for anything
 that has to render the offline page faithfully.
 
 ## 2. `compose2.py` + `q_final.py` — the text raster decision, fitted
@@ -99,9 +100,13 @@ for further fidelity work.
 
 ## Re-running any of this
 
-The scripts reference the session scratchpad they were written in. Retarget
-`SP` / `GDL` / `REF` (in `qlib.py`, `v2.py`, `v3.py`) at `fixtures/gdl/` and
-`fixtures/snapshots/Individual/`, and use a Python with Pillow. The snapshot
-directory they scored against is byte-identical to `fixtures/snapshots/`, and
-their `diff_stats` is the same function as `gdl/compose.py`'s, so the numbers
-above are directly comparable to the harness output.
+Every script here but `synthetic_bold.py`, `gdi_padding.py` and
+`synthetic_breakdown.py` was written against a client project and GUI Designer's snapshots of it, in the session scratchpad
+they came from; that project and its snapshots are no longer in the repo
+(`docs/history.md`), so their numbers are a record and not a check. Their
+`diff_stats` is the same function as `gdl/compose.py`'s, so the numbers above
+are comparable to the harness output on that project. To try one again, point
+`SP` / `GDL` / `REF` (in `qlib.py`, `v2.py`, `v3.py`) at the synthetic fixture
+(`tests/data/synthetic/synthetic.gdl` and its `snapshots/Individual/`) and
+replace the page tables, which name the client project's pages; use a Python
+with Pillow.

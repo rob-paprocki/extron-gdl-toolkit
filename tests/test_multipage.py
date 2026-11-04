@@ -1,7 +1,7 @@
 """More than one page per spec.
 
 Every example and every test in this repo used exactly one page, while the real
-client fixture has 27 - so page-to-page ID allocation, the thing a real panel
+client project it was first read off had 27 - so page-to-page ID allocation, the thing a real panel
 depends on most, had never been exercised at all. It turns out to work; these
 tests are here so it keeps working, and so the gap is not silently reopened.
 """

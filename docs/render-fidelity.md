@@ -1,8 +1,12 @@
 # Render fidelity: what GUI Designer actually draws
 
 Findings from scoring our compositor against GUI Designer's own snapshot
-exports (50 renders of the `_alt 2_0_0` project). Every claim below was
-measured, and each was put through an adversarial verification pass.
+exports (50 renders of a client project, findings 1-8, and the synthetic
+fixture's 29, §9). Every claim below was measured, and findings 1-8 were each
+put through an adversarial verification pass. The client project and its
+renders are no longer in the repo (`docs/history.md`): findings 1-8 stand as
+measured, and the synthetic fixture is the render baseline
+(`tests/baseline-synthetic.json`, `CLAUDE.md` *Verifying a change*).
 
 Baseline when this started: mean **4.57%** differing pixels, worst page 40.22%.
 
@@ -41,15 +45,15 @@ are **defined** in it; see `docs/from-scratch.md`.
 **Implemented** in `gdl/compose.py` as `fill_index()` + `draw_fill()`, joined on
 `(page id, control id)` — the pair both models already share. A page's
 `idField` is layout.json's `Page.ID` and a control's `idField` is its
-`Control.ID`; verified equal across all six fixtures (157 pages, 3,744
-controls). `gdl/project.py`'s `pages()` walks the authoring model's page tree to
+`Control.ID`; verified equal across all six of the client project's files
+(157 pages, 3,744 controls). `gdl/project.py`'s `pages()` walks the authoring model's page tree to
 supply it. Measured: Offline Page 40.22% → 1.28%, all 26 other pages ±0.00%.
 
 The first version keyed on `(type, rect)` instead, because the authoring model
 was only read as a flat object graph. It scored identically — but only because
 the eligible subset (no artwork *and* a real fill) is a single control per file.
-`(type, rect)` is **not** unique over controls generally: each fixture has
-127–132 colliding groups, and nothing checked the destination side, so two
+`(type, rect)` is **not** unique over controls generally: each of those files
+had 127–132 colliding groups, and nothing checked the destination side, so two
 same-typed, same-positioned controls on different pages would both have been
 filled. Recorded because "it scored the same" is exactly how a key like that
 survives review.
@@ -58,9 +62,9 @@ One trap in the page walk: a serialized `List<T>`'s `_items` is over-allocated �
 32 slots holding 4 pages — so it must be sliced to `_size`, or the tail of
 `None`s reads as real empty objects.
 
-The index holds exactly **one** entry in each of the six fixtures — the same
-`PBShape "Offline Window"` — so this rule is narrow in this corpus even though
-it is worth 1.44 points of the corpus mean.
+The index held exactly **one** entry in each of those six files — the same
+`PBShape "Offline Window"` — so this rule was narrow there even though it was
+worth 1.44 points of their mean.
 
 ### The scrim half of the rule is not verifiable here
 
@@ -98,7 +102,10 @@ alpha == 0 is skipped. It does not do straight alpha blending.
 
 Measured over 3,296 partial-alpha pixels: straight alpha is off by a mean of
 **97 levels** per channel; binary alpha by **2.15**. This affects every page
-with an antialiased asset edge, which is all of them.
+with an antialiased asset edge, which is all of them. A fill translucent over
+its whole area is not drawn so - the synthetic fixture's translucent keys and
+panel show what is under them in the snapshot (§9) - and the client's project
+has none to measure it on.
 
 `gdl.compose.paste` keeps that rule by default, and it is the rule wherever a
 render is **scored** against a snapshot: `tests/score.py`,
@@ -264,11 +271,13 @@ document's closing caution already warns about. The next person should find the
 
 ### Scope limit on all of the above
 
-The scored fixture only ever draws **one** family: instrumenting `face()` across
-a full harness run shows 576 calls, all Forma DJR Display. Every text finding
-here is therefore validated against a single typeface; the corpus's Arial,
+The client project findings 1-8 were scored on only ever drew **one** family:
+instrumenting `face()` across a full harness run showed 576 calls, all Forma
+DJR Display. Every text finding here was therefore validated against a single
+typeface; the corpus's Arial,
 Open Sans and Afterburn text is flattened into artwork on these pages. Treat the
-constants as measured for Forma and plausible elsewhere.
+constants as measured for Forma and plausible elsewhere. The synthetic fixture
+(§9) draws five faces live, and measures them.
 
 The way out of that is now on disk. Extron ships 50 `.glt` templates with GUI
 Designer (`C:\Users\Public\Documents\Extron\GUI Designer Templates\TouchLink
@@ -277,8 +286,8 @@ all 50 unchanged, and between them they define **15 distinct font families** -
 Arial, Arial Black, Open Sans, Open Sans Light, Roboto, Segoe UI, Segoe UI
 Semibold, FluentSystemIcons-Regular, and seven Extron families (Afterburn,
 Shockwave, Lift and Extron-Lift, GUI Configurator, and two GUIC Video
-Conference faces) - where `gdl/fonts/` holds the fixtures' (its README lists
-them). A weight Windows names as part of the family is a family here
+Conference faces) - where `gdl/fonts/` holds the synthetic fixture's (its
+README lists them). A weight Windows names as part of the family is a family here
 (`font_resource_names()`); Roboto's Light and Thin share the one resource,
 `Roboto`. What they do
 *not* ship is ground truth: a template carries no built payload, so there are no
@@ -286,8 +295,8 @@ snapshots to score against and one would have to be built first.
 
 ## 8. Bold is the regular, emboldened - a model measured, not shipped
 
-GUI Designer has no bold file for the faces a panel draws bold. The fixtures
-embed Forma DJR Display Regular only; every seed carries Open Sans as Regular
+GUI Designer has no bold file for the faces a panel draws bold. The client
+project embedded Forma DJR Display Regular only; every seed carries Open Sans as Regular
 (and Light), none an Open Sans Bold. It emboldens the regular, as GDI+ does for
 a family with no bold face. `gdl.compose` draws a bold caption in the regular,
 unemboldened - and adding an Open Sans Bold file would draw a design the panel
@@ -320,10 +329,84 @@ emboldens and lays out at the regular's widths: every line of the two-line
 `Conference Volume` on 120 Audio Controls, which grown would fill its 167 px
 box to within GDI+'s default padding of 1/6 em a side. Nothing measured
 explains the two-line ones - both fit their box by these metrics - and a rule
-fitted on two captions of one design would be fitting noise. What would settle
-it is bold ground truth beyond these 44: the synthetic fixture
-(`docs/ROADMAP.md`), with bold Open Sans captions on one line and on two, near
-their box's edge and far from it.
+fitted on two captions of one design would be fitting noise. The synthetic
+fixture (§9) has bold Open Sans captions on one line and on two, near their
+box's edge and far from it; on it the model does not settle the question yet,
+because a missing padding confounds every left-aligned bold title (§9).
+
+## 9. The synthetic fixture: ground truth beyond one typeface
+
+`tests/data/synthetic/` is a project of the toolkit's own, in generic words -
+10 pages and 18 popups of the client project's sizes, every control type the
+renderer draws but a Level - built on `seeds/Afterburn 1035.gdl` by
+`powershell/New-GdlPanel.ps1` (verified, 2,836 checks on 531 controls), and
+GUI Designer's own *Take All Pages Snapshot (Individual)* of it, exported by
+`powershell/Export-GdlSnapshots.ps1`: 29 PNGs, the Offline Page among them.
+Its README says what each page holds. Where the client's drew one face, it
+draws Open Sans regular, bold and italic from 14 to 40 pt, Open Sans Light,
+Arial, Arial Black and the Afterburn icon face, in every alignment.
+
+Its baseline, `tests/baseline-synthetic.json`: **mean 3.44%, median 2.68%,
+worst 8.03%** over 29 pages (Type Sizes), where the client's was 2.19%, 1.65%
+and 7.68% over 27. Each face is the build's own (`python -m gdl.fonts` over
+it); recovered from the client's project instead, every page scored the same
+to the last digit.
+
+Where the pixels differ, inside each control's rect
+(`research/synthetic_breakdown.py`; the client's in brackets):
+
+| What drew it | Controls | Differing |
+|---|---|---|
+| Image | 3 | 19.71% (1.10%) - the stretched stripes under the translucent keys (37%); a picture alone is 0.07% at most |
+| Arial Black | 9 | 15.49% |
+| Open Sans italic | 8 | 14.76% |
+| Open Sans Light | 9 | 8.71% |
+| Arial | 22 | 7.15% |
+| Open Sans regular | 374 | 6.93% (Forma regular 7.09%) |
+| Open Sans bold | 50 | 5.36% (Forma bold 10.50%) |
+| Extron-Afterburn | 18 | 5.06% |
+| Shape, popup reference, button without words | 59 | 3.7-4.6% (2.2-6.5%) |
+| Line | 6 | 2.06% (1.72%) |
+| Button, caption flattened by Build | 4 | 1.23% (3.38%) |
+| Slider | 11 | 0.54% (1.51%) |
+
+What it shows that the client's could not:
+
+- **A left- or right-aligned caption is set in by 1/6 em**, GDI+'s default
+  padding a side - 3 px at 14 pt, 9 px at 40 pt on Type Sizes - where
+  `gdl.compose` sets it at the box's edge; and every caption wraps in its box
+  less that padding. The client's project centres all but 3 of its 490
+  captions, so its baseline never saw it. Modelled in memory
+  (`research/gdi_padding.py`: each caption laid out in its box less 1/6 em a
+  side): the synthetic mean 3.44% → 3.00%, median 2.68% → 2.57%, worst 8.03%
+  → 7.05%, 22 pages better and none worse; the client's 2.19% → 2.10%, worst
+  7.68% → 7.06%, 14 better and none worse. Moving only the line, not its
+  wrap, does the same on the synthetic fixture and leaves the client's mean
+  where it was.
+  Not shipped: it is a render change, owed its own pull request
+  (`docs/ROADMAP.md`).
+- **A translucent fill is drawn translucent.** Finding 2's binary rule was
+  measured on antialiased edges; a fill at 20 to 75% opacity is not pasted
+  solid in the snapshot - the Buttons page's six translucent keys show the
+  stripes under them, and Controls' white at 20% reads (126,126,130) over
+  #242634, lighter than a plain 20% blend (80,81,93) and nothing like the
+  solid white the binary rule paints. Those keys differ by 39-88% each;
+  not modelled.
+- **Italic is the regular, slanted.** No seed carries an Open Sans Italic,
+  and none is installed on the host that exported it: GUI Designer obliques
+  the regular, as it emboldens it for bold (finding 8), and `gdl.compose`
+  draws italic upright - 14.76% of an italic caption's rect.
+- **Finding 8's bold model** on Open Sans bold: mean 3.44% → 3.40%, median
+  2.68% → 2.60%, worst 8.03% → 8.40%, 15 pages worse - nearly every one by a
+  bold left-aligned title the missing padding above already misplaces, so it
+  says nothing yet; run again once the padding is in
+  (`research/synthetic_bold.py`).
+
+What it cannot show: a Level, which its seed has none of (neither baseline
+scored the renderer's Level path), and Forma, the client's retail face, which
+only the client's baseline drew. That baseline is no longer scored - its
+project is gone from the repo - so findings 7 and 8's measurements in Forma
+stand as recorded and cannot be run again (`docs/ROADMAP.md`).
 
 ## Where it stands
 
@@ -334,11 +417,17 @@ their box's edge and far from it.
 | + borderFillColor fill | 2.60% | 2.02% | 8.99% |
 | + transparent canvas / bilevel text | 2.33% | 1.85% | 8.15% |
 | **+ fractional text metrics (current)** | **2.19%** | **1.65%** | **7.68%** |
+| the synthetic fixture, same renderer (§9) | 3.44% | 2.68% | 8.03% |
+
+The rows above are the client's 27 pages, a record now that the project is
+gone; the last is the synthetic fixture's 29, at its first recording - the
+baseline a render change is scored against.
 
 Implemented in `gdl/compose.py`: findings 1 (fill only), 2, 3, 4 and 7.
 
-With the Offline page no longer an outlier, the mean is a fair summary of the
-corpus rather than one page's error — every page is now between 0.54% and 7.68%.
+With the Offline page no longer an outlier, the client's mean was a fair
+summary of its pages rather than one page's error — every page was between
+0.54% and 7.68%.
 
 Not implemented, but **written and measured**:
 
@@ -347,7 +436,8 @@ Not implemented, but **written and measured**:
 | ascent / line-height multipliers | mean 2.19% → 1.72%, but a degenerate fit | see above; `research/q_final.py` |
 | per-control RGBA layering | **rejected** — see below | `research/v3.py` |
 | modal scrim at 65% opacity | no observable effect in this corpus | `research/final_patch.py` |
-| synthetic bold: 1 px smear, 1/60 em advance | mean 2.19% → 2.13%, but two pages regress | finding 8; `research/synthetic_bold.py` |
+| synthetic bold: 1 px smear, 1/60 em advance | mean 2.19% → 2.13%, but two pages regress; on the synthetic fixture 3.44% → 3.40%, 15 regress | finding 8, §9; `research/synthetic_bold.py` |
+| GDI+'s 1/6 em padding a side | client 2.19% → 2.10%, synthetic 3.44% → 3.00%, none regress | §9; `research/gdi_padding.py` |
 
 ### Why `research/v3.py`'s architecture was not adopted
 

@@ -25,8 +25,8 @@ rules, with what is documented kept strictly separate from what we extrapolated 
 never quote an extrapolated number to a client as an Extron requirement.
 
 **The canvas is not 1280x800.** Resolution and DPI are set by the panel model —
-`docs/design-rules.md` §1 — and the fixtures are all one model. Assume nothing
-about panel geometry from them.
+`docs/design-rules.md` §1 — and the synthetic fixture is one model, a TLP Pro
+1035T. Assume nothing about panel geometry from it.
 
 ## Environment
 
@@ -50,8 +50,8 @@ A 64-bit PowerShell will load 34 of 39 assemblies and then fail on
 
 **Whether GUI Designer is installed is the only environment split that matters.**
 Everything that reads, renders, previews or plans runs on any OS with Python 3
-(plus Pillow for rendering), and - where the client fixtures are, which is the
-archive only - reproduces `tests/baseline.json` exactly.
+(plus Pillow for rendering), and reproduces `tests/baseline-synthetic.json`
+exactly.
 Everything that *writes* or *builds* a `.gdl` needs Windows, 32-bit PowerShell
 5.1 and an install of GUI Designer — and where GUI Designer is installed,
 author, build and verify in one session.
@@ -59,16 +59,16 @@ author, build and verify in one session.
 | Runs anywhere | Needs GUI Designer installed |
 |---|---|
 | `gdl.container` / `data` / `nrbf` / `project` / `themes` / `fonts` / `templates` | every `powershell/*.ps1` but `GdlBlocker.ps1`, which the others share and which needs Windows alone |
-| `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` (the last two score against the client fixtures, so in the archive - but `score.py preview`, given a spec and its build) | File > Save and Build |
+| `gdl.compose`, `tests/score.py`, `tests/compare_snapshots.py` (the last two against the synthetic fixture's snapshots, `tests/data/synthetic/`; `score.py preview` given a spec and its build) | File > Save and Build, and its snapshot export (`powershell/Export-GdlSnapshots.ps1`) |
 | `gdl.spec` check / render / plan / donors / icons | `examples/add-page-and-popup.ps1` |
 | `gdl.edit` check / plan | |
 | `gdl.idmap` check / write / write-panels / from-built / diff | |
 | `gdl.designsys` build (its icons and backgrounds need Pillow and Extron's kit, and say so without them) and audit; `gdl.design` translate (needs headless Chrome) | |
-| the `python -m pytest` suite, with Pillow - a test that needs the seeds, the client fixtures, Extron's kit, the Design runtime or Windows PowerShell skips without them | |
+| the `python -m pytest` suite, with Pillow - a test that needs the seeds, Extron's kit, the Design runtime or Windows PowerShell skips without them | |
 | `tests/verify_built.py`, `tests/verify_idmap.py`, `tests/verify_seed.py` (it compares a seed's series only where Extron's templates are - the install or `vendor/` - and says so where they are not), `tests/type_probe.py`, given the built file or seed | |
 
-Setup is in `README.md` *Setup*. `fixtures/` is real client material, in the
-archive only — see *Working on the fixtures* and *Where work happens* below.
+Setup is in `README.md` *Setup*. The synthetic fixture is the toolkit's own
+built project and the render baseline — see *The synthetic fixture* below.
 
 ## Four things that will waste your time if you don't know them
 
@@ -92,16 +92,25 @@ Each fails silently — the file opens, builds, and is wrong. The detail is in
 
 ## Verifying a change
 
-There is ground truth, so use it rather than eyeballing:
+There is ground truth, so use it rather than eyeballing. The synthetic
+fixture carries GUI Designer's own snapshot exports of itself
+(`tests/data/synthetic/README.md`), and the harness scores it with no
+arguments:
 
 ```bash
-python tests/compare_snapshots.py fixtures/gdl/client-boardroom-2.0.0.gdl fixtures/snapshots/Individual
+python tests/compare_snapshots.py      # = tests/data/synthetic/synthetic.gdl tests/data/synthetic/snapshots/Individual
 ```
 
-Current baseline: **mean 2.19%, median 1.65%, worst 7.68%** differing pixels
-across 27 pages. The snapshots are that fixture's own exports, and the harness
-refuses any other: a snapshot is matched to its page by number and must carry
-the page's name.
+The current baseline, differing pixels:
+
+| Project | Pages | Mean | Median | Worst | Baseline |
+|---|---|---|---|---|---|
+| synthetic fixture | 29 | **3.44%** | **2.68%** | **8.03%** | `tests/baseline-synthetic.json` |
+
+`docs/render-fidelity.md` §9 says where it differs, and records the client
+project the baseline used to be scored on. The snapshots are the project's
+own exports, and the harness refuses any other: a snapshot is matched to its
+page by number and must carry the page's name.
 
 A render change must report its before and after across **all** pages —
 several plausible-looking fixes improve one page and regress twenty.
@@ -110,12 +119,15 @@ Don't do that comparison by eye; `tests/score.py` does it properly and exits
 non-zero on any regression:
 
 ```bash
-python tests/score.py record fixtures/gdl/client-boardroom-2.0.0.gdl fixtures/snapshots/Individual -o /tmp/after.json
-python tests/score.py diff tests/baseline.json /tmp/after.json
+python tests/score.py record tests/data/synthetic/synthetic.gdl tests/data/synthetic/snapshots/Individual -o /tmp/after-synthetic.json
+python tests/score.py diff tests/baseline-synthetic.json /tmp/after-synthetic.json
 ```
 
-`tests/baseline.json` is the currently shipped state; refresh it when a render
-change lands.
+Without a project, `record` scores the synthetic fixture, and `diff` given
+one recording diffs it against the baseline. The baseline is the currently
+shipped state; refresh it when a render change lands, and report it.
+Rebuilding the synthetic fixture is new ground truth, not a render change: its
+README says how, and the baseline is recorded again.
 
 For authoring changes, the end-to-end check is `examples/add-page-and-popup.ps1`,
 which self-asserts. A file that merely serializes proves nothing; the real test
@@ -266,6 +278,12 @@ were updated. So:
   SystemPoolTagInformation) before blaming an application, and reboot to
   free them. GUI Designer beside such a session is what Claude Code stopped
   for low memory (`docs/history.md`).
+- **A build's time follows the processor's clock.** Save and Build is about
+  two seconds a control, and on the development host's N100 it ran at 3.1 GHz
+  or, now and then for a quarter of an hour, at 1.1 GHz and took two and a half
+  times as long, with no throttle reported. Read `% Processor Performance`
+  beside any timing - `New-GdlPanel.ps1` logs it as `clock_pct` - and compare
+  builds at the same clock (`docs/from-scratch.md` §5c).
 - **Do not write backslash escapes through a bash heredoc.** Backslash-v and
   backslash-a get interpreted before Python sees them, leaving literal 0x0B and
   0x07 bytes in the file. A doubled backslash does not survive either: `'C:\\'`
@@ -280,13 +298,12 @@ were updated. So:
 ## Things deliberately not in git
 
 - **Most of `gdl/fonts/`** — retail and unlicensed faces, recovered from the
-  tracked fixtures during setup. Skip that and the renderer falls back to the
-  host's Arial, or a seed's copy of a face, and scores worse, and
+  synthetic fixture's build during setup. Skip that and the renderer falls
+  back to the host's Arial, or a seed's copy of a face, and scores worse, and
   `tests/score.py` refuses to record over either. `gdl/fonts/README.md` has
   the per-file licensing, and which projects declare faces they do not
-  embed. The bytes are still inside the tracked `.gdl`
-  fixtures, so if the concern is distribution, `fixtures/` is the thing to look
-  at.
+  embed. The bytes are still inside the tracked synthetic build and the
+  seeds, so if the concern is distribution, those are the thing to look at.
 - `out/`, `__pycache__/`, built viewer HTML.
 - **`vendor/`'s contents** — Extron's templates and icon kit, reinstallable,
   pinned by SHA-256 in `vendor/MANIFEST.md`; `vendor/README.md` repopulates it.
@@ -301,7 +318,7 @@ were updated. So:
 ## Where work happens
 
 There are two repositories. The private archive, `extron-gdl-toolkit-archive`,
-is where work happens - branches, PRs, CI, the client fixtures. The public
+is where work happens - branches, PRs, CI. The public
 `extron-gdl-toolkit` is a line of snapshot commits built from it, never pushed
 to directly. A checkout with `private/` is the archive; one without it is the
 public copy, and a change made there belongs in the archive. To publish, from a
@@ -322,12 +339,12 @@ it, and `git push --no-verify` or a clone without it is not covered: the check
 before a publish is the gate. The check reads `private/` - GUI Designer's
 settings file and `public-sync-denylist.txt` - and refuses to run without
 either, or with one it reads nothing from. Keep the client's name out of
-tracked text, file names and commit messages: `fixtures/README.md` is the one
-file that names it. A binary that should publish is looked at by a person and
-pinned in the tool's `BINARY_OK` by the SHA-256 of what was looked at; one whose
-bytes change is refused until someone looks again, and the version it replaced
-stays pinned beside it, since `check --history` still reads it in older
-published commits.
+tracked text, file names and commit messages: no tracked file names it but a
+few evidence files under `archive/` that the tool's `EXCLUDE` holds back. A
+binary that should publish is looked at by a person and pinned in the tool's
+`BINARY_OK` by the SHA-256 of what was looked at; one whose bytes change is
+refused until someone looks again, and the version it replaced stays pinned
+beside it, since `check --history` still reads it in older published commits.
 
 ## Where things live
 
@@ -335,12 +352,18 @@ published commits.
 without an LFS pull they are pointer files, and the seed tests skip rather than
 fail.
 
-## Working on the fixtures
+## The synthetic fixture
 
-`fixtures/` holds **real client project files**
-and 50 GUI Designer snapshot renders. They are test data — treat them as
-read-only. They are in the archive only: the public copy holds them back
-(`README.md` *Provenance and licensing*).
+`tests/data/synthetic/` is the toolkit's own project, in generic words, and GUI
+Designer's snapshots of it, in both copies: the built project the edit, render
+and verifier tests read, and the render baseline. Treat it as read-only test
+data; changing it is a rebuild on the Windows host (its README). What only a
+hand-edited project holds - a caption stored as formatted text, one ID
+mirrored across two popups, a touch target under Extron's minimum - a spec
+cannot write, so a test lays it into a page shaped as `Project.pages()` reads
+one. The client project the toolkit was first read off is no longer in the
+repo (`docs/history.md`); what its tests covered that nothing covers now is in
+`docs/ROADMAP.md`.
 
 ## Terminology
 

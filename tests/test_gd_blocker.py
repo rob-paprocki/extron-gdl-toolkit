@@ -365,7 +365,7 @@ class TestTheWaitsAsk(unittest.TestCase):
         wait = _block(s, 'function Wait-For(')
         self.assertIn('Stop-IfBlocked $cleanup', wait)
         self.assertIn('$(Get-GdlShowing)', wait)
-        own = s[s.index('while (-not (Get-Wizard) -and'):]
+        own = s[s.index('while (-not (Get-WizardWhenLoading) -and'):]
         self.assertIn('Stop-IfBlocked', own[:own.index('\n}')])
         menu = s[s.index('while (((Get-Date) - $t0).TotalSeconds -lt 180) {'):]
         self.assertIn('Stop-IfBlocked', menu[:menu.index('\n}')])

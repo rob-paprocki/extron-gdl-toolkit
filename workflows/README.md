@@ -21,9 +21,8 @@ analysis, so sonnet; and the synthesis is the session that launched the run,
 reading what the script returns. Every agent is read-only and must attach a
 paste-able command and its real output to each finding.
 
-The corpus is every usable project under `fixtures/gdl/` and `seeds/` - the
-client fixtures are in the private archive only, so a checkout without them
-hunts the seeds. The translator dimensions also use the Design canvases in
+The corpus is every usable project under `tests/data/synthetic/` and `seeds/`.
+The translator dimensions also use the Design canvases in
 `tests/data/` and the series profiles in `gdl/designsys/*.json`; running
 `translate` needs `GDL_DC_RUNTIME`. The
 agents enumerate it themselves with `usable()` from `tests/_corpus.py`, so a

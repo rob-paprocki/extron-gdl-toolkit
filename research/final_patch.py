@@ -30,7 +30,10 @@ def render_page2(pg, assets, size, ox=0, oy=0, canvas=None, draw_txt=True):
         render_control(canvas, c, assets, ox, oy, draw_txt)
     return canvas
 
-SNAP=r'fixtures/snapshots/Individual'
+# Historical: written against a client project and GUI Designer's snapshots of
+# it, both deleted from the repo (docs/history.md); its page table names that
+# project's pages. Kept as the record of its result (research/README.md).
+SNAP=r"<the client project's snapshots>/Individual"
 j,assets=load(r'src/client-boardroom-2.0.0.gdl')
 pages={p['ID']:p for p in j['Pages']+j['PopupPages']}
 rows=[]

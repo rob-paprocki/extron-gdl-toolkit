@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Recording</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Recording" kind="modal" role="settings" title="Recording" panels="TLP1035T TLP725T TLP525T TLP320M" theme="saturn">
+  <x-import component-from-global-scope="ExtronShockwave.Group" title="Record" cell="280x100" gap="40" cap="2" style="position: absolute; left: 340px; top: 300px; width: 600px; height: 120px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Start Recording" variant="wide" states='[{"name":"Off"},{"name":"On","icon":"red_round","color":"alert","text":"Recording"}]' does="Starts recording the lecture. On, reading Recording and lit red, while the room is being recorded.">Start Recording</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Stop Recording" variant="wide" icon="red_round" nav="StopRecording">Stop Recording</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

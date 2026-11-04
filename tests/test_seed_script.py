@@ -66,6 +66,18 @@ class TestSeedScript(unittest.TestCase):
     def test_the_verifier_is_told_the_theme(self):
         self.assertRegex(SCRIPT, r"verify_seed\.py'\) \$Output \$Model \$Theme")
 
+    def test_a_tree_walk_that_times_out_while_the_gui_loads_is_a_poll_not_a_failure(self):
+        """GUI Designer's tree, walked while it is still loading, can time a
+        FindAll out (0x80131505); unhandled, that ended a run at exit 1 before
+        the wizard was even open. The launch wait looks for the wizard through
+        a wrapper that catches it, and does not call Get-Wizard bare."""
+        self.assertRegex(SCRIPT, r'function Get-WizardWhenLoading \{\s*try \{ Get-Wizard \} catch \{ \$null \}\s*\}')
+        launch = SCRIPT[SCRIPT.index('function Get-WizardWhenLoading'):SCRIPT.index("Write-Output 'wizard open'")]
+        self.assertIn('while (-not (Get-WizardWhenLoading)', launch)
+        self.assertIn('if (-not (Get-WizardWhenLoading))', launch)
+        self.assertNotRegex(launch.split('function Get-WizardWhenLoading', 1)[1].split('}', 1)[1],
+                            r'\(Get-Wizard\)')
+
 
 def _block(text, start):
     """The statement that begins `start`, through its closing brace at the

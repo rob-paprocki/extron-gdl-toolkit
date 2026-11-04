@@ -231,7 +231,7 @@
     ],
     "camera": {"heading": [360, 110, 120, 60], "key": [370, 170, 100, 100], "step": 140, "box": [370, 170, 100, 280], "icons": ["vc_plus", "vc_dash"]},
     "_image": "The device pictures Turbulence pins on its popups and windows, each a PBImage drawing a kit file fitted (seeds/Turbulence 525.gdl's Lighting Control: Light Image, 1152x1152_lightbulb.png at 220,49 262x250; its Audio Control's speaker, its Display Control's monitor; every source popup's own, which the Center draws).",
-    "image": {"name": "Lighting Image", "image": "1152x1152_lightbulb.png", "size": [262, 250], "note": "Turbulence pins a device picture on its popups and windows, fitted: the Center draws a source's by itself, by its `device`; on a settings window put one where its template stands it - the 525's Lighting Control draws the lightbulb (`1152x1152_lightbulb.png`, 262x250) under its title and behind its preset cards, its Audio Control the speaker and its Display Control the monitor."},
+    "image": {"name": "Lighting Image", "image": "1152x1152_lightbulb.png", "size": [262, 250], "note": "Turbulence pins a device picture on its popups and windows, fitted, and the system draws each by itself: the Center a source's, by its `device`; on the 525 a settings window its own, by its title or its `device` - the lightbulb (`1152x1152_lightbulb.png`, 262x250) under a Lighting window's title and behind its controls, as its Lighting Control draws it, the speaker an Audio window's, the monitor its Display Control's. Its bar panels' settings windows draw none. Put an Image where you want more of the template's art than those."},
     "states": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"Warming\",\"look\":\"off\",\"color\":\"accent\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"accent\"}]",
     "states_note": "In Turbulence a state shows itself through the kit's image: at rest the art is a gray tile, a white ring, a navy tile or a clear beveled tile, lit it is white or dark teal, and a lit caption is `accent` (`lime` on a dock, Help and the call tiles). A state can name its own `icon` (Share Content's lit image is Stop Sharing) or `look` (vc_power-dn's green).",
     "on_off": "[{\"name\":\"Off\",\"look\":\"off\"},{\"name\":\"On\",\"look\":\"on\",\"color\":\"accent\"}]",
@@ -430,7 +430,7 @@
         "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
-      "seeds": {"TLP1035M": "seeds/Turbulence 1035.gdl", "TLP1035T": "seeds/Turbulence 1035.gdl"},
+      "seeds": {"TLP1035M": "seeds/Turbulence 1035.gdl", "TLP1035T": "seeds/Turbulence 1035.gdl", "TLP1025M": "seeds/Turbulence 1025.gdl", "TLP1025T": "seeds/Turbulence TLP1025T.gdl", "TLP1220MG": "seeds/Turbulence 1220.gdl", "TLP1220TG": "seeds/Turbulence TLP1220TG.gdl", "TLP1225MG": "seeds/Turbulence 1225.gdl", "TLP1225TG": "seeds/Turbulence TLP1225TG.gdl", "TLP835C": "seeds/Turbulence TLP835C.gdl", "TLP835M": "seeds/Turbulence 835.gdl", "TLP835T": "seeds/Turbulence TLP835T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -1179,7 +1179,7 @@
         "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
-      "seeds": {"TLP725T": "seeds/Turbulence 725.gdl"},
+      "seeds": {"TLP725T": "seeds/Turbulence 725.gdl", "TLP1020M": "seeds/Turbulence 1020.gdl", "TLP1020T": "seeds/Turbulence TLP1020T.gdl", "TLP725C": "seeds/Turbulence TLP725C.gdl", "TLP725M": "seeds/Turbulence TLP725M.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -1860,7 +1860,7 @@
         "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
-      "seeds": {"TLP1525TG": "seeds/Turbulence 1525.gdl"},
+      "seeds": {"TLP1525TG": "seeds/Turbulence 1525.gdl", "TLP1525MG": "seeds/Turbulence TLP1525MG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -2559,7 +2559,7 @@
         "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
-      "seeds": {"TLP720T": "seeds/Turbulence 720.gdl"},
+      "seeds": {"TLP720T": "seeds/Turbulence 720.gdl", "TLP720C": "seeds/Turbulence TLP720C.gdl", "TLP720M": "seeds/Turbulence TLP720M.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -3288,7 +3288,7 @@
         "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
-      "seeds": {"TLP525T": "seeds/Turbulence 525.gdl"},
+      "seeds": {"TLP525T": "seeds/Turbulence 525.gdl", "TLP525C": "seeds/Turbulence TLP525C.gdl", "TLP525M": "seeds/Turbulence TLP525M.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main Page",
@@ -3386,6 +3386,11 @@
             "laptop": [196, 45, 310, 241],
             "pc": [219, 38, 264, 260],
             "tuner": [182, 35, 338, 265]
+          },
+          "settings_pictures": {
+            "Audio Control": {"device": "speaker", "rect": [214, 79, 273, 237]},
+            "Display Control": {"device": "monitor", "rect": [212, 41, 278, 252]},
+            "Lighting Control": {"device": "lightbulb", "rect": [220, 49, 262, 250]}
           },
           "level": {
             "popup": "Volume Level",
@@ -3509,6 +3514,42 @@
           ],
           "pt": {"title": 30, "label": 14}
         },
+        "display": {
+          "popup": "Display Control",
+          "heading": null,
+          "text": null,
+          "cards": [
+            {
+              "rect": [77, 100, 242, 350],
+              "surface": {
+                "name": "Display 1 Background",
+                "rect": [77, 100, 242, 350],
+                "kind": "shape",
+                "fill": "#00000080",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              },
+              "heading": [77, 108, 242, 31],
+              "text": "Display 1",
+              "keys": [[107, 202, 75, 75], [210, 202, 75, 75], [107, 274, 75, 75], [210, 274, 75, 75], [160, 352, 75, 75]]
+            },
+            {
+              "rect": [382, 100, 242, 350],
+              "surface": {
+                "name": "Display 2 Background",
+                "rect": [382, 100, 242, 350],
+                "kind": "shape",
+                "fill": "#00000080",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              },
+              "heading": [382, 108, 242, 31],
+              "text": "Display 2",
+              "keys": [[413, 202, 75, 75], [516, 202, 75, 75], [413, 274, 75, 75], [516, 274, 75, 75], [467, 352, 75, 75]]
+            }
+          ],
+          "pt": {"heading": 18}
+        },
         "windows": {
           "help": {
             "popup": "Help",
@@ -3624,7 +3665,7 @@
         "swoop": {"image": "bkgd_swoop_plain.png", "file": "Turbulence/bkgd_swoop_plain.png"},
         "water": {"image": "bkgd_water-1_plain.png", "file": "Turbulence/bkgd_water-1_plain.png"}
       },
-      "seeds": {"TLP320M": "seeds/Turbulence 320.gdl"},
+      "seeds": {"TLP320M": "seeds/Turbulence 320.gdl", "TLP320C": "seeds/Turbulence TLP320C.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": false, "popup": false, "image": false},
       "frame": {
         "page": "Doc Cam 1",

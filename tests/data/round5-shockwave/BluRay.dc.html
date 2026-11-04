@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blu-ray</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Blu-ray" kind="popup" group="Sources" role="source" title="Blu-ray" panels="TLP1035T TLP725T TLP525T TLP320M" theme="saturn">
+  <x-import component-from-global-scope="ExtronShockwave.Group" title="Disc" cell="140x120" gap="20" cap="5" style="position: absolute; left: 70px; top: 130px; width: 780px; height: 140px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Play" does="Plays the disc.">Play</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Pause" does="Pauses the disc.">Pause</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Stop" does="Stops the disc.">Stop</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Skip Back" does="Skips to the previous chapter.">Skip Back</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Skip Next" does="Skips to the next chapter.">Skip Next</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Group" title="Display" cell="160x120" gap="20" cap="2" style="position: absolute; left: 290px; top: 380px; width: 340px; height: 140px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray To Projector" states="Off, On" does="Sends the Blu-ray player to the projector. On while it is the projector's source.">Projector</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray To Monitor" states="Off, On" does="Sends the Blu-ray player to the confidence monitor. On while it is the monitor's source.">Monitor</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":921,"height":574}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

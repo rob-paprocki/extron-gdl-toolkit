@@ -4,8 +4,10 @@ Notes from reverse-engineering Extron GUI Designer **1.28.0.7** project files,
 verified end to end: machine-written `.gdl` files open in GUI Designer, survive
 structural edits, and **build successfully**.
 
-Everything here was derived from the files in `fixtures/gdl/`, GUI Designer's own
-snapshot renders, and the installed assemblies. Nothing came from Extron
+Everything here was derived from project files - first a client's real
+project, no longer in the repo (`docs/history.md`), then the seeds and
+Extron's templates - GUI Designer's own snapshot renders, and the installed
+assemblies. Nothing came from Extron
 documentation, so treat version 1.28.0.7 as the tested boundary.
 
 ---
@@ -95,7 +97,7 @@ from an `AssemblyResolve` handler. Calling `LoadFrom` *inside* the handler
 recurses until the stack overflows.
 
 Re-serializing an untouched project is **not** byte-identical to the original:
-it differs by **5,900 bytes** on the `_alt` fixture. But it is *stable* from the
+it differs by **5,900 bytes** on the client project it was measured on. But it is *stable* from the
 first pass onward - pass1 vs pass2 and pass2 vs pass3 are both **zero**
 differing bytes.
 
@@ -384,7 +386,7 @@ read off 1.28.0.7's IL, they are `PopupID != UInt64.MaxValue` and `GroupID >
   (where a button's normally is), or the first state's `ftextField` - GUI
   Designer's formatted text, which carries tab and CRLF layout markers inline
   (`"\t\tDevice\r\nComms"`). 23 controls against 336 in the client
-  fixture. Formatted captions are **flattened into the artwork**, so they read
+  project. Formatted captions are **flattened into the artwork**, so they read
   as `''` in `layout.json`: their words are in the built project and their
   lines only in the asset (`docs/editing.md` has how both are checked) - and
   because their line breaks are hand-placed, a longer replacement wraps onto an
@@ -641,7 +643,7 @@ read off 1.28.0.7's IL, they are `PopupID != UInt64.MaxValue` and `GroupID >
   outline was not drawn either, and its corners came out square - a 460 x 100
   button's corner pixel at alpha 96 of the fill's 180. On the clean-room
   panel's 2D Capsule, thickness 3, the stroke is three pixels of `muted` inside
-  the edge. `BORDER_GEOMETRY` is the client fixture's and only the preview's.
+  the edge. `BORDER_GEOMETRY` is the client project's and only the preview's.
   So `gdl.spec donors`, and the translator with the panel's own seed, name a
   stroke on a border the seed gives no thickness (`Panel.stroke_rules`), and
   each design system draws a built-in as its design panel's seed defines it.
@@ -674,10 +676,11 @@ read off 1.28.0.7's IL, they are `PopupID != UInt64.MaxValue` and `GroupID >
 ## 9. What the corpus audit checks
 
 `python tests/audit_corpus.py` re-tests the claims above against every project
-it can reach — the fixtures, the seeds and Extron's installed templates — and
-reports each as PASS, FAIL or INFO. Run it rather than trusting a written
-result: the figures below are from its last full run in the archive, over a
-corpus that has since grown (the seeds above all), so they date what the
+it can reach — the synthetic fixture, the seeds and Extron's installed
+templates — and reports each as PASS, FAIL or INFO. Run it rather than trusting
+a written result: the figures below are from its last full run in the archive,
+over a corpus that has since changed - grown by the seeds above all, and
+without the client project's six files it then read - so they date what the
 invariants looked like and are not today's totals:
 
 | Invariant | Result |

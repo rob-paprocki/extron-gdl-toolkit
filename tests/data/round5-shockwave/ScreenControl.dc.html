@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Screen Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Screen Control" kind="modal" role="settings" title="Screen Control" panels="TLP1035T TLP725T TLP525T TLP320M" theme="saturn">
+  <x-import component-from-global-scope="ExtronShockwave.Group" title="Screen" cell="176x110" gap="40" cap="2" style="position: absolute; left: 444px; top: 300px; width: 400px; height: 130px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Screen Up" states="Off, On" does="Raises the projector screen. On while the screen is up.">Screen Up</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Screen Down" states="Off, On" does="Lowers the projector screen. On while the screen is down.">Screen Down</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

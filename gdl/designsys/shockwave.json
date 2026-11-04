@@ -351,7 +351,7 @@
         "haze": {"image": "1280x800 bkgd.png", "file": "Shockwave/backgrounds/1280x800 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP1035M": "seeds/Shockwave 1035.gdl", "TLP1035T": "seeds/Shockwave 1035.gdl"},
+      "seeds": {"TLP1035M": "seeds/Shockwave 1035.gdl", "TLP1035T": "seeds/Shockwave 1035.gdl", "TLP1025M": "seeds/Shockwave 1025.gdl", "TLP1025T": "seeds/Shockwave TLP1025T.gdl", "TLP1220MG": "seeds/Shockwave 1220.gdl", "TLP1220TG": "seeds/Shockwave TLP1220TG.gdl", "TLP1225MG": "seeds/Shockwave 1225.gdl", "TLP1225TG": "seeds/Shockwave TLP1225TG.gdl", "TLP835C": "seeds/Shockwave TLP835C.gdl", "TLP835M": "seeds/Shockwave 835.gdl", "TLP835T": "seeds/Shockwave TLP835T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -1053,7 +1053,7 @@
         "haze": {"image": "1024x600_bkgd.png", "file": "Shockwave/backgrounds/1024x600_bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP725T": "seeds/Shockwave 725.gdl"},
+      "seeds": {"TLP725T": "seeds/Shockwave 725.gdl", "TLP1020M": "seeds/Shockwave 1020.gdl", "TLP1020T": "seeds/Shockwave TLP1020T.gdl", "TLP725C": "seeds/Shockwave TLP725C.gdl", "TLP725M": "seeds/Shockwave TLP725M.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -1806,7 +1806,7 @@
         "haze": {"image": "1366x768 bkgd.png", "file": "Shockwave/backgrounds/1366x768 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP1525TG": "seeds/Shockwave 1525.gdl"},
+      "seeds": {"TLP1525TG": "seeds/Shockwave 1525.gdl", "TLP1525MG": "seeds/Shockwave TLP1525MG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -2474,7 +2474,7 @@
         "haze": {"image": "5464x3072_bkgd.png", "file": "Shockwave/backgrounds/5464x3072_bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP1535M": "seeds/Shockwave 1535.gdl"},
+      "seeds": {"TLP1535M": "seeds/Shockwave 1535.gdl", "TLP1535T": "seeds/Shockwave TLP1535T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -3176,7 +3176,7 @@
         "haze": {"image": "800x480 bkgd.png", "file": "Shockwave/backgrounds/800x480 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP720T": "seeds/Shockwave 720.gdl"},
+      "seeds": {"TLP720T": "seeds/Shockwave 720.gdl", "TLP720C": "seeds/Shockwave TLP720C.gdl", "TLP720M": "seeds/Shockwave TLP720M.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -4133,6 +4133,54 @@
           ],
           "pt": {"title": 40, "label": 20}
         },
+        "display": {
+          "popup": "Display Control",
+          "heading": null,
+          "text": null,
+          "cards": [
+            {
+              "rect": [123, 144, 387, 538],
+              "surface": {
+                "name": "Display 1 Background",
+                "rect": [123, 144, 387, 538],
+                "kind": "shape",
+                "fill": "#99999980",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              },
+              "heading": [123, 168, 387, 60],
+              "text": "Display 1",
+              "keys": [
+                [171, 303, 120, 112],
+                [336, 303, 120, 112],
+                [171, 411, 120, 112],
+                [336, 411, 120, 112],
+                [208, 537, 200, 112]
+              ]
+            },
+            {
+              "rect": [611, 144, 387, 538],
+              "surface": {
+                "name": "Display 2 Background",
+                "rect": [611, 144, 387, 538],
+                "kind": "shape",
+                "fill": "#99999980",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              },
+              "heading": [611, 168, 387, 60],
+              "text": "Display 2",
+              "keys": [
+                [660, 303, 120, 112],
+                [825, 303, 120, 112],
+                [660, 411, 120, 112],
+                [825, 411, 120, 112],
+                [707, 537, 200, 112]
+              ]
+            }
+          ],
+          "pt": {"heading": 28}
+        },
         "windows": {
           "help": {
             "popup": "Help",
@@ -4245,7 +4293,7 @@
         "haze": {"image": "800x480 bkgd.png", "file": "Shockwave/backgrounds/800x480 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP525T": "seeds/Shockwave 525.gdl"},
+      "seeds": {"TLP525T": "seeds/Shockwave 525.gdl", "TLP525C": "seeds/Shockwave TLP525C.gdl", "TLP525M": "seeds/Shockwave TLP525M.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": false},
       "radii": {"rounded": 10},
       "frame": {
@@ -4449,6 +4497,42 @@
           ],
           "pt": {"title": 30, "label": 14}
         },
+        "display": {
+          "popup": "Display Control",
+          "heading": null,
+          "text": null,
+          "cards": [
+            {
+              "rect": [77, 96, 242, 359],
+              "surface": {
+                "name": "Display 1 Background",
+                "rect": [77, 96, 242, 359],
+                "kind": "shape",
+                "fill": "#99999980",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              },
+              "heading": [77, 112, 242, 40],
+              "text": "Display 1",
+              "keys": [[107, 202, 75, 75], [210, 202, 75, 75], [107, 274, 75, 75], [210, 274, 75, 75], [130, 358, 125, 75]]
+            },
+            {
+              "rect": [382, 96, 242, 359],
+              "surface": {
+                "name": "Display 2 Background",
+                "rect": [382, 96, 242, 359],
+                "kind": "shape",
+                "fill": "#99999980",
+                "border": "2D Rounded Rectangle",
+                "art": null
+              },
+              "heading": [382, 112, 242, 40],
+              "text": "Display 2",
+              "keys": [[413, 202, 75, 75], [516, 202, 75, 75], [413, 274, 75, 75], [516, 274, 75, 75], [442, 358, 125, 75]]
+            }
+          ],
+          "pt": {"heading": 18}
+        },
         "windows": {
           "help": {
             "popup": "Help",
@@ -4561,7 +4645,7 @@
         "haze": {"image": "1280x800 bkgd.png", "file": "Shockwave/backgrounds/1280x800 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP320M": "seeds/Shockwave 320.gdl"},
+      "seeds": {"TLP320M": "seeds/Shockwave 320.gdl", "TLP320C": "seeds/Shockwave TLP320C.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": false, "popup": false, "image": false},
       "radii": {"rounded": 10},
       "frame": {

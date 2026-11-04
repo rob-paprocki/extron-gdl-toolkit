@@ -1071,7 +1071,19 @@ class Panel:
         # sign or an accented room name in a spec comes through as mojibake and
         # gets rasterized into the panel. Silent, and invisible off Windows.
         with open(path, encoding='utf-8') as fh:
-            return cls(json.load(fh))
+            spec = json.load(fh)
+        # An `images` path written './' or '../' is the spec's own art, beside
+        # it, rather than a file of Extron's kit (RESOURCE_ROOTS): the
+        # synthetic fixture (tests/data/synthetic/) brings pictures of its own,
+        # so it checks, plans and previews on a host with no kit and no GUI
+        # Designer. Made absolute here, where the spec's folder is known.
+        images = spec.get('images') if isinstance(spec, dict) else None
+        if isinstance(images, dict):
+            base = os.path.dirname(os.path.abspath(path))
+            spec['images'] = {k: os.path.normpath(os.path.join(base, v))
+                              if isinstance(v, str) and v.replace('\\', '/').startswith(('./', '../'))
+                              else v for k, v in images.items()}
+        return cls(spec)
 
     # -- layout ------------------------------------------------------------
     def _controls(self, node, out, region=None):
@@ -1511,7 +1523,8 @@ class Panel:
         for name, f in self.images.items():
             if not resolve_image(f):
                 out.append(f'image {name!r}: {f!r} is not a file here or under '
-                           f"{' or '.join(RESOURCE_ROOTS)}")
+                           f"{' or '.join(RESOURCE_ROOTS)} (a spec's own art is written "
+                           "'./<path>', beside the spec)")
         for item in self.pages + self.popups:
             for c in item['controls']:
                 out += self._image_rules(c, f"{item['name']!r} {c.get('name') or c.get('kind')}")

@@ -8,13 +8,16 @@ regress twenty. Reading two tables side by side does not catch a page that got
 
 So: record a run to JSON, make the change, record again, and diff.
 
-    python tests/score.py record <project.gdl> <snapshots/Individual> -o before.json
+    python tests/score.py record -o before.json
     # ... edit gdl/compose.py ...
-    python tests/score.py record <project.gdl> <snapshots/Individual> -o after.json
+    python tests/score.py record -o after.json
     python tests/score.py diff before.json after.json
 
-tests/baseline.json is the currently shipped state, refreshed whenever a
-render change lands, so any working change can be diffed against it directly.
+`record` scores the synthetic fixture (tests/data/synthetic/) against its own
+snapshots unless it is given another project and its snapshots, and `diff`
+with one recording diffs it against tests/baseline-synthetic.json - the
+currently shipped state, refreshed whenever a render change lands, so any
+working change can be diffed against it directly.
 The diff exits non-zero if any page regressed by more than --tol (default
 0.01%), so it can gate a commit. Scores come from the same `diff_stats` the
 harness uses, so the numbers are directly comparable to its output.
@@ -31,8 +34,11 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PIL import Image  # noqa: E402
+
+from _corpus import BASELINE, SYNTHETIC, SYNTHETIC_SNAPSHOTS  # noqa: E402
 
 from gdl.compose import (FALLBACKS, FROM_SEED, diff_stats, fill_index,  # noqa: E402
                          group_members, load, render_page)
@@ -61,13 +67,14 @@ def record(gdl_path, snapshot_dir):
         scores[fn] = diff_stats(mine, ref)['pct_bad']
 
     # Same guard as compare_snapshots: matching is by numeric id alone, so the
-    # wrong fixture scores confidently against unrelated pages.
+    # wrong project scores confidently against unrelated pages.
     if missing and len(missing) > len(scores):
         raise SystemExit(f'{len(missing)} of {len(missing) + len(scores)} snapshots have no '
                          f'matching page - these snapshots are probably not from this .gdl')
     # And a snapshot is named for its page: another version of the project
-    # matches more than half by number - the TLP1035-1.1.0 fixture matched 14 of
-    # the 27 and scored a 5.86% "residual" that was another project's pages.
+    # matches more than half by number - a client project's earlier release
+    # matched 14 of its later one's 27 and scored a 5.86% "residual" that was
+    # another project's pages.
     renamed = [f'{fn} is page {pages[int(ID_RE.search(fn).group(1))]["Name"]!r}'
                for fn in scores if fn[:ID_RE.search(fn).start()] !=
                pages[int(ID_RE.search(fn).group(1))]['Name']]
@@ -192,12 +199,16 @@ def main():
     sub = ap.add_subparsers(dest='cmd', required=True)
 
     r = sub.add_parser('record', help='score every page and write JSON')
-    r.add_argument('gdl')
-    r.add_argument('snapshots', help='the Individual/ directory of a snapshot export')
+    r.add_argument('gdl', nargs='?',
+                   help='the built project (default: the synthetic fixture)')
+    r.add_argument('snapshots', nargs='?',
+                   help="the Individual/ directory of its snapshot export (default: the synthetic "
+                        "fixture's)")
     r.add_argument('-o', '--out', required=True)
 
     d = sub.add_parser('diff', help='compare two recordings')
-    d.add_argument('before')
+    d.add_argument('before', nargs='?', default=BASELINE,
+                   help='the recording before (default: tests/baseline-synthetic.json)')
     d.add_argument('after')
     d.add_argument('--tol', type=float, default=0.01,
                    help='percentage points of regression to tolerate (default 0.01)')
@@ -231,15 +242,21 @@ def main():
         return 0
 
     if args.cmd == 'record':
+        if args.gdl is None:
+            args.gdl, args.snapshots = SYNTHETIC, SYNTHETIC_SNAPSHOTS
+        elif args.snapshots is None:
+            ap.error('record takes a project and its own snapshots, or neither for the '
+                     'synthetic fixture')
         scores = record(args.gdl, args.snapshots)
         if FALLBACKS or FROM_SEED:
-            # Not comparable with tests/baseline.json, which was scored on the
-            # faces the project embeds: the host's Arial costs every page, and
+            # Not comparable with the baseline, which was scored on the
+            # faces its project embeds: the host's Arial costs every page, and
             # a seed's face is another build of it, so the score would turn
             # on which seeds are pulled.
-            print(f"scored on faces the fixtures do not embed - {'; '.join(sorted(FALLBACKS | FROM_SEED))} - "
+            print(f"scored on faces the project does not embed - {'; '.join(sorted(FALLBACKS | FROM_SEED))} - "
                   f'for want of the recovered faces, nothing written. Recover them first:\n'
-                  f'  for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done')
+                  f'  python -m gdl.fonts tests/data/synthetic/synthetic.gdl gdl/fonts/\n'
+                  f'or, for another project, from that project.')
             return 2
         with open(args.out, 'w', encoding='utf-8') as fh:
             json.dump(scores, fh, indent=1, sort_keys=True)

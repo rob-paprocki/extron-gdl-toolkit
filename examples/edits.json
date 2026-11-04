@@ -1,32 +1,32 @@
 {
   "_comment": [
-    "A worked edit spec, run against fixtures/gdl/client-boardroom-2.0.0.gdl.",
-    "Every selector below resolves against the real project when you run",
-    "`python -m gdl.edit check`, so a typo is an error on the Mac rather than a",
-    "no-op discovered on the panel."
+    "A worked edit spec, run against tests/data/synthetic/synthetic.gdl, the synthetic fixture.",
+    "Every selector below resolves against that built project when you run",
+    "`python -m gdl.edit check examples/edits.json tests/data/synthetic/synthetic.gdl`,",
+    "so a typo is an error at your desk rather than a no-op discovered on the panel."
   ],
   "edits": [
     {
       "op": "rename",
       "_why": "Caption changes are the single most common request on a live job.",
-      "select": { "page": "2000 - Main - Presentation", "type": "PBButton" },
+      "select": { "page": "Main", "type": "PBButton" },
       "map": {
-        "Cameras": "Camera Control",
-        "Audio": "Sound Levels",
-        "Displays": "Screens"
+        "Alpha": "Overview",
+        "Beta": "Sources",
+        "Gamma": "Settings"
       }
     },
     {
       "op": "rename",
-      "_why": "Regex selection, for 'every input labelled Table Input N'.",
-      "select": { "type": "PBButton", "text_matches": "^Table Input" },
-      "text": "Table Connection"
+      "_why": "Regex selection, for 'every label numbered Channel NN'.",
+      "select": { "type": "PBLabel", "text_matches": "^Channel \\d\\d$" },
+      "text": "Zone"
     },
     {
       "op": "restyle",
       "_why": "Recolor the sliders' track fill without touching anything else.",
       "select": { "type": "PBSlider" },
-      "map": { "#242634": "#1B2233" }
+      "map": { "#37394E": "#1B2233" }
     }
   ]
 }

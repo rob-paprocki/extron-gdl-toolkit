@@ -6,8 +6,13 @@ the impressive demo; changing one that already exists is the job. A client says
 question is whether that can be done reliably rather than by hand.
 
 It can. All five operations are verified end to end against GUI Designer
-1.28.0.7: four on the real client project, and `renumber` on Extron's own
-Afterburn 1035 seed and on a panel generated from a spec.
+1.28.0.7: four on a real client project, and `renumber` on Extron's own
+Afterburn 1035 seed and on a panel generated from a spec. That client project
+is no longer in the repo (`docs/history.md`); the suite holds each op to the
+synthetic fixture (`tests/data/synthetic/`), and what only a hand-edited
+project has - a formatted caption, a mirror across two popups, a fill only a
+state has, a touch target already too small - to pages laid out as that
+project had them (`tests/test_edit.py`).
 
 | Op | What it does | Verified |
 |---|---|---|
@@ -15,7 +20,7 @@ Afterburn 1035 seed and on a panel generated from a spec.
 | `restyle` | remap colors on each control and each state, text color included | 5 sliders built, 5/5 off the artwork; a fill held only on a state and a text color, built and correct |
 | `states` | give a button the states it should have: add, remove, rename or reorder them, and set each one's look | grown 2 to 3, trimmed 3 to 2, and a state inserted before On; built, every state and press state correct |
 | `renumber` | reassign the IDs of the addressable controls it selects - each button, label, level or slider that has one - from `start`, `step` apart, within 1 to 65535; controls sharing an ID (mirrors) take one new one, a mirror the selector leaves is a warning, and a band per page is a renumber per page | **26/26 on two builds**: a seed popup's 12 buttons from 20000 and a mirror on two popups to one new ID, and 12 of a generated panel's controls from 30000 - each on its new ID, no other ID moved, `verify_built` 0 problems; the ID map made off each build verifies, and the one from before fails on exactly the controls renumbered (`archive/job-e823df9b/probes-128/`) |
-| `retarget` | move to another panel model, or turn one that rotates, optionally rescaling | **654/654 on the fixture; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved; 650/650 on the same seed turned to a portrait 1035M** |
+| `retarget` | move to another panel model, or turn one that rotates, optionally rescaling | **654/654 on the client project; 650/650 on a seed retargeted 1280x800 -> 1920x1080, popup canvases preserved; 650/650 on the same seed turned to a portrait 1035M** |
 
 ## The shape
 
@@ -47,7 +52,7 @@ panel's does from its spec: `python -m gdl.idmap from-built <built.gdl> <out>`
 The thing that made `rename` harder than it looks. A caption lives in one of
 three places and a control that uses one leaves the others empty:
 
-| Where | Count in the fixture | Notes |
+| Where | Count in the client project | Notes |
 |---|---|---|
 | the control's `textField` | — | rare on buttons |
 | first state's `textField` | 336 | the normal case |
@@ -74,7 +79,7 @@ cover the art's text there and be covered by it, and land in a run of text its
 own width. A line found nowhere is a failure, and one whose words are found on
 two lines is said to have wrapped. The art cannot tell one letter from another,
 which is why the words come from the project. Measured on the client
-fixture's formatted captions of words - 11 controls, 22 states; its other 12
+project's formatted captions of words - 11 controls, 22 states; its other 12
 are icon glyphs - each scores 0.93 or more in its own art and none over 0.89
 in another's but `Camera` in Device / Comms, at 0.93 - a near word the project's
 words catch and the art does not. A line between 0.85 and 0.93 that lands in a
@@ -83,14 +88,18 @@ verifiable here*. So is a line holding an icon glyph - a private-use code point
 (U+E000 to U+F8FF), which Build draws in its run's icon face, not the state's -
 and a caption whose text color is within the text mask's 64 a channel of its
 art's commonest color, where the whole fill reads as text: white on
-(200, 200, 200), or the fixture's grey #767789 on #37394E. The fixture's other
-12 controls, 24 states, are all one or the other. That is one face at one size
-of ground truth.
+(200, 200, 200), or that project's grey #767789 on #37394E. Its other 12
+controls, 24 states, are all one or the other. That was one face at one size
+of ground truth; the suite now holds the check to GUI Designer's own baking of
+the synthetic fixture's flattened captions - Open Sans at 16 and 20 pt, on one
+line and on two, and Arial - each found in its own art and none in another's
+(`tests/test_verify_built.py`). A bold one is not found: `gdl.compose` draws a
+bold caption regular (`docs/ROADMAP.md`).
 
 ## A button is its states
 
-A button draws from its states, not from itself. In the fixture, **none of its
-442 buttons has a fill of its own**, and 340 have one on each state. Table
+A button draws from its states, not from itself. In the client project,
+**none of its 442 buttons had a fill of its own**, and 340 had one on each state. Table
 Input 1 is transparent when Off and `#242634` when On, and the two need not
 share a caption either. So every edit reads and writes each state, addressed by
 index, which is also the number the control program sets.

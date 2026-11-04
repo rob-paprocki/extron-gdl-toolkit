@@ -1,8 +1,5 @@
 # Binaries carried off the Windows box's C: drive go through Git LFS, so a clone
 # stays light and `git lfs pull` fetches them only when wanted.
-#
-# fixtures/ predates this and stays in plain git: moving it to LFS would rewrite
-# every commit that touched it.
 
 # The publish hook is a shell script: a CRLF checkout breaks it under sh.
 tools/hooks/*               text eol=lf

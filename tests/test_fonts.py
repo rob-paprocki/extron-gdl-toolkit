@@ -1,4 +1,4 @@
-"""Every face a fixture declares must come back out of it, byte for byte.
+"""Every face a built project declares must come back out of it, byte for byte.
 
 This is the gate that was missing. `extract` used to require the declared size
 to equal `sfnt_length` exactly; Arial and Arial Black declare a size past their
@@ -6,8 +6,12 @@ last table, so they never matched and were written off as system faces that
 GUI Designer referenced without embedding. That inference reached the docs, the
 CI config and the render path, where it became a hard `LookupError` on any host
 without Arial installed. Nothing failed, because nothing checked.
+
+The built project is the synthetic fixture (tests/data/synthetic/), whose
+build embeds Arial and Arial Black as GUI Designer does, beside Extron-Afterburn
+and both Open Sans faces. A seed will not do: most declare a face they do not
+carry (gdl/fonts/README.md).
 """
-import glob
 import json
 import os
 import struct
@@ -16,7 +20,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _corpus import MAIN_CLIENT, needs_client  # noqa: E402
+from _corpus import SYNTHETIC, needs_synthetic  # noqa: E402
 
 from gdl.container import open_gdl, open_payload  # noqa: E402
 from gdl.fonts import extract, scan  # noqa: E402
@@ -24,8 +28,7 @@ from gdl.fonts import extract, scan  # noqa: E402
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _corpus import seed, usable  # noqa: E402
 
-FIXTURES = sorted(glob.glob(os.path.join(
-    os.path.dirname(__file__), '..', 'fixtures', 'gdl', '*.gdl')))
+PROJECTS = [SYNTHETIC] if usable(SYNTHETIC) else []
 
 SFNT_MAGIC = (b'\x00\x01\x00\x00', b'OTTO', b'true', b'ttcf')
 
@@ -37,13 +40,13 @@ def faces(path):
     return declared, extract(gcp, declared)
 
 
-@needs_client(MAIN_CLIENT)
+@unittest.skipUnless(PROJECTS, f'{SYNTHETIC} is not here')
 class TestEveryDeclaredFaceIsRecovered(unittest.TestCase):
-    def test_fixtures_exist(self):
-        self.assertTrue(FIXTURES, 'no fixtures found to check')
+    def test_the_project_exists(self):
+        self.assertTrue(PROJECTS, 'no built project found to check')
 
     def test_nothing_is_declared_but_missing(self):
-        for path in FIXTURES:
+        for path in PROJECTS:
             declared, found = faces(path)
             missing = [r['EmbeddedFileName'] for r in declared
                        if r['EmbeddedFileName'] not in found]
@@ -52,13 +55,13 @@ class TestEveryDeclaredFaceIsRecovered(unittest.TestCase):
 
     def test_arial_is_embedded_not_a_system_face(self):
         """The specific claim that was wrong, pinned so it cannot come back."""
-        for path in FIXTURES:
+        for path in PROJECTS:
             _, found = faces(path)
             self.assertIn('arial.ttf', found, os.path.basename(path))
             self.assertIn('ariblk.ttf', found, os.path.basename(path))
 
     def test_recovered_bytes_are_the_declared_length_and_a_real_sfnt(self):
-        for path in FIXTURES:
+        for path in PROJECTS:
             declared, found = faces(path)
             sizes = {r['EmbeddedFileName']: r['Size'] for r in declared}
             for name, face in found.items():
@@ -68,7 +71,7 @@ class TestEveryDeclaredFaceIsRecovered(unittest.TestCase):
 
     def test_the_table_directory_fits_inside_the_recovered_bytes(self):
         """A short slice would still start with the magic but truncate a table."""
-        for path in FIXTURES:
+        for path in PROJECTS:
             _, found = faces(path)
             for name, face in found.items():
                 blob = face['bytes']
@@ -80,7 +83,7 @@ class TestEveryDeclaredFaceIsRecovered(unittest.TestCase):
                                          f'{name} table {i} runs past the end')
 
     def test_two_faces_never_resolve_to_the_same_blob(self):
-        for path in FIXTURES:
+        for path in PROJECTS:
             _, found = faces(path)
             starts = [face['bytes'][:64] for face in found.values()]
             self.assertEqual(len(starts), len({bytes(s) for s in starts}),
@@ -89,9 +92,9 @@ class TestEveryDeclaredFaceIsRecovered(unittest.TestCase):
 
 class TestASystemFaceIsSaidAloud(unittest.TestCase):
     """Without the recovered faces the compositor falls back to the host's
-    Arial for every one, and the render scores 2.81% instead of the baseline's
-    2.19% - a checkout that skipped `python -m gdl.fonts` scored every page
-    worse and nothing said so. compose records each fallback, and
+    Arial for every one, and the render scores worse - the client project's
+    baseline read 2.81% for 2.19% so - and a checkout that skipped `python -m
+    gdl.fonts` scored every page worse and nothing said so. compose records each fallback, and
     tests/score.py refuses to record over one."""
 
     def setUp(self):
@@ -126,7 +129,7 @@ class TestASystemFaceIsSaidAloud(unittest.TestCase):
             compose.FALLBACKS.update(saved[2])
 
     def test_a_face_drawn_in_the_recovered_arial_is_recorded(self):
-        """A partial recovery - `gdl.fonts` run over one fixture, which carries
+        """A partial recovery - `gdl.fonts` run over one project, which carries
         Arial but not every face - drew each missing face in that Arial, and
         nothing recorded it. Arial itself, drawn in Arial, is no fallback."""
         import shutil
@@ -159,7 +162,7 @@ class TestASystemFaceIsSaidAloud(unittest.TestCase):
 
 
 class TestAnIconFaceIsReadFromItsSeed(unittest.TestCase):
-    """No fixture embeds Extron-Lift, so a Mach spec's preview drew every icon
+    """No built project here embeds Extron-Lift, so a Mach spec's preview drew every icon
     in the recovered Arial - and recovering the face from a Mach seed would
     replace that Arial with the seed's own. The renderer reads an icon face
     straight out of its family's seed instead, before anything stands in."""
@@ -194,7 +197,7 @@ class TestAnIconFaceIsReadFromItsSeed(unittest.TestCase):
 
 
 class TestAnyFaceIsReadFromTheSeedThatCarriesIt(unittest.TestCase):
-    """No fixture carries Roboto (the Shockwave Start clock), Extron GUI
+    """No built project here carries Roboto (the Shockwave Start clock), Extron GUI
     Configurator or Extron GUIC Video Conference 1a, so a spec's preview drew
     each in Arial and said so. A seed carries each: the renderer reads one
     from the first seed that does (gdl.fonts.find_face), as it reads an icon
@@ -222,7 +225,7 @@ class TestAnyFaceIsReadFromTheSeedThatCarriesIt(unittest.TestCase):
         compose.FALLBACKS.clear()
         self.compose = compose
 
-    def test_a_face_no_fixture_carries_is_drawn_from_a_seed(self):
+    def test_a_face_no_built_project_carries_is_drawn_from_a_seed(self):
         from gdl.seeds import usable
         if not usable('seeds/Shockwave 1035.gdl'):
             self.skipTest('seeds/Shockwave 1035.gdl is not pulled from Git LFS here')
@@ -522,23 +525,27 @@ class TestTheSeedCIHas(unittest.TestCase):
         self.assertEqual(len(written), 217360)
 
 
-@needs_client(MAIN_CLIENT)
 class TestNothingToSayNeedsNoParse(unittest.TestCase):
-    def test_a_project_that_carries_all_it_declares_is_not_parsed(self):
-        """Every fixture declares what it carries and carries what it declares,
-        and the stream scan says so on its own: parsing the whole project to
-        say nothing made the command 20 times slower over them."""
+    """A built project that declares what it carries and carries what it
+    declares - each of the client project's six did, and the synthetic
+    fixture does - has the stream scan say so on its own: parsing the whole
+    project to say nothing made the command 20 times slower over them."""
+
+    def _not_parsed(self, path):
         import contextlib
         import io
         from unittest import mock
-        from _corpus import client
         from gdl import fonts
 
         def parse(*a, **k):
             raise AssertionError('parsed the whole project')
 
         with mock.patch.object(fonts, 'carried', parse), contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(fonts.main(['fonts', client(MAIN_CLIENT)]), 0)
+            self.assertEqual(fonts.main(['fonts', path]), 0)
+
+    @needs_synthetic()
+    def test_a_project_that_carries_all_it_declares_is_not_parsed(self):
+        self._not_parsed(SYNTHETIC)
 
 
 class TestWhereAFaceIsRecovered(unittest.TestCase):
@@ -561,8 +568,9 @@ class TestWhereAFaceIsRecovered(unittest.TestCase):
         self.assertEqual(self._found('Extron-Shockwave', 'extron_shockwave.ttf'), 'extron_shockwave.ttf')
 
     def test_a_face_is_found_under_another_name_it_is_embedded_as(self):
-        """The client fixtures embed Extron-Afterburn as
-        extron_-_afterburn_1a.ttf, and the Afterburn 320 seed as afterburn.ttf."""
+        """A client project embedded Extron-Afterburn as
+        extron_-_afterburn_1a.ttf, and the Afterburn 320 seed embeds it as
+        afterburn.ttf."""
         self.assertEqual(self._found('Extron-Afterburn', 'extron_-_afterburn_1a.ttf'), 'extron_-_afterburn_1a.ttf')
         self.assertEqual(self._found('Extron-Afterburn', 'afterburn.ttf'), 'afterburn.ttf')
 
@@ -580,10 +588,11 @@ class TestWhereAFaceIsRecovered(unittest.TestCase):
         self.assertIs(compose.ALIASES, fonts.ALIASES)
 
 
+@unittest.skipUnless(PROJECTS, f'{SYNTHETIC} is not here')
 class TestScanIsUnchanged(unittest.TestCase):
     def test_scan_still_finds_every_recovered_face(self):
         """`extract` anchors on `scan`, so an anchor for each face must exist."""
-        for path in FIXTURES:
+        for path in PROJECTS:
             gcp = open_gdl(path).read('ProjectGCP')
             declared, found = faces(path)
             self.assertLessEqual(len(found), len(scan(gcp)))

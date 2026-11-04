@@ -708,7 +708,7 @@
         "blue-slate": {"image": "6400x4000_bg3-blueslate.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg3-blueslate.png"},
         "grape": {"image": "6400x4000_bg4-grape.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png"}
       },
-      "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl", "TLP1035M-Portrait": "seeds/Afterburn 1035 Portrait.gdl"},
+      "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl", "TLP1035M-Portrait": "seeds/Afterburn 1035 Portrait.gdl", "TLP1025M": "seeds/Afterburn 1025.gdl", "TLP1025T": "seeds/Afterburn TLP1025T.gdl", "TLP1220MG": "seeds/Afterburn 1220.gdl", "TLP1220TG": "seeds/Afterburn TLP1220TG.gdl", "TLP1225MG": "seeds/Afterburn 1225.gdl", "TLP1225TG": "seeds/Afterburn TLP1225TG.gdl", "TLP835C": "seeds/Afterburn TLP835C.gdl", "TLP835T": "seeds/Afterburn 835.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -1316,7 +1316,7 @@
         "blue-slate": {"image": "5120x3000_bg3-blueslate.png", "file": "Afterburn/Backgrounds/5120x3000/TLP 725/5120x3000_bg3-blueslate.png"},
         "grape": {"image": "5120x3000_bg4-grape.png", "file": "Afterburn/Backgrounds/5120x3000/TLP 725/5120x3000_bg4-grape.png"}
       },
-      "seeds": {"TLP725T": "seeds/Afterburn 725.gdl"},
+      "seeds": {"TLP725T": "seeds/Afterburn 725.gdl", "TLP1020M": "seeds/Afterburn 1020.gdl", "TLP1020T": "seeds/Afterburn TLP1020T.gdl", "TLP725C": "seeds/Afterburn TLP725C.gdl", "TLP725M": "seeds/Afterburn TLP725M.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -1897,7 +1897,586 @@
         "blue-slate": {"image": "6830x3840_bg3-blurslate.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg3-blurslate.png"},
         "grape": {"image": "6830x3840_bg4-grape.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg4-grape.png"}
       },
-      "seeds": {}
+      "seeds": {"TLP1525MG": "seeds/Afterburn 1525.gdl", "TLP1525TG": "seeds/Afterburn TLP1525TG.gdl"},
+      "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
+      "frame": {
+        "page": "Main SD",
+        "top": null,
+        "left": {
+          "rect": [0, 0, 179, 768],
+          "surfaces": [],
+          "groups": [
+            {
+              "heading": {"rect": [14, 146, 152, 50], "text": "Display"},
+              "buttons": [
+                {
+                  "role": "display-power",
+                  "name": "Display Power",
+                  "kind": "button",
+                  "rect": [0, 194, 178, 50],
+                  "id": 8112
+                },
+                {
+                  "role": "display-mute",
+                  "name": "Display Mute",
+                  "kind": "button",
+                  "rect": [0, 252, 178, 50],
+                  "id": 8114
+                }
+              ],
+              "pitch": 58
+            },
+            {
+              "heading": {"rect": [14, 389, 152, 50], "text": "Settings"},
+              "buttons": [
+                {"role": "screen", "name": "Screen Settings", "kind": "button", "rect": [0, 437, 178, 50], "id": 8115},
+                {
+                  "role": "lighting",
+                  "name": "Lighting Settings",
+                  "kind": "button",
+                  "rect": [0, 495, 178, 50],
+                  "id": 8116
+                },
+                {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 553, 178, 50], "id": 8020}
+              ],
+              "pitch": 58
+            }
+          ],
+          "seam": 21,
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [20, 684, 144, 64], "id": 8120}
+          ]
+        },
+        "right": {
+          "rect": [1186, 0, 180, 768],
+          "surfaces": [],
+          "items": [
+            {
+              "role": "heading",
+              "name": "Main Volume Label",
+              "kind": "label",
+              "rect": [1190, 146, 171, 50],
+              "id": 4052,
+              "text": "Volume"
+            },
+            {"role": "volume", "name": "Main Volume Slider", "kind": "slider", "rect": [1250, 188, 50, 395], "id": 8024},
+            {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1243, 580, 64, 64], "id": 8021},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1209, 684, 64, 64], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [1283, 684, 64, 64], "id": 8022}
+          ]
+        },
+        "bottom": null,
+        "center": {
+          "rect": [179, 16, 1007, 735],
+          "surfaces": [],
+          "tabs": {
+            "first": [385, 28, 110, 110],
+            "pitch": 159,
+            "count": 4,
+            "look": {
+              "off": {"fill": null, "border": null, "art": "756x756_pc_nsel.png", "text": "#FFFFFFFF"},
+              "on": {"fill": "#242634FF", "border": null, "art": "756x756_pc-orange_sel.png", "text": "#FFFFFFFF"}
+            },
+            "items": [
+              {"role": "source", "name": "PC", "kind": "button", "rect": [385, 28, 110, 110], "id": 8052},
+              {"role": "source", "name": "Laptop", "kind": "button", "rect": [544, 28, 110, 110], "id": 8050},
+              {"role": "source", "name": "TV", "kind": "button", "rect": [703, 28, 110, 110], "id": 8059},
+              {"role": "source", "name": "Streaming", "kind": "button", "rect": [862, 28, 110, 110], "id": 8063}
+            ]
+          },
+          "region": [243, 161, 880, 517],
+          "popup": "Laptop",
+          "well": null,
+          "title": [602, 161, 162, 50],
+          "empty": [363, 234, 640, 128],
+          "pt": {"title": 21, "empty": 16},
+          "title_controls": [602, 161, 162, 50],
+          "pitch": [202, 79],
+          "items": [
+            {"role": "divider", "name": "Divider", "kind": "line", "rect": [303, 128, 760, 20]},
+            {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [611, 679, 144, 64], "id": 8301},
+            {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [203, 688, 208, 60]},
+            {"role": "clock", "name": "Time", "kind": "datetime", "rect": [1015, 688, 148, 60]}
+          ]
+        },
+        "foot": {
+          "rect": [0, 679, 1366, 89],
+          "items": [
+            {"role": "mode", "name": "Video Conference", "kind": "button", "rect": [20, 684, 144, 64], "id": 8120},
+            {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [203, 688, 208, 60]},
+            {"role": "preview", "name": "Preview Source", "kind": "button", "rect": [611, 679, 144, 64], "id": 8301},
+            {"role": "clock", "name": "Time", "kind": "datetime", "rect": [1015, 688, 148, 60]},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1209, 684, 64, 64], "id": 8117},
+            {"role": "power", "name": "Power", "kind": "button", "rect": [1283, 684, 64, 64], "id": 8022}
+          ]
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": [0, 0, 1366, 768],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1366, 768],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": [528, 28, 310, 50],
+            "close": {"role": "close", "name": "Close Help", "kind": "button", "rect": [1114, 19, 64, 64], "id": 9057},
+            "pt": {"title": 21, "message": 16},
+            "message": [333, 132, 700, 100],
+            "lines": 3
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 1366, 768],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1366, 768],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 21},
+            "message": [333, 215, 700, 50],
+            "lines": 1,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [505, 317, 154, 64], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [707, 317, 154, 64],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": [0, 0, 1366, 768],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1366, 768],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 21},
+            "message": [333, 359, 700, 50],
+            "lines": 1
+          },
+          "settings": [
+            {
+              "popups": [
+                "Video Preview",
+                "Camera Select",
+                "Audio Settings",
+                "Video Preview - Multi-Window",
+                "Display Settings",
+                "Video Preview - Share Source",
+                "Window Layout",
+                "TV Channels",
+                "Share Content",
+                "Screen Settings",
+                "Lighting Settings",
+                "Recording Controls"
+              ],
+              "rect": [0, 0, 1366, 768],
+              "surfaces": [
+                {
+                  "name": "Background",
+                  "rect": [0, 0, 1366, 768],
+                  "kind": "image",
+                  "fill": null,
+                  "border": null,
+                  "art": "6830x3840_bg1-default.png"
+                }
+              ],
+              "title": [528, 28, 310, 50],
+              "close": {
+                "role": "close",
+                "name": "Close Preview Source",
+                "kind": "button",
+                "rect": [1114, 19, 64, 64],
+                "id": 9034
+              },
+              "pt": {"title": 21}
+            }
+          ],
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 0, 1366, 768],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1366, 768],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 21},
+            "message": [312, 105, 741, 170],
+            "lines": 3,
+            "buttons": [
+              {
+                "role": "start-recording",
+                "name": "Start Recording",
+                "kind": "button",
+                "rect": [505, 317, 154, 64],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Record Cancel",
+                "kind": "button",
+                "rect": [707, 317, 154, 64],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
+          },
+          "incoming": {
+            "popup": "Incoming Call",
+            "rect": [0, 0, 1366, 768],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1366, 768],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "6830x3840_bg1-default.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 21},
+            "message": [333, 215, 700, 50],
+            "lines": 1,
+            "buttons": [
+              {
+                "role": "accept",
+                "name": "Accept Call",
+                "kind": "button",
+                "rect": [505, 317, 154, 64],
+                "id": 9032,
+                "text": "Accept"
+              },
+              {
+                "role": "decline",
+                "name": "Decline Call",
+                "kind": "button",
+                "rect": [707, 317, 154, 64],
+                "id": 9033,
+                "text": "Decline"
+              }
+            ],
+            "text": "Incoming call, do you wish to accept?"
+          }
+        },
+        "call": {
+          "page": "Main VC",
+          "top": null,
+          "left": {
+            "rect": [0, 0, 179, 768],
+            "surfaces": [],
+            "groups": [
+              {
+                "heading": {"rect": [14, 146, 152, 50], "text": "VTC"},
+                "buttons": [
+                  {
+                    "role": "call",
+                    "name": "Call",
+                    "kind": "button",
+                    "rect": [0, 194, 178, 50],
+                    "id": 5014,
+                    "text": "Make Call"
+                  },
+                  {
+                    "role": "end-call",
+                    "name": "End Call",
+                    "kind": "button",
+                    "rect": [0, 252, 178, 50],
+                    "id": 5215,
+                    "text": "End Call"
+                  },
+                  {
+                    "role": "privacy",
+                    "name": "Call Privacy",
+                    "kind": "button",
+                    "rect": [0, 310, 178, 50],
+                    "id": 5217,
+                    "text": "Privacy"
+                  }
+                ],
+                "pitch": 58
+              },
+              {
+                "heading": {"rect": [14, 389, 152, 50], "text": "Settings"},
+                "buttons": [
+                  {
+                    "role": "display",
+                    "name": "Display Settings",
+                    "kind": "button",
+                    "rect": [0, 436, 178, 50],
+                    "id": 8214
+                  },
+                  {"role": "screen", "name": "Screen Settings", "kind": "button", "rect": [0, 495, 178, 50], "id": 8115},
+                  {
+                    "role": "lighting",
+                    "name": "Lighting Settings",
+                    "kind": "button",
+                    "rect": [0, 553, 178, 50],
+                    "id": 8116
+                  },
+                  {"role": "audio", "name": "Audio Settings", "kind": "button", "rect": [0, 611, 178, 50], "id": 8020}
+                ],
+                "pitch": 58
+              }
+            ],
+            "items": [
+              {"role": "presentation", "name": "Presentation", "kind": "button", "rect": [20, 684, 144, 64], "id": 8118}
+            ]
+          },
+          "right": {
+            "rect": [1186, 0, 180, 768],
+            "surfaces": [],
+            "items": [
+              {"role": "share", "name": "Share Content", "kind": "button", "rect": [1207, 16, 144, 64], "id": 8090},
+              {
+                "role": "heading",
+                "name": "Main Volume Label",
+                "kind": "label",
+                "rect": [1190, 146, 171, 50],
+                "id": 4052,
+                "text": "Volume"
+              },
+              {
+                "role": "volume",
+                "name": "Main Volume Slider",
+                "kind": "slider",
+                "rect": [1250, 188, 50, 395],
+                "id": 8024
+              },
+              {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1243, 580, 64, 64], "id": 8021},
+              {"role": "help", "name": "Help", "kind": "button", "rect": [1209, 684, 64, 64], "id": 8117},
+              {"role": "power", "name": "Power", "kind": "button", "rect": [1283, 684, 64, 64], "id": 8022}
+            ]
+          },
+          "bottom": null,
+          "center": {
+            "rect": [179, 16, 1007, 735],
+            "region": [243, 161, 880, 517],
+            "surfaces": [],
+            "items": [
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [303, 128, 760, 20]},
+              {
+                "role": "share",
+                "name": "Preview Source Share",
+                "kind": "button",
+                "rect": [611, 679, 144, 64],
+                "id": 8301
+              },
+              {"role": "clock", "name": "Current Date", "kind": "datetime", "rect": [203, 688, 208, 60]},
+              {"role": "clock", "name": "Time", "kind": "datetime", "rect": [1015, 688, 148, 60]}
+            ],
+            "dialer": {
+              "popup": "VTC Dialer",
+              "title": [602, 161, 162, 50],
+              "text": "VTC Dialer",
+              "pt": {"title": 21, "entry": 20},
+              "entry": {
+                "role": "entry",
+                "name": "Phone Number Label",
+                "kind": "label",
+                "rect": [405, 229, 225, 50],
+                "id": 50000,
+                "text": "123 - 456 - 7890"
+              },
+              "surfaces": [],
+              "keys": [
+                {
+                  "role": "delete",
+                  "name": "Phone Number Delete",
+                  "kind": "button",
+                  "rect": [630, 222, 64, 64],
+                  "id": 5237,
+                  "art": "440x440_delete.png"
+                },
+                {
+                  "role": "digit-1",
+                  "name": "Dialer Keypad 1",
+                  "kind": "button",
+                  "rect": [404, 287, 64, 64],
+                  "id": 5203,
+                  "text": "1"
+                },
+                {
+                  "role": "digit-2",
+                  "name": "Dialer Keypad 2",
+                  "kind": "button",
+                  "rect": [498, 287, 64, 64],
+                  "id": 5204,
+                  "text": "2"
+                },
+                {
+                  "role": "digit-3",
+                  "name": "Dialer Keypad 3",
+                  "kind": "button",
+                  "rect": [592, 287, 64, 64],
+                  "id": 5205,
+                  "text": "3"
+                },
+                {
+                  "role": "call",
+                  "name": "Call",
+                  "kind": "button",
+                  "rect": [807, 287, 154, 64],
+                  "id": 5214,
+                  "text": "Make Call",
+                  "art": "1059x440_call_unavailable.png"
+                },
+                {
+                  "role": "digit-4",
+                  "name": "Dialer Keypad 4",
+                  "kind": "button",
+                  "rect": [404, 366, 64, 64],
+                  "id": 5206,
+                  "text": "4"
+                },
+                {
+                  "role": "digit-5",
+                  "name": "Dialer Keypad 5",
+                  "kind": "button",
+                  "rect": [498, 366, 64, 64],
+                  "id": 5207,
+                  "text": "5"
+                },
+                {
+                  "role": "digit-6",
+                  "name": "Dialer Keypad 6",
+                  "kind": "button",
+                  "rect": [592, 366, 64, 64],
+                  "id": 5208,
+                  "text": "6"
+                },
+                {
+                  "role": "swap",
+                  "name": "Swap",
+                  "kind": "button",
+                  "rect": [807, 366, 154, 64],
+                  "id": 5251,
+                  "text": "Swap",
+                  "art": "1059x440_swap.png"
+                },
+                {
+                  "role": "digit-7",
+                  "name": "Dialer Keypad 7",
+                  "kind": "button",
+                  "rect": [404, 445, 64, 64],
+                  "id": 5209,
+                  "text": "7"
+                },
+                {
+                  "role": "digit-8",
+                  "name": "Dialer Keypad 8",
+                  "kind": "button",
+                  "rect": [498, 445, 64, 64],
+                  "id": 5210,
+                  "text": "8"
+                },
+                {
+                  "role": "digit-9",
+                  "name": "Dialer Keypad 9",
+                  "kind": "button",
+                  "rect": [592, 445, 64, 64],
+                  "id": 5211,
+                  "text": "9"
+                },
+                {
+                  "role": "contacts",
+                  "name": "Contacts",
+                  "kind": "button",
+                  "rect": [807, 445, 154, 64],
+                  "id": 5250,
+                  "text": "Contacts",
+                  "art": "1059x440_contacts.png"
+                },
+                {"role": "star", "name": "Dialer Keypad *", "kind": "button", "rect": [404, 524, 64, 64], "id": 5212},
+                {
+                  "role": "digit-0",
+                  "name": "Dialer Keypad 0",
+                  "kind": "button",
+                  "rect": [498, 524, 64, 64],
+                  "id": 5202,
+                  "text": "0"
+                },
+                {
+                  "role": "hash",
+                  "name": "Dialer Keypad #",
+                  "kind": "button",
+                  "rect": [592, 524, 64, 64],
+                  "id": 5213,
+                  "text": "#"
+                },
+                {
+                  "role": "period",
+                  "name": "Dialer Keypad Period",
+                  "kind": "button",
+                  "rect": [670, 524, 64, 64],
+                  "id": 5228,
+                  "text": "."
+                },
+                {
+                  "role": "keyboard",
+                  "name": "Keyboard",
+                  "kind": "button",
+                  "rect": [807, 524, 154, 64],
+                  "id": 5229,
+                  "art": "440x440_keyboard.png"
+                }
+              ]
+            }
+          },
+          "ids": {"call": 5014, "end-call": 5215, "privacy": 5217, "share": 8090}
+        },
+        "choose": {
+          "page": "Main Select Source",
+          "title": [558, 209, 250, 50],
+          "text": "Select a Source",
+          "surfaces": [],
+          "help": null,
+          "close": null,
+          "tiles": [
+            {"rect": [389, 301, 110, 110], "label": null},
+            {"rect": [548, 301, 110, 110], "label": null},
+            {"rect": [707, 301, 110, 110], "label": null},
+            {"rect": [866, 301, 110, 110], "label": null}
+          ],
+          "pt": {"title": 21}
+        },
+        "ids": {"help": 8117, "power": 8022, "volume": 8024, "mute": 8021, "mode": 8120},
+        "note": "No top or bottom bar: the background art draws the centre and the rails beside it, the source tabs sit across the centre's top and the clock in its foot."
+      }
     },
     "Afterburn 1720 Series": {
       "size": [1920, 1080],
@@ -1915,7 +2494,7 @@
         "blue-slate": {"image": "6830x3840_bg3-blurslate.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg3-blurslate.png"},
         "grape": {"image": "6830x3840_bg4-grape.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg4-grape.png"}
       },
-      "seeds": {"TLP1535M": "seeds/Afterburn 1535.gdl"},
+      "seeds": {"TLP1535M": "seeds/Afterburn 1535.gdl", "TLP1535T": "seeds/Afterburn TLP1535T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -3235,7 +3814,7 @@
         "blue-slate": {"image": "4000x2400_bg3-blueslate_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg3-blueslate_main.png"},
         "grape": {"image": "4000x2400_bg4-grape_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg4-grape_main.png"}
       },
-      "seeds": {"TLP525T": "seeds/Afterburn 525.gdl"},
+      "seeds": {"TLP525T": "seeds/Afterburn 525.gdl", "TLP525C": "seeds/Afterburn TLP525C.gdl", "TLP525M": "seeds/Afterburn TLP525M.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main",
@@ -3322,6 +3901,28 @@
             {"rect": [52, 315, 178, 50], "label": null}
           ],
           "pt": {"title": 21}
+        },
+        "display": {
+          "popup": "Display Settings",
+          "heading": null,
+          "text": null,
+          "cards": [
+            {
+              "rect": [123, 145, 178, 108],
+              "surface": null,
+              "heading": [133, 83, 152, 50],
+              "text": "DISPLAY 1",
+              "keys": [[123, 145, 178, 50], [123, 203, 178, 50]]
+            },
+            {
+              "rect": [385, 145, 178, 108],
+              "surface": null,
+              "heading": [399, 83, 152, 50],
+              "text": "DISPLAY 2",
+              "keys": [[385, 145, 178, 50], [385, 203, 178, 50]]
+            }
+          ],
+          "pt": {"heading": 16}
         },
         "windows": {
           "help": {
@@ -3451,7 +4052,226 @@
         "blue-slate": {"image": "4000x2400_bg3-blueslate_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg3-blueslate_main.png"},
         "grape": {"image": "4000x2400_bg4-grape_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg4-grape_main.png"}
       },
-      "seeds": {}
+      "seeds": {"TLP535T": "seeds/Afterburn 535.gdl"},
+      "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
+      "frame": {
+        "page": "Main",
+        "top": null,
+        "left": null,
+        "right": {
+          "rect": [1101, 0, 179, 720],
+          "surfaces": [],
+          "items": [
+            {
+              "role": "heading",
+              "name": "Main Volume Label",
+              "kind": "label",
+              "rect": [1112, 6, 160, 72],
+              "id": 4052,
+              "text": "Volume"
+            },
+            {"role": "volume-up", "name": "Main Volume Up", "kind": "button", "rect": [1139, 73, 105, 99], "id": 8120},
+            {
+              "role": "volume-down",
+              "name": "Main Volume Down",
+              "kind": "button",
+              "rect": [1139, 195, 105, 99],
+              "id": 8121
+            },
+            {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [1139, 316, 105, 99], "id": 8021},
+            {"role": "help", "name": "Help", "kind": "button", "rect": [1139, 438, 105, 75], "id": 8117},
+            {"role": "settings", "name": "Settings", "kind": "button", "rect": [1139, 535, 105, 75], "id": 8040},
+            {"role": "power", "name": "Power Down", "kind": "button", "rect": [1139, 633, 105, 75], "id": 8022}
+          ]
+        },
+        "bottom": null,
+        "center": {
+          "rect": [0, 0, 1097, 720],
+          "surfaces": [],
+          "region": [0, 0, 1097, 720],
+          "popup": "Laptop",
+          "well": null,
+          "title": [105, 31, 259, 75],
+          "empty": [108, 220, 880, 120],
+          "pt": {"title": 32, "empty": 24},
+          "close": {"role": "back", "name": "Laptop Back", "kind": "button", "rect": [0, 19, 105, 99], "id": 9102},
+          "title_controls": [105, 31, 454, 75],
+          "pitch": [256, 119],
+          "level": {
+            "popup": "Volume Level",
+            "fill": "#BABCCEFF",
+            "rect": [27, 60, 24, 600],
+            "track": "#242634FF",
+            "border": "Afterburn - 14 Radius 0 Thick",
+            "bar": "#626ACFFF",
+            "art": null,
+            "labels": []
+          },
+          "items": [{"role": "popup", "name": "Volume Level", "kind": "popup_ref", "rect": [1019, 0, 80, 720]}]
+        },
+        "select": {
+          "popup": "Select Source",
+          "title": [318, 31, 464, 75],
+          "text": "Select a Source",
+          "surfaces": [
+            {
+              "name": "Divider",
+              "rect": [52, 357, 993, 30],
+              "kind": "line",
+              "fill": "#BABCCEFF",
+              "border": null,
+              "art": null
+            }
+          ],
+          "help": null,
+          "close": null,
+          "tiles": [
+            {"rect": [92, 220, 176, 150], "label": [92, 291, 176, 54]},
+            {"rect": [337, 220, 176, 150], "label": [337, 291, 176, 54]},
+            {"rect": [581, 220, 176, 150], "label": [581, 291, 176, 54]},
+            {"rect": [829, 220, 176, 150], "label": [829, 291, 176, 54]}
+          ],
+          "pt": {"title": 21, "label": 22}
+        },
+        "options": {
+          "popup": "Settings",
+          "title": [105, 31, 259, 75],
+          "text": "Settings",
+          "surfaces": [],
+          "help": null,
+          "close": {"role": "back", "name": "Settings Back", "kind": "button", "rect": [0, 19, 105, 99], "id": 6210},
+          "tiles": [
+            {"rect": [83, 124, 284, 75], "label": null},
+            {"rect": [83, 211, 284, 75], "label": null},
+            {"rect": [83, 298, 284, 75], "label": null},
+            {"rect": [83, 385, 284, 75], "label": null}
+          ],
+          "pt": {"title": 32}
+        },
+        "display": {
+          "popup": "Display Settings",
+          "heading": null,
+          "text": null,
+          "cards": [
+            {
+              "rect": [196, 217, 284, 162],
+              "surface": null,
+              "heading": [212, 124, 243, 75],
+              "text": "DISPLAY 1",
+              "keys": [[196, 217, 284, 75], [196, 304, 284, 75]]
+            },
+            {
+              "rect": [616, 217, 284, 162],
+              "surface": null,
+              "heading": [638, 124, 243, 75],
+              "text": "DISPLAY 2",
+              "keys": [[616, 217, 284, 75], [616, 304, 284, 75]]
+            }
+          ],
+          "pt": {"heading": 24}
+        },
+        "windows": {
+          "help": {
+            "popup": "Help",
+            "rect": [0, 0, 1097, 720],
+            "surfaces": [],
+            "title": [105, 31, 132, 75],
+            "close": {"role": "back", "name": "Help Back", "kind": "button", "rect": [0, 19, 105, 99], "id": 9057},
+            "pt": {"title": 32, "message": 24},
+            "message": [108, 220, 880, 120],
+            "lines": 2
+          },
+          "confirm": {
+            "popup": "Confirmation",
+            "rect": [0, 0, 1280, 720],
+            "surfaces": [
+              {
+                "name": "Background_ID0",
+                "rect": [0, 0, 1280, 720],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "4000x2400_bg1-default_starrt.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 24},
+            "message": [291, 187, 697, 126],
+            "lines": 1,
+            "buttons": [
+              {"role": "power", "name": "Power Down", "kind": "button", "rect": [355, 333, 246, 99], "id": 9028},
+              {
+                "role": "cancel",
+                "name": "Confirmation Cancel",
+                "kind": "button",
+                "rect": [678, 333, 246, 99],
+                "id": 9029
+              }
+            ]
+          },
+          "wait": {
+            "popup": "Powering Down",
+            "rect": null,
+            "surfaces": [],
+            "title": null,
+            "close": null,
+            "pt": {"message": 22},
+            "message": [200, 211, 880, 295],
+            "lines": 1
+          },
+          "settings": [
+            {
+              "popups": ["Settings"],
+              "rect": [0, 0, 1097, 720],
+              "surfaces": [],
+              "title": [105, 31, 259, 75],
+              "close": {"role": "back", "name": "Settings Back", "kind": "button", "rect": [0, 19, 105, 99], "id": 6210},
+              "pt": {"title": 32}
+            }
+          ],
+          "recording": {
+            "popup": "Confirmation - Recording",
+            "rect": [0, 0, 1280, 720],
+            "surfaces": [
+              {
+                "name": "Background",
+                "rect": [0, 0, 1280, 720],
+                "kind": "image",
+                "fill": null,
+                "border": null,
+                "art": "4000x2400_bg1-default_starrt.png"
+              }
+            ],
+            "title": null,
+            "close": null,
+            "pt": {"message": 24},
+            "message": [291, 79, 697, 234],
+            "lines": 4,
+            "buttons": [
+              {
+                "role": "start-recording",
+                "name": "Start Recording",
+                "kind": "button",
+                "rect": [355, 333, 246, 99],
+                "id": 9244,
+                "text": "Record"
+              },
+              {
+                "role": "cancel",
+                "name": "Recording Cancel",
+                "kind": "button",
+                "rect": [678, 333, 246, 99],
+                "id": 9245,
+                "text": "Cancel"
+              }
+            ],
+            "text": "You are about to start recording.\n\nPlease let attendees know\nthey will be recorded."
+          }
+        },
+        "ids": {"help": 8117, "power": 8022, "mute": 8021, "volume-up": 8120, "volume-down": 8121, "settings": 8040},
+        "note": "The popups fill main."
+      }
     },
     "Afterburn 320 Series": {
       "size": [320, 240],
@@ -3469,7 +4289,7 @@
         "blue-slate": {"image": "1600x1200_bg3-blueslate.png", "file": "Afterburn/Backgrounds/1600x1200/1600x1200_bg3-blueslate.png"},
         "grape": {"image": "1600x1200_bg4-grape.png", "file": "Afterburn/Backgrounds/1600x1200/1600x1200_bg4-grape.png"}
       },
-      "seeds": {"TLP320M": "seeds/Afterburn 320.gdl"},
+      "seeds": {"TLP320M": "seeds/Afterburn 320.gdl", "TLP320C": "seeds/Afterburn TLP320C.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": false, "image": true},
       "borders": {"afterburn": "Afterburn - 7 Radius 2 Thick", "afterburn-flat": "Afterburn - 14 Radius 0 Thick"},
       "frame": {

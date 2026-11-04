@@ -257,7 +257,11 @@ build at a time.
    seed IDs, which `pin_ids` keeps where no canvas control has them; what
    the hub has no place for (the clock, a later Section's heading, a
    Header's ends) is named and listed in the page's `left`, which `pin_ids`
-   lets be absent there - nothing is dropped silently. A source popup and a
+   lets be absent there - nothing is dropped silently. (Backlog plan 1.3
+   gives a later Section's heading's words the options' title, which keeps
+   its name, and the display
+   group a card per display; the clock stays named, every hub template
+   drawing its own on its Start page alone.) A source popup and a
    settings window are popups of main's group under the hub's header, their
    Close back to Select Source by `nav` (the one place back is known); Help,
    the question and the wait stay modals in the hub's style. Looks are the
@@ -386,7 +390,8 @@ build at a time.
    designer reads it - the grammar's bars as the template's art (and the
    Header's and Footer's READMEs), the center's picture and `device`, a
    hub's popups on its photo in the grammar, the center and the windows, and
-   a settings window's picture as an `Image` - and its Differences no longer
+   a settings window's picture as an `Image` (on the 525 the window has
+   since drawn its own: backlog plan 1.3) - and its Differences no longer
    lists the bars or the device picture: the ledger's turbulence-02 and
    turbulence-34 are the frame's, and turbulence-35 each device's own size.
 10. **Round four**: fresh designers from the published systems alone, built on
@@ -536,3 +541,65 @@ build at a time.
     regions`) and on its region canvas, clean on the 1035, 725, 525 and 320
     with their ID maps, and built in GUI Designer and verified on all four,
     their ID maps too (`archive/job-e823df9b/afterburn-regions/`).
+13. **Round five**: fresh designers again, from the systems as they stood
+    after Afterburn's regions and the backlog plan's packages 1.2 to 1.4, on a
+    harder brief (the backlog plan's 3.1). Drawn (2026-11-01): four designers,
+    each with one theme's built README and the Design type's instructions
+    only, drew a 30-seat training room - two displays, five sources with a
+    Blu-ray's transport, Zoom with its dialer, a lecture recording that asks
+    before it stops, program and mic volume, lighting presets and a projector
+    screen - for the TLP1035T, 725T, 525T and 320M; their canvases as they
+    left them are `tests/data/round5-<theme>`. Translated unchanged, every one
+    was refused - Mach 31 times, Shockwave 35, Turbulence 68, Afterburn 26 -
+    and each problem was put to whoever owned it. The toolkit's: on a hub an
+    option written in the rail's own launcher look - the README tells a
+    designer a Shockwave launcher of two lines is a `tile`, a Turbulence one a
+    `dock` - kept it, and took the options' glyph its kit lacks
+    (`speaker_white`, `input_lightbulb`, `input_audio`), no image at rest; the
+    options wrapped at the template's two to a row, so a call page's five ran
+    off the 525's popup, a tile lit with its own word grew over its
+    neighbours, and one that ran off was said once for each tile that did; the
+    call option drew a laptop; a Group in a window or a popup, which cannot
+    page, stayed in its box where its cells outgrew it by 3 px on the 725 - it
+    now takes the room the window leaves round it, wider and then in more
+    rows; a plain modal - the stop question every designer drew, since no
+    template asks one - was laid out as a page and did not re-space as a
+    window's body does, its keys 5 px apart on the 525; a re-spaced row 14.6
+    px apart built 14; the 525's level for a mic's slider, the README's own
+    Mic column, stood 8 px over its Mute; a lit state of no name of the key
+    look's came out like its rest on the 320; a Label saying a Group's title,
+    as the README's own Doc Cam heads its Zoom keys, was drawn beside the
+    title on the 320; Help one Label too long for a 320 page was given a More
+    to a page that was not there; and the share window's title the README
+    prescribes ran under the 320's Back. The README's: which series each bar
+    panel is drawn from, and what each rail's second Section holds there, the
+    RightRail's Audio Control one of them on the 725; how many options a hub
+    holds; which panels draw the Footer's Preview, and the way back to a
+    select page; a Label over a Group said one way, where three designers
+    found the rule against the example; where a Group may go and what it does
+    in a window; how much one 320 page of words holds, and a 320 heading's
+    room counted in the capitals it is set in; and recipes for two displays, a
+    disc's transport and a recording's state and stop question. The
+    designers': a list launcher's caption and a 320 field wider than the
+    README's room for them, and the template's own Presentation on the 725's
+    mode launcher, which the README names. What each canvas, unchanged, is
+    still refused for is `tests/data/round5-left.json` - Mach 17, Shockwave 9,
+    Turbulence 39, Afterburn 14: 70 README gaps the README now tells of, 8 the
+    designers' and one a toolkit limit (`docs/ROADMAP.md`), a Label over a row
+    of keys that does not move apart from them - each with its class and why,
+    which `TestRoundFiveRooms` holds every translation to. Round four's rooms,
+    translated again, are left Mach 2 and Afterburn 76
+    (`tests/data/round4-left.json`), what the fixes took off theirs gone.
+    Revised (2026-11-02): each designer was given the revised README and what
+    the translator still refused, with nothing else; Afterburn's, Shockwave's
+    and Turbulence's rooms translated clean on all four panels after one
+    revision, Mach's after two (four words on its 320 Display Sources page).
+    Built: the first builds, at fix/round5, verified Afterburn's, Mach's and
+    Turbulence's rooms on every panel and refused Shockwave's 525 in its ID map
+    - a Header Record the hub had dropped, the only way to its Recording window
+    - which translate had passed (the hub's Header buttons and translate's own
+    ID-map check, #82). At main bffab82 all four rooms translate clean and are
+    built in GUI Designer and verified on the TLP1035T, 725T, 525T and 320M,
+    their ID maps 0 problems (`archive/job-e823df9b/round5/`: each room's
+    brief, canvas as finally revised, notes, the translator's first, revised
+    and final verdicts, build log and ID map).

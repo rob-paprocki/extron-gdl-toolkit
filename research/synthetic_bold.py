@@ -1,21 +1,22 @@
 """Synthetic bold, as GUI Designer draws a bold caption in a face it has no bold
 file for - measured, not shipped (docs/render-fidelity.md finding 8).
 
-GUI Designer embeds Forma DJR Display regular only, and draws the client
-fixture's bold captions by emboldening it. The model fitted on the 44 bold
-captions of the scored pages:
+GUI Designer embeds a face's regular only, and draws a bold caption by
+emboldening it. The model was fitted on the 44 bold Forma DJR Display captions
+of a client project's scored pages (no longer in the repo; its figures are in
+docs/render-fidelity.md):
 
   - each glyph's coverage smeared one whole pixel to the right (GDI's own
     simulated-bold overstrike), and
   - each advance grown by 1/60 em - in em, not pixels: every constant-pixel
     growth tried (0.3 to 1 px) scored worse.
 
-Run from the repository root, with the fixtures and recovered faces:
+Run from the repository root, with the recovered faces:
 
-    python research/synthetic_bold.py
+    python research/synthetic_bold.py               # the synthetic fixture
 
-It patches gdl.compose in memory, scores the 27 pages as tests/score.py does,
-and diffs the result against tests/baseline.json.
+It patches gdl.compose in memory, scores the pages as tests/score.py does,
+and diffs the result against the project's baseline.
 """
 import os
 import sys
@@ -96,10 +97,13 @@ if __name__ == '__main__':
 
     import score
     patch()
-    got = score.record(os.path.join(ROOT, 'fixtures/gdl/client-boardroom-2.0.0.gdl'),
-                       os.path.join(ROOT, 'fixtures/snapshots/Individual'))
+    # The synthetic fixture (tests/data/synthetic/), whose bold is Open Sans,
+    # on one line and on two, near its box's edge and far from it.
+    gdl, snaps, base = ('tests/data/synthetic/synthetic.gdl',
+                        'tests/data/synthetic/snapshots/Individual', 'tests/baseline-synthetic.json')
+    got = score.record(os.path.join(ROOT, gdl), os.path.join(ROOT, snaps))
     if compose.FALLBACKS:
         raise SystemExit(f'drawn in stand-ins: {sorted(compose.FALLBACKS)} - recover the faces first')
-    with open(os.path.join(ROOT, 'tests/baseline.json'), encoding='utf-8') as fh:
+    with open(os.path.join(ROOT, base), encoding='utf-8') as fh:
         base = json.load(fh)
     raise SystemExit(score.diff(base, got, 0.01))

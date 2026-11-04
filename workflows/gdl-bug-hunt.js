@@ -28,8 +28,8 @@ READ-ONLY. Do not edit, create or delete any file in the repo. You are finding, 
 You MAY write throwaway scripts to your temp dir and run them.
 
 THE CORPUS - this is the point of the exercise: every .gdl project the repo carries.
-  - fixtures/gdl/*.gdl    real client projects (in the private archive only: a checkout
-                          without them has none, and usable() is then False for all)
+  - tests/data/synthetic/*.gdl  the synthetic fixture: a many-page project the toolkit
+                          built on a seed, in generic words, everywhere
   - seeds/*.gdl           themed seed projects, one per theme and panel size (Git LFS)
 The translator (gdl/design.py, gdl/designsys/) works on Design canvases rather than .gdl
 files: tests/data/design-*/ and tests/data/round4-*/ each hold a canvas.json and its
@@ -39,15 +39,16 @@ Any count or list of them written in a doc or a prompt goes stale, so enumerate 
 yourself, once, from the repo root, and quote what that prints:
   import glob, sys; sys.path.insert(0, '.'); sys.path.insert(0, 'tests')
   from _corpus import usable      # False for a missing file or an un-pulled LFS pointer
-  paths = [p for p in sorted(glob.glob('fixtures/gdl/*.gdl') + glob.glob('seeds/*.gdl')) if usable(p)]
+  paths = [p for p in sorted(glob.glob('tests/data/synthetic/*.gdl') + glob.glob('seeds/*.gdl'))
+           if usable(p)]
   print(len(paths), 'usable projects')
 A seed that is still an LFS pointer is not in the corpus: say so rather than guess at it.
 Stream the corpus: open one project, reduce it to plain facts, drop it, then open the
 next. Parsed projects are large, and holding many at once in every parallel agent can
 exhaust the host's commit limit.
-Nearly every claim in this repo was first inferred from ONE project (the client project), and
-the seeds differ in theme, platform, panel size and canvas. Claims that were "always
-true" may be true only of that one project.
+Nearly every claim in this repo was first inferred from ONE project (a client's, no longer
+in the repo), and the seeds differ in theme, platform, panel size and canvas. Claims that
+were "always true" may be true only of that one project.
 
 HOW TO READ A PROJECT (all stdlib, works from the repo root):
   import sys; sys.path.insert(0, '.')
@@ -252,7 +253,7 @@ Python", "run this under 32-bit PowerShell"), and anything you cannot test by re
 .gdl files.
 
 Mark risk=high when the code ACTS on the claim (a check, a branch, a written field) AND
-it looks like it was inferred from the client fixture. Those are the ones that ship
+it looks like it was inferred from the one client project. Those are the ones that ship
 wrong output.
 
 Be thorough - this is extraction, not judgment. 30+ claims from a docs source is normal.`,
@@ -274,7 +275,7 @@ Be thorough - this is extraction, not judgment. 30+ claims from a docs source is
 
 Below are ${claims.length} claims extracted from ${src.where}. Your job is to FALSIFY them
 against every project in the corpus. Not to confirm them - to find the ones that are
-false, or true only of the client fixture.
+false, or true only of the one client project it was first read off.
 
 ${claims.map((c, i) => `${i + 1}. [${c.risk}] "${c.claim}"
    (${c.file}${c.line ? ':' + c.line : ''})  test: ${c.testable}`).join('\n')}
@@ -385,7 +386,7 @@ Then find the mismatches:
 Generate real plans to work from; the specs in examples/ (panel.json, multipage.json,
 clean-room.json, huddle.json) exercise different keys, so use more than one:
   python -m gdl.spec plan examples/panel.json <tmp>/plan.json
-  python -m gdl.edit plan examples/retarget.json fixtures/gdl/<fixture>.gdl <tmp>/edits.json`,
+  python -m gdl.edit plan examples/retarget.json tests/data/synthetic/synthetic.gdl <tmp>/edits.json`,
   },
   {
     key: 'verifier-blindspots',
@@ -417,7 +418,7 @@ nobody thought to clear. Known cases already handled: TLPImageID, buttonImageFie
 flattenTextField, backgroundImageField.
 
 Systematically find the rest. Method: clone-by-hand in Python - take a real donor control
-from a fixture, list every field it carries, and subtract the set of fields
+from a seed or the synthetic fixture, list every field it carries, and subtract the set of fields
 powershell/Apply-GdlPlan.ps1 (and the helpers it shares in powershell/GdlApply.ps1)
 explicitly sets or clears. What remains is inherited silently.
 
@@ -431,7 +432,7 @@ Compare a BUILT generated panel against its plan to see which inherited fields s
 Built panels with their plans are kept in archive/gdlwork/ (Git LFS; usable() in
 tests/_corpus.py says whether they are pulled), for example CleanRoom/CleanRoom.gdl with
 CleanRoom/plan.json. They were built by earlier appliers, so a field that survived there
-may be handled since. Otherwise build the comparison from a seed or fixture plus the plan
+may be handled since. Otherwise build the comparison from a seed plus the plan
 python -m gdl.spec plan gives for examples/panel.json.`,
   },
   {

@@ -16,10 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 
-from _corpus import usable  # noqa: E402
-
-FIXTURE = os.path.join(os.path.dirname(HERE), 'fixtures', 'gdl',
-                       'client-boardroom-2.0.0.gdl')
+from _corpus import SYNTHETIC, usable  # noqa: E402
 
 
 def _vb(test):
@@ -457,28 +454,34 @@ class TestNoArtwork(unittest.TestCase):
         self.assertIn('no artwork', problems[0])
 
 
-@unittest.skipUnless(usable(FIXTURE), 'the client fixture is not here')
-class TestPopupGroupBinding(unittest.TestCase):
+@unittest.skipUnless(usable(SYNTHETIC), 'the synthetic fixture is not built here')
+class TestPopupGroupBindingOnTheSyntheticFixture(unittest.TestCase):
     """A reference bound to the wrong group, or to none, reads 'Unassigned' or
     opens the wrong popup, and is invisible in every other field. The check
     read a `PopupGroups` key no layout.json has - none of the corpus's 47 - so
     it never fired. The built file records the binding on the reference
     (PopupPageID.GroupID, IsPopupGroupIdValid), on each popup (GroupID) and in
-    the project's group registry, which names each group."""
+    the project's group registry, which names each group.
 
-    PAGE, REF, GROUP = '2000 - Main - Presentation', 'Volume Popup Page Reference', 'Volume Popups'
+    On the synthetic fixture, whose five groups the toolkit named and the build
+    registered: Main's Level strip is two 136x496 popups, as a client project's
+    volume popups were."""
+
+    PAGE, REF, GROUP = 'Main', 'LevelRef', 'Level'
     PLAN = {'generated_by': 'gdl.spec', 'popup_groups': [GROUP],
             'pages': [{'name': PAGE, 'controls': [
                 {'donor_type': 'PBPopupPageReference', 'group': GROUP,
                  'fields': {'nameField': REF}}]}],
-            'popups': [{'name': '2210 - Conference Volume', 'group': GROUP, 'modal': False},
-                       {'name': '2220 - CATV Volume', 'group': GROUP, 'modal': False}]}
+            'popups': [{'name': 'Level One', 'group': GROUP, 'modal': False},
+                       {'name': 'Level Two', 'group': GROUP, 'modal': False}]}
 
     def setUp(self):
         self.vb = _vb(self)
         from gdl.compose import load
-        self.j, _ = load(FIXTURE)
-        self.registry = self.vb.popup_group_registry(FIXTURE)
+        self.j, _ = load(SYNTHETIC)
+        self.registry = self.vb.popup_group_registry(SYNTHETIC)
+        self.level = next(g for g, n in self.registry.items() if n == self.GROUP)
+        self.other = next(g for g, n in self.registry.items() if n == 'Keys')
 
     def _ref(self):
         page = next(p for p in self.j['Pages'] if p['Name'] == self.PAGE)
@@ -489,53 +492,53 @@ class TestPopupGroupBinding(unittest.TestCase):
                                           self.registry if registry is None else registry)
 
     def test_the_registry_is_read_off_the_built_project(self):
-        self.assertEqual(self.registry, {1: 'Volume Popups', 2: 'Tech Popups',
-                                         3: 'Presentation Popups', 5: 'Keyboards'})
+        self.assertEqual(sorted(self.registry.values()),
+                         ['Content', 'Keys', 'Level', 'Note', 'Wide'])
 
     def test_a_binding_as_planned_passes(self):
         self.assertEqual(self._check(), [])
 
     def test_a_reference_bound_to_another_group_is_reported(self):
-        self._ref()['GroupID'] = 3
+        self._ref()['GroupID'] = self.other
         problems = self._check()
-        self.assertTrue(any(self.REF in p and 'group 3' in p and "'Volume Popups'" in p
+        self.assertTrue(any(self.REF in p and f'group {self.other}' in p and "'Level'" in p
                             for p in problems), problems)
 
-    def test_a_reference_bound_to_nothing_is_reported(self):
+    def test_a_reference_bound_to_nothing_is_reported_once(self):
         self._ref().update(GroupID=0, IsPopupGroupIdValid=False)
-        problems = self._check()
-        self.assertTrue(any(self.REF in p and 'Unassigned' in p for p in problems), problems)
+        problems = [p for p in self._check() if self.REF in p]
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn('Unassigned', problems[0])
 
     def test_a_group_registered_under_another_name_is_reported(self):
-        problems = self._check(registry={1: 'Volume', 2: 'Tech Popups',
-                                         3: 'Presentation Popups', 5: 'Keyboards'})
-        self.assertTrue(any("'Volume'" in p and "'Volume Popups'" in p for p in problems), problems)
+        problems = self._check(registry={**self.registry, self.level: 'Volume'})
+        self.assertTrue(any("'Volume'" in p and "'Level'" in p for p in problems), problems)
 
     def test_an_unregistered_group_is_reported(self):
-        problems = self._check(registry={2: 'Tech Popups', 3: 'Presentation Popups',
-                                         5: 'Keyboards'})
+        registry = {g: n for g, n in self.registry.items() if g != self.level}
+        problems = self._check(registry=registry)
         self.assertTrue(any('registry' in p and 'Unassigned' in p for p in problems), problems)
 
     def test_a_planned_popup_built_in_no_group_is_reported(self):
         next(p for p in self.j['PopupPages']
-             if p['Name'] == '2210 - Conference Volume').update(GroupID=0, IsGroupValid=False)
+             if p['Name'] == 'Level One').update(GroupID=0, IsGroupValid=False)
         problems = self._check()
-        self.assertTrue(any("'2210 - Conference Volume' in no group" in p for p in problems),
-                        problems)
+        self.assertTrue(any("'Level One' in no group" in p for p in problems), problems)
         plan = dict(self.PLAN, popups=self.PLAN['popups'][:1])
         problems = self._check(plan)
-        self.assertTrue(any('2210 - Conference Volume' in p and 'built in no group' in p
+        self.assertTrue(any('Level One' in p and 'built in no group' in p
                             for p in problems), problems)
 
     def test_a_planned_group_split_across_two_built_groups_is_reported(self):
-        next(p for p in self.j['PopupPages'] if p['Name'] == '2220 - CATV Volume')['GroupID'] = 2
+        next(p for p in self.j['PopupPages'] if p['Name'] == 'Level Two')['GroupID'] = self.other
         problems = self._check()
-        self.assertTrue(any("'Volume Popups'" in p and '2220 - CATV Volume' in p
-                            for p in problems), problems)
+        self.assertTrue(any("'Level'" in p and 'Level Two' in p for p in problems), problems)
 
-    def test_the_hunts_repro_every_group_reference_rebound_to_999(self):
-        """No plan reference at all - a donor's kept pages - and still caught:
-        a group no popup is in shows nothing."""
+    def test_every_group_reference_rebound_to_999_is_caught(self):
+        """The hunt's repro. No plan reference at all - a donor's kept pages -
+        and still caught: a group no popup is in shows nothing. Its five
+        references bound to a group - Start's Note, Main's Content and Level,
+        Matrix's Wide, Keys' Keys - each reported."""
         n = 0
         for page in self.j['Pages']:
             for c in page.get('Controls') or []:
@@ -544,8 +547,8 @@ class TestPopupGroupBinding(unittest.TestCase):
                     pp['GroupID'] = 999
                     n += 1
         problems = self._check(plan={'pages': [], 'popups': [], 'keep_donor_pages': True})
-        self.assertEqual(n, 4)
-        self.assertEqual(len([p for p in problems if 'group 999' in p]), 4, problems)
+        self.assertEqual(n, 5)
+        self.assertEqual(len([p for p in problems if 'group 999' in p]), 5, problems)
 
     def test_a_kept_reference_bound_to_nothing_is_reported(self):
         self._ref().update(GroupID=0, IsPopupGroupIdValid=False)
@@ -553,22 +556,20 @@ class TestPopupGroupBinding(unittest.TestCase):
         self.assertEqual(len(problems), 1, problems)
         self.assertIn('Unassigned', problems[0])
 
-    def test_a_planned_reference_bound_to_nothing_is_reported_once(self):
-        self._ref().update(GroupID=0, IsPopupGroupIdValid=False)
-        self.assertEqual(len([p for p in self._check() if self.REF in p]), 1)
-
     def test_a_reference_to_a_popup_that_is_not_there_is_reported(self):
         self._ref().update(GroupID=0, IsPopupGroupIdValid=False, IsPopupPageIdValid=True,
                            PopupID=4242)
         problems = self._check(plan={'pages': [], 'popups': [], 'keep_donor_pages': True})
         self.assertTrue(any('4242' in p for p in problems), problems)
 
-    def test_a_direct_reference_to_one_popup_is_not_a_group_binding(self):
-        """Extron's 525s bind Volume Level by its PopupID, at GroupID 0."""
-        self._ref().update(GroupID=0, IsPopupGroupIdValid=False, IsPopupPageIdValid=True,
-                           PopupID=2)
-        problems = self._check(plan={'pages': [], 'popups': [], 'keep_donor_pages': True})
-        self.assertEqual(problems, [])
+    def test_its_reference_bound_to_one_popup_is_not_a_group_binding(self):
+        """Main's SingleRef, bound to the popup Single by its ID, as Extron's
+        525s bind Volume Level, at GroupID 0."""
+        page = next(p for p in self.j['Pages'] if p['Name'] == self.PAGE)
+        pp = next(c for c in page['Controls'] if c['Name'] == 'SingleRef')['PopupPageID']
+        self.assertTrue(pp['IsPopupPageIdValid'])
+        self.assertFalse(pp['IsPopupGroupIdValid'])
+        self.assertEqual(self._check(plan={'pages': [], 'popups': [], 'keep_donor_pages': True}), [])
 
 
 class TestRetarget(unittest.TestCase):
@@ -2072,84 +2073,97 @@ class TestBakedCaptionInAStandIn(unittest.TestCase):
             self.assertIn('stand-in', note or '', word)
 
 
-@unittest.skipUnless(usable(FIXTURE), 'client fixture not present')
-class TestBakedCaptionOnTheFixture(unittest.TestCase):
-    """Against GUI Designer's own baking: the client fixture's formatted
-    captions, every one found in its art in the fixture's own face, and none
-    found where another caption was baked."""
+@unittest.skipUnless(usable(SYNTHETIC), 'the synthetic fixture is not built here')
+class TestBakedCaptionOnTheSyntheticFixture(unittest.TestCase):
+    """Against GUI Designer's own baking: the synthetic fixture's flattened
+    captions (Buttons' Flat1 to Flat4, each state's `ftextField` baked into its
+    art by Build), every one found in its art in its own face, and none found
+    where another caption was baked. Open Sans at 16 and 20 pt, on one line and
+    on two, and Arial.
+
+    The thresholds were measured on a client project's formatted captions in
+    one retail face (CAPTION_FOUND); its icon-bearing formatted captions, which
+    no spec writes, are covered by TestBakedCaption only, on art compose draws.
+    The bold one, Flat2, is left out: compose draws a bold caption regular, so
+    its art's bold ink is not found (docs/ROADMAP.md)."""
 
     def setUp(self):
         self.vb = _vb(self)
         from gdl import compose
         from gdl.compose import load
         from gdl.project import Project
-        from gdl.fonts import FILES
-        if not os.path.exists(os.path.join(compose.FONTDIR, FILES[('Forma DJR Display', 0, 0)])):
-            # The fixture's face comes out of the fixtures by `python -m
-            # gdl.fonts` (CI recovers it before this file runs); drawn in a
-            # stand-in, every caption is only 'not verifiable'.
-            self.skipTest("the fixture's face is not recovered into gdl/fonts/")
-        self.j, self.assets = load(FIXTURE)
-        P = Project.open(FIXTURE)
-        built = {(pg['ID'], c['ID']): c for pg in self.j['Pages'] + self.j['PopupPages']
+        if not os.path.exists(os.path.join(compose.FONTDIR, 'arial.ttf')):
+            # The faces come out of the build by `python -m gdl.fonts` (CI
+            # recovers them before this file runs); drawn in a stand-in, every
+            # caption is only 'not verifiable'.
+            self.skipTest("the synthetic fixture's faces are not recovered into gdl/fonts/")
+        self.j, self.assets = load(SYNTHETIC)
+        P = Project.open(SYNTHETIC)
+        built = {(pg['ID'], c['ID']): (pg, c) for pg in self.j['Pages'] + self.j['PopupPages']
                  for c in pg.get('Controls') or []}
-        self.baked, self.icons = [], []
+        self.baked = []
         proj = next(P.instances('PBProject'))
         for field in ('pagesField', 'popupPagesField'):
             for pg in P.items(P.field(proj, field)):
                 for co in P.items(P.field(pg, 'controlsField')):
-                    c = built.get((P.field(pg, 'idField'), P.field(co, 'idField')))
+                    hit = built.get((P.field(pg, 'idField'), P.field(co, 'idField')))
+                    if not hit or not P.field(co, 'flattenTextField'):
+                        continue
+                    bpg, c = hit
                     for i, st in enumerate(P.states(co)):
                         ft = P.deref(st.get('ftextField'))
-                        # The formatted glyphs (U+E9xx) are icons, not words.
-                        if c and ft:
-                            (self.icons if any(0xE000 <= ord(ch) <= 0xF8FF for ch in ft) else
-                             self.baked).append((ft, c['States'][i]))
+                        bs = c['States'][i]
+                        if ft and not ((bs.get('Font') or {}).get('Style') or {}).get('Bold'):
+                            # The spec breaks a line with LF, GUI Designer's own
+                            # formatted text with CRLF, which is what the check
+                            # splits a caption's lines at (docs/ROADMAP.md).
+                            crlf = ft.replace('\r\n', '\n').replace('\n', '\r\n')
+                            self.baked.append((bpg, c, i, crlf, bs))
 
-    def test_an_icon_caption_is_never_failed(self):
-        """Half the fixture's icon-bearing states failed as 'not in the art':
-        their glyph drawn in the state's own face, which has none. Each is not
-        verifiable here, none a problem - some for their icon, the rest for
-        their grey text (#767789) on a fill (#37394E) within the tolerance."""
-        self.assertTrue(self.icons)
-        for ft, bs in self.icons:
+    def test_every_flattened_caption_is_found_in_its_own_art(self):
+        self.assertEqual(sorted({c['Name'] for _, c, _, _, _ in self.baked}),
+                         ['Flat1', 'Flat3', 'Flat4'])
+        for _, c, i, ft, bs in self.baked:
             problem, note = self.vb.check_baked_caption('x', ft, bs, self.assets)
-            self.assertIsNone(problem, ft)
-            self.assertRegex(note or '', 'private-use|cannot tell its caption from its fill', ft)
-
-    def test_every_formatted_caption_is_found_in_its_own_art(self):
-        self.assertTrue(self.baked)
-        for ft, bs in self.baked:
-            problem, note = self.vb.check_baked_caption('x', ft, bs, self.assets)
-            self.assertEqual((problem, note), (None, None), ft)
-
-    def test_a_rename_checked_against_a_build_that_never_had_it(self):
-        """The whole path: gdl.edit plans Displays -> Screens on the fixture,
-        and the fixture itself, unedited, is the 'build' - its project says
-        Displays, and so does its art."""
-        import tempfile
-        from gdl.edit import Edits
-        plan, errors, _ = Edits({'edits': [{'op': 'rename', 'map': {'Displays': 'Screens'}}]},
-                                FIXTURE).check()
-        self.assertEqual(errors, [])
-        self.assertTrue(any(ps.get('flattened') for op in plan['controls']
-                            for ps in op.get('per_state') or []), plan['controls'])
-        path = os.path.join(tempfile.mkdtemp(), 'plan.json')
-        with open(path, 'w', encoding='utf-8') as fh:
-            json.dump(plan, fh)
-        problems, _ = self.vb.check(path, FIXTURE)
-        self.assertTrue(any("is 'Displays' in the built project, the edit asked for 'Screens'" in p
-                            for p in problems), problems)
+            self.assertEqual((problem, note), (None, None), (c['Name'], i, ft))
 
     def test_another_caption_is_never_found_in_it(self):
-        words = sorted({ln.replace('\t', '').strip() for ft, _ in self.baked for ln in ft.split('\r\n')})
-        for ft, bs in self.baked[::4]:
-            own = {ln.replace('\t', '').strip() for ln in ft.split('\r\n')}
+        """Not one a letter or a digit off ('Flattened 18' in 'Flattened 16'):
+        the art cannot spell, so the words are read off the built project
+        (test_words_that_did_not_take_are_read_off_the_built_project)."""
+        words = sorted({ln.strip() for _, _, _, ft, _ in self.baked for ln in ft.split('\r\n')}
+                       | {'Flattened 24'})
+        for _, c, i, ft, bs in self.baked:
+            if i:
+                continue
+            own = {ln.strip() for ln in ft.split('\r\n')}
             for w in words:
                 if w in own:
                     continue
                 problem, note = self.vb.check_baked_caption('x', '\t\t' + w, bs, self.assets)
-                self.assertFalse(problem is None and note is None, (w, ft))
+                self.assertFalse(problem is None and note is None, (w, c['Name']))
+
+    def test_a_rename_checked_against_a_build_that_never_had_it(self):
+        """The whole path, on an edit plan: Flat1's 'Flattened 16' renamed, and
+        the fixture itself, unedited, the 'build' - its project says
+        'Flattened 16', and so does its art."""
+        import tempfile
+        pg, c, _, _, _ = next(b for b in self.baked if b[1]['Name'] == 'Flat1')
+        path = os.path.join(tempfile.mkdtemp(), 'plan.json')
+
+        def check(new):
+            plan = {'generated_by': 'gdl.edit', 'project': [], 'pages': [], 'controls': [
+                {'page': pg['ID'], 'control': c['ID'], 'why': f'rename -> {new!r}',
+                 'per_state': [{'index': i, 'was': 'Flattened 16', 'ftext': new, 'flattened': True}
+                               for i in range(len(c['States']))]}]}
+            with open(path, 'w', encoding='utf-8') as fh:
+                json.dump(plan, fh)
+            return self.vb.check(path, SYNTHETIC)[0]
+
+        self.assertEqual(check('Flattened 16'), [])
+        problems = check('Flattened 18')
+        self.assertTrue(any("is 'Flattened 16' in the built project, the edit asked for 'Flattened 18'"
+                            in p for p in problems), problems)
 
 
 class TestOfflinePage(unittest.TestCase):
@@ -2294,18 +2308,22 @@ class TestTypeNames(unittest.TestCase):
     message naming one of those types was wrong."""
 
     def test_every_type_number_matches_the_built_type(self):
+        """On the synthetic fixture, which builds every type the renderer
+        draws."""
         vb = _vb(self)
-        if not usable(FIXTURE):
-            self.skipTest('fixture not present')
         from gdl.container import open_payload
-        j = json.loads(open_payload(FIXTURE).read('layout.json'))
-        seen = {}
-        for pg in j['Pages'] + j['PopupPages']:
-            for c in pg.get('Controls') or []:
-                seen[c.get('Type')] = c.get('__type')
-        for num, name in seen.items():
-            if num in vb.TYPE_NAME:
-                self.assertEqual('PB' + vb.TYPE_NAME[num], name, f'Type {num}')
+        built = [p for p in (SYNTHETIC,) if usable(p)]
+        if not built:
+            self.skipTest(f'{SYNTHETIC} is not here')
+        for path in built:
+            j = json.loads(open_payload(path).read('layout.json'))
+            seen = {}
+            for pg in j['Pages'] + j['PopupPages']:
+                for c in pg.get('Controls') or []:
+                    seen[c.get('Type')] = c.get('__type')
+            for num, name in seen.items():
+                if num in vb.TYPE_NAME:
+                    self.assertEqual('PB' + vb.TYPE_NAME[num], name, f'Type {num} in {path}')
 
 
 if __name__ == '__main__':

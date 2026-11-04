@@ -67,6 +67,9 @@ $repo = Split-Path $PSScriptRoot -Parent
 $ps32 = 'C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe'
 $gd = Join-Path $InstallDir 'GUI Designer.exe'
 . (Join-Path $PSScriptRoot 'GdlBlocker.ps1')
+# Timing only reads the host; a host where it cannot (a blocked Add-Type, a
+# broken WMI) loses the timing, never the build.
+try { . (Join-Path $PSScriptRoot 'GdlTiming.ps1') } catch { Write-Output "  timing unavailable: $($_.Exception.Message)" }
 
 if (-not (Test-Path $ps32)) { throw "32-bit PowerShell 5.1 not found at $ps32" }
 if (-not (Test-Path $gd))   { throw "GUI Designer not found at $gd" }
@@ -136,11 +139,30 @@ Get-ChildItem -Path $Work -Filter '*.tgz4' -File -ErrorAction SilentlyContinue |
     Remove-Item -Force
 New-Item -ItemType Directory -Force -Path (Split-Path $Output -Parent) | Out-Null
 
+# Where the time goes. Each step is timed from its heading to the next, and the
+# list is printed as TIMING lines when the run ends, failed or not, so a log
+# says what a build cost without a stopwatch beside it (docs/from-scratch.md
+# section 5c has what they showed). The Save and Build step adds the finer
+# pieces itself: the menu click, the build, the file's last write.
 $step = 0
-function Step($msg) {
+$runStart = Get-Date
+$phases = New-Object System.Collections.Specialized.OrderedDictionary
+$script:phaseKey = $null
+$script:phaseAt = $null
+function End-Phase {
+    if ($script:phaseKey) {
+        $phases[$script:phaseKey] = ((Get-Date) - $script:phaseAt).TotalSeconds
+        $script:phaseKey = $null
+    }
+}
+function Step($msg, $key) {
+    End-Phase
     $script:step++
     Write-Output ''
     Write-Output "=== [$script:step] $msg"
+    $script:phaseKey = if ($key) { $key } else { "step$script:step" }
+    $script:phaseAt = Get-Date
+    Write-Output ('  at {0:HH:mm:ss}, +{1:N1}s' -f $script:phaseAt, ($script:phaseAt - $runStart).TotalSeconds)
 }
 function Run($exe, $arguments, $what) {
     & $exe @arguments
@@ -153,24 +175,24 @@ try {
     $gcp  = Join-Path $Work 'ProjectGCP'
     $out  = Join-Path $Work 'gen_ProjectGCP'
 
-    Step 'spec check - ids, canvas, and Extron design rules'
+    Step 'spec check - ids, canvas, and Extron design rules' 'check'
     Run $Python @('-m', 'gdl.spec', 'check', $Spec) 'spec check'
 
     if ($IdMap) {
-        Step 'ID map check - navigation targets and reachability'
+        Step 'ID map check - navigation targets and reachability' 'idmap_check'
         # With -Previous this also refuses a map other than the one the spec
         # kept its IDs against - before the build, not after it.
         Run $Python (@('-m', 'gdl.idmap', 'check', $Spec) + $prev) 'ID map check'
     }
 
-    Step 'donor check - every cloned type available, no name the built panel keeps'
+    Step 'donor check - every cloned type available, no name the built panel keeps' 'donors'
     Run $Python @('-m', 'gdl.spec', 'donors', $Spec, $Donor) 'donor check'
 
-    Step 'plan'
+    Step 'plan' 'plan'
     # Against the donor: a border it lacks is planned as its own nearest.
     Run $Python @('-m', 'gdl.spec', 'plan', $Spec, $plan, '--donor', $Donor) 'plan'
 
-    Step 'extract the donor'
+    Step 'extract the donor' 'extract'
     Run $Python @('-m', 'gdl.container', 'extract', $Donor, $Work) 'extract'
 
     # A control type the donor has none of, which another seed of its theme
@@ -190,16 +212,16 @@ try {
     }
     $typeArgs = @(if ($typeDonors.Count) { '-TypeDonors', ($typeDonors -join ';') })
 
-    Step 'apply the plan (32-bit PowerShell, Extron assemblies are x86)'
+    Step 'apply the plan (32-bit PowerShell, Extron assemblies are x86)' 'apply'
     Run $ps32 (@('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
                  (Join-Path $PSScriptRoot 'Apply-GdlPlan.ps1'),
                  '-DonorProject', $gcp, '-Plan', $plan, '-Output', $out,
                  '-InstallDir', $InstallDir) + $typeArgs) 'apply'
 
-    Step 'repack'
+    Step 'repack' 'pack'
     Run $Python @('-m', 'gdl.container', 'pack', $Donor, $out, $Output) 'pack'
 
-    Step 'open in GUI Designer'
+    Step 'open in GUI Designer' 'open'
     Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue |
         Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
@@ -228,7 +250,7 @@ try {
     }
     Write-Output "  $($proc.MainWindowTitle)"
 
-    Step 'File > Save and Build'
+    Step 'File > Save and Build' 'save_and_build'
     # Capture the baseline BEFORE triggering, because the invoke below blocks on
     # the build modal. Sampling it afterwards can read a mtime the build has
     # already moved, leaving Wait-GdlBuild waiting for a second write that never
@@ -240,33 +262,60 @@ try {
     # from that terminal. Both are checked - an unchecked failure here means
     # waiting the full build timeout for a build that never started, which is
     # exactly what it did twice before.
-    & powershell -NoProfile -ExecutionPolicy Bypass -File `
+    $load0 = try { Get-GdlLoad } catch { $null }
+    $menuAt = Get-Date
+    $menuOut = & powershell -NoProfile -ExecutionPolicy Bypass -File `
         (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'Save and Build'
-    if ($LASTEXITCODE -ne 0) {
+    $menuCode = $LASTEXITCODE
+    $menuDone = Get-Date
+    $menuOut | ForEach-Object { Write-Output $_ }
+    # The click is the moment Invoke-GdlMenu.ps1 stamps just before it invokes
+    # the item; the time from $menuAt to it is the script finding the window
+    # and the menu, and is not the build's.
+    $clickAt = $menuAt
+    foreach ($line in @($menuOut)) {
+        if ("$line" -match '^clicked at (\S+)') { try { $clickAt = [datetime]::Parse($Matches[1]) } catch { }; break }
+    }
+    if ($menuCode -ne 0) {
         Write-Output '  UIA menu invoke failed; falling back to SendKeys'
+        $clickAt = Get-Date
         Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
                     (Join-Path $PSScriptRoot 'Send-GdlKeys.ps1'), '-Keys', '^+b') 'keystroke'
     }
+    $waitAt = Get-Date
     Run $ps32 @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
                 (Join-Path $PSScriptRoot 'Wait-GdlBuild.ps1'),
                 '-ProjectFile', $Output, '-TimeoutSeconds', $TimeoutSeconds,
                 '-Since', $buildFrom.ToString('o')) 'build'
+    $load1 = try { Get-GdlLoad } catch { $null }
+    # The time Save and Build takes, to the second: from the click to the last
+    # write of the file - not to Wait-GdlBuild's verdict, which comes a few
+    # seconds after (its stability check) and 67 s after the click at the
+    # earliest (the menu invoke's own timeout).
+    $writtenAt = (Get-Item $Output).LastWriteTime
+    Write-Output ('SAVE_AND_BUILD click_to_written={0:F1}s menu_find={1:F1}s menu_invoke={2:F1}s wait_started=+{3:F1}s written_at={4:HH:mm:ss.fff}' -f
+                  ($writtenAt - $clickAt).TotalSeconds, ($clickAt - $menuAt).TotalSeconds,
+                  ($menuDone - $clickAt).TotalSeconds, ($waitAt - $clickAt).TotalSeconds, $writtenAt)
+    if ($load0 -and $load1) {
+        try { Write-Output (Format-GdlLoad 'save_and_build' $load0 $load1) } catch { Write-Output 'LOAD save_and_build n/a' }
+    } else { Write-Output 'LOAD save_and_build n/a' }
+    $phases['click_to_written'] = ($writtenAt - $clickAt).TotalSeconds
 
     if (-not $KeepOpen) {
         Get-Process -Name 'GUI Designer' -ErrorAction SilentlyContinue |
             Stop-Process -Force -ErrorAction SilentlyContinue
     }
 
-    Step 'verify the build against the plan'
+    Step 'verify the build against the plan' 'verify'
     # The gate that matters. A clean build still relocates controls that do not
     # fit, bakes captions into artwork, and drops fills - all reporting 0 errors.
     Run $Python @((Join-Path $repo 'tests\verify_built.py'), $plan, $Output) 'verification'
 
     if ($IdMap) {
-        Step 'write the ID map'
+        Step 'write the ID map' 'idmap_write'
         Run $Python (@('-m', 'gdl.idmap', 'write', $Spec, $IdMap) + $prev) 'ID map'
 
-        Step 'verify the ID map against the build'
+        Step 'verify the ID map against the build' 'idmap_verify'
         # Build renumbers pages, so the names and IDs a programmer will work
         # from are checked against what was built.
         Run $Python @((Join-Path $repo 'tests\verify_idmap.py'), $IdMap, $Output) `
@@ -278,4 +327,8 @@ try {
     if ($IdMap) { Write-Output "ID MAP WRITTEN AND VERIFIED -> $IdMap" }
 } finally {
     Pop-Location
+    End-Phase
+    Write-Output ''
+    foreach ($k in $phases.Keys) { Write-Output ('TIMING {0} {1:F1}' -f $k, $phases[$k]) }
+    Write-Output ('TIMING total {0:F1}' -f ((Get-Date) - $runStart).TotalSeconds)
 }

@@ -2,7 +2,7 @@
 #
 # The border-resource append is proven (docs/from-scratch.md section 5). Images
 # are the OTHER half of the icon story - the Afterburn kit ships 1,316 icon PNGs
-# and real panels use them heavily (the client fixture carries 38 image
+# and real panels use them heavily (a client project carried 38 image
 # resources and 1,855 references). The font route covers single-color icons;
 # this covers everything else.
 #

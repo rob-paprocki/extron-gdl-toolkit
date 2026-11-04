@@ -1,0 +1,78 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-01T12:00:00Z"
+ },
+ "title": "Training Room",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 800, "title": "Start", "is_interactive": true},
+  "SelectSource.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Select a Source", "is_interactive": true},
+  "MainSD.dc.html": {"x": 2720, "y": 0, "w": 1280, "h": 800, "title": "Main SD (working page)", "is_interactive": true},
+  "Call.dc.html": {"x": 4080, "y": 0, "w": 1280, "h": 800, "title": "Call", "is_interactive": true},
+
+  "PC.dc.html": {"x": 0, "y": 1160, "w": 880, "h": 525, "title": "PC popup"},
+  "Laptop.dc.html": {"x": 960, "y": 1160, "w": 880, "h": 525, "title": "Laptop popup"},
+  "ShareLink.dc.html": {"x": 1920, "y": 1160, "w": 880, "h": 525, "title": "ShareLink popup"},
+  "DocCam.dc.html": {"x": 2880, "y": 1160, "w": 880, "h": 525, "title": "Doc Cam popup"},
+  "BluRay.dc.html": {"x": 3840, "y": 1160, "w": 880, "h": 525, "title": "Blu-ray popup"},
+  "VTCDialer.dc.html": {"x": 4800, "y": 1160, "w": 880, "h": 525, "title": "VTC Dialer popup"},
+
+  "Screen.dc.html": {"x": 0, "y": 2045, "w": 1280, "h": 800, "title": "Screen Settings"},
+  "Lighting.dc.html": {"x": 1360, "y": 2045, "w": 1280, "h": 800, "title": "Lighting Settings"},
+  "Audio.dc.html": {"x": 2720, "y": 2045, "w": 1280, "h": 800, "title": "Audio Settings"},
+  "Camera.dc.html": {"x": 4080, "y": 2045, "w": 1280, "h": 800, "title": "Camera Settings"},
+
+  "Recording.dc.html": {"x": 0, "y": 3205, "w": 1280, "h": 800, "title": "Recording Settings"},
+  "StopRecording.dc.html": {"x": 1360, "y": 3205, "w": 1280, "h": 800, "title": "Stop Recording question"},
+  "Help.dc.html": {"x": 2720, "y": 3205, "w": 1280, "h": 800, "title": "Help"},
+  "PowerDown.dc.html": {"x": 4080, "y": 3205, "w": 1280, "h": 800, "title": "Power Down question"},
+
+  "PoweringUp.dc.html": {"x": 0, "y": 4365, "w": 1280, "h": 800, "title": "Powering Up wait"},
+  "PoweringDown.dc.html": {"x": 1360, "y": 4365, "w": 1280, "h": 800, "title": "Powering Down wait"},
+  "IncomingCall.dc.html": {"x": 2720, "y": 4365, "w": 1280, "h": 800, "title": "Incoming Call question"}
+ },
+ "order": [
+  "Main.dc.html",
+  "SelectSource.dc.html",
+  "MainSD.dc.html",
+  "Call.dc.html",
+  "PC.dc.html",
+  "Laptop.dc.html",
+  "ShareLink.dc.html",
+  "DocCam.dc.html",
+  "BluRay.dc.html",
+  "VTCDialer.dc.html",
+  "Screen.dc.html",
+  "Lighting.dc.html",
+  "Audio.dc.html",
+  "Camera.dc.html",
+  "Recording.dc.html",
+  "StopRecording.dc.html",
+  "Help.dc.html",
+  "PowerDown.dc.html",
+  "PoweringUp.dc.html",
+  "PoweringDown.dc.html",
+  "IncomingCall.dc.html"
+ ],
+ "notes": {
+  "row1": {"x": 0, "y": -300, "text": "Start, sources and the call", "kind": "title1", "maxW": 5360},
+  "row2": {"x": 0, "y": 860, "text": "Source popups and the dialer", "kind": "title1", "maxW": 5680},
+  "row3": {"x": 0, "y": 1745, "text": "Settings windows", "kind": "title1", "maxW": 5360},
+  "row4": {"x": 0, "y": 2905, "text": "Recording, help and power", "kind": "title1", "maxW": 5360},
+  "row5": {"x": 0, "y": 4065, "text": "Waits and the incoming call", "kind": "title1", "maxW": 3920}
+ },
+ "designSystems": [
+  {
+   "title": "Extron Afterburn",
+   "namespace": "extronafterburn",
+   "artifact": "https://claude.ai/artifact/1nZsxvdm7HsXpfoSXBVjvx",
+   "version": null,
+   "copiedAt": "2026-11-01T12:00:00Z"
+  }
+ ]
+}

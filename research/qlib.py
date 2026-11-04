@@ -4,8 +4,11 @@ sys.path.insert(0,SP)
 from compose import load, render_page
 from PIL import Image, ImageChops
 import numpy as np
-GDL=r'fixtures/gdl/client-boardroom-2.0.0.gdl'
-REF=r'fixtures/snapshots/Individual'
+# Historical: written against a client project and GUI Designer's snapshots of
+# it, both deleted from the repo (docs/history.md); its page table names that
+# project's pages. Kept as the record of its result (research/README.md).
+GDL=r'<the client project>.gdl'
+REF=r'<its snapshots>/Individual'
 FILES={10:'3110 - Adv Device Connectivity Details_Id10.png',8:'3112 - Adv Video Connectivity Details_Id8.png',
        18:'3100 - Adv Device Connectivity Details_Id18.png',15:'3000 - Tech_Id15.png',
        20:'2000 - Main - Presentation_Id20.png',6:'3400 - Adv Matrix Routing_Id6.png',

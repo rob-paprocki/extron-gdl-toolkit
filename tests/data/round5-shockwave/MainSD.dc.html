@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Main SD</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Main SD" panels="TLP1035T TLP725T TLP525T TLP320M" theme="saturn" does="The working page: sources, displays, volume and room settings.">
+  <x-import component-from-global-scope="ExtronShockwave.Header">
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="start" name="Record" id="120" nav="Recording" states='[{"name":"Off"},{"name":"On","icon":"red","color":"alert","text":"Recording"},{"name":"Held","look":"on"}]' press="Held" does="Opens the Recording window. Reads Recording and is lit red while the room is being recorded." style="width: 120px; height: 80px">Record</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" name="PC" id="101" variant="source" icon="pc_white" nav="PC">PC</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" name="Laptop" id="102" variant="source" icon="laptop_white" nav="Laptop">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" name="ShareLink" id="103" variant="source" icon="sharelink_white" nav="ShareLink">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" name="Doc Cam" id="104" variant="source" icon="doc-cam_white" nav="DocCam">Doc Cam</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="source" name="Blu-ray" id="105" variant="source" icon="blu-ray-2_white" nav="BluRay">Blu-ray</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.LeftRail">
+    <x-import component-from-global-scope="ExtronShockwave.Section" title="Display">
+      <x-import component-from-global-scope="ExtronShockwave.Button" name="Projector Power" variant="tile" states='[{"name":"Off","text":"Projector Off"},{"name":"Warming","look":"on","icon":"yellow","color":"caution","text":"Projector Warming"},{"name":"On","look":"on","icon":"green","color":"go","text":"Projector On"},{"name":"Cooling","look":"on","icon":"blue","color":"text-secondary","text":"Projector Cooling"}]' does="Turns the projector on when it is off and off when it is on. The program sets Warming while it starts and Cooling while it powers down.">Projector Off</x-import>
+      <x-import component-from-global-scope="ExtronShockwave.Button" name="Monitor Power" variant="tile" states='[{"name":"Off","text":"Monitor Off"},{"name":"Warming","look":"on","icon":"yellow","color":"caution","text":"Monitor Warming"},{"name":"On","look":"on","icon":"green","color":"go","text":"Monitor On"},{"name":"Cooling","look":"on","icon":"blue","color":"text-secondary","text":"Monitor Cooling"}]' does="Turns the confidence monitor on when it is off and off when it is on. The program sets Warming while it starts and Cooling while it powers down.">Monitor Off</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Section">
+      <x-import component-from-global-scope="ExtronShockwave.Button" name="Screen Control" id="111" nav="ScreenControl">Screen Control</x-import>
+      <x-import component-from-global-scope="ExtronShockwave.Button" name="Lighting Control" id="110" nav="LightingControl">Lighting Control</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.RightRail">
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="audio" name="Audio Control" variant="tile" nav="AudioControl" states='[{"name":"Off"},{"name":"Muted","look":"on","icon":"red","color":"alert","text":"Mics Muted"},{"name":"Held","look":"on"}]' press="Held" does="Opens the Audio Control window. Reads Mics Muted and is lit red while the wireless microphones are muted.">Audio Control</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronShockwave.Button" slot="mode" name="Video Call" nav="Call">Video Call</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

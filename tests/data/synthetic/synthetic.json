@@ -1,0 +1,5223 @@
+{
+ "name": "Synthetic Fixture",
+ "model": "TLP1035T",
+ "family": "Afterburn",
+ "size": [
+  1280,
+  800
+ ],
+ "_why": "The render baseline's project (tests/data/synthetic/README.md): every control type the renderer scores, text at many sizes, faces, weights, alignments and widths, popups of every size the old fixture had, in generic words.",
+ "_seed": "seeds/Afterburn 1035.gdl",
+ "_template_colors": [
+  "#000000",
+  "#242634",
+  "#37394E",
+  "#414459",
+  "#626ACF",
+  "#6A6E89",
+  "#767789",
+  "#BABCCE",
+  "#D32929",
+  "#D69B61",
+  "#FFFFFF"
+ ],
+ "theme": {
+  "page": "#242634",
+  "raised": "#37394E",
+  "text": "#FFFFFF",
+  "muted": "#BABCCE",
+  "subtle": "#767789",
+  "ground": "#414459",
+  "shape": "#6A6E89",
+  "accent": "#D69B61",
+  "accent2": "#626ACF",
+  "alert": "#D32929",
+  "black": "#000000",
+  "blue": "#3D8BFD",
+  "green": "#2E9E5B",
+  "yellow": "#F2C94C",
+  "deep": "#12131C",
+  "paper": "#DCDCDC",
+  "accent25": "#40D69B61",
+  "accent50": "#80D69B61",
+  "accent75": "#C0D69B61",
+  "white20": "#33FFFFFF",
+  "black50": "#80000000",
+  "blue60": "#993D8BFD",
+  "background": "#242634",
+  "font": "Open Sans",
+  "size": 18,
+  "on": "accent"
+ },
+ "start_page": "Start",
+ "offline": {
+  "enabled": true,
+  "replace": {
+   "XXX.XXX.XXXX": "555.010.4567"
+  }
+ },
+ "images": {
+  "backdrop.png": "./art/backdrop.png",
+  "stripes.png": "./art/stripes.png",
+  "pattern.png": "./art/pattern.png",
+  "glyph.png": "./art/glyph.png",
+  "glyph-on.png": "./art/glyph-on.png",
+  "thumb.png": "./art/thumb.png"
+ },
+ "pages": [
+  {
+   "name": "Start",
+   "number": 1000,
+   "background_image": "backdrop.png",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Heading",
+     "rect": [
+      80,
+      60,
+      1120,
+      110
+     ],
+     "text": "Synthetic Panel",
+     "size": 48,
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Subheading",
+     "rect": [
+      80,
+      170,
+      1120,
+      50
+     ],
+     "text": "A test project in generic words",
+     "size": 20,
+     "color": "muted"
+    },
+    {
+     "kind": "popup_ref",
+     "name": "NoteRef",
+     "rect": [
+      340,
+      250,
+      600,
+      150
+     ],
+     "group": "Note"
+    },
+    {
+     "kind": "button",
+     "name": "Begin",
+     "rect": [
+      540,
+      440,
+      200,
+      80
+     ],
+     "size": 24,
+     "fill": "accent",
+     "border": "capsule",
+     "color": "deep",
+     "on": "raised",
+     "text": "Begin"
+    },
+    {
+     "kind": "datetime",
+     "name": "Clock",
+     "rect": [
+      415,
+      590,
+      450,
+      70
+     ],
+     "format": "time",
+     "size": 32
+    },
+    {
+     "kind": "datetime",
+     "name": "Date",
+     "rect": [
+      340,
+      670,
+      600,
+      50
+     ],
+     "format": "dddd, MMMM d, yyyy",
+     "size": 18,
+     "color": "muted"
+    }
+   ]
+  },
+  {
+   "name": "Main",
+   "number": 2000,
+   "controls": [
+    {
+     "kind": "panel",
+     "name": "Rail",
+     "rect": [
+      0,
+      0,
+      365,
+      800
+     ],
+     "fill": "raised",
+     "border": "rect-thin"
+    },
+    {
+     "kind": "label",
+     "name": "RailTitle",
+     "rect": [
+      24,
+      20,
+      317,
+      60
+     ],
+     "text": "Main",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "stack": {
+      "rect": [
+       24,
+       100,
+       317,
+       580
+      ],
+      "count": 8,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "muted",
+      "size": 20,
+      "align": "left",
+      "items": [
+       {
+        "name": "NavAlpha",
+        "text": "Alpha"
+       },
+       {
+        "name": "NavBeta",
+        "text": "Beta"
+       },
+       {
+        "name": "NavGamma",
+        "text": "Gamma"
+       },
+       {
+        "name": "NavDelta",
+        "text": "Delta"
+       },
+       {
+        "name": "NavEpsilon",
+        "text": "Epsilon"
+       },
+       {
+        "name": "NavZeta",
+        "text": "Zeta"
+       },
+       {
+        "name": "NavEta",
+        "text": "Eta"
+       },
+       {
+        "name": "NavTheta",
+        "text": "Theta"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "datetime",
+     "name": "Clock",
+     "rect": [
+      24,
+      700,
+      317,
+      70
+     ],
+     "format": "h:mm tt",
+     "size": 24,
+     "align": "left"
+    },
+    {
+     "kind": "popup_ref",
+     "name": "ContentRef",
+     "rect": [
+      365,
+      0,
+      915,
+      800
+     ],
+     "group": "Content"
+    },
+    {
+     "kind": "popup_ref",
+     "name": "LevelRef",
+     "rect": [
+      1120,
+      24,
+      136,
+      496
+     ],
+     "group": "Level"
+    },
+    {
+     "kind": "popup_ref",
+     "name": "SingleRef",
+     "rect": [
+      600,
+      600,
+      400,
+      160
+     ],
+     "popup": "Single"
+    }
+   ]
+  },
+  {
+   "name": "Matrix",
+   "number": 2100,
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      40,
+      20,
+      1200,
+      60
+     ],
+     "text": "Matrix",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Hint",
+     "rect": [
+      40,
+      84,
+      1200,
+      40
+     ],
+     "text": "Each row routes one input to the outputs above it",
+     "size": 16,
+     "color": "muted",
+     "align": "left"
+    },
+    {
+     "kind": "popup_ref",
+     "name": "WideRef",
+     "rect": [
+      190,
+      140,
+      900,
+      530
+     ],
+     "group": "Wide"
+    },
+    {
+     "grid": {
+      "rect": [
+       190,
+       690,
+       900,
+       80
+      ],
+      "cols": 3,
+      "gap": 24,
+      "kind": "button",
+      "fill": "raised",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 20,
+      "items": [
+       {
+        "name": "Clear",
+        "text": "Clear"
+       },
+       {
+        "name": "Undo",
+        "text": "Undo"
+       },
+       {
+        "name": "Apply",
+        "text": "Apply",
+        "fill": "accent",
+        "color": "deep",
+        "on": "raised"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Type Sizes",
+   "number": 3000,
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      40,
+      20,
+      1200,
+      60
+     ],
+     "text": "Type Sizes",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Regular14",
+     "rect": [
+      40,
+      100,
+      460,
+      36
+     ],
+     "text": "Type 14 Regular",
+     "size": 14,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Bold14",
+     "rect": [
+      510,
+      100,
+      380,
+      36
+     ],
+     "text": "Type 14 Bold",
+     "size": 14,
+     "align": "left",
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Italic14",
+     "rect": [
+      900,
+      100,
+      340,
+      36
+     ],
+     "text": "Type 14 Italic",
+     "size": 14,
+     "align": "left",
+     "italic": true
+    },
+    {
+     "kind": "label",
+     "name": "Regular16",
+     "rect": [
+      40,
+      140,
+      460,
+      40
+     ],
+     "text": "Type 16 Regular",
+     "size": 16,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Bold16",
+     "rect": [
+      510,
+      140,
+      380,
+      40
+     ],
+     "text": "Type 16 Bold",
+     "size": 16,
+     "align": "left",
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Italic16",
+     "rect": [
+      900,
+      140,
+      340,
+      40
+     ],
+     "text": "Type 16 Italic",
+     "size": 16,
+     "align": "left",
+     "italic": true
+    },
+    {
+     "kind": "label",
+     "name": "Regular18",
+     "rect": [
+      40,
+      184,
+      460,
+      44
+     ],
+     "text": "Type 18 Regular",
+     "size": 18,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Bold18",
+     "rect": [
+      510,
+      184,
+      380,
+      44
+     ],
+     "text": "Type 18 Bold",
+     "size": 18,
+     "align": "left",
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Italic18",
+     "rect": [
+      900,
+      184,
+      340,
+      44
+     ],
+     "text": "Type 18 Italic",
+     "size": 18,
+     "align": "left",
+     "italic": true
+    },
+    {
+     "kind": "label",
+     "name": "Regular20",
+     "rect": [
+      40,
+      232,
+      460,
+      48
+     ],
+     "text": "Type 20 Regular",
+     "size": 20,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Bold20",
+     "rect": [
+      510,
+      232,
+      380,
+      48
+     ],
+     "text": "Type 20 Bold",
+     "size": 20,
+     "align": "left",
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Italic20",
+     "rect": [
+      900,
+      232,
+      340,
+      48
+     ],
+     "text": "Type 20 Italic",
+     "size": 20,
+     "align": "left",
+     "italic": true
+    },
+    {
+     "kind": "label",
+     "name": "Regular24",
+     "rect": [
+      40,
+      284,
+      460,
+      56
+     ],
+     "text": "Type 24 Regular",
+     "size": 24,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Bold24",
+     "rect": [
+      510,
+      284,
+      380,
+      56
+     ],
+     "text": "Type 24 Bold",
+     "size": 24,
+     "align": "left",
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Italic24",
+     "rect": [
+      900,
+      284,
+      340,
+      56
+     ],
+     "text": "Type 24 Italic",
+     "size": 24,
+     "align": "left",
+     "italic": true
+    },
+    {
+     "kind": "label",
+     "name": "Regular28",
+     "rect": [
+      40,
+      344,
+      460,
+      64
+     ],
+     "text": "Type 28 Regular",
+     "size": 28,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Bold28",
+     "rect": [
+      510,
+      344,
+      380,
+      64
+     ],
+     "text": "Type 28 Bold",
+     "size": 28,
+     "align": "left",
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Italic28",
+     "rect": [
+      900,
+      344,
+      340,
+      64
+     ],
+     "text": "Type 28 Italic",
+     "size": 28,
+     "align": "left",
+     "italic": true
+    },
+    {
+     "kind": "label",
+     "name": "Regular32",
+     "rect": [
+      40,
+      412,
+      460,
+      72
+     ],
+     "text": "Type 32 Regular",
+     "size": 32,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Bold32",
+     "rect": [
+      510,
+      412,
+      380,
+      72
+     ],
+     "text": "Type 32 Bold",
+     "size": 32,
+     "align": "left",
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Italic32",
+     "rect": [
+      900,
+      412,
+      340,
+      72
+     ],
+     "text": "Type 32 Italic",
+     "size": 32,
+     "align": "left",
+     "italic": true
+    },
+    {
+     "kind": "label",
+     "name": "Regular40",
+     "rect": [
+      40,
+      488,
+      460,
+      88
+     ],
+     "text": "Type 40 Regular",
+     "size": 40,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Bold40",
+     "rect": [
+      510,
+      488,
+      380,
+      88
+     ],
+     "text": "Type 40 Bold",
+     "size": 40,
+     "align": "left",
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Italic40",
+     "rect": [
+      900,
+      488,
+      340,
+      88
+     ],
+     "text": "Type 40 Italic",
+     "size": 40,
+     "align": "left",
+     "italic": true
+    }
+   ]
+  },
+  {
+   "name": "Type Faces",
+   "number": 3100,
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      40,
+      20,
+      1200,
+      60
+     ],
+     "text": "Type Faces",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "ArialName",
+     "rect": [
+      40,
+      90,
+      280,
+      40
+     ],
+     "text": "Arial",
+     "size": 16,
+     "color": "muted",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Arial14",
+     "rect": [
+      40,
+      136,
+      280,
+      34
+     ],
+     "text": "Hamburg 14",
+     "size": 14,
+     "font": "Arial",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Arial18",
+     "rect": [
+      40,
+      172,
+      280,
+      42
+     ],
+     "text": "Hamburg 18",
+     "size": 18,
+     "font": "Arial",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Arial24",
+     "rect": [
+      40,
+      216,
+      280,
+      54
+     ],
+     "text": "Hamburg 24",
+     "size": 24,
+     "font": "Arial",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Arial28",
+     "rect": [
+      40,
+      272,
+      280,
+      62
+     ],
+     "text": "Hamburg 28",
+     "size": 28,
+     "font": "Arial",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "ArialOnFill",
+     "rect": [
+      40,
+      344,
+      280,
+      60
+     ],
+     "text": "On a fill 18",
+     "size": 18,
+     "font": "Arial",
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "ArialColored",
+     "rect": [
+      40,
+      412,
+      280,
+      60
+     ],
+     "text": "Colored 20",
+     "size": 20,
+     "font": "Arial",
+     "color": "accent"
+    },
+    {
+     "kind": "label",
+     "name": "ArialDigits",
+     "rect": [
+      40,
+      480,
+      280,
+      50
+     ],
+     "text": "0123456789",
+     "size": 22,
+     "font": "Arial",
+     "color": "muted"
+    },
+    {
+     "kind": "label",
+     "name": "ArialWord",
+     "rect": [
+      40,
+      536,
+      280,
+      50
+     ],
+     "text": "Hamburgefons",
+     "size": 18,
+     "font": "Arial",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "BlackName",
+     "rect": [
+      340,
+      90,
+      280,
+      40
+     ],
+     "text": "Arial Black",
+     "size": 16,
+     "color": "muted",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Black14",
+     "rect": [
+      340,
+      136,
+      280,
+      34
+     ],
+     "text": "Hamburg 14",
+     "size": 14,
+     "font": "Arial Black",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Black18",
+     "rect": [
+      340,
+      172,
+      280,
+      42
+     ],
+     "text": "Hamburg 18",
+     "size": 18,
+     "font": "Arial Black",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Black24",
+     "rect": [
+      340,
+      216,
+      280,
+      54
+     ],
+     "text": "Hamburg 24",
+     "size": 24,
+     "font": "Arial Black",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Black28",
+     "rect": [
+      340,
+      272,
+      280,
+      62
+     ],
+     "text": "Hamburg 28",
+     "size": 28,
+     "font": "Arial Black",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "BlackOnFill",
+     "rect": [
+      340,
+      344,
+      280,
+      60
+     ],
+     "text": "On a fill 18",
+     "size": 18,
+     "font": "Arial Black",
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "BlackColored",
+     "rect": [
+      340,
+      412,
+      280,
+      60
+     ],
+     "text": "Colored 20",
+     "size": 20,
+     "font": "Arial Black",
+     "color": "blue"
+    },
+    {
+     "kind": "label",
+     "name": "BlackDigits",
+     "rect": [
+      340,
+      480,
+      280,
+      50
+     ],
+     "text": "0123456789",
+     "size": 22,
+     "font": "Arial Black",
+     "color": "muted"
+    },
+    {
+     "kind": "label",
+     "name": "BlackWord",
+     "rect": [
+      340,
+      536,
+      280,
+      50
+     ],
+     "text": "Hamburgefons",
+     "size": 18,
+     "font": "Arial Black",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "LightName",
+     "rect": [
+      640,
+      90,
+      280,
+      40
+     ],
+     "text": "Open Sans Light",
+     "size": 16,
+     "color": "muted",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Light14",
+     "rect": [
+      640,
+      136,
+      280,
+      34
+     ],
+     "text": "Hamburg 14",
+     "size": 14,
+     "font": "Open Sans Light",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Light18",
+     "rect": [
+      640,
+      172,
+      280,
+      42
+     ],
+     "text": "Hamburg 18",
+     "size": 18,
+     "font": "Open Sans Light",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Light24",
+     "rect": [
+      640,
+      216,
+      280,
+      54
+     ],
+     "text": "Hamburg 24",
+     "size": 24,
+     "font": "Open Sans Light",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Light28",
+     "rect": [
+      640,
+      272,
+      280,
+      62
+     ],
+     "text": "Hamburg 28",
+     "size": 28,
+     "font": "Open Sans Light",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "LightOnFill",
+     "rect": [
+      640,
+      344,
+      280,
+      60
+     ],
+     "text": "On a fill 18",
+     "size": 18,
+     "font": "Open Sans Light",
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "LightColored",
+     "rect": [
+      640,
+      412,
+      280,
+      60
+     ],
+     "text": "Colored 20",
+     "size": 20,
+     "font": "Open Sans Light",
+     "color": "yellow"
+    },
+    {
+     "kind": "label",
+     "name": "LightDigits",
+     "rect": [
+      640,
+      480,
+      280,
+      50
+     ],
+     "text": "0123456789",
+     "size": 22,
+     "font": "Open Sans Light",
+     "color": "muted"
+    },
+    {
+     "kind": "label",
+     "name": "LightWord",
+     "rect": [
+      640,
+      536,
+      280,
+      50
+     ],
+     "text": "Hamburgefons",
+     "size": 18,
+     "font": "Open Sans Light",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "SansName",
+     "rect": [
+      940,
+      90,
+      280,
+      40
+     ],
+     "text": "Open Sans",
+     "size": 16,
+     "color": "muted",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Sans14",
+     "rect": [
+      940,
+      136,
+      280,
+      34
+     ],
+     "text": "Hamburg 14",
+     "size": 14,
+     "font": "Open Sans",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Sans18",
+     "rect": [
+      940,
+      172,
+      280,
+      42
+     ],
+     "text": "Hamburg 18",
+     "size": 18,
+     "font": "Open Sans",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Sans24",
+     "rect": [
+      940,
+      216,
+      280,
+      54
+     ],
+     "text": "Hamburg 24",
+     "size": 24,
+     "font": "Open Sans",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Sans28",
+     "rect": [
+      940,
+      272,
+      280,
+      62
+     ],
+     "text": "Hamburg 28",
+     "size": 28,
+     "font": "Open Sans",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "SansOnFill",
+     "rect": [
+      940,
+      344,
+      280,
+      60
+     ],
+     "text": "On a fill 18",
+     "size": 18,
+     "font": "Open Sans",
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "SansColored",
+     "rect": [
+      940,
+      412,
+      280,
+      60
+     ],
+     "text": "Colored 20",
+     "size": 20,
+     "font": "Open Sans",
+     "color": "green"
+    },
+    {
+     "kind": "label",
+     "name": "SansDigits",
+     "rect": [
+      940,
+      480,
+      280,
+      50
+     ],
+     "text": "0123456789",
+     "size": 22,
+     "font": "Open Sans",
+     "color": "muted"
+    },
+    {
+     "kind": "label",
+     "name": "SansWord",
+     "rect": [
+      940,
+      536,
+      280,
+      50
+     ],
+     "text": "Hamburgefons",
+     "size": 18,
+     "font": "Open Sans",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Mixed",
+     "rect": [
+      40,
+      690,
+      1200,
+      80
+     ],
+     "text": "Labels set in four faces, each at four sizes, on and off a fill",
+     "size": 20,
+     "color": "muted"
+    }
+   ]
+  },
+  {
+   "name": "Alignment",
+   "number": 3200,
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      40,
+      20,
+      1200,
+      60
+     ],
+     "text": "Alignment",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       96,
+       1200,
+       330
+      ],
+      "cols": 3,
+      "rows": 3,
+      "gap": 12,
+      "kind": "label",
+      "fill": "raised",
+      "border": "rounded",
+      "size": 20,
+      "items": [
+       {
+        "name": "Filltop-left",
+        "text": "Top Left",
+        "align": "top-left"
+       },
+       {
+        "name": "Filltop",
+        "text": "Top",
+        "align": "top"
+       },
+       {
+        "name": "Filltop-right",
+        "text": "Top Right",
+        "align": "top-right"
+       },
+       {
+        "name": "Fillleft",
+        "text": "Left",
+        "align": "left"
+       },
+       {
+        "name": "Fillcenter",
+        "text": "Center",
+        "align": "center"
+       },
+       {
+        "name": "Fillright",
+        "text": "Right",
+        "align": "right"
+       },
+       {
+        "name": "Fillbottom-left",
+        "text": "Bottom Left",
+        "align": "bottom-left"
+       },
+       {
+        "name": "Fillbottom",
+        "text": "Bottom",
+        "align": "bottom"
+       },
+       {
+        "name": "Fillbottom-right",
+        "text": "Bottom Right",
+        "align": "bottom-right"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       440,
+       1200,
+       330
+      ],
+      "cols": 3,
+      "rows": 3,
+      "gap": 12,
+      "kind": "label",
+      "size": 18,
+      "color": "muted",
+      "items": [
+       {
+        "name": "Twotop-left",
+        "text": "Top Left\nsecond line",
+        "align": "top-left"
+       },
+       {
+        "name": "Twotop",
+        "text": "Top\nsecond line",
+        "align": "top"
+       },
+       {
+        "name": "Twotop-right",
+        "text": "Top Right\nsecond line",
+        "align": "top-right"
+       },
+       {
+        "name": "Twoleft",
+        "text": "Left\nsecond line",
+        "align": "left"
+       },
+       {
+        "name": "Twocenter",
+        "text": "Center\nsecond line",
+        "align": "center"
+       },
+       {
+        "name": "Tworight",
+        "text": "Right\nsecond line",
+        "align": "right"
+       },
+       {
+        "name": "Twobottom-left",
+        "text": "Bottom Left\nsecond line",
+        "align": "bottom-left"
+       },
+       {
+        "name": "Twobottom",
+        "text": "Bottom\nsecond line",
+        "align": "bottom"
+       },
+       {
+        "name": "Twobottom-right",
+        "text": "Bottom Right\nsecond line",
+        "align": "bottom-right"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Wrapping",
+   "number": 3300,
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      40,
+      20,
+      1200,
+      60
+     ],
+     "text": "Wrapping",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Wrap120",
+     "rect": [
+      40,
+      96,
+      120,
+      260
+     ],
+     "text": "The quick brown fox jumps over the lazy dog",
+     "size": 18,
+     "fill": "raised",
+     "border": "rect-thin",
+     "align": "top-left"
+    },
+    {
+     "kind": "label",
+     "name": "Wrap200",
+     "rect": [
+      180,
+      96,
+      200,
+      260
+     ],
+     "text": "The quick brown fox jumps over the lazy dog",
+     "size": 18,
+     "fill": "raised",
+     "border": "rect-thin",
+     "align": "top-left"
+    },
+    {
+     "kind": "label",
+     "name": "Wrap300",
+     "rect": [
+      400,
+      96,
+      300,
+      260
+     ],
+     "text": "The quick brown fox jumps over the lazy dog",
+     "size": 18,
+     "fill": "raised",
+     "border": "rect-thin",
+     "align": "top-left"
+    },
+    {
+     "kind": "label",
+     "name": "Wrap480",
+     "rect": [
+      720,
+      96,
+      480,
+      260
+     ],
+     "text": "The quick brown fox jumps over the lazy dog",
+     "size": 18,
+     "fill": "raised",
+     "border": "rect-thin",
+     "align": "top-left"
+    },
+    {
+     "kind": "label",
+     "name": "Breaks",
+     "rect": [
+      40,
+      370,
+      360,
+      150
+     ],
+     "text": "First line\nSecond line\nThird line",
+     "size": 20,
+     "align": "left",
+     "fill": "ground",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "LongWord",
+     "rect": [
+      420,
+      370,
+      160,
+      150
+     ],
+     "text": "Abcdefghijklmnopqrstuvwxyz",
+     "size": 18,
+     "fill": "ground",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "Centered",
+     "rect": [
+      600,
+      370,
+      640,
+      150
+     ],
+     "text": "A centered paragraph of several lines that wraps inside its box",
+     "size": 22,
+     "fill": "ground",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "Bold0",
+     "rect": [
+      40,
+      540,
+      204,
+      100
+     ],
+     "text": "Program Level",
+     "size": 20,
+     "bold": true,
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "Bold1",
+     "rect": [
+      264,
+      540,
+      408,
+      100
+     ],
+     "text": "Program Level",
+     "size": 20,
+     "bold": true,
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "Bold2",
+     "rect": [
+      692,
+      540,
+      84,
+      100
+     ],
+     "text": "Level\nOne",
+     "size": 20,
+     "bold": true,
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "Bold3",
+     "rect": [
+      796,
+      540,
+      168,
+      100
+     ],
+     "text": "Level\nOne",
+     "size": 20,
+     "bold": true,
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "Bold4",
+     "rect": [
+      984,
+      540,
+      248,
+      100
+     ],
+     "text": "Conference Room",
+     "size": 20,
+     "bold": true,
+     "fill": "raised",
+     "border": "rounded"
+    },
+    {
+     "kind": "label",
+     "name": "Bold5",
+     "rect": [
+      40,
+      660,
+      496,
+      100
+     ],
+     "text": "Conference Room",
+     "size": 20,
+     "bold": true,
+     "fill": "raised",
+     "border": "rounded"
+    }
+   ]
+  },
+  {
+   "name": "Buttons",
+   "number": 4000,
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      40,
+      20,
+      1200,
+      60
+     ],
+     "text": "Buttons",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       90,
+       1200,
+       90
+      ],
+      "cols": 8,
+      "gap": 12,
+      "kind": "button",
+      "fill": "raised",
+      "stroke": "muted",
+      "size": 14,
+      "items": [
+       {
+        "name": "Brect",
+        "text": "rect",
+        "border": "rect"
+       },
+       {
+        "name": "Brect-thin",
+        "text": "rect thin",
+        "border": "rect-thin"
+       },
+       {
+        "name": "Brounded",
+        "text": "rounded",
+        "border": "rounded"
+       },
+       {
+        "name": "Bcapsule",
+        "text": "capsule",
+        "border": "capsule"
+       },
+       {
+        "name": "Bellipse",
+        "text": "ellipse",
+        "border": "ellipse"
+       },
+       {
+        "name": "Brect-3d",
+        "text": "rect 3d",
+        "border": "rect-3d"
+       },
+       {
+        "name": "Brounded-3d",
+        "text": "rounded 3d",
+        "border": "rounded-3d"
+       },
+       {
+        "name": "Bcapsule-3d",
+        "text": "capsule 3d",
+        "border": "capsule-3d"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       194,
+       1200,
+       90
+      ],
+      "cols": 5,
+      "gap": 16,
+      "kind": "button",
+      "fill": "accent",
+      "color": "deep",
+      "size": 18,
+      "on": "raised",
+      "items": [
+       {
+        "name": "Aafterburn",
+        "text": "afterburn",
+        "border": "afterburn"
+       },
+       {
+        "name": "Aafterburn-flat",
+        "text": "afterburn flat",
+        "border": "afterburn-flat"
+       },
+       {
+        "name": "Aafterburn-14",
+        "text": "afterburn 14",
+        "border": "afterburn-14"
+       },
+       {
+        "name": "Aafterburn-ellipse",
+        "text": "afterburn ellipse",
+        "border": "afterburn-ellipse"
+       },
+       {
+        "name": "Acapsule",
+        "text": "capsule",
+        "border": "capsule"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "image",
+     "name": "Stripes",
+     "rect": [
+      40,
+      298,
+      1200,
+      110
+     ],
+     "image": "stripes.png",
+     "layout": "stretch"
+    },
+    {
+     "grid": {
+      "rect": [
+       60,
+       313,
+       1160,
+       80
+      ],
+      "cols": 6,
+      "gap": 16,
+      "kind": "button",
+      "border": "rounded",
+      "size": 18,
+      "items": [
+       {
+        "name": "Taccent25",
+        "text": "accent25",
+        "fill": "accent25"
+       },
+       {
+        "name": "Taccent50",
+        "text": "accent50",
+        "fill": "accent50"
+       },
+       {
+        "name": "Taccent75",
+        "text": "accent75",
+        "fill": "accent75"
+       },
+       {
+        "name": "Twhite20",
+        "text": "white20",
+        "fill": "white20"
+       },
+       {
+        "name": "Tblack50",
+        "text": "black50",
+        "fill": "black50"
+       },
+       {
+        "name": "Tblue60",
+        "text": "blue60",
+        "fill": "blue60"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       422,
+       1200,
+       90
+      ],
+      "cols": 5,
+      "gap": 16,
+      "kind": "button",
+      "fill": "raised",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 18,
+      "items": [
+       {
+        "name": "OneState",
+        "text": "One state",
+        "on": null
+       },
+       {
+        "name": "TwoStates",
+        "text": "Two states"
+       },
+       {
+        "name": "ThreeStates",
+        "text": "Three",
+        "states": [
+         "Off",
+         {
+          "name": "Ready",
+          "fill": "green"
+         },
+         {
+          "name": "On",
+          "fill": "accent"
+         }
+        ]
+       },
+       {
+        "name": "FourStates",
+        "text": "Muted",
+        "states": [
+         {
+          "name": "Muted",
+          "fill": "alert"
+         },
+         {
+          "name": "Low",
+          "fill": "ground",
+          "text": "Low"
+         },
+         {
+          "name": "Mid",
+          "fill": "shape",
+          "text": "Mid"
+         },
+         {
+          "name": "High",
+          "fill": "accent",
+          "text": "High"
+         }
+        ]
+       },
+       {
+        "name": "PressFirst",
+        "text": "Pressed",
+        "fill": "accent2",
+        "on": "blue"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       526,
+       760,
+       100
+      ],
+      "cols": 6,
+      "gap": 16,
+      "kind": "button",
+      "fill": "raised",
+      "border": "afterburn",
+      "size": 40,
+      "items": [
+       {
+        "name": "home",
+        "icon": "home"
+       },
+       {
+        "name": "display",
+        "icon": "display"
+       },
+       {
+        "name": "camera",
+        "icon": "camera"
+       },
+       {
+        "name": "pc",
+        "icon": "pc"
+       },
+       {
+        "name": "hdmi",
+        "icon": "hdmi"
+       },
+       {
+        "name": "doc_cam",
+        "icon": "doc_cam"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       816,
+       526,
+       424,
+       100
+      ],
+      "cols": 3,
+      "gap": 16,
+      "kind": "button",
+      "fill": "raised",
+      "border": "afterburn",
+      "items": [
+       {
+        "name": "PicA",
+        "image": "glyph.png"
+       },
+       {
+        "name": "PicB",
+        "image": "glyph.png",
+        "fill": "ground"
+       },
+       {
+        "name": "PicC",
+        "states": [
+         {
+          "name": "Off",
+          "image": "glyph.png"
+         },
+         {
+          "name": "On",
+          "image": "glyph-on.png",
+          "fill": "accent"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       640,
+       1200,
+       130
+      ],
+      "cols": 4,
+      "gap": 16,
+      "kind": "button",
+      "fill": "ground",
+      "border": "afterburn",
+      "stroke": "muted",
+      "flatten": true,
+      "items": [
+       {
+        "name": "Flat1",
+        "text": "Flattened 16",
+        "size": 16
+       },
+       {
+        "name": "Flat2",
+        "text": "Flattened 24",
+        "size": 24,
+        "bold": true
+       },
+       {
+        "name": "Flat3",
+        "text": "Two lines\nflattened",
+        "size": 20
+       },
+       {
+        "name": "Flat4",
+        "text": "Arial flat",
+        "size": 22,
+        "font": "Arial"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Controls",
+   "number": 4100,
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      40,
+      20,
+      1200,
+      60
+     ],
+     "text": "Controls",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "slider",
+     "name": "Up",
+     "rect": [
+      40,
+      100,
+      60,
+      360
+     ],
+     "orientation": "up",
+     "fill": "raised",
+     "track": 14
+    },
+    {
+     "kind": "slider",
+     "name": "Down",
+     "rect": [
+      120,
+      100,
+      60,
+      360
+     ],
+     "orientation": "down",
+     "fill": "shape",
+     "track": 10
+    },
+    {
+     "kind": "slider",
+     "name": "Pictured",
+     "rect": [
+      200,
+      100,
+      70,
+      360
+     ],
+     "orientation": "up",
+     "fill": "ground",
+     "track": 24,
+     "thumb": 64,
+     "thumb_image": "thumb.png"
+    },
+    {
+     "kind": "slider",
+     "name": "Right",
+     "rect": [
+      300,
+      100,
+      560,
+      60
+     ],
+     "orientation": "right",
+     "fill": "raised",
+     "track": 12
+    },
+    {
+     "kind": "slider",
+     "name": "Left",
+     "rect": [
+      300,
+      180,
+      560,
+      60
+     ],
+     "orientation": "left",
+     "fill": "ground",
+     "track": 20,
+     "thumb": 56
+    },
+    {
+     "kind": "line",
+     "name": "Hair",
+     "rect": [
+      300,
+      260,
+      560,
+      10
+     ],
+     "thickness": 2,
+     "fill": "muted",
+     "border": "none"
+    },
+    {
+     "kind": "line",
+     "name": "Rule",
+     "rect": [
+      300,
+      280,
+      560,
+      10
+     ],
+     "thickness": 3,
+     "fill": "accent",
+     "border": "none"
+    },
+    {
+     "kind": "line",
+     "name": "Heavy",
+     "rect": [
+      300,
+      300,
+      560,
+      16
+     ],
+     "thickness": 6,
+     "fill": "blue",
+     "border": "none"
+    },
+    {
+     "kind": "line",
+     "name": "Upright",
+     "rect": [
+      300,
+      330,
+      20,
+      130
+     ],
+     "thickness": 2,
+     "fill": "muted",
+     "border": "none",
+     "from": "TopCenter",
+     "to": "BottomCenter"
+    },
+    {
+     "kind": "line",
+     "name": "Slant",
+     "rect": [
+      340,
+      330,
+      240,
+      130
+     ],
+     "thickness": 3,
+     "fill": "yellow",
+     "border": "none",
+     "from": "TopLeft",
+     "to": "BottomRight"
+    },
+    {
+     "kind": "line",
+     "name": "Rise",
+     "rect": [
+      600,
+      330,
+      260,
+      130
+     ],
+     "thickness": 2,
+     "fill": "green",
+     "border": "none",
+     "from": "BottomLeft",
+     "to": "TopRight"
+    },
+    {
+     "kind": "image",
+     "name": "Fitted",
+     "rect": [
+      900,
+      100,
+      340,
+      160
+     ],
+     "image": "pattern.png"
+    },
+    {
+     "kind": "image",
+     "name": "Stretched",
+     "rect": [
+      900,
+      280,
+      340,
+      180
+     ],
+     "image": "pattern.png",
+     "layout": "stretch"
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       490,
+       820,
+       120
+      ],
+      "cols": 5,
+      "gap": 16,
+      "kind": "panel",
+      "items": [
+       {
+        "name": "PanelRect",
+        "fill": "ground",
+        "border": "rect-thin"
+       },
+       {
+        "name": "PanelRound",
+        "fill": "raised",
+        "border": "afterburn",
+        "stroke": "shape"
+       },
+       {
+        "name": "PanelPill",
+        "fill": "accent2",
+        "border": "capsule"
+       },
+       {
+        "name": "PanelClear",
+        "fill": "white20",
+        "border": "rounded"
+       },
+       {
+        "name": "PanelLine",
+        "fill": "page",
+        "stroke": "accent",
+        "border": "afterburn"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "datetime",
+     "name": "TimeLeft",
+     "rect": [
+      900,
+      490,
+      340,
+      50
+     ],
+     "format": "time",
+     "size": 20,
+     "align": "left"
+    },
+    {
+     "kind": "datetime",
+     "name": "DateRight",
+     "rect": [
+      900,
+      550,
+      340,
+      50
+     ],
+     "format": "date",
+     "size": 20,
+     "align": "right",
+     "color": "muted"
+    },
+    {
+     "kind": "datetime",
+     "name": "Stamp",
+     "rect": [
+      900,
+      610,
+      340,
+      50
+     ],
+     "format": "datetime",
+     "size": 18,
+     "color": "accent"
+    },
+    {
+     "kind": "label",
+     "name": "SliderNote",
+     "rect": [
+      40,
+      630,
+      820,
+      140
+     ],
+     "text": "Sliders up, down, with a thumb of their own, right and left; lines of two, three and six pixels; pictures fitted and stretched; five panels; three clocks",
+     "size": 18,
+     "color": "muted",
+     "align": "top-left"
+    }
+   ]
+  },
+  {
+   "name": "Keys",
+   "number": 5000,
+   "controls": [
+    {
+     "kind": "panel",
+     "name": "Side",
+     "rect": [
+      0,
+      0,
+      285,
+      800
+     ],
+     "fill": "raised",
+     "border": "rect-thin"
+    },
+    {
+     "kind": "label",
+     "name": "SideTitle",
+     "rect": [
+      24,
+      20,
+      237,
+      60
+     ],
+     "text": "Keys",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "stack": {
+      "rect": [
+       24,
+       100,
+       237,
+       280
+      ],
+      "count": 3,
+      "gap": 16,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "muted",
+      "size": 20,
+      "items": [
+       {
+        "name": "Upper",
+        "text": "Upper case"
+       },
+       {
+        "name": "Lower",
+        "text": "Lower case"
+       },
+       {
+        "name": "ClearAll",
+        "text": "Clear"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "popup_ref",
+     "name": "KeysRef",
+     "rect": [
+      285,
+      0,
+      995,
+      800
+     ],
+     "group": "Keys"
+    }
+   ]
+  }
+ ],
+ "popups": [
+  {
+   "name": "Content Alpha",
+   "number": 6000,
+   "group": "Content",
+   "size": [
+    915,
+    800
+   ],
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      32,
+      24,
+      851,
+      56
+     ],
+     "text": "Alpha",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       32,
+       100,
+       300,
+       620
+      ],
+      "cols": 1,
+      "rows": 8,
+      "gap": 12,
+      "kind": "label",
+      "size": 20,
+      "align": "left",
+      "items": [
+       {
+        "name": "Name0",
+        "text": "Channel 01"
+       },
+       {
+        "name": "Name1",
+        "text": "Channel 02"
+       },
+       {
+        "name": "Name2",
+        "text": "Channel 03"
+       },
+       {
+        "name": "Name3",
+        "text": "Channel 04"
+       },
+       {
+        "name": "Name4",
+        "text": "Channel 05"
+       },
+       {
+        "name": "Name5",
+        "text": "Channel 06"
+       },
+       {
+        "name": "Name6",
+        "text": "Channel 07"
+       },
+       {
+        "name": "Name7",
+        "text": "Channel 08"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       340,
+       100,
+       250,
+       620
+      ],
+      "cols": 1,
+      "rows": 8,
+      "gap": 12,
+      "kind": "label",
+      "size": 16,
+      "color": "muted",
+      "align": "left",
+      "items": [
+       {
+        "name": "State0",
+        "text": "Ready"
+       },
+       {
+        "name": "State1",
+        "text": "Idle"
+       },
+       {
+        "name": "State2",
+        "text": "Busy"
+       },
+       {
+        "name": "State3",
+        "text": "Offline"
+       },
+       {
+        "name": "State4",
+        "text": "Ready"
+       },
+       {
+        "name": "State5",
+        "text": "Idle"
+       },
+       {
+        "name": "State6",
+        "text": "Busy"
+       },
+       {
+        "name": "State7",
+        "text": "Offline"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       610,
+       100,
+       130,
+       620
+      ],
+      "cols": 1,
+      "rows": 8,
+      "gap": 12,
+      "kind": "button",
+      "fill": "raised",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 16,
+      "items": [
+       {
+        "name": "Set0",
+        "text": "Set"
+       },
+       {
+        "name": "Set1",
+        "text": "Set"
+       },
+       {
+        "name": "Set2",
+        "text": "Set"
+       },
+       {
+        "name": "Set3",
+        "text": "Set"
+       },
+       {
+        "name": "Set4",
+        "text": "Set"
+       },
+       {
+        "name": "Set5",
+        "text": "Set"
+       },
+       {
+        "name": "Set6",
+        "text": "Set"
+       },
+       {
+        "name": "Set7",
+        "text": "Set"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       756,
+       100,
+       130,
+       620
+      ],
+      "cols": 1,
+      "rows": 8,
+      "gap": 12,
+      "kind": "button",
+      "fill": "ground",
+      "border": "afterburn-flat",
+      "size": 16,
+      "items": [
+       {
+        "name": "Reset0",
+        "text": "Reset"
+       },
+       {
+        "name": "Reset1",
+        "text": "Reset"
+       },
+       {
+        "name": "Reset2",
+        "text": "Reset"
+       },
+       {
+        "name": "Reset3",
+        "text": "Reset"
+       },
+       {
+        "name": "Reset4",
+        "text": "Reset"
+       },
+       {
+        "name": "Reset5",
+        "text": "Reset"
+       },
+       {
+        "name": "Reset6",
+        "text": "Reset"
+       },
+       {
+        "name": "Reset7",
+        "text": "Reset"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Content Beta",
+   "number": 6010,
+   "group": "Content",
+   "size": [
+    915,
+    800
+   ],
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      32,
+      24,
+      851,
+      56
+     ],
+     "text": "Beta",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       32,
+       100,
+       851,
+       600
+      ],
+      "cols": 3,
+      "rows": 3,
+      "gap": 24,
+      "kind": "button",
+      "fill": "raised",
+      "border": "afterburn",
+      "stroke": "muted",
+      "size": 24,
+      "bold": true,
+      "items": [
+       {
+        "name": "In0",
+        "text": "Input\nOne"
+       },
+       {
+        "name": "In1",
+        "text": "Input\nTwo"
+       },
+       {
+        "name": "In2",
+        "text": "Input\nThree"
+       },
+       {
+        "name": "In3",
+        "text": "Input\nFour"
+       },
+       {
+        "name": "In4",
+        "text": "Input\nFive"
+       },
+       {
+        "name": "In5",
+        "text": "Input\nSix"
+       },
+       {
+        "name": "In6",
+        "text": "Input\nSeven"
+       },
+       {
+        "name": "In7",
+        "text": "Input\nEight"
+       },
+       {
+        "name": "In8",
+        "text": "Input\nNine"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "Footer",
+     "rect": [
+      32,
+      716,
+      851,
+      60
+     ],
+     "text": "Two-line bold captions on raised keys",
+     "size": 16,
+     "color": "muted"
+    }
+   ]
+  },
+  {
+   "name": "Content Gamma",
+   "number": 6020,
+   "group": "Content",
+   "size": [
+    915,
+    800
+   ],
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      32,
+      24,
+      851,
+      56
+     ],
+     "text": "Gamma",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       32,
+       100,
+       200,
+       660
+      ],
+      "cols": 1,
+      "rows": 12,
+      "gap": 6,
+      "kind": "label",
+      "size": 16,
+      "color": "muted",
+      "align": "left",
+      "items": [
+       {
+        "name": "LKey0",
+        "text": "Address"
+       },
+       {
+        "name": "LKey1",
+        "text": "Gateway"
+       },
+       {
+        "name": "LKey2",
+        "text": "Subnet"
+       },
+       {
+        "name": "LKey3",
+        "text": "Port"
+       },
+       {
+        "name": "LKey4",
+        "text": "Protocol"
+       },
+       {
+        "name": "LKey5",
+        "text": "Firmware"
+       },
+       {
+        "name": "LKey6",
+        "text": "Serial"
+       },
+       {
+        "name": "LKey7",
+        "text": "Uptime"
+       },
+       {
+        "name": "LKey8",
+        "text": "Model"
+       },
+       {
+        "name": "LKey9",
+        "text": "Location"
+       },
+       {
+        "name": "LKey10",
+        "text": "Contact"
+       },
+       {
+        "name": "LKey11",
+        "text": "Status"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       232,
+       100,
+       220,
+       660
+      ],
+      "cols": 1,
+      "rows": 12,
+      "gap": 6,
+      "kind": "label",
+      "size": 16,
+      "align": "left",
+      "items": [
+       {
+        "name": "LVal0",
+        "text": "10.0.0.20"
+       },
+       {
+        "name": "LVal1",
+        "text": "10.0.0.1"
+       },
+       {
+        "name": "LVal2",
+        "text": "255.255.255.0"
+       },
+       {
+        "name": "LVal3",
+        "text": "23"
+       },
+       {
+        "name": "LVal4",
+        "text": "Telnet"
+       },
+       {
+        "name": "LVal5",
+        "text": "3.04.0001"
+       },
+       {
+        "name": "LVal6",
+        "text": "A1B2C3D4"
+       },
+       {
+        "name": "LVal7",
+        "text": "12 days"
+       },
+       {
+        "name": "LVal8",
+        "text": "Unit 100"
+       },
+       {
+        "name": "LVal9",
+        "text": "Room 3"
+       },
+       {
+        "name": "LVal10",
+        "text": "Desk"
+       },
+       {
+        "name": "LVal11",
+        "text": "Online"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       480,
+       100,
+       200,
+       660
+      ],
+      "cols": 1,
+      "rows": 12,
+      "gap": 6,
+      "kind": "label",
+      "size": 16,
+      "color": "muted",
+      "align": "left",
+      "items": [
+       {
+        "name": "RKey0",
+        "text": "Address"
+       },
+       {
+        "name": "RKey1",
+        "text": "Gateway"
+       },
+       {
+        "name": "RKey2",
+        "text": "Subnet"
+       },
+       {
+        "name": "RKey3",
+        "text": "Port"
+       },
+       {
+        "name": "RKey4",
+        "text": "Protocol"
+       },
+       {
+        "name": "RKey5",
+        "text": "Firmware"
+       },
+       {
+        "name": "RKey6",
+        "text": "Serial"
+       },
+       {
+        "name": "RKey7",
+        "text": "Uptime"
+       },
+       {
+        "name": "RKey8",
+        "text": "Model"
+       },
+       {
+        "name": "RKey9",
+        "text": "Location"
+       },
+       {
+        "name": "RKey10",
+        "text": "Contact"
+       },
+       {
+        "name": "RKey11",
+        "text": "Status"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       680,
+       100,
+       220,
+       660
+      ],
+      "cols": 1,
+      "rows": 12,
+      "gap": 6,
+      "kind": "label",
+      "size": 16,
+      "align": "left",
+      "items": [
+       {
+        "name": "RVal0",
+        "text": "10.0.0.20"
+       },
+       {
+        "name": "RVal1",
+        "text": "10.0.0.1"
+       },
+       {
+        "name": "RVal2",
+        "text": "255.255.255.0"
+       },
+       {
+        "name": "RVal3",
+        "text": "23"
+       },
+       {
+        "name": "RVal4",
+        "text": "TELNET"
+       },
+       {
+        "name": "RVal5",
+        "text": "3.04.0001"
+       },
+       {
+        "name": "RVal6",
+        "text": "A1B2C3D4"
+       },
+       {
+        "name": "RVal7",
+        "text": "12 DAYS"
+       },
+       {
+        "name": "RVal8",
+        "text": "UNIT 100"
+       },
+       {
+        "name": "RVal9",
+        "text": "ROOM 3"
+       },
+       {
+        "name": "RVal10",
+        "text": "DESK"
+       },
+       {
+        "name": "RVal11",
+        "text": "ONLINE"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Content Delta",
+   "number": 6030,
+   "group": "Content",
+   "size": [
+    915,
+    800
+   ],
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      32,
+      24,
+      851,
+      56
+     ],
+     "text": "Delta",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Head0",
+     "rect": [
+      32,
+      100,
+      851,
+      44
+     ],
+     "text": "Overview",
+     "size": 24,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Body0",
+     "rect": [
+      32,
+      148,
+      851,
+      150
+     ],
+     "text": "This page holds headings and paragraphs, the kind of text a help page or a status page carries, wrapped at the width of the popup.",
+     "size": 18,
+     "align": "top-left",
+     "color": "text"
+    },
+    {
+     "kind": "label",
+     "name": "Head1",
+     "rect": [
+      32,
+      310,
+      851,
+      44
+     ],
+     "text": "Details",
+     "size": 24,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Body1",
+     "rect": [
+      32,
+      358,
+      851,
+      150
+     ],
+     "text": "Each paragraph is one label. The words break at spaces, and a line that would run past the edge of its box goes on to the next one.",
+     "size": 18,
+     "align": "top-left",
+     "color": "muted"
+    },
+    {
+     "kind": "label",
+     "name": "Head2",
+     "rect": [
+      32,
+      520,
+      851,
+      44
+     ],
+     "text": "Notes",
+     "size": 24,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Body2",
+     "rect": [
+      32,
+      568,
+      851,
+      150
+     ],
+     "text": "Short lines, long lines, and lines in between. Numbers like 1280 by 800 and 14 point appear here too.",
+     "size": 18,
+     "align": "top-left",
+     "color": "text"
+    }
+   ]
+  },
+  {
+   "name": "Content Epsilon",
+   "number": 6040,
+   "group": "Content",
+   "size": [
+    915,
+    800
+   ],
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      32,
+      24,
+      851,
+      56
+     ],
+     "text": "Epsilon",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "name": "IconRow0",
+      "rect": [
+       32,
+       110,
+       851,
+       150
+      ],
+      "cols": 6,
+      "gap": 20,
+      "kind": "button",
+      "fill": "raised",
+      "border": "afterburn",
+      "size": 48,
+      "items": [
+       {
+        "name": "Iconhome",
+        "icon": "home"
+       },
+       {
+        "name": "Icondisplay",
+        "icon": "display"
+       },
+       {
+        "name": "Iconcamera",
+        "icon": "camera"
+       },
+       {
+        "name": "Iconpc",
+        "icon": "pc"
+       },
+       {
+        "name": "Iconhdmi",
+        "icon": "hdmi"
+       },
+       {
+        "name": "Icondoc_cam",
+        "icon": "doc_cam"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       32,
+       270,
+       851,
+       44
+      ],
+      "cols": 6,
+      "gap": 20,
+      "kind": "label",
+      "size": 14,
+      "color": "muted",
+      "items": [
+       {
+        "name": "IconLabelhome",
+        "text": "home"
+       },
+       {
+        "name": "IconLabeldisplay",
+        "text": "display"
+       },
+       {
+        "name": "IconLabelcamera",
+        "text": "camera"
+       },
+       {
+        "name": "IconLabelpc",
+        "text": "pc"
+       },
+       {
+        "name": "IconLabelhdmi",
+        "text": "hdmi"
+       },
+       {
+        "name": "IconLabeldoc_cam",
+        "text": "doc cam"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "name": "IconRow1",
+      "rect": [
+       32,
+       410,
+       851,
+       150
+      ],
+      "cols": 6,
+      "gap": 20,
+      "kind": "button",
+      "fill": "raised",
+      "border": "afterburn",
+      "size": 48,
+      "items": [
+       {
+        "name": "Iconbluray",
+        "icon": "bluray"
+       },
+       {
+        "name": "Iconcable_tv",
+        "icon": "cable_tv"
+       },
+       {
+        "name": "Iconmake_call",
+        "icon": "make_call"
+       },
+       {
+        "name": "Iconend_call",
+        "icon": "end_call"
+       },
+       {
+        "name": "Iconmic_mute_2",
+        "icon": "mic_mute_2"
+       },
+       {
+        "name": "Iconspeaker_mute_2",
+        "icon": "speaker_mute_2"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       32,
+       570,
+       851,
+       44
+      ],
+      "cols": 6,
+      "gap": 20,
+      "kind": "label",
+      "size": 14,
+      "color": "muted",
+      "items": [
+       {
+        "name": "IconLabelbluray",
+        "text": "bluray"
+       },
+       {
+        "name": "IconLabelcable_tv",
+        "text": "cable tv"
+       },
+       {
+        "name": "IconLabelmake_call",
+        "text": "make call"
+       },
+       {
+        "name": "IconLabelend_call",
+        "text": "end call"
+       },
+       {
+        "name": "IconLabelmic_mute_2",
+        "text": "mic mute 2"
+       },
+       {
+        "name": "IconLabelspeaker_mute_2",
+        "text": "speaker mute 2"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Content Zeta",
+   "number": 6050,
+   "group": "Content",
+   "size": [
+    915,
+    800
+   ],
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      32,
+      24,
+      851,
+      56
+     ],
+     "text": "Zeta",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "ZName0",
+     "rect": [
+      40,
+      100,
+      140,
+      40
+     ],
+     "text": "Zone 1",
+     "size": 18
+    },
+    {
+     "kind": "slider",
+     "name": "ZLevel0",
+     "rect": [
+      80,
+      150,
+      60,
+      440
+     ],
+     "orientation": "up",
+     "fill": "raised",
+     "track": 10
+    },
+    {
+     "kind": "label",
+     "name": "ZValue0",
+     "rect": [
+      40,
+      600,
+      140,
+      40
+     ],
+     "text": "25%",
+     "size": 16,
+     "color": "muted"
+    },
+    {
+     "kind": "button",
+     "name": "ZMute0",
+     "rect": [
+      50,
+      660,
+      120,
+      70
+     ],
+     "size": 18,
+     "fill": "raised",
+     "border": "afterburn",
+     "on": "alert",
+     "text": "Mute"
+    },
+    {
+     "kind": "label",
+     "name": "ZName1",
+     "rect": [
+      250,
+      100,
+      140,
+      40
+     ],
+     "text": "Zone 2",
+     "size": 18
+    },
+    {
+     "kind": "slider",
+     "name": "ZLevel1",
+     "rect": [
+      290,
+      150,
+      60,
+      440
+     ],
+     "orientation": "up",
+     "fill": "ground",
+     "track": 14
+    },
+    {
+     "kind": "label",
+     "name": "ZValue1",
+     "rect": [
+      250,
+      600,
+      140,
+      40
+     ],
+     "text": "50%",
+     "size": 16,
+     "color": "muted"
+    },
+    {
+     "kind": "button",
+     "name": "ZMute1",
+     "rect": [
+      260,
+      660,
+      120,
+      70
+     ],
+     "size": 18,
+     "fill": "raised",
+     "border": "afterburn",
+     "on": "alert",
+     "text": "Mute"
+    },
+    {
+     "kind": "label",
+     "name": "ZName2",
+     "rect": [
+      460,
+      100,
+      140,
+      40
+     ],
+     "text": "Zone 3",
+     "size": 18
+    },
+    {
+     "kind": "slider",
+     "name": "ZLevel2",
+     "rect": [
+      500,
+      150,
+      60,
+      440
+     ],
+     "orientation": "up",
+     "fill": "shape",
+     "track": 18
+    },
+    {
+     "kind": "label",
+     "name": "ZValue2",
+     "rect": [
+      460,
+      600,
+      140,
+      40
+     ],
+     "text": "75%",
+     "size": 16,
+     "color": "muted"
+    },
+    {
+     "kind": "button",
+     "name": "ZMute2",
+     "rect": [
+      470,
+      660,
+      120,
+      70
+     ],
+     "size": 18,
+     "fill": "raised",
+     "border": "afterburn",
+     "on": "alert",
+     "text": "Mute"
+    },
+    {
+     "kind": "label",
+     "name": "ZName3",
+     "rect": [
+      670,
+      100,
+      140,
+      40
+     ],
+     "text": "Zone 4",
+     "size": 18
+    },
+    {
+     "kind": "slider",
+     "name": "ZLevel3",
+     "rect": [
+      710,
+      150,
+      60,
+      440
+     ],
+     "orientation": "up",
+     "fill": "accent2",
+     "track": 22
+    },
+    {
+     "kind": "label",
+     "name": "ZValue3",
+     "rect": [
+      670,
+      600,
+      140,
+      40
+     ],
+     "text": "100%",
+     "size": 16,
+     "color": "muted"
+    },
+    {
+     "kind": "button",
+     "name": "ZMute3",
+     "rect": [
+      680,
+      660,
+      120,
+      70
+     ],
+     "size": 18,
+     "fill": "raised",
+     "border": "afterburn",
+     "on": "alert",
+     "text": "Mute"
+    }
+   ]
+  },
+  {
+   "name": "Content Eta",
+   "number": 6060,
+   "group": "Content",
+   "size": [
+    915,
+    800
+   ],
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      32,
+      24,
+      851,
+      56
+     ],
+     "text": "Eta",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       180,
+       100,
+       703,
+       40
+      ],
+      "cols": 8,
+      "gap": 9,
+      "kind": "label",
+      "size": 14,
+      "color": "muted",
+      "items": [
+       {
+        "name": "Out0",
+        "text": "Out 1"
+       },
+       {
+        "name": "Out1",
+        "text": "Out 2"
+       },
+       {
+        "name": "Out2",
+        "text": "Out 3"
+       },
+       {
+        "name": "Out3",
+        "text": "Out 4"
+       },
+       {
+        "name": "Out4",
+        "text": "Out 5"
+       },
+       {
+        "name": "Out5",
+        "text": "Out 6"
+       },
+       {
+        "name": "Out6",
+        "text": "Out 7"
+       },
+       {
+        "name": "Out7",
+        "text": "Out 8"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "InName0",
+     "rect": [
+      32,
+      150,
+      140,
+      100
+     ],
+     "text": "In 1",
+     "size": 20,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       180,
+       150,
+       703,
+       100
+      ],
+      "cols": 8,
+      "gap": 15,
+      "kind": "button",
+      "fill": "ground",
+      "border": "rounded",
+      "size": 14,
+      "on": "accent",
+      "items": [
+       {
+        "name": "X00",
+        "text": "1:1"
+       },
+       {
+        "name": "X01",
+        "text": "1:2"
+       },
+       {
+        "name": "X02",
+        "text": "1:3"
+       },
+       {
+        "name": "X03",
+        "text": "1:4"
+       },
+       {
+        "name": "X04",
+        "text": "1:5"
+       },
+       {
+        "name": "X05",
+        "text": "1:6"
+       },
+       {
+        "name": "X06",
+        "text": "1:7"
+       },
+       {
+        "name": "X07",
+        "text": "1:8"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "InName1",
+     "rect": [
+      32,
+      270,
+      140,
+      100
+     ],
+     "text": "In 2",
+     "size": 20,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       180,
+       270,
+       703,
+       100
+      ],
+      "cols": 8,
+      "gap": 15,
+      "kind": "button",
+      "fill": "ground",
+      "border": "rounded",
+      "size": 14,
+      "on": "accent",
+      "items": [
+       {
+        "name": "X10",
+        "text": "2:1"
+       },
+       {
+        "name": "X11",
+        "text": "2:2"
+       },
+       {
+        "name": "X12",
+        "text": "2:3"
+       },
+       {
+        "name": "X13",
+        "text": "2:4"
+       },
+       {
+        "name": "X14",
+        "text": "2:5"
+       },
+       {
+        "name": "X15",
+        "text": "2:6"
+       },
+       {
+        "name": "X16",
+        "text": "2:7"
+       },
+       {
+        "name": "X17",
+        "text": "2:8"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "InName2",
+     "rect": [
+      32,
+      390,
+      140,
+      100
+     ],
+     "text": "In 3",
+     "size": 20,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       180,
+       390,
+       703,
+       100
+      ],
+      "cols": 8,
+      "gap": 15,
+      "kind": "button",
+      "fill": "ground",
+      "border": "rounded",
+      "size": 14,
+      "on": "accent",
+      "items": [
+       {
+        "name": "X20",
+        "text": "3:1"
+       },
+       {
+        "name": "X21",
+        "text": "3:2"
+       },
+       {
+        "name": "X22",
+        "text": "3:3"
+       },
+       {
+        "name": "X23",
+        "text": "3:4"
+       },
+       {
+        "name": "X24",
+        "text": "3:5"
+       },
+       {
+        "name": "X25",
+        "text": "3:6"
+       },
+       {
+        "name": "X26",
+        "text": "3:7"
+       },
+       {
+        "name": "X27",
+        "text": "3:8"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "InName3",
+     "rect": [
+      32,
+      510,
+      140,
+      100
+     ],
+     "text": "In 4",
+     "size": 20,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       180,
+       510,
+       703,
+       100
+      ],
+      "cols": 8,
+      "gap": 15,
+      "kind": "button",
+      "fill": "ground",
+      "border": "rounded",
+      "size": 14,
+      "on": "accent",
+      "items": [
+       {
+        "name": "X30",
+        "text": "4:1"
+       },
+       {
+        "name": "X31",
+        "text": "4:2"
+       },
+       {
+        "name": "X32",
+        "text": "4:3"
+       },
+       {
+        "name": "X33",
+        "text": "4:4"
+       },
+       {
+        "name": "X34",
+        "text": "4:5"
+       },
+       {
+        "name": "X35",
+        "text": "4:6"
+       },
+       {
+        "name": "X36",
+        "text": "4:7"
+       },
+       {
+        "name": "X37",
+        "text": "4:8"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "InName4",
+     "rect": [
+      32,
+      630,
+      140,
+      100
+     ],
+     "text": "In 5",
+     "size": 20,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       180,
+       630,
+       703,
+       100
+      ],
+      "cols": 8,
+      "gap": 15,
+      "kind": "button",
+      "fill": "ground",
+      "border": "rounded",
+      "size": 14,
+      "on": "accent",
+      "items": [
+       {
+        "name": "X40",
+        "text": "5:1"
+       },
+       {
+        "name": "X41",
+        "text": "5:2"
+       },
+       {
+        "name": "X42",
+        "text": "5:3"
+       },
+       {
+        "name": "X43",
+        "text": "5:4"
+       },
+       {
+        "name": "X44",
+        "text": "5:5"
+       },
+       {
+        "name": "X45",
+        "text": "5:6"
+       },
+       {
+        "name": "X46",
+        "text": "5:7"
+       },
+       {
+        "name": "X47",
+        "text": "5:8"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Content Theta",
+   "number": 6070,
+   "group": "Content",
+   "size": [
+    915,
+    800
+   ],
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Title",
+     "rect": [
+      32,
+      24,
+      851,
+      56
+     ],
+     "text": "Theta",
+     "size": 28,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "ArialHead",
+     "rect": [
+      32,
+      100,
+      851,
+      50
+     ],
+     "text": "Set in Arial",
+     "size": 26,
+     "font": "Arial",
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "ArialBody",
+     "rect": [
+      32,
+      156,
+      851,
+      120
+     ],
+     "text": "Arial at 18 point, wrapped across the popup, in the face the seeds embed for their system text.",
+     "size": 18,
+     "font": "Arial",
+     "align": "top-left"
+    },
+    {
+     "kind": "label",
+     "name": "BlackHead",
+     "rect": [
+      32,
+      290,
+      851,
+      60
+     ],
+     "text": "Arial Black Heading",
+     "size": 28,
+     "font": "Arial Black",
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       32,
+       370,
+       851,
+       300
+      ],
+      "cols": 3,
+      "rows": 4,
+      "gap": 12,
+      "kind": "label",
+      "font": "Arial",
+      "size": 16,
+      "fill": "raised",
+      "border": "rect-thin",
+      "items": [
+       {
+        "name": "Cell0",
+        "text": "Cell 1",
+        "align": "left"
+       },
+       {
+        "name": "Cell1",
+        "text": "Cell 2",
+        "align": "center"
+       },
+       {
+        "name": "Cell2",
+        "text": "Cell 3",
+        "align": "right"
+       },
+       {
+        "name": "Cell3",
+        "text": "Cell 4",
+        "align": "left"
+       },
+       {
+        "name": "Cell4",
+        "text": "Cell 5",
+        "align": "center"
+       },
+       {
+        "name": "Cell5",
+        "text": "Cell 6",
+        "align": "right"
+       },
+       {
+        "name": "Cell6",
+        "text": "Cell 7",
+        "align": "left"
+       },
+       {
+        "name": "Cell7",
+        "text": "Cell 8",
+        "align": "center"
+       },
+       {
+        "name": "Cell8",
+        "text": "Cell 9",
+        "align": "right"
+       },
+       {
+        "name": "Cell9",
+        "text": "Cell 10",
+        "align": "left"
+       },
+       {
+        "name": "Cell10",
+        "text": "Cell 11",
+        "align": "center"
+       },
+       {
+        "name": "Cell11",
+        "text": "Cell 12",
+        "align": "right"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "LightFoot",
+     "rect": [
+      32,
+      690,
+      851,
+      70
+     ],
+     "text": "Open Sans Light at 24 point",
+     "size": 24,
+     "font": "Open Sans Light",
+     "color": "muted"
+    }
+   ]
+  },
+  {
+   "name": "Level One",
+   "number": 7000,
+   "group": "Level",
+   "size": [
+    136,
+    496
+   ],
+   "background": "raised",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "LevelName",
+     "rect": [
+      0,
+      8,
+      136,
+      64
+     ],
+     "text": "Level\nOne",
+     "size": 16,
+     "bold": true
+    },
+    {
+     "kind": "slider",
+     "name": "LevelSlider",
+     "rect": [
+      38,
+      80,
+      60,
+      300
+     ],
+     "orientation": "up",
+     "fill": "raised",
+     "track": 10
+    },
+    {
+     "kind": "button",
+     "name": "LevelMute",
+     "rect": [
+      16,
+      400,
+      104,
+      72
+     ],
+     "size": 16,
+     "fill": "page",
+     "border": "afterburn",
+     "stroke": "shape",
+     "on": "alert",
+     "text": "Mute"
+    }
+   ]
+  },
+  {
+   "name": "Level Two",
+   "number": 7010,
+   "group": "Level",
+   "size": [
+    136,
+    496
+   ],
+   "background": "raised",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "LevelName",
+     "rect": [
+      0,
+      8,
+      136,
+      64
+     ],
+     "text": "Level\nTwo",
+     "size": 16,
+     "bold": true
+    },
+    {
+     "kind": "slider",
+     "name": "LevelSlider",
+     "rect": [
+      38,
+      80,
+      60,
+      300
+     ],
+     "orientation": "up",
+     "fill": "shape",
+     "track": 10
+    },
+    {
+     "kind": "button",
+     "name": "LevelMute",
+     "rect": [
+      16,
+      400,
+      104,
+      72
+     ],
+     "size": 16,
+     "fill": "page",
+     "border": "afterburn",
+     "stroke": "shape",
+     "on": "alert",
+     "text": "Mute"
+    }
+   ]
+  },
+  {
+   "name": "Wide Grid",
+   "number": 7100,
+   "group": "Wide",
+   "size": [
+    900,
+    530
+   ],
+   "background": "raised",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "WideTitle",
+     "rect": [
+      24,
+      12,
+      852,
+      50
+     ],
+     "text": "Wide Grid",
+     "size": 24,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Row0",
+     "rect": [
+      24,
+      80,
+      120,
+      130
+     ],
+     "text": "North",
+     "size": 18,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       150,
+       80,
+       726,
+       130
+      ],
+      "cols": 6,
+      "gap": 14,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 16,
+      "items": [
+       {
+        "name": "W00",
+        "text": "North\n1"
+       },
+       {
+        "name": "W01",
+        "text": "North\n2"
+       },
+       {
+        "name": "W02",
+        "text": "North\n3"
+       },
+       {
+        "name": "W03",
+        "text": "North\n4"
+       },
+       {
+        "name": "W04",
+        "text": "North\n5"
+       },
+       {
+        "name": "W05",
+        "text": "North\n6"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "Row1",
+     "rect": [
+      24,
+      230,
+      120,
+      130
+     ],
+     "text": "South",
+     "size": 18,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       150,
+       230,
+       726,
+       130
+      ],
+      "cols": 6,
+      "gap": 14,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 16,
+      "items": [
+       {
+        "name": "W10",
+        "text": "South\n1"
+       },
+       {
+        "name": "W11",
+        "text": "South\n2"
+       },
+       {
+        "name": "W12",
+        "text": "South\n3"
+       },
+       {
+        "name": "W13",
+        "text": "South\n4"
+       },
+       {
+        "name": "W14",
+        "text": "South\n5"
+       },
+       {
+        "name": "W15",
+        "text": "South\n6"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "Row2",
+     "rect": [
+      24,
+      380,
+      120,
+      130
+     ],
+     "text": "East",
+     "size": 18,
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       150,
+       380,
+       726,
+       130
+      ],
+      "cols": 6,
+      "gap": 14,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 16,
+      "items": [
+       {
+        "name": "W20",
+        "text": "East\n1"
+       },
+       {
+        "name": "W21",
+        "text": "East\n2"
+       },
+       {
+        "name": "W22",
+        "text": "East\n3"
+       },
+       {
+        "name": "W23",
+        "text": "East\n4"
+       },
+       {
+        "name": "W24",
+        "text": "East\n5"
+       },
+       {
+        "name": "W25",
+        "text": "East\n6"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Keys Upper",
+   "number": 8000,
+   "group": "Keys",
+   "size": [
+    995,
+    800
+   ],
+   "background": "page",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Entry",
+     "rect": [
+      40,
+      40,
+      915,
+      90
+     ],
+     "text": "TYPE HERE",
+     "size": 28,
+     "fill": "paper",
+     "color": "black",
+     "border": "rect-thin",
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       160,
+       915,
+       96
+      ],
+      "cols": 9,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 26,
+      "items": [
+       {
+        "name": "K00",
+        "text": "A"
+       },
+       {
+        "name": "K01",
+        "text": "B"
+       },
+       {
+        "name": "K02",
+        "text": "C"
+       },
+       {
+        "name": "K03",
+        "text": "D"
+       },
+       {
+        "name": "K04",
+        "text": "E"
+       },
+       {
+        "name": "K05",
+        "text": "F"
+       },
+       {
+        "name": "K06",
+        "text": "G"
+       },
+       {
+        "name": "K07",
+        "text": "H"
+       },
+       {
+        "name": "K08",
+        "text": "I"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       270,
+       915,
+       96
+      ],
+      "cols": 9,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 26,
+      "items": [
+       {
+        "name": "K10",
+        "text": "J"
+       },
+       {
+        "name": "K11",
+        "text": "K"
+       },
+       {
+        "name": "K12",
+        "text": "L"
+       },
+       {
+        "name": "K13",
+        "text": "M"
+       },
+       {
+        "name": "K14",
+        "text": "N"
+       },
+       {
+        "name": "K15",
+        "text": "O"
+       },
+       {
+        "name": "K16",
+        "text": "P"
+       },
+       {
+        "name": "K17",
+        "text": "Q"
+       },
+       {
+        "name": "K18",
+        "text": "R"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       380,
+       915,
+       96
+      ],
+      "cols": 9,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 26,
+      "items": [
+       {
+        "name": "K20",
+        "text": "S"
+       },
+       {
+        "name": "K21",
+        "text": "T"
+       },
+       {
+        "name": "K22",
+        "text": "U"
+       },
+       {
+        "name": "K23",
+        "text": "V"
+       },
+       {
+        "name": "K24",
+        "text": "W"
+       },
+       {
+        "name": "K25",
+        "text": "X"
+       },
+       {
+        "name": "K26",
+        "text": "Y"
+       },
+       {
+        "name": "K27",
+        "text": "Z"
+       },
+       {
+        "name": "K28",
+        "text": "-"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       490,
+       915,
+       96
+      ],
+      "cols": 9,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 26,
+      "items": [
+       {
+        "name": "K30",
+        "text": "1"
+       },
+       {
+        "name": "K31",
+        "text": "2"
+       },
+       {
+        "name": "K32",
+        "text": "3"
+       },
+       {
+        "name": "K33",
+        "text": "4"
+       },
+       {
+        "name": "K34",
+        "text": "5"
+       },
+       {
+        "name": "K35",
+        "text": "6"
+       },
+       {
+        "name": "K36",
+        "text": "7"
+       },
+       {
+        "name": "K37",
+        "text": "8"
+       },
+       {
+        "name": "K38",
+        "text": "9"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       600,
+       915,
+       96
+      ],
+      "cols": 4,
+      "gap": 12,
+      "kind": "button",
+      "fill": "ground",
+      "border": "afterburn",
+      "size": 22,
+      "items": [
+       {
+        "name": "Zero",
+        "text": "0"
+       },
+       {
+        "name": "Space",
+        "text": "Space"
+       },
+       {
+        "name": "Back",
+        "text": "Back"
+       },
+       {
+        "name": "Enter",
+        "text": "Enter",
+        "fill": "accent",
+        "color": "deep",
+        "on": "raised"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "KeysNote",
+     "rect": [
+      40,
+      716,
+      915,
+      50
+     ],
+     "text": "Single-character captions at 26 point",
+     "size": 16,
+     "color": "muted"
+    }
+   ]
+  },
+  {
+   "name": "Keys Lower",
+   "number": 8010,
+   "group": "Keys",
+   "size": [
+    995,
+    800
+   ],
+   "background": "page",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Entry",
+     "rect": [
+      40,
+      40,
+      915,
+      90
+     ],
+     "text": "Type here",
+     "size": 28,
+     "fill": "paper",
+     "color": "black",
+     "border": "rect-thin",
+     "align": "left"
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       160,
+       915,
+       96
+      ],
+      "cols": 9,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 26,
+      "items": [
+       {
+        "name": "K00",
+        "text": "a"
+       },
+       {
+        "name": "K01",
+        "text": "b"
+       },
+       {
+        "name": "K02",
+        "text": "c"
+       },
+       {
+        "name": "K03",
+        "text": "d"
+       },
+       {
+        "name": "K04",
+        "text": "e"
+       },
+       {
+        "name": "K05",
+        "text": "f"
+       },
+       {
+        "name": "K06",
+        "text": "g"
+       },
+       {
+        "name": "K07",
+        "text": "h"
+       },
+       {
+        "name": "K08",
+        "text": "i"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       270,
+       915,
+       96
+      ],
+      "cols": 9,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 26,
+      "items": [
+       {
+        "name": "K10",
+        "text": "j"
+       },
+       {
+        "name": "K11",
+        "text": "k"
+       },
+       {
+        "name": "K12",
+        "text": "l"
+       },
+       {
+        "name": "K13",
+        "text": "m"
+       },
+       {
+        "name": "K14",
+        "text": "n"
+       },
+       {
+        "name": "K15",
+        "text": "o"
+       },
+       {
+        "name": "K16",
+        "text": "p"
+       },
+       {
+        "name": "K17",
+        "text": "q"
+       },
+       {
+        "name": "K18",
+        "text": "r"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       380,
+       915,
+       96
+      ],
+      "cols": 9,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 26,
+      "items": [
+       {
+        "name": "K20",
+        "text": "s"
+       },
+       {
+        "name": "K21",
+        "text": "t"
+       },
+       {
+        "name": "K22",
+        "text": "u"
+       },
+       {
+        "name": "K23",
+        "text": "v"
+       },
+       {
+        "name": "K24",
+        "text": "w"
+       },
+       {
+        "name": "K25",
+        "text": "x"
+       },
+       {
+        "name": "K26",
+        "text": "y"
+       },
+       {
+        "name": "K27",
+        "text": "z"
+       },
+       {
+        "name": "K28",
+        "text": "-"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       490,
+       915,
+       96
+      ],
+      "cols": 9,
+      "gap": 12,
+      "kind": "button",
+      "fill": "page",
+      "border": "afterburn",
+      "stroke": "shape",
+      "size": 26,
+      "items": [
+       {
+        "name": "K30",
+        "text": "1"
+       },
+       {
+        "name": "K31",
+        "text": "2"
+       },
+       {
+        "name": "K32",
+        "text": "3"
+       },
+       {
+        "name": "K33",
+        "text": "4"
+       },
+       {
+        "name": "K34",
+        "text": "5"
+       },
+       {
+        "name": "K35",
+        "text": "6"
+       },
+       {
+        "name": "K36",
+        "text": "7"
+       },
+       {
+        "name": "K37",
+        "text": "8"
+       },
+       {
+        "name": "K38",
+        "text": "9"
+       }
+      ]
+     }
+    },
+    {
+     "grid": {
+      "rect": [
+       40,
+       600,
+       915,
+       96
+      ],
+      "cols": 4,
+      "gap": 12,
+      "kind": "button",
+      "fill": "ground",
+      "border": "afterburn",
+      "size": 22,
+      "items": [
+       {
+        "name": "Zero",
+        "text": "0"
+       },
+       {
+        "name": "Space",
+        "text": "Space"
+       },
+       {
+        "name": "Back",
+        "text": "Back"
+       },
+       {
+        "name": "Enter",
+        "text": "Enter",
+        "fill": "accent",
+        "color": "deep",
+        "on": "raised"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "label",
+     "name": "KeysNote",
+     "rect": [
+      40,
+      716,
+      915,
+      50
+     ],
+     "text": "Single-character captions at 26 point",
+     "size": 16,
+     "color": "muted"
+    }
+   ]
+  },
+  {
+   "name": "Note Clear",
+   "number": 7200,
+   "group": "Note",
+   "size": [
+    600,
+    150
+   ],
+   "background": "none",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "NoteHead",
+     "rect": [
+      0,
+      0,
+      600,
+      60
+     ],
+     "text": "Clear background",
+     "size": 26,
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "NoteBody",
+     "rect": [
+      0,
+      60,
+      600,
+      40
+     ],
+     "text": "Text drawn over nothing at all",
+     "size": 18,
+     "color": "muted"
+    },
+    {
+     "kind": "label",
+     "name": "NoteChip",
+     "rect": [
+      200,
+      104,
+      200,
+      40
+     ],
+     "text": "Chip",
+     "size": 16,
+     "fill": "accent2",
+     "border": "capsule"
+    }
+   ]
+  },
+  {
+   "name": "Single",
+   "number": 7300,
+   "size": [
+    400,
+    160
+   ],
+   "background": "ground",
+   "controls": [
+    {
+     "kind": "label",
+     "name": "SingleText",
+     "rect": [
+      20,
+      10,
+      360,
+      60
+     ],
+     "text": "Shown by its ID",
+     "size": 20
+    },
+    {
+     "kind": "button",
+     "name": "SingleClose",
+     "rect": [
+      120,
+      84,
+      160,
+      64
+     ],
+     "size": 18,
+     "fill": "raised",
+     "border": "afterburn",
+     "stroke": "muted",
+     "text": "Close"
+    }
+   ]
+  },
+  {
+   "name": "Confirm",
+   "number": 9000,
+   "modal": true,
+   "controls": [
+    {
+     "kind": "panel",
+     "name": "Card",
+     "rect": [
+      340,
+      250,
+      600,
+      300
+     ],
+     "fill": "page",
+     "border": "afterburn",
+     "stroke": "shape"
+    },
+    {
+     "kind": "label",
+     "name": "Question",
+     "rect": [
+      370,
+      270,
+      540,
+      70
+     ],
+     "text": "Confirm",
+     "size": 28,
+     "bold": true
+    },
+    {
+     "kind": "label",
+     "name": "Detail",
+     "rect": [
+      370,
+      340,
+      540,
+      80
+     ],
+     "text": "Proceed with the change to every channel?",
+     "size": 20,
+     "color": "muted"
+    },
+    {
+     "grid": {
+      "rect": [
+       400,
+       440,
+       480,
+       80
+      ],
+      "cols": 2,
+      "gap": 40,
+      "kind": "button",
+      "border": "afterburn",
+      "size": 22,
+      "items": [
+       {
+        "name": "Yes",
+        "text": "Yes",
+        "fill": "accent",
+        "color": "deep",
+        "on": "raised"
+       },
+       {
+        "name": "No",
+        "text": "No",
+        "fill": "raised"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "Notice",
+   "number": 9010,
+   "modal": true,
+   "controls": [
+    {
+     "kind": "panel",
+     "name": "Card",
+     "rect": [
+      240,
+      200,
+      800,
+      400
+     ],
+     "fill": "raised",
+     "border": "afterburn-14"
+    },
+    {
+     "kind": "label",
+     "name": "Head",
+     "rect": [
+      280,
+      220,
+      720,
+      60
+     ],
+     "text": "Notice",
+     "size": 26,
+     "bold": true,
+     "align": "left"
+    },
+    {
+     "kind": "label",
+     "name": "Body",
+     "rect": [
+      280,
+      290,
+      720,
+      180
+     ],
+     "text": "A longer message, set as a paragraph inside a card that covers the middle of the screen, with the page dimmed behind it.",
+     "size": 20,
+     "align": "top-left"
+    },
+    {
+     "kind": "button",
+     "name": "Okay",
+     "rect": [
+      820,
+      500,
+      180,
+      70
+     ],
+     "size": 22,
+     "fill": "accent",
+     "color": "deep",
+     "border": "afterburn",
+     "on": "raised",
+     "text": "OK"
+    }
+   ]
+  },
+  {
+   "name": "Busy",
+   "number": 9020,
+   "modal": true,
+   "controls": [
+    {
+     "kind": "label",
+     "name": "Wait",
+     "rect": [
+      240,
+      330,
+      800,
+      80
+     ],
+     "text": "Please wait",
+     "size": 36
+    },
+    {
+     "kind": "label",
+     "name": "WaitMore",
+     "rect": [
+      240,
+      410,
+      800,
+      50
+     ],
+     "text": "Text over the dimmed page, with no card",
+     "size": 18,
+     "color": "muted"
+    }
+   ]
+  }
+ ]
+}

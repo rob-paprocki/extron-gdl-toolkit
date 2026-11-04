@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Camera Select</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Camera Select" kind="modal" role="settings" title="Camera Select" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Group" title="Presets" cell="200x60" gap="40" cap="3" style="position: absolute; left: 290px; top: 220px; width: 700px; height: 140px">
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Front" states="Off, On" does="Points the call camera at the front of the room; On while selected.">Front</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Audience" states="Off, On" does="Points the call camera at the audience; On while selected.">Audience</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Camera Whiteboard" states="Off, On" does="Points the call camera at the whiteboard; On while selected.">Whiteboard</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

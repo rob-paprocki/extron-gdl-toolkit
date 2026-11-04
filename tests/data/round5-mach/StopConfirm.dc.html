@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm Stop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Confirm Stop" kind="modal" does="Asks before the recording is stopped." panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Panel" name="Stop Card" fill="page" border="none" style="position: absolute; left: 340px; top: 220px; width: 600px; height: 300px"></x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Stop Message" align="center" color="text" style="position: absolute; left: 370px; top: 250px; width: 540px; height: 120px">Do you want to stop the recording?</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" variant="alert" name="Stop Recording" does="Stops the recording and closes this popup." style="position: absolute; left: 370px; top: 410px; width: 250px; height: 60px">Stop Recording</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" variant="ghost" name="Stop Cancel" does="Closes this popup; recording continues." style="position: absolute; left: 660px; top: 410px; width: 250px; height: 60px">Cancel</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

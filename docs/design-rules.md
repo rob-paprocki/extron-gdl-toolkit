@@ -9,7 +9,7 @@ Sources, all primary:
   of the installed assemblies.
 
 The point of this file is to separate three things that are easy to blur: what
-Extron **documents**, what the client fixture happens to **do**, and what we
+Extron **documents**, what one client project happened to **do**, and what we
 **guessed**. Only the first is authoritative. Anything marked *extrapolated* must
 never be presented to a client as an Extron requirement.
 
@@ -315,8 +315,8 @@ States: Not Selected, Selected, Pressed, Multi-state Status.
 
 ## 6. Icons: images **and** fonts, both supported
 
-Two routes. Images are the normal one — real panels use them heavily (the client
-fixture carries 38 `PBImageResource` and 1,855 `PBResourceReferenceImage`) —
+Two routes. Images are the normal one — real panels use them heavily (a client
+project carried 38 `PBImageResource` and 1,855 `PBResourceReferenceImage`) —
 and the font is an additional convenience for single-color icons. An earlier
 draft of this file said icons "come from a font, not images", which was an
 overcorrection.
@@ -343,7 +343,7 @@ font instead, which needs no resource at all:
 | `Extron-Lift` (Mach), installed | 121 | U+E900–U+E978 | its codepoints, `uniE900` |
 | `Extron-Lift`, as the Mach seeds embed it | 95 | U+E900–U+E95E | none |
 | `Extron-Shockwave` (Shockwave) | 16 | U+00B0–U+00BF | none |
-| `Extron GUIC Video Conference 1`, as the client fixtures embed it | 203 | U+F008–U+F0FF | 41, as codepoints (`uni7B`) |
+| `Extron GUIC Video Conference 1`, as a client project embedded it | 203 | U+F008–U+F0FF | 41, as codepoints (`uni7B`) |
 | `Extron GUIC Video Conference 1`, as the Turbulence seed embeds it | 220 | U+F020–U+F0FF | 104, as words (`Keyboard`) |
 
 Each theme's template sets its glyph captions in its own face - counted on the
@@ -484,10 +484,11 @@ Extron blessed them:
 - Corner radius, bevel width, shadow depth; animation timings; icon-specific size
   minimums.
 
-## 9. Where the client fixture sits
+## 9. Where the client project sat
 
-Useful because it is a real shipped panel, but it is evidence of one integrator's
-taste, not of the standard:
+The client project the toolkit was first read off, no longer in the repo
+(`docs/history.md`), was useful because it was a real shipped panel, but it
+was evidence of one integrator's taste, not of the standard:
 
 - Its 1280×800 buttons (200×70, 320×120) and 16–20 px gutters **comfortably exceed**
   every documented minimum for that resolution. Over-compliant, not in conflict.

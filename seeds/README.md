@@ -52,9 +52,10 @@ A name is where a seed is kept, not what it is. `python -m gdl.seeds pick
 whose own built `layout.json` is that theme, part number and canvas - looked for
 under the theme's profile first, then its name, then every seed here - so
 `Afterburn ECP 16-9.gdl` serves a VTLPEcp, and `Afterburn 725.gdl` serves no
-TLP725M. With none, it prints the line that makes one - `New-GdlSeed.ps1`'s, or
-for a panel turned where no template is drawn that way up,
-`New-GdlTurnedSeed.ps1`'s, after its own seed's line where that is missing too
+TLP725M - `Afterburn TLP725M.gdl` does. With none, it prints the line that
+makes one - `New-GdlSeed.ps1`'s, or for a panel turned where no template is
+drawn that way up, `New-GdlTurnedSeed.ps1`'s, after its own seed's line where
+that is missing too
 - or why there is no such line: seeds Git LFS left as pointers, to pull; a soft
 panel, whose seed is made in the wizard by hand, as the ECP ones were; or a
 theme that draws no template for the panel either way up, so a seed retargeted
@@ -67,19 +68,42 @@ seed, the `frame` its `--frame` measures - and a row to the table below.
 
 | File | Project name | Model(s) by part number | Part | Canvas | Pages | Popups | Controls | Borders | Declared fonts |
 |---|---|---|---|---|---:|---:|---:|---:|---|
+| `Afterburn 1020.gdl` | Afterburn All-inclusive 1020 | TLP1020M | 60-1392-02 | 1024x600 | 7 | 26 | 582 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 1025.gdl` | Afterburn All-inclusive 1025 | TLP1025M | 60-1566-02 | 1280x800 | 7 | 29 | 648 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 1035 Portrait.gdl` | Afterburn All-inclusive 1220 | TLP1035M | 60-1999-02 | 800x1280 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 1035.gdl` | Afterburn All-inclusive 1220 | TLP1035M, TLP1035T | 60-1999-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 1220.gdl` | Afterburn All-inclusive 1220 | TLP1220MG | 60-1340-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 1225.gdl` | Afterburn All-inclusive 1225 | TLP1225MG | 60-1787-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 1230W.gdl` | Afterburn All-inclusive 1230 | TLP1230WTG | 60-1668-02 | 1920x720 | 12 | 26 | 878 | 18 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 1525.gdl` | Afterburn All-inclusive 1525 | TLP1525MG | 60-1789-02 | 1366x768 | 7 | 29 | 652 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 1535.gdl` | Afterburn All-inclusive 1720 | TLP1535M | 60-2000-02 | 1920x1080 | 7 | 29 | 652 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 300M Landscape.gdl` | Afterburn All-Inclusive str300 | TLP300M | 60-1667-02 | 480x320 | 13 | 6 | 180 | 17 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 300M Portrait.gdl` | Afterburn All-inclusive str300 | TLP300M | 60-1667-02 | 320x480 | 13 | 6 | 192 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 320.gdl` | Afterburn All-inclusive 320 | TLP320M | 60-1451-02 | 320x240 | 12 | 2 | 86 | 30 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 525.gdl` | Afterburn All-inclusive 525 | TLP525T | 60-1559-02 | 800x480 | 3 | 21 | 243 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 535.gdl` | Afterburn All-inclusive 535 | TLP535T | 60-1994-02 | 1280x720 | 3 | 21 | 240 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 725.gdl` | Afterburn All-inclusive 725 | TLP725T | 60-1562-02 | 1024x600 | 7 | 26 | 582 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn 835 (Project1).gdl` | Afterburn All-inclusive 1220 | TLP835M | 60-1996-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn 835.gdl` | Afterburn All-inclusive 1220 | TLP835T | 60-1997-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn ECP 16-9.gdl` | Afterburn All-inclusive 1720 | VTLPEcp | 60-sVTLPEcp | 1920x1080 | 7 | 29 | 649 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
 | `Afterburn ECP 16-10.gdl` | Afterburn All-inclusive Extron Control Pro | VTLPEcp | 60-sVTLPEcp | 1280x800 | 7 | 29 | 648 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP1020T.gdl` | Afterburn All-inclusive 1020 | TLP1020T | 60-1393-02 | 1024x600 | 7 | 26 | 582 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP1025T.gdl` | Afterburn All-inclusive 1025 | TLP1025T | 60-1565-02 | 1280x800 | 7 | 29 | 648 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP1220TG.gdl` | Afterburn All-inclusive 1220 | TLP1220TG | 60-1341-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP1225TG.gdl` | Afterburn All-inclusive 1225 | TLP1225TG | 60-1788-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP1525TG.gdl` | Afterburn All-inclusive 1525 | TLP1525TG | 60-1790-02 | 1366x768 | 7 | 29 | 652 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP1535T.gdl` | Afterburn All-inclusive 1720 | TLP1535T | 60-2001-02 | 1920x1080 | 7 | 29 | 652 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP320C.gdl` | Afterburn All-inclusive 320 | TLP320C | 60-1452-02 | 320x240 | 12 | 2 | 86 | 30 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP525C.gdl` | Afterburn All-inclusive 525 | TLP525C | 60-1560-02 | 800x480 | 3 | 21 | 243 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP525M.gdl` | Afterburn All-inclusive 525 | TLP525M | 60-1561-02 | 800x480 | 3 | 21 | 243 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP725C.gdl` | Afterburn All-inclusive 725 | TLP725C | 60-1564-02 | 1024x600 | 7 | 26 | 582 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP725M.gdl` | Afterburn All-inclusive 725 | TLP725M | 60-1563-02 | 1024x600 | 7 | 26 | 582 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Afterburn TLP835C.gdl` | Afterburn All-inclusive 1220 | TLP835C | 60-1995-02 | 1280x800 | 7 | 29 | 650 | 31 | Arial, Arial Black, Extron-Afterburn, Open Sans |
+| `Mach 1020.gdl` | Mach All-inclusive 1020 | TLP1020M | 60-1392-02 | 1024x600 | 8 | 26 | 618 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach 1025.gdl` | Mach All-inclusive 1025 | TLP1025M | 60-1566-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
 | `Mach 1035.gdl` | Mach All-inclusive 1220 | TLP1035M, TLP1035T | 60-1999-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach 1220.gdl` | Mach All-inclusive 1220 | TLP1220MG | 60-1340-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach 1225.gdl` | Mach All-inclusive 1225 | TLP1225MG | 60-1787-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
 | `Mach 1525.gdl` | Mach All-inclusive 1525 | TLP1525TG | 60-1790-02 | 1366x768 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
 | `Mach 1535.gdl` | Mach All-inclusive 1720 | TLP1535M | 60-2000-02 | 1920x1080 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
 | `Mach 300M Portrait.gdl` | Mach All inclusive str300 | TLP300M | 60-1667-02 | 320x480 | 12 | 6 | 176 | 13 | Arial, Arial Black, Extron-Lift, Open Sans |
@@ -88,9 +112,29 @@ seed, the `frame` its `--frame` measures - and a row to the table below.
 | `Mach 535.gdl` | Mach All-inclusive 535 | TLP535T | 60-1994-02 | 1280x720 | 3 | 20 | 232 | 14 | Arial, Arial Black, Extron-Lift, Open Sans, Open Sans Light |
 | `Mach 720.gdl` | Mach All-inclusive 720 | TLP720T | 60-1395-02 | 800x480 | 7 | 24 | 524 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
 | `Mach 725.gdl` | Mach All-inclusive 725 | TLP725T | 60-1562-02 | 1024x600 | 8 | 26 | 618 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach 835.gdl` | Mach All-inclusive 1220 | TLP835M | 60-1996-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
 | `Mach ECP 16-9.gdl` | Mach All-inclusive 1720 | VTLPEcp | 60-sVTLPEcp | 1920x1080 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
 | `Mach ECP 16-10.gdl` | Mach All-inclusive 1220 | VTLPEcp | 60-sVTLPEcp | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP1020T.gdl` | Mach All-inclusive 1020 | TLP1020T | 60-1393-02 | 1024x600 | 8 | 26 | 618 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP1025T.gdl` | Mach All-inclusive 1025 | TLP1025T | 60-1565-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP1220TG.gdl` | Mach All-inclusive 1220 | TLP1220TG | 60-1341-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP1225TG.gdl` | Mach All-inclusive 1225 | TLP1225TG | 60-1788-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP1525MG.gdl` | Mach All-inclusive 1525 | TLP1525MG | 60-1789-02 | 1366x768 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP1535T.gdl` | Mach All-inclusive 1720 | TLP1535T | 60-2001-02 | 1920x1080 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP320C.gdl` | Mach All-inclusive 320 | TLP320C | 60-1452-02 | 320x240 | 12 | 2 | 82 | 13 | Arial, Arial Black, Extron-Lift, Open Sans |
+| `Mach TLP525C.gdl` | Mach All-inclusive 525 | TLP525C | 60-1560-02 | 800x480 | 3 | 20 | 234 | 14 | Arial, Arial Black, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP525M.gdl` | Mach All-inclusive 525 | TLP525M | 60-1561-02 | 800x480 | 3 | 20 | 234 | 14 | Arial, Arial Black, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP720C.gdl` | Mach All-inclusive 720 | TLP720C | 60-1396-02 | 800x480 | 7 | 24 | 524 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP720M.gdl` | Mach All-inclusive 720 | TLP720M | 60-1394-02 | 800x480 | 7 | 24 | 524 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP725C.gdl` | Mach All-inclusive 725 | TLP725C | 60-1564-02 | 1024x600 | 8 | 26 | 618 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP725M.gdl` | Mach All-inclusive 725 | TLP725M | 60-1563-02 | 1024x600 | 8 | 26 | 618 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP835C.gdl` | Mach All-inclusive 1220 | TLP835C | 60-1995-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Mach TLP835T.gdl` | Mach All-inclusive 1220 | TLP835T | 60-1997-02 | 1280x800 | 8 | 26 | 624 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron-Lift, Open Sans, Open Sans Light |
+| `Shockwave 1020.gdl` | Shockwave All-inclusive 1020 | TLP1020M | 60-1392-02 | 1024x600 | 7 | 24 | 511 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave 1025.gdl` | Shockwave All-inclusive 1025 | TLP1025M | 60-1566-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
 | `Shockwave 1035.gdl` | Shockwave All-inclusive 1220 | TLP1035M, TLP1035T | 60-1999-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave 1220.gdl` | Shockwave All-inclusive 1220 | TLP1220MG | 60-1340-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave 1225.gdl` | Shockwave All-inclusive 1225 | TLP1225MG | 60-1787-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
 | `Shockwave 1525.gdl` | Shockwave All-inclusive 1525 | TLP1525TG | 60-1790-02 | 1366x768 | 7 | 24 | 514 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron-Shockwave, Open Sans, Roboto |
 | `Shockwave 1535.gdl` | Shockwave All-inclusive 1720 | TLP1535M | 60-2000-02 | 1920x1080 | 7 | 24 | 535 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron-Shockwave, Open Sans, Roboto |
 | `Shockwave 320.gdl` | Shockwave All-inclusive 320 | TLP320M | 60-1451-02 | 320x240 | 12 | 2 | 94 | 14 | Arial, Arial Black, Extron-Shockwave, Open Sans, Roboto |
@@ -98,14 +142,49 @@ seed, the `frame` its `--frame` measures - and a row to the table below.
 | `Shockwave 535.gdl` | Shockwave All-inclusive 535 | TLP535T | 60-1994-02 | 1280x720 | 2 | 18 | 221 | 13 | Arial, Arial Black, Extron-Shockwave, Open Sans, Roboto |
 | `Shockwave 720.gdl` | Shockwave All-inclusive 720 | TLP720T | 60-1395-02 | 800x480 | 7 | 24 | 511 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
 | `Shockwave 725.gdl` | Shockwave All-inclusive 725 | TLP725T | 60-1562-02 | 1024x600 | 7 | 24 | 511 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave 835.gdl` | Shockwave All-inclusive 1220 | TLP835M | 60-1996-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
 | `Shockwave ECP 16-9.gdl` | Shockwave All-inclusive 1720 | VTLPEcp | 60-sVTLPEcp | 1920x1080 | 7 | 24 | 535 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron-Shockwave, Open Sans, Roboto |
 | `Shockwave ECP 16-10.gdl` | Shockwave All-inclusive 1220 | VTLPEcp | 60-sVTLPEcp | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP1020T.gdl` | Shockwave All-inclusive 1020 | TLP1020T | 60-1393-02 | 1024x600 | 7 | 24 | 511 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP1025T.gdl` | Shockwave All-inclusive 1025 | TLP1025T | 60-1565-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP1220TG.gdl` | Shockwave All-inclusive 1220 | TLP1220TG | 60-1341-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP1225TG.gdl` | Shockwave All-inclusive 1225 | TLP1225TG | 60-1788-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP1525MG.gdl` | Shockwave All-inclusive 1525 | TLP1525MG | 60-1789-02 | 1366x768 | 7 | 24 | 514 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP1535T.gdl` | Shockwave All-inclusive 1720 | TLP1535T | 60-2001-02 | 1920x1080 | 7 | 24 | 535 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP320C.gdl` | Shockwave All-inclusive 320 | TLP320C | 60-1452-02 | 320x240 | 12 | 2 | 94 | 14 | Arial, Arial Black, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP525C.gdl` | Shockwave All-inclusive 525 | TLP525C | 60-1560-02 | 800x480 | 2 | 18 | 223 | 13 | Arial, Arial Black, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP525M.gdl` | Shockwave All-inclusive 525 | TLP525M | 60-1561-02 | 800x480 | 2 | 18 | 223 | 13 | Arial, Arial Black, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP720C.gdl` | Shockwave All-inclusive 720 | TLP720C | 60-1396-02 | 800x480 | 7 | 24 | 511 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP720M.gdl` | Shockwave All-inclusive 720 | TLP720M | 60-1394-02 | 800x480 | 7 | 24 | 511 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP725C.gdl` | Shockwave All-inclusive 725 | TLP725C | 60-1564-02 | 1024x600 | 7 | 24 | 511 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP725M.gdl` | Shockwave All-inclusive 725 | TLP725M | 60-1563-02 | 1024x600 | 7 | 24 | 511 | 14 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP835C.gdl` | Shockwave All-inclusive 1220 | TLP835C | 60-1995-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Shockwave TLP835T.gdl` | Shockwave All-inclusive 1220 | TLP835T | 60-1997-02 | 1280x800 | 7 | 24 | 537 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1a, Extron Lift, Extron-Shockwave, Open Sans, Roboto |
+| `Turbulence 1020.gdl` | Turbulence All-inclusive 1020 | TLP1020M | 60-1392-02 | 1024x600 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence 1025.gdl` | Turbulence All-inclusive 1025 | TLP1025M | 60-1566-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
 | `Turbulence 1035.gdl` | Turbulence All-inclusive 1220 | TLP1035M, TLP1035T | 60-1999-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence 1220.gdl` | Turbulence All-inclusive 1220 | TLP1220MG | 60-1340-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence 1225.gdl` | Turbulence All-inclusive 1225 | TLP1225MG | 60-1787-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
 | `Turbulence 1525.gdl` | Turbulence All-inclusive 1525 | TLP1525TG | 60-1790-02 | 1366x768 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
 | `Turbulence 320.gdl` | Turbulence All-inclusive 320 | TLP320M | 60-1451-02 | 320x240 | 12 | 2 | 94 | 13 | Arial, Arial Black, Open Sans |
 | `Turbulence 525.gdl` | Turbulence All-inclusive 525 | TLP525T | 60-1559-02 | 800x480 | 2 | 18 | 236 | 13 | Arial, Arial Black, Extron GUI Configurator, Open Sans |
 | `Turbulence 720.gdl` | Turbulence All-inclusive 720 | TLP720T | 60-1395-02 | 800x480 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
 | `Turbulence 725.gdl` | Turbulence All-inclusive 725 | TLP725T | 60-1562-02 | 1024x600 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence 835.gdl` | Turbulence All-inclusive 1220 | TLP835M | 60-1996-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP1020T.gdl` | Turbulence All-inclusive 1020 | TLP1020T | 60-1393-02 | 1024x600 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP1025T.gdl` | Turbulence All-inclusive 1025 | TLP1025T | 60-1565-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP1220TG.gdl` | Turbulence All-inclusive 1220 | TLP1220TG | 60-1341-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP1225TG.gdl` | Turbulence All-inclusive 1225 | TLP1225TG | 60-1788-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP1525MG.gdl` | Turbulence All-inclusive 1525 | TLP1525MG | 60-1789-02 | 1366x768 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP320C.gdl` | Turbulence All-inclusive 320 | TLP320C | 60-1452-02 | 320x240 | 12 | 2 | 94 | 13 | Arial, Arial Black, Open Sans |
+| `Turbulence TLP525C.gdl` | Turbulence All-inclusive 525 | TLP525C | 60-1560-02 | 800x480 | 2 | 18 | 236 | 13 | Arial, Arial Black, Extron GUI Configurator, Open Sans |
+| `Turbulence TLP525M.gdl` | Turbulence All-inclusive 525 | TLP525M | 60-1561-02 | 800x480 | 2 | 18 | 236 | 13 | Arial, Arial Black, Extron GUI Configurator, Open Sans |
+| `Turbulence TLP720C.gdl` | Turbulence All-inclusive 720 | TLP720C | 60-1396-02 | 800x480 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP720M.gdl` | Turbulence All-inclusive 720 | TLP720M | 60-1394-02 | 800x480 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP725C.gdl` | Turbulence All-inclusive 725 | TLP725C | 60-1564-02 | 1024x600 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP725M.gdl` | Turbulence All-inclusive 725 | TLP725M | 60-1563-02 | 1024x600 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP835C.gdl` | Turbulence All-inclusive 1220 | TLP835C | 60-1995-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
+| `Turbulence TLP835T.gdl` | Turbulence All-inclusive 1220 | TLP835T | 60-1997-02 | 1280x800 | 8 | 24 | 579 | 13 | Arial, Arial Black, Extron GUI Configurator, Extron GUIC Video Conference 1, Open Sans, Open Sans Light |
 | `Zoom Rooms Dark ZRTP 1035.gdl` | Zoom Rooms Dark ZRTP 1220 | TLP1035M, TLP1035T | 60-1999-02 | 1280x800 | 3 | 4 | 186 | 16 | Arial, Arial Black |
 | `Zoom Rooms Light ZRTP 1035.gdl` | Zoom Rooms Light ZRTP 1220 | TLP1035M, TLP1035T | 60-1999-02 | 1280x800 | 3 | 4 | 186 | 16 | Arial, Arial Black |
 
@@ -122,22 +201,32 @@ part and fonts from each seed's own built `layout.json`.
 - **The built panel is the seed's model**, whatever the spec's `model` says. Use
   a seed at the size you are delivering on; `retarget` is the fallback, and it
   matches Extron's own hand layout at another size for only 22% of controls.
-- **Every Mach, Shockwave and Turbulence seed but their 1035, 1535, 300M
-  Portrait and ECP seeds, and the Afterburn 1035 Portrait, carry a checksum**
-  no other seed has: GUI Designer's feature-flag Gd Generate Checksum was on
-  when they were built (`docs/from-scratch.md` §7, *Feature-flag mode*).
-  `tests/verify_seed.py` notes it and passes them, and `Apply-GdlPlan.ps1`
-  clears it in every panel built on one.
+- **A size's forms are one project under their own part numbers.** A theme's
+  TLP725M, 725C and 725T seeds hold the same pages, popups, controls and border
+  and font resources - the counts in the table agree across a size's forms - and
+  differ in the part number, which `gdl.seeds pick` and the built panel go by.
+  So a form's seed is its own, not its size's. The counts agree across a
+  series' seeds too (the 835, 1035, 1220 and 1225 are one series), bar one
+  pair: Afterburn's 1025M and 1025T hold 648 controls where its other
+  1220-series seeds hold 650, as its ECP 16-10 does.
+- **Most seeds carry a checksum** no others have: GUI Designer's feature-flag
+  Gd Generate Checksum was on when they were built (`docs/from-scratch.md` §7,
+  *Feature-flag mode*). Those without one: Afterburn's 1035, 1230W, 1535, 300M
+  (both), 320, 525, 725, 835 (Project1) and ECP seeds; Mach's 1035, 1535, 300M
+  Portrait and ECP seeds; Shockwave's 1035, 1535 and ECP seeds; Turbulence's
+  1035; and the Zoom Rooms pair. `tests/verify_seed.py` notes a checksum and
+  passes the seed, and `Apply-GdlPlan.ps1` clears it in every panel built on one.
 - **Border resources are per theme family, not universal.** Afterburn seeds
   define 17-31, Mach/Shockwave/Turbulence 13-14, the Zoom Rooms seeds 16: every
   one GUI Designer's 13 built-ins (2D and 3D rectangle, rounded rectangle,
   capsule, ellipse). Afterburn, Mach and Zoom Rooms add their own; Shockwave
   and Turbulence none, bar one rounded rectangle of Shockwave's in most of its
-  seeds - `2D Rounded Rectangle 1px` in the 725, 1525, 1535 and ECP 16-9, `2D
-  Rounded Rectangle Border 1px` in the 720, `2D Rounded Rectangle 0 Border` in
-  the 320, none in the 1035, 525, 535 and ECP 16-10 -
-  and not every seed of a family has all of its own: the 320 has no 10-radius
-  pair, the Mach 300M Portrait, 320 and 720 no Mach border. A border a seed lacks is built as
+  seeds - `2D Rounded Rectangle 1px` in the 725, 1020, 1525, 1535 and ECP 16-9
+  seeds, `2D Rounded Rectangle Border 1px` in the 720s, `2D Rounded Rectangle 0
+  Border` in the 320s, none in the 525, 535, 835, 1025, 1035, 1220, 1225 and ECP
+  16-10 seeds -
+  and not every seed of a family has all of its own: the 320s have no 10-radius
+  pair, the Mach 300M Portrait, 320s and 720s no Mach border. A border a seed lacks is built as
   its own of the nearest shape - of the same kind, its own family first, then
   the nearest thickness, then the nearest radius - and `donors` says which; one
   with no shape near enough is refused (`gdl.spec.nearest_border`).
@@ -150,10 +239,10 @@ part and fonts from each seed's own built `layout.json`.
 - **A declared face is not always one the seed has a resource for.** The column
   above is what the built `layout.json` declares. What a control draws in is
   narrower: the families the project has a `PBFontResource` for. Arial Black has
-  one in every Mach and Shockwave seed but the 300M Portrait, 320, 525 and 535,
-  and in the Afterburn 1035 Portrait, and Open Sans Light in every Mach seed but
-  the 300M Portrait and 320, and in the Turbulence 720, 725, 1035 and 1525; every
-  other seed declares Arial Black and defines no resource for it. What gives a
+  one in every Mach and Shockwave seed but the 300M Portrait, 320s, 525s and
+  535, and in the Afterburn 1035 Portrait, and Open Sans Light in every Mach seed
+  but the 300M Portrait and 320s, and in every Turbulence seed but the 320s and
+  525s; every other seed declares Arial Black and defines no resource for it. What gives a
   seed the Arial Black resource is not known - each was built, and a build can
   add one (`gdl/fonts/README.md`). A spec naming a family
   its seed has no resource for is given one, a copy of the face another seed
@@ -182,17 +271,31 @@ part and fonts from each seed's own built `layout.json`.
 ## Gaps
 
 No seed yet for: the Teams Rooms family (Extron Control for Teams Rooms, 16x9
-and 16x10), Zoom Rooms at 725 or 986x740, and Afterburn at the two sizes it has
-a template for and no seed - 1366x768 (1520) and 1280x720 (535); its only 800x480
-template is the 520's.
-Mach, Shockwave and Turbulence have a seed for every series they draw. Each gap
-is one `New-GdlSeed.ps1` run away, made as a theme's series or a job needs it.
+and 16x10), Zoom Rooms at 725 or 986x740, and these forms of a bar theme's series
+(`python -m gdl.seeds pick` finds none, and prints the line that makes one):
+
+- the 520M, in every theme, and the 535M, in Afterburn, Mach and Shockwave -
+  Turbulence draws no 535;
+- the 1022M and 1022T, the 1020 series' other two forms at 1024x600;
+- the 1520MG and 1520TG at 1366x768 - the 1525s have seeds, and are the same
+  series;
+- the 1720 and 1725, MG and TG, at 1920x1080, in Afterburn, Mach and Shockwave -
+  Turbulence draws no 1720;
+- the TLC Pro panels (521M, 526M, 726M, 1026M).
+
+Every other form the four bar themes draw has a seed in each theme that draws it:
+the 320 (M, C), 525, 720 and 725 (M, C, T), 835 (M, C, T), 1020 and 1025 (M, T),
+1035 (M and T share one), 1220 and 1225 (MG, TG), 1525 (MG, TG) and 1535 (M, T),
+the 535T, the 1230WTG and the 300M. Afterburn draws no 720, and no theme but
+Mach and Afterburn draws a 300. Each gap is one `New-GdlSeed.ps1` run away, made as
+a series or a job needs it.
 
 The wizard makes no seed for a panel turned where no template is drawn that way
 up - it offers those Blank alone (`docs/design-rules.md` §1 has which) - so its
 seed is its default seed turned, by `New-GdlTurnedSeed.ps1` (above). Only the
-1035M has one: the 835M's is one run away, and the 520M's, 521M's and 535M's
-need their own seed made first - `gdl.seeds pick` prints both lines.
+1035M's, in Afterburn, has one: the 835M's turned is one run away in each theme
+(its own seed is here), and the 520M's, 521M's and 535M's need their own seed
+made first - `gdl.seeds pick` prints both lines.
 
 ECP is complete: all three themes at both presets that can be themed, and a
 spec can target either (`spec.sizes('VTLPEcp')` is 1920x1080 and 1280x800). Its other

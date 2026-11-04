@@ -136,11 +136,13 @@ PROBE = r"""
     rg.selectNodeContents(el);
     return rg.getBoundingClientRect().height > box.height + s * line / 2;
   }
-  // The face the page is set in: waited for, then measured. A face that
-  // never arrives (no network to Google Fonts, no link in the helmet) leaves
-  // Arial, 5% narrower, and the layout was fitted to that - said, not silent.
-  // Present is told by width, not by the FontFace API, which answers true for
-  // a family it holds no face for: the family set against a bare monospace.
+  // The face the page is set in: there from the first measure, as render
+  // adds it from its own bytes (designsys.face_js), and waited for besides,
+  // for a page set in a face the toolkit does not carry. One Chrome will not
+  // take leaves Arial, 5% narrower, and the layout was fitted to that - said,
+  // not silent. Present is told by width, not by the FontFace API, which
+  // answers true for a family it holds no face for: the family set against a
+  // bare monospace.
   function settle() {
     var pages = document.querySelectorAll('[data-gdl]');
     var fam = null;
@@ -259,6 +261,11 @@ def render(board_path, chrome, size, timeout=90, panel=None):
         if '<head>' not in src:
             raise ValueError(f'{os.path.basename(board_path)} has no <head>')
         src = src.replace('<head>', f'<head>\n<script>window.__GDL_PANEL = {json.dumps(panel)};</script>', 1)
+    # The system's face before anything else in the head - before the runtime
+    # and the system load - so its captions are measured in it from the first,
+    # whether or not the canvas's own copy of the system carries it, and with
+    # no network (designsys.face_js).
+    src = src.replace('<head>', f'<head>\n<script>{designsys.face_js()}</script>', 1)
     # One probe file per board and panel, so no two renders share a name.
     probe = os.path.join(os.path.dirname(board_path),
                          f"__gdl_probe_{panel + '_' if panel else ''}" + os.path.basename(board_path))
@@ -399,10 +406,16 @@ class Canvas:
             if previous is not None:
                 notes = notes + renamed_windows(spec, gdlidmap.view_of(previous, _panel(spec)),
                                                 {r['id'] for r in spec.get('_retired') or []})
+            whole = not problems
             problems = problems + _spec_check(spec, self._seed_geometry(spec), problems)
         for item in (spec or {}).get('pages', []) + (spec or {}).get('popups', []):
             item.pop('_host', None)
             item.pop('_hosts', None)
+        # As the ID map a build writes (`gdl.idmap write`) reads it
+        # (map_problems): whole where nothing else is wrong, so its IDs are
+        # the ones it is written with.
+        if spec is not None:
+            problems = problems + map_problems({'': spec}, whole).get('', [])
         return spec, problems, notes
 
     def translate_panels(self, rendered=None, previous=None):
@@ -482,12 +495,14 @@ class Canvas:
         first = next(iter(specs), None)
         if previous is not None and specs.get(first) is not None:
             notes[first] += [f'{first}: {x}' if first else x for x in revision_notes(specs[first], previous)]
+        pinned = False
         if not any(problems.values()) and all(v is not None for v in specs.values()):
             carried = {(model, it['name'], c['name']): c['id'] for model, spec in specs.items()
                        for it in spec['pages'] + spec['popups'] for c in it['controls']
                        if c.get('derived') and c.get('name') and c.get('id')}
             for model, q in pin_ids(specs, list(specs), previous).items():
                 problems[model] += [f'{model}: {x}' if model else x for x in q]
+            pinned = not any(problems.values())
             for model, q in _yielded(specs, carried).items():
                 notes[model] += [f'{model}: {x}' if model else x for x in q]
             # Before `_host` goes: a hub's window is its page's.
@@ -510,6 +525,12 @@ class Canvas:
             for item in (spec or {}).get('pages', []) + (spec or {}).get('popups', []):
                 item.pop('_host', None)
                 item.pop('_hosts', None)
+        # And as the ID map a build writes reads them, as they are written:
+        # what no nav reaches on any panel whatever else is wrong, as the
+        # spec check runs; the rest of the map's checks once the IDs are
+        # the ones the specs will be built with.
+        for model, q in map_problems(specs, pinned).items():
+            problems[model] += [f'{model}: {x}' if model else x for x in q]
         if any(problems.values()) or any(v is None for v in specs.values()):
             return None, problems, notes
         return specs, problems, notes
@@ -615,14 +636,17 @@ class Canvas:
                 notes.append(f'{b}: {q}')
             face = out.get('font')
             if face and not face.get('loaded') and face['family'] not in unloaded:
-                # The layout allows for the fallback (the bundle measures
-                # captions 5-6% wide) but cannot wait for the face, which loads
-                # after the components measure.
+                # Render adds the system's face from its own bytes, so this is
+                # a face Chrome refused, or one the toolkit does not carry. The
+                # bundle measures captions 6% wide, which about covers the
+                # fallback's being narrower.
                 unloaded.add(face['family'])
-                self._say('notes', f"{b}: {face['family']} did not load in this render (no network to Google "
-                          f"Fonts, or no link in the artboard's helmet), so captions were measured in "
-                          f"the fallback face, narrower than {face['family']} - the layout allows for "
-                          f"that, but a caption that only just fits is not proof it fits on the panel")
+                why = (f"Chrome refused the toolkit's own copy of it ({os.path.basename(designsys.FACE)})"
+                       if face['family'] == designsys.FACE_FAMILY else
+                       "the toolkit carries no copy of it, and no link in the artboard's helmet brought one")
+                self._say('notes', f"{b}: {face['family']} did not load in this render ({why}), so captions "
+                          f"were measured in the fallback face, narrower than {face['family']} - the layout "
+                          f"allows for that, but a caption that only just fits is not proof it fits on the panel")
             if profile is None:
                 profile = self._profile(pg.get('template'))
                 self.template = profile['template']
@@ -1021,8 +1045,11 @@ def _one_name_each(pages, popups, notes, known=None):
     as a page named twice. What each part is for decides it:
 
     - Derived alike from two pages - the same controls, which the program
-      knows by the same IDs - it is one window the program shows from either:
-      one popup. The Volume strip and the 320's Volume modal always are.
+      knows by the same IDs, its layout's leading to the same window from
+      each page - it is one window the program shows from either: one popup.
+      The Volume strip and the 320's Volume modal always are; options alike
+      on two pages whose Display Settings are two, or a later page of
+      options whose first pages are, are each page's.
     - Derived otherwise - each page's options hold its own launchers, its
       display popup its own first Section - each is its page's: the later
       takes its page's name in front ('Video Call More Options'), and what its
@@ -1105,6 +1132,17 @@ def _one_name_each(pages, popups, notes, known=None):
         by.setdefault(it['name'], []).append(it)
     gone, ways = set(), {}   # ways: host -> {derived name: the part its page's navs now open}
     owner = {pg['name']: pg for pg in pages if not pg.get('_derived')}
+
+    def way(host, n):
+        to = (ways.get(host) or {}).get(n)
+        return to['name'] if to is not None else n
+
+    def agree(k, d):
+        # Whether what `k`'s layout leads to from its page is what it leads
+        # to from `d`'s, as each part's name is decided by then.
+        return all(way(k['_host'], c['nav']) == way(d['_host'], c['nav'])
+                   for c in k['controls'] if c.get('derived') and c.get('nav'))
+    merged = []   # (the window, a part that went into it)
     for name, group in by.items():
         own = [x for x in group if not x.get('_derived')]
         made = [x for x in group if x.get('_derived')]
@@ -1131,6 +1169,7 @@ def _one_name_each(pages, popups, notes, known=None):
                 # Every page it is the window of, in the canvas's order:
                 # which one's it is to the program, pin_ids decides.
                 rep.setdefault('_hosts', [rep['_host']]).append(d['_host'])
+                merged.append((rep, d))
                 continue
             kept.append(d)
         for i, d in enumerate(kept):
@@ -1141,12 +1180,32 @@ def _one_name_each(pages, popups, notes, known=None):
             ways.setdefault(d['_host'], {})[name] = d
             notes.append(f"{d['_host']}'s {name} holds other controls than {first} - it is {d['name']!r} "
                          'on this panel')
+    # Alike, a part is one window only where what its layout leads to is the
+    # same window from each page: a hub's options gone on over pages
+    # (bundle.js optionPages) whose first pages differ and later pages are
+    # alike went Back from both to one page's first, and Mach's Settings,
+    # alike on two pages whose Display Settings differ, opened one page's
+    # from both and left the other's shown from nowhere. Read once every
+    # part's name is decided - a window comes before what it opens in the
+    # order a page derives them - and again while one comes apart.
+    apart = True
+    while apart:
+        apart = False
+        for rep, d in merged:
+            if id(d) not in gone or agree(rep, d):
+                continue
+            gone.discard(id(d))
+            rep['_hosts'].remove(d['_host'])
+            if len(rep['_hosts']) == 1:
+                del rep['_hosts']
+            was = d['name']
+            d['name'] = f"{d['_host']} {was}"
+            ways[d['_host']][was] = d
+            notes.append(f"{d['_host']}'s {was} leads elsewhere than {rep['name']!r} on this panel - it is "
+                         f"{d['name']!r}")
+            apart = True
     pages = [x for x in pages if id(x) not in gone]
     popups = [x for x in popups if id(x) not in gone]
-
-    def way(host, n):
-        to = (ways.get(host) or {}).get(n)
-        return to['name'] if to is not None else n
     for it in pages + popups:
         for c in it['controls']:
             if c.get('derived') and c.get('nav') and c['nav'] in (ways.get(it['_host']) or {}):
@@ -1328,6 +1387,36 @@ def _spec_check(spec, geometry=None, known=()):
             out += panel.stroke_rules(geometry, spec.get('_seed'))
     except ValueError as e:
         return [] if known else [f'the spec check could not read it: {e}']
+    return out
+
+
+def map_problems(specs, pinned):
+    """{panel: problems} - what the ID map a build writes (`gdl.idmap
+    write-panels`, check_panels) refuses in `specs` ({panel: spec or None}),
+    read as they are written, but gdl.spec check's own, which _spec_check
+    says. Round five's Shockwave canvas translated clean, built, and then had
+    its 525 refused there: its hub had left the Header's Record off, by a
+    note, and with it the only way to the Recording window and its Stop
+    Recording question.
+
+    Where the IDs are not the ones the specs are built with - `pinned` false:
+    another problem stopped pin_ids - only what navigation alone decides
+    (IdMap.nav_rules), which needs no ID; a spec _spec_check cannot read is
+    its problem, not this one's."""
+    maps = {}
+    for model, spec in specs.items():
+        if spec is None:
+            continue
+        try:
+            maps[model] = gdlidmap.IdMap(gdlspec.Panel(json.loads(json.dumps(spec))))
+        except ValueError:
+            continue
+    out = {m: (mp.check(spec=False)[0] if pinned else mp.nav_rules()) for m, mp in maps.items()}
+    # One ID, one control, on every panel: pin_ids holds the canvas to it,
+    # and this is the build's word on what it pinned - the canvas's, said
+    # on the panel it is drawn on.
+    if pinned and len(maps) > 1:
+        out[next(iter(maps))] += gdlidmap.across_panels(maps)
     return out
 
 

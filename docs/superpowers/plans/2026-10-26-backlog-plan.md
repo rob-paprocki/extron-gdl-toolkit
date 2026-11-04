@@ -39,15 +39,15 @@ in the same commit.
 | 2.1 | **Format probes on 1.28** | the probes' error and warning readout; a `renumber` through a build; a border outside the corpus and a same-page ID twin; Shockwave's 1535 tab twin; a horizontal slider with a non-square thumb; what `referenceCountField` does | M |
 | 2.2 | **What the spec cannot say yet** | the Offline Page and its enable flag; a popup's auto-hide timeout; a reference bound to one popup by its ID, as the seeds' Volume Level is | M each |
 | 2.3 | **The small panels' last refusals** | a modal that shows another modal (so a plain modal goes on past the 320's screen); a Clock on Shockwave's and Turbulence's 320 cloned from another seed of the theme; the recording and room-mode questions' words measured, and Mach's Recording tile; Shockwave's 725 call page's third launcher | M each |
-| 2.4 | **Where a build spends its time** | a 23-page build timed per page, control, state and resource, with feature-flag mode on as the owner keeps it, on a quiet host, with and without scanning | M |
-| 2.5 | **A synthetic fixture** | a many-page project of every renderer-scored control type, GUI Designer's snapshots of it, a new render baseline, the fixture-gated tests moved onto it - so the client fixtures can go, on the owner's word, and the text findings get ground truth beyond one typeface | L |
-| 2.6 | **Seeds ahead of jobs** | the forms a client most often lists - 725M/C, 525M/C, 320C, 835, 1220/1225, 1025/1020, 1525MG, 720M/C, 1535T, Afterburn's 1520 and 535 - made in one session while the owner keeps the desktop connected | M |
+| 2.4 | **Where a build spends its time** | a build timed per page, control, state and resource on a quiet host, with feature-flag mode on as the owner keeps it and scanning as it is - done, `docs/from-scratch.md` §5c; left: the same with scanning excluded, on the owner's word (`docs/ROADMAP.md` *Mine*, item 1) | M |
+| 2.5 | **A synthetic fixture** | a many-page project of every renderer-scored control type, GUI Designer's snapshots of it, a new render baseline, the fixture-gated tests moved onto it - so the client fixtures can go, on the owner's word, and the text findings get ground truth beyond one typeface. **Done** (`tests/data/synthetic/`, `tests/baseline-synthetic.json`), and the client fixtures deleted on the owner's word on 2026-11-03 (`docs/history.md`); what that took with it is in `docs/ROADMAP.md`'s backlog | L |
+| 2.6 | **Seeds ahead of jobs** | the forms a client most often lists - 725M/C, 525M/C, 320C, 835, 1220/1225, 1025/1020, 1525MG, 720M/C, 1535T, Afterburn's 1520 and 535 - made in one session while the owner keeps the desktop connected. Made (`seeds/README.md`): every one in each theme that draws it, 78 seeds, and listed in the profiles. Left: the forms `seeds/README.md` *Gaps* lists | M |
 
 ## Phase 3 - proof
 
 | # | Package | What |
 |---|---|---|
-| 3.1 | **Round five** | Fresh designers against the READMEs as they then stand, translated unchanged, refusals counted, then built - after Afterburn's regions and Phase 1.2-1.4, so it measures them |
+| 3.1 | **Round five** | Fresh designers against the READMEs as they then stand, translated unchanged, refusals counted, then built - after Afterburn's regions and Phase 1.2-1.4, so it measures them. **Done**: first try Mach 31, Shockwave 35, Turbulence 68, Afterburn 26 refusals; the toolkit's share fixed (#80, #82); revised, all four rooms clean and built and verified on the 1035, 725, 525 and 320 (region-frame spec item 13, `archive/job-e823df9b/round5/`) |
 | 3.2 | **The bug hunt again** | Over everything since its first run (#62's fixes, the call mode, Afterburn's regions, Phase 1), with its second verification in the same session |
 | 3.3 | **The region frame on turned panels and the 300** | The turned frame's header as a left band and the 300's menu bar measured and drawn - when a job lists one, or once Phases 1-2 are done |
 | 3.4 | **Research** | The size-dependent vertical text residual in the preview |
@@ -58,10 +58,10 @@ None of these blocks the phases above; each is in the ROADMAP's *Yours*.
 
 - **Load a built panel onto a TouchLink Pro panel**, and say how panels are loaded - the one step with no evidence.
 - **Confirm or overrule** the assumptions already built: a mic mute and a display's state where the template keeps them; the footer cells the template stands together drawn as a joined set; a source popup's column of keys drawn at the template's row pitch kept at each panel's as a joined set; the 320's column headings in capitals; Afterburn's regions' ten answers.
-- **Decide**: kit art or Extron's icon fonts for the small glyphs; whether a 320 key's caption may go below 14 pt (and the type floor's formula on the 535); whether the call mode's derived answers and tiles take the template's IDs; Open Sans Light; an empty caption on Mach's Share Content.
-- **Approve** deleting the client fixtures once 2.5 has replaced them; schedule `~/gdltmp/nightly.sh` on the Linux box; pick a licence.
+- **Decide**: kit art or Extron's icon fonts for the small glyphs; whether a 320 key's caption may go below 14 pt (and the type floor's formula on the 535); whether the call mode's derived answers and tiles take the template's IDs; Open Sans Light; an empty caption on Mach's Share Content; whether GUI Designer's folders are excluded from real-time scanning, and the base build timed with it (2.4's other half).
+- **Schedule** `~/gdltmp/nightly.sh` on the Linux box; pick a licence. (Deleting the client fixtures, approved 2026-11-03, is done.)
 - **Larger calls**: a room whose panels are in two themes or two zones (a cross-canvas ID check); a Design front end for Teams and Zoom Rooms.
 
 ## What waits on a job
 
-Seeds for forms 2.6 does not make, turned panels' seeds, Zoom and Teams Rooms seeds, and a fifteen-input room on Shockwave (whose bar templates have no Select Source page).
+Seeds for the forms `seeds/README.md` *Gaps* lists, turned panels' seeds, Zoom and Teams Rooms seeds, and a fifteen-input room on Shockwave (whose bar templates have no Select Source page).

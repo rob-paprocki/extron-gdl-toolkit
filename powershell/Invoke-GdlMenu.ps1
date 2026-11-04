@@ -98,6 +98,9 @@ if (-not $target.Current.IsEnabled) {
 }
 
 Write-Output "invoking '$($target.Current.Name)'"
+# The click's moment, for a caller that times what it starts (New-GdlPanel.ps1):
+# everything before this is finding the window and expanding the menu.
+Write-Output ('clicked at {0}' -f (Get-Date).ToString('o'))
 try {
     $target.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
     Write-Output 'invoke returned'

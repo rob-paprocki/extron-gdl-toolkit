@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ShareLink</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="ShareLink" kind="popup" group="Sources" role="source" title="ShareLink" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Label" name="ShareLink Show Label" align="center" style="position: absolute; left: 269px; top: 130px; width: 460px; height: 40px">Show On</x-import>
+  <x-import component-from-global-scope="ExtronMach.Group" title="Show" cell="160x60" gap="40" cap="2" style="position: absolute; left: 269px; top: 180px; width: 460px; height: 140px">
+    <x-import component-from-global-scope="ExtronMach.Button" name="ShareLink To Projector" states="Off, On" does="Sends ShareLink to the projector; On while it is showing there.">Projector</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="ShareLink To Monitor" states="Off, On" does="Sends ShareLink to the confidence monitor; On while it is showing there.">Monitor</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

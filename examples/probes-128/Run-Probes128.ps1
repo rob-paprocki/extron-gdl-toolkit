@@ -36,10 +36,11 @@ param(
     [string]$Python = 'python',
     [string]$InstallDir = 'C:\Program Files (x86)\Extron\GUI Designer',
     [int]$TimeoutSeconds = 900,
-    # The project New-FormatProbes.ps1 authors its three tests on. The same
-    # fixture its 1.27 and 1.28 runs used; a seed stands in where the client
-    # fixtures are not (the archive only), and the summary says so.
-    [string]$FormatFixture = 'fixtures\gdl\client-boardroom-2.0.0.gdl'
+    # The project New-FormatProbes.ps1 authors its three tests on: the seed the
+    # inputs name (FormatSeed), unless this names another, by its path from the
+    # repo root. Its 1.27 and 1.28 runs used a client project, no longer in the
+    # repo; fixture.txt and the summary say which this run used.
+    [string]$FormatProject
 )
 
 $ErrorActionPreference = 'Stop'
@@ -54,7 +55,7 @@ $here = Join-Path $repo 'examples\probes-128'
 # Every input, by its path from the repo root.
 $In = [ordered]@{
     FormatProbes      = 'powershell\New-FormatProbes.ps1'
-    FormatFixtureSeed = 'seeds\Afterburn 1035.gdl'
+    FormatSeed        = 'seeds\Afterburn 1035.gdl'
     RenumberSeed      = 'seeds\Afterburn 1035.gdl'
     RenumberSeedEdits = 'examples\probes-128\renumber-seed.json'
     HuddleSpec        = 'examples\huddle-functions.json'
@@ -83,7 +84,6 @@ if (-not (Test-Path $ps32)) { throw "32-bit PowerShell 5.1 not found at $ps32" }
 if (-not (Test-Path $gd))   { throw "GUI Designer not found at $gd" }
 if (-not [Environment]::UserInteractive) { throw 'needs an interactive desktop session' }
 foreach ($k in $In.Keys) {
-    if ($k -eq 'FormatFixtureSeed') { continue }
     if (-not (Test-Path (Join-Path $repo $In[$k]))) { throw "input missing: $($In[$k])" }
 }
 New-Item -ItemType Directory -Force -Path $Out, $Work | Out-Null
@@ -260,20 +260,20 @@ function Edit-Build([string]$source, [string]$edits, [string]$dir, [string]$tag)
 
 # ------------------------------------------------------------------ probes ---
 function Probe-FormatProbes([string]$dir) {
-    $fixture = Join-Path $repo $FormatFixture
-    if (-not (Test-Path $fixture)) {
-        Say "the fixture $FormatFixture is not here (the client fixtures are in the archive only); using $($In.FormatFixtureSeed)"
-        $fixture = Join-Path $repo $In.FormatFixtureSeed
-        Set-Content -Path (Join-Path $dir 'fixture.txt') -Value "seed: $($In.FormatFixtureSeed)" -Encoding UTF8
+    if ($FormatProject) {
+        $source = Join-Path $repo $FormatProject
+        if (-not (Test-Path $source)) { throw "the project $FormatProject is not here" }
+        Set-Content -Path (Join-Path $dir 'fixture.txt') -Value "project: $FormatProject" -Encoding UTF8
     } else {
-        Set-Content -Path (Join-Path $dir 'fixture.txt') -Value "fixture: $FormatFixture" -Encoding UTF8
+        $source = Join-Path $repo $In.FormatSeed
+        Set-Content -Path (Join-Path $dir 'fixture.txt') -Value "seed: $($In.FormatSeed)" -Encoding UTF8
     }
     $w = Join-Path $Work 'format'
-    Extract $fixture $w
+    Extract $source $w
     Ps32 'author the three probes (New-FormatProbes.ps1)' (Join-Path $repo $In.FormatProbes) @('-Repo', $repo, '-Work', $w)
     foreach ($t in 'A', 'B', 'C') {
         $gdl = Join-Path $dir "test$t.gdl"
-        Py "pack test$t" @('-m', 'gdl.container', 'pack', $fixture, (Join-Path $w "test${t}_ProjectGCP"), $gdl)
+        Py "pack test$t" @('-m', 'gdl.container', 'pack', $source, (Join-Path $w "test${t}_ProjectGCP"), $gdl)
         Copy-Item $gdl (Join-Path $dir "test$t.pre.gdl") -Force
     }
     $fails = @()

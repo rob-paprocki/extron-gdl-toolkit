@@ -57,8 +57,8 @@ build, and rasterizes at the geometry it asks for.
 **The consequence that matters:** a generator that only *references* resources
 already in a donor project needs no new resource appended.
 
-Worth knowing how narrow the corpus evidence was: across all six fixtures only
-**9** distinct border names are ever bound to a control, and ~25 — including
+Worth knowing how narrow the corpus evidence was: across all six of the
+client project's files only **9** distinct border names were bound to a control, and ~25 — including
 *every* 3D template and every `zGD - Default *` — are defined but never
 referenced. §5 tested one of those unreferenced names directly and it built
 clean, so the usable palette is the full **34**, and appending more works too.
@@ -82,8 +82,9 @@ rather than by the resource list.
   TopLeft→BottomRight *is* a diagonal, and since the bounding rect is arbitrary so
   is the angle.
 - Canvas size is set by the panel model, **not fixed** — `docs/design-rules.md`
-  §1 lists the resolutions. The fixtures are all 1280×800, which is a property
-  of this client's hardware, not of the format.
+  §1 lists the resolutions. The client project the toolkit was first read off
+  was all 1280×800, which was a property of that client's hardware, not of the
+  format.
 - Arbitrary raster art: unless the bitmap is already a `PBImageResource` it needs
   the resource-append step (which §5 showed works). But note this is rarely the
   binding constraint — ~339 icons are available as *font glyphs* and need no image
@@ -118,7 +119,7 @@ that a spec now says - its Offline Page's switch and words, and each popup's
 `timeout`, which reaches no panel - is in `SKILL.md` step 3.
 
 It makes a group by cloning one of the registry's own, so a project with none -
-the 320 and 300M seeds and one client fixture - cannot take a grouped standard
+the 320 and 300M seeds, as one client project had - cannot take a grouped standard
 popup: `gdl.spec donors` refuses it, and the function stops with that reason
 rather than on an index out of range. A plan problem (a control with no donor
 to clone, an op that threw, a popup binding that did not take, a start page the
@@ -129,7 +130,7 @@ plan does not author) stops `Apply-GdlPlan.ps1` from writing the file, as
 
 Building is the slow step — apply, pack, open, Save and Build, verify. The
 compositor is scored against GUI Designer's own snapshot exports
-(`tests/baseline.json`), which makes it good enough to judge a design *before*
+(`tests/baseline-synthetic.json`), which makes it good enough to judge a design *before*
 building it:
 
 ```bash
@@ -158,8 +159,8 @@ how that was driven, which is fully scriptable.
 
 The error and warning counts below were read off 1.27.0.9. On 1.28.0.7 the
 format probes (`examples/probes-128/`) built all three of `New-FormatProbes.ps1`'s
-tests again from the same fixture, each with a payload: test 1's control still
-on `3D Capsule`; test 2's 35 border resources against the fixture's 34, the new
+tests again from the same client project, each with a payload: test 1's control still
+on `3D Capsule`; test 2's 35 border resources against the project's 34, the new
 one defined, bound and at radius 20 and thickness 1; test 4's page holding the
 clone (10 controls built to 11). 1.28 shows no count to read: its Build Manager
 is a progress bar, the phase it is in and Cancel, and closes itself when a build
@@ -178,7 +179,7 @@ is `archive/job-e823df9b/probes-128/`.
 
 **1 — referencing an unused resource works.** A `PBShape` was repointed from
 `Afterburn - 10 Radius 0 Thick` to `3D Capsule`, a System template no control in
-any fixture binds. GUI Designer opened it and built with **0 errors, 0
+the client project bound. GUI Designer opened it and built with **0 errors, 0
 warnings**. So §1's conclusion holds: the usable palette is all **34** defined
 resources, not the 6 this project happens to reference.
 
@@ -233,7 +234,7 @@ Two errors, no payload. Points worth keeping:
   nothing here.
 * The **name** is the only identity that matters. Page "number" (the `2210 -`
   prefix) is a naming convention, not a field: `PBPage` has no number, and the
-  fixture's own names are just numerically prefixed strings.
+  client project's own names were just numerically prefixed strings.
 * Numeric `idField`s were duplicated across projects throughout this work with
   no complaint, so whatever uniqueness ids need, it is not this one.
 
@@ -351,8 +352,8 @@ the page artwork is 100% `#12131C`, with no trace of the donor's.
 
 ## 5c. Authoring without a client project: seeds
 
-Before the seeds, every generated panel cloned
-`fixtures/gdl/client-boardroom-2.0.0.gdl`, which is a **real client project**.
+Before the seeds, every generated panel cloned a **real client project**, kept
+as a test fixture then and no longer in the repo (`docs/history.md`).
 That is fine for testing and wrong for delivery: the result inherits that
 client's page names, popups, resources, artwork and retail fonts, and is
 pinned to their model and theme.
@@ -411,7 +412,7 @@ combination. `seeds/README.md` lists each one's model, canvas and resources. The
 are in Git LFS, so run `git lfs pull` on a fresh clone.
 
 **Prefer a seed at the target size; retarget is the fallback.** A retarget
-builds correctly — 654/654 on the client fixture, 650/650 on the Afterburn
+builds correctly — 654/654 on the client project, 650/650 on the Afterburn
 1035 seed taken to a 1535M. But scored against Extron's *own*
 hand-authored 1535, only 22% of controls land identically, median 18px off. The
 rule is the same per-axis scale Extron used; the difference is their designers
@@ -429,10 +430,10 @@ nothing of any client's in the result.
 Two things that seed taught, both now checked by `gdl.spec donors`:
 
 - **A fresh themed project defines a different resource set from a client
-  file.** It has 31 border resources and the fixture has 34, but they are not
-  the same list. And its only font resources are Arial, Extron-Afterburn and
-  Open Sans - so the spec's `Forma DJR Display`, inherited from the client
-  fixture, had no resource to resolve against. That does *not* fail the build:
+  file.** It has 31 border resources and the client project had 34, but they
+  are not the same list. And its only font resources are Arial,
+  Extron-Afterburn and Open Sans - so the spec's `Forma DJR Display`, inherited
+  from the client project, had no resource to resolve against. That does *not* fail the build:
   `Set-GdlFont` correctly leaves the donor's face, the panel builds clean, and
   it ships in Open Sans. Only `tests/verify_built.py` noticed, 14 controls deep.
 - **The spec's `model` is not the panel's model.** The built panel is whatever
@@ -444,7 +445,7 @@ Two things that seed taught, both now checked by `gdl.spec donors`:
 ### A real-size panel
 
 `examples/boardroom-full.json` is the size of a real job - the client project
-has 27 pages - built on `seeds/Afterburn 1035.gdl`: 23 pages reached from a
+had 27 pages - built on `seeds/Afterburn 1035.gdl`: 23 pages reached from a
 Welcome start page, a page per source, room pages, three video-call pages and
 help; a Volume popup group shown on seven pages, each through its own popup
 reference; a Keypad group in a different place on each of two pages; three
@@ -469,18 +470,18 @@ Getting there found these, each fixed, checked or measured:
   panel carrying a page or popup its plan does not name. The built file went
   from 3.66 MB to 2.89. Only the pages and popups go: the donor's resource
   library ships whole.
-- **Save and Build is slow, and its time varies.** Six builds of the spec ran
-  on one host. The five that ran to the end took 21 minutes with the donor's
-  content, then 28, 9, 21 and 22 without it - so the donor's content is not
-  what decides it (`docs/ROADMAP.md`, *What a real-size build spends its time
-  on*). The fourth was closed after a minute by a
-  wait that took it for wedged.
+- **Save and Build is slow, and its time varies.** It is about two seconds a
+  control, and it varies with the processor's clock, not with the spec:
+  *What a build's time scales with*, below, has the measurements. Six builds of
+  the spec, made before them, took 21 minutes with the donor's content and 28,
+  9, 21 and 22 without it; the fourth was closed after a minute by a wait that
+  took it for wedged.
 - **A small spec's build is the seed's content.** `examples/panel.json` - one
   page, 29 controls - built on the same seed in about a minute with the seed's
   pages and popups dropped, and in about 11 minutes with them kept: 71 s
   against 643 s from the click to the file written. The seed's 7 pages and 29
-  popups are nearly all of a one-page panel's build, and less than the spread
-  between two builds of the 23-page one.
+  popups are most of a one-page panel's build because a build costs its
+  controls, and those are a few hundred of them.
 - **A fixed wait called a running build failed.** `Wait-GdlBuild.ps1` gave up
   at 15 minutes while GUI Designer was still building; it now runs on while
   GUI Designer is still busy (§7). The Build Manager is no sign of life: in
@@ -491,6 +492,105 @@ The logs of all six builds, the window watcher's log, the last build's plan,
 ID map and built file, and the donor-kept build's file are in
 `archive/job-2419a20b/item4/`; the one-page panel's two builds are
 `archive/job-2419a20b/autoseed/` (dropped) and `wait/long-build.log` (kept).
+
+### What a build's time scales with
+
+Measured on 2026-11-03 on the development host - an Intel N100 (four cores,
+12 GB, a local SSD), Windows 11 Pro, GUI Designer 1.28.0.7 in feature-flag
+mode, Windows Defender's real-time protection on with no exclusions - on
+`seeds/Afterburn 1035.gdl` with the seed's own pages and popups dropped, one
+build at a time and nothing else running. `tools/build_timing_specs.py` writes
+specs that differ from a base of 12 pages of 15 controls in one count each;
+`tools/Run-BuildTiming.ps1` builds a queue of them, settling the host first
+and sampling it beside each build; `tools/timing_table.py` reads the logs into
+a table and a fit. Every spec was built twice, the two rounds in different
+shuffled orders, and the base twelve times; all 58 builds' logs, traces and
+table are in `archive/job-e823df9b/build-timing/`.
+
+Save and Build is timed from the click to the file's last write
+(`New-GdlPanel.ps1` logs it as `SAVE_AND_BUILD`, and each step as `TIMING`).
+At the processor's full clock, about 3.1 GHz, it takes
+
+    2.0 s a control + 0.08 s a feedback state a button has past its first
+                    + 2.2 s a distinct image the spec adds
+
+with a fixed part under five seconds and about 1.5 s a page on top of its
+controls (R^2 0.997 over 48 builds; the residual is 1% to 5% of a build). It
+takes nothing measurable more for a border resource, a text face, or an image
+used again. In seconds, each the mean of two builds - of the base, twelve -
+at the full clock:
+
+| varied | at | Save and Build |
+|---|---|---|
+| pages, 15 controls each | 1 / 6 / 12 / 23 / 40 | 36 / 187 / 375 / 728 / 1,282 |
+| controls a page, 12 pages | 5 / 15 / 30 / 60 | 123 / 375 / 760 / 1,472 |
+| states a button | 1 / 2 / 4 / 8 | 350 / 375 / 399 / 426 |
+| distinct images, on 24 buttons | 1 / 24 | 369 / 411 (48 on 48 buttons: 485) |
+| border resources | 1 / 4 / 12 | 375 / 374 / 373 |
+| text faces | 1 / 2 / 4 | 375 / 371 / 377 |
+
+`examples/boardroom-full.json` - 367 controls on 23 pages and 6 popups - took
+750 to 781 s at the full clock, and 1,721 s at the low one. A page adds about
+1.5 s to its controls: 600 controls on 40 pages and 720 on 12 take 1,282 and
+1,472 s, 2.1 and 2.0 s a control. A button's second state costs most (+25 s
+over 108 buttons), the third and fourth +12 s each, the fifth to eighth +7 s
+each. The rest of the loop is small: `New-GdlPanel.ps1`'s apply is 13 s and
+0.13 s a control, its verify 6 s and 0.06 s a control, opening the file in GUI
+Designer 14 s; for the boardroom panel Save and Build is about 85% of the 15
+minutes from spec to verified panel. A build under about a minute is shorter
+than the menu invoke's 66 s timeout, which then returns when the build does.
+
+**What the time is.** GUI Designer itself uses 0.10 to 0.20 of one core
+through a build, 0.16 at the full clock. The antivirus engine, `MsMpEng`, uses
+one whole core from the click to the file's last write - about 0.2 in the
+minute either side - and its CPU seconds are the build's seconds, within 10%,
+in every build; nothing else on the host comes near a core. A build is paced
+by one thread, and the only thread at a whole core is the engine's, so GUI
+Designer is waiting for it. Real-time scanning of what GUI Designer does is
+the likely thing the engine is doing, but scanning was not turned off - that
+is the owner's to do (`docs/ROADMAP.md`, *Mine*, item 1) - so it is an
+inference. A file-system watcher over GUI Designer's likely folders during a
+base build saw it create only a few dozen files, in `%TEMP%`, in
+`C:\ProgramData\Extron\Temp` (`Project<guid>`, `GDFont`), in the folder the
+project is built in and in its settings folder. It writes some 0.3 to 0.5 MB a
+control (62 to 86 MB for the base, a fifth fewer from the last third of the
+second round on with no change in time), so neither bytes written nor a count
+of files measures the work.
+
+**The spread is the processor's clock.** Windows' *% Processor Performance*
+reads 383 to 396 - about 3.1 GHz - through every fast build, and 137 to 170,
+about 1.1 to 1.4 GHz, through the slow ones; the machine idles at 1.1 GHz and
+rises to 3.1 GHz under a build. In two of 53 builds it stayed down, or fell
+back, for 15 to 26 minutes, a few minutes into the build: the boardroom panel
+took 1,721 s in the first of three back-to-back builds - its clock not yet
+logged, read from its write rate - and 763 and 781 s in the others, and one
+12-page panel 928 s at a clock of 167 and 377 s at 385. Within the slow build
+the write rate fell with the clock, from 219 KB/s at 384 to 74 at 140, and the
+engine's CPU seconds a control rose with it, as the same work does on a slower
+clock. The operating system reports no throttle (thermal throttle reasons 0,
+passive limit 100%) and the power plan is Balanced at a 100% maximum, so what
+holds the clock down - heat, or a power limit in the firmware - is not visible
+from here, and none of the other processes the sampler named distinguished a
+slow build from a fast. A spread of two and a half times or more is a 3.1 GHz
+build beside a 1.1 GHz one. Any timing here is only as good as its clock:
+`New-GdlPanel.ps1`'s `LOAD` line logs it over Save and Build (`clock_pct`),
+`Sample-GdlHost.ps1`'s trace logs it every few seconds (`cpu_perf_pct`), and
+`timing_table.py` gives each build's `clock_pct` and its time at the full
+clock. The 9 minutes of the earlier sixth build is not reproduced: the fastest
+here is 12.5.
+
+**What it is not**, each tried:
+
+- *The first build after GUI Designer starts.* The open project built again in
+  the same session took 347 to 363 s (the base, four builds in two sessions)
+  against 359 and 363 s for the first build of each fresh start, and the
+  boardroom panel 751 s after 750 s.
+- *New content.* A base with every caption unique, so every control's artwork
+  a file nothing had built, took 359 and 355 s against 355 to 383 s.
+- *The donor's content*, beyond its pages and popups: the seed's other
+  resources ship whole and cost nothing a build can see, and an image the spec
+  appends costs about 2 s.
+- *The page count, or the number of border resources and text faces.*
 
 ### Automating the wizard: it works in 1.28
 
@@ -585,8 +685,8 @@ person. It still needs GUI Designer running and a desktop to draw on.
   360x260 panels; the preview's corners on a large radius are a few pixels
   tight (§5). The 1.28 Build Manager's readout of a *failed* build was not
   seen: every probe build succeeded, and a clean one shows no count (§7).
-- The resource counts are from the `_alt 2_0_0` fixture, which carries 34 border
-  resources; the two archived fixtures carry 36. Across Extron's 50 installed
+- The resource counts are from a client project, which carried 34 border
+  resources; its two archived builds carried 36. Across Extron's 50 installed
   templates the count runs **13 to 32**, so treat it as per-project and read it,
   never assume it. The low end matters: a Mach or Turbulence template offers 13
   borders, so a radius/thickness the target project has no resource for builds
@@ -744,9 +844,9 @@ the default is not inside the repo.
   seconds wrote no more than idle at a full core, then saved. So busy is a
   tenth of a core or 32 KB/s, and the wait runs on past `-TimeoutSeconds` while
   GUI Designer is busy and gives up a minute after it goes idle, saying which it
-  was. A 23-page panel built for 9 to 28 minutes, and a fixed 15-minute wait
-  reported a failure while GUI Designer was still building. The measurements,
-  on 1.28.0.7, are in `archive/job-2419a20b/wait/`.
+  was. A 23-page panel built for 9 to 28 minutes - the processor's clock, §5c -
+  and a fixed 15-minute wait reported a failure while GUI Designer was still
+  building. The measurements, on 1.28.0.7, are in `archive/job-2419a20b/wait/`.
 - **The Build Manager has no count to read.** On 1.28 a clean build's Build
   Manager is a progress bar, the phase it is in (*Building Platform ...*, a
   page's name, *Building Modal Popup Page References ...*, *Validating Popup
@@ -790,14 +890,21 @@ the default is not inside the repo.
   answering for a while - 16 s for the Mach 725 seed, 34 s for the Shockwave
   and Turbulence ones - when UI Automation finds no menu in it, so it waits for
   an answer before Save and Build, says if none came, and tries that menu up to
-  three times. A whole seed, Create to built file, takes from under two
-  minutes to over twenty - by the seeds' own creation and revision times, 85
-  to 168 s for the Afterburn 320, 525 and 725, and 560 to 1,337 s for the Mach,
-  Shockwave and Turbulence 725s. The theme is not what decides it: the
-  Afterburn 725, made again beside those three with feature-flag mode on and
-  other work on the host, took 935 s (`docs/ROADMAP.md`, *What a real-size
-  build spends its time on*). The 725 seeds' logs, the run that lost one to
-  the hung window, and that Afterburn 725 are in `archive/job-2419a20b/seeds/`.
+  three times. A whole seed, Create to built file, takes from under three
+  minutes to three-quarters of an hour: 78 seeds made one after another with
+  feature-flag mode on and nothing else running took 152 to 2,674 s, the
+  Save and Build alone 8 to 741 s. The panel's size and the theme decide it
+  together - the 320s, 525s and 535 took 152 to 511 s in every theme, the
+  720s, 725s, 835s, 1020s, 1025s, 1220s, 1225s, 1525s and 1535s 553 to
+  1,444 s in Afterburn, Mach and Shockwave and 1,160 to 2,674 s in
+  Turbulence, whose 60 MB projects spend 8 to 12 minutes in Save and Build
+  and 11 to 33 before it. The forms of one size (M, C, T) took about as long
+  as one another. A run now and then ends at exit 1 before the wizard is open, in a
+  UI Automation timeout while GUI Designer loads; the script waits through it
+  now, and a rerun makes the seed. Their Save and Build is the part that follows the processor's clock (§5c);
+  Create was not timed against it. The runs' logs and timings are in
+  `archive/job-e823df9b/seeds-2.6/`; the 725 seeds' earlier logs, and the run that lost one to the hung
+  window, are in `archive/job-2419a20b/seeds/`.
 - **A seed the wizard cannot make is turned by `New-GdlTurnedSeed.ps1`** - a
   panel turned where its theme draws no template that way up. No wizard: it
   plans `gdl.edit retarget` on the model's own seed, applies it, then opens,
@@ -808,6 +915,24 @@ the default is not inside the repo.
   `New-GdlPanel.ps1` run per panel, as a child process each so one failure
   does not end the rest, strictly one after another: each run opens GUI
   Designer, builds and closes it, so two cannot share it.
+- **GUI Designer's own snapshots are exported by `Export-GdlSnapshots.ps1`** -
+  *File > Snapshot > Take All Pages Snapshot (Individual)...*, how the render
+  baselines' ground truth was made. The File menu and its Snapshot submenu are
+  expanded, and the item invoked, through UI Automation from background jobs,
+  as Save and Build is. The item opens *Select Pages*: a tree of every page
+  and popup under a *Select All* root, ticked as it opens. While the item's
+  invoke is still blocked on that dialog, UI Automation reaches nothing in it -
+  30 s and no element, as Save As does `New-GdlSeed.ps1` - so its OK is a
+  window message (`BM_CLICK`). A progress window follows, then a message box,
+  *Snapshot completed successfully. Snapshots created in <folder>. Open
+  Folder?*, answered No (`WM_COMMAND IDNO`). The folder is
+  `<SnapshotsDirectory>\<the file's name>\Individual` - the synthetic
+  fixture's `synthetic.gdl` went to `Snapshots\synthetic\Individual` - and
+  *Overwrite Bulk Snapshot Folder* clears it first; both are File >
+  Preferences. A tree item's tick is no window to read, so the script counts
+  the PNGs against the project's pages and popups (the Offline Page is one)
+  and refuses a partial set. The synthetic fixture's 28 pages and popups and
+  its Offline Page came back as 29 PNGs, written in 8 s.
 
 ### Feature-flag mode
 

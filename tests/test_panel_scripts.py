@@ -311,5 +311,43 @@ class TestAnImageDrawsItsArt(unittest.TestCase):
         self.assertIn("'backgroundImageLayoutField' ([int]$pu.background_layout)", body)
 
 
+class TestTheSnapshotExport(unittest.TestCase):
+    """Export-GdlSnapshots.ps1 drives GUI Designer's own snapshot export, the
+    render baseline's ground truth (tests/data/synthetic/README.md)."""
+
+    def setUp(self):
+        self.script = _read('Export-GdlSnapshots.ps1')
+
+    def test_it_takes_the_menu_item_the_baselines_snapshots_were_exported_with(self):
+        self.assertIn("'Take All Pages Snapshot (Individual)'", self.script)
+        self.assertIn("Find-MenuItem $main 'Snapshot'", self.script)
+
+    def test_every_page_or_none(self):
+        """Select All is a tree item no window message reads, so what the
+        export wrote is counted against the project's pages and popups: a
+        partial export would score fewer pages and say nothing of it."""
+        self.assertIn("len(j['Pages']) + len(j['PopupPages'])", self.script)
+        self.assertIn('not taking a partial set', self.script)
+
+    def test_the_dialog_is_answered_by_window_messages(self):
+        """Opened by a UI Automation invoke still blocked on it, Select Pages
+        answered UI Automation nothing for 30 s: its OK is clicked with
+        BM_CLICK, as New-GdlSeed.ps1 answers Save As with window messages."""
+        self.assertIn("[GdlSnapWin]::Button($dlg.Handle, 'OK')", self.script)
+        self.assertIn('0x00F5', self.script)
+        self.assertNotIn('FromHandle($dlg.Handle)', self.script)
+
+    def test_open_folder_is_answered_no(self):
+        """IDNO (7): an Explorer window opened on the folder is nobody's."""
+        self.assertIn('PostMessage($done.Window.Handle, 0x0111, [IntPtr]7', self.script)
+        self.assertNotRegex(self.script, r"NameProperty, 'Yes'")
+
+    def test_a_dialog_that_waits_on_a_person_ends_the_run(self):
+        self.assertIn('Get-GdlBlocker', self.script)
+
+    def test_only_what_this_export_wrote_is_taken(self):
+        self.assertIn('LastWriteTime -ge $started', self.script)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stop Recording</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Stop Recording" kind="modal" reached-by="program" does="Asks whether to stop the recording; the program shows it when Record is pressed while recording." panels="TLP1035T TLP725T TLP525T TLP320M" theme="office">
+  <x-import component-from-global-scope="ExtronTurbulence.Panel" name="Stop Recording Card" fill="page" border="rounded" style="position: absolute; left: 240px; top: 174px; width: 800px; height: 448px"></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="Stop Recording Question" type="heading" align="center" style="position: absolute; left: 280px; top: 230px; width: 720px; height: 100px">Do you want to stop recording?</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Stop Recording Confirm" icon="square_red" does="Stops the recording and closes this question." style="position: absolute; left: 457px; top: 382px; width: 146px; height: 153px">Stop Recording</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Stop Recording Cancel" icon="cancel" does="Keeps recording and closes this question." style="position: absolute; left: 672px; top: 382px; width: 146px; height: 153px"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

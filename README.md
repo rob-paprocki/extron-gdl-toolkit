@@ -49,6 +49,7 @@ together.
 | `powershell/New-GdlSeed.ps1` | a seed for any panel and theme, made through GUI Designer's Project Create Wizard |
 | `powershell/New-GdlTurnedSeed.ps1` | a seed for a panel turned where its theme draws no template that way up: its own seed turned, built and verified |
 | `powershell/Get-GdlPlatforms.ps1` | every panel GUI Designer builds for, from its own assemblies: resolution, DPI, part number and the resolutions it runs at |
+| `powershell/Export-GdlSnapshots.ps1` | GUI Designer's own snapshot of every page and popup of a built project, exported with nobody touching it - the render baseline's ground truth |
 | `viewer/` | builds a single-file HTML browser for every page and popup |
 | `tests/score.py` | scores the render against ground truth and fails on any regression; `preview` scores a spec's preview against the panel built from it |
 | `tests/compare_snapshots.py` | the same comparison, printed per page |
@@ -66,7 +67,7 @@ together.
 | `docs/claude-design.md` | designing a panel on a Design canvas and building it from the canvas |
 | `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
 | `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
-| `fixtures/` | real `.gdl` files and 50 GUI Designer snapshot renders to test against |
+| `tests/data/synthetic/` | the synthetic fixture: a many-page project in generic words, built by the toolkit on a seed, and GUI Designer's snapshots of it - the render baseline everywhere; its README says what it holds |
 | `seeds/` | themed seed projects to author from without client material (Git LFS); its README lists them |
 | `tests/audit_corpus.py` | re-tests the repo's documented beliefs against every project it can reach |
 | `research/` | measured findings and unshipped render improvements, with their numbers and scripts |
@@ -74,6 +75,7 @@ together.
 | `archive/` | raw working state carried off an earlier build host, kept as evidence (Git LFS) |
 | `vendor/` | Extron's templates and icons, on disk but not pushed - see its README |
 | `tools/public_sync.py` | builds and checks the public copy from the private archive; `tools/hooks/pre-push` enforces it |
+| `tools/build_timing_specs.py`, `tools/Run-BuildTiming.ps1`, `tools/timing_table.py` | where Save and Build's time goes: specs that vary one count at a time, a runner that builds a queue of them with the host's counters beside each build, and the table and fit read from its logs (`docs/from-scratch.md` §5c); `tools/Sample-GdlHost.ps1` and `tools/Watch-GdlFiles.ps1` are the runner's samplers |
 | `private/` | on the owner's machine only, never tracked: GUI Designer's working files and settings, the publish denylist, and the owner's notes |
 | `docs/ROADMAP.md` | what is left, in order, and who has to do it |
 | `docs/history.md` | retired setups and corrections — why a claim changed. Not needed to use the toolkit |
@@ -95,11 +97,9 @@ Then, from the repo root:
 1. `git clone`, then `git lfs pull`. Without it `seeds/` holds LFS pointer
    files, and the seed tests skip rather than fail.
 2. `pip install -r requirements.txt pytest`
-3. Extract the fonts from every fixture — no single one embeds every face:
-   `for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done`.
-   The public copy holds the fixtures back; there, extract them from a seed,
-   which carries the same Monotype Arial:
-   `python -m gdl.fonts "seeds/Afterburn 1035.gdl" gdl/fonts/`.
+3. Extract the fonts from the synthetic fixture's build, which carries
+   Monotype Arial and Arial Black and every face the render baseline is scored
+   in: `python -m gdl.fonts tests/data/synthetic/synthetic.gdl gdl/fonts/`.
 4. With GUI Designer installed, repopulate `vendor/`; `vendor/README.md` has
    the commands. On a machine without it - a Linux box that translates and
    runs the tests while the Windows one builds - copy `vendor/` and the
@@ -138,21 +138,23 @@ Run these from the repo root. The package is not pip-installable, so
 Inspect a project:
 
 ```bash
-python -m gdl.container extract "fixtures/gdl/<file>.gdl" out/
+python -m gdl.container extract tests/data/synthetic/synthetic.gdl out/
 ```
 
 Build the HTML viewer for a set of projects:
 
 ```bash
-python -m gdl.data fixtures/gdl panel-data.json
+python -m gdl.data tests/data/synthetic panel-data.json
 python viewer/build_viewer.py viewer/template.html panel-data.json panel-atlas.html
 ```
 
 Score the compositor against ground truth (needs Pillow):
 
 ```bash
-# the snapshots belong to this fixture; the harness refuses any other (exit 2)
-python tests/compare_snapshots.py "fixtures/gdl/client-boardroom-2.0.0.gdl" fixtures/snapshots/Individual
+# the snapshots belong to this project; the harness refuses any other (exit 2)
+python tests/compare_snapshots.py tests/data/synthetic/synthetic.gdl tests/data/synthetic/snapshots/Individual
+# the same: with no project it scores the synthetic fixture
+python tests/compare_snapshots.py
 ```
 
 `tests/score.py record` and `tests/score.py diff` do the same comparison and
@@ -169,8 +171,8 @@ rescaling; and `renumber` addressable IDs. Selectors
 are ANDed and match exactly or by regex. `docs/editing.md` has the detail.
 
 ```bash
-python -m gdl.edit check examples/edits.json "fixtures/gdl/<file>.gdl"
-python -m gdl.edit plan  examples/edits.json "fixtures/gdl/<file>.gdl" out/edits-plan.json
+python -m gdl.edit check examples/edits.json tests/data/synthetic/synthetic.gdl
+python -m gdl.edit plan  examples/edits.json tests/data/synthetic/synthetic.gdl out/edits-plan.json
 ```
 
 `check` resolves every selector against the real file, so a selector that
@@ -229,7 +231,7 @@ C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -File examples\add-pag
 then repack and open in GUI Designer:
 
 ```bash
-python -m gdl.container pack "fixtures/gdl/<template>.gdl" out/new_ProjectGCP "My Project.gdl"
+python -m gdl.container pack tests/data/synthetic/synthetic.gdl out/new_ProjectGCP "My Project.gdl"
 ```
 
 A clean build is not proof the result is right, because Build silently
@@ -249,16 +251,17 @@ them wrong fails silently: the file opens, builds, and is wrong.
 Reading, rendering, editing, generating, round-tripping and building all work
 and are verified against 1.28.0.7.
 
-A retarget of the whole client project from a TLP Pro 1035T to a TLP Pro
-1535M came back 654 of 654 controls correct in the built file. A generated
+A retarget of a whole client project from a TLP Pro 1035T to a TLP Pro
+1535M came back 654 of 654 controls correct in the built file, and of the
+Afterburn 1035 seed 650 of 650. A generated
 panel went from `examples/panel.json` through the layout pass, ID allocation,
 `Apply-GdlPlan.ps1` and `gdl.container pack` into GUI Designer on the Afterburn
 1035 seed, which built it and verified clean. `docs/generated-built.png` is
 that page rendered from its own built payload rather than from a preview.
 
 The compositor is scored against GUI Designer's own snapshot exports:
-`tests/baseline.json` holds the current numbers, and `docs/render-fidelity.md`
-what the residual is. Known gaps, and everything left to do, are in
+`tests/baseline-synthetic.json` holds the current numbers on the synthetic
+fixture, and `docs/render-fidelity.md` what the residual is. Known gaps, and everything left to do, are in
 `docs/ROADMAP.md`.
 
 ## Fonts
@@ -267,10 +270,11 @@ The renderer resolves faces from `gdl/fonts/`, then a family with no file
 there from the seed that carries it, before the system font path. A face it
 cannot find in any draws in a stand-in - the host's copy, or Arial - and
 `tests/score.py record` refuses to score over one, or over a face read from a
-seed, which is another build than the fixtures embed; a face found nowhere
-raises.
+seed, which can be another build than the synthetic fixture embeds; a face
+found nowhere raises.
 `gdl/fonts/README.md` has which faces are tracked and why, how the rest are
-recovered from the fixtures, and which projects declare faces they do not embed.
+recovered from the synthetic fixture's build, and which projects declare faces
+they do not embed.
 
 ## Provenance and licensing
 
@@ -283,9 +287,7 @@ the tested boundary.
 `extron-gdl-toolkit`, is built from it by `tools/public_sync.py`, and leaves
 out:
 
-- `fixtures/` - a client's real project files and GUI Designer's snapshot
-  exports of them, the render baseline's ground truth;
-- the builds in `archive/gdlwork/` made from that project, two screenshots
+- the builds in `archive/gdlwork/` made from a client's project, two screenshots
   whose status bar shows an account, the evidence logs and builds of
   `archive/job-2419a20b/` and `archive/job-e823df9b/` (that `docs/claude-design.md`
   and `docs/ROADMAP.md` cite throughout), scratch files that name the client or
@@ -296,8 +298,9 @@ out:
 `tools/public_sync.py`'s `EXCLUDE` is the full list.
 
 A doc that names one of these means the archive's copy. A test that needs one
-skips and says which, so a clone of the public copy runs everything else; the
-render baseline is scored in the archive. `seeds/`, made from Extron's
+skips and says which, so a clone of the public copy runs everything else, the
+render baseline (the synthetic fixture, `tests/data/synthetic/`) included.
+`seeds/`, made from Extron's
 templates in GUI Designer, is published. Extron's own installer files are in
 neither repository: `vendor/README.md` repopulates them from an install.
 

@@ -41,12 +41,13 @@ Extron GUI Designer .gdl files. Repo root: ${ROOT}.
 READ-ONLY. Do not edit, create or delete any file in the repo. You MAY write throwaway
 scripts to your temp dir and run them.
 
-THE CORPUS: fixtures/gdl/*.gdl (real client projects, in the private archive only) and
-seeds/*.gdl (themed seeds, Git LFS). Enumerate it yourself, and skip what is an un-pulled
-LFS pointer:
+THE CORPUS: tests/data/synthetic/*.gdl (the synthetic fixture, everywhere) and
+seeds/*.gdl (themed seeds, Git LFS). Enumerate it yourself, and skip what is an
+un-pulled LFS pointer:
   import glob, sys; sys.path.insert(0, '.'); sys.path.insert(0, 'tests')
   from _corpus import usable
-  paths = [p for p in sorted(glob.glob('fixtures/gdl/*.gdl') + glob.glob('seeds/*.gdl')) if usable(p)]
+  paths = [p for p in sorted(glob.glob('tests/data/synthetic/*.gdl') + glob.glob('seeds/*.gdl'))
+           if usable(p)]
 Stream it - open one project, reduce it to facts, drop it - parsed projects are large.
 The translator works on Design canvases (tests/data/design-*/, tests/data/round4-*/) and
 the profiles gdl/designsys/*.json; running translate needs $GDL_DC_RUNTIME.

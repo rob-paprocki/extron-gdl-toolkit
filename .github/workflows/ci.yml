@@ -5,19 +5,16 @@ name: ci
 #   CAN  - the layout maths, ID allocation and Extron's numeric design rules.
 #          gdl/spec.py is stdlib-only at module level and tests/test_spec.py
 #          needs no Pillow, so this runs on a bare runner.
-#   CAN  - reading the authoring model out of the fixtures and the seeds
-#          (gdl/project.py, gdl/nrbf.py, gdl/container.py are all stdlib).
-#   CAN  - the render fidelity harness, where the client fixtures are - the
-#          archive; the public copy holds them back, and the steps that read
-#          them run only where they exist (if: hashFiles). gdl/fonts/ is
-#          deliberately not in git, but every face the fixtures declare comes
-#          back out of them with stdlib alone, so the runner reproduces
-#          tests/baseline.json exactly. Where they are not, the faces come out
-#          of seeds/Afterburn 1035.gdl.
-#          Recover the faces FIRST: without them face() raises where no Arial
-#          is installed, and where one is, score.py record refuses to score
-#          over the stand-in (exit 2) - docs/history.md has the wrong number
-#          it reported before it refused.
+#   CAN  - reading the authoring model out of the synthetic fixture and the
+#          seeds (gdl/project.py, gdl/nrbf.py, gdl/container.py are all stdlib).
+#   CAN  - the render fidelity harness, on the synthetic fixture
+#          (tests/data/synthetic/), against tests/baseline-synthetic.json.
+#          gdl/fonts/ is deliberately not in git, but every face the fixture's
+#          build declares comes back out of it with stdlib alone, so the runner
+#          reproduces the baseline exactly. Recover the faces FIRST: without
+#          them face() raises where no Arial is installed, and where one is,
+#          score.py record refuses to score over the stand-in (exit 2) -
+#          docs/history.md has the wrong number it reported before it refused.
 #   CAN  - the Claude Design translator's rules, run on the probe's output
 #          (tests/test_design.py), and the design systems' grammar and what the
 #          spec can build from them (tests/test_designsys.py). Both are stdlib,
@@ -139,16 +136,23 @@ jobs:
         run: python tests/test_spec.py
 
       - name: edit tests (selectors, rename, retarget, renumber, restyle)
-        # These run against the real fixture rather than a synthetic project:
-        # every bug this vocabulary has had came from the difference between
-        # what a panel file looks like in the abstract and what one contains.
+        # These run against a built project rather than hand-made pages: every
+        # bug this vocabulary has had came from the difference between what a
+        # panel file looks like in the abstract and what one contains - the
+        # synthetic fixture, and what only a hand-edited project holds laid
+        # into pages shaped as the reader reads one.
         run: python tests/test_edit.py
 
-      - name: the worked edit spec still resolves against the fixture
-        if: hashFiles('fixtures/gdl/*.gdl') != ''
+      - name: the worked edit spec still resolves against the synthetic fixture
         run: |
           python -m gdl.edit check examples/edits.json \
-            fixtures/gdl/client-boardroom-2.0.0.gdl
+            tests/data/synthetic/synthetic.gdl
+
+      - name: the synthetic fixture's spec, build and pins agree
+        # Its spec to the script that writes it, every page to its snapshot,
+        # every picture to its BINARY_OK pin; stdlib, so here. Its build's
+        # verification against its spec imports Pillow and skips here.
+        run: python tests/test_synthetic.py
 
       - name: the worked example still checks clean
         run: python -m gdl.spec check examples/panel.json
@@ -194,14 +198,13 @@ jobs:
           print(f"  {len(plan['popups'])} popup(s), all sized")
           PY
 
-      - name: every fixture and template still parses
-        if: hashFiles('fixtures/gdl/*.gdl') != ''
+      - name: the synthetic fixture still parses
         run: |
           python - <<'PY'
           import glob
           from gdl.project import Project
-          files = sorted(glob.glob('fixtures/gdl/*.gdl'))
-          assert files, 'no fixtures found'
+          files = sorted(glob.glob('tests/data/synthetic/*.gdl'))
+          assert files, 'no built project found'
           for f in files:
               p = Project.open(f)
               pages = list(p.pages())
@@ -210,32 +213,9 @@ jobs:
               print(f'  ok {len(pages):>3} pages {ctl:>5} controls  {f.split("/")[-1][:48]}')
           PY
 
-      - name: theme extraction still agrees with the published Afterburn guide
-        if: hashFiles('fixtures/gdl/*.gdl') != ''
-        run: |
-          python - <<'PY'
-          from gdl.themes import extract, AFTERBURN
-          t = extract('fixtures/gdl/client-boardroom-2.0.0.gdl')
-          observed = {k.upper() for k, _ in t['fills'] + t['strokes']}
-          doc = {v.upper() for v in AFTERBURN.values()
-                 if isinstance(v, str) and v.startswith('#')}
-          doc = {('#FF' + c[1:]) if len(c) == 7 else c for c in doc}
-          # The client's own two, stored by .NET name and drawn so in GUI
-          # Designer's snapshots: Gainsboro behind the keyboard popups' entry
-          # field (6500/6600, 220,220,220) and DarkGray round the wireless-mic
-          # page's outlines (3520, 169,169,169). They read as none until named
-          # colors were read, which is all that kept this check passing.
-          client = {'#FFDCDCDC', '#FFA9A9A9'}
-          assert client <= observed, f'named colors read as none again: {sorted(client - observed)}'
-          extra = observed - doc - client
-          assert not extra, f'colors not in the Afterburn guide: {sorted(extra)}'
-          print(f"  {len(observed)} colors observed, all in the guide or the client's own two")
-          PY
-
       - name: the clean-room example checks on a canvas that is not 1280x800
         # TLP1020T, 1024x600 at 118 DPI. No donor: it needs a seed project a
-        # human makes once, and the fixtures are client material. check and
-        # render need neither.
+        # human makes once. check and render need none.
         run: python -m gdl.spec check examples/clean-room.json
 
       - name: donor fitness gates (types, names, borders, fonts, canvas)
@@ -245,7 +225,7 @@ jobs:
 
       - name: more than one page per spec
         # Every example and test used exactly one page until 2026-09-08, while
-        # the client fixture has 27 - so cross-page id allocation was untested.
+        # a real panel has dozens - so cross-page id allocation was untested.
         run: python tests/test_multipage.py
 
       - name: containers with no built payload round-trip
@@ -270,7 +250,7 @@ jobs:
         # popups - the only pages where a canvas may differ from the screen.
         run: python tests/test_retarget_canvas.py
 
-      - name: every declared face comes back out of every fixture
+      - name: every declared face comes back out of the synthetic fixture's build
         # The gate that was missing. Arial and Arial Black were declared,
         # embedded, and silently dropped by an over-strict size match for as
         # long as the extractor existed, and the inference drawn from that -
@@ -356,7 +336,7 @@ jobs:
         # minutes, so its checks are pinned on the facts it keeps per project.
         run: python tests/test_audit_corpus.py
 
-      - name: a test that needs the client files skips and says so
+      - name: a test that needs a file the checkout lacks skips and says so
         run: python tests/test_corpus.py
 
       - name: the public copy's builder and its pre-push hook
@@ -371,6 +351,8 @@ jobs:
         # Designer. What needs the seeds, pwsh or Chrome skips.
         run: python tests/test_probes_128.py
 
+      - name: the build-timing specs, table and log parser
+        run: python tests/test_build_timing.py
       - name: every Python file parses as the Windows host's 3.11 does
         # This job runs 3.12, which accepts f-strings 3.11 refuses (PEP 701);
         # one stopped the probe reader on the host.
@@ -431,8 +413,9 @@ jobs:
     needs: lfs
     timeout-minutes: 30
     # The render harness, against GUI Designer's own snapshot exports. Runs here
-    # only because every face is recoverable from the tracked fixtures; see the
-    # note at the top of this file before assuming it can be simplified.
+    # only because every face is recoverable from the synthetic fixture's
+    # tracked build; see the note at the top of this file before assuming it
+    # can be simplified.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -461,21 +444,17 @@ jobs:
         run: python tests/test_type_probe.py
 
       - name: recover the embedded faces
-        # All six fixtures where they are - no single one embeds every face, and
-        # the baseline was scored on theirs - and the seed, which carries the same
-        # Monotype Arial, only where they are not.
+        # Out of the synthetic fixture's build: Monotype Arial and Arial Black,
+        # Extron-Afterburn and both Open Sans files - every face its baseline is
+        # scored in.
         run: |
-          if ls fixtures/gdl/*.gdl >/dev/null 2>&1; then
-            for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
-          else
-            python -m gdl.fonts "seeds/Afterburn 1035.gdl" gdl/fonts/
-          fi
+          python -m gdl.fonts tests/data/synthetic/synthetic.gdl gdl/fonts/
           ls -1 gdl/fonts/
 
       - name: the layout verifier checks start page, modal popups and IDs
         # Here rather than in `test`: verify_built imports the compositor, so
-        # these skip without Pillow. After the recovery: a formatted caption is
-        # looked for in its art drawn in the fixture's own face.
+        # these skip without Pillow. After the recovery: a flattened caption is
+        # looked for in its art drawn in the synthetic fixture's own faces.
         run: python tests/test_verify_built.py
 
       - name: a face drawn in a stand-in is said aloud
@@ -505,16 +484,19 @@ jobs:
         # build is archived in Git LFS, and skipped where it is a pointer.
         run: python tests/test_score.py
 
-      - name: score the render against ground truth
-        if: hashFiles('fixtures/gdl/*.gdl') != ''
+      - name: the synthetic fixture verifies against its spec
+        # After the recovery, with Pillow and the Afterburn seed it was built on.
+        run: python tests/test_synthetic.py
+
+      - name: score the render against the synthetic fixture's snapshots
+        # Everywhere: the project and GUI Designer's snapshots of it are tracked.
         run: |
           python tests/score.py record \
-            fixtures/gdl/client-boardroom-2.0.0.gdl \
-            fixtures/snapshots/Individual -o /tmp/after.json
+            tests/data/synthetic/synthetic.gdl \
+            tests/data/synthetic/snapshots/Individual -o /tmp/after-synthetic.json
 
-      - name: no page may regress against the shipped baseline
-        if: hashFiles('fixtures/gdl/*.gdl') != ''
-        run: python tests/score.py diff tests/baseline.json /tmp/after.json
+      - name: no page may regress against the synthetic baseline
+        run: python tests/score.py diff tests/baseline-synthetic.json /tmp/after-synthetic.json
 
   chrome:
     # The Claude Design translator's Chrome tests, in a job of their own so a slow

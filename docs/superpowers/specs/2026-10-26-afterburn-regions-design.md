@@ -389,8 +389,9 @@ template places the rail's parts as follows:
 - **The later Sections' launchers and the mode launcher** become the Settings
   column: `list` buttons at the template's places (52,83, pitch 58, the 525's
   66 px cells at its 8 px seam). Five rows fit at 66 px, from 83 to 445. A
-  later Section's heading has no place in Settings: it is named and listed in
-  the page's `left`, as on the bar themes' hubs. The bar hubs' options are
+  later Section's heading's words are Settings' title (backlog plan 1.3),
+  which keeps its name, `Settings Title`, so its ID; the heading is named and
+  listed in the page's `left`, as it was before. The bar hubs' options are
   tiles in a centred row with captions under them. Afterburn's are its own
   list buttons, captioned inside, in a column.
 - **The sources** become the Select Source tiles at the template's places,

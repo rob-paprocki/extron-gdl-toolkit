@@ -38,9 +38,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File examples\probes-128\Run-Prob
   `python examples/probes-128/read_probes.py out/probes-128` first and send
   that beside it. The runner ends by running it into `summary.txt`.
 
-Needs the client fixture `fixtures/gdl/client-boardroom-2.0.0.gdl` for
-`format-probes` (the archive only; a seed stands in, and `fixture.txt` and the
-summary say so - the 34-against-35 figure is the fixture's).
+`format-probes` authors its tests on `seeds/Afterburn 1035.gdl`, or on the
+project `-FormatProject` names; `fixture.txt` and the summary say which. Its
+1.27 and 1.28 runs used a client project no longer in the repo, and the
+34-against-35 figure below is that project's.
 
 ## What is here
 
@@ -60,8 +61,8 @@ whole record, and `buildmgr-*` the Build Manager's.
 
 ### `format-probes` - the probes' counts on 1.28, and test 3
 
-- **Input:** `powershell/New-FormatProbes.ps1` on `fixtures/gdl/client-boardroom-2.0.0.gdl`
-  (what its 1.27 and 1.28 runs used): tests A (a border resource never
+- **Input:** `powershell/New-FormatProbes.ps1` on `seeds/Afterburn 1035.gdl`
+  (its 1.27 and 1.28 runs used a client project): tests A (a border resource never
   referenced), B (an appended `Claude - 20 Radius 1 Thick`) and C (a control
   cloned across two graphs). The script only authors them; the runner packs each,
   opens it, Save and Builds it, and watches the Build Manager.
@@ -69,8 +70,9 @@ whole record, and `buildmgr-*` the Build Manager's.
   1.27 numbers came from - and, by `buildmgr-test*`, whether a script can read
   that readout at all.
 - **Read:** `read_probes.py`: per test, whether the built file has a payload;
-  A's control still on `3D Capsule`; B's 35 resources against 34 and the new one
-  defined, bound and with its geometry; C's page gaining a control. The Build
+  A's control still on `3D Capsule`; B's resources one more than before (the
+  client project's 35 against 34) and the new one defined, bound and with its
+  geometry; C's page gaining a control. The Build
   Manager's counts: the figures in the last `dump-*.txt` of each window, grepped
   for *error* and *warning*; `windows.log` lists the windows; `screen-*.png` is
   the screen every six seconds - read those if the dumps hold no count. On 1.28

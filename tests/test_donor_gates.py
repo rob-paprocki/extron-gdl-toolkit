@@ -13,11 +13,11 @@ Each gate here exists because it actually cost something:
   * border resources - a plan may only name borders the donor defines, so a
     spec's others are built as the donor's nearest shape and refused where it
     has none near enough; the spread is wide (a fresh themed project defines
-    13 to 31, the client fixture 34, and they are not the same ones).
+    13 to 31, a client's hand-made project 34, and they are not the same ones).
   * font families - the softest and worst. A family with no PBFontResource does
     not fail the build; the applier leaves the donor's face and the panel ships
     in the wrong typeface. A three-page panel built cleanly in Open Sans while
-    its spec asked for Forma DJR Display, and only the built-file verifier
+    its spec asked for a client's retail face, and only the built-file verifier
     noticed. So a face a seed carries is appended, and one none carries is
     refused.
   * canvas - the built panel is the DONOR's model. A 1024x600 spec applied to a
@@ -31,19 +31,13 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _corpus import MAIN_CLIENT, needs_client  # noqa: E402
+from _corpus import SYNTHETIC, needs_synthetic  # noqa: E402
 
 from gdl.project import Project  # noqa: E402
 from gdl.spec import Panel  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-FIXTURE = os.path.join(ROOT, 'fixtures', 'gdl',
-                       'client-boardroom-2.0.0.gdl')
-# Defines Open Sans Light, which the _alt fixture does not. Plain git, so the
-# tests that use it need no LFS pull.
-LIGHT_FIXTURE = os.path.join(ROOT, 'fixtures', 'gdl',
-                             'client-boardroom-1.1.0.gdl')
 PANEL = os.path.join(ROOT, 'examples', 'panel.json')
 
 
@@ -56,7 +50,7 @@ def spec(path=PANEL, **over):
 
 class TestAPopupGroupNeedsOneToClone(unittest.TestCase):
     """Register-GdlPopupGroup makes a group by cloning one of the registry's,
-    and the 320 and 300M seeds and one client fixture have none: a grouped
+    and the 320 and 300M seeds have none, as one client project had: a grouped
     standard popup on them stopped at the apply step."""
 
     def _spec(self, group):
@@ -99,7 +93,7 @@ class TestAPopupGroupNeedsOneToClone(unittest.TestCase):
 
 class TestTheWorkedExampleStillFits(unittest.TestCase):
     """The regression guard. Every gate below must leave this clean. Its donor is a
-    seed: the client's project, which it used to be, is not in the public copy."""
+    seed, which every checkout that pulls Git LFS has."""
 
     def test_no_problems_against_its_own_donor(self):
         donor = seed('Afterburn 1035.gdl')
@@ -109,23 +103,24 @@ class TestTheWorkedExampleStillFits(unittest.TestCase):
 
 
 class TestBorderResources(unittest.TestCase):
-    @needs_client(MAIN_CLIENT)
-    def test_defined_is_not_the_same_as_referenced(self):
-        """The distinction the first version of this gate got wrong."""
-        p = Project.open(FIXTURE)
+    @needs_synthetic()
+    def test_defined_is_not_the_same_as_referenced_on_the_synthetic_fixture(self):
+        """The distinction the first version of this gate got wrong: checking
+        the referenced set rejected a spec that had already built, with a
+        border its donor defined and never drew with. The synthetic fixture's
+        seed defines the Afterburn kit's borders, and it draws with few."""
+        p = Project.open(SYNTHETIC)
         referenced = set(p.border_resources())
         defined = p.border_resource_names()
         self.assertLess(len(referenced), len(defined))
-        # '2D Capsule' is defined and never drawn with - checking the referenced
-        # set rejected a spec that had already built.
-        self.assertIn('2D Capsule', defined)
-        self.assertNotIn('2D Capsule', referenced)
+        self.assertTrue(defined - referenced)
+        self.assertIn('2D Capsule', referenced)
 
-    @needs_client(MAIN_CLIENT)
-    def test_an_undefined_border_is_reported(self):
+    @needs_synthetic()
+    def test_an_undefined_border_is_reported_on_the_synthetic_fixture(self):
         d = spec()
         d['pages'][0]['controls'][0]['border'] = 'No Such Border'
-        msgs = Panel(d).check_donor(FIXTURE)
+        msgs = Panel(d).check_donor(SYNTHETIC)
         self.assertTrue(any('No Such Border' in m and 'border resource' in m
                             for m in msgs), msgs)
 
@@ -493,20 +488,33 @@ class TestAFaceTheDonorLacks(unittest.TestCase):
 
 
 class TestFontResources(unittest.TestCase):
-    @needs_client(MAIN_CLIENT, 'client-boardroom-1.1.0.gdl')
-    def test_families_are_read_without_their_style_suffix(self):
-        names = Project.open(FIXTURE).font_resource_names()
-        self.assertIn('Forma DJR Display', names)
-        self.assertNotIn('Forma DJR Display Regular Bold Italic', names)
-
-    @needs_client(MAIN_CLIENT, 'client-boardroom-1.1.0.gdl')
-    def test_a_weight_named_in_the_family_is_not_a_style(self):
-        """Arial Black and Open Sans Light are families of their own, not Arial
-        and Open Sans in another weight: a control names them in PBFont.nameField,
-        and the resource is `<family> Regular Bold Italic`."""
-        names = Project.open(LIGHT_FIXTURE).font_resource_names()
+    @needs_synthetic()
+    def test_the_synthetic_fixtures_families_are_its_five_faces(self):
+        """Read without their style suffix - a resource is `<family> Regular
+        Bold Italic` - and Arial Black and Open Sans Light as families of their
+        own, not Arial and Open Sans in another weight: a control names them in
+        PBFont.nameField. Appended to its seed from the seeds that carry them."""
+        names = Project.open(SYNTHETIC).font_resource_names()
         self.assertEqual(names, {'Arial', 'Arial Black', 'Extron-Afterburn',
                                  'Open Sans', 'Open Sans Light'})
+
+    @needs_synthetic()
+    def test_a_face_the_synthetic_donor_defines_is_not_reported_missing(self):
+        """The symptom: `donors` said a project that defines Arial Black and Open
+        Sans Light lacked both, and New-GdlPanel.ps1 stops on its exit code."""
+        d = spec()
+        d['theme']['font'] = 'Open Sans Light'
+        d['pages'][0]['controls'][0]['font'] = 'Arial Black'
+        msgs = Panel(d).check_donor(SYNTHETIC)
+        self.assertEqual([m for m in msgs if 'font family' in m], [], msgs)
+
+    @needs_synthetic()
+    def test_a_family_the_synthetic_donor_lacks_is_reported(self):
+        d = spec()
+        d['theme']['font'] = 'Comic Sans MS'
+        msgs = Panel(d).check_donor(SYNTHETIC)
+        self.assertTrue(any('Comic Sans MS' in m and 'font family' in m
+                            for m in msgs), msgs)
 
     def test_only_regular_bold_and_italic_are_style_words(self):
         """Light, Black, Semibold and the other weights Windows puts in a family
@@ -548,24 +556,6 @@ class TestFontResources(unittest.TestCase):
                      ('Calibri regular bold italic', None)]).font_resource_names()
         self.assertEqual(got, {'Arial Rounded MT Bold', 'Arial', 'Georgia Italic', 'Calibri'})
 
-    @needs_client(MAIN_CLIENT, 'client-boardroom-1.1.0.gdl')
-    def test_a_face_the_donor_defines_is_not_reported_missing(self):
-        """The symptom: `donors` said a project that defines Arial Black and Open
-        Sans Light lacked both, and New-GdlPanel.ps1 stops on its exit code."""
-        d = spec()
-        d['theme']['font'] = 'Open Sans Light'
-        d['pages'][0]['controls'][0]['font'] = 'Arial Black'
-        msgs = Panel(d).check_donor(LIGHT_FIXTURE)
-        self.assertEqual([m for m in msgs if 'font family' in m], [], msgs)
-
-    @needs_client(MAIN_CLIENT, 'client-boardroom-1.1.0.gdl')
-    def test_a_family_the_donor_lacks_is_reported(self):
-        d = spec()
-        d['theme']['font'] = 'Comic Sans MS'
-        msgs = Panel(d).check_donor(FIXTURE)
-        self.assertTrue(any('Comic Sans MS' in m and 'font family' in m
-                            for m in msgs), msgs)
-
     def test_the_theme_default_counts_not_just_per_control_fonts(self):
         """Most controls name no font, so the theme default is what ships."""
         d = spec()
@@ -573,16 +563,20 @@ class TestFontResources(unittest.TestCase):
         self.assertIn('Nonexistent Face', Panel(d).needs_fonts())
 
 
-@needs_client(MAIN_CLIENT)
-class TestCanvas(unittest.TestCase):
+class _Canvas:
     def test_a_mismatched_canvas_is_reported(self):
         d = spec(size=[1024, 600])
-        msgs = Panel(d).check_donor(FIXTURE)
+        msgs = Panel(d).check_donor(self.PATH)
         self.assertTrue(any('canvas' in m for m in msgs), msgs)
 
     def test_a_matching_canvas_is_not(self):
-        msgs = Panel(spec(size=[1280, 800])).check_donor(FIXTURE)
+        msgs = Panel(spec(size=[1280, 800])).check_donor(self.PATH)
         self.assertFalse([m for m in msgs if 'canvas' in m], msgs)
+
+
+@needs_synthetic()
+class TestCanvas(_Canvas, unittest.TestCase):
+    PATH = SYNTHETIC
 
 
 sys.path.insert(0, HERE)

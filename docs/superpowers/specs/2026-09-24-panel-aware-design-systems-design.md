@@ -223,8 +223,9 @@ canvas built and verified on the 1035, 725, 525 and 320. **Landed** (`docs/super
 its rulings in the plan): the homes are `docs/claude-design.md` §2-4 and §6,
 `docs/design-rules.md` §1-2 and `docs/idmap.md` §7. Two rulings changed this
 design: derived navigation has an ID and is in the map, since a `.gdl` carries no
-behaviour; and a tier B page pages each Group in its own box - the shared hub is
-`docs/ROADMAP.md` backlog.
+behaviour; and a tier B page pages each Group in its own box - the shared hub
+followed in backlog plan 1.3, for the Groups of a page's `MainArea`
+(`docs/claude-design.md` §4).
 
 Mach, Shockwave and Turbulence are already design systems at 1280×800, each
 built and verified on its 1035 seed (`docs/claude-design.md` §6). What their

@@ -6,11 +6,12 @@ Those are ground truth: whatever the application draws is by definition right.
 This harness composites the same pages from the .gdl and reports how far off we
 are, so a change to the render rules can be judged by a number instead of by eye.
 
-    python tests/compare_snapshots.py <project.gdl> <snapshot_dir> [--save out/]
+    python tests/compare_snapshots.py [<project.gdl> <snapshot_dir>] [--save out/]
 
-Needs Pillow. Font rendering also wants the faces the project uses; run
-`python -m gdl.fonts <project.gdl> gdl/fonts/` first to pull them out of the
-file itself.
+With no project it scores the synthetic fixture (tests/data/synthetic/), the
+render baseline, against its own snapshots. Needs Pillow. Font rendering also
+wants the faces the project uses; run `python -m gdl.fonts <project.gdl>
+gdl/fonts/` first to pull them out of the file itself.
 """
 import argparse
 import os
@@ -18,8 +19,11 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PIL import Image  # noqa: E402
+
+from _corpus import SYNTHETIC, SYNTHETIC_SNAPSHOTS  # noqa: E402
 
 from gdl.compose import (diff_stats, fill_index, group_members, load,  # noqa: E402
                          render_page)
@@ -29,10 +33,16 @@ ID_RE = re.compile(r'_Id(\d+)\.png$')
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('gdl')
-    ap.add_argument('snapshots', help='the Individual/ directory of a snapshot export')
+    ap.add_argument('gdl', nargs='?', help='the built project (default: the synthetic fixture)')
+    ap.add_argument('snapshots', nargs='?',
+                    help="the Individual/ directory of its snapshot export (default: the synthetic "
+                         "fixture's)")
     ap.add_argument('--save', help='write our render of each page here')
     args = ap.parse_args()
+    if args.gdl is None:
+        args.gdl, args.snapshots = SYNTHETIC, SYNTHETIC_SNAPSHOTS
+    elif args.snapshots is None:
+        ap.error('give a project and its own snapshots, or neither for the synthetic fixture')
 
     layout, assets = load(args.gdl)
     groups = group_members(layout)
@@ -61,7 +71,7 @@ def main():
         rows.append((diff_stats(mine, ref)['pct_bad'], fn))
 
     # Snapshots are matched to pages by numeric id only, so pointing this at a
-    # fixture the snapshots do not belong to yields a confident, meaningless
+    # project the snapshots do not belong to yields a confident, meaningless
     # score. Refuse rather than mislead.
     # A renamed snapshot found its page by number, so it counts as matched here,
     # as in score.py, and the names say the rest below.
@@ -70,8 +80,9 @@ def main():
               f'matching page - these snapshots are probably not from this .gdl')
         return 2
     # And a snapshot is named for its page: another version of the project
-    # matches more than half by number - the TLP1035-1.1.0 fixture matched 14 of
-    # the 27 and scored a 5.86% "residual" that was another project's pages.
+    # matches more than half by number - a client project's earlier release
+    # matched 14 of its later one's 27 and scored a 5.86% "residual" that was
+    # another project's pages.
     if renamed:
         print('snapshots of pages by another name - these snapshots are not from this .gdl:')
         for r in renamed:

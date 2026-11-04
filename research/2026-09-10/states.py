@@ -26,8 +26,10 @@ total = 0
 examples = []
 per_file = {}
 
+# The figures in research/2026-09-10/README.md were taken over the seeds and a
+# client project, since deleted from the repo (docs/history.md); a rerun counts
+# the seeds alone.
 files = sorted(glob.glob('seeds/*.gdl'))
-files.append('fixtures/gdl/client-boardroom-2.0.0.gdl')
 for f in files:
     p = Project.open(f)
     n2 = 0

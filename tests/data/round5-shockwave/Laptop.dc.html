@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Laptop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Laptop" kind="popup" group="Sources" role="source" panels="TLP1035T TLP725T TLP525T TLP320M" theme="saturn">
+  <x-import component-from-global-scope="ExtronShockwave.Group" title="Display" cell="160x120" gap="20" cap="2" style="position: absolute; left: 290px; top: 240px; width: 340px; height: 140px">
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Laptop To Projector" states="Off, On" does="Sends the lectern laptop to the projector. On while it is the projector's source.">Projector</x-import>
+    <x-import component-from-global-scope="ExtronShockwave.Button" name="Laptop To Monitor" states="Off, On" does="Sends the lectern laptop to the confidence monitor. On while it is the monitor's source.">Monitor</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":921,"height":574}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

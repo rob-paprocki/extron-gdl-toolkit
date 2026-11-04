@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Camera</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Camera" kind="popup" group="Sources" role="source" title="Camera" panels="TLP1035T TLP725T TLP525T TLP320M" theme="office">
+  <x-import component-from-global-scope="ExtronTurbulence.Group" title="Presets" cell="383x100" gap="20" cap="1" style="position: absolute; left: 300px; top: 150px; width: 400px; height: 380px">
+    <x-import component-from-global-scope="ExtronTurbulence.Button" variant="wide" name="Camera Front" states="Off, On" does="Recalls the Front camera preset; On while it is recalled.">Front</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" variant="wide" name="Camera Audience" states="Off, On" does="Recalls the Audience camera preset; On while it is recalled.">Audience</x-import>
+    <x-import component-from-global-scope="ExtronTurbulence.Button" variant="wide" name="Camera Whiteboard" states="Off, On" does="Recalls the Whiteboard camera preset; On while it is recalled.">Whiteboard</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -23,13 +23,11 @@ import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _corpus import MAIN_CLIENT, needs_client  # noqa: E402
+from _corpus import SYNTHETIC, needs_synthetic  # noqa: E402
 
 from gdl.container import open_gdl, pack, payload_name  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FIXTURE = os.path.join(HERE, '..', 'fixtures', 'gdl',
-                       'client-boardroom-2.0.0.gdl')
 sys.path.insert(0, HERE)
 from _corpus import TEMPLATES_DIR as TEMPLATES  # noqa: E402
 
@@ -50,9 +48,9 @@ class TestPayloadName(unittest.TestCase):
         import tempfile
         self.d = tempfile.mkdtemp()
 
-    @needs_client(MAIN_CLIENT)
+    @needs_synthetic()
     def test_a_built_gdl_reports_its_payload(self):
-        self.assertTrue(payload_name(open_gdl(FIXTURE)).endswith('.tgz4'))
+        self.assertTrue(payload_name(open_gdl(SYNTHETIC)).endswith('.tgz4'))
 
     def test_a_payloadless_container_returns_none_when_optional(self):
         bare = write_bare(os.path.join(self.d, 'bare.gdl'))
@@ -79,15 +77,18 @@ class TestPackWithoutAPayload(unittest.TestCase):
         self.assertEqual(z.namelist(), ['ProjectGCP'])
         self.assertEqual(z.read('ProjectGCP'), b'a new graph')
 
-    @needs_client(MAIN_CLIENT)
-    def test_packing_from_a_built_donor_still_carries_the_payload(self):
-        out = pack(FIXTURE, b'a new graph', os.path.join(self.d, 'out.gdl'))
+    def _carries_the_payload(self, donor):
+        out = pack(donor, b'a new graph', os.path.join(self.d, 'out.gdl'))
         z = open_gdl(out)
         self.assertEqual(len(z.namelist()), 2)
         self.assertEqual(z.read('ProjectGCP'), b'a new graph')
         # the donor's built payload, carried across unchanged
         self.assertEqual(z.read(payload_name(z)),
-                         open_gdl(FIXTURE).read(payload_name(open_gdl(FIXTURE))))
+                         open_gdl(donor).read(payload_name(open_gdl(donor))))
+
+    @needs_synthetic()
+    def test_packing_from_a_built_donor_still_carries_the_payload(self):
+        self._carries_the_payload(SYNTHETIC)
 
 
 @unittest.skipUnless(os.path.isdir(TEMPLATES), 'GUI Designer templates not installed')

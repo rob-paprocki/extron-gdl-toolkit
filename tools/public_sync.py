@@ -64,7 +64,9 @@ from gdl.container import open_gdl_bytes  # noqa: E402
 # Repo-relative paths, fnmatch-style, matched in any case: on Windows a folder takes whatever
 # case created it. A pattern ending in "/" means everything under that folder.
 EXCLUDE = [
-    "fixtures/",                       # the client's project files and GUI Designer's renders of them
+    "fixtures/",                       # the client's project files and their renders: deleted
+                                       # from the archive, kept here so a copy restored from its
+                                       # history never publishes
     "private/",                        # settings file, temp fonts, denylist (also git-ignored)
     "archive/claude/sessions/",        # whole working conversations
     "archive/gui-designer/",           # where the settings file was once tracked
@@ -125,6 +127,47 @@ BINARY_OK = {
     "gdl/fonts/opensans-regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
     # the format probes' horizontal slider rails and thumb, cropped from its build (2.1)
     "tests/data/probe-hslider-128/crops.png": "cbefd4ed48c1b7294497afa6568b327a839fdda867834d71e2443b7eb9ff2620",
+    # the synthetic fixture's own art, drawn by its make_synthetic.py: shapes and bars, no words (2.5)
+    # Google Fonts' own Latin subset of Open Sans 3.003, SIL OFL 1.1 (gdl/fonts/README.md):
+    # a valid WOFF2 of 23 TrueType tables, its licence beside it.
+    "gdl/fonts/opensans-latin.woff2": "d8e4fe0452aa2076429a9bb5d8757d00a994dd95986cf950e9a1a371b9a072a0",
+    "tests/data/synthetic/art/backdrop.png": "38aac86b194b6ac2b3e23ce28516f6fe38ef9afa4da6d9f8b7d73e09e32be915",
+    "tests/data/synthetic/art/glyph-on.png": "26a6f6280cf640162f8ba60e00ea83600ce7035e89d548c5055530343d0080b6",
+    "tests/data/synthetic/art/glyph.png": "ebf04eb898fb48d0deb9ed2a2912c024e220739c687e7738b32717e9a6cd6780",
+    "tests/data/synthetic/art/pattern.png": "c50897021c7ce106029082553f2710e2dbb747e3b88918e84bcda04c86ac2df9",
+    "tests/data/synthetic/art/stripes.png": "504355845932de294980165c08048750b91f7dad7fefeca864e203ccd4641819",
+    "tests/data/synthetic/art/thumb.png": "ebbe209d899efb84d5e1188a5a1a8780fde2507649871d655a82cec0e7e8a0c9",
+    # GUI Designer's snapshots of the synthetic fixture, Export-GdlSnapshots.ps1 (2.5):
+    # its generic words, its own art, the seed's Offline Page with 555.010.4567
+    "tests/data/synthetic/snapshots/Individual/Alignment_Id9207.png": "f47f18f5179ac366c1c80db398b4e88ac4f27d80ea55f381193c5692956eac53",
+    "tests/data/synthetic/snapshots/Individual/Busy_Id9229.png": "05806446fc01be861afba8f1cb7ed3c7a6cafd02e7aa864cf57840e838e606e1",
+    "tests/data/synthetic/snapshots/Individual/Buttons_Id9209.png": "ac05543f5194d6e91a2b9d1e329c03ab3123e4ec9ab1fe42baebc61ff076d371",
+    "tests/data/synthetic/snapshots/Individual/Confirm_Id9227.png": "1ffc7f9685c32ef06ce477dfff172a4a1e01b8ad46984602f570664501917176",
+    "tests/data/synthetic/snapshots/Individual/Content Alpha_Id9212.png": "723dbac3b0573ac0403734af00c3e6a7a788045d5ade65098ccec58584798455",
+    "tests/data/synthetic/snapshots/Individual/Content Beta_Id9213.png": "546f682bf56133a498606182c9386226a8eb3cede6c847a9aabcb01620289085",
+    "tests/data/synthetic/snapshots/Individual/Content Delta_Id9215.png": "41f87644693a2b88455b1c1e04d230b9cc179314b24d9deebbb9a063c378b82c",
+    "tests/data/synthetic/snapshots/Individual/Content Epsilon_Id9216.png": "4223c3268dce8ceb49f45dde4d36c93069939771dc6f482f4b53908f5d6978da",
+    "tests/data/synthetic/snapshots/Individual/Content Eta_Id9218.png": "9b8c0b8ae946b69875b017c759c89352d9b3fc6da89c78082f783d510006ef6d",
+    "tests/data/synthetic/snapshots/Individual/Content Gamma_Id9214.png": "bc21fb9988afbadbc93450a10d019c3f58122b60fcc349a38908fd95a983eb47",
+    "tests/data/synthetic/snapshots/Individual/Content Theta_Id9219.png": "9f30b43117a6e8a63bf3a84a7182ee3487a239d28628ee8a50966426781a7df0",
+    "tests/data/synthetic/snapshots/Individual/Content Zeta_Id9217.png": "f4f90b4b1d6152658b318d022820f38df0d57f83fb44217f07f7b21d20ff0454",
+    "tests/data/synthetic/snapshots/Individual/Controls_Id9210.png": "2074c00ce4b37f2c409dffb7df1160d84bab48e49a5aa9b3c478a6d515932dec",
+    "tests/data/synthetic/snapshots/Individual/Keys Lower_Id9224.png": "d99555be8a4e01f808580cf483392e891e02a5a562b01dc43163bf4fd4e1552e",
+    "tests/data/synthetic/snapshots/Individual/Keys Upper_Id9223.png": "36623dbdf70b86f26947940fb29e2ea08bfc7a64e2d17ed03cffdd6cfe469ff5",
+    "tests/data/synthetic/snapshots/Individual/Keys_Id9211.png": "42795165cba2548c4d77a3488ff86708ae768a59224293071e16f092dc6e3dae",
+    "tests/data/synthetic/snapshots/Individual/Level One_Id9220.png": "a5727067cbb295ef9210a5213bf5b409b445b7fb96162aec2a61b84326e128e8",
+    "tests/data/synthetic/snapshots/Individual/Level Two_Id9221.png": "03e31514b6329b36683c5426cd939badd029cd625fe1179cd544b0e2dd0e193c",
+    "tests/data/synthetic/snapshots/Individual/Main_Id9203.png": "c460e26472eaf0f8d7865f5a5a3a7730841a289756575534a828a1e626890b7f",
+    "tests/data/synthetic/snapshots/Individual/Matrix_Id9204.png": "1fdf08bce6af7960d2ed7a0a05293dc72462bbe7b73b110d6df55c4951902265",
+    "tests/data/synthetic/snapshots/Individual/Note Clear_Id9225.png": "032fda1c35baf89384938da21bbb58d8673678df2df36a643cd90310e8e367d1",
+    "tests/data/synthetic/snapshots/Individual/Notice_Id9228.png": "65b96db6ea10ce690605cb0d32db46a1e177707da3e257db3d147164cdc6b0fd",
+    "tests/data/synthetic/snapshots/Individual/Offline Page_Id65535.png": "f6f156edb5fd0f75dcae0574f784197c02095da79c888a14889114bb85d0f458",
+    "tests/data/synthetic/snapshots/Individual/Single_Id9226.png": "59a0d7431e6a68da91d3d4d52b8c13db26c023edbd9fe97959618961ec38656d",
+    "tests/data/synthetic/snapshots/Individual/Start_Id9202.png": "feaba1d6a331644b77c559c4ae8b51e1636d706d0344f16dba182bd2af0e592e",
+    "tests/data/synthetic/snapshots/Individual/Type Faces_Id9206.png": "0157ccffa7f3c7f73e60abcb2a684f571d0feb477f011036167713b18d7bd99b",
+    "tests/data/synthetic/snapshots/Individual/Type Sizes_Id9205.png": "6a148828917ef6f143b9223fe1c1f71717fec86a7b0e765cd8daa66ee65999b7",
+    "tests/data/synthetic/snapshots/Individual/Wide Grid_Id9222.png": "81a61d42ac9bd42f3e71576f8a29a9fbbf55aefc63fab9d344055f7cefb6f77d",
+    "tests/data/synthetic/snapshots/Individual/Wrapping_Id9208.png": "db66d6be3d6925519d141e4153d85edbb9eb5b424c47621673736c29cb1a746b",
     # panels rendered from seeds
     "archive/gdlwork/CleanRoom/room.png": "11a3598393d1b6394dffc25d08afac96c51b254cf8fbc38e04e38426a4f05f85",
     "archive/gdlwork/clean/preview.png": "c9235802522b3898b6b0b6a89eab4a141eafa3ca0503365423e6dd6f5bd90eeb",

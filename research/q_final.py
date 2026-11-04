@@ -8,7 +8,10 @@ import compose2
 from compose import load, rgba, face, metrics
 from gdl_data import popup_ref
 
-REF = r'fixtures/snapshots/Individual'
+# Historical: written against a client project and GUI Designer's snapshots of
+# it, both deleted from the repo (docs/history.md); its page table names that
+# project's pages. Kept as the record of its result (research/README.md).
+REF = r"<the client project's snapshots>/Individual"
 BEFORE = dict(aa='L')
 AFTER = dict(aa='autofill', aagamma=0.7, dx=-0.5, wrapk=1 / 3,
              bold='smear', boldpx=1, bold_dpx=0.75, lhk=1.19, ak=0.825)

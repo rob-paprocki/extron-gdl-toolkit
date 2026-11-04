@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blu-ray</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Blu-ray" kind="popup" group="Sources" role="source" title="Blu-ray" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Label" name="Disc Label" align="center" style="position: absolute; left: 114px; top: 125px; width: 770px; height: 36px">Disc</x-import>
+  <x-import component-from-global-scope="ExtronMach.Group" title="Disc" cell="130x60" gap="20" cap="5" style="position: absolute; left: 114px; top: 165px; width: 770px; height: 130px">
+    <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Play" states="Off, On" does="Plays the disc; On while playing.">Play</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Pause" states="Off, On" does="Pauses the disc; On while paused.">Pause</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Stop" does="Stops the disc.">Stop</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Previous" does="Skips to the previous chapter.">Previous</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Next" does="Skips to the next chapter.">Next</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Blu-ray Show Label" align="center" style="position: absolute; left: 269px; top: 305px; width: 460px; height: 36px">Show On</x-import>
+  <x-import component-from-global-scope="ExtronMach.Group" title="Show" cell="160x60" gap="40" cap="2" style="position: absolute; left: 269px; top: 345px; width: 460px; height: 120px">
+    <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray To Projector" states="Off, On" does="Sends the Blu-ray player to the projector; On while it is showing there.">Projector</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray To Monitor" states="Off, On" does="Sends the Blu-ray player to the confidence monitor; On while it is showing there.">Monitor</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Recording Settings</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Recording" kind="modal" role="settings" title="Recording Settings" panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Recording Status" type="subheading" align="center" does="Shows Recording while the room is recording and Not Recording otherwise." style="position: absolute; left: 340px; top: 130px; width: 600px; height: 60px">Not Recording</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Group" title="Record" cell="220x64" gap="40" cap="2" style="position: absolute; left: 380px; top: 240px; width: 520px; height: 80px">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Start Recording" states="Off, On" does="Starts recording the lecture; On, with the red record icon, while recording.">Start Recording</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Stop Recording" nav="StopRecording">Stop Recording</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -552,8 +552,11 @@ FOOT_ROLES = ('mode', 'clock', 'preview', 'help', 'power')
 def series_seed(row):
     """The seed a series' own models are built on (its `seeds`, by model; a
     turned panel's own turned seed is not the series'), the commonest where
-    its models have several - the 1220's 1035 over its 835."""
-    own = [v for k, v in sorted((row.get('seeds') or {}).items()) if k in row.get('models', [])]
+    its models have several - the 1220's 1035 over its 835 - and on a tie the
+    one the profile lists first, the series' reference seed: a seed made later
+    for another of its models (the 320C's beside the 320M's) must not move the
+    frame onto itself, nor onto a seed a checkout has not pulled."""
+    own = [v for k, v in (row.get('seeds') or {}).items() if k in row.get('models', [])]
     return collections.Counter(own).most_common(1)[0][0] if own else None
 
 
@@ -899,10 +902,28 @@ def _pictures(page, pages, at, drawn):
     modals - and the device it pictures is no source's, wherever else it is
     drawn: Dual Display Select, the 525's Blu-ray routing step, pictures
     the monitor its Display Control does."""
+    devices, std, settings = _device_art(page, pages, drawn)
+    if devices is None:
+        return {}
+    theirs = {d for pg in settings for d, _ in devices(pg)}
+    out = {}
+    for pg in std:
+        for d, c in devices(pg) if pg not in settings else ():
+            if d not in theirs:
+                out.setdefault(d, _offset(c['rect'], at))
+    return dict(sorted(out.items()))
+
+
+def _device_art(page, pages, drawn):
+    """What _pictures and _settings_pictures read: the device a popup's
+    picture names (its art at the size the measured source's own picture is,
+    `drawn`), the standard popups, and the settings popups among them - those
+    the working page's buttons open, and those those open. (None, ...) where
+    the template pins no picture."""
     own = next((s['art'] for s in drawn if s['kind'] == 'image' and s['art']), None)
     size = re.match(r'^(\d+x\d+)_', own or '')
     if not size:
-        return {}
+        return None, [], []
     art = re.compile('^' + re.escape(size.group(1)) + r'_(.+)\.png$')
     std = [pg for pg in pages if pg['kind'] == 'popup' and not pg['modal'] and pg['name']]
 
@@ -915,13 +936,101 @@ def _pictures(page, pages, at, drawn):
                 for m in [art.match(c['art'] or '')] if m]
     settings = opened(page['controls'])
     settings += [pg for s in list(settings) for pg in opened(s['controls']) if pg not in settings]
-    theirs = {d for pg in settings for d, _ in devices(pg)}
+    return devices, std, settings
+
+
+def _settings_pictures(page, pages, at, drawn):
+    """{popup: {device, rect}} - the picture each settings popup a hub's
+    working page opens pins, by its name and the device its art names, in
+    page coordinates: Turbulence 525's Display Control the monitor (its
+    menu bar's Display Control opens it), and the Audio Control and Lighting
+    Control its More Options opens the speaker and the lightbulb, each under
+    its title and behind its cards, sized its own way. A hub draws its
+    settings windows as popups in main, so a window of one of those names (a
+    Lighting window, by its first word) draws that picture where it does.
+    Only where the template pins a source's picture (_pictures)."""
+    devices, _, settings = _device_art(page, pages, drawn)
+    if devices is None:
+        return {}
     out = {}
-    for pg in std:
-        for d, c in devices(pg) if pg not in settings else ():
-            if d not in theirs:
-                out.setdefault(d, _offset(c['rect'], at))
+    for pg in settings:
+        got = devices(pg)
+        if got:
+            d, c = got[0]
+            out[pg['name']] = {'device': d, 'rect': _offset(c['rect'], at)}
     return dict(sorted(out.items()))
+
+
+def _display_cards(popups, name, at):
+    """The popup a hub's display group opens (`name`: its Display Control, or
+    Mach's and Afterburn's Display Settings), as it lays out two displays: a
+    card per display - Shockwave's and Turbulence's a rounded shape
+    ('Display 1 Background') under the display's heading ('Display 1'),
+    holding its keys (its Display On, Off and Mute, its Screen Up and Down);
+    Mach's and Afterburn's a column of the display's keys under its heading
+    (Mach's '1' and '2' under the DISPLAYS heading over both, Afterburn's
+    DISPLAY 1 and DISPLAY 2) - in page coordinates. Each card's `rect` (its
+    shape, else its keys' box), its `surface` (fill and border, else None),
+    its `heading` rect and its words, and its `keys`: every button in the
+    card, which the template lays out in its columns and rows. `heading`
+    (Mach's DISPLAYS) is a heading over every card where the template draws
+    one, and `pt` the sizes it sets the headings in. None where the popup
+    draws no display's keys apart."""
+    pg = next((pg for pg in popups if pg['name'] == name), None)
+    if pg is None:
+        return None
+    cs = pg['controls']
+    buttons = [c for c in cs if c['type'] == 'PBButton']
+    labels = [c for c in cs if c['type'] == 'PBLabel']
+    shapes = [c for c in cs if c['type'] == 'PBShape' and c['rect'][2] < 0.9 * pg['size'][0]]
+    cards = []
+    for n in range(1, 10):
+        # A display's keys by their names - 'Display 1 On', 'Display 1 Power'
+        # - not Afterburn's toggle halves ('Display 1 Power Toggle On').
+        keys = [c for c in buttons if re.match(rf'^Display {n}\b', c['name'] or '')
+                and 'toggle' not in (c['name'] or '').lower()]
+        # Nor a half that stands in a key of its own (Afterburn's 'Display 2
+        # Mute On', named without the word).
+        keys = [c for c in keys if not any(o is not c and o['rect'] != c['rect'] and _inside(c['rect'], o['rect'])
+                                           for o in keys)]
+        if not keys:
+            break
+        box = _bbox([c['rect'] for c in keys])
+        shape = next((c for c in shapes if _inside(box, c['rect'])), None)
+        rect = list(shape['rect']) if shape else box
+        held = [c for c in buttons if c in keys or shape and _inside(c['rect'], shape['rect'])]
+
+        # Its heading: over its keys, across them, saying the display -
+        # 'Display 1', 'DISPLAY 1' - or its number alone (Mach's '1').
+        def says(c):
+            w = ' '.join((c['caption'] or '').split()).lower()
+            return w in (f'display {n}', str(n))
+        head = min((c for c in labels if says(c) and c['rect'][1] + c['rect'][3] / 2 < box[1]
+                    and c['rect'][0] < box[0] + box[2] and box[0] < c['rect'][0] + c['rect'][2]),
+                   key=lambda c: box[1] - c['rect'][1], default=None)
+        cards.append({'rect': rect, 'shape': shape, 'head': head, 'keys': [
+            c['rect'] for c in sorted(held, key=lambda c: (c['rect'][1], c['rect'][0]))]})
+    if len(cards) < 2:
+        return None
+    # A heading over every card (Mach's DISPLAYS over its 1 and 2): a label
+    # above the cards' own headings that reaches across the first card's keys
+    # into the next card's.
+    heads = [c['head'] for c in cards if c['head']]
+    top = min(c['rect'][1] for c in heads) if heads else min(c['rect'][1] for c in cards)
+    first, second = cards[0]['keys'][0], cards[1]['keys'][0]
+    # Not the popup's title, which says its name.
+    titled = [c for c in labels if ' '.join((c['caption'] or '').split()).lower() == name.lower()]
+    over = min((c for c in labels if c not in heads and c not in titled and c['rect'][1] + c['rect'][3] <= top + TOL
+                and c['rect'][0] <= first[0] + TOL and c['rect'][0] + c['rect'][2] > second[0]),
+               key=lambda c: top - c['rect'][1], default=None)
+    pt = {'heading': heads[0]['pt'] if heads else None, 'group': over['pt'] if over else None}
+    return {'popup': name, 'heading': _offset(over['rect'], at) if over else None,
+            'text': over['caption'] if over else None,
+            'cards': [{'rect': _offset(c['rect'], at), 'surface': _surface_of(c['shape'], at) if c['shape'] else None,
+                       'heading': _offset(c['head']['rect'], at) if c['head'] else None,
+                       'text': c['head']['caption'] if c['head'] else None,
+                       'keys': [_offset(r, at) for r in c['keys']]} for c in cards],
+            'pt': {k: v for k, v in pt.items() if v is not None}}
 
 
 def _band(rect, cs, surfaces):
@@ -1395,6 +1504,9 @@ def _hub_frame(page, popups, size, art):
     pictures = _pictures(page, popups, region[:2], drawn)
     if pictures:
         centre['pictures'] = pictures
+    pictures = _settings_pictures(page, popups, region[:2], drawn)
+    if pictures:
+        centre['settings_pictures'] = pictures
     level = _level_strip(popups, next((it['rect'] for it in centre['items'] if it['role'] == 'popup'), None))
     if level:
         centre['level'] = level
@@ -1410,6 +1522,13 @@ def _hub_frame(page, popups, size, art):
     opener = next((it for it in out['right']['items'] if it['role'] == 'settings'), None)
     named = _windows_named(popups, opener['name']) if opener else None
     out['options'] = _grid_of(named['controls'], region[:2], named['name']) if named else None
+    # The popup its display group opens - by its menu bar's Display Control,
+    # else Display Settings (Mach's and Afterburn's, from a tile among the
+    # options) - as it lays two displays out, a card each.
+    display = next((it['name'] for it in out['right']['items'] if it['role'] == 'display'), 'Display Settings')
+    cards = _display_cards(popups, display, region[:2])
+    if cards:
+        out['display'] = cards
     out['ids'] = _ids([it for b in BANDS if out[b] for it in out[b]['items']],
                       [pg for pg in popups if 'source' in pg['name'].lower()])
     notes = ['The popups fill main' + (', the header strip included' if top else '') + '.']

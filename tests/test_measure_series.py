@@ -584,6 +584,68 @@ class TestTheFrameOfEachSeries(unittest.TestCase):
         if not checked:
             self.skipTest('no seeds here (git lfs pull)')
 
+    def test_each_settings_picture_and_display_card_is_where_the_seed_draws_it(self):
+        # Read off the seed's own popups: a settings popup's picture is its
+        # PBImage of <size>_<device>.png (Turbulence 525's Lighting Control:
+        # the lightbulb), and a display card a 'Display <n> Background' shape
+        # or, where none, its 'Display <n> ...' keys - on the page at the
+        # popup region's origin.
+        from gdl import seeds
+        from gdl.project import Project
+        checked = 0
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            for series, row in _profile(theme)['panels'].items():
+                f = row.get('frame') if not series.startswith('_') else None
+                seed = measure_series.series_seed(row) if f and f.get('select') else None
+                if not seeds.usable(seed):
+                    continue
+                checked += 1
+                with self.subTest(series=series):
+                    at = f['center']['region'][:2]
+                    pops = {pg['name']: pg for pg in measure_series.seed_pages(Project.open(seeds.path(seed)))
+                            if pg['kind'] == 'popup'}
+                    on = lambda r: [r[0] + at[0], r[1] + at[1], r[2], r[3]]  # noqa: E731
+                    for name, pic in (f['center'].get('settings_pictures') or {}).items():
+                        self.assertIn(pic['rect'], [on(c['rect']) for c in pops[name]['controls']
+                                                    if c['type'] == 'PBImage' and (c['art'] or '').endswith(
+                                                        '_' + pic['device'] + '.png')], name)
+                    D = f['display']
+                    self.assertEqual(len(D['cards']), 2, series)
+                    for n, card in enumerate(D['cards'], 1):
+                        cs = pops[D['popup']]['controls']
+                        if card['surface']:
+                            self.assertEqual(card['surface']['name'], f'Display {n} Background')
+                            self.assertIn(card['rect'], [on(c['rect']) for c in cs if c['type'] == 'PBShape'])
+                        buttons = {c['name']: on(c['rect']) for c in cs if c['type'] == 'PBButton'}
+                        for k in card['keys']:
+                            self.assertIn(k, buttons.values(), (series, n))
+                        first = buttons.get(f'Display {n} On') or buttons.get(f'Display {n} Power')
+                        self.assertIn(first, card['keys'], (series, n))
+                        self.assertIn(card['heading'], [on(c['rect']) for c in cs if c['type'] == 'PBLabel'])
+        if not checked:
+            self.skipTest('no seeds here (git lfs pull)')
+
+    def test_no_hub_draws_a_clock_but_on_its_start(self):
+        # What a hub's region page names when it leaves a footer's clock off
+        # (bundle.js planHub): every hub seed's clock is on its Start page -
+        # none on its working page, nor in a popup its working page shows.
+        from gdl import seeds
+        from gdl.project import Project
+        checked = 0
+        for theme in ('afterburn', 'mach', 'shockwave', 'turbulence'):
+            for series, row in _profile(theme)['panels'].items():
+                f = row.get('frame') if not series.startswith('_') else None
+                seed = measure_series.series_seed(row) if f and f.get('select') else None
+                if not seeds.usable(seed):
+                    continue
+                checked += 1
+                with self.subTest(series=series):
+                    where = {pg['name'] for pg in measure_series.seed_pages(Project.open(seeds.path(seed)))
+                             if any(c['type'] == 'PBDateTime' for c in pg['controls'])}
+                    self.assertEqual(where, {'Start'}, series)
+        if not checked:
+            self.skipTest('no seeds here (git lfs pull)')
+
 
 if __name__ == '__main__':
     unittest.main()

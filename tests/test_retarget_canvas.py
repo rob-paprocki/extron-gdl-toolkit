@@ -7,7 +7,7 @@ and wrong for any other, and it went unnoticed for two reasons:
 
   * a standard popup blown up to the screen still holds its scaled controls,
     so nothing overflowed, and the build was verified by where its controls
-    landed - no popup's size was compared. The client fixture's 16 standard
+    landed - no popup's size was compared. The client project's 16 standard
     popups, 136x496 to 995x800, were every one resized;
   * `check()`'s overflow test, the one whose docstring calls it "the check that
     makes retargeting safe to offer", skipped popups outright
@@ -28,13 +28,11 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _corpus import MAIN_CLIENT, needs_client  # noqa: E402
+from _corpus import SYNTHETIC, needs_synthetic  # noqa: E402
 
 from gdl.edit import Edits
 from gdl.project import Project
 
-FIXTURE = os.path.join('fixtures', 'gdl',
-                       'client-boardroom-2.0.0.gdl')
 RETARGET = {'edits': [{'op': 'retarget', 'model': 'TLP1535M', 'scale': True}]}
 
 
@@ -44,10 +42,9 @@ def plan_for(spec, path):
     return ed, plan, errors, warnings
 
 
-@needs_client(MAIN_CLIENT)
-class TestCanvasScales(unittest.TestCase):
+class _CanvasScales:
     def setUp(self):
-        self.ed, self.plan, self.errors, _ = plan_for(RETARGET, FIXTURE)
+        self.ed, self.plan, self.errors, _ = plan_for(RETARGET, self.PATH)
 
     def test_every_page_gets_a_size(self):
         """No page may be left for the applier to guess at."""
@@ -84,17 +81,16 @@ class TestCanvasScales(unittest.TestCase):
         self.assertEqual(self.errors, [])
 
 
-@needs_client(MAIN_CLIENT)
-class TestSmallPopupsSurvive(unittest.TestCase):
+class _SmallPopupsSurvive:
     """A standard popup smaller than the screen, at Extron's own numbers.
 
-    The fixture's own standard popups are smaller than the screen too; this
-    splices in one at Afterburn 1035's 880x525, so the numbers the tests assert
-    are fixed whatever the fixture holds.
+    The synthetic fixture's own standard popups are smaller than the screen
+    too; this splices in one at Afterburn 1035's 880x525, so the numbers the
+    tests assert are fixed whatever the fixture holds.
     """
 
     def setUp(self):
-        self.ed, self.plan, self.errors, _ = plan_for(RETARGET, FIXTURE)
+        self.ed, self.plan, self.errors, _ = plan_for(RETARGET, self.PATH)
         # Splice in a small popup alongside the real pages, so the op walk and
         # the overflow check both see it exactly as they would a real one.
         self.ed.pages = list(self.ed.pages) + [{
@@ -122,12 +118,11 @@ class TestSmallPopupsSurvive(unittest.TestCase):
             'a control that filled the old popup must still fill the new one')
 
 
-@needs_client(MAIN_CLIENT)
-class TestOverflowIsCaughtOnPopups(unittest.TestCase):
+class _OverflowIsCaughtOnPopups:
     """The check has to be able to fail, or passing it means nothing."""
 
     def test_a_control_outside_a_popup_is_reported(self):
-        ed, _, _, _ = plan_for(RETARGET, FIXTURE)
+        ed, _, _, _ = plan_for(RETARGET, self.PATH)
         ed.pages = list(ed.pages) + [{
             'kind': 'popup', 'id': 999998, 'name': 'Bad Card', 'modal': False,
             'size': (880, 525),
@@ -142,24 +137,20 @@ class TestOverflowIsCaughtOnPopups(unittest.TestCase):
                         'popup overflow went unreported - the blind spot is back')
 
 
-GREENROOM = 'client-greenroom-1.1.0.gdl'
-
-
-@needs_client(GREENROOM)
-class TestTheOldCanvasIsTheScreen(unittest.TestCase):
+class _TheOldCanvasIsTheScreen:
     """The factors come from the panel's screen, not from its largest control.
 
     The old size was taken as the largest control on a standard page, on the
-    reading that something always fills the screen. On this fixture the
-    largest is 1185x269 on a 1280x800 screen, so a retarget to a 1535 scaled
-    by 1.62 and 4.01, put controls at y=2863 on a 1080-high panel, grew every
+    reading that something always fills the screen. On a client project's
+    second panel the largest was 1185x269 on a 1280x800 screen, so a retarget
+    to a 1535 scaled by 1.62 and 4.01, put controls at y=2863 on a 1080-high
+    panel, grew every
     canvas by the same wrong factors - and the overflow check, measuring
     against those canvases, reported nothing.
     """
 
     def setUp(self):
-        from _corpus import client
-        self.ed, self.plan, self.errors, _ = plan_for(RETARGET, client(GREENROOM))
+        self.ed, self.plan, self.errors, _ = plan_for(RETARGET, self.PATH)
 
     def test_the_factors_are_new_screen_over_old_screen(self):
         self.assertEqual(self.ed._resize, ((1280, 800), (1920, 1080)))
@@ -185,8 +176,7 @@ class TestTheOldCanvasIsTheScreen(unittest.TestCase):
         self.assertTrue([e for e in errors if '1920x1080' in e and 'screen' in e], errors)
 
 
-@needs_client(MAIN_CLIENT)
-class TestAnUnscaledRetargetSizesEveryPage(unittest.TestCase):
+class _AnUnscaledRetargetSizesEveryPage:
     """Without `scale` the controls stay put, but the pages still change size:
     a page that was the screen becomes the new one, and a popup authored at its
     own size keeps it. Planned explicitly, or the applier falls back to
@@ -196,7 +186,7 @@ class TestAnUnscaledRetargetSizesEveryPage(unittest.TestCase):
 
     def setUp(self):
         self.ed, self.plan, self.errors, _ = plan_for(
-            {'edits': [{'op': 'retarget', 'model': 'TLP1535M'}]}, FIXTURE)
+            {'edits': [{'op': 'retarget', 'model': 'TLP1535M'}]}, self.PATH)
 
     def test_every_sized_page_gets_a_size(self):
         want = {pg['id'] for pg in self.ed.pages if None not in pg['size']}
@@ -208,6 +198,34 @@ class TestAnUnscaledRetargetSizesEveryPage(unittest.TestCase):
             self.assertEqual(p['size'], want, p['name'])
         self.assertTrue([p for p in self.plan['pages'] if p['size'] == p['was']],
                         'the fixture has no standard popup - the test is vacuous')
+
+
+# Each on the synthetic fixture.
+@needs_synthetic()
+class TestCanvasScales(_CanvasScales, unittest.TestCase):
+    PATH = SYNTHETIC
+
+
+@needs_synthetic()
+class TestSmallPopupsSurvive(_SmallPopupsSurvive, unittest.TestCase):
+    PATH = SYNTHETIC
+
+
+@needs_synthetic()
+class TestOverflowIsCaughtOnPopups(_OverflowIsCaughtOnPopups, unittest.TestCase):
+    PATH = SYNTHETIC
+
+
+@needs_synthetic()
+class TestAnUnscaledRetargetSizesEveryPage(_AnUnscaledRetargetSizesEveryPage, unittest.TestCase):
+    PATH = SYNTHETIC
+
+
+@needs_synthetic()
+class TestTheOldCanvasIsTheScreen(_TheOldCanvasIsTheScreen, unittest.TestCase):
+    """The synthetic fixture has no control the size of its screen either: its
+    largest, the Keys page's 995x800 popup reference, is not 1280x800."""
+    PATH = SYNTHETIC
 
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

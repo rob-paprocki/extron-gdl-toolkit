@@ -177,11 +177,11 @@ def read_format(d):
                 out(f'     border resources: {len(names)} built'
                     f'{f", {len(project(pre).border_resource_names())} before" if pre else ""}; '
                     f'{new!r} {"still defined" if new in names else "GONE"}; bound by {len(bound)} control(s)'
-                    f'  (question 2: 1.28 gave 35 against the fixture\'s 34)')
+                    f'  (question 2: one more than before; 1.28 gave a client project 35 against its 34)')
                 geo = b.border_geometry().get(new)
                 out(f'     its geometry as built: {geo}  (asked: radius 20, thickness 1)')
             if t == 'C':
-                # Against test A's build, the same fixture without the clone:
+                # Against test A's build, the same project without the clone:
                 # test C's own .pre.gdl already holds it.
                 npg = [len(pg['controls']) for pg in b.pages() if pg['kind'] == 'page']
                 a = exists(d, 'testA.gdl')

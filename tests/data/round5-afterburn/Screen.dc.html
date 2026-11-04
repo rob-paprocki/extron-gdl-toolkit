@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Screen Settings</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Screen" kind="modal" role="settings" title="Screen Settings" panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Screen Label" type="body-strong" color="text-secondary" align="center" style="position: absolute; left: 440px; top: 120px; width: 400px; height: 40px">SCREEN</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Group" title="Screen" cell="160x64" gap="40" cap="2" style="position: absolute; left: 460px; top: 180px; width: 360px; height: 80px">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Screen Up" does="Raises the projector screen.">Up</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Screen Down" does="Lowers the projector screen.">Down</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

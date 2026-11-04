@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Display Sources</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Display Sources" kind="modal" role="settings" title="Display Sources" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Label" name="Projector Heading" type="heading" align="right" color="text" style="position: absolute; left: 260px; top: 200px; width: 320px; height: 50px">Projector</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Projector Source" type="heading" align="left" color="text" does="Shows the source on the projector, or Off, Warming or Cooling." style="position: absolute; left: 620px; top: 200px; width: 400px; height: 50px">Projector Source</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Monitor Heading" type="heading" align="right" color="text" style="position: absolute; left: 260px; top: 290px; width: 320px; height: 50px">Monitor</x-import>
+  <x-import component-from-global-scope="ExtronMach.Label" name="Monitor Source" type="heading" align="left" color="text" does="Shows the source on the confidence monitor, or Off, Warming or Cooling." style="position: absolute; left: 620px; top: 290px; width: 400px; height: 50px">Monitor Source</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

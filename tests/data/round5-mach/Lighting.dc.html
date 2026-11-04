@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lighting Settings</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Lighting" kind="modal" role="settings" title="Lighting Settings" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Group" title="Presets" cell="200x60" gap="20" cap="4" style="position: absolute; left: 210px; top: 220px; width: 880px; height: 140px">
+    <x-import component-from-global-scope="ExtronMach.Button" id="201" name="Lighting Full" states="Off, On" does="Recalls the Full lighting preset; On while it is active.">Full</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" id="202" name="Lighting Presentation" states="Off, On" does="Recalls the Presentation lighting preset; On while it is active.">Presentation</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" id="203" name="Lighting Video" states="Off, On" does="Recalls the Video lighting preset; On while it is active.">Video</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" id="204" name="Lighting Off" states="Off, On" does="Recalls the Off lighting preset; On while it is active.">Off</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

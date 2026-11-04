@@ -1,16 +1,8 @@
 {
  "mach": {
-  "TLP320M: 'Call 2' Camera Presets Heading: its text does not fit its 108x26 box on this panel - give it room, or fewer words": [
+  "TLP320M: 'Call' Camera Presets Heading: its text does not fit its 108x26 box on this panel - give it room, or fewer words": [
    "readme",
    "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP320M: 'Call' Camera Label: its text does not fit its 125x26 box on this panel - give it room, or fewer words": [
-   "readme",
-   "a Label over a Group heads the column beside it on the 320 - Words on the 320 says to leave the heading to the Group's title"
-  ],
-  "TLP320M: 'Call' Camera Label: its words run into Make Call on this panel - give them room": [
-   "readme",
-   "a Label over a Group heads the column beside it on the 320 - Words on the 320 says to leave the heading to the Group's title"
   ],
   "TLP320M: 'Call' Camera Presets Heading: its words run into Camera Wide on this panel - give them room": [
    "readme",
@@ -69,10 +61,6 @@
   "TLP320M: Call.dc.html: the rail needs 364 px of a TLP320M's 320": [
    "readme",
    "a Volume heading in the Rail - a hub's rail and the 320's foot hold the volume and three buttons; a working page now draws the volume as its RightRail, the hub's menu bar and the 320's Volume Level window"
-  ],
-  "TLP320M: Help.dc.html: Help needs 335 px of a TLP320M's 240 - it does not fit": [
-   "readme",
-   "Help as a stack of one-line Labels - Words now counts a state caption and asks for one Label of Help with the room's largest Words"
   ],
   "TLP320M: MainSD.dc.html: Main SD's rows need 451 px of the 186 a TLP320M's main holds, one under another, and 423 with a side column's beside another's - it does not fit": [
    "readme",
@@ -154,21 +142,9 @@
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: popup 'Help' Help Message: 9,281 302x56 does not fit the popup's 320x240 - GUI Designer moves it to 0,0 without reporting anything": [
-   "readme",
-   "Help as a stack of one-line Labels - Words now counts a state caption and asks for one Label of Help with the room's largest Words"
-  ],
-  "TLP320M: popup 'Help' Share Step 4: 9,223 302x56 does not fit the popup's 320x240 - GUI Designer moves it to 0,0 without reporting anything": [
-   "readme",
-   "Help as a stack of one-line Labels - Words now counts a state caption and asks for one Label of Help with the room's largest Words"
-  ],
   "TLP525T: 'Audio Settings' Mic Label: its words run into Mic Mute on this panel - give them room": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
-  ],
-  "TLP525T: 'Audio Settings' Program Label: its text does not fit its 91x32 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
   ],
   "TLP525T: 'Audio Settings' Program Label: its words run into Mute on this panel - give them room": [
    "readme",
@@ -214,26 +190,6 @@
    "readme",
    "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
   ],
-  "TLP525T: 'Help' Share Step 1: its text does not fit its 420x36 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
-  ],
-  "TLP525T: 'Help' Share Step 3: its text does not fit its 420x36 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
-  ],
-  "TLP525T: 'Help' Share Step 3: its words run into the words of Share Step 4 on this panel - give them room": [
-   "readme",
-   "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
-  ],
-  "TLP525T: 'Help' Share Step 4: its text does not fit its 420x36 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
-  ],
-  "TLP525T: 'Lighting Settings' Lighting Settings Title: its text does not fit its 186x32 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
-  ],
   "TLP525T: 'Main SD' Current Date: its text does not fit its 133x38 box on this panel - give it room, or fewer words": [
    "readme",
    "the date and time and the loose left rail on a working page the 320 cannot hold - a working page now draws them as its Footer's clocks and its LeftRail, which the 320 names as left and goes on over pages of its own"
@@ -270,14 +226,6 @@
    "readme",
    "the date and time and the loose left rail on a working page the 320 cannot hold - a working page now draws them as its Footer's clocks and its LeftRail, which the 320 names as left and goes on over pages of its own"
   ],
-  "TLP525T: 'Power Down' Power Down Question: its text does not fit its 420x32 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
-  ],
-  "TLP525T: 'Powering Down' Powering Down Message: its text does not fit its 420x32 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
-  ],
   "TLP525T: 'ShareLink' ShareLink Title: its text does not fit its 103x32 box on this panel - give it room, or fewer words": [
    "readme",
    "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
@@ -301,10 +249,6 @@
   "TLP525T: Call.dc.html: the rail needs 506 px of a TLP525T's 480": [
    "readme",
    "a Volume heading in the Rail - a hub's rail and the 320's foot hold the volume and three buttons; a working page now draws the volume as its RightRail, the hub's menu bar and the 320's Volume Level window"
-  ],
-  "TLP525T: DocCam.dc.html: Zoom cannot page in a popup - its pages would be popups, which only a page can show - and its 2 cells of 99x66 do not fit its 99x91 box on a TLP525T: give it a box that holds them all there, or put it on a page": [
-   "readme",
-   "copied the README's Zoom keys, sized for the 1035 alone"
   ],
   "TLP525T: Main.dc.html: Lights cannot fit a row of 252x76 cells and its Previous and Next in its 252x156 box on a TLP525T": [
    "readme",
@@ -341,10 +285,6 @@
   "TLP525T: page 3000 Power: rect [711, 425, 66, 66] leaves the (800, 480) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
-  ],
-  "TLP525T: popup 'Power Down' Power Down / Cancel: overlap - two touch targets cannot share pixels": [
-   "readme",
-   "copied the README's answers, sized for the 1035 alone"
   ],
   "TLP525T: popup 'Start Lights 2' Start Lighting Meeting / Lights Next: 14px vertical gap is below the 15px minimum (2mm, p.56)": [
    "readme",
@@ -397,10 +337,6 @@
   "TLP725T: 'Main SD' Settings Heading: its words run into Lighting Settings on this panel - give them room": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
-  ],
-  "TLP725T: DocCam.dc.html: Zoom cannot page in a popup - its pages would be popups, which only a page can show - and its 2 cells of 119x60 do not fit its 119x111 box on a TLP725T: give it a box that holds them all there, or put it on a page": [
-   "readme",
-   "copied the README's Zoom keys, sized for the 1035 alone"
   ],
   "TLP725T: page 2000 Audio Settings / Video Conference: 8px vertical gap is below the 13px minimum (2mm, p.56)": [
    "readme",

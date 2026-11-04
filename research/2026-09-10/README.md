@@ -5,9 +5,9 @@ the commit messages and docs can be reproduced rather than taken on trust. Run
 them from the repo root after `git lfs pull` (they read `seeds/` and
 `archive/job-9fe2c865/`).
 
-`seeds/` now also holds the 835 seed, so a rerun that globs every seed counts
-one project more than the figures quoted below, which were taken over the 13
-seeds plus the client fixture.
+The figures quoted below were taken over the 13 seeds then in `seeds/` and a
+client project, since deleted from the repo (`docs/history.md`). A rerun reads
+every seed `seeds/` holds now, and not that project, so its counts differ.
 
 | Script | Question | Answer at the time |
 |---|---|---|

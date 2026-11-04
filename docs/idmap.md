@@ -20,7 +20,7 @@ keeps the IDs the programmer already has (§9).
 button shows that page". GUI Designer's previous generation had per-button
 actions (`PanelBuilder.PBActionShowPage`, `PBActionShowPopup`, `PageBack` and
 so on, still visible in `GUI Designer.xml`), but they are gone. They appear in
-none of the fixtures or seeds, and converting an old project says so
+none of the seeds or the client project they were looked for in, and converting an old project says so
 outright: *"Local Actions and Audio Resources will be lost!"*
 
 The format keeps structure only: a start page, popup groups, whether a popup is
@@ -92,6 +92,10 @@ block `plan`.
 
 The reachability check runs only when the spec uses `nav`. Three unlinked pages
 in a layout-only spec are a layout, not a broken panel.
+
+`gdl.design translate` runs these checks on every panel's spec before it writes
+any (`docs/claude-design.md` §1), so a canvas the map would refuse is refused
+there first.
 
 **Notes** never block. They cover a button whose function is not described
 (once the spec describes any), and a dead-end page that leads to no other page.
@@ -311,7 +315,7 @@ flattened into the control's artwork, which leaves its text empty - 71 of the
 Afterburn 1035 seed's 365 IDs. Its Function column is empty: a `.gdl` carries
 no behavior (§1), so what each control does is the programmer's to fill in. A
 control whose ID is 0 - what GUI Designer leaves on one nobody numbered, 98
-controls in the client fixture, 59 of them buttons - is left out and counted,
+controls in a client project, 59 of them buttons - is left out and counted,
 since nothing can address it. An ID on several controls is one row, from its
 first copy; where another copy differs in type, states or press state, the map
 says which above its tables. A glyph caption in an icon face is the glyph's

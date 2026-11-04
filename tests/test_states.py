@@ -26,13 +26,10 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _corpus import MAIN_CLIENT, needs_client  # noqa: E402
+from _corpus import SYNTHETIC, needs_synthetic  # noqa: E402
 
 from gdl.project import Project
 from gdl.spec import BORDERS, Panel
-
-FIXTURE = os.path.join('fixtures', 'gdl',
-                       'client-boardroom-2.0.0.gdl')
 
 THEME = {'raised': '#37394E', 'accent': '#3D8BFD', 'surface': '#242634',
          'text': '#FFFFFF', 'muted': '#BABCCE', 'font': 'Open Sans', 'size': 16}
@@ -255,8 +252,7 @@ class TestStateChecks(unittest.TestCase):
         self.assertTrue(found)
 
 
-@needs_client(MAIN_CLIENT)
-class TestDonorGate(unittest.TestCase):
+class _DonorGate:
     """The applier now gives the cloned button exactly the states the spec
     names - growing by cloning its last state, trimming from the end. The one
     thing that stops it is PBStates.statusField, PBState.StatusFlags on the
@@ -264,7 +260,7 @@ class TestDonorGate(unittest.TestCase):
 
     def test_the_fixture_can_supply_any_number_of_states(self):
         sp = spec_with([MUTE])
-        problems = [p for p in sp.check_donor(FIXTURE) if 'state' in p]
+        problems = [p for p in sp.check_donor(self.PATH) if 'state' in p]
         self.assertEqual(problems, [])
 
     def test_a_flagged_donor_button_is_refused(self):
@@ -277,17 +273,16 @@ class TestDonorGate(unittest.TestCase):
                 out['state_flags'] = 1          # PreventAddState
             return out
         with mock.patch.object(Project, 'control', flagged):
-            problems = [p for p in spec_with([MUTE]).check_donor(FIXTURE) if 'state' in p]
+            problems = [p for p in spec_with([MUTE]).check_donor(self.PATH) if 'state' in p]
         self.assertTrue(problems)
 
 
-@needs_client(MAIN_CLIENT)
-class TestReaderCountsStates(unittest.TestCase):
+class _ReaderCountsStates:
     """`n_states` has to be the real count - the length of `mItems` - and
     not the 1 PowerShell reports for `$states.Count`."""
 
     def setUp(self):
-        self.proj = Project.open(FIXTURE)
+        self.proj = Project.open(self.PATH)
 
     def test_buttons_report_more_than_one_state(self):
         counts = [c['n_states'] for pg in self.proj.pages()
@@ -306,6 +301,17 @@ class TestReaderCountsStates(unittest.TestCase):
         self.assertGreater(offon / len(pairs), 0.8,
                            f'Off/On was {offon}/{len(pairs)} - if that has '
                            f'changed, the names this spec emits should change too')
+
+
+# Each on the synthetic fixture.
+@needs_synthetic()
+class TestDonorGate(_DonorGate, unittest.TestCase):
+    PATH = SYNTHETIC
+
+
+@needs_synthetic()
+class TestReaderCountsStates(_ReaderCountsStates, unittest.TestCase):
+    PATH = SYNTHETIC
 
 
 class TestNoScriptCountsAPBStates(unittest.TestCase):

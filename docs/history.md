@@ -25,7 +25,8 @@ installed (see `CLAUDE.md`, *Where to work*).
   the screen. The durable lesson — authoring is headless, anything that draws
   needs a real interactive desktop — is in `docs/from-scratch.md` §7.
 - **A Claude Code Linux cloud container**, and **macOS natively**, both of which
-  reproduced `tests/baseline.json` exactly. This is why the render half carries
+  reproduced `tests/baseline.json`, the client project's render baseline then,
+  exactly. This is why the render half carries
   no platform-specific code.
 - **Windows natively, with GUI Designer installed.** The current arrangement,
   and the only one where author → build → verify is a single loop.
@@ -80,12 +81,79 @@ machine you are already working on.
 
   One belief corrected on the way: the Project Create Wizard is no longer
   entirely opaque to UI Automation. See *Corrections worth remembering*.
+- **2026-11-03 — the client fixtures deleted, on the owner's word.**
+  `fixtures/` held a client's real project, the one the toolkit was first read
+  off: six `.gdl` files (two releases of two panels, and two archived builds,
+  one a TLP Pro 1025 with a Level) and GUI Designer's 50 snapshot exports of
+  the main one. Its render baseline, `tests/baseline.json`, went with it - at
+  deletion **mean 2.19%, median 1.65%, worst 7.68%** over 27 pages
+  (`docs/render-fidelity.md` *Where it stands* keeps the record). The synthetic
+  fixture (`tests/data/synthetic/`, 2.5 of the backlog plan) had been built to
+  replace it, and is the render baseline now. The tests that had a synthetic
+  twin lost their client half; those that covered what only the client's
+  project had were laid into pages shaped as it had them (`tests/test_edit.py`'s
+  formatted captions, mirrors, a fill on a state, a touch target already too
+  small), rebuilt on a seed (a donor with a Level, the Afterburn 320's) or on
+  the synthetic build's own flattened captions (`tests/test_verify_built.py`),
+  and what nothing covers now is in `docs/ROADMAP.md`. Earlier commits still
+  hold the files; the public copy never did (`tools/public_sync.py` still
+  excludes the folder). The builds in `archive/gdlwork/` made with that project
+  as the donor were not part of the decision and stay.
 
 ## Corrections worth remembering
 
 Each of these was believed, written down, and later found wrong. The current
 statement is in the live docs; this is the record that it changed.
 
+- **A real-size build's time was taken to vary at random, with the donor's
+  content in doubt** (until 2026-11-03). Six builds of
+  `examples/boardroom-full.json` took 21, 28, 9, 21 and 22 minutes and a
+  sixth was lost; the owner's mode and the host's state were suspected. With the
+  mode on and scanning as it is, a build is about two seconds a control and the
+  spread is the processor's clock, 3.1 GHz or about 1.1, which nothing the
+  earlier runs logged would have shown (`docs/from-scratch.md` §5c). The 9
+  minutes is not reproduced: the fastest here is 12.5. The seeds' Create times
+  (85 to 1,337 s, one of them 168 s and then 935 s) were put down to the theme,
+  then to the host's state; their Save and Build is the clock's, and Create has
+  not been timed against it.
+- **Captions were measured before Open Sans loaded** - written in the ROADMAP
+  as the fallback's measure, which the bundle widened 5-6% for and which the
+  probe could not wait for without laying a canvas out twice. Measured on
+  2026-11-03, a canvas that linked Google Fonts was laid out twice and the
+  face landed at the very moment of the second layout, so the layout kept was
+  Open Sans's or the fallback's by the order of two tasks: three Chrome tests
+  failed on one host and passed on another (a 320's zone buttons [30, 107,
+  81, 40] against [33, 107, 79, 40]). A canvas with no link was measured in
+  the host's Arial. The system now carries its face and adds it from its own
+  bytes before anything renders (`gdl.designsys.face_js`). Two of the three
+  tests were not that at all: the README room's call page said Presentation,
+  which its own rule names as too wide for the 725's rail, in either face;
+  and the repeat test's three buttons ran into Display on the 725 and the
+  525. Both already failed with Extron's kit present at 901194b, the commit
+  that added the repeat test.
+
+- **A Group in a modal or a popup holds only what its box holds** - the
+  README told designers to give its box room for every member on every large
+  and mid-size panel, and the toolkit refused the rest by name. Round five
+  (2026-11-02) found every designer's box sized for the 1035 alone, Mach's
+  Lighting presets 3 px past theirs on the 725: a Group there now takes the
+  room its window leaves round its box, and is refused only past that. The
+  same round found a plain modal laid out as a page, not re-spaced as a
+  window's body is, and the Group README's 'put no Label over the group'
+  against the README's own Doc Cam, which heads its Zoom keys with one.
+- **A hub has no place for a Header's start and end** - the hub named
+  what stands there as left off, as it names the footer's clock, and
+  translate passed it. Round five's final Shockwave room (2026-11-03)
+  translated clean and built on all four panels, and its build's ID map then
+  refused the 525: its Record at the Header's start was the only way to its
+  Recording window and Stop Recording question. Turbulence's final had lost
+  its Record toggle at the Header's end from its 525 the same way, with no
+  window to give it away. A button there is now one of the options, which go
+  on over pages past what their popup holds, and translate runs the ID map's
+  checks before a build. The same change split a window two pages had shared
+  while it led back to only one of them (Afterburn's 525 Display Settings),
+  which moves the derived IDs after it on a fresh translate - `--previous`
+  keeps a built canvas's.
 - **Extron's own templates keep points fixed** - written with the type floor
   (`docs/design-rules.md` §1), from the 1035 and 725. Read off the seeds made
   at every size in October 2026, their 520s do, but their 535s step up: Mach's
@@ -652,6 +720,21 @@ statement is in the live docs; this is the record that it changed.
   light as their templates' do. The 720's seed lights its Flash #000000 and
   its template gives the lit caption no color, where the six other series'
   are #474747; the system draws the six.
+- **No hub template draws a clock** (until 2026-11-01). A region page's clock
+  left off a hub was named with "its template draws no clock", and the
+  README said the same. Read off every hub seed's pages
+  (`tests/test_measure_series.py`), each draws one - on its Start page alone,
+  none on its working page or in a popup that page shows. The clock is still
+  named and left, now in those words. In the same package a later Section's
+  heading, which the hub had named and left too, became the options' title,
+  at the place the hub's template sets that title - renamed as the heading
+  (`Settings Heading`, the canvas's control), as the display popup's title
+  was where its Section became a card per display (`Display Heading`). IDs
+  are keyed by name, so a built canvas's next revision would have retired
+  the title's ID, for nothing a program needs. In review, before the
+  package merged, each title got its own name back (`Settings Title`,
+  `Display Settings Title`), saying the heading's words, and the heading
+  went back to being named and left.
 
 ## Dated facts moved out of the live docs
 

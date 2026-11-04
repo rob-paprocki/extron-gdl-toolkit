@@ -1,16 +1,17 @@
-# Font binaries recovered from the fixtures. Regenerate with:
-#   for f in fixtures/gdl/*.gdl; do python -m gdl.fonts "$f" gdl/fonts/; done
+# Font binaries recovered from the synthetic fixture's build. Regenerate with:
+#   python -m gdl.fonts tests/data/synthetic/synthetic.gdl gdl/fonts/
 #
-# Ignored per file rather than as a class: the nine files do not share a
-# license. Open Sans is Apache 2.0 and declares it in its own name table, so it
-# is tracked. Arial and Arial Black are retail Monotype faces, Forma DJR Display
-# is a retail typeface, and the Extron and Crestron icon fonts carry no license
-# grant at all. gdl/fonts/README.md has the per-file detail, read from each font
-# rather than assumed.
+# Ignored per file rather than as a class: the files do not share a license.
+# Open Sans is Apache 2.0 and declares it in its own name table, so it is
+# tracked; so is the design systems' own Open Sans (opensans-latin.woff2, not
+# recovered but Google Fonts' own, SIL OFL 1.1, LICENSE-OpenSans-OFL.txt).
+# Arial and Arial Black are retail Monotype faces, and the Extron icon fonts
+# carry no license grant at all. gdl/fonts/README.md has the per-file detail,
+# read from each font rather than assumed.
 #
-# This ignore does not keep the bytes out of git - every face is embedded in the
-# tracked .gdl fixtures and is recoverable from them exactly. It prevents a
-# second, more conveniently redistributable copy, nothing more.
+# This ignore does not keep the bytes out of git - every face is embedded in
+# the tracked synthetic build or a seed, and is recoverable from it exactly. It
+# prevents a second, more conveniently redistributable copy, nothing more.
 #
 # Without the untracked faces the harness degrades: each draws in a stand-in -
 # the host's copy, or the recovered Arial - and tests/score.py record refuses
@@ -20,6 +21,8 @@ gdl/fonts/*
 !gdl/fonts/LICENSE-OpenSans.txt
 !gdl/fonts/opensans-regular.ttf
 !gdl/fonts/opensans-light.ttf
+!gdl/fonts/opensans-latin.woff2
+!gdl/fonts/LICENSE-OpenSans-OFL.txt
 
 # GUI Designer's own working files - its temp font folder (retail Monotype
 # Arial and Arial Black, the same bytes the seeds embed) and its per-user

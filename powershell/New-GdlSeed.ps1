@@ -433,12 +433,19 @@ Start-Process -FilePath $gd
 # gap opens a second wizard over the first, and UI Automation then finds one
 # with no combos or hangs. So wait for its own, and use the menu only if none
 # comes.
+#
+# A walk of GUI Designer's tree while it is still loading can time out (a
+# COMException, 0x80131505) and end the run at exit 1 with nothing saved: here
+# it is a poll that found no wizard yet, as in Wait-For.
+function Get-WizardWhenLoading {
+    try { Get-Wizard } catch { $null }
+}
 $deadline = (Get-Date).AddSeconds(180)
-while (-not (Get-Wizard) -and (Get-Date) -lt $deadline) {
+while (-not (Get-WizardWhenLoading) -and (Get-Date) -lt $deadline) {
     Stop-IfBlocked
     Start-Sleep -Milliseconds 700
 }
-if (-not (Get-Wizard)) {
+if (-not (Get-WizardWhenLoading)) {
     # Invoke blocks on the modal and times out; the wizard opens regardless.
     & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
         -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'New Project' | ForEach-Object { "  menu: $_" }

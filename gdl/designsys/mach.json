@@ -666,7 +666,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP1035M": "seeds/Mach 1035.gdl", "TLP1035T": "seeds/Mach 1035.gdl"},
+      "seeds": {"TLP1035M": "seeds/Mach 1035.gdl", "TLP1035T": "seeds/Mach 1035.gdl", "TLP1025M": "seeds/Mach 1025.gdl", "TLP1025T": "seeds/Mach TLP1025T.gdl", "TLP1220MG": "seeds/Mach 1220.gdl", "TLP1220TG": "seeds/Mach TLP1220TG.gdl", "TLP1225MG": "seeds/Mach 1225.gdl", "TLP1225TG": "seeds/Mach TLP1225TG.gdl", "TLP835C": "seeds/Mach TLP835C.gdl", "TLP835M": "seeds/Mach 835.gdl", "TLP835T": "seeds/Mach TLP835T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -1436,7 +1436,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP725T": "seeds/Mach 725.gdl"},
+      "seeds": {"TLP725T": "seeds/Mach 725.gdl", "TLP1020M": "seeds/Mach 1020.gdl", "TLP1020T": "seeds/Mach TLP1020T.gdl", "TLP725C": "seeds/Mach TLP725C.gdl", "TLP725M": "seeds/Mach TLP725M.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -2196,7 +2196,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP1525TG": "seeds/Mach 1525.gdl"},
+      "seeds": {"TLP1525TG": "seeds/Mach 1525.gdl", "TLP1525MG": "seeds/Mach TLP1525MG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -2967,7 +2967,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP1535M": "seeds/Mach 1535.gdl"},
+      "seeds": {"TLP1535M": "seeds/Mach 1535.gdl", "TLP1535T": "seeds/Mach TLP1535T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -3762,7 +3762,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP720T": "seeds/Mach 720.gdl"},
+      "seeds": {"TLP720T": "seeds/Mach 720.gdl", "TLP720C": "seeds/Mach TLP720C.gdl", "TLP720M": "seeds/Mach TLP720M.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -4571,6 +4571,28 @@
           ],
           "pt": {"title": 42, "label": 22}
         },
+        "display": {
+          "popup": "Display Settings",
+          "heading": [88, 132, 390, 60],
+          "text": "DISPLAYS",
+          "cards": [
+            {
+              "rect": [86, 241, 160, 387],
+              "surface": null,
+              "heading": [88, 189, 158, 52],
+              "text": "1",
+              "keys": [[86, 241, 160, 99], [86, 363, 160, 99], [86, 529, 160, 99]]
+            },
+            {
+              "rect": [318, 241, 160, 387],
+              "surface": null,
+              "heading": [318, 189, 160, 52],
+              "text": "2",
+              "keys": [[318, 241, 160, 99], [318, 363, 160, 99], [318, 529, 160, 99]]
+            }
+          ],
+          "pt": {"heading": 24, "group": 28}
+        },
         "windows": {
           "help": {
             "popup": "Help",
@@ -4680,7 +4702,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP525T": "seeds/Mach 525.gdl"},
+      "seeds": {"TLP525T": "seeds/Mach 525.gdl", "TLP525C": "seeds/Mach TLP525C.gdl", "TLP525M": "seeds/Mach TLP525M.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main Page",
@@ -4774,6 +4796,28 @@
             {"rect": [530, 183, 100, 100], "label": [504, 283, 153, 54]}
           ],
           "pt": {"title": 30, "label": 14}
+        },
+        "display": {
+          "popup": "Display Settings",
+          "heading": [55, 88, 244, 40],
+          "text": "DISPLAYS",
+          "cards": [
+            {
+              "rect": [54, 161, 100, 258],
+              "surface": null,
+              "heading": [55, 126, 99, 35],
+              "text": "1",
+              "keys": [[54, 161, 100, 66], [54, 242, 100, 66], [54, 353, 100, 66]]
+            },
+            {
+              "rect": [199, 161, 100, 258],
+              "surface": null,
+              "heading": [199, 126, 100, 35],
+              "text": "2",
+              "keys": [[199, 161, 100, 66], [199, 242, 100, 66], [199, 353, 100, 66]]
+            }
+          ],
+          "pt": {"heading": 16, "group": 18}
         },
         "windows": {
           "help": {
@@ -4884,7 +4928,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP320M": "seeds/Mach 320.gdl"},
+      "seeds": {"TLP320M": "seeds/Mach 320.gdl", "TLP320C": "seeds/Mach TLP320C.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": false, "image": false},
       "frame": {
         "page": "Doc Cam 1",

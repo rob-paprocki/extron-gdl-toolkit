@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Start</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- The page the panel boots to. -->
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Start" splash="true" start="true" panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate" does="Boots the panel; the program shows Powering Up while the room starts.">
+  <x-import component-from-global-scope="ExtronAfterburn.MainArea">
+    <x-import component-from-global-scope="ExtronAfterburn.Label" name="RoomName" type="title" align="center" style="position: absolute; left: 158px; top: 107px; width: 600px; height: 60px">Training Room</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Start" size="17" nav="SelectSource" does="Starts the room and shows the sources." style="position: absolute; left: 344px; top: 360px; width: 228px; height: 64px">Press to begin</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Clock" name="DateTime" format="datetime" align="center" color="text" style="position: absolute; left: 232px; top: 690px; width: 450px; height: 60px"></x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

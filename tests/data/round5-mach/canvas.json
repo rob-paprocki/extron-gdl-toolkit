@@ -1,0 +1,72 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-01T12:00:00Z"
+ },
+ "title": "Training Room",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 800, "title": "Start", "is_interactive": true},
+  "MainSD.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Main SD", "is_interactive": true},
+  "Call.dc.html": {"x": 2720, "y": 0, "w": 1280, "h": 800, "title": "Call", "is_interactive": true},
+  "PC.dc.html": {"x": 0, "y": 920, "w": 995, "h": 549, "title": "PC"},
+  "Laptop.dc.html": {"x": 1075, "y": 920, "w": 995, "h": 549, "title": "Laptop"},
+  "ShareLink.dc.html": {"x": 2150, "y": 920, "w": 995, "h": 549, "title": "ShareLink"},
+  "DocCam.dc.html": {"x": 0, "y": 1589, "w": 995, "h": 549, "title": "Document Camera"},
+  "BluRay.dc.html": {"x": 1075, "y": 1589, "w": 995, "h": 549, "title": "Blu-ray"},
+  "VTCDialer.dc.html": {"x": 2150, "y": 1589, "w": 995, "h": 549, "title": "VTC Dialer"},
+  "Lighting.dc.html": {"x": 0, "y": 2258, "w": 1280, "h": 800, "title": "Lighting Settings"},
+  "Screen.dc.html": {"x": 1360, "y": 2258, "w": 1280, "h": 800, "title": "Screen Settings"},
+  "Audio.dc.html": {"x": 2720, "y": 2258, "w": 1280, "h": 800, "title": "Audio Settings"},
+  "Recording.dc.html": {"x": 0, "y": 3178, "w": 1280, "h": 800, "title": "Recording Controls", "is_interactive": true},
+  "DisplaySources.dc.html": {"x": 1360, "y": 3178, "w": 1280, "h": 800, "title": "Display Sources"},
+  "CameraSelect.dc.html": {"x": 2720, "y": 3178, "w": 1280, "h": 800, "title": "Camera Select"},
+  "ShareContent.dc.html": {"x": 0, "y": 4098, "w": 1280, "h": 800, "title": "Share Content"},
+  "Help.dc.html": {"x": 1360, "y": 4098, "w": 1280, "h": 800, "title": "Help"},
+  "PowerDown.dc.html": {"x": 2720, "y": 4098, "w": 1280, "h": 800, "title": "Power Down"},
+  "PoweringDown.dc.html": {"x": 0, "y": 5018, "w": 1280, "h": 800, "title": "Powering Down"},
+  "PoweringUp.dc.html": {"x": 1360, "y": 5018, "w": 1280, "h": 800, "title": "Powering Up"},
+  "IncomingCall.dc.html": {"x": 2720, "y": 5018, "w": 1280, "h": 800, "title": "Incoming Call"},
+  "RecordConfirm.dc.html": {"x": 0, "y": 5938, "w": 1280, "h": 800, "title": "Confirm Record"},
+  "StopConfirm.dc.html": {"x": 1360, "y": 5938, "w": 1280, "h": 800, "title": "Confirm Stop"}
+ },
+ "order": [
+  "Main.dc.html",
+  "MainSD.dc.html",
+  "Call.dc.html",
+  "PC.dc.html",
+  "Laptop.dc.html",
+  "ShareLink.dc.html",
+  "DocCam.dc.html",
+  "BluRay.dc.html",
+  "VTCDialer.dc.html",
+  "Lighting.dc.html",
+  "Screen.dc.html",
+  "Audio.dc.html",
+  "Recording.dc.html",
+  "DisplaySources.dc.html",
+  "CameraSelect.dc.html",
+  "ShareContent.dc.html",
+  "Help.dc.html",
+  "PowerDown.dc.html",
+  "PoweringDown.dc.html",
+  "PoweringUp.dc.html",
+  "IncomingCall.dc.html",
+  "RecordConfirm.dc.html",
+  "StopConfirm.dc.html"
+ ],
+ "notes": {},
+ "designSystems": [
+  {
+   "title": "Extron Mach",
+   "namespace": "extronmach",
+   "artifact": "https://claude.ai/artifact/MsCJMb2sMX7vJys3KZ42ND",
+   "version": null,
+   "copiedAt": "2026-11-01T12:00:00Z"
+  }
+ ]
+}

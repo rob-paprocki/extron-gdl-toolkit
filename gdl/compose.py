@@ -53,8 +53,8 @@ FALLBACKS = set()
 # Every face read out of a seed because no file of it is recovered here
 # (gdl.fonts.seed_face), as '<face> from <seed>'. Right for a preview, which
 # has nothing better; wrong for the render baseline, which is scored in the
-# faces the fixtures embed - a seed's Arial Black is Windows', not their
-# Monotype 5.06 - and would then score by which seeds are pulled.
+# faces the synthetic fixture embeds - a seed's Arial Black can be Windows', not
+# its Monotype 5.06 - and would then score by which seeds are pulled.
 # tests/score.py refuses to record over one, as over a stand-in.
 FROM_SEED = set()
 
@@ -79,8 +79,8 @@ def _system_fonts():
 
 # The faces the built file being drawn carries (gdl.fonts.carried), or None.
 # Set only by as_the_panel(): the render baseline is scored in the Monotype
-# faces the fixtures embed, and drawing a Mach seed's Windows Arial there would
-# move it.
+# faces the synthetic fixture embeds, and drawing a Mach seed's Windows Arial
+# there would move it.
 _carried = None
 _carried_tag = None
 _PROJECT_FACES = {}
@@ -129,7 +129,7 @@ def as_the_panel(project=None):
     is the one the built file `project` embeds, not the build recovered into
     gdl/fonts/ (Afterburn's 320/525/725/300M seeds embed a different
     afterburn.ttf from the others; Mach, Shockwave and Turbulence embed Windows
-    Arial, not the Monotype the fixtures do). A face the file does not carry
+    Arial, not the Monotype the synthetic fixture does). A face the file does not carry
     falls back as it always has. The scoring path (tests/score.py) never enters
     this and keeps the snapshot rule. Both settings go back as found. Nested, an
     inner call with no `project` keeps the outer one's faces (only BINARY is
@@ -187,10 +187,11 @@ def face(name, bold, italic, px):
             f = _cache[key] = ImageFont.truetype(p, size=px)
             return f
     raise LookupError(
-        f'no font file for {name!r} (bold={bold} italic={italic}). Every face a '
-        f'fixture declares is embedded in it, Arial included - run '
-        f'`python -m gdl.fonts <file.gdl> gdl/fonts/` over all six fixtures, since '
-        f'no single one carries every face. Failing that, {SYSFONTS} is searched.')
+        f'no font file for {name!r} (bold={bold} italic={italic}). A built project '
+        f'embeds the faces it declares, Arial included - run '
+        f'`python -m gdl.fonts <file.gdl> gdl/fonts/` over the project, or over '
+        f'tests/data/synthetic/synthetic.gdl for the faces the render baseline is '
+        f'scored in. Failing that, {SYSFONTS} is searched.')
 
 
 def metrics(f):

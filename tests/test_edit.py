@@ -1,11 +1,20 @@
 """Tests for the edit vocabulary.
 
-These run against the REAL client fixture rather than a synthetic project,
-on purpose. Every bug this vocabulary has had came from the difference between
-what a panel file looks like in the abstract and what a real one contains: a
-button whose caption is not in `textField`, a caption that is formatted text
-with hand-placed tabs, a page whose controls do not fit a smaller panel. A
-hand-built fixture would have had none of those.
+These run against a built project rather than hand-made page dicts, on purpose.
+Every bug this vocabulary has had came from the difference between what a
+panel file looks like in the abstract and what a real one contains: a button
+whose caption is not in `textField`, a caption that is formatted text with
+hand-placed tabs, a page whose controls do not fit a smaller panel. The
+synthetic fixture (tests/data/synthetic/), built by the toolkit on a seed, is
+that project, everywhere.
+
+What only a hand-edited project holds - a caption stored as formatted text on
+a state, one ID mirrored across two popups, a fill only a state has, a touch
+target under Extron's minimum - the synthetic spec cannot carry: a spec never
+writes formatted text, and it has to pass the design rules to build. Each is
+put, as the client project that found it had it, into a page shaped exactly as
+Project.pages() reads one (`_hand_made`, below), or spliced into the
+fixture's own pages.
 """
 import os
 import sys
@@ -13,59 +22,52 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _corpus import MAIN_CLIENT, needs_client  # noqa: E402
+from _corpus import SYNTHETIC, needs_synthetic  # noqa: E402
 
 from gdl.edit import Edits, _norm  # noqa: E402
 from gdl.spec import MODELS_FULL, PRESS_FIELD as PRESS  # noqa: E402
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FIXTURE = os.path.join(
-    HERE, 'fixtures', 'gdl',
-    'client-boardroom-2.0.0.gdl')
-MAIN = '2000 - Main - Presentation'
 
 
-def _edits(edits):
-    return Edits({'edits': edits}, FIXTURE)
+def _on_synthetic(edits):
+    return Edits({'edits': edits}, SYNTHETIC)
 
 
-@needs_client(MAIN_CLIENT)
-class TestSelection(unittest.TestCase):
+@needs_synthetic()
+class TestSelectionOnTheSyntheticFixture(unittest.TestCase):
     def test_an_empty_selector_matches_everything(self):
-        self.assertGreater(len(_edits([]).select({})), 600)
+        self.assertGreater(len(_on_synthetic([]).select({})), 500)
 
-    def test_page_narrows_by_name(self):
-        ed = _edits([])
-        hits = ed.select({'page': MAIN})
-        self.assertTrue(hits)
-        self.assertTrue(all(pg['name'] == MAIN for pg, _ in hits))
+    def test_page_and_type_are_anded(self):
+        hits = _on_synthetic([]).select({'page': 'Controls', 'type': 'PBSlider'})
+        self.assertEqual(len(hits), 5)
+        self.assertTrue(all(pg['name'] == 'Controls' and c['type'] == 'PBSlider' for pg, c in hits))
 
-    def test_type_and_page_are_anded(self):
-        ed = _edits([])
-        hits = ed.select({'page': MAIN, 'type': 'PBSlider'})
-        self.assertTrue(all(c['type'] == 'PBSlider' for _, c in hits))
+    def test_text_matches_a_buttons_caption(self):
+        hits = _on_synthetic([]).select({'page': 'Main', 'text': 'Alpha'})
+        self.assertEqual([c['caption'] for _, c in hits], ['Alpha'])
 
-    def test_text_matches_the_caption_not_the_text_field(self):
-        """The trap this vocabulary was built around.
-
-        A button's wording usually lives on its first STATE, so a selector that
-        compared `textField` matched nothing on a real project and the edit
-        silently did nothing.
-        """
-        ed = _edits([])
-        hits = ed.select({'text': 'Cameras'})
-        self.assertTrue(hits, 'no control captioned Cameras - caption lookup is broken')
+    def test_text_matches_a_caption_only_a_state_holds(self):
+        """The trap this vocabulary was built around. A button's wording often
+        lives on its states, so a selector that compared `textField` matched
+        nothing on a real project and the edit silently did nothing. The
+        fixture's picture buttons have no textField, and on each state the
+        formatted 'Preset 1' their seed's clone carries (docs/gdl-format.md
+        section 2)."""
+        hits = _on_synthetic([]).select({'page': 'Buttons', 'text': 'Preset 1'})
+        self.assertEqual(sorted(c['name'] for _, c in hits), ['PicA', 'PicB', 'PicC'])
         for _, c in hits:
-            self.assertEqual(c['caption'], 'Cameras')
-            self.assertFalse(c['text'], 'this fixture holds it on the state, not the control')
+            self.assertFalse(c['text'], 'held on the state, not the control')
+            self.assertEqual(c['caption_in'], 'fstate')
 
     def test_regex_selection(self):
-        hits = _edits([]).select({'text_matches': r'^Table Input \d$'})
-        self.assertEqual(len(hits), 9)
+        hits = _on_synthetic([]).select({'text_matches': r'^Channel \d\d$'})
+        self.assertEqual(len(hits), 8)
 
 
-@needs_client(MAIN_CLIENT)
-class TestUnknownKeys(unittest.TestCase):
+@needs_synthetic()
+class TestUnknownKeysOnTheSyntheticFixture(unittest.TestCase):
     """select() tests only the keys it knows, so a misspelled one was skipped
     and the selector matched everything: a recolor meant for five sliders
     restyled 292 controls, and a renumber of one page's buttons renumbered its
@@ -73,227 +75,170 @@ class TestUnknownKeys(unittest.TestCase):
     plan. Every level of an edit file is held to the keys something reads."""
 
     def _errors(self, spec):
-        return Edits(spec, FIXTURE).check()[1]
+        return Edits(spec, SYNTHETIC).check()[1]
 
     def test_a_misspelled_selector_key_is_an_error_and_plans_nothing(self):
         spec = {'edits': [{'op': 'restyle', 'select': {'tipe': 'PBSlider'},
-                           'map': {'#242634': '#1B2233'}}]}
-        plan, errors, _ = Edits(spec, FIXTURE).check()
+                           'map': {'#37394E': '#1B2233'}}]}
+        plan, errors, _ = Edits(spec, SYNTHETIC).check()
         self.assertTrue([e for e in errors if "'tipe'" in e], errors)
         self.assertEqual(plan['controls'], [])
 
     def test_the_correct_selector_still_plans(self):
         spec = {'edits': [{'op': 'restyle', 'select': {'type': 'PBSlider'},
-                           'map': {'#242634': '#1B2233'}}]}
-        plan, errors, _ = Edits(spec, FIXTURE).check()
+                           'map': {'#37394E': '#1B2233'}}]}
+        plan, errors, _ = Edits(spec, SYNTHETIC).check()
         self.assertEqual(errors, [])
-        self.assertEqual(len(plan['controls']), 5)
+        self.assertTrue(plan['controls'])
 
     def test_a_renumber_with_a_misspelled_selector_is_an_error(self):
         errors = self._errors({'edits': [{'op': 'renumber', 'start': 5000,
-                                          'select': {'tpye': 'PBButton', 'page': MAIN}}]})
+                                          'select': {'tpye': 'PBButton', 'page': 'Main'}}]})
         self.assertTrue([e for e in errors if "'tpye'" in e], errors)
 
     def test_a_misspelled_op_key_is_an_error(self):
-        errors = self._errors({'edits': [{'op': 'restyle', 'mpa': {'#242634': '#1B2233'}}]})
+        errors = self._errors({'edits': [{'op': 'restyle', 'mpa': {'#37394E': '#1B2233'}}]})
         self.assertTrue([e for e in errors if "'mpa'" in e], errors)
 
     def test_a_key_of_another_op_is_an_error(self):
         """`scale` belongs to retarget; on a rename it does nothing."""
-        errors = self._errors({'edits': [{'op': 'rename', 'map': {'Cameras': 'Cams'},
+        errors = self._errors({'edits': [{'op': 'rename', 'map': {'Alpha': 'First'},
                                           'scale': True}]})
         self.assertTrue([e for e in errors if "'scale'" in e], errors)
 
     def test_a_misspelled_top_level_key_is_an_error(self):
         """`edit` for `edits` planned nothing, with 0 errors."""
-        errors = self._errors({'edit': [{'op': 'rename', 'map': {'Cameras': 'Cams'}}]})
+        errors = self._errors({'edit': [{'op': 'rename', 'map': {'Alpha': 'First'}}]})
         self.assertTrue([e for e in errors if "'edit'" in e], errors)
 
     def test_underscored_keys_are_notes(self):
         errors = self._errors({'_why': 'a note', 'edits': [
-            {'op': 'rename', '_why': 'shorter', 'map': {'Cameras': 'Cams'}}]})
+            {'op': 'rename', '_why': 'shorter', 'select': {'page': 'Main'},
+             'map': {'Alpha': 'First'}}]})
         self.assertEqual(errors, [])
 
     def test_the_examples_edit_file_passes(self):
+        """examples/edits.json is written against the synthetic fixture, so it
+        is checked wherever the toolkit is."""
         import json
         with open(os.path.join(HERE, 'examples', 'edits.json'), encoding='utf-8') as fh:
             spec = json.load(fh)
-        self.assertEqual([e for e in self._errors(spec) if 'not a key' in e], [])
+        plan, errors, _ = Edits(spec, SYNTHETIC).check()
+        self.assertEqual(errors, [])
+        self.assertTrue(plan['controls'])
 
 
-@needs_client(MAIN_CLIENT)
-class TestRename(unittest.TestCase):
-    def _plan(self, edits):
-        return _edits(edits).plan()
-
-    def test_rename_writes_to_the_state_for_a_state_caption(self):
-        plan, problems = self._plan([{'op': 'rename',
-                                      'select': {'text': 'Table Input 1'},
-                                      'text': 'Laptop'}])
+@needs_synthetic()
+class TestRenameOnTheSyntheticFixture(unittest.TestCase):
+    def test_a_caption_on_the_control_is_written_there_and_on_every_state(self):
+        """A button renders from its states, so a caption written only on the
+        control builds blank."""
+        plan, problems = _on_synthetic([{'op': 'rename', 'select': {'page': 'Main', 'text': 'Alpha'},
+                                         'text': 'First'}]).plan()
         self.assertEqual(problems, [])
-        op = plan['controls'][0]
-        # Both of its states say it, so both are written - each by index.
-        self.assertEqual([(ps['index'], ps['fields']) for ps in op['per_state']],
-                         [(0, {'textField': 'Laptop'}), (1, {'textField': 'Laptop'})])
-        self.assertNotIn('fields', op)
-
-    def test_rename_writes_ftext_for_a_formatted_caption(self):
-        plan, _ = self._plan([{'op': 'rename', 'select': {'text': 'Cameras'},
-                               'text': 'Camera Control'}])
-        op = plan['controls'][0]
-        self.assertTrue(op['per_state'])
-        for ps in op['per_state']:
-            self.assertEqual(ps['ftext'], 'Camera Control')
-            self.assertTrue(ps['flattened'])
-            self.assertNotIn('fields', ps)
+        (op,) = plan['controls']
+        self.assertEqual(op['fields'], {'textField': 'First'})
+        self.assertEqual(op['per_state'], [{'index': 0, 'fields': {'textField': 'First'}},
+                                           {'index': 1, 'fields': {'textField': 'First'}}])
 
     def test_a_selector_matching_nothing_is_an_error(self):
-        _, problems = self._plan([{'op': 'rename',
-                                   'select': {'text': 'No Such Caption'},
-                                   'text': 'x'}])
+        _, problems = _on_synthetic([{'op': 'rename', 'select': {'text': 'No Such Caption'},
+                                      'text': 'x'}]).plan()
         self.assertTrue(any('matched nothing' in p or 'nothing has the caption' in p
-                            for p in problems))
+                            for p in problems), problems)
 
     def test_map_form_renames_several_at_once(self):
-        plan, problems = self._plan([{'op': 'rename', 'select': {'page': MAIN},
-                                      'map': {'Cameras': 'A', 'Displays': 'B'}}])
+        plan, problems = _on_synthetic([{'op': 'rename', 'select': {'page': 'Main'},
+                                         'map': {'Alpha': 'A', 'Beta': 'B'}}]).plan()
         self.assertEqual(problems, [])
         self.assertEqual(len(plan['controls']), 2)
 
-    def test_growing_a_formatted_caption_warns(self):
-        """Measured against the real build: 'Cameras' -> 'Camera Control'
-        rasterizes as two lines with the second unindented over the icon."""
-        _, _, warnings = _edits([{'op': 'rename', 'select': {'text': 'Cameras'},
-                                  'text': 'Camera Control'}]).check()
-        self.assertTrue(any('FORMATTED text' in w for w in warnings))
 
-    def test_a_same_length_formatted_rename_does_not_warn(self):
-        """'Displays' -> 'Screens' built correctly, so warning on it would be
-        crying wolf on the one case that works."""
-        _, errors, warnings = _edits([{'op': 'rename', 'select': {'text': 'Displays'},
-                                       'text': 'Screens'}]).check()
-        self.assertEqual(errors, [])
-        self.assertEqual(warnings, [])
-
-
-@needs_client(MAIN_CLIENT)
-class TestRenumber(unittest.TestCase):
-    def test_ids_are_handed_out_in_order(self):
-        plan, problems = _edits([{'op': 'renumber',
-                                  'select': {'page': '1000 - Home', 'type': 'PBLabel'},
-                                  'start': 1100}]).plan()
+@needs_synthetic()
+class TestRenumberOnTheSyntheticFixture(unittest.TestCase):
+    def test_ids_are_handed_out_in_order_and_by_step(self):
+        sel = {'page': 'Start', 'type': 'PBLabel'}
+        plan, problems = _on_synthetic([{'op': 'renumber', 'select': sel, 'start': 1100}]).plan()
         self.assertEqual(problems, [])
-        got = [o['fields']['userIdField'] for o in plan['controls']]
-        self.assertEqual(got, [1100, 1101])
-
-    def test_step_is_honoured(self):
-        plan, _ = _edits([{'op': 'renumber',
-                           'select': {'page': '1000 - Home', 'type': 'PBLabel'},
-                           'start': 200, 'step': 10}]).plan()
-        self.assertEqual([o['fields']['userIdField'] for o in plan['controls']],
-                         [200, 210])
+        self.assertEqual([o['fields']['userIdField'] for o in plan['controls']], [1100, 1101])
+        plan, _ = _on_synthetic([{'op': 'renumber', 'select': sel, 'start': 200, 'step': 10}]).plan()
+        self.assertEqual([o['fields']['userIdField'] for o in plan['controls']], [200, 210])
 
     def test_colliding_with_an_untouched_control_is_an_error(self):
         """Duplicate IDs are legal in the format - Extron uses them for feedback
         mirrors - so nothing downstream would complain. It is still never what a
         renumber means."""
-        ed = _edits([])
-        home = [p for p in ed.pages if p['name'] == '1000 - Home'][0]
-        taken = next(c['id'] for c in home['controls']
-                     if c['id'] and c['type'] != 'PBLabel')
-        _, errors, _ = _edits([{'op': 'renumber',
-                                'select': {'page': '1000 - Home', 'type': 'PBLabel'},
-                                'start': taken}]).check()
-        self.assertTrue(any('already has it' in e for e in errors))
+        start = [p for p in _on_synthetic([]).pages if p['name'] == 'Start'][0]
+        taken = next(c['id'] for c in start['controls'] if c['id'] and c['type'] == 'PBButton')
+        _, errors, _ = _on_synthetic([{'op': 'renumber', 'start': taken,
+                                       'select': {'page': 'Start', 'type': 'PBLabel'}}]).check()
+        self.assertTrue(any('already has it' in e for e in errors), errors)
 
     def test_only_an_addressable_control_is_numbered(self):
-        """A button, label, level or slider with an ID. A control at 0 has none
-        on purpose - the client fixture's clock and popup references on Home -
-        and numbering it gives the program a control it never had."""
-        ed = _edits([{'op': 'renumber', 'select': {'page': '1000 - Home'}, 'start': 1100}])
-        plan, errors, warnings = ed.check()
+        """A button, label, level or slider with an ID. Start's popup
+        references and clocks are not addressable, and its four unnamed
+        references have no ID on purpose: numbering one gives the program a
+        control it never had."""
+        plan, errors, warnings = _on_synthetic([{'op': 'renumber', 'select': {'page': 'Start'},
+                                                 'start': 1100}]).check()
         self.assertEqual(errors, [])
         self.assertEqual([(o['was'], o['fields']['userIdField']) for o in plan['controls']],
-                         [(2, 1100), (63, 1101), (77, 1102)])
+                         [(1001, 1100), (1002, 1101), (1004, 1102)])
         self.assertTrue(any('7 control(s) the selector matched' in w and 'no ID' in w
                             for w in warnings), warnings)
 
     def test_nothing_addressable_is_an_error(self):
-        _, errors, _ = _edits([{'op': 'renumber', 'start': 1100,
-                                'select': {'page': '1000 - Home',
-                                           'type': 'PBPopupPageReference'}}]).check()
+        _, errors, _ = _on_synthetic([{'op': 'renumber', 'start': 1100,
+                                       'select': {'page': 'Start',
+                                                  'type': 'PBPopupPageReference'}}]).check()
         self.assertTrue(any('nothing addressable' in e for e in errors), errors)
 
-    def test_mirrors_take_one_new_id(self):
-        """Controls sharing an ID are one control to the program - a feedback
-        twin on its page, one button on two confirmation popups. Numbered one
-        by one, each took its own, and check() said nothing."""
-        plan, errors, _ = _edits([{'op': 'renumber', 'start': 30000,
-                                   'select': {'page': MAIN, 'type': 'PBButton'}}]).check()
-        self.assertEqual(errors, [])
-        new = {o['fields']['userIdField'] for o in plan['controls'] if o['was'] == 5000}
-        self.assertEqual(len(new), 1, new)
-        olds = {o['was'] for o in plan['controls']}
-        self.assertEqual(len({o['fields']['userIdField'] for o in plan['controls']}), len(olds))
-        plan, errors, warnings = _edits([{'op': 'renumber', 'start': 40000,
-                                          'select': {'name': 'btn_shutdown_confirm'}}]).check()
-        self.assertEqual((errors, [o['fields']['userIdField'] for o in plan['controls']]),
-                         ([], [40000, 40000]))
-        self.assertEqual([w for w in warnings if 'mirror' in w], [])
-
-    def test_a_mirror_the_selector_leaves_is_a_warning(self):
-        _, errors, warnings = _edits([{'op': 'renumber', 'start': 40000, 'select': {
-            'page': '160 - Confirmation', 'name': 'btn_shutdown_confirm'}}]).check()
-        self.assertEqual(errors, [])
-        self.assertTrue(any("'161 - Teams Confirmation'" in w and 'keeps id 81' in w
-                            for w in warnings), warnings)
-
     def test_an_id_past_uint16_is_an_error(self):
-        _, errors, _ = _edits([{'op': 'renumber', 'select': {'type': 'PBButton'},
-                                'start': 65530, 'step': 3}]).check()
+        _, errors, _ = _on_synthetic([{'op': 'renumber', 'select': {'type': 'PBButton'},
+                                       'start': 65530, 'step': 3}]).check()
         self.assertTrue(any('65535' in e for e in errors), errors)
 
     def test_a_start_or_step_that_cannot_be_is_an_error_not_a_hang(self):
         """A step of 0 never moves past a taken ID: the planner spun forever."""
         for start, step in ((1, 0), (1, -1), (1, 1.5), (0, 1), (70000, 1), ('abc', 1), (True, 1)):
-            plan, errors, _ = _edits([{'op': 'renumber', 'select': {'type': 'PBLabel'},
-                                       'start': start, 'step': step}]).check()
+            plan, errors, _ = _on_synthetic([{'op': 'renumber', 'select': {'type': 'PBLabel'},
+                                              'start': start, 'step': step}]).check()
             self.assertTrue(errors, (start, step))
             self.assertEqual(plan['controls'], [], (start, step))
 
 
-class TestRestyle(unittest.TestCase):
-    @needs_client(MAIN_CLIENT)
+@needs_synthetic()
+class TestRestyleOnTheSyntheticFixture(unittest.TestCase):
     def test_colors_are_remapped(self):
-        plan, problems = _edits([{'op': 'restyle', 'select': {'type': 'PBSlider'},
-                                  'map': {'#242634': '#1B2233'}}]).plan()
+        plan, problems = _on_synthetic([{'op': 'restyle', 'select': {'type': 'PBSlider'},
+                                         'map': {'#37394E': '#1B2233'}}]).plan()
         self.assertEqual(problems, [])
         self.assertTrue(plan['controls'])
         for o in plan['controls']:
             self.assertEqual(o['colors']['borderFillColorField'], '#FF1B2233')
 
-    def test_short_hex_means_opaque(self):
-        self.assertEqual(_norm('#242634'), '#FF242634')
-        self.assertEqual(_norm('#FF242634'), '#FF242634')
-
-    @needs_client(MAIN_CLIENT)
     def test_an_unused_color_is_a_warning_not_an_error(self):
         """A theme map legitimately covers colors a given project happens not
         to use, so this must not block the edit."""
-        ed = _edits([{'op': 'restyle', 'map': {'#010203': '#040506'}}])
+        ed = _on_synthetic([{'op': 'restyle', 'map': {'#010203': '#040506'}}])
         _, errors, _ = ed.check()
         self.assertEqual(errors, [])
         self.assertIn('#FF010203', ed._unused_colors)
 
 
-class TestRetarget(unittest.TestCase):
-    @needs_client(MAIN_CLIENT)
+class TestColors(unittest.TestCase):
+    def test_short_hex_means_opaque(self):
+        self.assertEqual(_norm('#242634'), '#FF242634')
+        self.assertEqual(_norm('#FF242634'), '#FF242634')
+
+
+@needs_synthetic()
+class TestRetargetOnTheSyntheticFixture(unittest.TestCase):
     def test_an_unknown_model_is_an_error_with_a_suggestion(self):
-        _, errors, _ = _edits([{'op': 'retarget', 'model': 'TLP1720'}]).check()
+        _, errors, _ = _on_synthetic([{'op': 'retarget', 'model': 'TLP1720'}]).check()
         self.assertTrue(errors)
         self.assertIn('TLP1720MG', errors[0])
 
-    @needs_client(MAIN_CLIENT)
     def test_cci700_is_gone(self):
         """GUI Designer 1.28 dropped CCI700 from PlatformProTypeEnum.
 
@@ -303,18 +248,12 @@ class TestRetarget(unittest.TestCase):
         file whose controls are scaled for one panel on another panel's canvas.
         """
         self.assertNotIn('CCI700', MODELS_FULL)
-        _, errors, _ = _edits([{'op': 'retarget', 'model': 'CCI700'}]).check()
+        _, errors, _ = _on_synthetic([{'op': 'retarget', 'model': 'CCI700'}]).check()
         self.assertTrue(errors, 'a CCI700 retarget must not pass check()')
 
-    def test_ecp_is_a_known_model(self):
-        """Extron Control Pro, new in 1.28. Read out of the assemblies:
-        CreatePlatform -> PBVTLPEcpPlatform, 1920x1080 @ 220 DPI, 60-sVTLPEcp."""
-        self.assertEqual(MODELS_FULL['VTLPEcp'], (1920, 1080, 220.0, '60-sVTLPEcp'))
-
-    @needs_client(MAIN_CLIENT)
-    def test_a_real_model_sets_all_three_fields(self):
-        plan, errors, _ = _edits([{'op': 'retarget', 'model': 'TLP1535M',
-                                   'scale': True}]).check()
+    def test_a_real_model_sets_all_three_fields_and_moves_every_control(self):
+        plan, errors, _ = _on_synthetic([{'op': 'retarget', 'model': 'TLP1535M',
+                                          'scale': True}]).check()
         self.assertEqual(errors, [], 'scaling up should not overflow')
         self.assertEqual(len(plan['project']), 1)
         self.assertEqual(plan['project'][0]['size'], [1920, 1080])
@@ -323,45 +262,82 @@ class TestRetarget(unittest.TestCase):
         # class from Enum.Parse + CreatePlatform; a guessed class name was wrong
         # for 9 of the 55 models and read by nothing.
         self.assertNotIn('platform_class', plan['project'][0])
-
-    @needs_client(MAIN_CLIENT)
-    def test_scaling_moves_every_control(self):
-        plan, _, _ = _edits([{'op': 'retarget', 'model': 'TLP1535M',
-                              'scale': True}]).check()
-        self.assertGreater(len(plan['controls']), 600)
+        self.assertGreater(len(plan['controls']), 500)
         for o in plan['controls']:
             self.assertIn('leftField', o['fields'])
 
-    @needs_client(MAIN_CLIENT)
     def test_shrinking_without_scaling_is_an_error(self):
         """The whole point of the check. Build moves a control that no longer
         fits to 0,0 - silently, reporting 0 errors - so an unscaled retarget to
         a smaller panel destroys the layout and nothing says so."""
-        _, errors, _ = _edits([{'op': 'retarget', 'model': 'TLP725M'}]).check()
-        self.assertTrue(errors)
-        self.assertTrue(any('falls outside' in e and '0,0' in e for e in errors))
+        _, errors, _ = _on_synthetic([{'op': 'retarget', 'model': 'TLP725M'}]).check()
+        self.assertTrue(any('falls outside' in e and '0,0' in e for e in errors), errors)
 
-    @needs_client(MAIN_CLIENT)
+    def test_the_old_minimum_is_the_projects_own_model(self):
+        """A TLP Pro 1035, minimum 53 px, every touch target at least that: on
+        an 835 (67 px) some are under, and none was already."""
+        _, _, warnings = _on_synthetic([{'op': 'retarget', 'model': 'TLP835M'}]).check()
+        under = [w for w in warnings if 'touch target' in w]
+        self.assertTrue(under)
+        self.assertFalse([w for w in under if 'already under' in w], under)
+
+
+@needs_synthetic()
+class TestATouchTargetAlreadyUnder(unittest.TestCase):
+    """A retarget of a hand-made project surfaces the touch targets that were
+    already under the minimum of the panel it leaves - dozens on the client
+    project this was found on. The synthetic spec passes the design rules to
+    build, so it has none: a key under the 1035's 53 px is spliced into its
+    Start page, read exactly as the fixture's own are."""
+
+    def _check(self, edit, size=(30, 30)):
+        ed = _on_synthetic([edit])
+        start = next(pg for pg in ed.pages if pg['name'] == 'Start')
+        begin = next(c for c in start['controls'] if c['name'] == 'Begin')
+        start['controls'].append(dict(begin, obj_id=999999, id=1999, name='Tiny',
+                                      rect=(20, 20) + size))
+        return ed.check()
+
     def test_a_pre_existing_touch_violation_says_so(self):
-        _, _, warnings = _edits([{'op': 'retarget', 'model': 'TLP1535M',
-                                  'scale': True}]).check()
-        self.assertTrue(any('already under the old' in w for w in warnings))
+        _, errors, warnings = self._check({'op': 'retarget', 'model': 'TLP1535M', 'scale': True})
+        self.assertEqual(errors, [])
+        # Scaled to 45x40, under the 1535's 45; the fixture's own keys all clear it.
+        self.assertEqual(len(warnings), 1, warnings)
+        self.assertIn('Tiny', warnings[0])
+        self.assertIn("already under the old panel's minimum - the TLP1035M or TLP1035T's 53px",
+                      warnings[0])
 
-    @needs_client(MAIN_CLIENT)
     def test_the_old_minimum_is_the_projects_own_model(self):
         """The fixture is a TLP Pro 1035 (60-1999-02), whose minimum is 53 px.
         By its resolution alone the old minimum was the 835's 67, so a button
         legal on the 1035 that the move to an 835 makes too small was tagged as
         one that already was."""
-        _, _, warnings = _edits([{'op': 'retarget', 'model': 'TLP835M'}]).check()
+        _, _, warnings = self._check({'op': 'retarget', 'model': 'TLP835M'})
         under = [w for w in warnings if 'touch target' in w]
-        self.assertTrue(under)
         for w in under:
             w_, h_ = (int(v) for v in w.split(': ', 1)[1].split()[0].split('x'))
             self.assertEqual('already under' in w, min(w_, h_) < 53, w)
+        self.assertEqual([w for w in under if 'already under' in w and 'Tiny' in w],
+                         [w for w in under if 'already under' in w])
+        self.assertTrue([w for w in under if 'already under' in w], under)
         self.assertTrue(any('already under' not in w for w in under), under)
         self.assertTrue(all("the TLP1035M or TLP1035T's" in w for w in under
                             if 'already under' in w), under)
+
+    def test_warnings_never_block_a_plan(self):
+        """A retarget of a real project surfaces touch-target warnings. If those
+        blocked, the tool would refuse the job it was asked to do."""
+        plan, errors, warnings = self._check({'op': 'retarget', 'model': 'TLP1535M', 'scale': True})
+        self.assertTrue(warnings)
+        self.assertEqual(errors, [])
+        self.assertTrue(plan['controls'])
+
+
+class TestRetarget(unittest.TestCase):
+    def test_ecp_is_a_known_model(self):
+        """Extron Control Pro, new in 1.28. Read out of the assemblies:
+        CreatePlatform -> PBVTLPEcpPlatform, 1920x1080 @ 220 DPI, 60-sVTLPEcp."""
+        self.assertEqual(MODELS_FULL['VTLPEcp'], (1920, 1080, 220.0, '60-sVTLPEcp'))
 
 
 class TestRetargetOrientation(unittest.TestCase):
@@ -410,23 +386,12 @@ class TestRetargetOrientation(unittest.TestCase):
                 self.assertTrue(any('size is [width, height]' in e for e in errors), errors)
 
 
-@needs_client(MAIN_CLIENT)
-class TestSeverity(unittest.TestCase):
-    def test_warnings_never_block_a_plan(self):
-        """A retarget of a real project always surfaces touch-target warnings.
-        If those blocked, the tool would refuse the job it was asked to do."""
-        plan, errors, warnings = _edits([{'op': 'retarget', 'model': 'TLP1535M',
-                                          'scale': True}]).check()
-        self.assertTrue(warnings)
-        self.assertEqual(errors, [])
-        self.assertTrue(plan['controls'])
-
-
-# -- a button's states are not one thing --------------------------------------
+# -- what only a hand-edited project holds ------------------------------------
 #
-# The fixture has no button whose states say different things, so those cases
-# use a synthetic page shaped exactly like Project.pages() output. Colors come
-# from the fixture, where they genuinely differ by state.
+# The synthetic fixture has no button whose states say different things, no
+# caption held as formatted text, no mirror and no fill only a state has, so
+# those cases use a page shaped exactly like Project.pages() output - each as
+# the client project these rules were found on had it.
 
 def _st(name, caption=None, fill=None, where='state', text_color=None, stroke=None):
     return {'name': name, 'caption': caption, 'caption_in': where if caption else None,
@@ -446,11 +411,13 @@ def _button(name, states, **kw):
     return c
 
 
-def _synthetic(edits, *controls):
+def _hand_made(edits, *controls, pages=None):
+    """Edits over one page holding `controls`, or over `pages`, with no
+    project behind them."""
     ed = Edits.__new__(Edits)
-    ed.spec, ed.path, ed.project, ed.edits = {'edits': edits}, 'synthetic', None, edits
-    ed.pages = [{'kind': 'page', 'id': 51, 'name': 'Home', 'modal': None,
-                 'size': (1280, 800), 'controls': list(controls)}]
+    ed.spec, ed.path, ed.project, ed.edits = {'edits': edits}, 'hand-made', None, edits
+    ed.pages = pages or [{'kind': 'page', 'id': 51, 'name': 'Home', 'modal': None,
+                          'size': (1280, 800), 'controls': list(controls)}]
     return ed
 
 
@@ -459,16 +426,18 @@ GREY, NAVY, BLUE = ({'A': 255, 'R': 0x37, 'G': 0x39, 'B': 0x4E},
                     {'A': 255, 'R': 0x3D, 'G': 0x8B, 'B': 0xFD})
 DISPLAY = _button('Display', [_st('Off', 'Display Off', GREY),
                               _st('On', 'Display On', BLUE)])
+# A key whose caption is on both states and whose fill is only On's.
+INPUT = _button('Input', [_st('Off', 'Input 1'), _st('On', 'Input 1', NAVY)])
 
 
 class TestRenameByState(unittest.TestCase):
     def test_the_selector_finds_a_caption_in_any_state(self):
-        ed = _synthetic([], DISPLAY)
+        ed = _hand_made([], DISPLAY)
         self.assertEqual(len(ed.select({'text': 'Display On'})), 1)
         self.assertEqual(len(ed.select({'text_matches': 'On$'})), 1)
 
     def test_map_renames_only_the_state_that_says_it(self):
-        plan, problems = _synthetic([{'op': 'rename', 'map': {'Display On': 'Screen On'}}],
+        plan, problems = _hand_made([{'op': 'rename', 'map': {'Display On': 'Screen On'}}],
                                     DISPLAY).plan()
         self.assertEqual(problems, [])
         (op,) = plan['controls']
@@ -478,44 +447,134 @@ class TestRenameByState(unittest.TestCase):
     def test_one_caption_over_different_ones_is_refused(self):
         """Writing 'Screen' to every state would erase the feedback wording,
         silently - the old behavior."""
-        _, problems = _synthetic([{'op': 'rename', 'select': {'name': 'Display'},
+        _, problems = _hand_made([{'op': 'rename', 'select': {'name': 'Display'},
                                    'text': 'Screen'}], DISPLAY).plan()
         self.assertTrue(any('different in each state' in p and "'Display Off'" in p
                             for p in problems), problems)
 
     def test_state_narrows_a_rename(self):
-        plan, problems = _synthetic([{'op': 'rename', 'select': {'name': 'Display'},
+        plan, problems = _hand_made([{'op': 'rename', 'select': {'name': 'Display'},
                                       'text': 'Screen Off', 'state': 'Off'}],
                                     DISPLAY).plan()
         self.assertEqual(problems, [])
         self.assertEqual([ps['index'] for ps in plan['controls'][0]['per_state']], [0])
 
     def test_an_unknown_state_is_an_error(self):
-        _, problems = _synthetic([{'op': 'rename', 'select': {'name': 'Display'},
+        _, problems = _hand_made([{'op': 'rename', 'select': {'name': 'Display'},
                                    'text': 'x', 'state': 'Standby'}], DISPLAY).plan()
         self.assertTrue(any("no state 'Standby'" in p for p in problems), problems)
 
     def test_state_with_map_is_an_error(self):
-        _, problems = _synthetic([{'op': 'rename', 'map': {'Display On': 'x'},
+        _, problems = _hand_made([{'op': 'rename', 'map': {'Display On': 'x'},
                                    'state': 'On'}], DISPLAY).plan()
         self.assertTrue(any('`state` goes with `text`' in p for p in problems), problems)
 
     def test_each_state_is_written_where_its_own_caption_lives(self):
         mixed = _button('M', [_st('Off', 'Cams', where='fstate'), _st('On', 'Cams')])
-        plan, _ = _synthetic([{'op': 'rename', 'map': {'Cams': 'Cameras'}}], mixed).plan()
+        plan, _ = _hand_made([{'op': 'rename', 'map': {'Cams': 'Cameras'}}], mixed).plan()
         a, b = plan['controls'][0]['per_state']
         self.assertEqual((a.get('ftext'), a.get('flattened')), ('Cameras', True))
         self.assertEqual(b['fields'], {'textField': 'Cameras'})
 
+    def test_a_caption_on_its_states_is_written_on_each_by_index(self):
+        """No textField, the caption on both states, as most of the client
+        project's buttons held theirs: both are written, each by index, and not
+        the control."""
+        plan, problems = _hand_made([{'op': 'rename', 'select': {'text': 'Input 1'},
+                                      'text': 'Laptop'}], INPUT).plan()
+        self.assertEqual(problems, [])
+        (op,) = plan['controls']
+        self.assertEqual([(ps['index'], ps['fields']) for ps in op['per_state']],
+                         [(0, {'textField': 'Laptop'}), (1, {'textField': 'Laptop'})])
+        self.assertNotIn('fields', op)
+
+
+class TestFormattedCaptions(unittest.TestCase):
+    """A caption GUI Designer stores as formatted text (`ftextField`), with
+    hand-placed tabs and line breaks, is baked into the artwork. Only a
+    hand-edited project has one - a spec never writes it - so each case is a
+    button holding one on both states, as the client project's Cameras and
+    Displays did (docs/editing.md)."""
+
+    def _ed(self, old, new):
+        b = _button('F', [_st('Off', old, where='fstate'), _st('On', old, where='fstate')])
+        return _hand_made([{'op': 'rename', 'select': {'text': old}, 'text': new}], b)
+
+    def test_rename_writes_ftext_for_a_formatted_caption(self):
+        plan, _ = self._ed('Cameras', 'Camera Control').plan()
+        op = plan['controls'][0]
+        self.assertTrue(op['per_state'])
+        for ps in op['per_state']:
+            self.assertEqual(ps['ftext'], 'Camera Control')
+            self.assertTrue(ps['flattened'])
+            self.assertNotIn('fields', ps)
+
+    def test_growing_a_formatted_caption_warns(self):
+        """Measured against the real build: 'Cameras' -> 'Camera Control'
+        rasterizes as two lines with the second unindented over the icon."""
+        _, _, warnings = self._ed('Cameras', 'Camera Control').check()
+        self.assertEqual(len([w for w in warnings if 'FORMATTED text' in w]), 1, warnings)
+
+    def test_a_same_length_formatted_rename_does_not_warn(self):
+        """'Displays' -> 'Screens' built correctly, so warning on it would be
+        crying wolf on the one case that works."""
+        _, errors, warnings = self._ed('Displays', 'Screens').check()
+        self.assertEqual(errors, [])
+        self.assertEqual(warnings, [])
+
+
+class TestRenumberMirrors(unittest.TestCase):
+    """Controls sharing an ID are one control to the program - a feedback twin
+    on its page, one button on two confirmation popups. Numbered one by one,
+    each took its own, and check() said nothing. Laid out as the client
+    project these were found on had them: a source key and its twin on the
+    main page, and its shutdown key on two confirmation popups."""
+
+    @staticmethod
+    def _pages():
+        def key(name, caption, id_, obj_id):
+            return _button(name, [_st('Off', caption), _st('On', caption)], id=id_, obj_id=obj_id)
+        return [
+            {'kind': 'page', 'id': 51, 'name': 'Main', 'modal': None, 'size': (1280, 800),
+             'controls': [key('Source', 'Laptop', 5000, 1), key('Source Twin', 'Laptop', 5000, 2),
+                          key('Mute', 'Mute', 5001, 3)]},
+            {'kind': 'popup', 'id': 52, 'name': 'Confirmation', 'modal': True, 'size': (1280, 800),
+             'controls': [key('Shutdown', 'Yes', 81, 1)]},
+            {'kind': 'popup', 'id': 53, 'name': 'Teams Confirmation', 'modal': True,
+             'size': (1280, 800), 'controls': [key('Shutdown', 'Yes', 81, 1)]}]
+
+    def _check(self, edit):
+        return _hand_made([edit], pages=self._pages()).check()
+
+    def test_mirrors_take_one_new_id(self):
+        plan, errors, _ = self._check({'op': 'renumber', 'start': 30000,
+                                       'select': {'page': 'Main', 'type': 'PBButton'}})
+        self.assertEqual(errors, [])
+        new = {o['fields']['userIdField'] for o in plan['controls'] if o['was'] == 5000}
+        self.assertEqual(len(new), 1, new)
+        olds = {o['was'] for o in plan['controls']}
+        self.assertEqual(len({o['fields']['userIdField'] for o in plan['controls']}), len(olds))
+        plan, errors, warnings = self._check({'op': 'renumber', 'start': 40000,
+                                              'select': {'name': 'Shutdown'}})
+        self.assertEqual((errors, [o['fields']['userIdField'] for o in plan['controls']]),
+                         ([], [40000, 40000]))
+        self.assertEqual([w for w in warnings if 'mirror' in w], [])
+
+    def test_a_mirror_the_selector_leaves_is_a_warning(self):
+        _, errors, warnings = self._check({'op': 'renumber', 'start': 40000, 'select': {
+            'page': 'Confirmation', 'name': 'Shutdown'}})
+        self.assertEqual(errors, [])
+        self.assertTrue(any("'Teams Confirmation'" in w and 'keeps id 81' in w
+                            for w in warnings), warnings)
+
 
 class TestRestyleByState(unittest.TestCase):
-    @needs_client(MAIN_CLIENT)
     def test_a_fill_that_lives_only_on_a_state_is_restyled(self):
-        """Table Input 1 has no fill of its own: Off is transparent and On is
-        #242634. Matching the control's colors found nothing to restyle on 288
-        of the fixture's 442 buttons."""
-        plan, problems = _edits([{'op': 'restyle', 'select': {'text': 'Table Input 1'},
-                                  'map': {'#242634': '#101826'}}]).plan()
+        """No fill of its own: Off is transparent and On is #242634, as on the
+        client project's Table Input keys. Matching the control's colors found
+        nothing to restyle on 288 of that project's 442 buttons."""
+        plan, problems = _hand_made([{'op': 'restyle', 'map': {'#242634': '#101826'}}],
+                                    INPUT).plan()
         self.assertEqual(problems, [])
         (op,) = plan['controls']
         self.assertNotIn('colors', op)
@@ -525,7 +584,7 @@ class TestRestyleByState(unittest.TestCase):
     def test_each_state_is_remapped_from_its_own_color(self):
         """The old op wrote the control's new color to every state, so an On
         state came out in the Off color."""
-        plan, _ = _synthetic([{'op': 'restyle', 'map': {'#37394E': '#111111',
+        plan, _ = _hand_made([{'op': 'restyle', 'map': {'#37394E': '#111111',
                                                         '#3D8BFD': '#2266EE'}}],
                              DISPLAY).plan()
         per = plan['controls'][0]['per_state']
@@ -536,7 +595,7 @@ class TestRestyleByState(unittest.TestCase):
         white = {'A': 255, 'R': 255, 'G': 255, 'B': 255}
         b = _button('T', [_st('Off', 'x', GREY, text_color=white),
                           _st('On', 'x', BLUE, text_color=white)])
-        plan, _ = _synthetic([{'op': 'restyle', 'map': {'#FFFFFF': '#F0F0F0'}}], b).plan()
+        plan, _ = _hand_made([{'op': 'restyle', 'map': {'#FFFFFF': '#F0F0F0'}}], b).plan()
         per = plan['controls'][0]['per_state']
         self.assertEqual([ps['colors'] for ps in per],
                          [{'textColorField': '#FFF0F0F0'}] * 2)
@@ -548,7 +607,7 @@ class TestStatesOp(unittest.TestCase):
             {'name': 'Cooling', 'fill': '#2E3040', 'text': 'Cooling Down'}]
 
     def _op(self, states, *controls, **kw):
-        plan, problems = _synthetic([dict({'op': 'states', 'select': {'name': 'Display'},
+        plan, problems = _hand_made([dict({'op': 'states', 'select': {'name': 'Display'},
                                            'states': states}, **kw)],
                                     *(controls or (DISPLAY,))).plan()
         return (plan['controls'][0] if plan['controls'] else None), problems
@@ -643,28 +702,28 @@ class TestStatesOp(unittest.TestCase):
     def test_another_op_on_the_same_buttons_states_is_an_error(self):
         """Each op is planned against the file on disk, so a rename before a
         `states` op would make its expected captions wrong."""
-        _, errors, _ = _synthetic([
+        _, errors, _ = _hand_made([
             {'op': 'rename', 'map': {'Display On': 'Screen On'}},
             {'op': 'states', 'select': {'name': 'Display'}, 'states': self.FOUR}],
             DISPLAY).check()
         self.assertTrue(any('rename and states both change' in e for e in errors), errors)
-        _, errors, _ = _synthetic([
+        _, errors, _ = _hand_made([
             {'op': 'rename', 'map': {'Display On': 'Screen On'}},
             {'op': 'restyle', 'map': {'#3D8BFD': '#2266EE'}}], DISPLAY).check()
         self.assertEqual(errors, [])
 
-    @needs_client(MAIN_CLIENT)
-    def test_on_the_fixture(self):
-        """Grow a real two-state button to three; the new state starts as On."""
-        plan, problems = _edits([{'op': 'states', 'select': {'text': 'Table Input 1'},
-                                  'states': ['Off', 'On', {'name': 'Fault',
-                                                           'fill': '#8B1E1E'}]}]).plan()
+    @needs_synthetic()
+    def test_on_the_synthetic_fixture(self):
+        """Grow a built two-state button to three; the new state starts as On."""
+        plan, problems = _on_synthetic([{'op': 'states', 'select': {'page': 'Main', 'text': 'Alpha'},
+                                         'states': ['Off', 'On', {'name': 'Fault',
+                                                                  'fill': '#8B1E1E'}]}]).plan()
         self.assertEqual(problems, [])
         (op,) = plan['controls']
         self.assertEqual(op['was'], ['Off', 'On'])
-        self.assertEqual(op['expect_states'][1]['fill'], '#FF242634')
+        self.assertEqual(op['expect_states'][1]['fill'], '#FFD69B61')
         self.assertEqual(op['expect_states'][2]['fill'], '#FF8B1E1E')
-        self.assertEqual(op['expect_states'][2]['text'], 'Table Input 1')
+        self.assertEqual(op['expect_states'][2]['text'], 'Alpha')
 
 
 if __name__ == '__main__':

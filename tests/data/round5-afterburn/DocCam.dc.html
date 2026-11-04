@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Doc Cam</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronafterburn/components/bundle.css">
+<script src="ds/extronafterburn/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronAfterburn.Page" name="Doc Cam" kind="popup" group="Sources" role="source" title="Document Camera" panels="TLP1035T TLP725T TLP525T TLP320M" theme="blue-slate">
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Zoom Label" type="body-strong" color="text-secondary" align="center" style="position: absolute; left: 343px; top: 73px; width: 194px; height: 50px">ZOOM</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Group" title="Zoom" cell="154x64" gap="15" cap="1" style="position: absolute; left: 363px; top: 135px; width: 154px; height: 200px">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Zoom Tele" does="Zooms the document camera in.">In</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Zoom Wide" does="Zooms the document camera out.">Out</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Label" name="Doc Cam Display Label" type="body-strong" color="text-secondary" align="center" style="position: absolute; left: 260px; top: 340px; width: 360px; height: 40px">DISPLAY</x-import>
+  <x-import component-from-global-scope="ExtronAfterburn.Group" title="Display" cell="160x64" gap="40" cap="2" style="position: absolute; left: 260px; top: 390px; width: 360px; height: 80px">
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Doc Cam To Front" states="Off, On" does="Routes the document camera to the front projector; On while it is routed there.">Front</x-import>
+    <x-import component-from-global-scope="ExtronAfterburn.Button" name="Doc Cam To Back" states="Off, On" does="Routes the document camera to the back confidence monitor; On while it is routed there.">Back</x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":525}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audio Settings</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronMach.Page" name="Audio" kind="modal" role="settings" title="Audio Settings" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake">
+  <x-import component-from-global-scope="ExtronMach.Label" name="Mic Heading" type="heading" align="center" color="text" style="position: absolute; left: 540px; top: 170px; width: 200px; height: 40px">Mic</x-import>
+  <x-import component-from-global-scope="ExtronMach.Slider" name="Mic Volume" does="Sets the wireless microphone volume; follows the DSP level." style="position: absolute; left: 614px; top: 220px; width: 53px; height: 330px"></x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" id="9017" name="Mic Mute" variant="highlight" states='[{"name":"Off"},{"name":"Muted","text":"Mics Muted","fill":"accent","color":"ink"}]' does="Mutes the wireless microphones; lit Mics Muted while they are muted." style="position: absolute; left: 540px; top: 570px; width: 200px; height: 60px">Mute</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

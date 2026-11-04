@@ -63,23 +63,25 @@ def template(name):
     return _first_file(_TEMPLATE_DIRS, name)
 
 
-CLIENT_DIR = os.path.join(REPO, 'fixtures', 'gdl')
-# The client fixture GUI Designer's snapshot exports in fixtures/snapshots/ came from.
-MAIN_CLIENT = 'client-boardroom-2.0.0.gdl'
+# The synthetic fixture: a project of generic words built by the toolkit on the
+# Afterburn 1035 seed, and GUI Designer's own snapshots of it
+# (tests/data/synthetic/README.md) - the one built project the suite reads, and
+# the render baseline. Plain git, in the public copy too, so what runs on it
+# runs everywhere.
+SYNTHETIC_DIR = os.path.join(REPO, 'tests', 'data', 'synthetic')
+SYNTHETIC = os.path.join(SYNTHETIC_DIR, 'synthetic.gdl')
+SYNTHETIC_SPEC = os.path.join(SYNTHETIC_DIR, 'synthetic.json')
+SYNTHETIC_SNAPSHOTS = os.path.join(SYNTHETIC_DIR, 'snapshots', 'Individual')
+# The render baseline: tests/score.py's record of the synthetic fixture.
+BASELINE = os.path.join(REPO, 'tests', 'baseline-synthetic.json')
 
 
-def client(name):
-    """A client fixture by file name. The public copy holds fixtures/ back, so a
-    test that needs one is decorated with needs_client() as well."""
-    return os.path.join(CLIENT_DIR, name)
-
-
-def needs_client(*names):
-    """Skip a test or class unless these client fixtures are here, naming them."""
+def needs_synthetic(path=SYNTHETIC):
+    """Skip a test or class unless the synthetic fixture's build is here, naming
+    where it was looked for. `path` is for the test of this gate."""
     import unittest
-    missing = [n for n in names if not usable(client(n))]
-    return unittest.skipIf(bool(missing), f"{', '.join(missing)} not here - the client "
-                                         f"fixtures are held back from the public copy")
+    return unittest.skipUnless(usable(path), f'{path} is not here - build it with '
+                                             f'tests/data/synthetic/README.md')
 
 
 SEEDS_DIR = _first_dir(_SEED_DIRS)

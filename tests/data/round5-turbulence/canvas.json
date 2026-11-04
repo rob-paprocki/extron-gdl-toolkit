@@ -1,0 +1,69 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-01T12:00:00Z"
+ },
+ "title": "Training Room",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 800, "title": "Start", "is_interactive": true},
+  "MainSD.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Main SD", "is_interactive": true},
+  "Call.dc.html": {"x": 2720, "y": 0, "w": 1280, "h": 800, "title": "Call", "is_interactive": true},
+  "PC.dc.html": {"x": 0, "y": 1200, "w": 995, "h": 549, "title": "PC", "is_interactive": true},
+  "Laptop.dc.html": {"x": 1075, "y": 1200, "w": 995, "h": 549, "title": "Laptop", "is_interactive": true},
+  "ShareLink.dc.html": {"x": 2150, "y": 1200, "w": 995, "h": 549, "title": "ShareLink", "is_interactive": true},
+  "DocCam.dc.html": {"x": 3225, "y": 1200, "w": 995, "h": 549, "title": "Doc Cam", "is_interactive": true},
+  "BluRay.dc.html": {"x": 4300, "y": 1200, "w": 995, "h": 549, "title": "Blu-ray", "is_interactive": true},
+  "Camera.dc.html": {"x": 5375, "y": 1200, "w": 995, "h": 549, "title": "Camera", "is_interactive": true},
+  "VTCDialer.dc.html": {"x": 6450, "y": 1200, "w": 995, "h": 549, "title": "VTC Dialer", "is_interactive": true},
+  "DisplayControl.dc.html": {"x": 0, "y": 2200, "w": 1280, "h": 800, "title": "Display Control", "is_interactive": true},
+  "LightingControl.dc.html": {"x": 1360, "y": 2200, "w": 1280, "h": 800, "title": "Lighting Control", "is_interactive": true},
+  "AudioControl.dc.html": {"x": 2720, "y": 2200, "w": 1280, "h": 800, "title": "Audio Control", "is_interactive": true},
+  "Help.dc.html": {"x": 4080, "y": 2200, "w": 1280, "h": 800, "title": "Help"},
+  "PowerDown.dc.html": {"x": 0, "y": 3400, "w": 1280, "h": 800, "title": "Power Down"},
+  "PoweringDown.dc.html": {"x": 1360, "y": 3400, "w": 1280, "h": 800, "title": "Powering Down"},
+  "StartingUp.dc.html": {"x": 2720, "y": 3400, "w": 1280, "h": 800, "title": "Starting Up"},
+  "StopRecording.dc.html": {"x": 4080, "y": 3400, "w": 1280, "h": 800, "title": "Stop Recording", "is_interactive": true},
+  "IncomingCall.dc.html": {"x": 5440, "y": 3400, "w": 1280, "h": 800, "title": "Incoming Call"}
+ },
+ "order": [
+  "Main.dc.html",
+  "MainSD.dc.html",
+  "Call.dc.html",
+  "PC.dc.html",
+  "Laptop.dc.html",
+  "ShareLink.dc.html",
+  "DocCam.dc.html",
+  "BluRay.dc.html",
+  "Camera.dc.html",
+  "VTCDialer.dc.html",
+  "DisplayControl.dc.html",
+  "LightingControl.dc.html",
+  "AudioControl.dc.html",
+  "Help.dc.html",
+  "PowerDown.dc.html",
+  "PoweringDown.dc.html",
+  "StartingUp.dc.html",
+  "StopRecording.dc.html",
+  "IncomingCall.dc.html"
+ ],
+ "notes": {
+  "pages-title": {"x": 0, "y": -300, "text": "Pages", "kind": "title1", "maxW": 4000},
+  "sources-title": {"x": 0, "y": 900, "text": "Source and call popups", "kind": "title1", "maxW": 7445},
+  "settings-title": {"x": 0, "y": 1900, "text": "Settings windows and Help", "kind": "title1", "maxW": 5360},
+  "questions-title": {"x": 0, "y": 3100, "text": "Questions and waits", "kind": "title1", "maxW": 6720}
+ },
+ "designSystems": [
+  {
+   "title": "Extron Turbulence",
+   "namespace": "extronturbulence",
+   "artifact": "https://claude.ai/artifact/3RFtbd87nDJjyVBaXy3gHS",
+   "version": null,
+   "copiedAt": "2026-11-01T12:00:00Z"
+  }
+ ]
+}

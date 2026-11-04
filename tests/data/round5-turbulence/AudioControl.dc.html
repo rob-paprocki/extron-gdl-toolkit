@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audio Control</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Audio Control" kind="modal" role="settings" title="Audio Control" does="The wireless microphone level and mute." panels="TLP1035T TLP725T TLP525T TLP320M" theme="office">
+  <x-import component-from-global-scope="ExtronTurbulence.Label" name="Mic Heading" type="heading" align="center" style="position: absolute; left: 540px; top: 175px; width: 200px; height: 60px">Mic</x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Slider" name="Mic Level" does="Sets the wireless microphone volume; follows the DSP level." style="position: absolute; left: 614px; top: 245px; width: 53px; height: 300px"></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" variant="wide" id="9017" name="Mic Mute" states='[{"name":"Off","text":"Mute"},{"name":"Muted","text":"Mics Muted","look":"on","color":"accent"}]' does="Mutes the wireless microphones; lit and reading Mics Muted while they are muted." style="position: absolute; left: 450px; top: 575px; width: 380px; height: 100px">Mute</x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -15,7 +15,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _corpus import MAIN_CLIENT, needs_client, seed, usable  # noqa: E402
+from _corpus import SYNTHETIC, needs_synthetic, seed, usable  # noqa: E402
 
 from gdl.spec import ALIGN, BORDER_GEOMETRY, Panel, color, grid, stack  # noqa: E402
 
@@ -530,20 +530,38 @@ class TestDonorAvailability(unittest.TestCase):
                    {'kind': 'level', 'rect': [0, 0, 40, 300]}])
         self.assertEqual(p.needs(), {'PBButton', 'PBLevel'})
 
-    @needs_client(MAIN_CLIENT, 'client-boardroom-archived-1025.gdl')
-    def test_a_donor_without_the_type_is_reported(self):
+    @needs_synthetic()
+    def test_a_donor_without_the_type_is_reported_on_the_synthetic_fixture(self):
+        """Built on the Afterburn 1035 seed, which has no Level."""
         p = _spec([{'kind': 'level', 'rect': [0, 0, 40, 300]}])
-        alt = self._path('fixtures', 'gdl',
-                         'client-boardroom-2.0.0.gdl')
-        problems = p.check_donor(alt)
-        self.assertTrue(any('PBLevel' in m for m in problems))
+        self.assertTrue(any('PBLevel' in m for m in p.check_donor(SYNTHETIC)))
 
-    @needs_client(MAIN_CLIENT, 'client-boardroom-archived-1025.gdl')
     def test_a_donor_with_the_type_is_accepted(self):
-        p = _spec([{'kind': 'level', 'rect': [0, 0, 40, 300]}])
-        archived = self._path('fixtures', 'gdl',
-                              'client-boardroom-archived-1025.gdl')
-        self.assertEqual(p.check_donor(archived), [])
+        """The Afterburn 320 seed has a Level, as its template draws one; a
+        spec for its canvas that asks for one has nothing to report."""
+        donor = seed('Afterburn 320.gdl')
+        if not usable(donor):
+            self.skipTest('seeds/Afterburn 320.gdl is not pulled from Git LFS here')
+        p = Panel({'name': 'T', 'size': [320, 240], 'theme': {'text': '#FFFFFF'},
+                   'pages': [{'name': 'P', 'number': 1000, 'controls': [
+                       {'kind': 'level', 'rect': [0, 0, 40, 100]}]}]})
+        self.assertEqual(p.needs(), {'PBLevel'})
+        self.assertEqual(p.check_donor(donor), [])
+
+    @needs_synthetic()
+    def test_a_name_the_synthetic_donor_already_uses_is_reported(self):
+        """GUI Designer: "Duplicate page or popup page names are not allowed
+        within the same project." It is a build ERROR, and it cost a Windows
+        round trip to find - the generated popups joined the donor's project,
+        where those names were already taken. A page's name and a popup's."""
+        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
+                   'pages': [{'name': 'Start', 'number': 1000,
+                              'controls': [{'kind': 'label', 'rect': [0, 0, 8, 8]}]}],
+                   'popups': [{'name': 'Confirm', 'number': 2100, 'modal': True,
+                               'controls': []}]})
+        kept = Panel(dict(p.spec, keep_donor_pages=True)).check_donor(SYNTHETIC)
+        self.assertTrue(any("'Start'" in m and 'unique' in m for m in kept), kept)
+        self.assertTrue(any("'Confirm'" in m for m in kept), kept)
 
     def test_the_worked_example_is_satisfiable_by_the_afterburn_seed(self):
         donor = seed('Afterburn 1035.gdl')
@@ -551,20 +569,6 @@ class TestDonorAvailability(unittest.TestCase):
             self.skipTest('seeds/Afterburn 1035.gdl is not pulled from Git LFS here')
         p = Panel.load(self._path('examples', 'panel.json'))
         self.assertEqual(p.check_donor(donor), [])
-
-    @needs_client(MAIN_CLIENT, 'client-boardroom-archived-1025.gdl')
-    def test_a_name_the_donor_already_uses_is_reported(self):
-        """GUI Designer: "Duplicate page or popup page names are not allowed
-        within the same project." It is a build ERROR, and it cost a Windows
-        round trip to find - the generated popups joined the donor's project,
-        where those two names were already taken."""
-        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
-                   'pages': [{'name': '1000 - Home', 'number': 1000,
-                              'controls': [{'kind': 'label', 'rect': [0, 0, 8, 8]}]}]})
-        alt = self._path('fixtures', 'gdl',
-                         'client-boardroom-2.0.0.gdl')
-        problems = Panel(dict(p.spec, keep_donor_pages=True)).check_donor(alt)
-        self.assertTrue(any('1000 - Home' in m and 'unique' in m for m in problems))
 
     def test_a_donor_name_is_free_when_the_donor_is_dropped(self):
         """The applier drops the donor's own pages and popups, by identity, unless
@@ -597,18 +601,6 @@ class TestDonorAvailability(unittest.TestCase):
         problems = Panel(spec).check_donor(donor)
         self.assertTrue(any("'Offline Page' already exists in the donor" in m for m in problems),
                         problems)
-
-    @needs_client(MAIN_CLIENT, 'client-boardroom-archived-1025.gdl')
-    def test_a_popup_name_the_donor_already_uses_is_reported(self):
-        p = Panel({'name': 'T', 'size': [1280, 800], 'theme': {'text': '#FFFFFF'},
-                   'pages': [{'name': 'Fresh', 'number': 1000, 'controls': [
-                       {'kind': 'popup_ref', 'rect': [0, 0, 100, 60], 'group': 'G'}]}],
-                   'popups': [{'name': '160 - Confirmation', 'number': 2100,
-                               'group': 'G', 'size': [100, 60], 'controls': []}]})
-        alt = self._path('fixtures', 'gdl',
-                         'client-boardroom-2.0.0.gdl')
-        kept = Panel(dict(p.spec, keep_donor_pages=True))
-        self.assertTrue(any('160 - Confirmation' in m for m in kept.check_donor(alt)))
 
 
 class TestNameUniqueness(unittest.TestCase):
@@ -1973,6 +1965,25 @@ class TestBackgroundImage(unittest.TestCase):
     def test_an_image_file_that_is_not_there_is_a_problem(self):
         p = self._spec({'x.png': 'Nowhere/x.png'}, background_image='x.png')
         self.assertTrue(any("image 'x.png'" in m for m in p.check()), p.check())
+
+    def test_art_of_the_specs_own_is_found_beside_the_spec(self):
+        """'./art/bg.png' is the spec's folder, not the kit's: the synthetic
+        fixture brings its own pictures and checks with no kit here. A kit
+        path, which never starts './', is left for the kit."""
+        import json
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, 'art'))
+            open(os.path.join(d, 'art', 'bg.png'), 'wb').write(b'x')
+            spec = self._spec({'bg.png': './art/bg.png', 'kit.png': 'Afterburn/kit.png'},
+                              background_image='bg.png').spec
+            path = os.path.join(d, 'panel.json')
+            with open(path, 'w', encoding='utf-8') as fh:
+                json.dump(spec, fh)
+            p = Panel.load(path)
+            self.assertEqual(p.images['bg.png'], os.path.join(d, 'art', 'bg.png'))
+            self.assertEqual(p.images['kit.png'], 'Afterburn/kit.png')
+            self.assertEqual(p.plan()['pages'][0]['background_image']['file'],
+                             os.path.join(d, 'art', 'bg.png'))
 
     def test_the_preview_draws_it_fitted_over_the_fill(self):
         """The build draws it, so the preview must: it once showed the flat

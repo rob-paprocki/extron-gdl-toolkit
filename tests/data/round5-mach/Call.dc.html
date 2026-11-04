@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Call</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<!-- The call page: the program shows it when a call comes in. -->
+<x-import component-from-global-scope="ExtronMach.Page" name="Call" role="call" reached-by="program" panels="TLP1035T TLP725T TLP525T TLP320M" theme="lake" does="The Zoom call page, shown by the program when a call comes in.">
+  <x-import component-from-global-scope="ExtronMach.Header">
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="101" name="PC" icon="pc" nav="PC" states="Off, On" does="Selects the instructor's PC and shows its popup; On while selected. Its Show keys send it to a display.">PC</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="102" name="Laptop" icon="laptop" nav="Laptop" states="Off, On" does="Selects the lectern laptop and shows its popup; On while selected. Its Show keys send it to a display.">Laptop</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="103" name="ShareLink" icon="monitor" nav="ShareLink" states="Off, On" does="Selects ShareLink wireless sharing and shows its popup; On while selected. Its Show keys send it to a display.">ShareLink</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="source" id="104" name="Doc Cam" icon="monitor" nav="DocCam" states="Off, On" does="Selects the document camera and shows its popup; On while selected. Its Show keys send it to a display.">Doc Cam</x-import>
+    <x-import component-from-global-scope="ExtronMach.Button" slot="share" name="Share Content" nav="ShareContent" states="Off, On" does="Shows the sources that can be shared into the call; On while content is shared.">Share</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.LeftRail">
+    <x-import component-from-global-scope="ExtronMach.Section" title="VTC">
+      <x-import component-from-global-scope="ExtronMach.Button" name="Make Call" nav="VTCDialer" states="Off, On" does="Shows the dialer so a number can be dialed or a Zoom meeting joined; On while in a call.">Make Call</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" name="End Call" does="Ends the Zoom call.">End Call</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" name="Privacy" states="Off, On" does="Turns the camera's privacy on or off; On while the camera is covered.">Privacy</x-import>
+    </x-import>
+    <x-import component-from-global-scope="ExtronMach.Section" title="Settings">
+      <x-import component-from-global-scope="ExtronMach.Button" name="Camera" nav="CameraSelect" does="Shows the camera presets.">Camera</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" id="121" name="Audio" nav="Audio" states='[{"name":"Off"},{"name":"Muted","text":"Muted","fill":"accent","color":"ink"}]' does="Shows the audio window; lit Muted while the wireless mics are muted.">Audio</x-import>
+      <x-import component-from-global-scope="ExtronMach.Button" id="122" name="Recording" nav="Recording" states='[{"name":"Off"},{"name":"Recording","text":"Recording","fill":"alert","color":"text"}]' does="Shows the recording controls; lit red while the room is recording.">Recording</x-import>
+    </x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.RightRail"></x-import>
+  <x-import component-from-global-scope="ExtronMach.Footer" help="Help" power="PowerDown">
+    <x-import component-from-global-scope="ExtronMach.Button" slot="mode" name="Presentation" nav="MainSD" does="Shows the working page.">Presentation</x-import>
+  </x-import>
+  <x-import component-from-global-scope="ExtronMach.Center" group="Sources"></x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

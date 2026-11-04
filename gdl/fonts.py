@@ -340,9 +340,13 @@ def find_face(family):
 
     For a donor that defines no resource for a family a spec names: the
     applier appends a clone of the donor's own font resource filled with this
-    (Add-GdlFontResource). The first seed in name order that carries it, and
+    (Add-GdlFontResource). The first seed that carries it - the 1035 seeds
+    (and Afterburn's 1035 Portrait) ahead of the rest, each in name order - and
     only that one is parsed - one to five seconds - for the record of the face
-    (carried). Which seeds declare the family their layout.json says, and
+    (carried). The 1035s first because they are the themes' reference seeds: a
+    seed made later (a 1020 sorts before them) must not change which build of a
+    face a job's panel gets (gdl/fonts/README.md names the carriers). Which
+    seeds declare the family their layout.json says, and
     whether one carries a face of the size it declares its stream does
     (_face_arrays): every Afterburn seed declares Arial Black and carries none,
     and parsing each to find that out was a minute."""
@@ -355,7 +359,7 @@ def find_face(family):
     import zipfile
     from . import seeds
     got = None
-    for name in seeds.here():
+    for name in sorted(seeds.here(), key=lambda n: (' 1035' not in n, n)):
         path = seeds.path(name)
         if not seeds.usable(path):
             continue
@@ -468,7 +472,7 @@ def main(argv):
         # Arial Black and defines no resource for them - a build can add one,
         # but does not always. The
         # renderer does not need a seed to carry it: gdl/fonts/ holds it,
-        # recovered from the fixtures. These are the declarations this file
+        # recovered from the synthetic fixture. These are the declarations this file
         # carries nothing for, each on its own - gdl/fonts/README.md has which.
         print('  DECLARED, NOT CARRIED:', ', '.join(absent))
     matched = {id(face) for face in pairs if face is not None}
