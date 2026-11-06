@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blu-ray</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronturbulence/components/bundle.css">
+<script src="ds/extronturbulence/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 995px; height: 549px; position: relative">
+<x-import component-from-global-scope="ExtronTurbulence.Page" name="Blu-ray" kind="popup" group="Sources" role="source" title="Blu-ray" panels="TLP1035T TLP725T TLP525T TLP320M" theme="corridor" style="position: absolute; left: 0px; top: 0px; width: 995px; height: 549px">
+<x-import component-from-global-scope="ExtronTurbulence.Group" title="Transport" cell="95x100" gap="20" cap="7" style="position: absolute; left: 105px; top: 200px; width: 785px; height: 100px">
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Blu-ray Skip Back" id="5006" icon="transport_prev" does="Skips back to the previous chapter."></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Blu-ray Rewind" id="5004" icon="transport_rewind" does="Rewinds the disc while held."></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Blu-ray Play" id="5000" icon="transport_play" does="Plays the disc."></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Blu-ray Pause" id="5002" icon="transport_pause" does="Pauses the disc."></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Blu-ray Stop" id="5001" icon="transport_stop" does="Stops the disc."></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Blu-ray Fast Forward" id="5003" icon="transport_ffwd" does="Fast-forwards the disc while held."></x-import>
+  <x-import component-from-global-scope="ExtronTurbulence.Button" name="Blu-ray Skip Forward" id="5005" icon="transport_next" does="Skips ahead to the next chapter."></x-import>
+</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

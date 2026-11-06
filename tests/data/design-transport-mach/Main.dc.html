@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Main</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative">
+<x-import component-from-global-scope="ExtronMach.Page" name="Main" start="true" panels="TLP1035T TLP725T TLP525T TLP320M" theme="sunset" does="The working page: the Blu-ray player its one source, the display left, volume right, the player's controls in the middle." style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 800px">
+<x-import component-from-global-scope="ExtronMach.Header">
+<x-import component-from-global-scope="ExtronMach.Button" slot="source" name="Blu-ray" icon="bluray" nav="BluRay" does="Routes the Blu-ray player to the display and shows its controls.">Blu-ray</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronMach.LeftRail">
+<x-import component-from-global-scope="ExtronMach.Section" title="Display">
+<x-import component-from-global-scope="ExtronMach.Button" name="Display On" does="Turns the display on.">On</x-import>
+<x-import component-from-global-scope="ExtronMach.Button" name="Display Off" does="Turns the display off.">Off</x-import>
+</x-import>
+</x-import>
+<x-import component-from-global-scope="ExtronMach.RightRail"></x-import>
+<x-import component-from-global-scope="ExtronMach.Footer" help="Help" power="PowerDown"></x-import>
+<x-import component-from-global-scope="ExtronMach.Center" group="Sources"></x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{
+ "v": 3,
+ "title": "Turbulence Blu-ray Transport",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "notes": {},
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1280,
+   "h": 800,
+   "title": "Main",
+   "is_interactive": true
+  },
+  "BluRay.dc.html": {
+   "x": 1400,
+   "y": 0,
+   "w": 995,
+   "h": 549,
+   "title": "Blu-ray",
+   "is_interactive": true
+  },
+  "Help.dc.html": {
+   "x": 0,
+   "y": 920,
+   "w": 1280,
+   "h": 800,
+   "title": "Help",
+   "is_interactive": true
+  },
+  "PowerDown.dc.html": {
+   "x": 1400,
+   "y": 920,
+   "w": 1280,
+   "h": 800,
+   "title": "Power Down",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "BluRay.dc.html",
+  "Help.dc.html",
+  "PowerDown.dc.html"
+ ],
+ "designSystems": [
+  {
+   "title": "Extron Turbulence",
+   "namespace": "extronturbulence",
+   "artifact": null,
+   "version": null
+  }
+ ]
+}

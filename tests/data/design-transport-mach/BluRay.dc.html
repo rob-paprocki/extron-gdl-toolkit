@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blu-ray</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronmach/components/bundle.css">
+<script src="ds/extronmach/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 995px; height: 549px; position: relative">
+<x-import component-from-global-scope="ExtronMach.Page" name="Blu-ray" kind="popup" group="Sources" role="source" title="Blu-ray" panels="TLP1035T TLP725T TLP525T TLP320M" theme="sunset" style="position: absolute; left: 0px; top: 0px; width: 995px; height: 549px">
+<x-import component-from-global-scope="ExtronMach.Group" title="Transport" cell="60x60" gap="20" cap="7" style="position: absolute; left: 227px; top: 200px; width: 540px; height: 60px">
+  <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Skip Back" id="5006" variant="ghost" glyph="skip-back" does="Skips back to the previous chapter.">Skip Back</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Rewind" id="5004" variant="ghost" glyph="rewind" does="Rewinds the disc while held.">Rewind</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Play" id="5000" variant="ghost" glyph="play" does="Plays the disc.">Play</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Pause" id="5002" variant="ghost" glyph="pause" does="Pauses the disc.">Pause</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Stop" id="5001" variant="ghost" glyph="stop" does="Stops the disc.">Stop</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Fast Forward" id="5003" variant="ghost" glyph="fast-forward" does="Fast-forwards the disc while held.">Fast Forward</x-import>
+  <x-import component-from-global-scope="ExtronMach.Button" name="Blu-ray Skip Forward" id="5005" variant="ghost" glyph="skip-forward" does="Skips ahead to the next chapter.">Skip Forward</x-import>
+</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":995,"height":549}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -127,6 +127,39 @@ machine you are already working on.
 Each of these was believed, written down, and later found wrong. The current
 statement is in the live docs; this is the record that it changed.
 
+- **A disc player's transport was five keys - Play, Pause, Stop, Previous
+  and Next - in rows where a panel's popup held fewer** (round five's README
+  recipe, until 2026-11-06). Each README told a designer to draw the five as
+  a `Group` in the source popup: icon keys with the kit's glyph where the
+  popup's look had all five (Mach's `play`, `pause`, `stop`, `previous` and
+  `next`; Turbulence's `transport_*`), else worded keys - Shockwave's and
+  Afterburn's, whose source looks have no transport art - the Group given a
+  box of two rows (`cap="3"`) where the room listed a 725 or a 525, since
+  five worded keys in a row fit neither's popup. It gave no IDs. The owner's
+  review of 2026-11-06 changed it: "Transports should be skip back, rewind,
+  play, pause, stop, fast forward, skip forward. Try to keep it one line."
+  The recipe is now those seven, one row where the panel holds it, with the
+  IDs the seeds give their disc player's keys, Mach's, Shockwave's and
+  Afterburn's drawn as their templates' glyphs in their icon faces
+  (`docs/claude-design.md` §4, §6). As first written the same day, Mach's
+  drew its kit's ghost images (`icon="previous"` ... `icon="next"`), until
+  its review pointed to the Extron-Lift glyphs the Mach seeds set and to the
+  owner's choice of the templates' icon faces for small glyphs (2026-11-04);
+  and the README said every seed of every theme gave the seven those IDs,
+  read off the 44 seeds this Linux box can read. Over all 174, on the Windows
+  host, 169 do and the five without - the 300M and Zoom Rooms seeds - have no
+  disc page. Round five's canvases (`tests/data/round5-<theme>`) keep the five
+  keys each designer drew. With it, a Group a window's room wrapped stopped
+  taking as many across as the room held and leaving the rest to its last
+  row - seven of Shockwave's 77 px keys on its 525 came out six over one -
+  and shares them out evenly. Translated at main 8f667ce and with the
+  change, every built canvas this machine can translate (127 panels, the
+  themes' art extracted) came out the same but three: the archived
+  round-five Afterburn, Mach and Shockwave rooms' TLP525T, whose four
+  Lighting presets went from three over one to two over two - specs built
+  before 2026-11-06 that a rebuild replaces, rebuilt the same day
+  (`archive/job-e823df9b/rebuild3-1106/`, below).
+
 - **What GUI Designer does with a caption's ink past its box was taken to be
   unknown, and Turbulence 720's two questions to run 2 px past theirs**
   (until 2026-11-05). `gdl.compose.caption_fit` read a line's ink off
@@ -1031,3 +1064,42 @@ statement is in the live docs; this is the record that it changed.
   Label' with nothing on row 91, where `line_ink` puts the 'h' of 'Lighting'
   a row above the 80x36 box, and the h begins on row 92 as the L does - cut
   flat at the box's top edge, as Turbulence 720's 'Window' is.
+
+- **The rebuild after #102** (2026-11-06, `archive/job-e823df9b/rebuild3-1106/`).
+  The four canvases #102 drew the owner's seven-key transport in
+  (`tests/data/design-transport-<theme>`) were translated at main 7655dad
+  without `--previous` and built unattended by `New-GdlPanels.ps1` on GUI
+  Designer 1.28.0.7: 16 panels, the TLP1035T, 725T, 525T and 320M of each
+  theme, in 43 minutes of panel time, every one verified at 0 problems with
+  the ID map at 0 on the first build. GUI Designer's own snapshot of each
+  theme's 1035 draws the Blu-ray popup's seven keys in one row, Skip Back,
+  Rewind, Play, Pause, Stop, Fast Forward, Skip Forward, each with its glyph
+  - Mach's Extron-Lift, Shockwave's Extron-Shockwave, Afterburn's
+  Extron-Afterburn, Turbulence's kit images - and its snapshot of each
+  theme's 320 draws five keys and two over its two Blu-ray pages (Mach,
+  Shockwave, Turbulence) or four and three (Afterburn), in order down their
+  columns (`transport-row/`). Turbulence's 1035 popup also draws the disc
+  picture its canvas pins at the upper left, whose lower 75 rows lie behind
+  Skip Back and the left of Rewind.
+
+  Every canvas the toolkit has built that translates - 36 canvases, 131
+  panels - was translated at 8f667ce, main before #102, and at 7655dad on
+  this host and compared panel by panel (`spec-diff/`): 128 the same and 3
+  differ, the TLP525T of round five's Afterburn, Mach and Shockwave rooms,
+  whose four Lighting presets move from three over one to two over two - the
+  three #102's workers named, and no others. Round five's Turbulence room
+  translates the same. Nine canvases are refused by the translator, alike at
+  both commits line for line: the Groups board, the first-try canvases of
+  round four's Afterburn and Shockwave and round five's four, and the two
+  hub canvases - `design-hub-shockwave` with 21 problems (a tab that leaves
+  its canvas on each of eleven panels, 18 in all, and no seed for three
+  portrait panels) and `design-hub-turbulence` with 2 (no seed for its two
+  portrait panels) - so the hubs do not change, and nothing of them is built. This
+  host's translations at 8f667ce are, spec for spec, the Linux box's at
+  c20ce1d (`rebuild2-1105/`) on its 118 panels; no code is between those
+  commits.
+
+  The three panels were built at 7655dad - 460, 356 and 502 s, 1,111, 1,381
+  and 928 checks and 278, 291 and 284 ID map references at 0 problems - and
+  GUI Designer's snapshot of each one's Lighting popup draws the four presets
+  two over two (`lighting-525/`).

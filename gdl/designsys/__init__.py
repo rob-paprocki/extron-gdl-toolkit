@@ -961,8 +961,10 @@ FACE_FAMILY, FACE_WEIGHTS = 'Open Sans', ('300', '400', '700')
 
 
 def glyph_face_names(p):
-    """Every icon face the profile's looks set a glyph in (`glyph.face`)."""
-    out = set()
+    """Every icon face the profile's looks set a glyph in (`glyph.face`), and
+    the faces of the glyphs a designer's key may name (`glyphs`)."""
+    out = {g['face'] for g in (p.get('glyphs') or {}).values()
+           if isinstance(g, dict) and isinstance(g.get('face'), str)}
 
     def walk(v):
         if isinstance(v, dict):
@@ -1198,6 +1200,8 @@ def bundle(p, art=True):
     # The template's own words, which the center and the windows draw.
     profile['writing'] = {k: v for k, v in (p.get('writing') or {}).items()
                           if not k.startswith('_') and k != 'voice'}
+    # The template's glyphs a designer's key may name (`glyph="rewind"`).
+    profile['glyphs'] = {k: v for k, v in (p.get('glyphs') or {}).items() if not k.startswith('_')}
     profile['backdrops'] = backdrops(p) if art else {}
     if p.get('kit'):
         index = kit_index(p)
@@ -1297,6 +1301,28 @@ def _icons_md(p):
         return ('The kit was not installed where this system was built, so it lists no icon '
                 'names.')
     return '\n'.join(f"- `{k}`: {', '.join(f'`{n}`' for n in v)}" for k, v in names.items())
+
+
+def glyph_names(p):
+    """The template's glyphs a designer's key may name (`glyphs`) whose face
+    this machine carries (glyph_faces) - the bundle draws no other."""
+    have = glyph_faces(p)
+    return [k for k, g in (p.get('glyphs') or {}).items()
+            if not k.startswith('_') and isinstance(g, dict) and g.get('face') in have]
+
+
+def _glyph_prop(p):
+    """The Button README's `glyph` line, where the template has glyphs a key
+    may name and the system carries their face; nothing elsewhere."""
+    names = glyph_names(p)
+    if not names:
+        return ''
+    face = p['glyphs'][names[0]]['face']
+    return (f"- `glyph`: one of {p['template']}'s own glyphs, set in its icon face ({face}) at the size its "
+            f"template sets it on each panel, in place of any image the kit has of it in the key's look: "
+            + ', '.join(f'`{n}`' for n in names) + ". It is the key's caption in every state, and a key that "
+            f"draws one keeps its cell on every panel, where words grow at the panel's type floor; give the key "
+            f"its words as well (Rewind), which it says where a system does not carry the face.\n")
 
 
 def _kit_size(p, size):
@@ -1763,9 +1789,11 @@ def _panels_section(p):
                else "as arrows where their words leave no room") + f". In a "
             f"modal or a popup a Group cannot page - its pages would be popups, which only a page shows - so "
             f"there it takes the room its window leaves round its box: wider about its middle, then in more rows, "
-            f"clear of what stands beside, over and under it; only what that room cannot hold is refused. Its "
-            f"cells grow to the touch minimum and to their widest caption at the panel's type floor (*Words*), so "
-            f"a set that needs more room than its window has - five worded transport keys, a row of long preset "
+            f"its cells shared out over them as evenly as they go where the room, not `cap`, wraps them (seven "
+            f"are four over three, never six over one), clear of what stands beside, over and under it; only what "
+            f"that room cannot hold is refused. "
+            f"Its cells grow to the touch minimum and to their widest caption at the panel's type floor (*Words*), "
+            f"so a set that needs more room than its window has - seven worded transport keys, a row of long preset "
             f"names - is drawn with fewer words (icon keys) or in rows (`cap`), or goes on a page, where it pages: "
             f"in place on a large panel, as popups in its own box on a hub, and as pages of its own on the 320, "
             f"wherever the page stands it. The `Rail` stacks its controls at each panel's gap. Loose controls "
@@ -2331,7 +2359,7 @@ Props:
 {variants}
 - `icon`: {_icon_prop(p)} The names, by variant:
 {_icons_md(p)}
-- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own image, from the variant's list). A state changes only what it names: the rest - fill, stroke, color, border and, on an image button, its icon - stays as the variant draws it. A state named `Off` or `On` first takes the variant's own Off or On look, and one of another name with a `look` the variant's state of that look (a lit Mics Muted its On); on an image button the first state shows the `off` image and the others `on`, unless the state sets `look`. Every state must look different. {p['examples']['states_note']}
+{_glyph_prop(p)}- `states`: the states the program sets, in order - state 0 is what the panel shows first. `"Off, On"` by name, or JSON for looks: `'{p['examples']['states']}'`. A state takes `name`, `fill`, `stroke`, `color` (caption color), `border`, `text` (its own caption), and on an image button `look` (`off` or `on`) and `icon` (its own image, from the variant's list). A state changes only what it names: the rest - fill, stroke, color, border and, on an image button, its icon - stays as the variant draws it. A state named `Off` or `On` first takes the variant's own Off or On look, and one of another name with a `look` the variant's state of that look (a lit Mics Muted its On); on an image button the first state shows the `off` image and the others `on`, unless the state sets `look`. Every state must look different. {p['examples']['states_note']}
 - `press`: the state shown while the button is held. Default: On, else the second state. The canvas draws it while you hold the button in Play, as the panel does, so give it a look that reads as pressed. It cannot be the state the button rests in, and a button with a single state has nothing to show - give it a second.
 - `nav`: the artboard this button shows, by its file name without `.dc.html` - `nav="Help"` shows `Help.dc.html`. The button becomes that link, so Play follows it.
 - `does`: anything else it does, in a sentence for the programmer: "Routes the laptop to the display; Live while it is routed."
@@ -3979,12 +4007,129 @@ def _mic_display_md(p):
             f"the footer beside it.\n\n")
 
 
-# The transport keys a disc player's popup holds, and the kit's names for
-# each, in the order a theme's kit might name it.
-_TRANSPORT = (('Play', ('play', 'transport_play')), ('Pause', ('pause', 'transport_pause')),
-              ('Stop', ('stop', 'transport_stop')),
-              ('Previous', ('previous', 'previous-chapter', 'prev', 'transport_prev')),
-              ('Next', ('next', 'next-chapter', 'transport_next')))
+# The transport keys a disc player's popup holds, in the owner's order
+# (2026-11-06: "skip back, rewind, play, pause, stop, fast forward, skip
+# forward. Try to keep it one line."): each key's words; its ID - Play 5000,
+# Stop 5001, Pause 5002, Fast Forward 5003, Rewind 5004, Chapter Next 5005
+# and Chapter Previous 5006, measured on the Windows host over all 174
+# seeds: 169 carry all seven, each on the same key everywhere, on their
+# Blu-ray popup (161 seeds) or the 320's DVD page (8), and the five without
+# any are the three 300M seeds and the two Zoom Rooms seeds, which have no
+# disc page; its glyph's name in the profile's `glyphs`; and the kit's names
+# for it, in the order a theme's kit might name it (Mach's ghost previous
+# ... next, its rewind and ffwd; Turbulence's transport_prev ...
+# transport_next, its transport_rewind and transport_ffwd).
+_TRANSPORT = (('Skip Back', 5006, 'skip-back', ('previous', 'previous-chapter', 'prev', 'transport_prev')),
+              ('Rewind', 5004, 'rewind', ('rewind', 'rew', 'transport_rewind', 'transport_rew')),
+              ('Play', 5000, 'play', ('play', 'transport_play')),
+              ('Pause', 5002, 'pause', ('pause', 'transport_pause')),
+              ('Stop', 5001, 'stop', ('stop', 'transport_stop')),
+              ('Fast Forward', 5003, 'fast-forward', ('ffwd', 'fast-forward', 'ff', 'transport_ffwd', 'transport_ff')),
+              ('Skip Forward', 5005, 'skip-forward', ('next', 'next-chapter', 'transport_next')))
+
+# Measured in headless Chrome (2026-11-06, tests/data/design-transport-<theme>,
+# 20 px gap, a box one row across): the cell each theme's row takes - its
+# template's own transport key on the 1035, Mach's 60x60, Turbulence's 95x100,
+# Afterburn's 85x64; and Shockwave's narrowed (`own`): its template draws the
+# key 95x82 on the 1035, 89x87 on the 725 and 75x75 on the 525 (its seeds),
+# and its 525's popup leaves the row 576 px. There a key grows to the 66 px
+# touch minimum deep, in its cell's shape: an 85 px cell to 69x66, seven of
+# which take 573 px of the 576 at the 15 px gap; a 95 px cell to 77 px, seven
+# of which do not fit (they came out four over three). Then how many of the
+# seven a 320's first page stands down its columns, the rest on the next; and
+# the rows seven worded keys take on the 1035, the 725 and the 525 (None:
+# refused - the 525 holds no rows of Shockwave's or Turbulence's worded keys,
+# whose art grows as deep as it grows wide).
+_TRANSPORT_LAYOUT = {
+    'Mach': ('60x60', None, 5, ((4, 3), (3, 2, 2), (3, 2, 2))),
+    'Shockwave': ('85x82', {'template': (('1035', '95x82'), ('725', '89x87'), ('525', '75x75')),
+                            'held': ('69x66', 573, 576), 'wide': 77},
+                  5, ((4, 3), (4, 3), None)),
+    'Turbulence': ('95x100', None, 5, ((4, 3), (4, 3), None)),
+    'Afterburn': ('85x64', None, 4, ((4, 3), (3, 2, 2), (3, 2, 2))),
+}
+_COUNT = {1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven'}
+
+
+def _rows_said(rows):
+    """(4, 3) -> 'four over three'; (3, 2, 2) -> 'three over two over two'."""
+    return ' over '.join(_COUNT[n] for n in rows)
+
+
+def _transport_md(p):
+    """The disc player's transport, as the owner asked for it: seven keys in
+    one row where the panel holds them, drawn as the template draws its own -
+    the template's glyph in its icon face where the system carries it, else
+    the kit's image of it, else the key's words - with the template's IDs."""
+    t = p['template']
+    look = (((p.get('regions') or {}).get('source') or {}).get('button') or {}).get('variant')
+    have, faced = set(icon_names(p).get(look) or ()), set(glyph_names(p))
+    # The template's glyph in its icon face first, where the system carries
+    # the face - the owner's choice for the private systems (2026-11-04), and
+    # what Mach's template sets over its ghost key where its kit has an image
+    # too - else the kit's image, else the key's words.
+    draw = [(f'glyph="{g}"' if g in faced else None) or next((f'icon="{n}"' for n in kit if n in have), None)
+            for _, _, g, kit in _TRANSPORT]
+    cell, own, first, worded = _TRANSPORT_LAYOUT[t]
+    cw, ch = (int(n) for n in cell.split('x'))
+    order = _say([w for w, *_ in _TRANSPORT])
+    small = models(p).get('TLP320M') or {}
+    need = 7 * small.get('touch', 40) + 6 * small.get('gap', 9)
+    out = (f"**A disc player's transport** is seven keys in one row, in this order: {order}. Draw it as a "
+           f"`Group` in its source popup - `cap=\"7\" cell=\"{cell}\" gap=\"20\"`, in a box one row across "
+           f"({7 * cw + 6 * 20}x{ch}) - and each key in the popup's own look (`variant=\"{look}\"`), with the ID "
+           f"every {t} seed with a disc player gives it (on its Blu-ray popup, the 320's DVD page): "
+           + _say([str(i) for _, i, _, _ in _TRANSPORT]) + ", in that order, so a program written for the "
+           f"template knows them. ")
+    if own:
+        (m0, k0), *others = own['template']
+        key, row, room = own['held']
+        wide = k0.split('x')[0]
+        out += (f"The cell is {cw} px wide where {t}'s template draws its key {wide} on the {m0} ({k0}; "
+                + _say([f'{k} on the {m}' for m, k in others]) + "), so that the 525's popup holds the row - at "
+                f"the touch minimum, with nothing to spare: there the keys grow "
+                f"{(models(p).get('TLP525T') or {}).get('touch', 66)} px deep, the minimum, in their cell's "
+                f"shape ({key}), and seven take {row} px of the {room} the popup leaves the row. In {wide} px "
+                f"cells they grow {own['wide']} px wide, the row holds six, and the seven come out four over "
+                f"three. ")
+    if all(draw):
+        words = any(d.startswith('glyph') for d in draw)
+        out += ("Each draws the template's own glyph - " + _say([f'`{d}`' for d in draw]) + " - "
+                + (f"set in {t}'s icon face as its Blu-ray popup sets them, with its words as its caption "
+                   f"({order}), which it says where a system does not carry the face"
+                   if words else "the kit's image of it, with no caption")
+                + ": a glyph keeps its cell on every panel, where a worded key grows for its words at the "
+                f"panel's type floor. So the row holds on the 1035, the 725 and the 525. The 320 holds no seven "
+                f"across - at its {small.get('touch', 40)} px touch minimum and {small.get('gap', 9)} px gap they "
+                f"need {need} px of its 320 px width - and there a Group stands down its page's columns under its "
+                f"title: "
+                f"the keys come out in order, {_COUNT[first]} on its page and {_COUNT[7 - first]} on the next, "
+                f"which its More goes on to.")
+    else:
+        alike = {}
+        for m, r in zip(('1035', '725', '525'), worded):
+            if r:
+                alike.setdefault(r, []).append(f'the {m}')
+        held = [f"{_rows_said(r)} on {_say(ms)}" for r, ms in alike.items()]
+        out += (f"Each is a worded key, {t}'s system here having no glyph for "
+                + _say([w for (w, *_), d in zip(_TRANSPORT, draw) if not d]) + " in that look: worded keys "
+                f"grow for their words at each panel's type floor, and seven fit one row on no panel. Drawn so, "
+                f"each window gives them the rows its room leaves - " + _say(held)
+                + ("" if all(worded) else
+                   " - and the 525 refuses them, its popup holding no rows of them") + "; the 320 stands them "
+                f"down its page's columns, over its pages. Glyph keys hold the row: build the system where "
+                + (f"{t}'s seeds are, which carry the icon face its glyphs are set in" if p.get('glyphs')
+                   else f"{t}'s kit is") + ".")
+    if ((p.get('regions') or {}).get('source') or {}).get('devices'):
+        # Turbulence's source popups pin a faint device picture behind their
+        # words, and its seeds' Blu-ray, Doc Cam, Lighting and Audio popups
+        # stand their keys on it - the rebuild after #102 saw the row over the
+        # disc on the 1035 (archive/job-e823df9b/rebuild3-1106/), which is the
+        # template's own look, not a fault.
+        out += (f" In {t}'s source popup the row stands on the faint device picture the Center draws at its top "
+                "left (on the 525 under its title), behind the words, as the template's own Blu-ray keys stand "
+                "on its disc.")
+    return out
 
 
 def _room_parts_md(p):
@@ -3995,18 +4140,6 @@ def _room_parts_md(p):
     t = p['template']
     regions = _region_frame(p)
     toggle = regions and ((p.get('regions') or {}).get('rail') or {}).get('variant') == 'toggle'
-    look = (((p.get('regions') or {}).get('source') or {}).get('button') or {}).get('variant')
-    have = set(icon_names(p).get(look) or ())
-    glyphs = [next((n for n in names if n in have), None) for _, names in _TRANSPORT]
-    if all(glyphs):
-        keys = (f"each an icon key in the popup's own look with the kit's glyph - "
-                + _say([f'`icon="{g}"`' for g in glyphs]) + " - which keeps its cell on every panel, where a "
-                f"worded key grows for its words at the panel's type floor")
-    else:
-        keys = (f"each a worded key, {t}'s kit having no glyph for "
-                + _say([w for (w, _), g in zip(_TRANSPORT, glyphs) if not g]) + " in a source popup's look: "
-                f"worded keys grow for their words at each panel's type floor, so give the Group a box of two "
-                f"rows (`cap=\"3\"`) where the room lists a 725 or a 525 - five in a row fit neither's popup")
     two = ("a toggle per display, captioned in one short word for it (Front, Back - a toggle holds one), its "
            "states the display's Power recipe above" if toggle else
            "a key per display, named for it (Projector, Monitor), its states Off, Warming, On and Cooling - the "
@@ -4018,8 +4151,7 @@ def _room_parts_md(p):
             f"or none does: an On and an Off for each are four keys, more than the template's three places. Which source each display shows is a source popup's to say: a "
             f"Group of a key per display in each source's popup, lit where that source is on it, and a status "
             f"Label in a window only where the room has a window for its displays.\n\n"
-            f"**A disc player's transport** - Play, Pause, Stop, Previous and Next - is a `Group` in its source "
-            f"popup, {keys}.\n\n"
+            + _transport_md(p) + "\n\n"
             f"**A recording** is the room's to show: give its launcher `states` whose lit state says so in its "
             f"own `text` (Recording) in the `alert` colour, on every working page that opens it. "
             + (f"{t}'s templates ask before a recording starts (a confirm window with `topic=\"recording\"`, the "

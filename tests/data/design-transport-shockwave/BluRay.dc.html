@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blu-ray</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/extronshockwave/components/bundle.css">
+<script src="ds/extronshockwave/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 921px; height: 574px; position: relative">
+<x-import component-from-global-scope="ExtronShockwave.Page" name="Blu-ray" kind="popup" group="Sources" role="source" title="Blu-ray" panels="TLP1035T TLP725T TLP525T TLP320M" theme="haze" style="position: absolute; left: 0px; top: 0px; width: 921px; height: 574px">
+<x-import component-from-global-scope="ExtronShockwave.Group" title="Transport" cell="85x82" gap="20" cap="7" style="position: absolute; left: 103px; top: 220px; width: 715px; height: 82px">
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Skip Back" id="5006" variant="key" glyph="skip-back" does="Skips back to the previous chapter.">Skip Back</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Rewind" id="5004" variant="key" glyph="rewind" does="Rewinds the disc while held.">Rewind</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Play" id="5000" variant="key" glyph="play" does="Plays the disc.">Play</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Pause" id="5002" variant="key" glyph="pause" does="Pauses the disc.">Pause</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Stop" id="5001" variant="key" glyph="stop" does="Stops the disc.">Stop</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Fast Forward" id="5003" variant="key" glyph="fast-forward" does="Fast-forwards the disc while held.">Fast Forward</x-import>
+  <x-import component-from-global-scope="ExtronShockwave.Button" name="Blu-ray Skip Forward" id="5005" variant="key" glyph="skip-forward" does="Skips ahead to the next chapter.">Skip Forward</x-import>
+</x-import>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":921,"height":574}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

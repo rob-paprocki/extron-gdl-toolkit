@@ -4809,6 +4809,206 @@ def _words_past_glyph(profile, g, rect):
     return word - ((w - aw) / 2 + profile['kit']['icon_right'][f'{kw}x{kh}'] * aw), adv.length(' ', px)
 
 
+# The owner's transport (2026-11-06, round five's README recipes reviewed):
+# "skip back, rewind, play, pause, stop, fast forward, skip forward. Try to
+# keep it one line." tests/data/design-transport-<theme> draws a working
+# page with one source tab and the Blu-ray popup exactly as each theme's
+# README recipe says (designsys._transport_md) where the system carries what
+# the template draws them in, for the TLP1035T, 725T, 525T and 320M; their
+# IDs are the ones every seed with a disc player gives its disc keys (the
+# comment over designsys._TRANSPORT).
+TRANSPORT = ('Skip Back', 'Rewind', 'Play', 'Pause', 'Stop', 'Fast Forward', 'Skip Forward')
+TRANSPORT_IDS = (5006, 5004, 5000, 5002, 5001, 5003, 5005)
+
+
+def _transport_keys(spec):
+    """{key's words: (the page or popup it is on, its control)} of a
+    translated transport canvas."""
+    return {c['name'][len('Blu-ray '):]: (it['name'], c) for it in spec['pages'] + spec['popups']
+            for c in it['controls'] if c.get('name') in {f'Blu-ray {n}' for n in TRANSPORT}}
+
+
+def _skip_without_the_face(test, theme):
+    """Skip `test` - or its subtest - where `theme`'s transport canvas sets
+    its keys in the template's icon face (`glyph`) and this machine carries
+    no copy of it (designsys.glyph_names): there the keys say their words,
+    which hold one row nowhere, and the README draws them so instead."""
+    with open(os.path.join(HERE, 'data', f'design-transport-{theme}', 'BluRay.dc.html'), encoding='utf-8') as fh:
+        drawn = 'glyph="' in fh.read()
+    p = designsys.load(theme)
+    if drawn and not designsys.glyph_names(p):
+        test.skipTest(f"{p['template']}'s icon face is not carried here (git lfs pull its seeds)")
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestTheTransportCanvases(unittest.TestCase):
+    """Each theme's transport canvas translates clean on the four panels it
+    lists - no problem, gdl.spec check and the donor check clean, its ID map
+    clean across them - with the seven keys in the recipe's order: one row
+    in the Blu-ray popup on the 1035, the 725 and the 525, and on the 320,
+    where a Group stands down a page's columns, in order down them over two
+    pages, as many on the first as the README says. Each key has its
+    template's ID and draws what the README says it draws: the template's
+    glyph in its icon face on Mach, Shockwave and Afterburn, where the face
+    is carried, and the kit's image on Turbulence."""
+
+    PANELS = ['TLP1035T', 'TLP725T', 'TLP525T', 'TLP320M']
+
+    def translate(self, theme):
+        folder = os.path.join(HERE, 'data', f'design-transport-{theme}')
+        with open(os.path.join(folder, 'Main.dc.html'), encoding='utf-8') as fh:
+            listed = re.search(r'panels="([^"]+)"', fh.read()).group(1).split()
+        self.assertEqual(listed, self.PANELS)
+        p = designsys.load(theme)
+        if not all(seeds.usable(designsys.models(p)[m]['seed']) for m in listed):
+            self.skipTest(f'the {theme} seeds are not here (git lfs pull)')
+        skip_without_kit(self, theme)
+        _skip_without_the_face(self, theme)
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        shutil.copytree(folder, d, dirs_exist_ok=True)
+        _stage(d, theme)
+        specs, problems, _ = design.Canvas(d).translate_panels()
+        return p, specs, problems
+
+    def check(self, theme):
+        p, specs, problems = self.translate(theme)
+        self.assertEqual({m: q for m, q in problems.items() if q}, {})
+        self.assertEqual(sorted(specs), sorted(self.PANELS))
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out, True)
+        design.write_panels(specs, out)
+        self.assertEqual(idmap.check_panels(idmap.load_panels(out)), [])
+        _, _, first, _ = designsys._TRANSPORT_LAYOUT[p['template']]
+        recipe = designsys._transport_md(p)
+        self.assertIn(f'{designsys._COUNT[first]} on its page and {designsys._COUNT[7 - first]} on the next', recipe)
+        self.assertIn('the row holds on the 1035, the 725 and the 525', recipe)
+        # The glyphs this machine draws (their face carried), not the ones
+        # the profile names: where the face is not here the keys say words.
+        glyphs = {g: p['glyphs'][g] for g in designsys.glyph_names(p)}
+        for m, spec in specs.items():
+            with self.subTest(theme=theme, panel=m):
+                panel = Panel(json.loads(json.dumps(spec)))
+                self.assertEqual(panel.check(), [])
+                self.assertEqual(panel.check_donor(spec['_seed'], swaps={}, fonts={}, notes=[], controls={}), [])
+                keys = _transport_keys(spec)
+                self.assertEqual(sorted(keys), sorted(TRANSPORT))
+                self.assertEqual([keys[n][1].get('id') for n in TRANSPORT], list(TRANSPORT_IDS))
+                if m == 'TLP320M':
+                    # Down the columns of the source's pages, in order.
+                    at = sorted(TRANSPORT, key=lambda n: (keys[n][0], keys[n][1]['rect'][0], keys[n][1]['rect'][1]))
+                    self.assertEqual(at, list(TRANSPORT))
+                    pages = [keys[n][0] for n in TRANSPORT]
+                    self.assertEqual(len(set(pages)), 2, pages)
+                    self.assertEqual(pages.count(pages[0]), first, pages)
+                else:
+                    self.assertEqual({keys[n][0] for n in TRANSPORT}, {'Blu-ray'})
+                    rs = [keys[n][1]['rect'] for n in TRANSPORT]
+                    self.assertEqual(len({r[1] for r in rs}), 1, rs)
+                    self.assertEqual([r[0] for r in rs], sorted(r[0] for r in rs), rs)
+                for n, g in zip(TRANSPORT, (designsys._TRANSPORT[i][2] for i in range(7))):
+                    c = keys[n][1]
+                    if glyphs:
+                        self.assertEqual((c.get('icon'), c.get('font'), c.get('text')),
+                                         (glyphs[g]['char'], glyphs[g]['face'], None), n)
+                    else:
+                        self.assertIsNone(c.get('text'), n)
+                        self.assertTrue(all(st.get('image') for st in c['states'] if isinstance(st, dict)), n)
+
+    def test_the_canvas_is_drawn_as_the_recipe_says(self):
+        """Its Group's cap, cell and gap, each key's look, what it draws and
+        its ID are the README's, in the README's order."""
+        for theme in designsys.TEMPLATES:
+            with self.subTest(theme=theme):
+                skip_without_kit(self, theme)
+                _skip_without_the_face(self, theme)
+                p = designsys.load(theme)
+                recipe = designsys._transport_md(p)
+                with open(os.path.join(HERE, 'data', f'design-transport-{theme}', 'BluRay.dc.html'),
+                          encoding='utf-8') as fh:
+                    src = fh.read()
+                group = re.search(r'Group" title="Transport" cell="(\d+x\d+)" gap="20" cap="7"', src)
+                self.assertTrue(group, src)
+                self.assertIn(f'`cap="7" cell="{group.group(1)}" gap="20"`', recipe)
+                box = re.search(r'in a box one row across \((\d+)x(\d+)\)', recipe).groups()
+                self.assertRegex(src, rf'cap="7" style="position: absolute; left: \d+px; top: \d+px; '
+                                      rf'width: {box[0]}px; height: {box[1]}px"')
+                keys = re.findall(r'Button" name="Blu-ray ([^"]+)" id="(\d+)" (?:variant="(\w+)" )?'
+                                  r'((?:icon|glyph)="[^"]+") does="[^"]*">([^<]*)<', src)
+                self.assertEqual([k[0] for k in keys], list(TRANSPORT))
+                self.assertEqual([int(k[1]) for k in keys], list(TRANSPORT_IDS))
+                variant = (p['regions']['source']['button'])['variant']
+                self.assertIn(f'(`variant="{variant}"`)', recipe)
+                self.assertEqual({k[2] or p['defaults']['button']['variant'] for k in keys}, {variant})
+                self.assertIn(designsys._say([f'`{k[3]}`' for k in keys]), recipe)
+                # A glyph's key says its words where the face is not carried;
+                # a kit icon's key has none.
+                self.assertEqual([k[4] for k in keys],
+                                 [n if k[3].startswith('glyph') else '' for n, k in zip(TRANSPORT, keys)])
+
+    def test_mach(self):
+        self.check('mach')
+
+    def test_shockwave(self):
+        self.check('shockwave')
+
+    def test_turbulence(self):
+        self.check('turbulence')
+
+    def test_afterburn(self):
+        self.check('afterburn')
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestATransportRowWrapsEvenly(_Probe, unittest.TestCase):
+    """Drawn in its template's own 95 px cells, Shockwave's transport needs
+    629 px of the 576 its 525 popup leaves the row: the room holds six, and
+    a Group that room wraps came out six over a lone Skip Forward. Its cells
+    are shared out over its rows as evenly as they go - four over three -
+    while the 1035 and the 725 keep the one row. And a key that names a
+    glyph the system has none of says its own words."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-transport-shockwave')
+    THEME = 'shockwave'
+
+    @classmethod
+    def setUpClass(cls):
+        # Its keys name the template's glyphs: where the icon face is not
+        # carried they say their words, which grow wider than the glyphs'
+        # cells, and the 525 refuses them - what the README says instead.
+        if not designsys.glyph_names(designsys.load(cls.THEME)):
+            raise unittest.SkipTest("Shockwave's icon face is not carried here (git lfs pull its seeds): "
+                                    'its transport keys say their words')
+        super().setUpClass()
+
+    def rows(self, panel, edit=None):
+        _, ctl, out = self.probe('BluRay.dc.html', panel, edit=edit)
+        self.assertEqual(out['problems'], [], panel)
+        rows = {}
+        for n in TRANSPORT:
+            r = ctl[f'Blu-ray {n}'][1]
+            rows.setdefault(r[1], []).append((r[0], n))
+        return [[n for _, n in sorted(v)] for _, v in sorted(rows.items())], ctl
+
+    def test_seven_wrapped_by_the_room_are_four_over_three(self):
+        wide = ('cell="85x82"', 'cell="95x82"')
+        got, _ = self.rows('TLP525T', wide)
+        self.assertEqual(got, [list(TRANSPORT[:4]), list(TRANSPORT[4:])])
+        for m in ('TLP1035T', 'TLP725T'):
+            self.assertEqual(self.rows(m, wide)[0], [list(TRANSPORT)], m)
+        # In the recipe's 85 px cells the 525 holds the row.
+        self.assertEqual(self.rows('TLP525T')[0], [list(TRANSPORT)])
+
+    def test_a_key_naming_no_glyph_says_its_words(self):
+        _, ctl = self.rows('TLP1035T', ('glyph="rewind"', 'glyph="no-such-glyph"'))
+        rewind, play = ctl['Blu-ray Rewind'][0], ctl['Blu-ray Play'][0]
+        self.assertEqual((rewind.get('text'), rewind.get('icon')), ('Rewind', None))
+        self.assertEqual((play.get('text'), play.get('icon'), play.get('font')),
+                         (None, designsys.load('shockwave')['glyphs']['play']['char'], 'Extron-Shockwave'))
+
+
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
                      'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
 class TestARevisionDrawingThePagesInAnotherOrder(unittest.TestCase):

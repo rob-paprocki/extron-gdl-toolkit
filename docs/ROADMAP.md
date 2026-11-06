@@ -54,13 +54,19 @@ opening GUI Designer.**
    Down as their own `text` - since no template page draws a status field
    (`docs/claude-design.md` §4, each theme's README *The working page*, the
    ledgers' entries). Overruled, a slot for either is a region's to draw.
-   Round five's brief added three more each designer improvised, assumed the
-   same way: two displays a key each in the first Section, its states the
-   display's and its `display` naming it, with which source each shows a
-   source popup's Group; a disc player's transport a Group of the kit's
-   transport glyphs, or of worded keys in two rows where the kit has none; and
-   a recording's state its launcher's lit state, the question before it stops
-   a plain modal the designer draws, since no template asks one.
+   Round five's three recipes, which each designer improvised, are answered
+   (your review of 2026-11-06): two displays and stopping a recording are
+   kept as written, and the transport is the seven keys you named, in your
+   order, one row wherever the panel holds it - the 1035, the 725 and the 525
+   in every theme, the 320 down its columns over two pages
+   (`docs/claude-design.md` §4 and §6). Its canvases,
+   `tests/data/design-transport-<theme>`, translate clean on all four panels
+   and are built on Windows: 16 panels, each verified at 0 problems with its
+   ID map at 0, and GUI Designer's snapshot of each theme's Blu-ray popup on
+   the 1035 draws the seven keys in one row, in your order, each glyph drawn
+   (`archive/job-e823df9b/rebuild3-1106/`). On Turbulence's 1035 the row
+   stands on the popup's faint disc picture, as the template's own Blu-ray
+   keys do; the recipe says so.
 3. **Confirm or overrule the ten assumptions Afterburn's regions are built
    on** (`docs/superpowers/specs/2026-10-26-afterburn-regions-design.md` §7,
    each taken at its recommended answer, §8): (1) the same component names on
@@ -616,8 +622,9 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     `regions.dialer.keyboard.glyph.char` or turbulence-42's `fix`. A panel
     draws live captions itself, which nothing here has measured, so the
     touch panel is the last word if one is to hand. A designer's own Button
-    names a kit image, not a glyph: the arrows and transport keys its
-    template sets in the faces still draw the kit's art;
+    names a kit image, or a glyph its profile names (`glyphs`: Mach's,
+    Shockwave's and Afterburn's transport keys, `docs/claude-design.md` §2): the other
+    arrows and keys its template sets in the faces still draw the kit's art;
   - the region page's seed IDs and mirrors (`docs/idmap.md` §7) translate
     and check clean on every panel the region canvases list, and are built
     and verified on every one whose spec they changed, the ID maps at 0
@@ -648,8 +655,9 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     *Truth*) covers a theme once its file is there: `python -m gdl.designsys
     audit <theme>` names a theme with none, and every entry or claim not yet
     resolved. What Mach's records the system cannot draw: the Extron-Lift glyph
-    captions on a designer's arrows, transport and back keys (the kit's
-    images stand in - the system's own chrome draws the face's), and its
+    captions on a designer's arrows and back keys (the kit's images stand in
+    - the system's own chrome draws the face's, and a designer's transport
+    keys set it by `glyph`, as its Blu-ray popup does), and its
     whole-button image presets (Window Layout, TV Channels, the
     recording layouts), which no Mach variant offers; and where it differs
     for a gate, its 30 px volume slider is drawn 53, the touch minimum.
@@ -664,8 +672,10 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     the 2 mm gap). Privacy's red lit caption is `alert`, which a designer
     sets on its On state;
   - what Afterburn's ledger records the system does not draw: the glyphs of
-    Extron's Afterburn icon font on a designer's arrows, d-pad, transport and
-    zoom keys. The system's own chrome sets the font's glyphs - a window's
+    Extron's Afterburn icon font on a designer's arrows, d-pad and zoom keys -
+    its transport keys a designer sets by `glyph`, as the template's Blu-ray
+    popup does (the profile's `glyphs`). The system's own chrome sets the
+    font's glyphs - a window's
     Close, a hub's Up, Down and Back, the 320's More and Back (afterburn-36),
     where the machine that builds the system carries the face - and the kit
     draws most of the rest as images in Afterburn/Icons/PNG - the triangles

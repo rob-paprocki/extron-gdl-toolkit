@@ -275,10 +275,19 @@ __FACE__
   // look did before the faces were carried.
   var FACES = {};
   (P.faces || []).forEach(function (f) { FACES[f] = true; });
+  // A designer's key names one of the template's own glyphs by its word
+  // (P.glyphs, the profile's `glyphs`: `glyph="rewind"`) - the transport,
+  // which Mach's, Shockwave's and Afterburn's templates set in their icon
+  // faces on every panel, Mach's in place of its kit's ghost image of it.
+  // Where the face is not carried the key says its own words, as it did
+  // before.
+  var GLYPHS = P.glyphs || {};
   function glyphOf(props, L) {
     var g = props && props.glyph;
     if (typeof g === 'string' && g.charAt(0) === '{') {
       try { g = JSON.parse(g); } catch (e) { g = null; }
+    } else if (typeof g === 'string') {
+      g = Object.prototype.hasOwnProperty.call(GLYPHS, g) ? GLYPHS[g] : null;
     }
     if (!g || typeof g !== 'object' || !FACES[g.face]) return null;
     var cp = parseInt(String(g['char'] || '').replace(/^(U\+|uni)/i, ''), 16);
@@ -288,8 +297,10 @@ __FACE__
     if (pt == null) pt = props.size;
     if (pt == null) return null;
     var hex = cp.toString(16).toUpperCase();
+    // `color`: the glyph's own where the template sets it apart from its
+    // key's words (Afterburn's transport, text-secondary on an outlined key).
     return { face: g.face, 'char': 'U+' + (hex.length < 4 ? '0000'.slice(hex.length) + hex : hex),
-             text: String.fromCodePoint(cp), pt: Number(pt) };
+             text: String.fromCodePoint(cp), pt: Number(pt), color: g.color || null };
   }
   // A caption's width at a font, from the font's own metrics. Not layout:
   // nothing on the page is measured.
@@ -8130,15 +8141,25 @@ __FACE__
     var r = items.length && items[0].rect;
     return r ? [r[2], r[3]] : [110, 110];
   }
+  // `perRow` a number, or each row's count (evenRows).
   function gridPlace(n, perRow, cw, ch, g, W, H, top) {
-    var rows = Math.ceil(n / perRow), out = [];
+    var counts = Array.isArray(perRow) ? perRow : null;
+    var rows = counts ? counts.length : Math.ceil(n / perRow), out = [];
     var block = rows * ch + (rows - 1) * g;
     var y = top != null ? top : Math.round((H - block) / 2);
     for (var r = 0; r < rows; r++) {
-      var cnt = Math.min(perRow, n - r * perRow);
+      var cnt = counts ? counts[r] : Math.min(perRow, n - r * perRow);
       var x = Math.round((W - (cnt * cw + (cnt - 1) * g)) / 2);
       for (var c = 0; c < cnt; c++) out.push([x + c * (cw + g), y + r * (ch + g), cw, ch]);
     }
+    return out;
+  }
+  // `n` cells shared out over `rows` rows as evenly as they go, the longer
+  // rows first: seven over three rows are 3, 2 and 2, where rows of three
+  // left a lone seventh.
+  function evenRows(n, rows) {
+    var out = [];
+    for (var r = 0; r < rows; r++) out.push(Math.floor(n / rows) + (r < n % rows ? 1 : 0));
     return out;
   }
   // The cell a Group's members share on this panel: the designed cell at the
@@ -8367,16 +8388,22 @@ __FACE__
     // Nor can it page there - its pages would be popups - so it takes the
     // room its window leaves round its box (scaleLayout's `__grow`): as many
     // across as that holds, up to its `cap`, in as few rows, about its box's
-    // middle.
+    // middle. Where that room, not its `cap`, breaks the rows, its cells are
+    // shared out evenly among them (evenRows): Shockwave 525's room holds six
+    // of the transport's seven 77 px keys across, which came out six over a
+    // lone Skip Forward, and comes out four over three (the owner's
+    // transport, 2026-11-06: never a lone key).
     var GR = inPopup ? props.__grow : null;
     if (GR) {
       var pr2 = Math.max(1, Math.min(cap, n, Math.floor((GR[2] + g) / (cw + g))));
-      var W2 = Math.max(W, pr2 * cw + (pr2 - 1) * g), rows2 = Math.ceil(n / pr2);
+      var rows2 = Math.ceil(n / pr2), even = pr2 < Math.min(cap, n) ? evenRows(n, rows2) : null;
+      if (even) pr2 = even[0];
+      var W2 = Math.max(W, pr2 * cw + (pr2 - 1) * g);
       var H2 = Math.max(H, rows2 * ch + (rows2 - 1) * g);
       if (W2 <= GR[2] && H2 <= GR[3]) {
         var lx = Math.min(Math.max(Math.round((bx[0] - W2) / 2), GR[0]), GR[0] + GR[2] - W2);
         var ty = Math.min(Math.max(Math.round((bx[1] - H2) / 2), GR[1]), GR[1] + GR[3] - H2);
-        var at2 = gridPlace(n, pr2, cw, ch, g, W2, H2);
+        var at2 = gridPlace(n, even || pr2, cw, ch, g, W2, H2);
         return h('div', { className: 'xgdl-group', style: outlined({ position: 'absolute', left: lx + 'px', top: ty + 'px',
                                                                      width: W2 + 'px', height: H2 + 'px' }, problems) },
                  items.map(function (it, i) { return member(it, at2[i], 'c' + i); }).concat(problems.map(problem)));
@@ -8607,7 +8634,7 @@ __FACE__
     }
     var own = {};
     ['fill', 'stroke', 'color', 'border'].forEach(function (k) { if (props[k] != null) own[k] = props[k]; });
-    var look = Object.assign({}, V.look, own);
+    var look = Object.assign({}, V.look, gl && gl.color ? { color: gl.color } : {}, own);
     // Icons the kit does not have, by size: the translator refuses them.
     var missing = [];
     var given = !!list(props.states);

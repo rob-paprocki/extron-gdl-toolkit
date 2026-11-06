@@ -289,8 +289,19 @@ template has a seed for. Other resolutions follow the seeds (`seeds/README.md`).
 
 **A designer's icons are the kit's images; the chrome's glyphs are the
 template's faces.** A Button names a kit image, and an icon the kit does not
-have draws as a dashed box the translator refuses. What a region draws itself
-where its template sets a glyph in an icon face - a hub's menu glyphs, Close
+have draws as a dashed box the translator refuses. Where the template sets a
+key as a glyph, the profile names the glyph (`glyphs`: its face, its
+character, its size on each series, and its colour where the template sets it
+apart from the key's words) and a Button names it by `glyph` - Mach's,
+Shockwave's and Afterburn's transport keys, as their Blu-ray popups set them,
+read off a seed of each series. Mach's kit has
+ghost images of the seven too, but its template sets them in Extron-Lift, and
+the owner chose the templates' icon faces for small glyphs in the private
+systems (2026-11-04): the glyph draws where the face is carried, the kit's
+image where only the kit is (the README says which to draw), and the key's
+words where neither is. It is drawn and translated as a region's glyph is,
+below; where the system does not carry the face the key says its own words.
+What a region draws itself where its template sets a glyph in an icon face - a hub's menu glyphs, Close
 and Volume Level strip glyphs, the 320's More, Back and Volume glyphs, the
 300's bar keys, Back, Down and Up and Mach's 300's level glyphs,
 Afterburn's window Close, Shockwave's and Turbulence's dialer star and
@@ -326,8 +337,8 @@ pixels. On the canvas they are `<x-import component-from-global-scope=
 | Page | a page or popup | `name`, `kind` (`page`, `popup`, `modal`), `group`, `start`, `reached-by`, the `theme` (background and accent) or an accent `scheme` alone; `panels` (every panel the room has, the first the one it is drawn on) and `preview` (one of them to draw it as); on a bar theme `role` - `source` or `dialer` on a popup, `settings`, `help`, `confirm` or `wait` on a modal, `call` or `select` on a page with regions - with `title` and `topic` (§4), and on Turbulence a source's `device` - and on its hub a settings window's, which pictures what it is by itself (§4); its chrome as derived Panels, Labels and Buttons |
 | MainArea | nothing of its own | a frame: its children are placed inside the template's main area - on each panel, that panel's own |
 | Rail | nothing of its own | a frame: its children stack in the rail beside the main area, or across below it where there is no room beside it; a button in it fills it across, its caption needing only the button's own padding |
-| Group | its members; on a smaller panel, the popups or pages it becomes | `title`, `cell`, `gap`, `cap`, `joined`, `icon`: equal cells in its box - in place, paged as popups in its box (Previous and Next under its cells, or at the row's ends in a box one cell deep - arrows where their words leave no room; Afterburn's the kit's chevrons, `regions.group`), or pages of their own opened by a button, by the panel's size - on a small panel the button carries the group's `icon`, a kit icon named as a Button's is and drawn as the theme draws an icon button; on a mid-size panel several in a page's `MainArea` share one region where they stood, under a rail of a button per Group (its `title`) that shows its first page (§4); in a modal or a popup on a large or mid-size panel only in place, since a popup shows no popups - taking the room its window leaves round its box, wider about its middle and then in more rows, where its cells outgrow it there (§4) |
-| Button | `button` | caption, `variant`, `icon`, `states` (names, each with its own look, caption and kit image), `press` - the state the panel shows while it is held, which the canvas draws while it is held too - `nav`, `does`, `id` |
+| Group | its members; on a smaller panel, the popups or pages it becomes | `title`, `cell`, `gap`, `cap`, `joined`, `icon`: equal cells in its box - in place, paged as popups in its box (Previous and Next under its cells, or at the row's ends in a box one cell deep - arrows where their words leave no room; Afterburn's the kit's chevrons, `regions.group`), or pages of their own opened by a button, by the panel's size - on a small panel the button carries the group's `icon`, a kit icon named as a Button's is and drawn as the theme draws an icon button; on a mid-size panel several in a page's `MainArea` share one region where they stood, under a rail of a button per Group (its `title`) that shows its first page (§4); in a modal or a popup on a large or mid-size panel only in place, since a popup shows no popups - taking the room its window leaves round its box, wider about its middle and then in more rows, where its cells outgrow it there - its cells shared out over those rows as evenly as they go where the room, not `cap`, wraps them (§4) |
+| Button | `button` | caption, `variant`, `icon`, `glyph` (a glyph of the template's its profile names, §2), `states` (names, each with its own look, caption and kit image), `press` - the state the panel shows while it is held, which the canvas draws while it is held too - `nav`, `does`, `id` |
 | Label | `label` | text, `type` or `size`, `color`, `align`, `does`; `fill` and `border`, the field it paints itself (the dialer's number), none by default |
 | Panel | `panel` | `fill`, `stroke`, `border` |
 | Image | `image` | the template's own art, offered where the profile says what its template draws with one (`examples.image`) and the design panel's seed can clone a `PBImage` - Turbulence's: `image`, a kit file's name, `layout` (`fill`, fitted, the default, or `stretch`), an optional `fill` under it; named on a panel whose seed has none (its series' `kinds`). The regions draw the template's art surfaces as derived Images too (Turbulence's bars, a source's device picture, a hub settings window's own picture) |
@@ -504,6 +515,14 @@ tokens used, resolved for the canvas's accent scheme.
   in its On and Off keys' `states` - and nowhere the template does not: the
   README gives each as a recipe, and no region slot is drawn for them (an
   assumption the owner may overrule, `docs/ROADMAP.md`).
+- **Two displays, a disc player's transport and a recording's stop
+  question** - the recipes round five's README added, each designer having
+  improvised one - the owner reviewed on 2026-11-06: two displays and
+  stopping a recording are kept as written; the transport is changed, in
+  the owner's words "skip back, rewind, play, pause, stop, fast forward,
+  skip forward. Try to keep it one line." - seven keys in that order, one
+  row wherever the panel holds it (§6, *The owner's review of round five's
+  recipes*).
 - **On a hub (the 520s and 535s) the same region page is drawn in the hub's
   grammar**, from the hub's own frame (its `right`, `top`, `center`, and the
   `select` and `options` grids `frame_of` measures off its Select a Source
@@ -995,8 +1014,14 @@ tokens used, resolved for the canvas's accent scheme.
   its box - wider about its middle, then in more rows, clear of what stands
   beside, over and under it - and is refused only where that room cannot hold
   its cells (round five's Mach Lighting presets, 3 px past their box on the
-  725). A Label over a row of keys does not move apart from them as they
-  grow (`docs/ROADMAP.md`). Round four's
+  725). Where that room and not its `cap` breaks its rows, its cells are
+  shared out over them as evenly as they go, the longer rows first (`evenRows`):
+  the transport's seven keys on Shockwave's 525, whose popup holds six 77 px
+  keys across, came out six over a lone Skip Forward, and come out four over
+  three; seven over three rows are three, two and two. Of the built canvases
+  it moves only the archived round-five rooms' Lighting presets on the 525 -
+  Afterburn's, Mach's and Shockwave's four, now two over two. A Label over a
+  row of keys does not move apart from them as they grow (`docs/ROADMAP.md`). Round four's
   Shockwave Help, a stack of one-line Labels across the 1035's body, so
   holds its lines on the 725 and the 525, and Turbulence's on the 525. Where
   the body cannot hold them even so, they stay as they grew and are named.
@@ -1568,6 +1593,64 @@ sign-off lays the canvas out on it too.
   with its class and why, which `TestRoundFiveRooms` holds every translation
   to. Round four's rooms, translated again, are left Shockwave 2 and Afterburn 70.
   Not yet revised or built.
+- **The owner's review of round five's recipes** (2026-11-06): two displays
+  and stopping a recording are kept as written; a disc player's transport is
+  changed - "Transports should be skip back, rewind, play, pause, stop, fast
+  forward, skip forward. Try to keep it one line." Each README's recipe is
+  now those seven keys, in that order, in one row: a `Group` with
+  `cap="7"`, the template's own key as its cell (Mach 60x60, Turbulence
+  95x100, Afterburn 85x64), but for Shockwave's, 85x82: its template draws
+  the key 95x82 on the 1035, 89x87 on the 725 and 75x75 on the 525, and the
+  525's popup holds the row at the touch minimum with nothing to spare - its
+  keys grow 66 px deep in their cell's shape, 69x66, and seven take 573 px
+  of the 576 the popup leaves the row, where 95 px cells grow to 77 and hold
+  six. Each key is in the source popup's look with its template's ID - Skip
+  Back 5006, Rewind 5004, Play 5000, Pause 5002, Stop 5001, Fast Forward
+  5003, Skip Forward 5005. Read over every seed, all 174 pulled: 169
+  carry all seven, each on the same key everywhere,
+  on their Blu-ray popup (161 seeds) or the 320's DVD page (8); the five
+  without any are the three 300M seeds and the two Zoom Rooms seeds, which
+  have no disc page. Each draws what its template draws: Mach's, Shockwave's
+  and Afterburn's the template's own glyph in its icon face, which a key
+  names by `glyph` (Extron-Lift U+E93C, E93F, E938, E936, E94B, E920, E935
+  over Mach's ghost key, 16 to 32 pt by series; Extron-Shockwave U+00B0,
+  00BD, 00B9, 00B8, 00BE, 00B4, 00B7 on its gray key; Extron-Afterburn the
+  same codepoints as Mach's, `text-secondary` on an outlined key; the
+  profile's `glyphs`, §2), with its words as its caption where the face is
+  not carried; Turbulence's the kit's image (`icon="transport_prev"` ...
+  `icon="transport_next"`). Mach's kit has ghost images of the seven too
+  (`icon="previous"` ... `icon="next"`), which its README draws only where
+  its system carries the kit and not the face - the owner chose the
+  templates' icon faces for the small glyphs (2026-11-04). Measured in
+  headless Chrome on the four panels, the row holds on the 1035, the 725 and
+  the 525 in every theme, Mach's in glyphs as in its kit's images; the 320,
+  which holds no seven across (they need 334 px of its 320 px width at its
+  40 px touch minimum and 9 px gap), stands a Group down its page's columns,
+  the seven in order over two pages - five and two on Mach's, Shockwave's
+  and Turbulence's, four and three on Afterburn's. Seven worded keys hold
+  one row on no panel: four over three on the 1035, three over two over two
+  on Mach's and Afterburn's 725 and 525, four over three on Shockwave's and
+  Turbulence's 725, and their 525s refuse them - which is why the recipe
+  draws glyph keys. A Group a window's room, not its `cap`, wraps shares its
+  cells out evenly over its rows (§4), so a row the room cannot hold is
+  never left a lone key. Each recipe is drawn as
+  written in `tests/data/design-transport-<theme>` - a working page with one
+  source tab, Blu-ray, its popup, Help and Power Down - and translates clean
+  on the TLP1035T, 725T, 525T and 320M, its ID map too
+  (`TestTheTransportCanvases`). Built unattended on all four panels in all
+  four themes at main 7655dad - 16 panels, each verified at 0 problems with
+  its ID map at 0 on the first build - and GUI Designer's own snapshot of
+  each theme's Blu-ray popup on the 1035 draws the seven keys in one row in
+  that order, each with its own glyph: Mach's Extron-Lift, Shockwave's
+  Extron-Shockwave, Afterburn's Extron-Afterburn, Turbulence's kit images.
+  Its snapshots of the 320's two Blu-ray pages draw five and two keys
+  (Mach, Shockwave, Turbulence) and four and three (Afterburn), in order
+  down their columns. Turbulence's 1035 popup also draws the disc picture it
+  pins at its upper left, and the lower 75 px of it lie behind Skip Back and
+  the left of Rewind (`archive/job-e823df9b/rebuild3-1106/transport-row/`):
+  the template's own look - its seeds' Blu-ray, Doc Cam, Lighting and Audio
+  popups stand their keys on that faint picture - so the recipe says the row
+  stands on it.
 - **Shockwave's region canvas on the TLP1535M** (`examples/probes-128/canvas-1535`,
   `tests/data/design-regions-shockwave` with its panel list cut to the 1535M),
   translated and built unattended on `seeds/Shockwave 1535.gdl`: layout 263

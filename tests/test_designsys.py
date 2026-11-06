@@ -2182,9 +2182,14 @@ class TestTheRegionComponents(unittest.TestCase):
             # alike - about 13 KB of code (Mach's about 730 KB), and a box
             # holding its words as GUI Designer lays them out - gdiWidth,
             # holding and the rail's room, about 10 KB of code (Mach's about
-            # 748 KB). The file a canvas loads is the art bundle, megabytes
-            # of kit art; this is the code, the frames and the face.
-            self.assertLess(len(js.encode('utf-8')), 760_000, t)
+            # 748 KB; 760 KB at main 8f667ce), and the owner's transport of
+            # 2026-11-06 - a key naming its template's glyph (`glyphs`) and a
+            # Group a window wraps sharing its cells out evenly (evenRows),
+            # about 2 KB of code, and Mach's own seven transport glyphs, 1.6
+            # KB of profile (Mach's about 763 KB). The file a canvas
+            # loads is the art bundle, megabytes of kit art; this is the
+            # code, the frames and the face.
+            self.assertLess(len(js.encode('utf-8')), 770_000, t)
             # And each series' frame, which grows with each part of the
             # template the regions draw: under 10 KB (Mach's 1720 the most,
             # 9.1 KB with its call mode), so a key the regions do not read
@@ -4424,9 +4429,10 @@ class TestTurbulencesTruth(unittest.TestCase):
         their own, and the incoming call's answers), and the region score one
         (turbulence-46: the 725's and 720's tabs and the 720's footer at the
         type floor), and the hub's Volume Level strip, shown on every working
-        page (turbulence-47): one entry each, in order."""
+        page (turbulence-47), and the transport row standing on a source
+        popup's device picture (turbulence-48): one entry each, in order."""
         ids = [e['id'] for e in self.audit.load_ledger('turbulence')['entries']]
-        self.assertEqual(ids, [f'turbulence-{i:02d}' for i in range(48)])
+        self.assertEqual(ids, [f'turbulence-{i:02d}' for i in range(49)])
 
     def test_turbulence_is_done(self):
         self.assertEqual(self.audit.audit('turbulence'), [])
@@ -4603,6 +4609,147 @@ class TestWhatRoundFiveLeftToGuess(unittest.TestCase):
                 for said in ('**Two displays**', "**A disc player's transport**", '**A recording**',
                              'Stop Recording and Cancel', '`display="Projector"`'):
                     self.assertIn(said, text)
+
+    # What a transport key draws, by what the system carries: its template's
+    # glyph in its icon face (Mach, Shockwave, Afterburn), else the kit's
+    # image of it in the source popup's look (Mach, Turbulence), else words.
+    TRANSPORT_GLYPHS = ('`glyph="skip-back"`, `glyph="rewind"`, `glyph="play"`, `glyph="pause"`, `glyph="stop"`, '
+                        '`glyph="fast-forward"` and `glyph="skip-forward"`')
+    TRANSPORT_ICONS = {
+        'mach': ('previous', 'rewind', 'play', 'pause', 'stop', 'ffwd', 'next'),
+        'turbulence': ('transport_prev', 'transport_rewind', 'transport_play', 'transport_pause', 'transport_stop',
+                       'transport_ffwd', 'transport_next')}
+
+    @staticmethod
+    def environments():
+        """(name, patches) for each environment a machine stands in for by
+        taking away what it has: as it is, without the kit, without the icon
+        faces, with neither. Here (kit and faces) that is all four; on CI's
+        runner (the faces, no kit) the faces alone and neither."""
+        from unittest import mock
+
+        def no_kit():
+            return mock.patch.object(designsys, 'kit_roots', lambda p, part='root': [])
+
+        def no_face():
+            return mock.patch.object(designsys, 'glyph_faces', lambda p: {})
+        return (('as it is', ()), ('without the kit', (no_kit,)), ('without the faces', (no_face,)),
+                ('with neither', (no_kit, no_face)))
+
+    def test_the_transport_is_the_owners_seven_keys_in_one_row(self):
+        """The owner's review of 2026-11-06: "skip back, rewind, play, pause,
+        stop, fast forward, skip forward. Try to keep it one line." Seven
+        keys in that order with the IDs the seeds give their disc player's
+        keys, one row on the 1035, the 725 and the 525 - glyph keys, which
+        keep their cells - and the 320 named; the five keys in two rows it
+        replaced are gone (docs/history.md). What the README says draws
+        them is what the system it is built into carries, in each
+        environment: the template's glyphs where the face is, else the kit's
+        images, else words that hold one row nowhere."""
+        import contextlib
+        for env, patches in self.environments():
+            with contextlib.ExitStack() as stack:
+                for patch in patches:
+                    stack.enter_context(patch())
+                for theme in designsys.TEMPLATES:
+                    with self.subTest(env=env, theme=theme):
+                        p = designsys.load(theme)
+                        text = designsys.readme(p)
+                        recipe = text.split("**A disc player's transport**", 1)[1].split('\n\n', 1)[0]
+                        self.assertIn('is seven keys in one row, in this order: Skip Back, Rewind, Play, Pause, '
+                                      'Stop, Fast Forward and Skip Forward.', recipe)
+                        self.assertIn(f"every {p['template']} seed with a disc player gives it", recipe)
+                        self.assertIn('5006, 5004, 5000, 5002, 5001, 5003 and 5005, in that order', recipe)
+                        self.assertIn('`cap="7" cell="', recipe)
+                        self.assertNotIn('Previous and Next', recipe)
+                        self.assertNotIn('cap="3"', recipe)
+                        look = p['regions']['source']['button']['variant']
+                        icons = self.TRANSPORT_ICONS.get(theme, ())
+                        if p.get('glyphs') and designsys.glyph_names(p):
+                            drawn = self.TRANSPORT_GLYPHS
+                        elif icons and set(icons) <= set(designsys.icon_names(p).get(look) or ()):
+                            drawn = designsys._say([f'`icon="{n}"`' for n in icons])
+                        else:
+                            drawn = None
+                        if drawn:
+                            self.assertIn(f'Each draws the template\'s own glyph - {drawn} - ', recipe)
+                            self.assertIn('which it says where a system does not carry the face' if 'glyph=' in drawn
+                                          else "the kit's image of it, with no caption", recipe)
+                            self.assertIn('So the row holds on the 1035, the 725 and the 525. The 320 holds no '
+                                          'seven across', recipe)
+                            self.assertIn('need 334 px of its 320 px width', recipe)
+                        else:
+                            self.assertIn('Each is a worded key', recipe)
+                            self.assertIn('seven fit one row on no panel', recipe)
+                            self.assertNotIn('`glyph=', recipe)
+                            self.assertNotIn('`icon=', recipe)
+        # Here, with the kit and the faces, every branch above ran: Mach's
+        # glyphs come before its kit's images, which draw only without the
+        # face.
+        p = designsys.load('mach')
+        if designsys.glyph_names(p) and designsys.icon_names(p).get('ghost'):
+            self.assertIn(self.TRANSPORT_GLYPHS, designsys._transport_md(p))
+        # Shockwave's narrowed cell, said for the panels its seeds draw its
+        # key on, and the 525 that holds the row at the touch minimum.
+        said = designsys._transport_md(designsys.load('shockwave'))
+        self.assertIn("The cell is 85 px wide where Shockwave's template draws its key 95 on the 1035 (95x82; "
+                      "89x87 on the 725 and 75x75 on the 525)", said)
+        self.assertIn('at the touch minimum, with nothing to spare: there the keys grow 66 px deep, the minimum, '
+                      "in their cell's shape (69x66), and seven take 573 px of the 576", said)
+
+    def test_a_key_may_name_the_templates_transport_glyphs(self):
+        """Mach's, Shockwave's and Afterburn's templates set the seven in their
+        icon faces on every panel at their series' sizes (the Blu-ray popup of
+        a seed of each series): Mach's over the ghost key its kit has images
+        for too, the others' in source looks with no transport art. A key
+        names one by `glyph`, which the Button README lists where the face is
+        carried; Turbulence's template draws the kit's images, and has none."""
+        sizes = {'shockwave': {'Shockwave 1220 Series': 22, 'Shockwave 1020 Series': 18,
+                               'Shockwave 520 Series': 18, 'Shockwave 320 Series': 16},
+                 'afterburn': {'Afterburn 1220 Series': 40, 'Afterburn 1020 Series': 34,
+                               'Afterburn 1520 Series': 40, 'Afterburn 535 Series': 60,
+                               'Afterburn 520 Series': 40, 'Afterburn 320 Series': 27},
+                 'mach': {'Mach 1220 Series': 18, 'Mach 1020 Series': 18, 'Mach 1520 Series': 18,
+                          'Mach 1720 Series': 28, 'Mach 720 Series': 16, 'Mach 535 Series': 32,
+                          'Mach 520 Series': 20, 'Mach 320 Series': 18}}
+        # Mach's 525 and 320 set Play larger than the rest (22 and 24 pt), and
+        # its 320 Pause (20), in every state.
+        # Afterburn's 535 sets Play and Pause at 80 and Stop at 70, the rest 60
+        # (seeds/Afterburn 535.gdl and TLP535M.gdl, measured on Windows).
+        own = {('mach', 'play'): {'Mach 520 Series': 22, 'Mach 320 Series': 24},
+               ('mach', 'pause'): {'Mach 320 Series': 20},
+               ('afterburn', 'play'): {'Afterburn 535 Series': 80},
+               ('afterburn', 'pause'): {'Afterburn 535 Series': 80},
+               ('afterburn', 'stop'): {'Afterburn 535 Series': 70}}
+        lift = ('U+E93C', 'U+E93F', 'U+E938', 'U+E936', 'U+E94B', 'U+E920', 'U+E935')
+        chars = {'shockwave': ('U+00B0', 'U+00BD', 'U+00B9', 'U+00B8', 'U+00BE', 'U+00B4', 'U+00B7'),
+                 'afterburn': lift, 'mach': lift}
+        faces = {'shockwave': 'Extron-Shockwave', 'afterburn': 'Extron-Afterburn', 'mach': 'Extron-Lift'}
+        names = [g for _, _, g, _ in designsys._TRANSPORT]
+        for theme in ('mach', 'shockwave', 'afterburn'):
+            with self.subTest(theme=theme):
+                p = designsys.load(theme)
+                glyphs = {k: v for k, v in p['glyphs'].items() if not k.startswith('_')}
+                self.assertEqual(list(glyphs), names)
+                self.assertEqual(tuple(g['char'] for g in glyphs.values()), chars[theme])
+                self.assertEqual({g['face'] for g in glyphs.values()}, {faces[theme]})
+                for name, g in glyphs.items():
+                    want = dict(sizes[theme], **own.get((theme, name), {}))
+                    self.assertEqual({s: g['pt'][s] for s in want}, want, name)
+                self.assertIn(glyphs['play']['face'], designsys.glyph_face_names(p))
+                button = designsys.component_docs(p)['Button']
+                if designsys.glyph_names(p):
+                    self.assertIn('- `glyph`: one of ', button)
+                    self.assertIn('`skip-back`, `rewind`', button)
+                    self.assertIn('"glyphs":', designsys.bundle(p, art=False))
+        self.assertNotIn('glyphs', designsys.load('turbulence'))
+        self.assertNotIn('- `glyph`: ', designsys.component_docs(designsys.load('turbulence'))['Button'])
+        # Turbulence's source popups pin a faint device picture its template's
+        # keys stand on; the recipe says the row stands on it too. Themes with
+        # no device pictures say nothing of it.
+        self.assertIn('stands on the faint device picture', designsys._transport_md(designsys.load('turbulence')))
+        for theme in ('mach', 'shockwave', 'afterburn'):
+            self.assertNotIn('device picture', designsys._transport_md(designsys.load(theme)))
 
     def test_a_320_heading_set_in_capitals_is_counted_in_capitals(self):
         """Afterburn's 320 sets its column headings in capitals, 0.63 em each,
