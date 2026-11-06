@@ -1116,7 +1116,7 @@ def frame_of(path, size, art=None, reach=None):
             break
     paged = out is None
     if paged:
-        out = _pages_frame(named, size, (lambda pg: page_art(p, pg, size)) if art else (lambda pg: None))
+        out = _pages_frame(named, size, (lambda pg: page_art(p, pg, size)) if art else (lambda pg: None), popups)
     # The windows, then what the bands do not say, last.
     items = [it for rec in _records(out) for b in BANDS if rec[b] for it in rec[b]['items']]
     region = out['center'].get('region')
@@ -1286,6 +1286,13 @@ def _select_frame(page, bars, size):
             and not (foot and _centre_in(c['rect'], foot))]
     out = _grid_of(([title] if title else []) + head + held, (0, 0), None)
     out = dict({'page': page['name']}, **{k: v for k, v in out.items() if k != 'popup'})
+    # Whether its tiles are its tabs to the program: Turbulence's each take
+    # the working page's tab's ID (Laptop 8050 on both pages, whose page flip
+    # differs), Mach's and Afterburn's their own (8100 to 8103).
+    tabs = {it.get('id') for it in ((bars.get('top') or bars['center']).get('tabs') or {}).get('items') or ()}
+    tiles = [c['id'] for c in held if c['type'] == 'PBButton' and _role(c) not in ('help', 'close') and c.get('id')]
+    if tiles and set(tiles) <= tabs - {None}:
+        out['tab_ids'] = True
     return out
 
 
@@ -1728,14 +1735,105 @@ def _and(words):
     return ', '.join(words[:-1]) + ' and ' + words[-1] if len(words) > 1 else ''.join(words)
 
 
-def _pages_frame(named, size, art_of):
+def _key_row(pg, bands):
+    """A page's first row of keys in its centre and the steps across it and
+    down its first column - a toggle's switch drawn over its key (Afterburn
+    300's Display 1 Power Toggle On over Display 1 Power) is the key's."""
+    keys = [c for c in pg['controls'] if c['type'] == 'PBButton' and _role(c) not in ('more', 'back')
+            and _centre_in(c['rect'], bands['center'])]
+    inner = [c for c in keys if not any(o is not c and o['rect'] != c['rect'] and _inside(c['rect'], o['rect'])
+                                        for o in keys)]
+    if not inner:
+        return None, None, None
+    y = min(c['rect'][1] for c in inner)
+    row = sorted((c for c in inner if c['rect'][1] <= y + TOL), key=lambda c: c['rect'][0])
+    col = sorted((c for c in inner if abs(c['rect'][0] - row[0]['rect'][0]) <= TOL), key=lambda c: c['rect'][1])
+    pitch = [row[1]['rect'][0] - row[0]['rect'][0] if len(row) > 1 else None,
+             col[1]['rect'][1] - col[0]['rect'][1] if len(col) > 1 else None]
+    return inner, row, pitch
+
+
+def _menu_grid(named, settings, size, art_of):
+    """The page a 300's source's controls stand in columns as: its source
+    pages draw none (Computer) or a keypad (Video), so its settings windows'
+    columns - of the pages its Settings page opens, the one whose first row's
+    keys are widest, as holding a designer's words (Mach's Lighting Settings,
+    110x70 under Lights and Blinds; Afterburn's Display Settings, 178x50)."""
+    opened = [named[c['name']] for c in settings['controls'] if c['type'] == 'PBButton' and c['name'] in named]
+    best = None
+    for pg in opened:
+        _, row, _ = _key_row(pg, _page_bands(pg, size, art_of(pg)))
+        if row and (best is None or row[0]['rect'][2] > best[1]):
+            best = (pg, row[0]['rect'][2])
+    return best[0] if best else None
+
+
+def _menu_home(home, popups, size, art_of):
+    """A 300's home page between its title and its menu bar: every control in
+    its centre by role, its topmost label its `title` (Select a Source), and
+    its `volume` - the level and the glyphs over its ends in the Volume Level
+    popup Mach's Main shows at its 'Volume' reference, in page coordinates, or
+    Afterburn's level on the page itself - each with its seed ID."""
+    bands = _page_bands(home, size, art_of(home))
+    cs = sorted((c for c in _controls(home, size) if _centre_in(c['rect'], bands['center'])
+                 and c['type'] not in ('PBShape', 'PBImage')), key=lambda c: (c['rect'][1], c['rect'][0]))
+    title = next((c for c in cs if c['type'] == 'PBLabel'), None)
+    # A label's size too: Afterburn sets its Select a Source 16 pt, where its
+    # source pages' titles are 21.
+    items = [dict(_item(c, role='title' if c is title else None), **({'pt': c['pt']} if c['type'] == 'PBLabel' else {}))
+             for c in cs]
+    ref = next((c for c in cs if c['type'] == 'PBPopupPageReference'), None)
+    pg = next((pg for pg in popups if ref and list(pg['size']) == list(ref['rect'][2:])
+               and any(c['type'] == 'PBLevel' for c in pg['controls'])), None)
+    at = ref['rect'][:2] if pg else (0, 0)
+    lv = next((c for c in (pg['controls'] if pg else cs) if c['type'] == 'PBLevel'), None)
+    volume = None
+    if lv:
+        g = lv.get('gauge') or {}
+        volume = {'popup': pg['name'] if pg else None, 'rect': list(ref['rect']) if pg else None,
+                  'level': {'rect': _offset(lv['rect'], at), 'id': lv['id'] or None, 'track': lv['paint'],
+                            'border': (lv['border'] or {}).get('resource'),
+                            'bar': None if g.get('art') else g.get('fill'),
+                            'art': {'track': g.get('track_image'), 'fill': g.get('fill_image')} if g.get('art') else None},
+                  # Up's glyph first, as the 320's Volume modal lists its own.
+                  'labels': [{'rect': _offset(c['rect'], at), 'id': c['id'], 'pt': c['pt']}
+                             for c in sorted((c for c in pg['controls'] if c['type'] == 'PBLabel'),
+                                             key=lambda c: 'down' in (c['name'] or '').lower())] if pg else []}
+    return items, volume
+
+
+def _key_pts(pages):
+    """The sizes a page per source's template sets its keys' captions in,
+    over `pages` (None for a page it lacks): `key`, the least it sets a key's
+    words in - the 320's Doc Cam Freeze, Auto and Normal, 10 pt on Mach's,
+    Shockwave's and Afterburn's, which a key's caption there may go down to
+    (the owner's call, 2026-11-04); a digit, a glyph in an icon face and More
+    and Back are not words - and `digit`, the size it sets a key of digits
+    in, which is larger: Doc Cam's Input 1 to 3, 18 pt on Mach's, 22 on
+    Shockwave's and 11 on Afterburn's, and on a dialer the signs it sets
+    beside them ('*', '#' and '.' at the digits' 20 pt on Mach's 1035), so
+    a keypad's key is drawn at it, where a word's goes down to `key`. Each is
+    absent where no key says it in words of its own: Turbulence's 320 carries
+    its keys' words and its Inputs in their art (vc_freeze, vc_auto,
+    vc_normal)."""
+    keys = [c for pg in pages if pg for c in pg['controls']
+            if c['type'] == 'PBButton' and _role(c) not in ('more', 'back') and c.get('state_font')
+            and c['state_font']['pt'] and not str(c['state_font']['face'] or '').startswith('Extron')]
+    worded = [c['state_font']['pt'] for c in keys if re.search('[A-Za-z]', c['caption'] or '')]
+    digits = [c['state_font']['pt'] for c in keys if re.fullmatch(r'[0-9*#.]+', (c['caption'] or '').strip())]
+    return dict(({'key': min(worded)} if worded else {}), **({'digit': min(digits)} if digits else {}))
+
+
+def _pages_frame(named, size, art_of, popups=()):
     """The 320 and the 300: a page per source. The first source page in the
     five bands - its title, More and the centre's first row of controls and
     the headings over it, and the empty state of a source with no controls -
     with the home page (the 300's menu bar, the 320's Select a Source strip)
     and the source's second page (its Back) as records of their own, since a
-    band holds one page's controls. `art_of` is a page's own art's main
-    region (page_art) on Afterburn, else None."""
+    band holds one page's controls. A 300's home holds its Select a Source
+    and its volume too (_menu_home), and its columns are its settings
+    windows' (_menu_grid). `art_of` is a page's own art's main region
+    (page_art) on Afterburn, else None."""
     W, H = size
     home = named.get('Main')
     # The source page: a source's first of two (the 320's Doc Cam 1 and 2, the
@@ -1769,8 +1867,10 @@ def _pages_frame(named, size, art_of):
         col = sorted((c for c in inner if abs(c['rect'][0] - row[0]['rect'][0]) <= TOL), key=lambda c: c['rect'][1])
         out['center']['pitch'] = [row[1]['rect'][0] - row[0]['rect'][0] if len(row) > 1 else None,
                                   col[1]['rect'][1] - col[0]['rect'][1] if len(col) > 1 else None]
-        # The sizes it sets its title, its headings and its empty state in.
-        pt = {'title': title['pt'] if title else None, 'heading': heads[0]['pt'] if heads else None}
+        # The sizes it sets its title, its headings and its empty state in,
+        # and its keys' (_key_pts, over the source's two pages).
+        pt = dict({'title': title['pt'] if title else None, 'heading': heads[0]['pt'] if heads else None},
+                  **_key_pts((first, second)))
         # A source with controls has no empty state: a source page with none
         # draws it (the 320's Laptop: 'Laptop is currently selected.').
         empty = next((named[n] for n in EMPTY_SOURCES if n in named), None)
@@ -1787,8 +1887,32 @@ def _pages_frame(named, size, art_of):
         out['center']['pt'] = pt
     else:
         out['center']['empty'] = _empty_of(first, size, art_of(first))
+    # A 300's: a menu bar on its home page with Settings, which opens its
+    # Settings page.
+    menu = home is not None and 'Settings' in named and any(
+        c['type'] == 'PBButton' and _role(c) == 'settings' for c in home['controls'])
+    grid = _menu_grid(named, named['Settings'], size, art_of) if menu and not inner else None
+    if grid is not None:
+        gb = _page_bands(grid, size, art_of(grid))
+        _, row, pitch = _key_row(grid, gb)
+        gt = _title_of(grid)
+        heads = [c for c in sorted(grid['controls'], key=lambda c: c['rect'][0])
+                 if c['type'] == 'PBLabel' and c is not gt
+                 and c['rect'][1] + c['rect'][3] / 2 < row[0]['rect'][1] and _centre_in(c['rect'], gb['center'])]
+        said = _said_of(first, size, art_of(first))
+        # Its keys' sizes are the settings window's too, whose keys the 300
+        # lays its columns out as (_key_pts): Afterburn's Display Settings
+        # sets Power and Mute at 13 pt, Mach's Lighting Settings its Presets
+        # at 15.
+        out['center'].update(row=[list(c['rect']) for c in row], headings=[list(c['rect']) for c in heads],
+                             pitch=pitch, grid_page=grid['name'],
+                             pt=dict({'title': title['pt'] if title else None,
+                                      'heading': heads[0]['pt'] if heads else None},
+                                     **_key_pts((grid,)), empty=said[0]['pt'] if said else None))
     if home is not None and home is not first:
         out['home'] = _page_record(home, size, art_of(home))[0]
+        if menu:
+            out['home']['center']['items'], out['home']['volume'] = _menu_home(home, popups, size, art_of)
     if second is not None:
         out['second'] = _page_record(second, size, art_of(second))[0]
     out['ids'] = _ids([it for rec in _records(out) for b in BANDS if rec[b] for it in rec[b]['items']], [])
@@ -1876,6 +2000,17 @@ def _window(pg, size, at, kind):
         # down the system?' in one run, where its 1035 breaks after 'to').
         if pg['kind'] == 'page' and said:
             out['text'] = '\n'.join(c['caption'] for c in said if c['caption'])
+        # And the size it sets its answers' words in, where the question is
+        # a page (the 320's, whose own question the 320 draws its answers
+        # in at it): Power Down and Cancel at 11 pt on Mach's, 12 on
+        # Shockwave's, 10 on Afterburn's; Turbulence's Cancel at 16 over its
+        # blank red key, its Power Down's words its art's. A bar panel's and
+        # a hub's answers keep the panel's type floor.
+        answers = [c['state_font']['pt'] for c in buttons if c is not close and c.get('state_font')
+                   and c['state_font']['pt'] and not str(c['state_font']['face'] or '').startswith('Extron')
+                   and re.search('[A-Za-z]', c['caption'] or '')]
+        if pg['kind'] == 'page' and answers:
+            out['pt']['answer'] = min(answers)
     return out
 
 

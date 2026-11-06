@@ -33,8 +33,8 @@ TEMPLATE = {
 }
 OWN = {'blue': '#3D8BFD', 'green': '#2E9E5B', 'yellow': '#F2C94C', 'deep': '#12131C',
        'paper': '#DCDCDC'}
-# Translucent fills: a snapshot pastes a control's art with a binary alpha
-# test (docs/render-fidelity.md section 2), so these are solid there.
+# Translucent fills, over the stripes: a snapshot blends them in light, GDI+'s
+# gamma 2.2 (docs/render-fidelity.md finding 2).
 ALPHA = {'accent25': '#40D69B61', 'accent50': '#80D69B61', 'accent75': '#C0D69B61',
          'white20': '#33FFFFFF', 'black50': '#80000000', 'blue60': '#993D8BFD'}
 
@@ -613,6 +613,13 @@ def spec():
         'start_page': 'Start',
         # GUI Designer's own Offline Page, on, so its snapshot is scored too.
         'offline': {'enabled': True, 'replace': {'XXX.XXX.XXXX': '555.010.4567'}},
+        # Two of its captions GUI Designer cuts, and the snapshots show it:
+        # Type Sizes' Italic40 trimmed to 'Type 40 Itali', Wrapping's
+        # LongWord split over three lines - what gdl.compose.fitted was
+        # measured on. A measurement spec, so the check that refuses a cut
+        # caption (gdl.spec _caption_rules) says them instead; the plan's
+        # ops, and so the build, are what they were without it.
+        'caption_fit': 'off',
         'images': {n: f'./art/{n}' for n in ('backdrop.png', 'stripes.png', 'pattern.png',
                                              'glyph.png', 'glyph-on.png', 'thumb.png')},
         'pages': [start(), main_page(), matrix_page(), type_sizes(), type_faces(), alignment(),

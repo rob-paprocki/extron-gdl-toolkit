@@ -5,7 +5,7 @@
     "Colors: seeds/Mach 1035.gdl's own button per-state fill, stroke and text color, and its PBShape fills (python theme_survey.py, and Project.fill_map()/pages() from gdl/project.py), cross-checked against `python -m gdl.themes` on 'Mach 1020 Series.glt' and against Mach Styles.psd's 'Colors' layer group and its selected/unselected same-hue alpha-only rule (docs/design-rules.md section 7; research/psd_layer_names.py run on 'C:\\Users\\Public\\Documents\\Extron\\GUI Designer Templates\\Resources\\Mach\\Style Sheet\\Mach Styles.psd'). `page` is approximated, not measured: Mach's own pages usually show a full-bleed photo (its 'Main BG Image'/'mach-bg-02' PSD layers) that no flat token can represent, so `page` stands in with the template's own dominant SOLID (fully opaque) fill instead - #303030, the seed's 13 'Modal Window' shapes (0,64 1280x681 on Help, Display, Screen, Lighting and Audio Settings, Camera Select, Window Layout, Recording Controls, the three confirmations, Starting Up and Powering Down), matching 13 of gdl.themes' extract on the raw .glt exactly; the header and footer bars are #000000B4, and the 995x549 standard popups have no fill - the same method gdl/designsys/shockwave.json's own `page` uses. `scrim` is not measured per-theme at all: Build draws every modal popup as the page beneath under black at alpha 166 (0xA6) regardless of its authored background - the same value gdl/designsys/afterburn.json reports measuring identically on the Afterburn, Mach and Shockwave seeds - so it is fixed here to match, not derived from Mach's own palette, and gdl/spec.py's Panel.palette() excludes a modal's background from the six-color count for the same reason.",
     "Type: seeds/Mach 1035.gdl's own label and button point sizes in the 'Open Sans' face. The seed also defines 'Open Sans Light', at 12 to 35 pt, which this system does not offer; a spec can ask for it (Project.font_resource_names() lists it; docs/design-rules.md section 7). Counts corroborated exactly by seeds/Mach ECP 16-10.gdl and, in shape, by seeds/Mach 1535.gdl. Every measured Font.Style.Bold is false, so every style here is weight 400, unlike Afterburn's - Mach's real hierarchy leans on the Light face, not on bold, matching Shockwave's own finding.",
     "Borders: gdl.spec.BORDERS keys whose resource seeds/Mach 1035.gdl defines (Project.border_resource_names()) - `mach`, its own, plus the four generic 2D primitives also defined there. Radius/thickness from gdl.spec.BORDER_GEOMETRY, except `ellipse`: BORDER_GEOMETRY's own entry for '2D Ellipse' is (0, 3), which is the resource's raw dataField and not a corner radius - GUI Designer draws this shape as an ellipse by object type - so radius is set to -1 (a circle) here, the same convention gdl/designsys/afterburn.json's own ellipse uses. Counted over every page and popup of the seed, Project.border_resources() shows only `mach` and `rounded` (2D Rounded Rectangle) actually drawn with in the seed; `rect`, `capsule` and `ellipse` are defined but otherwise-undrawn-with generic escape hatches, as in the Afterburn profile.",
-    "Buttons: seeds/Mach 1035.gdl's own per-state fills, borders and images, read with gdl.project.Project on every PBButton state. ghost and solid author '2D Rounded Rectangle' (`rounded`) on most buttons and no border on a minority (Main SD's header tabs and footer cells - Room Mode, Window Layout, Recording Controls, Help, Power - Main Multi-Window's Window 1 and 2, Main VC's Share Content and the recording layout buttons); the `mach` resource the seed defines is on 16 of its 662 button states. Icons are small, mostly transparent kit images laid over the button's fill (1376x440_pc.png with a caption indented four spaces; 440x440_camera.png with the caption below; 700x448_power.png alone) - `with_icon`. A few are whole-button images, which no Mach variant offers: Window Layout's twelve presets (preset-01_nsel.png and on, with no fill), TV Channels' logos (755x440_abc.png) and the recording layouts (712x440_generic_*.png). The seed's red actions - Confirmation's Power Down, Confirmation - Recording's Record, Incoming Call's Decline, Main VC's End Call, Screen Settings' Stop - are #A829258C or #A82925DC, then solid alert when pressed, on '2D Rounded Rectangle' - `alert`; its green ones (Main VC's Make Call, Incoming Call's Accept) #659945DC or #65994596, then #86D161 - `call`. 56 buttons draw an Extron-Lift glyph as their caption (arrows, transport, back, delete, keyboard, more); a design system draws no glyph - Extron's icon fonts carry no license field - so the kit's own images of the same icons stand in.",
+    "Buttons: seeds/Mach 1035.gdl's own per-state fills, borders and images, read with gdl.project.Project on every PBButton state. ghost and solid author '2D Rounded Rectangle' (`rounded`) on most buttons and no border on a minority (Main SD's header tabs and footer cells - Room Mode, Window Layout, Recording Controls, Help, Power - Main Multi-Window's Window 1 and 2, Main VC's Share Content and the recording layout buttons); the `mach` resource the seed defines is on 16 of its 662 button states. Icons are small, mostly transparent kit images laid over the button's fill (1376x440_pc.png with a caption indented four spaces; 440x440_camera.png with the caption below; 700x448_power.png alone) - `with_icon`. A few are whole-button images, which no Mach variant offers: Window Layout's twelve presets (preset-01_nsel.png and on, with no fill), TV Channels' logos (755x440_abc.png) and the recording layouts (712x440_generic_*.png). The seed's red actions - Confirmation's Power Down, Confirmation - Recording's Record, Incoming Call's Decline, Main VC's End Call, Screen Settings' Stop - are #A829258C or #A82925DC, then solid alert when pressed, on '2D Rounded Rectangle' - `alert`; its green ones (Main VC's Make Call, Incoming Call's Accept) #659945DC or #65994596, then #86D161 - `call`. 56 buttons draw an Extron-Lift glyph as their caption (arrows, transport, back, delete, keyboard, more); the regions draw the chrome's in that face (`glyph`), read from the seeds when the system is built, and a designer's button draws the kit's own images of the same icons, which stand in.",
     "Schemes: one, `default`. Mach's named swatches (green, blue, red, yellow, white, gray - Mach Styles.psd's 'Colors' group) act as fixed status colors used together on a single seed panel - e.g. seeds/Mach 1035.gdl uses yellow for selection and red and green elsewhere, all in the one project - not as alternate branding schemes a project picks one of, unlike Afterburn's four.",
     "Slider: measured on Main Volume Slider (30x290): an 8 px track, a 30x30 thumb, all three drawn from images the seed carries and the kit folder does not - 8x500_mach_track_bg@3x.png, 8x500_mach_track_fill@3x.png, 40_mach_thumb@3x.png - extracted to vendor/ with `python -m gdl.designsys extract mach`. A clone keeps its donor's, which is these, so the panel is right either way; the canvas draws them. Level: assumed, as before - the seed has none; its Up and Down, where a level stands in for a slider, show the kit's volume-up and volume-down where their look draws an icon (`steps`), as the 525's own Volume Up and Down are glyphs.",
     "Themes: every one of Mach 1035's 8 pages draws mach-bg-02.png, the pastel mountain sunset, full-bleed (Project.pages()); the kit ships it and five others at 5472x3648 (Resources/Mach/Backgrounds). All six are offered, the seed's first. Extron publishes no pairing for Mach, and it has one accent scheme.",
@@ -32,7 +32,12 @@
   "font": {
     "family": "Open Sans",
     "stack": "\"Open Sans\", Arial, sans-serif",
-    "google": "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap"
+    "google": "https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&display=swap",
+    "light": {
+      "_source": "Where the template sets Open Sans Light, read off each series' seed (seeds/Mach 1035.gdl, Mach 725, 720, 1525 and 1535): its popups' and windows' titles (Light 24), Main Select Source's header title (Light 26) and its tiles' names (Light 16), a window's message (Light 20), a source's empty state (Light 16) and every footer clock (Light 16) - its other captions Open Sans. The hubs' and the 320's templates (seeds/Mach 525.gdl, 535, 320) set the same in Open Sans, but for the 525's Recording Controls, so a look that says `light`, and a type of weight 300, is Light on these series only.",
+      "family": "Open Sans Light",
+      "series": ["Mach 1220 Series", "Mach 1020 Series", "Mach 1520 Series", "Mach 1720 Series", "Mach 720 Series"]
+    }
   },
   "schemes": [
     {
@@ -153,19 +158,19 @@
       "name": "title",
       "pt": 32,
       "weight": 400,
-      "usage": "The room's name on the Start page: Room Title, Open Sans 32, black on the photo. The largest heading on a working page is Room Mode VC's prompt, Please select a room mode, in Open Sans Light 28, a face this system does not offer."
+      "usage": "The room's name on the Start page: Room Title, Open Sans 32, black on the photo. The largest heading on a working page is Room Mode VC's prompt, Please select a room mode, in Open Sans Light 28."
     },
     {
       "name": "header",
       "pt": 26,
-      "weight": 400,
-      "usage": "The header's title on the one Main page whose header has one: Main Select Source's Select a source, Open Sans Light 26 in white, centred on its bar. The working pages' headers hold the source tabs instead (Layout); this system draws Open Sans, not Light."
+      "weight": 300,
+      "usage": "The header's title on the one Main page whose header has one: Main Select Source's Select a source, Open Sans Light 26 in white, centred on its bar. The working pages' headers hold the source tabs instead (Layout). Light where the panel's template sets it so (font.light), Open Sans on a hub and the 320."
     },
     {
       "name": "heading",
       "pt": 24,
-      "weight": 400,
-      "usage": "A popup's or a window's title: Open Sans Light 24, white, at its top left - Help, Document Camera, Display Settings, Camera Select, Lighting Settings and the template's other titles. This system offers Open Sans, so 24 pt Open Sans."
+      "weight": 300,
+      "usage": "A popup's or a window's title: Open Sans Light 24, white, at its top left - Help, Document Camera, Display Settings, Camera Select, Lighting Settings and the template's other titles. Light where the panel's template sets it so (font.light), Open Sans on a hub and the 320."
     },
     {
       "name": "body",
@@ -447,7 +452,7 @@
   },
   "iconography": {
     "icon_prop": "Mach mostly shows state with the button's fill: the kit draws each icon in white. The few template buttons that swap their icon by state (Privacy, Record, VC Call, the Window Layout presets) give that state its own `icon`.",
-    "intro": "Mach shows state mostly with a button's fill: the kit draws each icon in white, and a button lights by moving to a brighter fill (`raised` to `pressed`, `shade` to `shade-on`), or, for an active mute or privacy, to solid `accent`. A few swap the icon as well - Privacy's privacy_nsel to privacy_sel, Record's record_1 to record_red_1 - which a state's own `icon` does. Every icon comes from Mach's own resource kit through a Button's `icon` - never draw one. The template draws arrows, transport, back, delete, keyboard and more as Extron-Lift glyph captions, which this system does not draw (Extron's icon fonts carry no license field): the kit's images of the same icons stand in.",
+    "intro": "Mach shows state mostly with a button's fill: the kit draws each icon in white, and a button lights by moving to a brighter fill (`raised` to `pressed`, `shade` to `shade-on`), or, for an active mute or privacy, to solid `accent`. A few swap the icon as well - Privacy's privacy_nsel to privacy_sel, Record's record_1 to record_red_1 - which a state's own `icon` does. Every icon comes from Mach's own resource kit through a Button's `icon` - never draw one. The template draws arrows, transport, back, delete, keyboard and more as Extron-Lift glyph captions. The system draws its own chrome's in that face - a hub's menu glyphs and Close, the 320's More and Back, the Volume glyphs - read from the seeds when it is built (Extron's icon fonts carry no license field, so they are in the private system alone); a Button of yours draws the kit's images of the same icons, which stand in.",
     "rules": [
       "**Which button**: page buttons - the rails, the tabs - are `solid` (the default), and the footer's Room Mode, Help and Power `footer`; a key in a source's well or in a window is `ghost`. With an `icon` and a caption, `solid` sets the icon at the left and the caption after it, as the tabs, and `ghost` the icon above its caption, as Camera Select's; with no caption, the icon alone, centered. A source tile (`source`, as Main Select Source's) has its icon and no caption, its name a Label under it.",
       "**Feedback**: every state must look different - a brighter fill, or `accent` with an `ink` caption for an active mute or privacy (`highlight`).",
@@ -549,26 +554,49 @@
     "mute": {"variant": "solid", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "fill": "accent", "color": "ink"}], "does": "Mutes the program audio; On while muted."},
     "help": {"variant": "footer", "text": "Help"},
     "power": {"variant": "footer", "icon": "power"},
-    "clock": {"format": "MMMM dd, yyyy - h:mm tt", "align": "center"},
+    "clock": {"format": "MMMM dd, yyyy - h:mm tt", "align": "center", "light": true},
     "_call": "What a call page (role=\"call\"), its dialer (role=\"dialer\"), the incoming call's question (topic=\"call\") and the page sources are chosen on (role=\"select\") draw, off seeds/Mach 1035.gdl's Main VC, VTC Dialer, Incoming Call and Main Select Source: Make Call green (#659945DC to #86D161, `call`), End Call red (#A82925DC, `alert-call`), Privacy the dim yellow #AD8544DC lighting to #EDB95E with a black caption (`highlight` on `accent-dim`), Share Content a shade key at the header's end that lights red (`alert-call`) - the template's with no words of its own, which its program writes; the dialer's keys white washes (`ghost`), its Call green, Flash the accent's wash (#EDB95E50, `accent-wash`) and Contacts steel blue, each its 880x440 icon with its word past it, its number on a white field; the question's Accept green and Decline red; a source's tile a shade square with its name under it, black Open Sans Light 16, under the header's 'Select a source'. The call keys carry the kit's 755x440 call, end-call and privacy icons over their words, set a line down; the dial pad's 2 to 9 their digit over the 440x440 letter art (abc to wxyz).",
     "call": {"call": {"variant": "call", "icon": "call"}, "end-call": {"variant": "alert", "fill": "alert-call", "icon": "end-call"}, "privacy": {"variant": "highlight", "fill": "accent-dim", "icon": "privacy"}},
     "share": {"variant": "solid", "states": [{"name": "Off"}, {"name": "On", "fill": "alert-call"}]},
     "dialer": {"key": {"variant": "ghost", "type": "button-large", "icon": "{letters}", "__breaks": 0}, "call": {"variant": "call", "icon": "call", "__kit": "880x440", "__caption": "indent"}, "flash": {"variant": "ghost", "fill": "accent-wash", "states": [{"name": "Off"}, {"name": "On", "fill": "accent-wash-on"}], "icon": "flash", "__kit": "880x440", "__caption": "indent"}, "contacts": {"variant": "ghost", "fill": "steel", "states": [{"name": "Off"}, {"name": "On", "fill": "steel-on"}], "icon": "contacts", "__kit": "880x440", "__caption": "indent"}, "keyboard": {"variant": "ghost", "icon": "keyboard", "text": ""}, "delete": {"variant": "ghost", "icon": "delete", "text": ""}, "entry": {"color": "ink", "align": "left"}},
-    "select": {"tile": {"variant": "source"}, "label": {"color": "ink", "size": 16}, "title": {"color": "text", "align": "center"}},
-    "_center": "What a source popup (role=\"source\") and a window draw (docs/claude-design.md section 4), off the 1035's and 725's seeds' Laptop, Doc Cam, Help, Confirmation, Powering Down and Lighting Settings: the well's title Open Sans Light 24 in white, left, 15 px in (the system offers Open Sans, so 24 pt Open Sans); the empty state Light 16 white, centred; the well's headings white and its keys ghost (#FFFFFF32 off, #FFFFFF78 on); a window's title Light 24 white at its top left, its message Light 20 white centred, Close the word in a ghost cell (Open Sans 12, lifted to the 14 pt floor), Power Down #A829258C / #E23636 - `alert` - and Cancel ghost. Those sizes are the 1035's: a source popup and a window set what they say at each panel's own template's size, its frame's `pt` (the 725's titles 20 pt, its question 18).",
-    "source": {"title": {"size": 24, "align": "left", "color": "text"}, "empty": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "ghost"}},
-    "window": {"title": {"size": 24, "align": "left", "color": "text"}, "message": {"size": 20, "align": "center", "color": "text"}, "label": {"color": "text"}, "close": {"variant": "ghost"}, "power": {"variant": "alert"}, "cancel": {"variant": "ghost"}, "button": {"variant": "ghost"}, "accept": {"variant": "call"}, "decline": {"variant": "alert"}},
-    "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Select Source, Laptop, Settings, Display Settings, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 (the frame's pt), black over the photo and white (`text`) on the Settings popup's opaque #303030 (`page`); a tile's name 14 pt under it; the Volume heading white (TextColor #FFFFFFFF) on the bar's black at 180; the menu bar's keys and every key on Settings, Display Settings and a settings window the raised white at alpha 50 (`ghost`: the Settings tiles, Close More Option and Close Help, the Display Settings keys and Lighting Settings' Close all (254,254,254,50)), and Select a Source's tiles and a source's Close over the photo black at 180 (`solid`); Mute its word (Open Sans 13 'Mute'); Help's title centred (TextAlignment 3) and its Close the back glyph; the options' glyphs the kit's `lighting` and `speaker` where Lighting/Blinds and Audio draw a bulb and a speaker. Chosen by eye from the renders: Up and Down the kit's `up` and `down` chevrons for the template's Extron-Lift ones, Settings, Power and Help the kit's glyphs for its Extron-Lift ones. Known differences: the template sets its menu glyphs in Extron-Lift at 20 to 24 pt and the kit's art fills its key, drawn Fill on the panel too, so ours are about twice the template's; Mute, set at 13 pt under the 525's 18 pt type floor, grows from 66 to 81 px; the Volume Level strip's speaker glyphs are Extron-Lift characters and are not drawn.",
-    "hub": {"heading": {"color": "text"}, "title": {"size": 30, "align": "center", "color": "ink"}, "label": {"size": 14, "align": "center", "color": "ink"}, "tile": {"variant": "solid"}, "button": {"variant": "solid"}, "menu": {"variant": "ghost"}, "up": {"icon": "up"}, "down": {"icon": "down"}, "mute": {"variant": "ghost"}, "power": {"variant": "ghost", "icon": "power", "text": ""}, "settings": {"variant": "ghost", "icon": "settings"}, "display": {"variant": "ghost", "icon": "display"}, "close": {"variant": "solid", "icon": "back"}, "help": {"variant": "solid", "icon": "help"}, "window": {"title": {"align": "center"}, "close": {"variant": "ghost", "icon": "back", "text": ""}}, "options": {"background": "page", "title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "ghost"}, "blank": {"variant": "ghost"}, "button": {"variant": "ghost"}, "close": {"variant": "ghost", "icon": "back"}, "glyphs": {"light": "lighting", "audio": "speaker"}}},
+    "select": {"tile": {"variant": "source"}, "label": {"color": "ink", "size": 16, "light": true}, "title": {"color": "text", "align": "center", "light": true}},
+    "_center": "What a source popup (role=\"source\") and a window draw (docs/claude-design.md section 4), off the 1035's and 725's seeds' Laptop, Doc Cam, Help, Confirmation, Powering Down and Lighting Settings: the well's title Open Sans Light 24 in white, left, 15 px in; the empty state Light 16 white, centred; the well's headings white and its keys ghost (#FFFFFF32 off, #FFFFFF78 on); a window's title Light 24 white at its top left, its message Light 20 white centred, Close the word in a ghost cell (Open Sans 12, lifted to the 14 pt floor), Power Down #A829258C / #E23636 - `alert` - and Cancel ghost. Those sizes are the 1035's: a source popup and a window set what they say at each panel's own template's size, its frame's `pt` (the 725's titles 20 pt, its question 18).",
+    "source": {"title": {"size": 24, "align": "left", "color": "text", "light": true}, "empty": {"size": 16, "align": "center", "color": "text", "light": true}, "label": {"color": "text"}, "button": {"variant": "ghost"}},
+    "window": {"title": {"size": 24, "align": "left", "color": "text", "light": true}, "message": {"size": 20, "align": "center", "color": "text", "light": true}, "label": {"color": "text"}, "close": {"variant": "ghost"}, "power": {"variant": "alert"}, "cancel": {"variant": "ghost"}, "button": {"variant": "ghost"}, "accept": {"variant": "call"}, "decline": {"variant": "alert"}},
+    "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Select Source, Laptop, Settings, Display Settings, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 (the frame's pt), black over the photo and white (`text`) on the Settings popup's opaque #303030 (`page`); a tile's name 14 pt under it; the Volume heading white (TextColor #FFFFFFFF) on the bar's black at 180; the menu bar's keys and every key on Settings, Display Settings and a settings window the raised white at alpha 50 (`ghost`: the Settings tiles, Close More Option and Close Help, the Display Settings keys and Lighting Settings' Close all (254,254,254,50)), and Select a Source's tiles and a source's Close over the photo black at 180 (`solid`); Mute its word (Open Sans 13 'Mute'); Help's title centred (TextAlignment 3) and its Close the back glyph; the options' glyphs the kit's `lighting` and `speaker` where Lighting/Blinds and Audio draw a bulb and a speaker. The template sets its menu bar's Up, Down, Settings and Power (U+E94E, U+E91D, U+E942, U+E93A at 20 pt on the 525, 32 on the 535), every popup's Close (the back glyph U+E906, 22 and 36 pt), Select Source's Help (U+E931, 24 and 36 pt) and the Volume Level strip's speaker glyphs (Volume Up Label U+E955 and Volume Down Label U+E954, 26 and 38 pt) in Extron-Lift, and so does the system (`glyph`), where the face is on the machine that builds it (gdl.designsys.glyph_faces); where it is not, the kit's `up`, `down`, `settings`, `power`, `help` and `back` art stands in, filling its key, about twice the template's glyph. Known differences: Mute, set at 13 pt under the 525's 18 pt type floor, grows from 66 to 81 px.",
+    "hub": {"heading": {"color": "text"}, "title": {"size": 30, "align": "center", "color": "ink"}, "label": {"size": 14, "align": "center", "color": "ink"}, "tile": {"variant": "solid"}, "button": {"variant": "solid"}, "menu": {"variant": "ghost"}, "up": {"icon": "up", "glyph": {"face": "Extron-Lift", "char": "U+E94E", "pt": {"Mach 520 Series": 20, "Mach 535 Series": 32}}}, "down": {"icon": "down", "glyph": {"face": "Extron-Lift", "char": "U+E91D", "pt": {"Mach 520 Series": 20, "Mach 535 Series": 32}}}, "mute": {"variant": "ghost"}, "power": {"variant": "ghost", "icon": "power", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E93A", "pt": {"Mach 520 Series": 20, "Mach 535 Series": 32}}}, "settings": {"variant": "ghost", "icon": "settings", "glyph": {"face": "Extron-Lift", "char": "U+E942", "pt": {"Mach 520 Series": 20, "Mach 535 Series": 32}}}, "display": {"variant": "ghost", "icon": "display"}, "close": {"variant": "solid", "icon": "back", "glyph": {"face": "Extron-Lift", "char": "U+E906", "pt": {"Mach 520 Series": 22, "Mach 535 Series": 36}}}, "help": {"variant": "solid", "icon": "help", "glyph": {"face": "Extron-Lift", "char": "U+E931", "pt": {"Mach 520 Series": 24, "Mach 535 Series": 36}}}, "level_up": {"color": "text", "__seed": 8122, "glyph": {"face": "Extron-Lift", "char": "U+E955", "pt": {"Mach 520 Series": 26, "Mach 535 Series": 38}}}, "level_down": {"color": "text", "__seed": 8124, "glyph": {"face": "Extron-Lift", "char": "U+E954", "pt": {"Mach 520 Series": 26, "Mach 535 Series": 38}}}, "window": {"title": {"align": "center"}, "close": {"variant": "ghost", "icon": "back", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E906", "pt": {"Mach 520 Series": 22, "Mach 535 Series": 36}}}}, "options": {"background": "page", "title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "ghost"}, "blank": {"variant": "ghost"}, "button": {"variant": "ghost"}, "close": {"variant": "ghost", "icon": "back", "glyph": {"face": "Extron-Lift", "char": "U+E906", "pt": {"Mach 520 Series": 22, "Mach 535 Series": 36}}}, "glyphs": {"light": "lighting", "audio": "speaker"}}},
     "page": {
-      "_source": "The 320's pages (seeds/Mach 320.gdl): its strip's white words on black at 70%, its headings and empty state black on the photo, its shade keys (`solid`), More the kit's ••• (more-options) and Back its back glyph on the shade, Back with no border where it ends the strip. The question and the waits say theirs white (`message`).",
+      "_source": "The 320's pages (seeds/Mach 320.gdl): its strip's white words on black at 70%, its headings and empty state black on the photo, its shade keys (`solid`), More and Back Extron-Lift glyphs on the shade (Doc Cam More U+E933 at 20 pt, Doc Cam Back U+E906 at 18), Back with no border where it ends the strip, and the Volume modal's Volume Up Label and Volume Down Label U+E955 and U+E954, white (`glyph`) - where the face is not on the machine, the kit's ••• (more-options), its back glyph and the words + and -. The question and the waits say theirs white (`message`).",
       "strip": {"align": "center", "color": "text"},
       "heading": {"align": "center", "color": "ink"},
       "empty": {"align": "center", "color": "ink"},
       "button": {"variant": "solid"},
-      "more": {"variant": "solid", "icon": "more-options", "text": ""},
-      "back": {"variant": "solid", "icon": "back", "text": "", "border": "none"},
+      "more": {"variant": "solid", "icon": "more-options", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E933", "pt": 20}},
+      "back": {"variant": "solid", "icon": "back", "text": "", "border": "none", "glyph": {"face": "Extron-Lift", "char": "U+E906", "pt": 18}},
+      "volume_up": {"glyph": {"face": "Extron-Lift", "char": "U+E955"}},
+      "volume_down": {"glyph": {"face": "Extron-Lift", "char": "U+E954"}},
       "message": {"align": "center", "color": "text"}
+    },
+    "_menu": "The 300's pages (seeds/Mach 300M Portrait.gdl): every page on the photo with a black menu bar at 70% along its foot - on Main its Settings, Help and Power, elsewhere Back - its keys the white wash (`ghost`) with their glyph in the template's icon face, Extron-Lift, white at 32 pt (Main's Settings U+E942, Help U+E931 and Power Down U+E93A, a page's Back U+E906 - `glyph`, where the face is on the machine, else the kit's settings, help, power and back); Main's Select a Source, a source page's title (22 pt) and its empty state (15 pt) black on the photo, centred; Main's source keys and its volume's Down and Up shade (`solid`), Down and Up Extron-Lift's speakers, white at 28 pt (Volume Down U+E954, Volume Up U+E955; else the kit's volume-down and volume-up), its Mute `highlight`, and at the ends of the Volume Level popup its level shows in the same speakers at 18 pt (Volume Down Label 7026 and Volume Up Label 7023: `volume_down`, `volume_up`, drawn where the face is, else not); its Settings, its settings windows and Help on a #303030 sheet over the photo, their words white and their keys the white wash (`sheet`). More is ours - the template pages nothing - in the bar's last slot, in the bar's look: Extron-Lift's three dots, the 320's More (U+E933), at the bar's 32 pt.",
+    "menu": {
+      "title": {"align": "center", "color": "ink"},
+      "strip": {"align": "center", "color": "ink"},
+      "heading": {"align": "center", "color": "ink"},
+      "empty": {"align": "center", "color": "ink"},
+      "button": {"variant": "solid"},
+      "source": {"variant": "solid"},
+      "settings": {"variant": "ghost", "icon": "settings", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E942", "pt": 32}},
+      "help": {"variant": "ghost", "icon": "help", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E931", "pt": 32}},
+      "power": {"variant": "ghost", "icon": "power", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E93A", "pt": 32}},
+      "more": {"variant": "ghost", "icon": "more-options", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E933", "pt": 32}},
+      "back": {"variant": "ghost", "icon": "back", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E906", "pt": 32}},
+      "mute": {"variant": "highlight"},
+      "up": {"variant": "solid", "icon": "volume-up", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E955", "pt": 28}},
+      "down": {"variant": "solid", "icon": "volume-down", "text": "", "glyph": {"face": "Extron-Lift", "char": "U+E954", "pt": 28}},
+      "volume_up": {"color": "text", "glyph": {"face": "Extron-Lift", "char": "U+E955"}},
+      "volume_down": {"color": "text", "glyph": {"face": "Extron-Lift", "char": "U+E954"}},
+      "message": {"align": "center", "color": "text"},
+      "sheet": {"strip": {"color": "text"}, "heading": {"color": "text"}, "empty": {"color": "text"}, "button": {"variant": "ghost"}}
     }
   },
   "writing": {
@@ -666,7 +694,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP1035M": "seeds/Mach 1035.gdl", "TLP1035T": "seeds/Mach 1035.gdl", "TLP1025M": "seeds/Mach 1025.gdl", "TLP1025T": "seeds/Mach TLP1025T.gdl", "TLP1220MG": "seeds/Mach 1220.gdl", "TLP1220TG": "seeds/Mach TLP1220TG.gdl", "TLP1225MG": "seeds/Mach 1225.gdl", "TLP1225TG": "seeds/Mach TLP1225TG.gdl", "TLP835C": "seeds/Mach TLP835C.gdl", "TLP835M": "seeds/Mach 835.gdl", "TLP835T": "seeds/Mach TLP835T.gdl"},
+      "seeds": {"TLP1035M": "seeds/Mach 1035.gdl", "TLP1035T": "seeds/Mach 1035.gdl", "TLP1025M": "seeds/Mach 1025.gdl", "TLP1025T": "seeds/Mach TLP1025T.gdl", "TLP1220MG": "seeds/Mach 1220.gdl", "TLP1220TG": "seeds/Mach TLP1220TG.gdl", "TLP1225MG": "seeds/Mach 1225.gdl", "TLP1225TG": "seeds/Mach TLP1225TG.gdl", "TLP835C": "seeds/Mach TLP835C.gdl", "TLP835M": "seeds/Mach 835.gdl", "TLP835T": "seeds/Mach TLP835T.gdl", "TLC1026M": "seeds/Mach 1026.gdl", "TLP835M-Portrait": "seeds/Mach 835 Portrait.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -1436,7 +1464,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP725T": "seeds/Mach 725.gdl", "TLP1020M": "seeds/Mach 1020.gdl", "TLP1020T": "seeds/Mach TLP1020T.gdl", "TLP725C": "seeds/Mach TLP725C.gdl", "TLP725M": "seeds/Mach TLP725M.gdl"},
+      "seeds": {"TLP725T": "seeds/Mach 725.gdl", "TLP1020M": "seeds/Mach 1020.gdl", "TLP1020T": "seeds/Mach TLP1020T.gdl", "TLP725C": "seeds/Mach TLP725C.gdl", "TLP725M": "seeds/Mach TLP725M.gdl", "TLC726M": "seeds/Mach 726.gdl", "TLP1022M": "seeds/Mach 1022.gdl", "TLP1022T": "seeds/Mach TLP1022T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -2196,7 +2224,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP1525TG": "seeds/Mach 1525.gdl", "TLP1525MG": "seeds/Mach TLP1525MG.gdl"},
+      "seeds": {"TLP1525TG": "seeds/Mach 1525.gdl", "TLP1525MG": "seeds/Mach TLP1525MG.gdl", "TLP1520MG": "seeds/Mach 1520.gdl", "TLP1520TG": "seeds/Mach TLP1520TG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -2967,7 +2995,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP1535M": "seeds/Mach 1535.gdl", "TLP1535T": "seeds/Mach TLP1535T.gdl"},
+      "seeds": {"TLP1535M": "seeds/Mach 1535.gdl", "TLP1535T": "seeds/Mach TLP1535T.gdl", "TLP1720MG": "seeds/Mach 1720.gdl", "TLP1720TG": "seeds/Mach TLP1720TG.gdl", "TLP1725MG": "seeds/Mach 1725.gdl", "TLP1725TG": "seeds/Mach TLP1725TG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -4477,7 +4505,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP535T": "seeds/Mach 535.gdl"},
+      "seeds": {"TLP535T": "seeds/Mach 535.gdl", "TLP535M": "seeds/Mach TLP535M.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main Page",
@@ -4702,7 +4730,7 @@
         "ridges": {"image": "5472x3648_mach-bg-05.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-05.png"},
         "facade": {"image": "5472x3648_mach-bg-06.png", "file": "Mach/Backgrounds/5472x3648/5472x3648_mach-bg-06.png"}
       },
-      "seeds": {"TLP525T": "seeds/Mach 525.gdl", "TLP525C": "seeds/Mach TLP525C.gdl", "TLP525M": "seeds/Mach TLP525M.gdl"},
+      "seeds": {"TLP525T": "seeds/Mach 525.gdl", "TLP525C": "seeds/Mach TLP525C.gdl", "TLP525M": "seeds/Mach TLP525M.gdl", "TLP520M": "seeds/Mach 520.gdl", "TLC521M": "seeds/Mach 521.gdl", "TLC526M": "seeds/Mach 526.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main Page",
@@ -4971,7 +4999,7 @@
             {"rect": [0, 123, 320, 35], "id": 6061},
             {"rect": [0, 153, 320, 29], "id": 6062}
           ],
-          "pt": {"title": 16, "heading": 11, "empty": 14},
+          "pt": {"title": 16, "heading": 11, "key": 10, "digit": 18, "empty": 14},
           "items": [{"role": "more", "name": "Doc Cam More", "kind": "button", "rect": [280, 200, 40, 40], "id": 8010}]
         },
         "home": {
@@ -5053,7 +5081,7 @@
             "title": null,
             "close": null,
             "art": false,
-            "pt": {"message": 15},
+            "pt": {"message": 15, "answer": 11},
             "message": [30, 39, 260, 60],
             "lines": 2,
             "buttons": [
@@ -5156,6 +5184,11 @@
           "rect": [0, 0, 320, 400],
           "surfaces": [],
           "empty": [0, 151, 320, 138],
+          "row": [[40, 110, 110, 70], [170, 110, 110, 70]],
+          "headings": [[40, 70, 110, 40], [170, 70, 110, 40]],
+          "pitch": [130, 90],
+          "grid_page": "Lighting Settings",
+          "pt": {"title": 22, "heading": 15, "key": 15, "empty": 15},
           "items": [
             {
               "role": "title",
@@ -5190,7 +5223,49 @@
               {"role": "power", "name": "Power Down", "kind": "button", "rect": [216, 404, 96, 72], "id": 8022}
             ]
           },
-          "center": {"rect": [0, 0, 320, 400], "surfaces": [], "items": []}
+          "center": {
+            "rect": [0, 0, 320, 400],
+            "surfaces": [],
+            "items": [
+              {
+                "role": "title",
+                "name": "Select Source Label",
+                "kind": "label",
+                "rect": [0, 15, 320, 40],
+                "id": 6072,
+                "text": "Select a Source",
+                "pt": 22
+              },
+              {"role": "source", "name": "Main Computer", "kind": "button", "rect": [40, 75, 240, 70], "id": 8065},
+              {"role": "source", "name": "Main Video", "kind": "button", "rect": [40, 165, 240, 70], "id": 8067},
+              {"role": "popup", "name": "Volume", "kind": "popup_ref", "rect": [0, 253, 320, 42]},
+              {"role": "mute", "name": "Volume Mute", "kind": "button", "rect": [40, 295, 70, 70], "id": 8021},
+              {
+                "role": "volume-down",
+                "name": "Volume Down",
+                "kind": "button",
+                "rect": [125, 295, 70, 70],
+                "id": 8121
+              },
+              {"role": "volume-up", "name": "Volume Up", "kind": "button", "rect": [210, 295, 70, 70], "id": 8120}
+            ]
+          },
+          "volume": {
+            "popup": "Volume Level",
+            "rect": [0, 253, 320, 42],
+            "level": {
+              "rect": [47, 266, 230, 15],
+              "id": 8023,
+              "track": "#000000FF",
+              "border": null,
+              "bar": "#E4EDF5FF",
+              "art": null
+            },
+            "labels": [
+              {"rect": [284, 253, 36, 42], "id": 7023, "pt": 18},
+              {"rect": [4, 253, 36, 42], "id": 7026, "pt": 18}
+            ]
+          }
         },
         "windows": {
           "help": {
@@ -5264,7 +5339,7 @@
             }
           ]
         },
-        "ids": {"help": 9103, "power": 8022, "settings": 8040},
+        "ids": {"help": 9103, "power": 8022, "mute": 8021, "volume-up": 8120, "volume-down": 8121, "settings": 8040},
         "note": "Each source is a page of its own. The title sits on the page, with no strip or bar behind it. Main holds Settings, Help and Power Down in the row along the foot; a source page holds Back there instead."
       }
     }

@@ -1085,8 +1085,8 @@
     ]
    },
    "status": "deviation",
-   "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 12 pt captions to 14, as type.button says.",
-   "here": "Nothing is under 14 pt, the toolkit's floor: the template's tab, rail and footer captions are 12 pt, and here they are 14.",
+   "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 12 pt captions to 14, as type.button says. A key's caption on the TLP320M, whose own template sets its keys' words under 14 pt, goes down to that size and no further (gdl.designsys.models' `key_floor`; docs/design-rules.md section 1).",
+   "here": "Nothing is under 14 pt, the toolkit's floor: the template's tab, rail and footer captions are 12 pt, and here they are 14. The exception is a key's caption on the TLP320M, which goes down to the size its own template sets its keys' words in, and no further (docs/design-rules.md section 1).",
    "fix": [
     {
      "key": "type.button.usage",
@@ -1372,9 +1372,14 @@
      "Incoming Call"
     ]
    },
-   "status": "deviation",
-   "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
-   "here": "An incoming call's Accept Call and Ignore Call take IDs of their own, from 50001, where the template's are 9032 and 9033: a program written for the template's needs them told.",
+   "status": "frame",
+   "frame": [
+    {"series": "Shockwave 1220 Series", "key": "windows.incoming"}
+   ],
+   "fix": [
+    {"readme": "each with the template's ID on every panel (Accept Call 9032 and Ignore Call 9033)"}
+   ],
+   "builds": "An incoming call's Accept Call and Ignore Call build as 9032 and 9033 on every panel - a hub's and the 320's, where the question stands in the power-down question's places, too - where they built at IDs of their own from 50001 (tests/data/design-call-shockwave). The owner's call (2026-11-04).",
    "evidence": "Incoming Call's Accept Call (9032) and Ignore Call (9033) on seeds/Shockwave 1035.gdl, and on its 725, 720, 1525 and 1535; docs/idmap.md, the call mode's dialer."
   },
   {
@@ -1408,9 +1413,12 @@
     "VTC Dialer"
    ]
   },
-  "status": "deviation",
-  "reason": "The system carries no icon face: the key says its star in the type.",
-  "here": "The dialer's star key says a plain * where the template draws a glyph.",
+  "status": "fixed",
+  "fix": [
+   {"key": "regions.dialer.star.glyph.char", "says": "U+0028"},
+   {"key": "regions.dialer.star.glyph.face", "says": "Extron GUIC Video Conference 1a"}
+  ],
+  "builds": "The dialer's star key builds the template's glyph, '(' in Extron GUIC Video Conference 1a at 26 pt on its 440x440 gray art, where it said a plain * - where the machine that built the system carries the face.",
   "evidence": "Dialer Keypad * (5212) at 287,590 80x86 on 440x440_gray_nsel.png, on seeds/Shockwave 1035.gdl."
  },
  {
@@ -1552,6 +1560,37 @@
   ],
   "builds": "The dialer's Call and Flash and the incoming call's answers build with their words the template's gap past the glyph, to the nearest space - on the 1035 the Call nine spaces in and the Flash ten, where they were one and four.",
   "evidence": "VC Call, VC Flash, Accept Call and Ignore Call on seeds/Shockwave 1035.gdl, 725, 1525, 1535 and 720, read with tests/measure_series.py words_gap: where the first letter stands in the key (the caption centred, its leading spaces the face's own at the caption's size) less where the glyph ends (kit.icon_right across the art fitted in the key). The 1035's VC Call is 178x86 on 960x440_call_outline_green_nsel, its caption nine spaces and four letters in Open Sans 14."
+ },
+ {
+  "id": "shockwave-46",
+  "claim": "The hub and 320 notes said the template's Extron-Shockwave and Extron GUI Configurator glyphs are not drawn: Up and Down Open Sans's Λ and V, the Volume Level strip's glyphs not drawn, the 320's Back the kit's return glyph.",
+  "where": [
+   "regions._hub",
+   "regions.page._source"
+  ],
+  "template": {
+   "does": "The hubs set their menu bar's Volume Up and Volume Down in Extron-Shockwave (U+00BF and U+00B3, 26 pt on the 525, 30 on the 535) and the Volume Level strip's Volume Up Label and Volume Down Label in Extron GUI Configurator (Q and P, 18 and 28 pt). The 320 sets its DVD Back in Extron-Shockwave (U+00B5, 22 pt) and its Volume modal's labels in Extron GUI Configurator (Q and P, 16 pt).",
+   "seed": "seeds/Shockwave 525.gdl",
+   "pages": [
+    "Main Page",
+    "Volume Level"
+   ]
+  },
+  "status": "fixed",
+  "fix": [
+   {"key": "regions.hub.up.glyph.char", "says": "U+00BF"},
+   {"key": "regions.hub.down.glyph.char", "says": "U+00B3"},
+   {"key": "regions.hub.level_up.glyph.face", "says": "Extron GUI Configurator"},
+   {"key": "regions.page.back.glyph.char", "says": "U+00B5"},
+   {"key": "regions.page.volume_up.glyph.char", "says": "U+0051"}
+  ],
+  "gone": [
+   "Chosen by eye: Up and Down Open Sans's",
+   "the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn",
+   "where the template sets a chevron in an icon face the system does not carry"
+  ],
+  "builds": "A hub's Up and Down build the template's Extron-Shockwave chevrons on their gray art, where they said Λ and V, and its Volume Level strip the template's Q and P in Extron GUI Configurator, where it drew none; the 320's Back builds the template's chevron on the gray key, where it drew the kit's return glyph, and its Volume modal's glyphs Q and P where they said + and -. Where the machine that built the system carries no copy of the faces, as before.",
+  "evidence": "seeds/Shockwave 525.gdl's Main Page Volume Up (8120) and Volume Down (8121), Extron-Shockwave 26, U+00BF and U+00B3; Volume Level's Volume Up Label (8122) and Volume Down Label (8124), Extron GUI Configurator 18, Q and P; seeds/Shockwave 535.gdl's at 30 and 28; seeds/Shockwave 320.gdl's DVD Back (8013), Extron-Shockwave 22, U+00B5, and its Volume Up Label (7023) and Volume Down Label (7026), Extron GUI Configurator 16."
  }
  ]
 }

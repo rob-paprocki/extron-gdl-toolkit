@@ -74,7 +74,12 @@ thing, with the same state names. A copy a panel's layout added where a canvas
 control holds the ID - the region page's tab twin (§7) - is that control's
 mirror: the row is the control's, not derived, and the copy's place is marked
 (`"mirror": true` in `idmap.json`, *Main (mirror: PC Caption)* in the panel
-columns).
+columns). One copy may do a different thing: a Select a Source tile with its
+tab's ID, as Turbulence's template gives it (§7) - pressed, it is the tab to
+the program, and its page flip is its own. Marked a tile (`_tile` in the
+spec, which translate writes), it is held to its tab's kind and states, the
+row says the tab's function, and its place says its own (`"tile"` in
+`idmap.json`, *Main Select Source (tile: Shows page 'Main SD'; ...)*).
 
 ## 3. The checks
 
@@ -250,7 +255,14 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   question's Power Down and Cancel) has one ID on every panel, from 50001,
   not the 320 seed's (the question's 9028 and 9029). The Volume modal's
   level has the template's glyphs over and under it, not Up and Down: the
-  320's template draws no volume control on a page.
+  320's template draws no volume control on a page. So does the 300's
+  (`docs/claude-design.md` §3): Main's title (6072), its bar's Settings
+  (8040), every other page's Back (8041) and the volume's Down and Up (8121,
+  8120); its Mores, ours, carry none, and take IDs from 50001. A derived
+  control carries one seed ID on every panel it is on or keeps none: on a
+  canvas listing a 300 and a 320, Main's title (6072 and 6075), Back (8041
+  and 8011) and More (none and 8010) take IDs from 50001 on both - and a panel
+  more on a canvas renumbers what every panel's layout derived from 50001 up.
 - **A region page's fixed chrome keeps the template's seed IDs**
   (`docs/claude-design.md` §3): the Footer's Help (8117), Power (8022) and
   mode launcher (8118), the RightRail's Volume
@@ -268,12 +280,32 @@ python tests/verify_idmap.py out/huddle/idmap <built TLP725T.gdl> --panel TLP725
   (5216), Contacts (5250), Keyboard (5229), Delete (5237) and the entry the
   program writes the number into (50000) - so a key keeps it on every page
   the 320 spreads the dialer over, where a derived control, keyed by its
-  page, would take one of its own on each. The incoming call's
-  answers (`topic="call"`) are the question's, from 50001, as the
-  power-down question's are - not the template's 9032 and 9033, which each
-  bar theme's README lists under *Differences* - and so are a recording's
-  (`topic="recording"`, Afterburn's and Mach's), not the template's 9244 and
-  9245.
+  page, would take one of its own on each.
+- **So do the incoming call's answers** (`topic="call"`): Accept Call 9032
+  and Decline - Shockwave's and Turbulence's Ignore - Call 9033, the
+  template's on every bar seed (the frame's `windows.incoming`), on every
+  panel, the hubs', the 320's and the 300's too, where the question stands
+  in the power-down question's places - the owner's call (2026-11-04). On a
+  canvas listing a 300 and a 320 they hold no ID the 300's chrome keeps
+  (Settings 8040, Back 8041, Volume 8120 and 8121, the title 6072, Mach's
+  level glyphs 7023 and 7026). Derived,
+  each keeps the seed ID it carries on every panel, as the region chrome
+  does, and one a canvas control already holds goes back to 50001. A
+  recording's (`topic="recording"`, Afterburn's and Mach's) and the
+  power-down question's are the question's own, from 50001 - not the
+  template's 9244 and 9245, nor 9028 and 9029. A revision translated with
+  `--previous` keeps the IDs the previous map gave them.
+- **A Select a Source tile is its tab where its template's is**
+  (`role="select"`, the frame's `choose.tab_ids`: Turbulence's, whose Main
+  Select Source's Laptop is 8050 as Main SD's is): it takes the ID of its
+  tab - the canvas control of its name on the page its `nav` shows - on
+  every panel - the owner's call (2026-11-04). The map lists the two as one row: the tab's function,
+  and the tile's place with its own (`Main Select Source (tile: Shows page
+  'Main SD'; ...)`), since a press there is the tab's to the program and its
+  page flip the panel's. A tile is held to its tab's kind and states, as any
+  copy is; with no control of its name on that page, it keeps an ID of its
+  own. Mach's and Afterburn's tiles have IDs of their own in their templates
+  (8100 to 8103), and keep theirs.
 - **A region page's mirrors share their control's ID.** Where a template draws
   one function twice and the program addresses it as one control - the
   Shockwave 1035's tab name under the tab's glyph (its frame's `twin`) - the

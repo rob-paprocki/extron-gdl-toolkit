@@ -319,9 +319,10 @@ class TestCheck(unittest.TestCase):
 
     def test_same_rect_different_type_is_fine(self):
         # A label sitting exactly on its panel is normal design, not an error.
+        # Big enough for its words, which GUI Designer would cut in 10x10.
         p = _spec([
-            {'kind': 'panel', 'rect': [0, 0, 10, 10], 'fill': '#242634'},
-            {'kind': 'label', 'rect': [0, 0, 10, 10], 'text': 'hi'},
+            {'kind': 'panel', 'rect': [0, 0, 40, 30], 'fill': '#242634'},
+            {'kind': 'label', 'rect': [0, 0, 40, 30], 'text': 'hi'},
         ])
         self.assertEqual(p.check(), [])
 
@@ -1083,6 +1084,30 @@ class TestExtronRules(unittest.TestCase):
                             ('TLP300M', 16), ('TLP1220MG', 14)):
             self.assertEqual(type_floor(model), want, model)
         self.assertIsNone(type_floor((1000, 700)))
+
+    def test_a_keys_caption_goes_down_to_its_templates_own_size_and_no_further(self):
+        """The owner's call (2026-11-04): a 320 key's caption may take the size
+        its own template sets its keys' words in - 10 pt, Extron's 320 Freeze,
+        Auto and Normal - which translate writes as `"type_floor": {"button":
+        10}`. Under it, a key is refused by that size; a label is held to
+        14 pt as before; and a typo in the key is named."""
+        def said(size, kind='button', tf=None):
+            spec = {'model': 'TLP320M', 'size': [320, 240], 'pages': [{'name': 'P', 'controls': [
+                {'kind': kind, 'name': 'Normal', 'text': 'Normal', 'rect': [10, 10, 100, 60], 'size': size}]}]}
+            if tf is not None:
+                spec['type_floor'] = tf
+            return [m for m in Panel(spec).check() if 'pt' in m or 'type_floor' in m]
+        self.assertEqual(len(said(10)), 1)
+        self.assertIn('14pt body-text minimum', said(10)[0])
+        self.assertEqual(said(10, tf={'button': 10}), [])
+        self.assertEqual(said(12, tf={'button': 10}), [])
+        under = said(9, tf={'button': 10})
+        self.assertEqual(len(under), 1, under)
+        self.assertIn("is under the 10pt this panel's own template sets its keys' words in", under[0])
+        self.assertIn('14pt body-text minimum', said(10, kind='label', tf={'button': 10})[0])
+        self.assertTrue(any("'buton'" in m for m in said(14, tf={'buton': 10})))
+        self.assertTrue(any('is not a point size' in m for m in said(14, tf={'button': 'ten'})))
+        self.assertTrue(any('neither "off"' in m for m in said(14, tf='of')))
 
     def test_a_control_with_no_size_is_held_to_the_floor_at_the_size_it_builds(self):
         """The plan builds a control with no size at 14 pt, and the check read
@@ -2555,6 +2580,173 @@ class TestPopupBoundById(unittest.TestCase):
         self.assertEqual(len(said), 1, problems)
         self.assertIn("'Bare'", said[0])
         self.assertIn('no reference bound to it', said[0])
+
+
+def _pillow(case):
+    try:
+        import PIL  # noqa: F401
+    except ImportError:
+        case.skipTest('Pillow not installed; a caption is measured with gdl.compose')
+
+
+class TestCaptionsGUIDesignerCuts(unittest.TestCase):
+    """A live caption GUI Designer's layout would cut is a problem
+    (Panel._caption_rules, gdl.compose.caption_fit): the Shockwave 525's
+    Volume heading, 'Volume' at 18 pt in the 91x37 box its template draws
+    for 14, built as 'Volum' with every gate passing."""
+
+    def _cut(self, controls, **top):
+        spec = {'name': 'T', 'model': 'TLP525T', 'size': [800, 480],
+                'theme': {'text': '#FFFFFF', 'font': 'Open Sans'},
+                'pages': [{'name': 'Main', 'number': 1000, 'controls': controls}], **top}
+        return [m for m in Panel(spec).check() if 'GUI Designer' in m or 'caption_fit' in m]
+
+    def heading(self, w=91, **kw):
+        return dict({'kind': 'label', 'name': 'Volume Heading', 'text': 'Volume', 'size': 18,
+                     'rect': [704, 18, w, 37]}, **kw)
+
+    def test_the_525s_volume_heading_is_named_with_the_room_it_needs(self):
+        _pillow(self)
+        said = self._cut([self.heading()])
+        self.assertEqual(len(said), 1, said)
+        self.assertIn("page 'Main' Volume Heading: GUI Designer shows 'Volum' of 'Volume' in 91x37", said[0])
+        self.assertIn('97 px across', said[0])
+        self.assertIn('18 pt in Open Sans', said[0])
+        self.assertEqual(self._cut([self.heading(w=97)]), [])
+
+    def test_a_buttons_caption_and_each_states_own_are_measured(self):
+        _pillow(self)
+        key = {'kind': 'button', 'name': 'Display Control', 'text': 'Display\nControl', 'size': 18,
+               'rect': [705, 254, 94, 66], 'states': ['Off', {'name': 'On', 'text': 'Display\nControls'}]}
+        said = self._cut([key])
+        self.assertEqual(len(said), 2, said)
+        self.assertIn("'Display / Contro' of 'Display / Control'", said[0])
+        self.assertIn("state 'On'", said[1])
+
+    def test_what_build_bakes_or_a_glyph_is_passed_over(self):
+        _pillow(self)
+        baked = {'kind': 'button', 'name': 'Baked', 'text': 'Volume', 'size': 18, 'flatten': True,
+                 'rect': [600, 300, 91, 60]}
+        letter = {'kind': 'button', 'name': 'Key', 'text': 'W', 'size': 40, 'rect': [600, 400, 60, 60]}
+        self.assertEqual(self._cut([baked, letter]), [])
+
+    def test_a_measurement_spec_turns_it_off_and_its_typo_is_named(self):
+        _pillow(self)
+        self.assertEqual(self._cut([self.heading()], caption_fit='off'), [])
+        said = self._cut([self.heading(w=97)], caption_fit='of')
+        self.assertEqual(len(said), 1, said)
+        self.assertIn('caption_fit \'of\' is not "off"', said[0])
+        plan = Panel({'name': 'T', 'size': [800, 480], 'caption_fit': 'off', 'theme': {'text': '#FFFFFF'},
+                      'pages': [{'name': 'Main', 'controls': [self.heading()]}]}).plan()
+        self.assertEqual(plan.get('caption_fit'), 'off')
+
+    def test_without_pillow_it_is_a_note_not_a_problem(self):
+        """gdl.spec is stdlib-only outside gdl.compose: a host with no Pillow
+        checks the rest, and says what it did not measure."""
+        import builtins
+        from unittest import mock
+        real = builtins.__import__
+
+        def no_compose(name, globals=None, locals=None, fromlist=(), level=0):
+            if level and fromlist and 'compose' in fromlist:
+                raise ImportError('no Pillow here')
+            return real(name, globals, locals, fromlist, level)
+        spec = {'name': 'T', 'model': 'TLP525T', 'size': [800, 480], 'theme': {'text': '#FFFFFF'},
+                'pages': [{'name': 'Main', 'controls': [self.heading()]}]}
+        with mock.patch('builtins.__import__', no_compose):
+            p = Panel(spec)
+            problems, notes = p.check(), p.notes()
+        self.assertFalse([m for m in problems if 'GUI Designer' in m], problems)
+        self.assertEqual(len(notes), 1, notes)
+        self.assertIn('1 live caption(s) not measured', notes[0])
+        self.assertIn('Pillow', notes[0])
+
+    def test_a_face_drawn_here_in_a_stand_in_is_noted_not_measured(self):
+        _pillow(self)
+        spec = {'name': 'T', 'model': 'TLP525T', 'size': [800, 480], 'theme': {'text': '#FFFFFF'},
+                'pages': [{'name': 'Main', 'controls': [self.heading(font='No Such Face 9')]}]}
+        p = Panel(spec)
+        self.assertFalse([m for m in p.check() if 'GUI Designer' in m])
+        said = [n for n in p.notes() if 'No Such Face 9' in n]
+        self.assertEqual(len(said), 1, p.notes())
+        self.assertIn('1 live caption(s) in No Such Face 9 (drawn here as', said[0])
+        self.assertIn("page 'Main' Volume Heading", said[0])
+
+    def test_a_face_that_will_not_open_is_noted_not_measured(self):
+        """No face to draw it in at all - no recovered file, no seed's, no
+        Arial to stand in (compose.face's LookupError)."""
+        _pillow(self)
+        from unittest import mock
+        from gdl import compose
+        spec = {'name': 'T', 'model': 'TLP525T', 'size': [800, 480], 'theme': {'text': '#FFFFFF', 'font': 'Open Sans'},
+                'pages': [{'name': 'Main', 'controls': [self.heading()]}]}
+        with mock.patch.object(compose, 'face', side_effect=LookupError('no font file')):
+            p = Panel(spec)
+            problems, notes = p.check(), p.notes()
+        self.assertFalse([m for m in problems if 'GUI Designer' in m], problems)
+        self.assertEqual(len(notes), 1, notes)
+        self.assertIn('1 live caption(s) in Open Sans not measured', notes[0])
+        self.assertIn('the face is not here', notes[0])
+
+    def test_without_pillow_at_all_check_says_so_and_does_not_crash(self):
+        """PIL blocked at the import system, as on a host that never installed
+        it, in a process of its own: gdl.compose cannot load, and gdl.spec -
+        stdlib-only outside it - checks the rest."""
+        import json
+        import subprocess
+        code = '\n'.join((
+            'import json, sys',
+            'class NoPIL:',
+            '    def find_spec(self, name, path=None, target=None):',
+            "        if name == 'PIL' or name.startswith('PIL.'):",
+            "            raise ImportError('no Pillow here')",
+            'sys.meta_path.insert(0, NoPIL())',
+            'from gdl.spec import Panel',
+            'p = Panel(json.loads(sys.argv[1]))',
+            "print(json.dumps({'problems': p.check(), 'notes': p.notes(),",
+            "                  'compose': 'gdl.compose' in sys.modules, 'pil': 'PIL' in sys.modules}))"))
+        spec = {'name': 'T', 'model': 'TLP525T', 'size': [800, 480], 'theme': {'text': '#FFFFFF'},
+                'pages': [{'name': 'Main', 'controls': [self.heading()]}]}
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        r = subprocess.run([sys.executable, '-c', code, json.dumps(spec)], capture_output=True, text=True,
+                           cwd=root, timeout=120)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        got = json.loads(r.stdout.strip().splitlines()[-1])
+        self.assertFalse(got['pil'] or got['compose'], got)
+        self.assertFalse([m for m in got['problems'] if 'GUI Designer' in m], got)
+        self.assertEqual(len(got['notes']), 1, got)
+        self.assertIn('1 live caption(s) not measured', got['notes'][0])
+        self.assertIn('Pillow', got['notes'][0])
+
+    def test_ink_past_the_box_is_refused(self):
+        """GUI Designer cuts a line's ink off flat at its box (Turbulence
+        720's snapshots, gdl.compose.CLIP_PX), so it is refused as words
+        trimmed or split are; and in a box its ink fits, nothing is said."""
+        _pillow(self)
+
+        def check(rect):
+            p = Panel({'name': 'T', 'model': 'TLP525T', 'size': [800, 480], 'theme': {'text': '#FFFFFF'},
+                       'pages': [{'name': 'Main', 'controls': [
+                           {'kind': 'label', 'name': 'Shallow', 'text': 'Hamburg', 'size': 18, 'rect': rect}]}]})
+            return [m for m in p.check() if 'Shallow' in m], [n for n in p.notes() if 'Shallow' in n]
+        problems, notes = check([0, 0, 200, 12])
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("page 'Main' Shallow: its ink runs 4 px past the box's top, 6 px past the box's foot "
+                      'in 200x12 - GUI Designer cuts it there, at 18 pt in Arial', problems[0])
+        self.assertEqual(notes, [])
+        self.assertEqual(check([0, 0, 200, 37]), ([], []))
+
+    def test_words_in_a_color_with_no_alpha_are_passed_over(self):
+        """They show nothing to cut: the Zoom Rooms seeds keep space-padded
+        words so behind their icons."""
+        _pillow(self)
+        self.assertEqual(self._cut([self.heading(color='#00FFFFFF')]), [])
+        key = {'kind': 'button', 'name': 'Display Control', 'text': 'Display\nControl', 'size': 18,
+               'rect': [705, 254, 94, 66], 'color': 'none',
+               'states': [{'name': 'Off'}, {'name': 'On', 'text': 'Display\nControls', 'color': '#FFFFFF'}]}
+        said = self._cut([key])
+        self.assertEqual(len(said), 1, said)
+        self.assertIn("state 'On'", said[0])
 
 
 if __name__ == '__main__':

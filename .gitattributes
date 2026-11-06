@@ -7,7 +7,7 @@ tools/hooks/*               text eol=lf
 # The theme seeds - see seeds/README.md.
 seeds/*.gdl                 filter=lfs diff=lfs merge=lfs -text
 
-# Raw working state from C:\gdlwork, the job scratch dir and the Desktop -
+# Raw working state from the job scratch dirs and the Desktop -
 # see archive/README.md.
 archive/**/*.gdl            filter=lfs diff=lfs merge=lfs -text
 archive/**/*ProjectGCP      filter=lfs diff=lfs merge=lfs -text

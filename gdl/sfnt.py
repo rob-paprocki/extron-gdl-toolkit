@@ -200,6 +200,32 @@ class Advances:
         return (self.win_ascent * px / self.upem,
                 self.win_descent * px / self.upem)
 
+    def bounds(self, ch):
+        """(xMin, yMin, xMax, yMax) of the outline `ch` draws, in font units,
+        y up from the baseline - the `glyf` header's own box, which no
+        hinting has moved; a character the face does not map draws its
+        .notdef, and has that's. None where the face has no `glyf` (a CFF
+        one) or the character draws nothing (a space). research/
+        synthetic_ink.py measures the ink models on it."""
+        if not hasattr(self, '_loca'):
+            self._loca = None
+            try:
+                glyf, head = self._table(b'glyf'), self._table(b'head')
+                raw = self._table(b'loca')
+                if struct.unpack('>h', head[50:52])[0]:
+                    offs = struct.unpack(f'>{len(raw) // 4}I', raw[:len(raw) // 4 * 4])
+                else:
+                    offs = [2 * o for o in struct.unpack(f'>{len(raw) // 2}H', raw[:len(raw) // 2 * 2])]
+                self._loca, self._glyf = offs, glyf
+            except (ValueError, struct.error):
+                pass
+        if self._loca is None:
+            return None
+        gid = self.cmap.get(ord(ch), 0)
+        if gid + 1 >= len(self._loca) or self._loca[gid + 1] - self._loca[gid] < 10:
+            return None
+        return struct.unpack('>4h', self._glyf[self._loca[gid] + 2:self._loca[gid] + 10])
+
     def glyph_names(self):
         """{name: codepoint} for each mapped glyph the font names itself.
 
@@ -234,3 +260,60 @@ class Advances:
             if i >= 258 and i - 258 < len(own) and own[i - 258] and gid in char:
                 out.setdefault(own[i - 258], char[gid])
         return out
+
+
+# A font file's first four bytes: TrueType, OpenType/CFF, Apple's 'true', a
+# collection, WOFF 1.0 and WOFF 2.0.
+MAGIC = (b'\x00\x01\x00\x00', b'OTTO', b'true', b'ttcf', b'wOFF', b'wOF2')
+
+
+def is_font(data):
+    """Whether `data` starts as a font file does (MAGIC)."""
+    return bytes(data[:4]) in MAGIC
+
+
+def names(data):
+    """{nameID: text} of a font's `name` table - 1 its family, 0 its
+    copyright, 8 its manufacturer, 13 its license - or None where the face
+    cannot be read with the standard library: a WOFF 2.0 (its tables are
+    Brotli), or bytes that are no font. A TrueType, OpenType or WOFF 1.0 face
+    reads; each ID keeps its Windows (Unicode) string where it has one, else
+    its Mac Roman one."""
+    import zlib
+    d = bytes(data)
+    try:
+        if d[:4] == b'wOFF':
+            num = struct.unpack('>H', d[12:14])[0]
+            raw = None
+            for i in range(num):
+                tag, off, comp, orig = struct.unpack('>4sIII', d[44 + 20 * i:60 + 20 * i])
+                if tag == b'name':
+                    raw = d[off:off + comp]
+                    raw = zlib.decompress(raw) if comp < orig else raw
+            if raw is None:
+                return {}
+        elif d[:4] in (b'\x00\x01\x00\x00', b'OTTO', b'true'):
+            num = struct.unpack('>H', d[4:6])[0]
+            raw = None
+            for i in range(num):
+                tag, _, off, length = struct.unpack('>4sIII', d[12 + 16 * i:28 + 16 * i])
+                if tag == b'name':
+                    raw = d[off:off + length]
+            if raw is None:
+                return {}
+        else:
+            return None
+        count, start = struct.unpack('>HH', raw[2:6])
+        out, mac = {}, {}
+        for i in range(count):
+            pid, _, _, nid, length, off = struct.unpack('>6H', raw[6 + 12 * i:18 + 12 * i])
+            s = raw[start + off:start + off + length]
+            if pid in (0, 3):
+                out.setdefault(nid, s.decode('utf-16-be', 'replace'))
+            elif pid == 1:
+                mac.setdefault(nid, s.decode('mac_roman', 'replace'))
+        for nid, s in mac.items():
+            out.setdefault(nid, s)
+        return out
+    except (struct.error, zlib.error, IndexError):
+        return None

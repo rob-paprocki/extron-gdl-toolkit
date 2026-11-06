@@ -33,8 +33,8 @@ candidate improvement to it, with the numbers that justify it.
 | `final_patch.py` | the `borderFillColor` fill + modal scrim rule |
 | `compose2.py`, `q_final.py` | the bilevel-vs-antialiased text decision, fitted |
 | `v3.py`, `v2.py`, `frac.py`, `qlib.py`, `q46.py` | fractional glyph advances + per-control layering — the best result reached |
-| `synthetic_bold.py` | GUI Designer's emboldening of a bold caption, fitted on a client project's 44 bold Forma captions; runs from the repo root on the synthetic fixture (`docs/render-fidelity.md` finding 8) |
-| `gdi_padding.py` | GDI+'s padding of a left- or right-aligned caption; runs from the repo root on the synthetic fixture (`docs/render-fidelity.md` §9) |
+| `synthetic_breakdown.py`, `synthetic_lines.py` | measurements on the synthetic fixture, run from the repo root as they are: where the render differs control by control, and where the snapshot puts each caption line against the renderer's - which found finding 7's vertical metrics at 96 DPI and its foot, and measures the horizontal residual left (`docs/render-fidelity.md`; `synthetic_lines.py` needs numpy) |
+| `synthetic_ink.py`, `caption_clips.py` | the same, for a caption's ink: how far down and up each line's reaches in the snapshot against six models of it - `compose.line_ink`, the one `caption_fit` reads, among them - and, for each line whose ink comes near its box, the snapshot's ink row by row across the box's edge beside compose's drawn uncut, which showed GUI Designer cutting ink off flat at the box (finding 7; both need numpy) |
 
 ## 1. `final_patch.py` — the fill the payload cannot describe
 
@@ -100,8 +100,8 @@ for further fidelity work.
 
 ## Re-running any of this
 
-Every script here but `synthetic_bold.py`, `gdi_padding.py` and
-`synthetic_breakdown.py` was written against a client project and GUI Designer's snapshots of it, in the session scratchpad
+Every script here but `synthetic_breakdown.py` and `synthetic_lines.py` was
+written against a client project and GUI Designer's snapshots of it, in the session scratchpad
 they came from; that project and its snapshots are no longer in the repo
 (`docs/history.md`), so their numbers are a record and not a check. Their
 `diff_stats` is the same function as `gdl/compose.py`'s, so the numbers above

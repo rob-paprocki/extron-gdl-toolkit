@@ -28,6 +28,7 @@ check_popup_size holds it to the plan's.
 import collections
 import io
 import json
+import re
 import os
 import sys
 
@@ -35,7 +36,7 @@ import sys
 # the split is a no-op, so the import below fails with ModuleNotFoundError.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PIL import Image, ImageChops  # noqa: E402
+from PIL import Image, ImageChops, ImageStat  # noqa: E402
 
 from gdl.compose import load  # noqa: E402
 
@@ -725,6 +726,71 @@ def check_fonts(plan_items, table, kind):
     return problems, checked
 
 
+def check_captions(plan, plan_items, table, kind, built_path=None):
+    """Each live caption the build holds - a planned label's or button's,
+    each state's words, that Build did not bake (FlattenText, or a formatted
+    caption, which reads back '') - that GUI Designer cuts, read off
+    layout.json as gdl.spec check reads the spec: gdl.compose.caption_fit,
+    in the faces the built file carries (compose.as_the_panel), which are
+    the ones GUI Designer laid it out in. The Shockwave 525's Volume heading
+    built as 'Volum' and every check here passed: its words, size and box
+    were all as planned.
+
+    One character - a glyph, a key's letter - is passed over, as the spec's
+    check passes it: it is never trimmed or split; so are words drawn in a
+    color with no alpha, which show nothing (compose.built_captions). Words
+    trimmed, a word split and ink cut off at the box are each refused, as
+    GUI Designer's snapshots show all three. A plan whose spec turns the rule
+    off (`"caption_fit": "off"`, gdl.spec.Panel._caption_rules: a
+    measurement spec that cuts captions on purpose) has what it cuts said,
+    not refused. (problems, notes, checked)."""
+    from gdl import compose
+    problems, notes, checked = [], [], 0
+    off = plan.get('caption_fit') == 'off'
+    faces = compose.as_the_panel(built_path) if built_path else compose.as_the_panel()
+    with faces:
+        for item in plan_items:
+            got = table.get(item['name'])
+            if got is None:
+                continue
+            by_name = _index(got)
+            for op in item['controls']:
+                if op.get('donor_type') not in ('PBLabel', 'PBButton') or op.get('flatten'):
+                    continue
+                name = (op.get('fields') or {}).get('nameField')
+                c = by_name.get(name)
+                if c is None:
+                    continue
+                probs, said, n = _caption_cuts(c, f"{kind} {item['name']!r} {name!r}", off)
+                problems += probs
+                notes += said
+                checked += n
+    return problems, notes, checked
+
+
+def _caption_cuts(c, where, off=False, only=None):
+    """(problems, notes, measured) for one built control's live captions,
+    `where` naming it (check_captions): compose.caption_cuts, each cut a
+    problem where the spec measures captions, else a note.
+    `only`: the words to hold to it (an edit's), where not every caption."""
+    from gdl import compose
+    problems, notes = [], []
+    cuts, unmeasured, n = compose.caption_cuts(c)
+    for state, text, why in unmeasured:
+        if only is None or text in only:
+            notes.append(f"CAPTION NOT MEASURED (its face is not here): {where}"
+                         f"{f' state {state!r}' if state else ''} - {why}")
+    for state, text, _, words, at in cuts:
+        if only is not None and text not in only:
+            continue
+        said = f"{where}{f' state {state!r}' if state else ''}: {words}, at {at}"
+        if off:
+            notes.append('CAPTION CUT, AS ITS MEASUREMENT SPEC ASKS (caption_fit off): ' + said)
+        else:
+            problems.append(said)
+    return problems, notes, n
+
+
 # Mean difference per channel, 0-255, above which a page's artwork is not the
 # planned image over the planned fill. Resampling a 6400x4000 image to the page
 # accounts for a few levels.
@@ -808,7 +874,8 @@ def fit_image(file, w, h):
 # image - every speaker and mic volume level, mute against level 1 too - have a
 # sibling under the gate, down to 6.9%: a level and the next differ by one thin
 # wave at 64 px. So each state is also held against its button's other states'
-# images, and nearer one of those than its own is a failure (_state_image).
+# images, and nearer one of those than its own where the two differ
+# (IMAGE_APART) is a failure (_state_image).
 IMAGE_PIXEL, IMAGE_OFF, IMAGE_INSET = 60, 0.25, 4
 # The gate was measured on Afterburn's 64 px icons. Mach's 1376x440 tab art
 # fitted into the 725's 152x60 tab comes out 21 to 25% off its own file -
@@ -829,22 +896,55 @@ def _max_channel(im):
     return ImageChops.lighter(ImageChops.lighter(r, g), b)
 
 
+def _fill_rgba(fill):
+    return (((fill >> 16) & 255, (fill >> 8) & 255, fill & 255, (fill >> 24) & 255)
+            if fill is not None else (0, 0, 0, 0))
+
+
+def _keyed(im):
+    """`im` onto one opaque key color, so a transparent pixel compares as
+    itself."""
+    return Image.alpha_composite(Image.new('RGBA', im.size, (255, 0, 255, 255)), im).convert('RGB')
+
+
+def _drawn(file, w, h, fill=None, draw=None):
+    """`file` drawn into w x h - fitted, unless `draw` says otherwise - over
+    `fill` (an ARGB int, or None), keyed."""
+    want = Image.new('RGBA', (w, h), _fill_rgba(fill))
+    want.alpha_composite((draw or fit_image)(file, w, h))
+    return _keyed(want)
+
+
+def _built_art(art_bytes, w, h):
+    got = Image.open(io.BytesIO(art_bytes)).convert('RGBA')
+    return _keyed(got if got.size == (w, h) else got.resize((w, h)))
+
+
+def _inset(w, h):
+    region = Image.new('L', (w, h), 0)
+    region.paste(255, (IMAGE_INSET, IMAGE_INSET, w - IMAGE_INSET, h - IMAGE_INSET))
+    return region
+
+
+def _near_difference(x, y):
+    """Per pixel, the largest channel difference between `x` and the nearest
+    match to it within one pixel in `y`: a 2 px kit line downscaled sevenfold
+    lands a pixel apart in GDI+ and in Pillow."""
+    near = None
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            d = _max_channel(ImageChops.difference(x, ImageChops.offset(y, dx, dy)))
+            near = d if near is None else ImageChops.darker(near, d)
+    return near
+
+
 def image_mismatch(file, art_bytes, w, h, fill=None, draw=None):
     """Share of the inked pixels that differ between the built artwork and
     `file` drawn into w x h - fitted, unless `draw` says otherwise - over
     `fill` (an ARGB int, or None)."""
-    base = (((fill >> 16) & 255, (fill >> 8) & 255, fill & 255, (fill >> 24) & 255)
-            if fill is not None else (0, 0, 0, 0))
-    want = Image.new('RGBA', (w, h), base)
-    want.alpha_composite((draw or fit_image)(file, w, h))
-    got = Image.open(io.BytesIO(art_bytes)).convert('RGBA')
-    if got.size != (w, h):
-        got = got.resize((w, h))
-    # Onto one opaque key color, so a transparent pixel compares as itself.
-    key = Image.new('RGBA', (w, h), (255, 0, 255, 255))
-    plain = Image.alpha_composite(key, Image.new('RGBA', (w, h), base)).convert('RGB')
-    a = Image.alpha_composite(key, want).convert('RGB')
-    b = Image.alpha_composite(key, got).convert('RGB')
+    plain = _keyed(Image.new('RGBA', (w, h), _fill_rgba(fill)))
+    a = _drawn(file, w, h, fill, draw)
+    b = _built_art(art_bytes, w, h)
 
     def over(im):
         return _max_channel(im).point(lambda d: 255 if d > IMAGE_PIXEL else 0)
@@ -853,30 +953,59 @@ def image_mismatch(file, art_bytes, w, h, fill=None, draw=None):
     # fill's shape - Extron's round Power button is an ellipse - so a pixel
     # that is fill on one side and empty on the other is the border's
     # business, not the image's.
-    empty = key.convert('RGB')
+    empty = _keyed(Image.new('RGBA', (w, h), (0, 0, 0, 0)))
 
     def ink(im):
         return ImageChops.multiply(over(ImageChops.difference(im, plain)),
                                    over(ImageChops.difference(im, empty)))
 
-    region = Image.new('L', (w, h), 0)
-    region.paste(255, (IMAGE_INSET, IMAGE_INSET, w - IMAGE_INSET, h - IMAGE_INSET))
-    inked = ImageChops.multiply(ImageChops.lighter(ink(a), ink(b)), region)
+    inked = ImageChops.multiply(ImageChops.lighter(ink(a), ink(b)), _inset(w, h))
     # A pixel is off when nothing within one pixel of it on the other side
-    # matches - a 2 px kit line downscaled sevenfold lands a pixel apart in
-    # GDI+ and in Pillow - looked at from both sides, or a thin extra stroke
-    # would find the empty pixels beside it and pass.
+    # matches (_near_difference), looked at from both sides, or a thin extra
+    # stroke would find the empty pixels beside it and pass.
     def unmatched(x, y):
-        near = None
-        for dx in (-1, 0, 1):
-            for dy in (-1, 0, 1):
-                d = _max_channel(ImageChops.difference(x, ImageChops.offset(y, dx, dy)))
-                near = d if near is None else ImageChops.darker(near, d)
-        return near.point(lambda d: 255 if d > IMAGE_PIXEL else 0)
+        return _near_difference(x, y).point(lambda d: 255 if d > IMAGE_PIXEL else 0)
 
     off = ImageChops.multiply(ImageChops.lighter(unmatched(a, b), unmatched(b, a)), inked)
     n = inked.histogram()[255]
     return off.histogram()[255] / n if n else 0.0
+
+
+# Two files that are one picture apart only in colour - Afterburn's Privacy
+# key, its X grey Off and light blue On - are a few pixels apart at a small key,
+# and those few under IMAGE_PIXEL: at the 320's 108x45 the On art built right
+# measured 0.00% off the Off file and 0.74% off its own, so the share of inked
+# pixels off cannot say which is there (archive/job-e823df9b/rebuild-1104/
+# privacy-320/). Which of two files a state's art is, is asked where they
+# differ: the pixels they draw more than IMAGE_APART levels apart, inside the
+# edge - 33 of the Privacy key's at 108x45 - and over those the art's mean
+# difference from each (_near_difference, 0 to 255). There the Privacy files
+# drawn as softly as that build drew them (TestStateImagesApartInColourAlone)
+# are 5 to 12 levels off their own file and 17 to 25 off the other, and each
+# drawn in the other's place the reverse; the build's own art is not here to
+# measure. On GUI Designer's own builds of the seeds - the four 1035s,
+# Afterburn's and Shockwave's 525, Shockwave's and Turbulence's 320 and
+# Afterburn's 300M Landscape: 1,844 image states of buttons whose states draw
+# different files - none is nearer another state's file than its own, and of
+# 1,966 states held to another state's file instead, every one is past
+# IMAGE_OFF or nearer the file it was built from.
+IMAGE_APART = 16
+
+
+def image_apart(own, other, art_bytes, w, h, fill=None):
+    """(pixels, off own, off other): where `own` and `other`, each drawn as
+    Build draws a button's image over `fill`, differ by more than IMAGE_APART
+    inside the edge, how many pixels that is, and the art's mean difference
+    from each there. (0, None, None) where they draw alike."""
+    a, b = _drawn(own, w, h, fill), _drawn(other, w, h, fill)
+    apart = ImageChops.multiply(_max_channel(ImageChops.difference(a, b)).point(
+        lambda d: 255 if d > IMAGE_APART else 0), _inset(w, h))
+    n = apart.histogram()[255]
+    if not n:
+        return 0, None, None
+    art = _built_art(art_bytes, w, h)
+    mine, theirs = (ImageStat.Stat(_near_difference(art, x), apart).mean[0] for x in (a, b))
+    return n, mine, theirs
 
 
 def _gone(where, img):
@@ -932,7 +1061,7 @@ def _state_image(where, i, bs, c, image, fill, assets, others=()):
     images: two a step apart, a volume level and the next, differ by one thin
     wave - a few per cent of the inked pixels at 64 px, under IMAGE_OFF - so
     one built in the other's place passes alone, and is caught as nearer that
-    state's image than its own."""
+    state's image than its own where the two files differ (image_apart)."""
     if not image:
         return []
     tid = bs.get('TLPImageID')
@@ -947,16 +1076,23 @@ def _state_image(where, i, bs, c, image, fill, assets, others=()):
                                 _nearest_of_family(image, off, assets[tid], c, fill)):
         return [f"{label}: {off:.0%} of the artwork differs from the planned image "
                 f"{image['name']!r} - it is not that image"]
-    # The NEAREST of them is the one there: levels 1 and 2 can both be nearer
-    # than a planned level 3 that level 2 was built over.
-    nearest = min(((image_mismatch(o['file'], assets[tid], c['Width'], c['Height'], fill), o['name'])
-                   for o in others
-                   if o and o.get('name') != image['name'] and o.get('file') != image['file']
-                   and o.get('file') and os.path.exists(o['file'])), default=None)
-    if nearest and nearest[0] < off:
-        return [f"{label}: the artwork is nearer {nearest[1]!r} ({nearest[0]:.0%} differs) than "
-                f"its planned {image['name']!r} ({off:.0%}) - another state's image "
-                f'built in its place']
+    # Held to each where the two files differ, not over the whole art
+    # (IMAGE_APART). The NEAREST of those it is nearer is the one there:
+    # levels 1 and 2 can both be nearer than a planned level 3 that level 2
+    # was built over, and level 2 is nearer still.
+    nearer = []
+    for o in others:
+        if not o or o.get('name') == image['name'] or o.get('file') == image['file'] \
+                or not o.get('file') or not os.path.exists(o['file']):
+            continue
+        n, mine, theirs = image_apart(image['file'], o['file'], assets[tid], c['Width'], c['Height'], fill)
+        if n and theirs < mine:
+            nearer.append((theirs, o['name'], n, mine))
+    if nearer:
+        theirs, name, n, mine = min(nearer)
+        return [f"{label}: the artwork is nearer {name!r} than its planned {image['name']!r} "
+                f'where the two files differ ({n} px, {theirs:.0f} levels off it on average and '
+                f"{mine:.0f} off the planned) - another state's image built in its place"]
     return []
 
 
@@ -1196,6 +1332,11 @@ CAPTION_WIDTH = 3
 CAPTION_TOLERANCE = 64
 
 
+# GUI Designer's own formatted text breaks a line at CRLF; a spec's breaks at
+# LF, and Build bakes either as two lines.
+_LINES = re.compile(r'\r\n|\r|\n')
+
+
 def _caption_mask(art, color):
     """The art's text-colored pixels: 255 where every channel is within
     CAPTION_TOLERANCE of `color` and the art is not transparent."""
@@ -1206,18 +1347,16 @@ def _caption_mask(art, color):
 
 
 def _line_ink(line, fnt):
-    """`line` as gdl.compose draws it, its fractional advances included, cut to
-    its ink: 255 where a glyph covers more than half a pixel."""
+    """`line` as gdl.compose draws it, by the same code - its fractional
+    advances, and a bold the face has no file for emboldened as GUI Designer
+    bakes it (docs/render-fidelity.md section 8) - cut to its ink: 255 where a
+    glyph covers more than half a pixel."""
     from PIL import ImageDraw
     from gdl import compose
     asc, desc = compose.metrics(fnt)
-    im = Image.new('L', (int(compose.measure(line, fnt)) + 4, int(asc + desc) + 4), 0)
-    d = ImageDraw.Draw(im)
-    adv, x = compose.advances(fnt), 1.0
-    for ch in line:
-        d.text((x, 1 + asc), ch, font=fnt, fill=255, anchor='ls')
-        x += adv.advance(ch, fnt.size) if adv else d.textlength(ch, font=fnt)
-    ink = im.point(lambda v: 255 if v > 128 else 0)
+    im = Image.new('L', (int(compose.measure(line, fnt)) + 4 + compose.BOLD_SMEAR, int(asc + desc) + 4), 0)
+    compose.draw_glyphs(ImageDraw.Draw(im), 1.0, 1 + asc, line, fnt, 255, compose.advances(fnt))
+    ink = compose.embolden(im, fnt).point(lambda v: 255 if v > 128 else 0)
     box = ink.getbbox()
     return ink.crop(box) if box else None
 
@@ -1277,8 +1416,8 @@ def _icon_line(line):
 
 
 def check_baked_caption(where, ftext, bs, assets):
-    """(problem, note) for a formatted caption an edit wrote: each line looked
-    for in the art Build baked it into. A line found nowhere is a problem - and
+    """(problem, note) for a baked caption an edit wrote - formatted text, or
+    a flattened button's: each line looked for in the art Build baked it into. A line found nowhere is a problem - and
     one whose words are found on two lines wrapped, which a formatted caption
     does onto a line its tabs do not indent (docs/editing.md). A face drawn in
     a stand-in, a fill within CAPTION_TOLERANCE of the text color, a line
@@ -1312,7 +1451,7 @@ def check_baked_caption(where, ftext, bs, assets):
                       f'channel of its art\'s {_hex(ground)}, so the art cannot tell its caption from its fill')
     text = _caption_mask(art, color)
     unsure, icons = [], []
-    for line in (ln.replace('\t', '').strip() for ln in ftext.split('\r\n')):
+    for line in (ln.replace('\t', '').strip() for ln in _LINES.split(ftext)):
         if not line:
             continue
         if _icon_line(line):
@@ -1344,7 +1483,7 @@ def check_baked_caption(where, ftext, bs, assets):
 def _words(ftext):
     """A formatted caption's words, without the tabs and line breaks that lay
     it out."""
-    return ' '.join((ftext or '').replace('\t', ' ').replace('\r\n', ' ').split())
+    return ' '.join(_LINES.sub(' ', (ftext or '').replace('\t', ' ')).split())
 
 
 def built_ftexts(built_path):
@@ -1372,11 +1511,13 @@ def check_edit_states(op, c, label, assets, ftexts=None):
     (problems, notes, unverifiable). A state is found by index, which is what
     the plan addressed and what the control program sets. Colors are read the
     way check_fills reads them: a fill off the state's own artwork, a text
-    color off the model, because the caption is drawn live. A formatted
-    caption's words are read off the built project, `ftexts` (built_ftexts),
-    and its lines looked for in its art (check_baked_caption), since
-    layout.json reads it back as ''; with no art given (`assets` None) it is
-    not verifiable here.
+    color off the model, because the caption is drawn live. A baked caption's
+    words - a formatted one's, or any planned on a control that built
+    flattened - are read off the built project, `ftexts` (built_ftexts), and
+    its lines looked for in its art (check_baked_caption), since layout.json
+    reads a formatted one back as '' and a flattened one as its textField,
+    whatever the art says; with no art given (`assets` None) it is not
+    verifiable here.
     """
     art, assets = assets, assets or {}
     problems, notes, unverifiable = [], [], []
@@ -1404,6 +1545,12 @@ def check_edit_states(op, c, label, assets, ftexts=None):
             w['name'] = f['nameField']
         if 'textField' in f:
             w['text'] = f['textField']
+            if c.get('FlattenText'):
+                # Build bakes a flattened caption from ftextField alone
+                # (docs/gdl-format.md section 2), and layout.json reads back
+                # textField, so a rename that wrote textField alone read right
+                # here while the art kept the old words: it is the art's.
+                w['ftext'] = w.pop('text')
         if ps.get('flattened'):
             w.pop('text', None)
             w['ftext'] = ps['ftext']
@@ -1423,12 +1570,14 @@ def check_edit_states(op, c, label, assets, ftexts=None):
             problems.append(f"{label} state {i}: named {bs.get('Name')!r}, the edit asked "
                             f"for {w['name']!r}")
         if 'ftext' in w:
-            # Formatted text is baked into the artwork and reads back as '':
-            # it is looked for in the art.
+            # A formatted or flattened caption is baked into the artwork - a
+            # formatted one reads back as '', a flattened one as its textField,
+            # whatever the art says: it is looked for in the art, and its words
+            # where Build reads them.
             built_words = (ftexts or {}).get((op.get('page'), op.get('control')))
             if built_words is not None and i < len(built_words) and \
                     _words(built_words[i]) != _words(w['ftext']):
-                problems.append(f"{where}: its formatted caption is {_words(built_words[i])!r} in "
+                problems.append(f"{where}: its baked caption (ftextField) is {_words(built_words[i])!r} in "
                                 f"the built project, the edit asked for {_words(w['ftext'])!r}")
             elif art is None:
                 unverifiable.append(f"{where} -> {w['ftext']!r}: no art was read")
@@ -1539,6 +1688,38 @@ def check_edits(plan, j, assets=None, ftexts=None):
         print(f'  FILL NOT DOMINANT (survived, but check it by eye): {n}')
     probs, n = check_retarget(plan, j)
     return problems + probs, checked + n
+
+
+def check_edit_captions(plan, j, built_path=None):
+    """An edit plan's renamed and retexted controls - a rename's words, a
+    `states` op's `text` - held to what GUI Designer cuts of them, as
+    check_captions holds a generated panel's: in the box the build has, in
+    the face and size the control keeps, which no rename changes. A rename
+    writes words into a box sized for the old ones, and check_edits only
+    asked whether the field changed. Only the words the edit wrote: a state
+    it left alone is the client's as it was. (problems, notes, checked)."""
+    from gdl import compose
+    from gdl.edit import live_words
+    pages = {p['ID']: p for p in j['Pages'] + j['PopupPages']}
+    want = {}
+    for op in plan.get('controls') or []:
+        words = live_words(op)
+        if words:
+            want.setdefault((op['page'], op['control']), set()).update(words.values())
+    problems, notes, checked = [], [], 0
+    if not want:
+        return problems, notes, checked
+    with compose.as_the_panel(built_path) if built_path else compose.as_the_panel():
+        for (page, control), words in want.items():
+            pg = pages.get(page)
+            c = next((x for x in (pg.get('Controls') or []) if x.get('ID') == control), None) if pg else None
+            if c is None or c['__type'].split(':')[0] not in ('PBLabel', 'PBButton'):
+                continue                    # check_edits says a missing one
+            probs, said, n = _caption_cuts(c, f"{pg['Name']!r} {c.get('Name')!r}", only=words)
+            problems += probs
+            notes += said
+            checked += n
+    return problems, notes, checked
 
 
 def check_retarget(plan, j):
@@ -2137,16 +2318,28 @@ def check_borders(plan, built_path):
     return problems, checked
 
 
+def _bakes(plan, j):
+    """Whether an edit plan writes a caption Build bakes into the art: one it
+    marks so (`flattened`), or one on a control that built flattened."""
+    flat = {(p['ID'], c.get('ID')) for p in j['Pages'] + j['PopupPages']
+            for c in p.get('Controls') or [] if c.get('FlattenText')}
+    return any(ps.get('flattened') or ('textField' in (ps.get('fields') or {}) and
+                                       (op.get('page'), op.get('control')) in flat)
+               for op in plan.get('controls') or [] for ps in op.get('per_state') or [])
+
+
 def check(plan_path, built_path):
     with open(plan_path, encoding='utf-8') as fh:
         plan = json.load(fh)
     j, assets = load(built_path)
     if plan.get('generated_by') == 'gdl.edit':
-        # The built project only where a formatted caption needs its words:
+        # The built project only where a baked caption needs its words:
         # opening it is seconds on a large file.
-        formatted = any(ps.get('flattened') for op in plan.get('controls') or []
-                        for ps in op.get('per_state') or [])
-        return check_edits(plan, j, assets, built_ftexts(built_path) if formatted else None)
+        problems, checked = check_edits(plan, j, assets, built_ftexts(built_path) if _bakes(plan, j) else None)
+        probs, notes, n = check_edit_captions(plan, j, built_path)
+        for note in notes:
+            print('  ' + note)
+        return problems + probs, checked + n
     pages = {p['Name']: p for p in j['Pages']}
     popups = {p['Name']: p for p in j['PopupPages']}
 
@@ -2169,6 +2362,11 @@ def check(plan_path, built_path):
         probs, n = check_fonts(spec, table, kind)
         problems += probs
         checked += n
+        probs, cut, n = check_captions(plan, spec, table, kind, built_path)
+        problems += probs
+        checked += n
+        for note in cut:
+            print('  ' + note)
         probs, notes, n = check_states(spec, table, assets, kind)
         problems += probs
         checked += n

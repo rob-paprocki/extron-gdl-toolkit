@@ -16,7 +16,7 @@ project had them (`tests/test_edit.py`).
 
 | Op | What it does | Verified |
 |---|---|---|
-| `rename` | captions, state by state, wherever they actually live | 12 controls built: 9 plain captions correct on both states; 3 formatted ones are in the artwork (below) |
+| `rename` | captions, state by state, wherever they actually live - and a flattened button's in the field Build bakes it from (below) | 12 controls built: 9 plain captions correct on both states; 3 formatted ones are in the artwork (below); a flattened button's art kept its old words while `rename` wrote `textField` alone; writing its `ftextField` too, 4 flattened buttons built with the new words in their art (below) |
 | `restyle` | remap colors on each control and each state, text color included | 5 sliders built, 5/5 off the artwork; a fill held only on a state and a text color, built and correct |
 | `states` | give a button the states it should have: add, remove, rename or reorder them, and set each one's look | grown 2 to 3, trimmed 3 to 2, and a state inserted before On; built, every state and press state correct |
 | `renumber` | reassign the IDs of the addressable controls it selects - each button, label, level or slider that has one - from `start`, `step` apart, within 1 to 65535; controls sharing an ID (mirrors) take one new one, a mirror the selector leaves is a warning, and a band per page is a renumber per page | **26/26 on two builds**: a seed popup's 12 buttons from 20000 and a mirror on two popups to one new ID, and 12 of a generated panel's controls from 30000 - each on its new ID, no other ID moved, `verify_built` 0 problems; the ID map made off each build verifies, and the one from before fails on exactly the controls renumbered (`archive/job-e823df9b/probes-128/`) |
@@ -71,8 +71,16 @@ Formatted text is the awkward one. It carries its layout inline —
 - `Cameras` → `Camera Control` came out as "Camera" on one line and "Control"
   on a second, unindented, over the icon.
 
-The hand-placed tabs indent line one only. `check` warns whenever a formatted
-caption is replaced by something longer. `verify_built` reads the words off the
+The hand-placed tabs indent line one only. `rename` writes the field whole,
+the new words where the old ones were: after its leading tabs, spaces and line
+breaks and before its trailing ones, each line at the old line's indent and
+broken with the field's own line break, and a line the old field did not have
+at its last line's indent - `'\t\tCameras'` renamed `Camera` / `Control` (an
+LF between) is `'\t\tCamera\n\t\tControl'`. Words that bring a layout of their
+own - a tab, or a leading space or line break - are written as they are, which
+is how a caption's layout is changed. The field holds no face, size or color:
+those are the state's, and `rename` does not touch them. `check` warns whenever
+a baked caption is replaced by something longer. `verify_built` reads the words off the
 built project, where Build reads them, and looks for each line in the art:
 drawn by `gdl.compose` in the state's face, where it fits best, a line must
 cover the art's text there and be covered by it, and land in a run of text its
@@ -91,10 +99,26 @@ art's commonest color, where the whole fill reads as text: white on
 (200, 200, 200), or that project's grey #767789 on #37394E. Its other 12
 controls, 24 states, are all one or the other. That was one face at one size
 of ground truth; the suite now holds the check to GUI Designer's own baking of
-the synthetic fixture's flattened captions - Open Sans at 16 and 20 pt, on one
-line and on two, and Arial - each found in its own art and none in another's
-(`tests/test_verify_built.py`). A bold one is not found: `gdl.compose` draws a
-bold caption regular (`docs/ROADMAP.md`).
+the synthetic fixture's flattened captions - Open Sans at 16 and 20 pt and
+bold at 24, on one line and on two, and Arial - each found in its own art and
+none in another's (`tests/test_verify_built.py`). A bold caption is looked for
+as GUI Designer bakes it, the regular emboldened (a 1 px smear to the right and
+1/60 em more advance a glyph) where no bold file of the family is drawn, by
+`gdl.compose`'s own code (`docs/render-fidelity.md` §8), and a line break is an
+LF, a CRLF or a CR alike, since a spec breaks at LF and GUI Designer's own
+formatted text at CRLF.
+
+A button whose `flattenTextField` is true draws its caption into its art from
+`ftextField` alone. A `rename` that wrote only the `textField` its words were
+kept in changed the model and `layout.json` and left the art as it was: the old
+words, or none (measured on the synthetic fixture's Buttons page,
+`archive/job-e823df9b/rebuild-1104/item3/`), and `verify_built` passed it. So on
+a flattened button `rename` - and `states`, where it gives a state words -
+writes each state's `ftextField` as well as its `textField`, laid out as above,
+and marks the state baked; and `verify_built` holds any caption planned on a
+control that built flattened to the built project's `ftextField` and to its
+art, as it does a formatted one, whether or not the plan marked it. Not yet
+built in GUI Designer: `docs/ROADMAP.md` says what the build has to show.
 
 ## A button is its states
 
@@ -144,6 +168,18 @@ index, which is also the number the control program sets.
 color from the model, and its fill off that state's own artwork. After
 `states`, it also checks the count, the press state, every state's look, and
 that states meant to differ built as different images.
+
+New words go into a box sized for the old ones, and GUI Designer cuts a live
+caption that does not fit it without a word (`docs/gdl-format.md` §2). So
+`check` lays each live caption a `rename` or a `states` op writes out in the
+control's box - its face, size and alignment as the project's built
+`layout.json` has them, its box a retarget's where one moves it - and warns of
+words it would trim or break across lines, and of a line whose ink it would
+cut off at the box (`gdl.compose.caption_cuts`); a caption it could not
+measure - no Pillow, no built payload, or a face drawn here in a stand-in - is
+a note. `verify_built` holds the build's captions to the same rule,
+the words the edit wrote and no others: a state it left alone is the client's.
+A baked caption is the artwork's to check, as above.
 
 ## Retargeting
 

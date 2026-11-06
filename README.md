@@ -11,15 +11,30 @@ Not affiliated with Extron.
 
 ## Start here
 
-In Claude Code, in this repository, ask for the panel you want: *"build the
+| if you want to | go to |
+|---|---|
+| see every page, popup and control ID in a `.gdl` | `python -m gdl.idmap from-built tests/data/synthetic/synthetic.gdl out/idmap`, or the HTML viewer in *Quick start* |
+| change a panel that already exists | *Changing a panel that already exists*, below, then `docs/editing.md` |
+| generate a panel from a spec | *Generating a panel from a spec*, below, then `docs/from-scratch.md` |
+| have Claude Code build a panel | the paragraph that begins "With Claude Code", below |
+| understand the file format | `docs/gdl-format.md` |
+| see what is left to do | `docs/ROADMAP.md` |
+
+Reading, rendering, previewing and planning run on any OS with Python 3.11
+(Pillow for rendering). Writing or building a `.gdl` needs Windows, 32-bit
+Windows PowerShell 5.1 and GUI Designer. `CLAUDE.md` *Environment* has the
+split command by command. The seeds are Git LFS files, so run `git lfs pull`
+after cloning, or every command that names one reads a small pointer file.
+
+With Claude Code, ask for the panel you want in this repository: *"build the
 huddle canvas at <claude.ai link> for a TLP Pro 1035 and 725"*, *"make a
 boardroom panel from this brief"*, *"change the client's 1035 panel so..."*.
 The `extron-panel` skill (`.claude/skills/`) points Claude Code at the
-procedure, `SKILL.md`. A Design canvas drawn in the Claude app with an Extron
-template's design system is built as `docs/claude-design.md` §1 says, and comes
-out as each panel's built `.gdl`, the programmer's ID map and a sign-off page.
-Building needs Windows and GUI Designer, and building from a canvas Chrome too
-(`CLAUDE.md` *Environment*); *Setup*, below, gets a machine ready.
+procedure in `SKILL.md`, which also reads fine as a runbook without it. A
+Design canvas drawn in the Claude app with an Extron template's design system
+is built as `docs/claude-design.md` §1 says, and comes out as each panel's
+built `.gdl`, the programmer's ID map and a sign-off page. Building from a
+canvas needs Chrome too; *Setup*, below, gets a machine ready.
 
 ## Why
 
@@ -30,55 +45,33 @@ together.
 
 ## What is here
 
-| Path | |
+Each folder marked with a README lists its own files.
+
+| folder | what is there | need it? |
+|---|---|---|
+| [`gdl/`](gdl/) | the Python package: read, render, spec, edit, ID map, Design canvases and design systems (README) | yes |
+| [`powershell/`](powershell/) | scripts that write and build `.gdl` files through GUI Designer, Windows only (README) | to build |
+| [`examples/`](examples/) | specs, edit sets and an authoring script to start from (README) | to learn |
+| [`seeds/`](seeds/) | themed starting projects per panel model, made in GUI Designer, with no client material (Git LFS; README lists them) | to author |
+| [`docs/`](docs/) | the format write-up, the how-to guides, the roadmap (README) | `gdl-format.md` first |
+| [`tests/`](tests/) | the pytest suite, the gates that check a built panel, and `data/synthetic/`, the render baseline (README) | to check a build |
+| [`viewer/`](viewer/) | builds a single-file HTML browser for every page and popup | optional |
+| [`vendor/`](vendor/) | where Extron's templates and icons go; on disk, not pushed (README) | for templates and icons |
+| [`research/`](research/) | measured findings and unshipped render improvements, with their numbers and scripts | no |
+| [`workflows/`](workflows/) | the multi-agent bug hunt: falsifies the code's and docs' claims against every project, then verifies each finding adversarially | no |
+| [`archive/`](archive/) | raw working state carried off an earlier build host, kept as evidence (Git LFS) | no |
+| [`tools/`](tools/) | `public_sync.py`, which builds and checks the public copy, and the build-timing tools (README) | no |
+| `private/` | the owner's machine only, never tracked: GUI Designer's settings, the publish denylist, notes | |
+
+And the files at the top:
+
+| file | what it is |
 |---|---|
-| `gdl/` | Python: container, render model, font recovery, reference compositor |
-| `gdl/nrbf.py`, `gdl/project.py` | pure-Python reader for the authoring model, no GUI Designer needed |
-| `gdl/spec.py` | declarative panel spec: layout pass, ID allocation, preview render, build plan |
-| `gdl/edit.py` | change vocabulary for an existing panel: rename, restyle, states, retarget, renumber |
-| `gdl/idmap.py` | the ID map a programmer works from: every addressable control, where it is, what it does |
-| `gdl/designsys/` | an Extron template as a Design System artifact: its profile, the components every template shares, and the region components (Header, LeftRail, Section, RightRail, Footer, Center), which draw each template's working page from its measured frames - Mach's, Shockwave's and Turbulence's bars as controls, Afterburn's round its squircle art; and in `truth/`, each theme's ledger of what its profile once said that its template does not do, which `python -m gdl.designsys audit <theme>` checks |
-| `gdl/design.py` | turns a Design canvas into a spec for each panel it lists, laying it out in headless Chrome with the canvas's own runtime, pinned in `gdl/dc_runtime.json` |
-| `gdl/themes.py` | Afterburn tokens, and palette extraction from any theme's template |
-| `gdl/templates.py` | Extron's series templates, from GUI Designer's own table: which template a model takes |
-| `powershell/GdlProject.ps1` | authoring bridge: load, clone, edit, save a real project graph |
-| `powershell/Apply-GdlPlan.ps1` | applies a build plan to a real project. `-WhatIf` dry-runs it |
-| `powershell/Apply-GdlEdits.ps1` | applies an edit plan to a real project |
-| `powershell/New-GdlPanel.ps1` | a spec to a built, verified panel, with nobody touching GUI Designer |
-| `powershell/New-GdlPanels.ps1` | every panel of a canvas built on its own seed, each verified against one ID map |
-| `powershell/New-GdlSeed.ps1` | a seed for any panel and theme, made through GUI Designer's Project Create Wizard |
-| `powershell/New-GdlTurnedSeed.ps1` | a seed for a panel turned where its theme draws no template that way up: its own seed turned, built and verified |
-| `powershell/Get-GdlPlatforms.ps1` | every panel GUI Designer builds for, from its own assemblies: resolution, DPI, part number and the resolutions it runs at |
-| `powershell/Export-GdlSnapshots.ps1` | GUI Designer's own snapshot of every page and popup of a built project, exported with nobody touching it - the render baseline's ground truth |
-| `viewer/` | builds a single-file HTML browser for every page and popup |
-| `tests/score.py` | scores the render against ground truth and fails on any regression; `preview` scores a spec's preview against the panel built from it |
-| `tests/compare_snapshots.py` | the same comparison, printed per page |
-| `tests/verify_built.py` | diffs a built `layout.json` against the plan that produced it |
-| `tests/verify_idmap.py` | checks an ID map's page names and control IDs against the built panel |
-| `tests/verify_seed.py` | checks a seed is a themed project of its theme for its model, made from that model's series template, not a blank or the wrong panel |
-| `tests/type_probe.py` | measures how many pixels a point is on a panel, off captions Build bakes |
-| `examples/` | worked spec, edit set and authoring script, all of which run |
-| `examples/probes-128/` | the format probes of backlog package 2.1 - inputs, one runner for the Windows host, and the reader of what it leaves |
-| `SKILL.md` | the repeatable procedure. Start here to build or modify a panel |
+| `SKILL.md` | the repeatable procedure for building or modifying a panel. Written for Claude Code; reads as a runbook too |
+| `CLAUDE.md` | instructions for AI agents, including the *Environment* table of what needs GUI Designer |
 | `.claude/skills/extron-panel/` | registers `SKILL.md` as a Claude Code skill, so asking for a panel in this repo finds it |
-| `docs/gdl-format.md` | the format writeup. Read this first |
-| `docs/from-scratch.md` | generating a panel from a spec, and driving GUI Designer from a script |
-| `docs/editing.md` | changing a panel that already exists |
-| `docs/claude-design.md` | designing a panel on a Design canvas and building it from the canvas |
-| `docs/render-fidelity.md` | what GUI Designer actually draws, measured against its own renders |
-| `docs/design-rules.md` | Extron's own design standards plus Afterburn tokens, encodable, with provenance |
-| `tests/data/synthetic/` | the synthetic fixture: a many-page project in generic words, built by the toolkit on a seed, and GUI Designer's snapshots of it - the render baseline everywhere; its README says what it holds |
-| `seeds/` | themed seed projects to author from without client material (Git LFS); its README lists them |
-| `tests/audit_corpus.py` | re-tests the repo's documented beliefs against every project it can reach |
-| `research/` | measured findings and unshipped render improvements, with their numbers and scripts |
-| `workflows/` | the multi-agent bug hunt - falsifies the code's and docs' claims against every project, then verifies each finding adversarially |
-| `archive/` | raw working state carried off an earlier build host, kept as evidence (Git LFS) |
-| `vendor/` | Extron's templates and icons, on disk but not pushed - see its README |
-| `tools/public_sync.py` | builds and checks the public copy from the private archive; `tools/hooks/pre-push` enforces it |
-| `tools/build_timing_specs.py`, `tools/Run-BuildTiming.ps1`, `tools/timing_table.py` | where Save and Build's time goes: specs that vary one count at a time, a runner that builds a queue of them with the host's counters beside each build, and the table and fit read from its logs (`docs/from-scratch.md` §5c); `tools/Sample-GdlHost.ps1` and `tools/Watch-GdlFiles.ps1` are the runner's samplers |
-| `private/` | on the owner's machine only, never tracked: GUI Designer's working files and settings, the publish denylist, and the owner's notes |
-| `docs/ROADMAP.md` | what is left, in order, and who has to do it |
-| `docs/history.md` | retired setups and corrections — why a claim changed. Not needed to use the toolkit |
+| `requirements.txt` | Pillow, for rendering |
+| `pytest.ini` | pytest settings |
 
 ## Setup
 
@@ -135,13 +128,23 @@ Code derives from the repo's path.
 Run these from the repo root. The package is not pip-installable, so
 `python -m gdl.*` needs the repo as the working directory.
 
-Inspect a project:
+Each command below uses the synthetic fixture, a tracked project in generic
+words, so it runs in the private archive and the public copy alike with no
+`git lfs pull`. Swap in your own `.gdl` the same way.
+
+List every page, popup and addressable control, with IDs and captions:
+
+```bash
+python -m gdl.idmap from-built tests/data/synthetic/synthetic.gdl out/idmap
+```
+
+Unpack a project's raw contents:
 
 ```bash
 python -m gdl.container extract tests/data/synthetic/synthetic.gdl out/
 ```
 
-Build the HTML viewer for a set of projects:
+Build the HTML viewer for the projects in a folder:
 
 ```bash
 python -m gdl.data tests/data/synthetic panel-data.json
@@ -282,16 +285,20 @@ Reverse-engineered from project files, GUI Designer's own snapshot exports and
 the installed assemblies. No Extron documentation was involved, so 1.28.0.7 is
 the tested boundary.
 
+**Licence.** The toolkit's own code and documentation are under the Apache
+License 2.0 (`LICENSE`). It does not relicense what is not the project's own:
+`seeds/` carries Extron's artwork and fonts, and the fonts in `gdl/fonts/` keep
+their own licences. `NOTICE` says which is which.
+
 **The project has two repositories.** Work happens in a private archive,
 `extron-gdl-toolkit-archive`, with the complete history. The public copy,
 `extron-gdl-toolkit`, is built from it by `tools/public_sync.py`, and leaves
 out:
 
-- the builds in `archive/gdlwork/` made from a client's project, two screenshots
-  whose status bar shows an account, the evidence logs and builds of
-  `archive/job-2419a20b/` and `archive/job-e823df9b/` (that `docs/claude-design.md`
-  and `docs/ROADMAP.md` cite throughout), scratch files that name the client or
-  the owner's folders, and the working sessions' transcripts;
+- the evidence logs and builds of `archive/job-2419a20b/` and
+  `archive/job-e823df9b/` (that `docs/claude-design.md` and `docs/ROADMAP.md`
+  cite throughout), scratch files that name the client or the owner's folders,
+  and the working sessions' transcripts;
 - the design notes and plan for the split itself;
 - GUI Designer's per-user settings file, which neither repository tracks.
 

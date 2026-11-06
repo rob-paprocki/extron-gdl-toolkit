@@ -156,6 +156,37 @@ class TestMirrors(unittest.TestCase):
                    page('Settings', btn('Go', id=500, nav='Home'), number=1100)])
         self.assertTrue(has(problems(m), '500'), problems(m))
 
+    def test_a_tile_is_its_tab_its_page_flip_its_own(self):
+        """Turbulence's Select a Source tile takes its tab's ID, as its
+        template's does (the owner's call, 2026-11-04): pressed, it is the tab
+        to the program, and it shows the working page where the tab shows its
+        popup. Marked a tile (`_tile`, gdl.design pin_ids), its page flip and
+        words are its own; the row says the tab's, and lists the tile's place
+        with its own function. Its states are still held alike."""
+        lit = [{'name': 'Off'}, {'name': 'On', 'fill': 'accent'}]
+        tab = btn('Laptop', id=101, nav='Laptop', does='Routes the laptop.', states=lit, on=None)
+        tile = btn('Laptop', id=101, nav='Main SD', does='Shows the laptop on the working page.', states=lit,
+                   on=None, _tile=True)
+        tab.pop('on')
+        tile.pop('on')
+        pages = [page('Main Select Source', tile), page('Main SD', tab, ref('Sources', x=300), number=1100)]
+        popups = [popup('Laptop', group='Sources')]
+        m = idmap(pages, popups)
+        self.assertEqual(problems(m), [])
+        row = next(c for c in m.data()['controls'] if c['id'] == 101)
+        self.assertEqual((row['nav'], row['does']), ({'kind': 'popup', 'target': 'Laptop'}, 'Routes the laptop.'))
+        self.assertEqual([(a['container'], a.get('tile')) for a in row['at']],
+                         [('Main Select Source', "Shows page 'Main SD'; Shows the laptop on the working page."),
+                          ('Main SD', None)])
+        # Unmarked, it is a mirror doing something else, as before.
+        untiled = dict(tile)
+        untiled.pop('_tile')
+        m = idmap([page('Main Select Source', untiled), pages[1]], popups)
+        self.assertTrue(has(problems(m), '101', 'functions'), problems(m))
+        # And a tile's states are its tab's.
+        m = idmap([page('Main Select Source', dict(tile, states=lit[:1])), pages[1]], popups)
+        self.assertTrue(has(problems(m), '101', 'states'), problems(m))
+
     def test_mirrors_of_different_kinds_are_a_problem(self):
         m = idmap([page('Home', btn('Go', id=500, nav='Settings')),
                    page('Settings', {'kind': 'label', 'name': 'L', 'id': 500,
@@ -557,7 +588,9 @@ class TestPanels(unittest.TestCase):
                     states=[{'name': 'Off'}, {'name': 'On', 'fill': '#FFFFFF'}], **kw)
             del c['on']
             return c
-        twin = btn('PC Caption', rect=[0, 755, 100, 25], id=1001, nav='Home', does='Routes the PC.',
+        # Its words the tab's, as the layout draws them - its name's would
+        # not fit 100x25 at 18 pt, which the spec check refuses.
+        twin = btn('PC Caption', text='PC', rect=[0, 755, 100, 25], id=1001, nav='Home', does='Routes the PC.',
                    derived=True, states=[{'name': 'Off', 'fill': 'none'}, {'name': 'On', 'fill': 'none'}])
         del twin['on']
         helpb = btn('Help', rect=[200, 500, 100, 80], id=1002, does='Helps.')
@@ -1476,28 +1509,22 @@ class TestWhatABuildDoesNotSay(unittest.TestCase):
 
 
 class TestAPanelBuiltFromBareButtons(unittest.TestCase):
-    """examples/huddle.json leaves 7 of its 13 buttons' states to the clone:
-    off its build, the map agrees with the spec's on the type, places and
-    caption of every ID the spec numbers, and names the states the spec's map
-    could not. The build is from before the applier dropped the donor's own
-    pages, so it holds theirs too."""
+    """The synthetic fixture's OneState button (`"on": null`) asks for no
+    states, so it keeps its clone's: off the fixture's build, the map agrees
+    with its spec's on the type, places and caption of every ID, and names the
+    states the spec's map could not."""
 
-    BUILT = os.path.join(ROOT, 'archive', 'gdlwork', 'out', 'Huddle.gdl')
-
-    def setUp(self):
-        if not _pulled(self.BUILT):
-            self.skipTest('archive/gdlwork/out/Huddle.gdl is not pulled from Git LFS here')
+    SYNTH = os.path.join(ROOT, 'tests', 'data', 'synthetic')
 
     def test_it_agrees_and_names_the_clones_states(self):
         from gdl.idmap import BuiltMap
-        built = BuiltMap.open(self.BUILT).data()
-        spec = load(os.path.join(ROOT, 'examples', 'huddle.json')).data()
+        built = BuiltMap.open(os.path.join(self.SYNTH, 'synthetic.gdl')).data()
+        spec = load(os.path.join(self.SYNTH, 'synthetic.json')).data()
 
         def rows(d):
             return {c['id']: (c['type'], sorted((a['container'], a['name'], a['caption']) for a in c['at']))
                     for c in d['controls']}
-        want = rows(spec)
-        self.assertEqual({k: v for k, v in rows(built).items() if k in want}, want)
+        self.assertEqual(rows(built), rows(spec))
         bare = [c['id'] for c in spec['controls'] if c['type'] == 'Button' and not c.get('states')]
         self.assertTrue(bare)
         got = {c['id']: c.get('states') for c in built['controls'] if c['id'] in bare}

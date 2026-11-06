@@ -85,14 +85,54 @@ opening GUI Designer.**
 4. **Load a built panel onto a touch panel.** No load is recorded: the proof
    ends at the built file and its artwork (*Where things stand*), so what a
    panel's firmware draws from `layout.json` - live captions, translucent
-   fills, a held button - has not been seen on hardware. Needs a panel, and
-   a person to read it.
+   fills, a held button - has not been seen on hardware: GUI Designer's
+   snapshot blends a translucent fill in light, and the picture of the panel
+   blends it plainly (`docs/render-fidelity.md` §2), and which the panel does
+   is unknown. Needs a panel, and a person to read it.
 5. **Decide whether to exclude GUI Designer's folders from real-time
    scanning, and run the build timing once with it set.** A build holds the
    antivirus engine at one whole core while GUI Designer uses a sixth of one
    (`docs/from-scratch.md` §5c). Which folders, and the commands to time the
    effect, are in *Mine*, item 1; an exclusion lets those files go unscanned,
    so it is yours to weigh and to set.
+6. **Confirm or overrule the 300's four assumptions, and say whether a
+   turned panel should have a region grammar of ours** (region-frame spec
+   item 14). The 300 draws a region page as its template does, and where the
+   template has no answer: (1) its Main holds the template's two source keys,
+   and more go on over pages of Main's own by a More in the second's place,
+   and a page that goes on stands a More in its bar's last place - no 300
+   template pages anything, so both pagers are ours; (2) Afterburn's 300
+   Landscape sets a page's title in its column's foot, 79 px across, where at
+   the 300's 16 pt floor about six letters fit - its template sets 14 pt and
+   shortens Computer to Comp. - so a longer title, and a source's name used
+   as one, is refused by name; (3) a 300's derived chrome keeps its own
+   template's seed IDs (Main's title 6072, Back 8041), a 320's its own (6075,
+   8011, More 8010), so on a canvas listing both, those controls take IDs from
+   50001 on both; (4) the template's Settings is a plain list of key pages,
+   so the pages Settings goes on to on Main's own (`Main 3` and on) - the
+   LeftRail's Sections as columns under their headings, Room Mode, an Audio
+   Control and the Header's ends - are ours: the template has no such page.
+   Overruled, each is the 300's code's and its README's to change. And turned panels: Extron draws no bar or hub template turned -
+   its one turned template is the 300 Landscape - so a region page, a source
+   popup and a window on a 1035M or 835M portrait, or a 520M, 521M or 535M
+   turned, or Mach's 300M landscape, are refused by name. Drawing one needs a
+   grammar no template measures: turned, Mach's 1220 header is a 64 px band
+   down the left, whose tabs hold a caption of four letters or so at the
+   1035's 14 pt floor (Help fits, Laptop does not), and its footer a 55 px
+   band down the right, which holds neither its clock nor Room Mode. Yours
+   to ask for, and to shape.
+7. **Say whether a 300 key's caption may go down to its template's size, as
+   you let a 320's.** Your call of 2026-11-04 covered the 320 only. We
+   carried it to the 300 by analogy, where its template sets its keys' words
+   under 14 pt: Afterburn's 300 draws its keys of words at 13 pt, the least
+   its Display Settings - the page its columns are read off - sets them in,
+   and its spec says `"type_floor": {"button": 13}`, where the 300's own
+   floor is 16. Mach's 300 sets its keys at 15, under 16 but not under 14,
+   and is untouched. Its template is not one size: Recording Controls' keys
+   are 10.5 and the Landscape's Main sources 12 (`docs/design-rules.md` §1).
+   Overruled, Afterburn's 300 keys go back to the 16 pt floor, where the
+   Landscape's Settings says Setup in its 88 px column, and `key_floor` is
+   the 320's alone (`gdl.designsys.models`).
 
 ## Mine, in order
 
@@ -161,17 +201,8 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
    Design and phases: `docs/superpowers/specs/2026-09-24-panel-aware-design-systems-design.md`.
    A native-size seed beats a retarget, which matches Extron's own hand layout
    for only 22% of controls. The other gaps in `seeds/README.md` (Teams Rooms,
-   Zoom Rooms and the forms its *Gaps* lists) wait for a job that needs one.
-3. **Lay a caption out in its box less GDI+'s padding.** GUI Designer sets a
-   left- or right-aligned caption in by 1/6 em a side and wraps every caption
-   in the box less that padding; `gdl.compose` uses the whole box. The
-   synthetic fixture found it - the client project the first baseline was
-   scored on centred all but 3 of its 490 captions - and modelled in memory it
-   improved both baselines with no page worse: the synthetic 3.44% → 3.00%
-   (worst 8.03% → 7.05%), the client's 2.19% → 2.10% (worst 7.68% → 7.06%)
-   (`docs/render-fidelity.md`
-   §9, `research/gdi_padding.py`). Ship it with the baseline refreshed, then
-   score the bold model again.
+   Zoom Rooms and the turned panels its *Gaps* lists) wait for a job that needs
+   one.
 
 ## Backlog - real, not urgent
 
@@ -179,10 +210,11 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   in a window or a plain modal. A window's body, a source popup's well and a
   plain modal's card re-space a row, or a stack, whose members came nearer
   than they may (bundle.js `freeLayout`), but a Label standing over two keys
-  side by side is neither: round five's Turbulence stop question, its Stop
-  Recording key grown from 92 to 192 px deep on the 525, ran up into its
-  question's words (`tests/data/round5-left.json`). Needs the rows below a
-  heading re-spaced as one block of its column.
+  side by side is neither. Round five's Turbulence stop question showed it -
+  its Stop Recording key grown from 92 to 192 px deep on the 525 ran up into
+  its question's words; its two keys now come out one size, 125x131, its words
+  on two lines (`artRows`, `twoLineNeed`), and clear of them, so no canvas here
+  shows it. Needs the rows below a heading re-spaced as one block of its column.
 - **Segoe UI, Segoe UI Semibold and FluentSystemIcons-Regular preview in
   Arial**, said aloud (`gdl.design compare` and `gdl.spec render` print
   `compose.FALLBACKS`): Extron's templates carry them and no seed does, so
@@ -214,13 +246,14 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   `turbulence-47`). Emitting it bound by its ID changes the four ledgers and
   needs the hubs rebuilt.
 - **A seed of the forms still missing.** `seeds/` holds a seed of each form
-  of the 320, 525, 720, 725, 835, 1020, 1025, 1220, 1225, 1525 and 1535 in every
-  theme that draws it, and Afterburn's 1520 and 535 series (backlog plan 2.6;
-  `gdl.seeds pick` finds each by its part number, and the profiles list them).
-  What it finds none for is in `seeds/README.md` *Gaps*: the 520M and 535M, the
-  1022s, the 1520s, the 1720s and 1725s, and the TLC panels. The wizard offers
-  each under the name `seeds.panel_type()` spells, so `New-GdlSeed.ps1` makes one
-  in a run.
+  of the 320, 520, 521, 525, 526, 535, 720, 725, 726, 835, 1020, 1022, 1025,
+  1026, 1220, 1225, 1520, 1525, 1535, 1720 and 1725 in every theme that draws it
+  (backlog plan 2.6; `gdl.seeds pick` finds each by its part number, and the
+  profiles list them), and the 835M turned to portrait in each. What it finds
+  none for is in `seeds/README.md` *Gaps*: Teams Rooms, Zoom Rooms at 725 and
+  986x740, and the panels turned where no template is drawn that way up other
+  than those - the 520M, 521M and 535M, and the 1035M outside Afterburn - whose
+  own seed is here, so `New-GdlTurnedSeed.ps1` makes each in a run.
 - **Afterburn's Level is one width in its profile, and its 535 seed draws it wider.**
   `defaults.level.track` is 15 px for every series; the 320, 525 and 300 seeds draw
   their Level 15 across and the 535 seed 24 (its DPI is 294, against their 113 to
@@ -248,36 +281,18 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   draws the donor's track and fill. It is most of what differs between the
   preview and the build (`docs/from-scratch.md` §6) - all of the worst popup,
   15.85%. The preview knows no donor, so it needs the theme's own level art.
-- **`gdl.compose` draws a bold caption regular** - on a seed-built panel the
-  largest remaining difference in `gdl.design compare`. GUI Designer has no
-  bold file either (no seed carries one): it emboldens the regular, so adding
-  Open Sans Bold would draw a design the panel does not show. A model of the
-  emboldening - a 1 px rightward smear and 1/60 em more advance a glyph - took
-  the client project's render baseline's mean from 2.19% to 2.13% but
-  regressed two popups whose two-line captions keep the regular's advances, so
-  it is not shipped (`docs/render-fidelity.md` §8). The synthetic fixture's 50
-  bold Open Sans captions are the bold ground truth now; on them the model is
-  mean 3.44% → 3.40% with 15 pages worse, nearly all through a bold
-  left-aligned title the missing padding misplaces (*Mine*, 3) - so run it
-  again once that is in (§9). It costs the built-file verifier too: a renamed
-  formatted caption in bold is looked for in the regular's ink, so a bold
-  caption Build baked right is reported not in its art (the synthetic
-  fixture's Flat2, `tests/test_verify_built.py`).
-- **`verify_built` splits a formatted caption's lines at CRLF only**
-  (`check_baked_caption`), as GUI Designer's own formatted text breaks them. A
-  caption whose lines break at LF, as a spec's do - the synthetic fixture's
-  Flat3, which Build bakes as two lines - is looked for as one line and
-  reported not in its art. An edit that renames a caption to two lines would
-  fail a right build the same way; the test of it normalises the breaks.
-- **A translucent fill is pasted solid where the snapshot draws it
-  translucent** (`docs/render-fidelity.md` §9): finding 2's binary rule holds
-  for antialiased edges, not for a fill at 20 to 75% - the synthetic
-  fixture's translucent keys differ by 39-88% each, and its white at 20% is
-  lighter in the snapshot than a plain blend would make it. Measure the rule
-  before modelling it.
-- **An italic caption is drawn upright**: GUI Designer obliques the regular,
-  as it emboldens it, and the synthetic fixture's italic rects differ by
-  14.76% (`docs/render-fidelity.md` §9).
+- **The profiles count a template message's lines in its whole box**
+  (`tests/measure_series.py` `_lines`, each window frame's `lines`), where
+  GUI Designer wraps it in the box less 1/6 em a side and trims what is too
+  deep (`docs/render-fidelity.md` §9). A message within that of its box's
+  width counts a line short. Measuring them again with `gdl.compose.fitted`
+  in the padded box moves design-system data, so it is its own change, with
+  the canvases it reaches rebuilt.
+- **How much of a caption's last line GUI Designer needs in its box to show
+  it is not pinned**: between 17% and 68% of its height, on the one caption
+  either side the synthetic fixture has, and `gdl.compose.TRIM_LINE` assumes
+  half (`docs/render-fidelity.md` §9). A caption in a box 1.3 to 1.6 lines
+  deep, built and snapshot, would settle it - a rebuild of the fixture.
 - **Three things the synthetic fixture's first build failed on**, each taken
   out of its spec so it builds and verifies (`tests/data/synthetic/make_synthetic.py`
   says where):
@@ -333,10 +348,32 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   leaves no room for More and Back beside them.
 - **The region frame, beyond tier A** (PR sequence in
   `docs/superpowers/specs/2026-10-22-region-frame-design.md`):
+  - on the 300 the region page derives to the 300's pages, under its menu bar
+    (`docs/claude-design.md` §3, spec item 14) - Mach's 300 and Afterburn's 300
+    Portrait and 300 Landscape - and Mach's and Afterburn's region canvases
+    translate clean on the TLP300M beside the 1035, their ID maps too, and
+    Afterburn's on its TLP300M-Landscape with titles its column holds;
+    Afterburn's 300 draws its keys of words at 13 pt, the least its Display
+    Settings sets them in, under 14 as Mach's 15 is not - the 320's rule
+    carried over by analogy, ours and pending the owner (*Yours* item 7,
+    `docs/design-rules.md` §1); `tests/data/design-300-afterburn`, the
+    region canvas listing the TLP300M beside the 1035, is the canvas to build
+    that on, its key floor and its bar's seed IDs translated and checked
+    clean, its ID map too, and built in GUI Designer on the TLP1035T and the
+    TLP300M and verified, both at 0 problems and their ID map at 0
+    (`archive/job-e823df9b/rebuild-1104/`); GUI Designer's own snapshot of
+    the 300's Main draws its bar keys, its Volume key and its Down and Up in
+    Extron-Afterburn (`glyphs/`). Mach's 300 is not built, nor Mach's level
+    glyphs (Extron-Lift) on any panel. What it does not do yet: Mach's level
+    stands on the photo, its glyphs at its ends, where its template shows it
+    in a Volume Level popup; and what *Yours* item 6 asks;
   - a region page, a source popup (`role="source"`) and a window (a modal
-    with a `role` or a `title`) on a turned panel or a 300 are refused by
-    name: a turned frame's header-as-left-band and the 300's menu bar are not
-    drawn yet;
+    with a `role` or a `title`) on a turned panel are refused by name: no
+    template of the theme is drawn that way up - Extron's one turned
+    template, Afterburn's 300 Landscape, is a series of its own, and turns
+    its Main as `models()` turns a frame but stands its other pages' bar down
+    the opposite side (`tests/test_measure_series.py`); a grammar of our own
+    is *Yours* item 6;
   - on the 320 the region page derives to the 320's pages
     (`docs/claude-design.md` §3), probed on the TLP320C and translated clean
     on the TLP320M the region canvases list - the 320C's seed is here in each
@@ -345,11 +382,14 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     (`archive/job-e823df9b/p320/`). What it does not do yet: the template puts
     no volume control on a page - Volume is the modal its program shows - so
     a 320 has no on-screen Up or Down, and Mach's modal has no Cancel, which
-    the program puts away; the strip's chevrons and the volume glyphs are in
-    icon faces the systems do not carry, so Back is the kit's back art
-    (Shockwave's its return glyph, Turbulence's its return key at the strip's
-    end) drawn across its whole key - Mach's about 1.6 times the template's
-    glyph - and the Volume modal's glyphs say + and -; a page's first Back -
+    the program puts away; the strip's chevrons and the Volume modal's glyphs are
+    drawn in the template's icon faces, where the machine that builds the
+    system carries them (`docs/claude-design.md` §2), translated, checked
+    clean, and built and verified on every TLP320M spec they changed
+    (`archive/job-e823df9b/rebuild-1104/`; the Afterburn 320's Privacy key,
+    stopped by a limit of the verifier since fixed, verified again at 0) -
+    Turbulence's Back
+    and More are the kit's own keys, as its template's are; a page's first Back -
     to Main, which the template has none of on screen, since it chooses
     sources off it - stands where its second page's Back does, or at the
     strip's end where More holds the foot's right (Shockwave's and
@@ -358,12 +398,26 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     headings at 11 to 12, a heading takes some of a column's depth - its
     words fill its box, so it cannot reach into its keys' clear tops as the
     template's does (Shockwave's keys 57 deep to its 60, Turbulence's 57 to
-    its 65) - its digit keys' captions are 14 pt to the template's 18 to 22,
-    and Turbulence's square key, whose wider art is too shallow to take,
-    holds no word longer than about five letters - a longer one ('Normal',
-    'Streaming') runs past the key's art, where the template sets its own
-    words in the art or at 11 pt (whether a 320 key's caption may take the
-    template's own size is the owner's call);
+    its 65); a key's caption takes the size its template sets that kind of
+    key in - a key of digits or signs its Doc Cam Inputs' 18, 22 and 11 pt
+    on Mach's, Shockwave's and Afterburn's, the question's answers its own
+    question's 11, 12 and 10, a key of words 10 (Freeze, Auto and Normal) -
+    going down to fit no further than that 10 (the owner's call, 2026-11-04,
+    `docs/design-rules.md` §1), and a key the designer gave a `size` keeps
+    it, at the 14 pt floor, where its words fit, translated, checked
+    clean, and built and verified on every TLP320M spec it changed
+    (`archive/job-e823df9b/rebuild-1104/`); Start's key does not yet,
+    though its templates set it at 16, 20 and 12 pt: it is a key of words
+    on the designer's own Start
+    page at 10, where the 320 cannot yet tell it from another drawn beside it
+    (round five's Mach Start holds Lighting too), and at the template's size
+    the two would not fit across - which wants a Start page laid out as the
+    template's, or a key's words pushed down to fit wherever it grows;
+    and Turbulence's, whose template sets its keys' words in their art and
+    so measures no size of its own, keeps 14: its square key, whose wider
+    art is too shallow to take, holds no word longer than about five
+    letters - a longer one ('Normal', 'Streaming') runs past the key's art,
+    where the template's words are the art's;
   - on a hub the region page derives to the hub's grammar
     (`docs/claude-design.md` §3) - built and verified on Mach's 525 and
     535, Shockwave's 525 and 535 and Turbulence's 525
@@ -391,15 +445,15 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     question is drawn now, but not the working page its tile opens, a page
     of its own grammar (its record status in the left rail, Recording
     Controls at the foot), which is more than the question's measurement
-    gives. The hubs set their
-    menu glyphs, their Volume Level strip's speaker glyphs and Shockwave's
-    Up and Down in icon faces (Extron-Lift, Extron GUI Configurator,
-    Extron-Shockwave) the design systems do not carry - fonts stay out of
-    them - so the menu draws the kit's art, which fills its key where the
-    template's glyph is about half the key (a kit image builds `Fill`, so a
-    smaller glyph needs art drawn smaller or the face), Shockwave's Up and
-    Down are Open Sans's Λ and V, and the strip's glyphs are not drawn;
-    a Shockwave source whose glyph has no whole-device outline in the kit
+    gives. The hubs'
+    menu glyphs, Close and Volume Level strip glyphs - Mach's Extron-Lift,
+    Shockwave's Extron-Shockwave Up and Down and Extron GUI Configurator
+    strip, Afterburn's icon font's carets and Back - are drawn in those faces
+    where the machine that builds the system carries them, translated,
+    checked clean, and built and verified on the region and call canvases,
+    and drawn in GUI Designer's own snapshot of Mach's, Shockwave's and
+    Afterburn's 525 Main (`archive/job-e823df9b/rebuild-1104/glyphs/`); a
+    Shockwave source whose glyph has no whole-device outline in the kit
     (blu-ray-2) keeps its tab's art on its Select a Source tile, a pressed
     tile lightens without the template's white ring, and an
     option with no glyph (Room Mode) is the kit's grey tile, which the
@@ -493,11 +547,19 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     that is less (Mach's Contacts, 0 to 3) - and the Header's
     tabs and a key whose template sets none take 4 px; a lit caption is its
     icon's color's dark on every Shockwave variant, as its template's are.
-    Both build differently from the passes above, which are not yet built
-    again.
+    Both build differently from the passes above, and every call canvas -
+    the three `design-call-<theme>` and round four's three call rooms - was
+    built again at main 0aeccf7 on all four panels and verified there
+    (`archive/job-e823df9b/rebuild-1104/`).
+    An incoming call's answers keep the template's 9032 and 9033 on every
+    panel, and Turbulence's Select a Source tiles their tabs' IDs, as their
+    templates give them (the owner's call, 2026-11-04; `docs/idmap.md` §7):
+    translated, checked clean and mapped on every panel the three
+    `design-call-<theme>` canvases list - and on a TLP300M added to Mach's -
+    and built and verified on every panel those canvases list, their ID maps
+    at 0 (the TLP300M added to Mach's is not built).
     What it does not do yet: Mach's Share Content
-    says Share, an incoming call's answers take IDs of their own, Turbulence's
-    Select a Source tiles too, and Shockwave's 725 call page holds two of its
+    says Share, and Shockwave's 725 call page holds two of its
     Main VC's three launchers (Differences) - it has not the room the
     template gives a third, which at the template's 98 px would end 27 px
     past the rail's foot under the VTC pills grown to the 725's touch
@@ -516,12 +578,54 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     room with more sources than a Header holds is refused on Shockwave's bar
     panels, whose templates draw no Main Select Source, with fewer tabs and a
     source popup of keys as the remedy;
+  - the glyphs the templates set in Extron's icon faces - a hub's menu,
+    Close and Volume Level glyphs, the 320's More, Back and Volume glyphs,
+    Afterburn's window Close, Shockwave's dialer star and Turbulence's
+    keyboard key - and Open Sans Light where the templates set it (Mach's
+    and Turbulence's bar series; `docs/claude-design.md` §2) translate and
+    check clean, the donor check too, on every panel the region and call
+    canvases list, and are built and verified (`verify_built`'s caption and
+    font checks included, 0 problems, the ID maps at 0) on every panel whose
+    spec they change (the Afterburn 320's Privacy key, stopped by a limit of
+    the verifier since fixed, verified again at 0) - the list is in
+    `archive/job-e823df9b/rebuild-1104/spec-diff/`, and the builds in
+    `builds/` - with a face a donor lacks appended where the plan asked:
+    Extron GUI Configurator, from Mach's 1035, on Shockwave's 320, 525 and
+    535 and Turbulence's 320; Extron GUIC Video Conference 1, from
+    Turbulence's 1035, on Turbulence's 320 and 525; Extron GUIC Video
+    Conference 1a, from Shockwave's 1035, on Shockwave's 320 and 525. A
+    caption is drawn live and not into the artwork `verify_built` reads
+    (`docs/gdl-format.md` §2), so GUI Designer's own snapshot is the witness
+    of each glyph drawn: it draws Mach's, Shockwave's and Afterburn's 525
+    Main with their menu glyphs and the Volume strip's Up and Down,
+    Afterburn's 300 Main, Shockwave's dialer with its star key, and
+    Turbulence's keyboard key on all four builds
+    (`archive/job-e823df9b/rebuild-1104/item2/`, `glyphs/`).
+    Turbulence's keyboard key is the one glyph whose code is not the
+    template's: the seed's VC Keyboard (5229, on `seeds/Turbulence 1035.gdl`'s
+    VTC Dialer) types 'B' (U+0042), which GDI maps into Extron GUIC Video
+    Conference 1's symbol range - its cmaps are Mac Roman and Windows Symbol,
+    U+F020 to U+F0FF - and the spec gives U+F042, the code that range holds.
+    `design-call-turbulence`'s TLP1035T, 725T and 525T (VC Keyboard on VTC
+    Dialer) and 320M (on VTC Dialer 2) build with VC Keyboard at 5229,
+    caption U+F042, in Extron GUIC Video Conference 1 at 28 pt, and GUI
+    Designer's snapshot of each page draws the keyboard glyph on the key as
+    it draws the seed's: on the 1035, at the seed's rect, the same
+    bounding box and no shift, 52 pixels in 9,500 more than 32 levels
+    apart, none more than 39. So U+F042 stays, and nothing changes in
+    `regions.dialer.keyboard.glyph.char` or turbulence-42's `fix`. A panel
+    draws live captions itself, which nothing here has measured, so the
+    touch panel is the last word if one is to hand. A designer's own Button
+    names a kit image, not a glyph: the arrows and transport keys its
+    template sets in the faces still draw the kit's art;
   - the region page's seed IDs and mirrors (`docs/idmap.md` §7) translate
-    and check clean on every panel the region canvases list, and are not yet
-    built in GUI Designer but for Shockwave's tab twins - a caption-only
+    and check clean on every panel the region canvases list, and are built
+    and verified on every one whose spec they changed, the ID maps at 0
+    (`archive/job-e823df9b/rebuild-1104/`; Shockwave's 1035 and 725 region
+    specs do not change). Shockwave's tab twins - a caption-only
     button inside the tab with the tab's ID, as the template draws it, the
-    first spec mirror on one page - built and verified on the 1035 in round
-    four's Shockwave room (`archive/job-e823df9b/round4/shockwave/reverify.log`,
+    first spec mirror on one page - were built and verified earlier on the
+    1035 in round four's Shockwave room (`archive/job-e823df9b/round4/shockwave/reverify.log`,
     once the verifier's own limits were fixed) and on the 1535M in the format
     probes, its four twins as planned and the ID map 0 problems
     (`archive/job-e823df9b/probes-128/`);
@@ -543,36 +647,33 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   - the truth ledger (`gdl/designsys/truth/`, `docs/claude-design.md` §2
     *Truth*) covers a theme once its file is there: `python -m gdl.designsys
     audit <theme>` names a theme with none, and every entry or claim not yet
-    resolved. What Mach's records the system cannot draw: Open Sans Light
-    (its titles, the footer clock and Main Select Source's header title are
-    drawn in Open Sans at the template's size), the Extron-Lift glyph
-    captions on its arrows, transport and back keys (the kit's images stand
-    in), and its whole-button image presets (Window Layout, TV Channels, the
+    resolved. What Mach's records the system cannot draw: the Extron-Lift glyph
+    captions on a designer's arrows, transport and back keys (the kit's
+    images stand in - the system's own chrome draws the face's), and its
+    whole-button image presets (Window Layout, TV Channels, the
     recording layouts), which no Mach variant offers; and where it differs
     for a gate, its 30 px volume slider is drawn 53, the touch minimum.
     Where Shockwave's differs: its
     tab captions stay on the tab (above); its 52 px volume slider is drawn
     53, the touch minimum, and the Screen and Lighting tiles its template
     stands 104 apart (110 deep) stand 110 apart, since two controls may not
-    overlap. What Turbulence's
-    records the system cannot draw: Open Sans Light (every label and
-    caption, drawn in Open Sans); and
-    where it differs for a gate: the 1035's 52 px volume slider is drawn 53
+    overlap. Where Turbulence's
+    differs for a gate: the 1035's 52 px volume slider is drawn 53
     (the touch minimum) and its Help 12 px in, at x 152 where the template
     has 141 (the footer opens its seam to the left rail's last launcher to
     the 2 mm gap). Privacy's red lit caption is `alert`, which a designer
     sets on its On state;
   - what Afterburn's ledger records the system does not draw: the glyphs of
-    Extron's Afterburn icon font (its Close, Back, More, arrows, d-pad,
-    transport and zoom keys, and the 520's and 535's triangle Up and Down),
-    a font it carries none of. The kit draws most of them as images in
-    Afterburn/Icons/PNG - Close's X, the chevrons, the triangles (Carets),
-    minus, plus, the More dots and most of the transport keys - which the
-    profile now indexes beside its Buttons/PNG (`kit.icons`), so a designer
-    can name each on a button, drawn fitted to it (afterburn-36), and a
-    window's Close draws the X, a Group pages with the chevrons
-    (afterburn-32) and a hub's Up and Down are the carets (afterburn-09); a
-    Rail's level, on a page without regions, still steps with `-` and `+`. The
+    Extron's Afterburn icon font on a designer's arrows, d-pad, transport and
+    zoom keys. The system's own chrome sets the font's glyphs - a window's
+    Close, a hub's Up, Down and Back, the 320's More and Back (afterburn-36),
+    where the machine that builds the system carries the face - and the kit
+    draws most of the rest as images in Afterburn/Icons/PNG - the triangles
+    (Carets), minus, plus, the More dots and most of the transport keys -
+    which the profile indexes beside its Buttons/PNG (`kit.icons`), so a
+    designer can name each on a button, drawn fitted to it; a Group pages
+    with the kit's chevrons (afterburn-32); a Rail's level, on a page without
+    regions, still steps with `-` and `+`. The
     squircle card under a modal with
     no `role` (Help's Background), which a window with a role draws as the
     page's own art but a plain modal cannot - Afterburn's system offers no
@@ -606,13 +707,64 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   title, a line of chrome's words), most of it set as a margin for the
   fallback face captions were measured in while Open Sans came from Google
   Fonts. The system carries its face (`gdl.designsys.face_js`), so the 6% is
-  margin over Open Sans 3.003's own widths, and no build has shown it is
-  needed or enough: the build draws its seed's Open Sans 1.10, a few font
-  units a glyph apart, and emboldens it for bold where the canvas measures a
-  real Bold. Taking it out changes what most canvases translate to, so it
-  waits on a build that compares the two. Letters outside the face's Latin
+  margin over Open Sans 3.003's own widths. The build draws its seed's Open
+  Sans 1.10, which over every word the built canvases caption runs at most
+  0.52% wider (its Light 0.19%), and emboldens it for bold where the canvas
+  measures a real Bold, wider; the boxes the layout sizes for their words
+  measure them 0.6% wide and give them GDI+'s third of an em
+  (`gdiWidth`, `FACE_SLACK`) where GDI+ would cut them (`gdiCut`), and
+  `gdl.spec check` refuses a caption GUI Designer would cut. The 0.6% is the
+  worst word's: a box it grows can be a pixel wider than the seed's own face
+  needs, and only where a word comes within 0.6% of its room. The 6% sites
+  keep their margin over that, which no
+  build has shown is needed; taking it out changes what most canvases
+  translate to, so it waits on a build that compares the two. Letters outside the face's Latin
   (Ł, ő) still come from the Google Fonts link as it arrives, or from the
   fallback.
+- **Two of the seeds' captions lose a row of ink.** `gdl.compose.caption_fit`
+  says a line a row of whose ink runs past its box (`clips`), and the three
+  checks refuse it: GUI Designer cuts it off flat there
+  (`docs/render-fidelity.md` finding 7). Over the 41 seeds this checkout
+  carries, two of Extron's own captions do, and GUI Designer's snapshots show
+  both cut: Turbulence 720's 12 pt 'Window' on Main Multi-Window, whose 'd' is
+  cut, and Mach 720's 12 pt 'Lighting Preset' in 80x36 on Start, whose 'h' is
+  the one glyph of 'Lighting' that `line_ink` - (18, 91, 76, 108) - puts on
+  row 91, a row above the box: it begins on row 92 as the L does, where an
+  uncut 'Lights' of the same face has its h a row above its L
+  (`archive/job-e823df9b/rebuild2-1105/mach720-lighting-preset/`). A canvas
+  that sets a caption in either template box is refused until its box holds
+  it.
+- **A word too wide for its box after another word is broken at a character,
+  as one snapshot shows.** `compose.wrap` and `bundle.js` `gdiCut` break a
+  word wider than the box less its padding at a character wherever it falls -
+  GDI+'s word break, as the synthetic fixture shows it for a word alone on its
+  line (Wrapping's LongWord) - where they broke one only at a line's start and
+  set one after another word whole. GUI Designer's snapshot of round five's
+  Turbulence 320M as the rebuild of 2026-11-04 built it
+  (`archive/job-e823df9b/rebuild2-1105/item1/`) draws its Display Control's
+  Monitor Status, 'Back: Laptop' at 14 pt in 65x57, as 'Back:' over 'Lapto':
+  the second line 48 px across where 'Laptop' is 60, ending 9 px short of the
+  box's edge - the word broken or trimmed at a character, as `caption_fit`
+  reads it ('Laptop' is 62.7 px across and 65 less the padding 58.6), not
+  cut flat at the edge. Translated at main the spec widens that box to 70 px
+  (63.6 px of room for 62.7) and moves Projector Source a pixel - the one
+  panel of the built canvases that #100 changes
+  (`archive/job-e823df9b/rebuild2-1105/spec-diff/`) - and GUI Designer's
+  snapshot of that panel built at main
+  (`archive/job-e823df9b/rebuild2-1105/monitor-status-rebuilt/`) draws 'Back:'
+  over 'Laptop' whole, 60 px across, 5 px in from each edge. What no snapshot
+  shows is a word broken after another onto a line the box has the depth for:
+  Afterburn 1035 Portrait's 13 pt 'Video Conference' in 90x102, whose
+  'Conference' is 96 px across, is `splits`.
+- **A trimmed paragraph's last line keeps no indent, as `compose.fitted`
+  lays it.** Where a box shows fewer lines than its words wrap to, the last
+  one shown holds the rest of its paragraph with its leading spaces stripped,
+  so a list key's second line indented past its icon - round five's Afterburn
+  525 'Video Conference', '            Video' over '            Conference'
+  at 18 pt in 214x66 - comes out 'Conference' from the box's left, over the
+  icon, and `caption_fit` names nothing: every character shows. Whether GDI+
+  strips those spaces, or trims the indented line at a character, no
+  snapshot shows; the translation sets it as main did.
 - **ECP's phone and tablet canvases have no donor, and cannot have one.** The
   six themable combinations (Afterburn / Mach / Shockwave × 16-9 and 16-10) are
   all seeded, and a spec can target either TouchLink canvas (`spec.sizes('VTLPEcp')`
@@ -638,9 +790,32 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
   and everything that builds skips on the runner; the public copy, which holds
   no runtime and fewer seeds, skips more. A green CI is therefore still not a
   green suite on a provisioned machine.
-- The size-dependent vertical text residual (`docs/render-fidelity.md`
-  finding 7); every text finding validated against one typeface, the client
-  project's Forma DJR Display, which can no longer be scored (below).
+- **Why GDI+ aligns a centred or bottom-aligned caption as in a box 0.2 px a
+  point shorter at its foot is not known** (`gdl.compose.FOOT`,
+  `docs/render-fidelity.md` finding 7). It is measured on the synthetic
+  fixture's five faces, the same for one line to four and for any box, and
+  nothing in the faces' metrics explains it. A caption built at several sizes
+  in boxes of several heights, at each vertical alignment, and snapshot, would
+  pin it - a rebuild of the fixture - and GDI+'s `StringFormat` as GUI
+  Designer's assembly sets it would say whether GUI Designer shrinks the box
+  itself. The glyphs are drawn here at 1.375 px a point down, where GUI
+  Designer draws them at 4/3, so a large caption's ink is 2-3% too tall:
+  Pillow draws a face at one size, and resampling each line scores worse.
+- **A left-aligned caption is drawn a little right of where GUI Designer
+  draws it** - 0.24 px at 14 pt to 0.96 px at 40 on the synthetic fixture,
+  centred ones about half that, right-aligned ones not at all
+  (`research/synthetic_lines.py`). It is why the oblique that scores best is
+  0.30 where its stems measure 0.34 (`docs/render-fidelity.md` §9): a
+  shallower slant moves an italic's ink left by as much. The padding, the
+  registration (`DX`) and the glyphs' side bearings are where to look; a
+  render change, scored over all pages.
+- **The design system and `gdl.design` give a caption's line 1.375 px a
+  point** (`gdl.design._line_px`, the `* 1.37` lines of
+  `gdl/designsys/bundle.js`, the profiles' `pt` and their notes on it), where
+  GDI+ sets one at 4/3 (`docs/render-fidelity.md` finding 7) - 3% more room
+  than a line takes. It errs safe, since a caption judged to fit does, but
+  moving it changes what canvases translate to, so it is its own change, with
+  the canvases it reaches rebuilt.
 - **What deleting the client fixtures took with it** (2026-11-03,
   `docs/history.md`). The tests that had a synthetic twin kept it; what only
   the client's project had is laid into hand-made pages or rebuilt on a seed or
@@ -673,6 +848,39 @@ where each runs: `docs/superpowers/plans/2026-10-26-backlog-plan.md`.
     probes' 34-against-35 (`examples/probes-128/`, which now authors on a
     seed), and the `research/` scripts written against the client's snapshots
     stand as recorded and cannot be re-run on their own inputs.
+  - **The builds made on them** (`archive/gdlwork/`, deleted 2026-11-04). One
+    test read one: `tests/test_idmap.py`'s map off a build whose buttons keep
+    their clone's states reads the synthetic build now, which has one such
+    button (`OneState`) where the archived build of `examples/huddle.json`
+    had seven. The records the folder held - the color run, the `.glt` donor GUI
+    Designer refused, the Save As item that carries the project's name - stand
+    as recorded.
+- **The repo's layout, reviewed 2026-11-02: one optional move, everything else
+  stays.** The optional move is `workflows/` to `tools/workflows/`. At the root
+  it sits beside `.github/workflows/` and reads as CI, while under `tools/` it
+  reads as maintainer tooling. The steps: `git mv workflows tools/workflows`,
+  then point at the new path in `README.md`'s folder table, `CLAUDE.md`
+  *Environment traps*, `archive/README.md`, and `tools/workflows/README.md`'s
+  title and both `scriptPath` lines. The scripts take the repo root as an
+  argument and name no path under `workflows/`, and no test or CI step reads
+  the folder. The bug hunt's archived results quote the old path; leave them.
+  What stays, and why:
+  - `archive/`, `research/` and `workflows/` under one history folder: several
+    misses would fail silently. `ci.yml` guards the Chrome job with
+    `hashFiles('archive/dc-runtime/...')`, so a stale path turns the job off
+    without a red run. `gdl/design.py` writes pin-runtime's copy to
+    `archive/dc-runtime`. `.gitattributes` matches `archive/` for
+    Git LFS. `tools/public_sync.py`'s `EXCLUDE` and
+    `BINARY_OK` name archive paths, and the docs cite `archive/job-*` paths
+    throughout.
+  - `SKILL.md` at the root: `tests/test_skill.py` ties it to
+    `.claude/skills/extron-panel/SKILL.md`, and the root is where a reader
+    without Claude Code finds the runbook.
+  - The scripts in `tests/` (`verify_built.py`, `score.py` and the rest): the
+    gate commands in `CLAUDE.md` *Verifying a change* and the docs name them
+    by these paths.
+  - `research/` and `viewer/`: their commands are documented where they are,
+    and moving them gains little.
 
 `python tests/audit_corpus.py` checks the documented invariants against every
 project it can reach; `docs/gdl-format.md` §9 has what it checks and its last

@@ -945,10 +945,16 @@
           "Offline Page"
         ]
       },
-      "status": "deviation",
-      "reason": "No profile offers Open Sans Light (docs/claude-design.md section 2, Type): the canvas loads Open Sans at 400 and the panel is authored in Open Sans, so a Light label draws regular. The README now says so; the type scale says which size each message is.",
-      "here": "Every label draws in Open Sans: the template's are Open Sans Light, which no design system here offers, so a label reads a little heavier than Extron's.",
+      "status": "fixed",
       "fix": [
+        {
+          "key": "font.light.family",
+          "says": "Open Sans Light"
+        },
+        {
+          "key": "font.light.series",
+          "says": "Turbulence 1220 Series"
+        },
         {
           "key": "type.body.usage",
           "says": "Labels and the clock"
@@ -962,16 +968,15 @@
           "says": "Room Mode's question is 28, Select a Source 34 and the VTC popups' titles 30"
         },
         {
-          "key": "font.note",
-          "says": "Open Sans Light"
-        },
-        {
-          "readme": "Its own labels and captions are Open Sans Light, a little lighter than the Open Sans this canvas draws"
+          "readme": "Open Sans Light where the panel's own template sets it - every label, caption and clock on the 1220, 1020, 1520 and 720 Series"
         }
       ],
       "gone": [
-        "Labels, status and messages, and the clock"
+        "Labels, status and messages, and the clock",
+        "no profile offers Light",
+        "which no design system here offers"
       ],
+      "builds": "On the bar panels - the 1220, 1020, 1520 and 720 Series - every label, caption and clock builds in Open Sans Light, where it built in Open Sans; a hub's and the 320's, whose templates set theirs in Open Sans, build as before.",
       "evidence": "Confirmation's Power Down Confirmation (4056), Incoming Call (4060), Powering Down Label (4067) at 20 pt; Room Mode Label (7036) 28; Select Source Label (6072) 34; VTC Dialer Label (4018) 30; Offline Page's two Labels 22."
     },
     {
@@ -1397,10 +1402,12 @@
           "VTC Dialer"
         ]
       },
-      "status": "deviation",
-      "reason": "The system carries no icon face: the keyboard key says its word.",
-      "here": "The dialer's keyboard key says Keys where the template draws a glyph.",
-      "builds": "The number field builds #DCDCDC, the entry's own paint, where none was drawn and the number stood black on the page; the Period key its vc_dot art, which the keypad's look hid.",
+      "status": "fixed",
+      "fix": [
+        {"key": "regions.dialer.keyboard.glyph.char", "says": "U+F042"},
+        {"key": "regions.dialer.keyboard.glyph.face", "says": "Extron GUIC Video Conference 1"}
+      ],
+      "builds": "The number field builds #DCDCDC, the entry's own paint, where none was drawn and the number stood black on the page; the Period key its vc_dot art, which the keypad's look hid; and the keyboard key the template's glyph in Extron GUIC Video Conference 1 at 28 pt on its square_blank art, where it said Keys - where the machine that built the system carries the face. The face is symbol-encoded: its cmap maps U+F042, which GDI reaches from the template's 'B', as Chrome does (the same glyph, pixel for pixel), and the spec check, which reads the cmap as it is stored, does not; so the glyph is named by U+F042, the same glyph. Whether Build draws it there is not yet built (docs/ROADMAP.md says what the build must show, and the switch to U+0042 if the key comes out blank).",
       "evidence": "VTC Dialer's Dialer Feedback Label (50000) filled #DCDCDCFF; VC Keyboard (5229) on 440x440_square_blank with caption 'B'."
     },
     {
@@ -1417,10 +1424,19 @@
           "Main SD"
         ]
       },
-      "status": "deviation",
-      "reason": "The ID map holds one ID to one control with one `nav` and `does` (gdl.idmap refuses one mirrored with different functions), and a tile shows the working page where its tab shows its popup.",
-      "here": "Each Select a Source tile takes an ID of its own, where the template's reuse their tabs' (8050, 8052, 8062, 8058, 8054, 8060).",
-      "evidence": "Main Select Source's six tiles beside Main SD's tabs of the same IDs on seeds/Turbulence 1035.gdl, and on its 725, 720 and 1525 alike."
+      "status": "frame",
+      "frame": [
+        {"series": "Turbulence 1220 Series", "key": "choose.tab_ids"},
+        {"series": "Turbulence 1220 Series", "key": "top.tabs"}
+      ],
+      "fix": [
+        {"readme": "a tile is its tab to the program and takes its tab's ID"}
+      ],
+      "gone": [
+        "a tile shows the working page where its tab shows its popup"
+      ],
+      "builds": "A Select a Source tile builds with the ID of its tab, the control of its name on the page it shows (gdl.design pin_ids), which the ID map lists as one control with the tab, its page flip its own (gdl.idmap): tests/data/design-call-turbulence's Laptop, PC and Doc Cam tiles 101 to 103, as their tabs, where they built at 4008 to 4010. The owner's call (2026-11-04).",
+      "evidence": "Main Select Source's six tiles beside Main SD's tabs of the same IDs on seeds/Turbulence 1035.gdl, and on its 725, 720 and 1525 alike; Mach's and Afterburn's 1035 tiles have IDs of their own (8100 to 8103)."
     },
     {
       "id": "turbulence-44",
@@ -1435,9 +1451,14 @@
           "Incoming Call Label"
         ]
       },
-      "status": "deviation",
-      "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
-      "here": "An incoming call's Accept Call and Ignore Call take IDs of their own, from 50001, where the template's are 9032 and 9033: a program written for the template's needs them told.",
+      "status": "frame",
+      "frame": [
+        {"series": "Turbulence 1220 Series", "key": "windows.incoming"}
+      ],
+      "fix": [
+        {"readme": "each with the template's ID on every panel (Accept Call 9032 and Ignore Call 9033)"}
+      ],
+      "builds": "An incoming call's Accept Call and Ignore Call build as 9032 and 9033 on every panel - a hub's and the 320's, where the question stands in the power-down question's places, too - where they built at IDs of their own from 50001 (50017 and 50018 on tests/data/design-call-turbulence). The owner's call (2026-11-04).",
       "evidence": "Incoming Call Label's Accept Call (9032) and Ignore Call (9033) on seeds/Turbulence 1035.gdl; Incoming Call's on its 725, 720 and 1525; docs/idmap.md, the call mode's dialer."
     },
   {
@@ -1473,18 +1494,18 @@
         ]
       },
       "status": "deviation",
-      "reason": "The type floor the toolkit checks (gdl.spec.type_floor: 14 pt as it reads on a 1035, 16 at the 725's density): a caption under it is refused, so a tab's caption is 16 pt on the 725 and 14 on the 720, and the row of tabs, one width, is as wide as its longest caption needs under its glyph. The 725's and 720's footers deepen for their docks' captions the same way.",
-      "here": "Nothing is under the toolkit's type floor: the 725's and 720's tab captions are 12 pt in the template and 16 and 14 here, so a source tab there is as wide as its caption needs - 113 and 100 px where the template's are 102 and 80 - and the 725's and 720's footers are 85 and 76 deep where the template's are 83 and 67.",
+      "reason": "The type floor the toolkit checks (gdl.spec.type_floor: 14 pt as it reads on a 1035, 16 at the 725's density): a caption under it is refused, so a tab's caption is 16 pt on the 725 and 14 on the 720, and the row of tabs, one width, is as wide as its longest caption needs under its glyph. The 725's and 720's footers deepen for their docks' captions the same way. Its TLP320M's keys keep the floor too, where another theme's 320 lets a key's caption go down to its template's size: Turbulence's template carries its keys' words in their art, and sets no smaller size for a caption to take (docs/design-rules.md section 1).",
+      "here": "Nothing is under the toolkit's type floor, a key's caption on the TLP320M included, whose template carries its keys' words in their art (docs/design-rules.md section 1): the 725's and 720's tab captions are 12 pt in the template and 16 and 14 here, so a source tab there is as wide as its caption needs - 109 and 96 px where the template's are 102 and 80 - and the 725's and 720's footers are 85 and 76 deep where the template's are 83 and 67.",
       "bounds": [
-        {"region": "top", "what": "first tab", "px": 11, "panels": ["TLP725T"]},
-        {"region": "top", "what": "tab pitch", "px": 11, "panels": ["TLP725T"]},
+        {"region": "top", "what": "first tab", "px": 7, "panels": ["TLP725T"]},
+        {"region": "top", "what": "tab pitch", "px": 7, "panels": ["TLP725T"]},
         {"region": "bottom", "what": "surface Bottom bar", "px": 2, "panels": ["TLP725T"]},
-        {"region": "top", "what": "first tab", "px": 20, "panels": ["TLP720T"]},
-        {"region": "top", "what": "tab pitch", "px": 20, "panels": ["TLP720T"]},
+        {"region": "top", "what": "first tab", "px": 16, "panels": ["TLP720T"]},
+        {"region": "top", "what": "tab pitch", "px": 16, "panels": ["TLP720T"]},
         {"region": "bottom", "what": "help Help", "px": 11, "panels": ["TLP720T"]},
         {"region": "bottom", "what": "surface Bottom bar", "px": 9, "panels": ["TLP720T"]}
       ],
-      "evidence": "Turbulence 725's Main SD: SD PC at 113,0 102x100 in Open Sans Light 12, its Bottom bar 83 deep; Turbulence 720's at 89,0 80x80, also 12, its Bottom bar 67 deep. gdl.design.region_score on the region canvas (tests/test_design.py TestRegionPagesAgainstTheirTemplates) draws the 725's tabs 113x100, 124 apart, in 16 pt, the 720's 100x80, 108 apart, in 14 pt, and the 725's and 720's footers 85 and 76 deep, the 720's Help 11 px higher."
+      "evidence": "Turbulence 725's Main SD: SD PC at 113,0 102x100 in Open Sans Light 12, its Bottom bar 83 deep; Turbulence 720's at 89,0 80x80, also 12, its Bottom bar 67 deep. gdl.design.region_score on the region canvas (tests/test_design.py TestRegionPagesAgainstTheirTemplates) draws the 725's tabs 109x100, 120 apart, in Open Sans Light 16, the 720's 96x80, 104 apart, in Light 14, and the 725's and 720's footers 85 and 76 deep, the 720's Help 11 px higher."
     },
     {
       "id": "turbulence-47",

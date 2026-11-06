@@ -1,9 +1,5 @@
 {
  "mach": {
-  "TLP320M: 'Recording 2' Recording Length: its text does not fit its 74x50 box on this panel - give it room, or fewer words": [
-   "designer",
-   "Words on the 320 gives a key's 74 px cell about 6 letters, and the recording's length field says 00:00:00, eight"
-  ],
   "TLP525T: 'Blu-ray' Blu-ray Show Label: its words run into Blu-ray Next on this panel - give them room": [
    "readme",
    "the README gave no recipe for a disc's transport: it now says to draw it with the kit's transport glyphs, whose cells keep their size, where five worded keys outgrow the 725's and the 525's popups"
@@ -108,26 +104,6 @@
   ]
  },
  "turbulence": {
-  "TLP320M: 'Display Control' Display Control Title: its words run into the words of Projector Source on this panel - give them room": [
-   "readme",
-   "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
-  ],
-  "TLP320M: 'Display Control' Monitor Source Label: its text does not fit its 65x57 box on this panel - give it room, or fewer words": [
-   "readme",
-   "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
-  ],
-  "TLP320M: 'Display Control' Monitor Status: its text does not fit its 65x57 box on this panel - give it room, or fewer words": [
-   "readme",
-   "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
-  ],
-  "TLP320M: 'Display Control' Projector Source: its text does not fit its 88x27 box on this panel - give it room, or fewer words": [
-   "readme",
-   "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
-  ],
-  "TLP320M: 'Display Control' Projector Source: its words run into the words of Monitor Status on this panel - give them room": [
-   "readme",
-   "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
-  ],
   "TLP320M: Help.dc.html: Help's Help Text needs 122 px of the 117 the TLP320M has under its strip, set at its 14 pt floor - say less": [
    "readme",
    "the README said only that a 320 Label too long for a page is refused: Words on the 320 now says how much one page holds"
@@ -136,16 +112,11 @@
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP525T: 'Stop Recording' Stop Recording Question: its words run into Stop Recording Confirm on this panel - give them room": [
-   "limit",
-   "a Label over a row of keys in a plain modal does not move apart from them as they grow: Turbulence's Stop Recording key grows from 92 to 192 px deep on the 525",
-   "A Label over a row of keys does not move apart from them"
-  ],
-  "TLP525T: DisplayControl.dc.html: Monitor cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 113x113 do not fit its 148x113 box on a TLP525T: give it a box that holds them all there, or put it on a page": [
+  "TLP525T: DisplayControl.dc.html: Monitor cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 114x114 do not fit its 148x114 box on a TLP525T: give it a box that holds them all there, or put it on a page": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP525T: DisplayControl.dc.html: Projector cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 113x113 do not fit its 148x113 box on a TLP525T: give it a box that holds them all there, or put it on a page": [
+  "TLP525T: DisplayControl.dc.html: Projector cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 114x114 do not fit its 148x114 box on a TLP525T: give it a box that holds them all there, or put it on a page": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
@@ -153,15 +124,15 @@
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP525T: DisplayControl.dc.html: Source cannot page in a modal - its pages would be popups, which only a page can show - and its 5 cells of 122x122 do not fit its 422x122 box on a TLP525T: give it a box that holds them all there, or put it on a page": [
+  "TLP525T: DisplayControl.dc.html: Source cannot page in a modal - its pages would be popups, which only a page can show - and its 5 cells of 123x123 do not fit its 422x123 box on a TLP525T: give it a box that holds them all there, or put it on a page": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP525T: popup 'Display Control' Monitor Blu-ray: 439,441 122x122 does not fit the popup's 702x480 - GUI Designer moves it to 0,0 without reporting anything": [
+  "TLP525T: popup 'Display Control' Monitor Blu-ray: 439,441 123x123 does not fit the popup's 702x480 - GUI Designer moves it to 0,0 without reporting anything": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP525T: popup 'Display Control' Monitor Doc Cam: 302,441 122x122 does not fit the popup's 702x480 - GUI Designer moves it to 0,0 without reporting anything": [
+  "TLP525T: popup 'Display Control' Monitor Doc Cam: 301,441 123x123 does not fit the popup's 702x480 - GUI Designer moves it to 0,0 without reporting anything": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
@@ -221,15 +192,15 @@
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP725T: DisplayControl.dc.html: Monitor cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 101x101 do not fit its 195x101 box on a TLP725T: give it a box that holds them all there, or put it on a page": [
+  "TLP725T: DisplayControl.dc.html: Monitor cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 97x97 do not fit its 195x97 box on a TLP725T: give it a box that holds them all there, or put it on a page": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP725T: DisplayControl.dc.html: Projector cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 101x101 do not fit its 195x101 box on a TLP725T: give it a box that holds them all there, or put it on a page": [
+  "TLP725T: DisplayControl.dc.html: Projector cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 97x97 do not fit its 195x97 box on a TLP725T: give it a box that holds them all there, or put it on a page": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP725T: DisplayControl.dc.html: Screen cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 144x144 do not fit its 195x144 box on a TLP725T: give it a box that holds them all there, or put it on a page": [
+  "TLP725T: DisplayControl.dc.html: Screen cannot page in a modal - its pages would be popups, which only a page can show - and its 2 cells of 140x140 do not fit its 195x140 box on a TLP725T: give it a box that holds them all there, or put it on a page": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
@@ -241,15 +212,7 @@
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
-  "TLP725T: popup 'Display Control' Projector Off / Monitor Off: 12px vertical gap is below the 13px minimum (2mm, p.56)": [
-   "readme",
-   "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
-  ],
   "TLP725T: popup 'Display Control' Projector Off / Monitor On: overlap - two touch targets cannot share pixels": [
-   "readme",
-   "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
-  ],
-  "TLP725T: popup 'Display Control' Projector On / Monitor On: 12px vertical gap is below the 13px minimum (2mm, p.56)": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ],
@@ -260,17 +223,9 @@
   "TLP725T: popup 'Display Control' Screen Down / Monitor Doc Cam: overlap - two touch targets cannot share pixels": [
    "readme",
    "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
-  ],
-  "TLP725T: popup 'Display Control' Screen Down / Monitor ShareLink: 5px horizontal gap is below the 13px minimum (2mm, p.56)": [
-   "readme",
-   "two displays had no recipe, so the designer put both displays' power, the screen and the monitor's sources in one window packed edge to edge on the 1035, which the 725, 525 and 320 cannot hold: the README now gives a key per display in the first Section and a source popup's Group for which source each shows"
   ]
  },
  "afterburn": {
-  "TLP320M: 'Blu-ray' Transport Heading: its text does not fit its 109x26 box on this panel - give it room, or fewer words": [
-   "readme",
-   "Words on the 320 counted a heading's room in letters - about 9 - where Afterburn's 320 sets its headings in capitals, and TRANSPORT's nine are 109 px: it now counts about 8 capitals"
-  ],
   "TLP320M: Call.dc.html: Sources takes the Footer's preview place, which the TLP320M's template does not draw - list the panels whose template draws one": [
    "readme",
    "the README did not say which panels draw the Footer's Preview, nor how a working page leads back to a select page: it now says Preview is the 1220's, 1520's and 1720's alone, and the way back a launcher of the rail's second Section"
@@ -322,6 +277,18 @@
   "TLP725T: SelectSource.dc.html: Recording's caption needs more room than the TLP725T's 137 px rail gives it - 81 px past its icon at the panel's type, on one line or two: shorten it": [
    "designer",
    "the README's left-rail table gives a list launcher's caption 89 px past its icon on the 725, about 7 letters; Recording is 9"
+  ],
+  "TLP725T: page 'Select Source' Recording: GUI Designer breaks 'Recording' across lines in 137 px - it needs 111 px across, at 16 pt in Open Sans": [
+   "designer",
+   "the README's left-rail table gives a list launcher's caption 89 px past its icon on the 725, about 7 letters; Recording is 9; GUI Designer breaks it at a character there, which gdl.spec check names"
+  ],
+  "TLP725T: page 'Main SD' Recording: GUI Designer breaks 'Recording' across lines in 137 px - it needs 111 px across, at 16 pt in Open Sans": [
+   "designer",
+   "the README's left-rail table gives a list launcher's caption 89 px past its icon on the 725, about 7 letters; Recording is 9; GUI Designer breaks it at a character there, which gdl.spec check names"
+  ],
+  "TLP725T: page 'Call' Recording: GUI Designer breaks 'Recording' across lines in 138 px - it needs 111 px across, at 16 pt in Open Sans": [
+   "designer",
+   "the README's left-rail table gives a list launcher's caption 89 px past its icon on the 725, about 7 letters; Recording is 9; GUI Designer breaks it at a character there, which gdl.spec check names"
   ]
  }
 }

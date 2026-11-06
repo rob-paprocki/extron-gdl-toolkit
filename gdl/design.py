@@ -61,11 +61,16 @@ def sandbox_flags():
 
 
 # What each kind carries into the spec, beyond kind, name and rect.
+# A button's and a label's `icon` and `font`: a glyph the template sets in its
+# icon face - its codepoint, and the face, which gdl.spec draws it in and
+# finds in the donor's build of - and the face a caption is set in where it is
+# not the theme's (Open Sans Light, `font.light`); a clock's `font` the same.
 FIELDS = {
-    'button': ('id', 'text', 'fill', 'stroke', 'color', 'border', 'size', 'bold', 'align',
+    'button': ('id', 'text', 'icon', 'font', 'fill', 'stroke', 'color', 'border', 'size', 'bold', 'align',
                'states', 'press', 'nav', 'does', 'derived', 'joined', 'back'),
     # A label's `fill` and `border`: the field it paints itself (the dialer's).
-    'label': ('id', 'text', 'color', 'size', 'bold', 'align', 'does', 'derived', 'fill', 'border'),
+    'label': ('id', 'text', 'icon', 'font', 'color', 'size', 'bold', 'align', 'does', 'derived', 'fill',
+              'border'),
     'panel': ('fill', 'stroke', 'border', 'derived'),
     # A line's `derived`: one a region draws (Afterburn's Header Divider, on
     # the panels whose template draws it).
@@ -77,7 +82,7 @@ FIELDS = {
     # A clock's `derived`: one a region draws as its panel's template does
     # (Afterburn's Footer: the 1035's date and time apart, the 725's one) is
     # that panel's chrome, which no other panel need carry.
-    'datetime': ('color', 'size', 'bold', 'align', 'format', 'derived'),
+    'datetime': ('color', 'size', 'bold', 'align', 'format', 'font', 'derived'),
     'popup_ref': ('group', 'derived'),
     # The template's own art (bundle.js's Image, and the art a region draws:
     # Turbulence's bars, a source's device picture), by its kit file.
@@ -200,7 +205,10 @@ PROBE = r"""
           if (at >= 0) box = [r.left - pr[at].left, r.top - pr[at].top, r.width, r.height];
           var c = { gdl: el.getAttribute('data-gdl'), rect: box, href: el.getAttribute('href') };
           if (at >= 0) c.part = at;
-          if (overflows(el, g.kind)) c.overflow = true;
+          // A glyph in an icon face (`icon`) is not words: its em box is far
+          // bigger than its ink - Afterburn's 320 sets a 20x34 px chevron at
+          // 70 pt in a 50x50 key - and Build centres it.
+          if (!g.icon && overflows(el, g.kind)) c.overflow = true;
           if (WORDS[g.kind]) {
             var wb = wordsBox(el, at >= 0 ? pr[at].left : o.left, at >= 0 ? pr[at].top : o.top);
             if (wb) {
@@ -812,7 +820,7 @@ class Canvas:
                         st['border'] = swap[st['border']]
             for c in item['controls']:
                 if c['kind'] == 'button':
-                    _fit_breaks(c, profile['pt'], profile['font']['family'])
+                    _fit_breaks(c, profile['pt'], c.get('font') or profile['font']['family'])
                 if c['kind'] == 'slider' and thumb:
                     c['thumb_image'] = thumb[0]
                 if c['kind'] == 'slider':
@@ -859,6 +867,14 @@ class Canvas:
             'pages': pages,
             'popups': popups,
         }
+        # The size a key's caption may go down to where this panel's own
+        # template sets its keys' words under 14 pt - the 320's 10 pt,
+        # Afterburn 300's 13 (designsys.models' `key_floor`, off its frame) -
+        # for gdl.spec check, which holds a button's caption to it and no
+        # other (gdl.spec.key_floor).
+        keys = designsys.models(profile).get(first.get('panel') or '', {}).get('key_floor')
+        if keys is not None:
+            spec['type_floor'] = {'button': keys}
         # An image goes with the file it comes from, relative to the resource
         # kits: the seed carries some already, and the applier appends the
         # rest. Background images are the themes'; button images the kit's.
@@ -997,6 +1013,11 @@ class Canvas:
             c['_seed_id'] = g['seed_id']
         if kind == 'button' and g.get('mirror'):
             c['_mirror'] = str(g['mirror'])
+        # A Select a Source tile its template gives its tab's ID (Turbulence's:
+        # the frame's `choose.tab_ids`), which pin_ids gives it and the ID map
+        # lists as one control with its tab, its own page flip apart.
+        if kind == 'button' and g.get('tile'):
+            c['_tile'] = True
         # Where an image's art is, where it is no kit's (a window's Background,
         # the page's own background art on Afterburn): the spec's `images`.
         if kind == 'image' and g.get('file'):
@@ -1463,8 +1484,11 @@ def _collisions(drawn, laid):
             if p1 == p2:
                 return True
             # A modal a layout derived (the 320's Volume) shows over the page
-            # under Build's scrim: nothing under it is read beside it.
-            if (d1 is not None and d1.get('modal')) or (d2 is not None and d2.get('modal')):
+            # under Build's scrim: nothing under it is read beside it. Nor is
+            # a popup the program shows over main for a moment (`over`: a
+            # hub's Volume Level strip, whose Volume Up Label the template
+            # stands over the corner of Select Source's Help).
+            if any(d is not None and (d.get('modal') or d.get('over')) for d in (d1, d2)):
                 return False
             if (d1 is not None and d1.get('kind') != 'popup') or (d2 is not None and d2.get('kind') != 'popup'):
                 return False
@@ -1782,7 +1806,17 @@ def pin_ids(specs, order, previous=None):
     seeded = _seeded(design, explicit | {i for i in held if not any(s == i and n in gave[i] for n, s in chrome)})
     taken |= set(seeded.values())
 
-    ids, nxt, seen, kept, pinned, named = {}, dict(bands), {}, {}, [], {}
+    ids, nxt, seen, kept, pinned, named, tiles = {}, dict(bands), {}, {}, [], {}, []
+
+    def fresh(it, k):
+        """The next free number in `it`'s band, as `k`'s."""
+        n = nxt.get(it['_host'], 1)
+        while n in taken:
+            n += 1
+        ids[k] = n
+        taken.add(n)
+        nxt[it['_host']] = n + 1
+
     for it in design['pages'] + design['popups']:
         for c in it['controls']:
             if c.get('derived'):
@@ -1813,12 +1847,26 @@ def pin_ids(specs, order, previous=None):
             if c.get('_seed_id') is not None and seeded.get(c.get('name')) == c['_seed_id']:
                 ids[k] = c['_seed_id']
                 continue
-            n = nxt.get(it['_host'], 1)
-            while n in taken:
-                n += 1
-            ids[k] = n
-            taken.add(n)
-            nxt[it['_host']] = n + 1
+            # A Select a Source tile its template gives its tab's ID (`_tile`):
+            # once every other control has its ID, below.
+            if c.get('_tile') and c.get('nav'):
+                tiles.append((it, c, k))
+                continue
+            fresh(it, k)
+    # Turbulence's tiles are their tabs to the program (its Main Select
+    # Source's Laptop is 8050, as Main SD's is): a tile takes the ID of the
+    # control of its name on the page it shows - the owner's call
+    # (2026-11-04), where it once took one of its own - and with no such
+    # control there, one of its own after all.
+    hosts = {x['name']: x['_host'] for x in design['pages'] + design['popups']}
+    tiled = set()
+    for it, c, k in tiles:
+        tab = ids.get((hosts.get(c['nav']), c['name']))
+        if tab is not None:
+            ids[k] = tab
+            tiled.add(k)
+        else:
+            fresh(it, k)
     # A designer's ID wins - but not over a control still on the canvas that
     # the program knows by it. Copies the previous map gave one ID (a mirror)
     # may pin it on one and keep it on the other.
@@ -1973,6 +2021,12 @@ def pin_ids(specs, order, previous=None):
                     continue
                 c['id'] = ids[k]
                 found.add(k)
+                # A tile with its tab's ID is that tab's on every panel, for
+                # the ID map (gdl.idmap: one control, its page flip apart).
+                if k in tiled:
+                    c['_tile'] = True
+                else:
+                    c.pop('_tile', None)
         left = {(it['_host'], n) for it in spec['pages'] + spec['popups'] for n in it.get('left') or ()}
         # A control is one ID to the program: one a page's copy of a window
         # held is still here where the window that is one - two region pages'

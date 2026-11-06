@@ -104,8 +104,87 @@ def _captions(c):
     return [c['caption'] or ''] + [s['caption'] or '' for s in c.get('states') or []]
 
 
+# A line break as formatted text holds one: CRLF in GUI Designer's own, LF in
+# what a spec writes (and Build bakes either as two lines), CR alone too.
+_BREAK = re.compile(r'(\r\n|\r|\n)')
+_LAYOUT = r'[\t\r\n ]*'
+
+
+def _baked_text(old, new):
+    """The ftextField a baked caption takes when its words become `new`.
+
+    The field is plain text - its face, size and color are the state's own
+    fontField and textColorField, which no rename touches - but its tabs,
+    spaces and line breaks are its layout: two CRLFs put a source's label
+    under its icon, leading spaces put a list button's past it
+    (docs/gdl-format.md section 7). So the new words go where the old ones
+    were: after the old field's leading layout and before its trailing one,
+    each line at the old line's indent, broken with the old field's own line
+    break; a line the old field did not have takes its last line's indent,
+    since an unindented line lies over the icon (docs/editing.md). New words
+    that bring a layout of their own - a tab, or a leading space or break -
+    are what the designer means the field to be, and are written as they are.
+    """
+    old = old or ''
+    if '\t' in new or re.match(r'[\r\n ]', new):
+        return new
+    lead = re.match(_LAYOUT, old).group()
+    body = old[len(lead):]
+    tail = re.search(_LAYOUT + r'\Z', body).group()
+    body = body[:len(body) - len(tail)]
+    lines, own = _BREAK.split(body)[::2], _BREAK.search(body)
+    indents = [re.search(r'[\t ]*\Z', lead).group()] + \
+              [re.match(r'[\t ]*', ln).group() for ln in lines[1:]]
+    parts = _BREAK.split(new)
+    out = parts[0]
+    for k in range(1, len(parts) // 2 + 1):
+        brk, words = parts[2 * k - 1], parts[2 * k]
+        out += (own.group() if own else brk) + indents[min(k, len(indents) - 1)] + words
+    return lead + out + tail
+
+
+def _write_text(entry, s, new, flat):
+    """Put `new` in a per-state op `entry` where state `s` keeps its caption.
+
+    A formatted caption ('fstate') lives in ftextField alone. A flattened
+    button's caption (`flat`) is baked from ftextField and from nothing else -
+    an empty one bakes no words - so it is written there too, as well as in
+    textField, which layout.json reads back (docs/gdl-format.md section 2).
+    Either is marked `flattened`, for check() and verify_built to know it is
+    in the art; `ftext` is the words asked for, and the field is written
+    whole (_baked_text). Anything else is textField alone.
+    """
+    fields = entry.setdefault('fields', {})
+    if s.get('caption_in') != 'fstate' and not flat:
+        fields['textField'] = new
+        return entry
+    if s.get('caption_in') != 'fstate':
+        fields['textField'] = new
+    old = s.get('ftext') if 'ftext' in s else (s.get('caption') if s.get('caption_in') == 'fstate' else None)
+    fields['ftextField'] = _baked_text(old, new)
+    entry.update(ftext=new, flattened=True)
+    return entry
+
+
 def _label(pg, c):
     return f"{pg['name']!r} {c['name'] or c['caption'] or c['type']}"
+
+
+def live_words(op):
+    """{index: words} an op writes as a live caption - each state's, by its
+    index, and the control's own as None - and not one Build bakes into the
+    art (`flattened`: a flattened button's, or a formatted caption's), which
+    verify_built reads off the artwork instead. What check() and
+    tests/verify_built.py hold to what GUI Designer cuts of a caption."""
+    out = {}
+    own = (op.get('fields') or {}).get('textField')
+    if isinstance(own, str):
+        out[None] = own
+    for ps in op.get('per_state') or []:
+        t = (ps.get('fields') or {}).get('textField')
+        if not ps.get('flattened') and isinstance(t, str):
+            out[ps['index']] = t
+    return out
 
 
 class Edits:
@@ -237,16 +316,18 @@ class Edits:
         caption, or are `names`d, are written at all.
         """
         states = c.get('states') or []
+        flat = bool(c.get('flatten'))
         op = {'page': pg['id'], 'control': c['obj_id'],
               'was': match if match is not None else c['caption'],
               'why': f'rename {match if match is not None else c["caption"]!r} -> {new!r}'}
         if c.get('caption_in') in (None, 'control') and not names:
             # No caption anywhere (an icon-only button), or it is on the
             # control. Set both: a button renders from its state, and a caption
-            # written only on the control builds blank.
+            # written only on the control builds blank - and a flattened one's
+            # state bakes from its ftextField, which _write_text writes too.
             op['fields'] = {'textField': new}
-            op['per_state'] = [{'index': i, 'fields': {'textField': new}}
-                               for i in range(len(states))]
+            op['per_state'] = [_write_text({'index': i, 'was': s['caption']} if flat else {'index': i},
+                                           s, new, flat) for i, s in enumerate(states)]
             return op
         per = []
         for i, s in enumerate(states):
@@ -254,15 +335,10 @@ class Edits:
                 continue
             if match is not None and (s['caption'] or '') != match:
                 continue
-            entry = {'index': i, 'was': s['caption']}
-            if s['caption_in'] == 'fstate':
-                # Formatted text carries tab/CRLF layout markers that are part
-                # of how it draws; the applier keeps the original's leading
-                # whitespace and replaces the words.
-                entry.update(ftext=new, flattened=True)
-            else:
-                entry['fields'] = {'textField': new}
-            per.append(entry)
+            # Each state where its own caption lives: a formatted one's tabs
+            # and line breaks are how it draws, and the field is written whole
+            # with them kept (_baked_text).
+            per.append(_write_text({'index': i, 'was': s['caption']}, s, new, flat))
         op['per_state'] = per
         return op
 
@@ -413,10 +489,11 @@ class Edits:
                 if colors:
                     entry['colors'] = colors
                 if 'text' in s:
-                    if src['caption_in'] == 'fstate':
-                        entry.update(ftext=s['text'], flattened=True, was=src['caption'])
-                    else:
-                        entry['fields']['textField'] = s['text']
+                    # Written as a rename writes it: a formatted or flattened
+                    # caption is baked from the field this state copies.
+                    if src['caption_in'] == 'fstate' or c.get('flatten'):
+                        entry['was'] = src['caption']
+                    _write_text(entry, src, s['text'], bool(c.get('flatten')))
                 per.append(entry)
                 looks.append({
                     'name': s['name'],
@@ -767,6 +844,10 @@ class Edits:
         """
         plan, errors = self.plan()
         warnings = []
+        # What check() says aloud and does not judge: a caption it could not
+        # measure (_caption_warnings).
+        self.notes = []
+        warnings += self._caption_warnings(plan)
 
         # A formatted-text caption is baked INTO the artwork at build time, and
         # its tab/CRLF scaffolding is hand-placed per line. Renaming one works -
@@ -776,7 +857,8 @@ class Edits:
         # perfectly; "Cameras" -> "Camera Control" comes out as "Camera" over
         # "Control" hanging off the left edge. Nothing in the file says so - the
         # model reads correctly and only the pixels are wrong, exactly like the
-        # flattenText trap.
+        # flattenText trap. A flattened button's caption is baked the same way
+        # (docs/gdl-format.md section 2), so it is warned of alike.
         for o in plan['controls']:
             said = set()        # once per control, not once per state
             for ps in o.get('per_state') or []:
@@ -789,11 +871,11 @@ class Edits:
                     continue
                 said.add((old, newt))
                 warnings.append(
-                    f'rename {old!r} -> {newt!r}: this caption is FORMATTED text baked '
-                    f'into the artwork with hand-placed line breaks. The new text is '
-                    f'longer, so it will wrap onto an unindented second line over the '
-                    f"icon. tests/verify_built.py looks for each line in the built art "
-                    f"and says if it wrapped.")
+                    f'rename {old!r} -> {newt!r}: this caption is baked into the artwork '
+                    f'(formatted or flattened text), its line breaks placed by hand. The '
+                    f'new text is longer, so it may wrap onto a second line its layout does '
+                    f"not indent - over the icon, where there is one. tests/verify_built.py "
+                    f"looks for each line in the built art and says if it wrapped.")
 
         # After the ops, does every control still fit its page? Build relocates
         # anything that does not to 0,0 - silently, with 0 errors reported - so
@@ -932,6 +1014,67 @@ class Edits:
                         f"{pg['name']}, but {c['name'] or c['type']} already has it")
         return plan, errors, warnings
 
+    def _caption_warnings(self, plan):
+        """A warning for each live caption an op writes (live_words) that GUI
+        Designer would cut in its control's box - trim, break mid-word, or
+        cut its ink off at the box (gdl.compose.caption_fit) - laid out as
+        the project's built layout.json has the control: its box (a
+        retarget's, where one moves it), and each state's face, size and
+        alignment, which no rename changes. A rename writes words into a box
+        sized for the old ones, and nothing else here measures them: the
+        field changes, and the panel shows 'Volum'. Notes, in self.notes, for
+        what is not measured - without Pillow, without a built payload, in a
+        face drawn here in a stand-in."""
+        ops = [(o, w) for o, w in ((o, live_words(o)) for o in plan['controls']) if w]
+        if not ops:
+            return []
+        try:
+            from . import compose
+        except ImportError:
+            self.notes.append(f'{len(ops)} edited caption(s) not measured for what GUI Designer would cut '
+                              'of them - that needs Pillow (gdl.compose); `pip install -r requirements.txt`')
+            return []
+        from .container import open_payload
+        try:
+            j = json.loads(open_payload(self.path).read('layout.json'))
+        except (KeyError, OSError, ValueError) as e:
+            self.notes.append(f'{len(ops)} edited caption(s) not measured for what GUI Designer would cut '
+                              f'of them - the project has no built layout to lay them out in ({e})')
+            return []
+        built = {(p['ID'], c.get('ID')): (p, c)
+                 for p in j['Pages'] + j['PopupPages'] for c in p.get('Controls') or []}
+        boxes = {}
+        for o in plan['controls']:
+            f = o.get('fields') or {}
+            if 'leftField' in f:
+                boxes[(o['page'], o['control'])] = [f['leftField'], f['topField'], f['widthField'],
+                                                    f['heightField']]
+        out = []
+        with compose.as_the_panel(self.path):
+            for o, words in ops:
+                pg, c = built.get((o['page'], o['control']), (None, None))
+                if c is None or c['__type'].split(':')[0] not in ('PBLabel', 'PBButton'):
+                    continue
+                if o.get('state_order') is not None:
+                    # A `states` op rebuilds the list, each state from the one
+                    # it is taken from.
+                    sts = c.get('States') or []
+                    c = dict(c, States=[sts[k] for k in o['state_order'] if k < len(sts)])
+                cuts, unmeasured, _ = compose.caption_cuts(c, words, boxes.get((o['page'], o['control'])))
+                where = f"{o['why'].split()[0]} {pg['Name']!r} {c.get('Name')!r}"
+                mine = set(words.values())
+                for state, text, why in unmeasured:
+                    if text in mine:
+                        self.notes.append(f"{where}{f' state {state!r}' if state else ''}: {text!r} not "
+                                          f'measured for what GUI Designer would cut of it - {why}')
+                for state, text, _, said, at in cuts:
+                    if text not in mine:
+                        continue
+                    out.append(f"{where}{f' state {state!r}' if state else ''}: {said}, at {at} - the new "
+                               "words do not fit the control's box as GUI Designer lays them out: give it "
+                               'room, or fewer words (tests/verify_built.py holds the build to it)')
+        return out
+
 
 def _summarise(plan):
     kinds = {}
@@ -955,6 +1098,8 @@ def main(argv):
         print(f'  warning ... and {len(warnings) - 20} more')
     for c in ed._unused_colors:
         print(f'  warning restyle: no control uses {c} - nothing to remap')
+    for n in ed.notes:
+        print('  note    ' + n)
     print(f'{len(plan["controls"])} control op(s), '
           f'{len(plan["project"])} project op(s): {_summarise(plan)}')
     print(f'{len(errors)} error(s), {len(warnings)} warning(s)')

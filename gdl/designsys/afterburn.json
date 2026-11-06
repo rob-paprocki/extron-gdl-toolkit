@@ -407,7 +407,7 @@
                    "caret-right-dark-gray", "rewind", "fast-forward", "pause", "stop", "next-chapter",
                    "previous-chapter"]
     },
-    "icons_note": "The kit's Icons/PNG, beside its Buttons/PNG (no file name is in both): 440x440 drawings of the template's icon font (Font/Extron - Afterburn 1a.ttf, whose glyphs `close`, `chevron_left`, `caret_up`, `plus` draw the same), each one file, named here by its stem - a caret in a gray and a dark-gray file, `caret-up-gray` and `caret-up-dark-gray`. The seeds draw them as that font's glyphs - seeds/Afterburn 1035.gdl's Close Help in #BABCCE, seeds/Afterburn 525.gdl's Help Back chevron and its Main page's Volume Up and Down carets, seeds/Afterburn 320.gdl's Doc Cam 1 More and Doc Cam 2 Back, and its Doc Cam 1 zoom minus and plus; the system draws the kit's drawing of each, fitted to its button, since the font carries no license field. Only these families are indexed, so the bundle carries a few dozen of the 657.",
+    "icons_note": "The kit's Icons/PNG, beside its Buttons/PNG (no file name is in both): 440x440 drawings of the template's icon font (Font/Extron - Afterburn 1a.ttf, whose glyphs `close`, `chevron_left`, `caret_up`, `plus` draw the same), each one file, named here by its stem - a caret in a gray and a dark-gray file, `caret-up-gray` and `caret-up-dark-gray`. The seeds draw them as that font's glyphs - seeds/Afterburn 1035.gdl's Close Help in #BABCCE, seeds/Afterburn 525.gdl's Help Back chevron and its Main page's Volume Up and Down carets, seeds/Afterburn 320.gdl's Doc Cam 1 More and Doc Cam 2 Back, and its Doc Cam 1 zoom minus and plus; a Button that names one draws the kit's drawing, fitted to it, and the system's own Close, Back, More and carets the font's glyphs (`glyph`), where the face is on the machine that built it - the font carries no license field, so the private system alone. Only these families are indexed, so the bundle carries a few dozen of the 657.",
     "icon_right": {"1224x344": 0.326},
     "icon_right_note": "How far across a 1224x344 `list` image its icon reaches: the icons' light pixels end at x 399 of 1224 at most - privacy the furthest, the median 366 - over the 278 files in the install's kit. The screen-up and screen-down arrows (from x 968) and the recording keys' play, stop, record, mark and pause glyphs (from 918) stand at the art's right, past any caption, and are left out. A region gives a `list` button's caption the leading spaces that start it 4 px clear of that reach, at the cell's own width and the panel's type, where the template counts a fixed 15 at its own 13 pt.",
     "switch_left": {"1224x344": 0.5204, "1224x464": 0.5727},
@@ -488,7 +488,7 @@
   },
   "iconography": {
     "icon_prop": "The kit draws each icon unselected and selected in every accent, with the selection line where the variant has one, so the button's states show themselves: state 0 unselected, the rest selected in the page's accent.",
-    "intro": "Afterburn shows state with icons, not with colored text. Every icon the kit has comes from Afterburn's own resource kit through a Button's `icon` - never draw one, and never color a caption red. The template's Close, Back, More, d-pad, transport, zoom, scroll and screen arrows are glyphs in its Extron-Afterburn icon font, which the design system does not carry. The kit draws most of them as images too, in Afterburn/Icons/PNG - Close's X, Back's and More's chevrons, the scroll and volume triangles (Carets), minus, plus, the More dots and most of the transport keys - and the system offers those drawings by their file's name (`kit.icons`) - `close`, `back`, `more`, `chevron-left` and `chevron-right`, the carets in their gray and dark gray (`caret-up-gray`, `caret-down-dark-gray`), `plus`, `minus`, `dot` and the transport keys - each fitted to its button: a Close is `variant=\"icon\" icon=\"close\"`.",
+    "intro": "Afterburn shows state with icons, not with colored text. Every icon the kit has comes from Afterburn's own resource kit through a Button's `icon` - never draw one, and never color a caption red. The template's Close, Back, More, d-pad, transport, zoom, scroll and screen arrows are glyphs in its Extron-Afterburn icon font, which the system's own chrome draws them in - a window's Close, a popup's and a 320 page's Back and More, a hub's Up and Down - read from the seeds when the system is built (the font carries no license field, so it is in the private system alone). For a Button of yours, the kit draws most of them as images too, in Afterburn/Icons/PNG - Close's X, Back's and More's chevrons, the scroll and volume triangles (Carets), minus, plus, the More dots and most of the transport keys - and the system offers those drawings by their file's name (`kit.icons`) - `close`, `back`, `more`, `chevron-left` and `chevron-right`, the carets in their gray and dark gray (`caret-up-gray`, `caret-down-dark-gray`), `plus`, `minus`, `dot` and the transport keys - each fitted to its button: a Close is `variant=\"icon\" icon=\"close\"`.",
     "rules": [
       "**Anatomy** (the guide's p.4): a `text-secondary` (#BABCCE) stroke and primary elements, `text-subtle` (#767789) secondary elements, an `icon-ground` (#414459) background inside the icon, and - selected - the supporting element in the accent. The kit already draws all of this, for every accent scheme.",
       "**Which button**: a stand-alone control (Help, Power, mute) is `variant=\"icon\"`, 64x64. Sources and cameras are `source`, a row of squares with the label under the icon. Options down the left rail are `list`, a selection line at the left when chosen - Make Call, End Call and Privacy among them. On and off is `toggle`. An important action with a label is `outlined` with an `icon` (Make Call, Swap).",
@@ -566,8 +566,8 @@
       "**The right rail (x 1099-1280) holds the volume and the system controls**, its column centred on x 1193: a `Volume` heading level with the left rail's first heading, the vertical slider (Afterburn draws it 50x395 at 1168,202; the RightRail draws it at the 53 px touch minimum the toolkit checks, and a Rail 54 wide) with Mute at its foot, and Help and Power side by side below, Help at 1125,706 and Power at 1197,706 (Start has neither). The slot at the top, y 30, is the page's own: Start Sharing (outlined, 144x64 at 1121,30) on a video-conference page, Window 1 and Window 2 (82x64) on a multi-window page, empty on the others.",
       "The 1230 Series splits its squircle with a vertical divider: a Preview half at the left (the preview tabs, the video and Send to Display) and, at the right, the source tabs and the popup region the Layout gives. A full-page grid of controls is a working panel but not an Afterburn one."
     ],
-    "popups": "On Afterburn's working page one source's controls are a standard popup of its own group in that region (the template's group 1; `Sources` here, the `PopupRegion`'s `group`), swapped in by the source buttons while the page stays; a page flip is for a mode of the room (a call) and for Start to the hub. A modal popup (`kind=\"modal\"`) shows the page beneath, dimmed: Help, the confirmations and a set of settings opened from a page - Screen, Lighting, Audio and Display Settings, Camera Select, Window Layout, Recording Controls, presets - are modals on the 1020, 1220, 1230, 1520 and 1720 Series, as the templates draw them there; the 520 and 535 draw them as standard popups filling main, each with a Back chevron, and the 300M as pages. A modal's own card is the template's squircle art, a full-canvas image under its title: a window with a `role` (`settings`, `help`, `confirm`, `wait`) draws it itself, as the page's own background art for its panel and theme (`<name> Background`), with the template's title, Close, message and answers where its frame has them; for a modal without a role, which a Page cannot give that art, put a `Panel` inside as the nearest card the system draws - the squircle's own 916x752 at 183,24, in the Panel's default look - and its words and buttons on it, where the Layout's windows give them. A card with a title (Help, a set of settings) has a Close at its top right: `nav` back to the page that opens it, or, where more than one page opens it, no `nav` and `does=\"Closes this popup.\"` - the program hides it and the page beneath shows again; the template's Close is a glyph of its icon font, which the design system does not carry, and the kit draws it as an image too (Afterburn/Icons/PNG's close), which this system offers: a Close is `variant=\"icon\" icon=\"close\"`, the X fitted to its button. A confirmation has neither title nor Close, only its question and two outlined buttons, the affirmative first (Power Down, Cancel; Accept, Decline), and a wait (Starting Up, Powering Down) is one sentence with no buttons.",
-    "rail_note": "Afterburn's own right column is not one stack, which a Rail is: its Volume heading stands level with the left rail's first heading, the slider runs under it, Mute overlaps the slider's foot, an empty band follows, and Help and Power sit side by side in one row. A Rail stacks them on every panel, the one the canvas is drawn on too: put the column's controls in it in the template's order - the Volume heading, the Slider, Mute, Help and Power - with no positions, and it stands them down the right rail, Help and Power one over the other where the template sets them side by side (the README's Differences). Where a panel's seed has no slider, Extron arranges the volume its own way: the 520 and 535 stand Up and Down together at the top of a column with Mute at its foot, beside a full-height level (on Main the level is a separate Volume Level popup, 50x480 at 637,0), with triangle glyphs from its icon font, which the design system does not carry - the kit draws those triangles as images too (Afterburn/Icons/PNG's Carets), which this system offers by name (`caret-up-gray`, `caret-down-gray`), though a Rail's level still steps with `-` and `+`; only the 300M uses minus and plus, in a row with Mute under a horizontal level. A Rail builds the level between Down and Up buttons that say `-` and `+`. A region page is not a Rail: its RightRail and Footer stand the column as the template does - the Volume heading level with the left rail's first, Mute at the slider's foot, Help and Power side by side in the foot row - and a hub's region page draws its menu bar's Up and Down with the kit's carets. The 320 draws no volume, Help or Power on screen: its footer is the page's name with More and a Back chevron, and its volume a modal Volume Level; the 300 Portrait's footer holds Settings, Help and Power with the volume in the main region, and the 300 Landscape's right column holds Settings, Help and Power. A Rail across the 320's foot is the toolkit's, not the template's."
+    "popups": "On Afterburn's working page one source's controls are a standard popup of its own group in that region (the template's group 1; `Sources` here, the `PopupRegion`'s `group`), swapped in by the source buttons while the page stays; a page flip is for a mode of the room (a call) and for Start to the hub. A modal popup (`kind=\"modal\"`) shows the page beneath, dimmed: Help, the confirmations and a set of settings opened from a page - Screen, Lighting, Audio and Display Settings, Camera Select, Window Layout, Recording Controls, presets - are modals on the 1020, 1220, 1230, 1520 and 1720 Series, as the templates draw them there; the 520 and 535 draw them as standard popups filling main, each with a Back chevron, and the 300M as pages. A modal's own card is the template's squircle art, a full-canvas image under its title: a window with a `role` (`settings`, `help`, `confirm`, `wait`) draws it itself, as the page's own background art for its panel and theme (`<name> Background`), with the template's title, Close, message and answers where its frame has them; for a modal without a role, which a Page cannot give that art, put a `Panel` inside as the nearest card the system draws - the squircle's own 916x752 at 183,24, in the Panel's default look - and its words and buttons on it, where the Layout's windows give them. A card with a title (Help, a set of settings) has a Close at its top right: `nav` back to the page that opens it, or, where more than one page opens it, no `nav` and `does=\"Closes this popup.\"` - the program hides it and the page beneath shows again; the template's Close is a glyph of its icon font, which a window with a `role` draws in that face where the machine that built the system carries it, and the kit draws it as an image too (Afterburn/Icons/PNG's close), which this system offers: a Close of yours is `variant=\"icon\" icon=\"close\"`, the X fitted to its button. A confirmation has neither title nor Close, only its question and two outlined buttons, the affirmative first (Power Down, Cancel; Accept, Decline), and a wait (Starting Up, Powering Down) is one sentence with no buttons.",
+    "rail_note": "Afterburn's own right column is not one stack, which a Rail is: its Volume heading stands level with the left rail's first heading, the slider runs under it, Mute overlaps the slider's foot, an empty band follows, and Help and Power sit side by side in one row. A Rail stacks them on every panel, the one the canvas is drawn on too: put the column's controls in it in the template's order - the Volume heading, the Slider, Mute, Help and Power - with no positions, and it stands them down the right rail, Help and Power one over the other where the template sets them side by side (the README's Differences). Where a panel's seed has no slider, Extron arranges the volume its own way: the 520 and 535 stand Up and Down together at the top of a column with Mute at its foot, beside a full-height level (on Main the level is a separate Volume Level popup, 50x480 at 637,0), with triangle glyphs from its icon font, which a hub's region page draws in that face where the machine that built the system carries it - the kit draws those triangles as images too (Afterburn/Icons/PNG's Carets), which this system offers by name (`caret-up-gray`, `caret-down-gray`), though a Rail's level still steps with `-` and `+`; only the 300M uses minus and plus, in a row with Mute under a horizontal level. A Rail builds the level between Down and Up buttons that say `-` and `+`. A region page is not a Rail: its RightRail and Footer stand the column as the template does - the Volume heading level with the left rail's first, Mute at the slider's foot, Help and Power side by side in the foot row - and a hub's region page draws its menu bar's Up and Down with the icon font's carets, else the kit's. The 320 draws no volume, Help or Power on screen: its footer is the page's name with More and a Back chevron, and its volume a modal Volume Level; the 300 Portrait's footer holds Settings, Help and Power with the volume in the main region, and the 300 Landscape's right column holds Settings, Help and Power. A Rail across the 320's foot is the toolkit's, not the template's."
   },
   "regions": {
     "_source": "What the region components draw by default on Afterburn (docs/superpowers/specs/2026-10-26-afterburn-regions-design.md), off seeds/Afterburn 1035.gdl's Main SD as its built layout.json draws it: its sources `source` tiles over the Divider; its left rail's first group `toggle`s (Display Power, Display Mute) and its later groups `list` launchers (Screen, Lighting, Audio), each group's heading a white 16 pt Label set left (TextAlignment 4) at the group's left; the Volume heading centred over its column (TextAlignment 3); Mute, Help and Power the kit's 440x440 icons on no fill, Mute (Main Volume Mute, 8021) its speaker-volume glyph in the scheme's secondary accent while live (its Level 3 state) and its speaker-mute-1 glyph in the primary while muted (its Muted state, the first); the foot row's mode launcher (Video Conference) and Preview outlined, 13 pt; the date set left and the time right in #BABCCE (`text-secondary`), 16 pt - 'MMMM d' and 'h:mm tt' - and on the 725 one date and time centred, 'MMMM d, yyyy h:mm:ss tt'. `rail` is a LeftRail's first group's, `launcher` its later groups', `mode` the Footer's mode slot's, `preview` its Preview's, `clocks` each clock the panel's template draws, by its name there.",
@@ -605,7 +605,7 @@
     },
     "select": {"tile": {"variant": "source"}, "title": {"color": "text", "align": "center"}},
     "group": {"previous": {"variant": "icon", "icon": "chevron-left"}, "next": {"variant": "icon", "icon": "chevron-right"}, "back": {"variant": "icon", "icon": "chevron-left"}},
-    "_hub": "What the 525's region page, its source popups and its windows draw in its hub's grammar, off seeds/Afterburn 525.gdl's Main, Select Source, Settings, Display Settings, Lighting Settings, Help and a source's popup (its built layout.json): the menu bar's Volume heading 16 pt bold and centred, its Up and Down outlined 66x66 keys with the icon font's carets (here the kit's caret-up-gray and caret-down-gray), Mute outlined with its speaker-mute-2 art, Help, Settings and Power the kit's 440x440 icons; every popup's Back the icon font's chevron at 0,13 (here the kit's chevron-left) and its title after it, 21 pt white set left; Select a Source's tiles its own 756x688 art (extracted, `kit.extract`; in orange alone, so another accent or a family it lacks takes the source tile), each caption a 13 pt label inside the tile's foot; Settings a column of its rail's `list` launchers at 52,83 every 58 px, Lighting Settings two columns 262 px apart (123 and 385); Display Settings its members down the column at 123,145 under a 16 pt bold #BABCCE heading in capitals at 133,83 (DISPLAY 1), opened from Settings' Display (8214); Help a popup in main, its message 68,147; the Volume Level strip's level filled in the scheme's accent-2 (`level.bar`), as the seed's #626ACF is its orange scheme's.",
+    "_hub": "What the 525's region page, its source popups and its windows draw in its hub's grammar, off seeds/Afterburn 525.gdl's Main, Select Source, Settings, Display Settings, Lighting Settings, Help and a source's popup (its built layout.json): the menu bar's Volume heading 16 pt bold and centred, its Up and Down outlined 66x66 keys with the icon font's carets, #BABCCE (Main Volume Up U+E94E and Main Volume Down U+E91D, 50 pt; 75 on the 535 - `glyph`, where the face is on the machine, else the kit's caret-up-gray and caret-down-gray), Mute outlined with its speaker-mute-2 art, Help, Settings and Power the kit's 440x440 icons; every popup's Back the icon font's chevron at 0,13 (Help Back U+E97B, 70 pt; 95 on the 535 - else the kit's chevron-left) and its title after it, 21 pt white set left; Select a Source's tiles its own 756x688 art (extracted, `kit.extract`; in orange alone, so another accent or a family it lacks takes the source tile), each caption a 13 pt label inside the tile's foot; Settings a column of its rail's `list` launchers at 52,83 every 58 px, Lighting Settings two columns 262 px apart (123 and 385); Display Settings its members down the column at 123,145 under a 16 pt bold #BABCCE heading in capitals at 133,83 (DISPLAY 1), opened from Settings' Display (8214); Help a popup in main, its message 68,147; the Volume Level strip's level filled in the scheme's accent-2 (`level.bar`), as the seed's #626ACF is its orange scheme's.",
     "hub": {
       "level": {"bar": "accent-2"},
       "heading": {"type": "body", "bold": true, "align": "center", "color": "text"},
@@ -615,17 +615,17 @@
       "message": {"align": "center", "color": "text"},
       "tile": {"variant": "tile"},
       "menu": {"variant": "icon"},
-      "up": {"variant": "outlined", "icon": "caret-up-gray"},
-      "down": {"variant": "outlined", "icon": "caret-down-gray"},
+      "up": {"variant": "outlined", "icon": "caret-up-gray", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E94E", "pt": {"Afterburn 520 Series": 50, "Afterburn 535 Series": 75}}},
+      "down": {"variant": "outlined", "icon": "caret-down-gray", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E91D", "pt": {"Afterburn 520 Series": 50, "Afterburn 535 Series": 75}}},
       "mute": {"variant": "outlined", "icon": "speaker-mute-2", "text": "", "states": [{"name": "Off"}, {"name": "On"}]},
       "help": {"variant": "icon", "icon": "help"},
       "settings": {"variant": "icon", "icon": "settings"},
       "power": {"variant": "icon", "icon": "power"},
-      "close": {"variant": "icon", "icon": "chevron-left"},
-      "options": {"layout": "column", "step": 262, "title": {"size": 21, "align": "left", "color": "text"}, "close": {"variant": "icon", "icon": "chevron-left"}, "glyphs": {"video": "video-conference-1", "conference": "video-conference-1", "call": "video-conference-1", "teams": "microsoft-teams", "light": "lights", "audio": "audio", "camera": "camera", "screen": "screen", "display": "display", "record": "record", "blind": "blinds"}},
+      "close": {"variant": "icon", "icon": "chevron-left", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E97B", "pt": {"Afterburn 520 Series": 70, "Afterburn 535 Series": 95}}},
+      "options": {"layout": "column", "step": 262, "title": {"size": 21, "align": "left", "color": "text"}, "close": {"variant": "icon", "icon": "chevron-left", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E97B", "pt": {"Afterburn 520 Series": 70, "Afterburn 535 Series": 95}}}, "glyphs": {"video": "video-conference-1", "conference": "video-conference-1", "call": "video-conference-1", "teams": "microsoft-teams", "light": "lights", "audio": "audio", "camera": "camera", "screen": "screen", "display": "display", "record": "record", "blind": "blinds"}},
       "display": {"opener": {"variant": "list", "icon": "display", "id": 8214}, "heading": [133, 83, 152, 50], "column": [123, 145, 178, 50], "pitch": 58, "label": {"type": "body-strong", "color": "text-secondary", "align": "left"}}
     },
-    "_page": "What the 320's region page, its source pages and its windows draw, off seeds/Afterburn 320.gdl's Main, Doc Cam 1, Doc Cam 2, Laptop, Confirmation and Powering Down (its built layout.json): a strip along the foot with no ground, the page's title in it 17.5 pt white set left, its More the icon font's chevron (here the kit's chevron-right) at the strip's right with a 'More' label beside it set right, its Back the chevron left at the strip's left with the title moved past it; the column headings 10 pt bold #BABCCE capitals centred over outlined keys 108x45; a source with no controls one label of three lines, 12 pt white centred; the question and the wait on the page's own ground, their words 12 pt white centred, Power Down and Cancel outlined.",
+    "_page": "What the 320's region page, its source pages and its windows draw, off seeds/Afterburn 320.gdl's Main, Doc Cam 1, Doc Cam 2, Laptop, Confirmation and Powering Down (its built layout.json): a strip along the foot with no ground, the page's title in it 17.5 pt white set left, its More the icon font's chevron, #BABCCE (DVD More U+E97C, 70 pt; `glyph`, where the face is on the machine, else the kit's chevron-right) at the strip's right with a 'More' label beside it set right, its Back the chevron left (DVD Back U+E97B, 70 pt) at the strip's left with the title moved past it; the column headings 10 pt bold #BABCCE capitals centred over outlined keys 108x45; a source with no controls one label of three lines, 12 pt white centred; the question and the wait on the page's own ground, their words 12 pt white centred, Power Down and Cancel outlined.",
     "page": {
       "strip": {"align": "left", "color": "text"},
       "more_label": {"align": "right", "color": "text"},
@@ -633,13 +633,34 @@
       "heading_caps": true,
       "empty": {"align": "center", "color": "text"},
       "button": {"variant": "outlined"},
-      "more": {"variant": "icon", "icon": "chevron-right"},
-      "back": {"variant": "icon", "icon": "chevron-left"},
+      "more": {"variant": "icon", "icon": "chevron-right", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E97C", "pt": 70}},
+      "back": {"variant": "icon", "icon": "chevron-left", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E97B", "pt": 70}},
       "message": {"align": "center", "color": "text"}
     },
-    "_center": "What a source popup (role=\"source\") and a window draw, off seeds/Afterburn 1035.gdl's Laptop and Doc Cam popups, Help, Confirmation, Powering Down and Lighting Settings: a source's title centred at the popup's top, white, 21 pt, over no well and no fill, the labels over its keys 16 pt bold #BABCCE capitals (ZOOM, FOCUS), and with nothing in it the template's two-line empty state centred, 16 pt; a window's card the page's own background art over the whole screen (its `Background` image), its title centred at the squircle's top, 21 pt, the labels over a group in it 16 pt bold #BABCCE capitals (MIC, PROGRAM), its Close the icon font's X at the squircle's top right - drawn as the kit's 440x440 close on no fill, pressed round on `pressed` - its message centred, 16 pt (the question 21), Power Down and Cancel outlined. Those sizes are the 1035's: each panel's own template's are its frame's `pt`.",
+    "_menu": "What the 300's region page, its source pages and its windows draw, off seeds/Afterburn 300M Portrait.gdl's and Landscape.gdl's Main, Computer, Settings, Display Settings, Help and Confirmation: every page on the theme's art, its menu bar the art's own - on Main the kit's settings, help and power on no fill (`icon`), elsewhere Back, the icon font's chevron, #BABCCE (Computer's Page Back U+E97B, 70 pt; `glyph`, where the face is on the machine, else the kit's chevron-left), with the page's title beside it, 21 pt white set left (16 on the Landscape, at its column's foot); Main's Select a Source and its Volume heading 16 pt white centred, its sources the kit's 756x756 tiles (`source`), its volume's Mute outlined with the kit's speaker-mute-2 and its Down and Up outlined with the icon font's minus and plus, #BABCCE (Main Volume Down U+E912 and Main Volume Up U+E939, 60 pt; else the kit's minus and plus, its drawings of them), its level filled in the scheme's secondary accent (`level.bar`: its seed's #626ACF is the orange scheme's); a settings window's headings 16 pt white capitals (DISPLAY 1) over outlined keys; a source with no controls one label, 13 pt white centred; the question and the wait on the art, Power Down and Cancel outlined. More is ours - the template pages nothing - in the bar's last slot, the chevron right: the 320's More (U+E97C) at Back's 70 pt.",
+    "menu": {
+      "title": {"align": "center", "color": "text"},
+      "strip": {"align": "left", "color": "text"},
+      "heading": {"align": "center", "color": "text"},
+      "heading_caps": true,
+      "empty": {"align": "center", "color": "text"},
+      "button": {"variant": "outlined"},
+      "source": {"variant": "source"},
+      "settings": {"variant": "icon", "icon": "settings"},
+      "help": {"variant": "icon", "icon": "help"},
+      "power": {"variant": "icon", "icon": "power"},
+      "more": {"variant": "icon", "icon": "chevron-right", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E97C", "pt": 70}},
+      "back": {"variant": "icon", "icon": "chevron-left", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E97B", "pt": 70}},
+      "mute": {"variant": "outlined", "icon": "speaker-mute-2", "text": ""},
+      "up": {"variant": "outlined", "icon": "plus", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E939", "pt": 60}},
+      "down": {"variant": "outlined", "icon": "minus", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E912", "pt": 60}},
+      "volume_heading": {"align": "center", "color": "text"},
+      "level": {"bar": "accent-2"},
+      "message": {"align": "center", "color": "text"}
+    },
+    "_center": "What a source popup (role=\"source\") and a window draw, off seeds/Afterburn 1035.gdl's Laptop and Doc Cam popups, Help, Confirmation, Powering Down and Lighting Settings: a source's title centred at the popup's top, white, 21 pt, over no well and no fill, the labels over its keys 16 pt bold #BABCCE capitals (ZOOM, FOCUS), and with nothing in it the template's two-line empty state centred, 16 pt; a window's card the page's own background art over the whole screen (its `Background` image), its title centred at the squircle's top, 21 pt, the labels over a group in it 16 pt bold #BABCCE capitals (MIC, PROGRAM), its Close the icon font's X at the squircle's top right, #BABCCE (Close Help U+E95C, 30 pt; 25 on the 725, 36 on the 1535 - `glyph`, where the face is on the machine, else the kit's 440x440 close) on no fill, pressed round on `pressed` - its message centred, 16 pt (the question 21), Power Down and Cancel outlined. Those sizes are the 1035's: each panel's own template's are its frame's `pt`.",
     "source": {"title": {"align": "center", "color": "text"}, "empty": {"align": "center", "color": "text"}, "label": {"type": "body-strong", "color": "text-secondary"}, "button": {"variant": "outlined"}},
-    "window": {"title": {"align": "center", "color": "text"}, "message": {"align": "center", "color": "text"}, "label": {"type": "body-strong", "color": "text-secondary"}, "close": {"variant": "icon", "icon": "close"}, "power": {"variant": "outlined"}, "cancel": {"variant": "outlined"}, "button": {"variant": "outlined"}, "accept": {"variant": "outlined"}, "decline": {"variant": "outlined"}}
+    "window": {"title": {"align": "center", "color": "text"}, "message": {"align": "center", "color": "text"}, "label": {"type": "body-strong", "color": "text-secondary"}, "close": {"variant": "icon", "icon": "close", "color": "text-secondary", "glyph": {"face": "Extron-Afterburn", "char": "U+E95C", "pt": {"Afterburn 1220 Series": 30, "Afterburn 1020 Series": 25, "Afterburn 1520 Series": 30, "Afterburn 1720 Series": 36, "Afterburn 1230 Series": 30, "_": 30}}}, "power": {"variant": "outlined"}, "cancel": {"variant": "outlined"}, "button": {"variant": "outlined"}, "accept": {"variant": "outlined"}, "decline": {"variant": "outlined"}}
   },
   "writing": {
     "_source": "The template's own words, off seeds/Afterburn 1035.gdl's Laptop and PC popups, Confirmation, Incoming Call, Starting Up, Powering Down and Help, and the grammar digest of every Afterburn page: the empty state of a source with no controls ({name} the popup's title), the power-down question and an incoming call's, the waits, Help's message and title and the buttons' words; and off seeds/Afterburn 320.gdl's Laptop, the 320's empty state, its first sentence a paragraph apart in one label (`page_empty`). Its region components say them where a region page's Center or a window by `role` draws them; on a page without regions they are the words a designer writes.",
@@ -708,7 +729,7 @@
         "blue-slate": {"image": "6400x4000_bg3-blueslate.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg3-blueslate.png"},
         "grape": {"image": "6400x4000_bg4-grape.png", "file": "Afterburn/Backgrounds/6400x4000/TLP 1025 & 1220/6400x4000_bg4-grape.png"}
       },
-      "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl", "TLP1035M-Portrait": "seeds/Afterburn 1035 Portrait.gdl", "TLP1025M": "seeds/Afterburn 1025.gdl", "TLP1025T": "seeds/Afterburn TLP1025T.gdl", "TLP1220MG": "seeds/Afterburn 1220.gdl", "TLP1220TG": "seeds/Afterburn TLP1220TG.gdl", "TLP1225MG": "seeds/Afterburn 1225.gdl", "TLP1225TG": "seeds/Afterburn TLP1225TG.gdl", "TLP835C": "seeds/Afterburn TLP835C.gdl", "TLP835T": "seeds/Afterburn 835.gdl"},
+      "seeds": {"TLP1035M": "seeds/Afterburn 1035.gdl", "TLP1035T": "seeds/Afterburn 1035.gdl", "TLP835M": "seeds/Afterburn 835 (Project1).gdl", "TLP1035M-Portrait": "seeds/Afterburn 1035 Portrait.gdl", "TLP1025M": "seeds/Afterburn 1025.gdl", "TLP1025T": "seeds/Afterburn TLP1025T.gdl", "TLP1220MG": "seeds/Afterburn 1220.gdl", "TLP1220TG": "seeds/Afterburn TLP1220TG.gdl", "TLP1225MG": "seeds/Afterburn 1225.gdl", "TLP1225TG": "seeds/Afterburn TLP1225TG.gdl", "TLP835C": "seeds/Afterburn TLP835C.gdl", "TLP835T": "seeds/Afterburn 835.gdl", "TLC1026M": "seeds/Afterburn 1026.gdl", "TLP835M-Portrait": "seeds/Afterburn 835 Portrait.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -1316,7 +1337,7 @@
         "blue-slate": {"image": "5120x3000_bg3-blueslate.png", "file": "Afterburn/Backgrounds/5120x3000/TLP 725/5120x3000_bg3-blueslate.png"},
         "grape": {"image": "5120x3000_bg4-grape.png", "file": "Afterburn/Backgrounds/5120x3000/TLP 725/5120x3000_bg4-grape.png"}
       },
-      "seeds": {"TLP725T": "seeds/Afterburn 725.gdl", "TLP1020M": "seeds/Afterburn 1020.gdl", "TLP1020T": "seeds/Afterburn TLP1020T.gdl", "TLP725C": "seeds/Afterburn TLP725C.gdl", "TLP725M": "seeds/Afterburn TLP725M.gdl"},
+      "seeds": {"TLP725T": "seeds/Afterburn 725.gdl", "TLP1020M": "seeds/Afterburn 1020.gdl", "TLP1020T": "seeds/Afterburn TLP1020T.gdl", "TLP725C": "seeds/Afterburn TLP725C.gdl", "TLP725M": "seeds/Afterburn TLP725M.gdl", "TLC726M": "seeds/Afterburn 726.gdl", "TLP1022M": "seeds/Afterburn 1022.gdl", "TLP1022T": "seeds/Afterburn TLP1022T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -1897,7 +1918,7 @@
         "blue-slate": {"image": "6830x3840_bg3-blurslate.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg3-blurslate.png"},
         "grape": {"image": "6830x3840_bg4-grape.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg4-grape.png"}
       },
-      "seeds": {"TLP1525MG": "seeds/Afterburn 1525.gdl", "TLP1525TG": "seeds/Afterburn TLP1525TG.gdl"},
+      "seeds": {"TLP1525MG": "seeds/Afterburn 1525.gdl", "TLP1525TG": "seeds/Afterburn TLP1525TG.gdl", "TLP1520MG": "seeds/Afterburn 1520.gdl", "TLP1520TG": "seeds/Afterburn TLP1520TG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -2494,7 +2515,7 @@
         "blue-slate": {"image": "6830x3840_bg3-blurslate.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg3-blurslate.png"},
         "grape": {"image": "6830x3840_bg4-grape.png", "file": "Afterburn/Backgrounds/6830x3840/6830x3840_bg4-grape.png"}
       },
-      "seeds": {"TLP1535M": "seeds/Afterburn 1535.gdl", "TLP1535T": "seeds/Afterburn TLP1535T.gdl"},
+      "seeds": {"TLP1535M": "seeds/Afterburn 1535.gdl", "TLP1535T": "seeds/Afterburn TLP1535T.gdl", "TLP1720MG": "seeds/Afterburn 1720.gdl", "TLP1720TG": "seeds/Afterburn TLP1720TG.gdl", "TLP1725MG": "seeds/Afterburn 1725.gdl", "TLP1725TG": "seeds/Afterburn TLP1725TG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main SD",
@@ -3814,7 +3835,7 @@
         "blue-slate": {"image": "4000x2400_bg3-blueslate_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg3-blueslate_main.png"},
         "grape": {"image": "4000x2400_bg4-grape_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg4-grape_main.png"}
       },
-      "seeds": {"TLP525T": "seeds/Afterburn 525.gdl", "TLP525C": "seeds/Afterburn TLP525C.gdl", "TLP525M": "seeds/Afterburn TLP525M.gdl"},
+      "seeds": {"TLP525T": "seeds/Afterburn 525.gdl", "TLP525C": "seeds/Afterburn TLP525C.gdl", "TLP525M": "seeds/Afterburn TLP525M.gdl", "TLP520M": "seeds/Afterburn 520.gdl", "TLC521M": "seeds/Afterburn 521.gdl", "TLC526M": "seeds/Afterburn 526.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main",
@@ -4052,7 +4073,7 @@
         "blue-slate": {"image": "4000x2400_bg3-blueslate_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg3-blueslate_main.png"},
         "grape": {"image": "4000x2400_bg4-grape_main.png", "file": "Afterburn/Backgrounds/4000x2400/TLP 525/4000x2400_bg4-grape_main.png"}
       },
-      "seeds": {"TLP535T": "seeds/Afterburn 535.gdl"},
+      "seeds": {"TLP535T": "seeds/Afterburn 535.gdl", "TLP535M": "seeds/Afterburn TLP535M.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": true},
       "frame": {
         "page": "Main",
@@ -4328,7 +4349,7 @@
           "pitch": [141, 54],
           "empty": [35, 44, 250, 102],
           "empty_page": "Laptop",
-          "pt": {"title": 17.5, "heading": 10, "empty": 12},
+          "pt": {"title": 17.5, "heading": 10, "key": 10, "digit": 11, "empty": 12},
           "items": []
         },
         "home": {
@@ -4383,7 +4404,7 @@
             "title": null,
             "close": null,
             "art": false,
-            "pt": {"message": 12},
+            "pt": {"message": 12, "answer": 10},
             "message": [35, 49, 250, 60],
             "lines": 2,
             "buttons": [
@@ -4475,7 +4496,17 @@
             }
           ]
         },
-        "center": {"rect": [0, 0, 320, 392], "surfaces": [], "empty": [0, 79, 320, 138], "items": []},
+        "center": {
+          "rect": [0, 0, 320, 392],
+          "surfaces": [],
+          "empty": [0, 79, 320, 138],
+          "row": [[13, 77, 178, 50]],
+          "headings": [[27, 15, 152, 50]],
+          "pitch": [null, 58],
+          "grid_page": "Display Settings",
+          "pt": {"title": 21, "heading": 16, "key": 13, "empty": 13},
+          "items": []
+        },
         "home": {
           "page": "Main",
           "top": null,
@@ -4490,7 +4521,68 @@
               {"role": "power", "name": "Power Down", "kind": "button", "rect": [231, 402, 66, 66], "id": 8022}
             ]
           },
-          "center": {"rect": [0, 0, 320, 392], "surfaces": [], "items": []}
+          "center": {
+            "rect": [0, 0, 320, 392],
+            "surfaces": [],
+            "items": [
+              {
+                "role": "title",
+                "name": "Select Source Label",
+                "kind": "label",
+                "rect": [25, 15, 269, 50],
+                "id": 6072,
+                "text": "Select a Source",
+                "pt": 16
+              },
+              {"role": "source", "name": "Main Computer", "kind": "button", "rect": [40, 77, 100, 100], "id": 8065},
+              {"role": "source", "name": "Main Video", "kind": "button", "rect": [179, 77, 100, 100], "id": 8067},
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [20, 170, 280, 15]},
+              {
+                "role": "heading",
+                "name": "Main Volume Label",
+                "kind": "label",
+                "rect": [25, 197, 269, 50],
+                "id": 4052,
+                "text": "Volume",
+                "pt": 16
+              },
+              {
+                "role": "level",
+                "name": "Main Volume Level",
+                "kind": "level",
+                "rect": [35, 258, 249, 15],
+                "id": 8023
+              },
+              {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [35, 288, 66, 66], "id": 8021},
+              {
+                "role": "volume-down",
+                "name": "Main Volume Down",
+                "kind": "button",
+                "rect": [137, 288, 66, 66],
+                "id": 8121
+              },
+              {
+                "role": "volume-up",
+                "name": "Main Volume Up",
+                "kind": "button",
+                "rect": [218, 288, 66, 66],
+                "id": 8120
+              }
+            ]
+          },
+          "volume": {
+            "popup": null,
+            "rect": null,
+            "level": {
+              "rect": [35, 258, 249, 15],
+              "id": 8023,
+              "track": "#242634FF",
+              "border": "Afterburn - 14 Radius 0 Thick",
+              "bar": "#626ACFFF",
+              "art": null
+            },
+            "labels": []
+          }
         },
         "windows": {
           "help": {
@@ -4564,7 +4656,7 @@
             }
           ]
         },
-        "ids": {"help": 8117, "power": 8022, "settings": 8040},
+        "ids": {"help": 8117, "power": 8022, "mute": 8021, "volume-up": 8120, "volume-down": 8121, "settings": 8040},
         "note": "Each source is a page of its own. The title sits in the row along the foot, with Back. Main holds Settings, Help and Power Down in the row along the foot; a source page holds Back there instead."
       }
     },
@@ -4607,7 +4699,17 @@
         },
         "right": null,
         "bottom": null,
-        "center": {"rect": [88, 0, 392, 320], "surfaces": [], "empty": [120, 91, 320, 138], "items": []},
+        "center": {
+          "rect": [88, 0, 392, 320],
+          "surfaces": [],
+          "empty": [120, 91, 320, 138],
+          "row": [[103, 87, 178, 50], [302, 87, 178, 50]],
+          "headings": [[107, 15, 152, 50], [306, 15, 152, 50]],
+          "pitch": [199, 58],
+          "grid_page": "Display Settings",
+          "pt": {"title": 16, "heading": 16, "key": 13, "empty": 13},
+          "items": []
+        },
         "home": {
           "page": "Main",
           "top": null,
@@ -4622,7 +4724,68 @@
             ]
           },
           "bottom": null,
-          "center": {"rect": [0, 0, 392, 320], "surfaces": [], "items": []}
+          "center": {
+            "rect": [0, 0, 392, 320],
+            "surfaces": [],
+            "items": [
+              {
+                "role": "title",
+                "name": "Select Source Label",
+                "kind": "label",
+                "rect": [69, 11, 269, 50],
+                "id": 6072,
+                "text": "Select a Source",
+                "pt": 16
+              },
+              {"role": "source", "name": "Main Computer", "kind": "button", "rect": [81, 51, 91, 90], "id": 8065},
+              {"role": "source", "name": "Main Video", "kind": "button", "rect": [220, 51, 91, 90], "id": 8067},
+              {"role": "divider", "name": "Divider", "kind": "line", "rect": [64, 136, 280, 15]},
+              {
+                "role": "heading",
+                "name": "Main Volume Label",
+                "kind": "label",
+                "rect": [59, 153, 269, 50],
+                "id": 4052,
+                "text": "Volume",
+                "pt": 16
+              },
+              {
+                "role": "level",
+                "name": "Main Volume Level",
+                "kind": "level",
+                "rect": [69, 204, 249, 15],
+                "id": 8023
+              },
+              {"role": "mute", "name": "Main Volume Mute", "kind": "button", "rect": [69, 234, 66, 66], "id": 8021},
+              {
+                "role": "volume-down",
+                "name": "Main Volume Down",
+                "kind": "button",
+                "rect": [171, 234, 66, 66],
+                "id": 8121
+              },
+              {
+                "role": "volume-up",
+                "name": "Main Volume Up",
+                "kind": "button",
+                "rect": [252, 234, 66, 66],
+                "id": 8120
+              }
+            ]
+          },
+          "volume": {
+            "popup": null,
+            "rect": null,
+            "level": {
+              "rect": [69, 204, 249, 15],
+              "id": 8023,
+              "track": "#242634FF",
+              "border": "Afterburn - 14 Radius 0 Thick",
+              "bar": "#626ACFFF",
+              "art": null
+            },
+            "labels": []
+          }
         },
         "windows": {
           "help": {
@@ -4734,7 +4897,7 @@
             "text": "You are about to start recording.\n\nPlease let attendees know they will be recorded."
           }
         },
-        "ids": {"help": 8117, "power": 8022, "settings": 8040},
+        "ids": {"help": 8117, "power": 8022, "mute": 8021, "volume-up": 8120, "volume-down": 8121, "settings": 8040},
         "note": "Each source is a page of its own. The title sits in the column at the left, with Back. Main holds Settings, Help and Power Down in the column at the right."
       }
     }

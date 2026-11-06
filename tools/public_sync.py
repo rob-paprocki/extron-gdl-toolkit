@@ -34,14 +34,17 @@ ProjectGCP streams, and any zip or gzip member inside one whatever it is named -
 member by member, as UTF-8 and as UTF-16 at either byte alignment; one that does not open is
 refused - but for a .gdl the old pack() wrote, whose swapped data signatures are put back
 where every CRC then agrees (_old_pack). Any other binary must be on BINARY_OK with the hash of the bytes a person looked at:
-no text check reads an image. Paths, commit messages and tag messages are checked too, and a
-private pattern is matched across a line break, since a hard wrap splits a two-word name.
+no text check reads an image. A font is held to an allowlist instead, FONT_OK, whatever BINARY_OK says - as a file of
+any font format, and encoded in a text (fonts_in_text; FONT_OK's comment says exactly what is read and what is not):
+the design systems' bundles carry Extron's icon faces, which have no license grant. Paths, commit messages and tag
+messages are checked too, and a private pattern is matched across a line break, since a hard wrap splits a two-word name.
 Nothing private is ever echoed: a hit is reported by its kind and place, masked.
 
-Standard library only (with this repository's gdl.nrbf and gdl.container); needs git on PATH.
+Standard library only (with this repository's gdl.nrbf, gdl.container and gdl.sfnt); needs git on PATH.
 """
 import argparse
 import base64
+import binascii
 import fnmatch
 import gzip
 import hashlib
@@ -59,6 +62,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 from gdl import nrbf  # noqa: E402
 from gdl.container import open_gdl_bytes  # noqa: E402
+from gdl.sfnt import MAGIC as FONT_MAGIC  # noqa: E402
 
 # ---- what stays private -------------------------------------------------------------------
 # Repo-relative paths, fnmatch-style, matched in any case: on Windows a folder takes whatever
@@ -70,6 +74,10 @@ EXCLUDE = [
     "private/",                        # settings file, temp fonts, denylist (also git-ignored)
     "archive/claude/sessions/",        # whole working conversations
     "archive/gui-designer/",           # where the settings file was once tracked
+    # archive/gdlwork/ is deleted from the archive (docs/history.md), and what it held back is
+    # kept here so a copy restored from its history never publishes. Folder by folder, not the
+    # whole folder: its other files are in published commits, which `check --history` reads,
+    # and an excluded path there is refused.
     "archive/gdlwork/Boardroom/", "archive/gdlwork/Huddle/", "archive/gdlwork/auto/",
     "archive/gdlwork/auto2/", "archive/gdlwork/color/", "archive/gdlwork/ex1/",
     "archive/gdlwork/mp/", "archive/gdlwork/mp2/", "archive/gdlwork/out/",
@@ -122,15 +130,10 @@ BINARY_OK = {
     "docs/panel-preview.png": ("88b6876a004cb3e4dd1274b9be03459443d5da076695502cf2c67704be4824f9",
                                "c2b9ef77efce72609e7b3da95d7d44b72d3e40e32738d133d41dc420a951836e"),
     "docs/generated-built.png": "fcc3fec8148a474f9f3cf634bbfa06d1bcf8775b36e098a6332744ab61a84f7a",
-    # Apache-2.0
-    "gdl/fonts/opensans-light.ttf": "cf5f5184c1441a1660aa52526328e9d5c2793e77b6d8d3a3ad654bdb07ab8424",
-    "gdl/fonts/opensans-regular.ttf": "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee",
+    # (a font is not pinned here, whatever it is: FONT_OK, below)
     # the format probes' horizontal slider rails and thumb, cropped from its build (2.1)
     "tests/data/probe-hslider-128/crops.png": "cbefd4ed48c1b7294497afa6568b327a839fdda867834d71e2443b7eb9ff2620",
     # the synthetic fixture's own art, drawn by its make_synthetic.py: shapes and bars, no words (2.5)
-    # Google Fonts' own Latin subset of Open Sans 3.003, SIL OFL 1.1 (gdl/fonts/README.md):
-    # a valid WOFF2 of 23 TrueType tables, its licence beside it.
-    "gdl/fonts/opensans-latin.woff2": "d8e4fe0452aa2076429a9bb5d8757d00a994dd95986cf950e9a1a371b9a072a0",
     "tests/data/synthetic/art/backdrop.png": "38aac86b194b6ac2b3e23ce28516f6fe38ef9afa4da6d9f8b7d73e09e32be915",
     "tests/data/synthetic/art/glyph-on.png": "26a6f6280cf640162f8ba60e00ea83600ce7035e89d548c5055530343d0080b6",
     "tests/data/synthetic/art/glyph.png": "ebf04eb898fb48d0deb9ed2a2912c024e220739c687e7738b32717e9a6cd6780",
@@ -168,12 +171,77 @@ BINARY_OK = {
     "tests/data/synthetic/snapshots/Individual/Type Sizes_Id9205.png": "6a148828917ef6f143b9223fe1c1f71717fec86a7b0e765cd8daa66ee65999b7",
     "tests/data/synthetic/snapshots/Individual/Wide Grid_Id9222.png": "81a61d42ac9bd42f3e71576f8a29a9fbbf55aefc63fab9d344055f7cefb6f77d",
     "tests/data/synthetic/snapshots/Individual/Wrapping_Id9208.png": "db66d6be3d6925519d141e4153d85edbb9eb5b424c47621673736c29cb1a746b",
-    # panels rendered from seeds
+    # panels rendered from seeds, deleted with archive/gdlwork/ and pinned still: older
+    # published commits hold them, and `check --history` reads those
     "archive/gdlwork/CleanRoom/room.png": "11a3598393d1b6394dffc25d08afac96c51b254cf8fbc38e04e38426a4f05f85",
     "archive/gdlwork/clean/preview.png": "c9235802522b3898b6b0b6a89eab4a141eafa3ca0503365423e6dd6f5bd90eeb",
     "archive/gdlwork/seed2/all-pages.png": "46040a76aa5a470f58ce206c36d126576d5d031df4b7a0d58f965d5cf8fdcd91",
 }
-CONTAINERS = (".gdl", ".glt", ".tgz4")    # and any file named *ProjectGCP
+CONTAINERS = (".gdl", ".glt", ".tgz4")    # and any file named *ProjectGCP that is a graph (is_graph)
+
+# ---- fonts: an allowlist -------------------------------------------------------------------
+# A font publishes only where the SHA-256 of its bytes is here, each one looked at by a person -
+# whatever it is named, and whatever BINARY_OK says. Extron's faces (Extron-Lift,
+# Extron-Shockwave, Extron GUI Configurator, Extron-Afterburn, the Video Conference faces) never
+# are: they carry no license grant (gdl/fonts/README.md), and the design systems embed them in
+# every bundle they build (gdl.designsys.glyph_faces). An allowlist, not a list of what to refuse:
+# a face's name table says only what its maker wrote there, can be rewritten, and cannot be read
+# at all here in a WOFF2 (Brotli) or a collection.
+#
+# What is checked, and refused unless its bytes are pinned here:
+#   - A file that is a font: one whose first four bytes are a font's (gdl.sfnt.MAGIC - TrueType,
+#     OpenType/CFF, Apple's 'true', a TrueType collection, WOFF 1.0, WOFF 2.0), whatever its
+#     name or extension, in the tree or in Git LFS (is_font). A project graph begins as TrueType
+#     does and is not one (is_graph): it is read for words, as a container is - and a file named
+#     *ProjectGCP is read so only where its bytes are a graph, so a face of that name is a font.
+#     Only a published path is checked: one EXCLUDE holds back never publishes, and the build
+#     leaves it out.
+#   - A font encoded in a text file, a commit message or a tag message, as a run of base64
+#     (standard or URL-safe: - and _ read as + and /), base32 (upper case, as RFC 4648 writes
+#     it), hex (plain, or byte by byte, each with or without \x, 0x or % before it, commas or
+#     spaces between) or decimal bytes (0, 1, 0, 0, ... - commas between) that begins with a
+#     font's first four bytes and decodes to _FONT_MIN bytes or more.
+#     The text is normalised first, keeping every character's place so a hit names its line:
+#     escaped slashes (\/) are unescaped, and the joints between pieces of one run are removed -
+#     spaces, tabs and single line breaks (a blank line ends a run), a literal \n, \r or \t, a
+#     backslash line continuation, and a closing quote and an opening one with a + or nothing
+#     between ("..." + "...", '...' '...'). So a run wrapped at any width, or cut into strings of
+#     any length and concatenated, is read whole, and its first bytes may be cut too. A run is
+#     read from wherever it begins or resumes after a joint, so a font that starts a later line
+#     or a later string of the run is found as well.
+#   - A reviewed face passes only as exactly its own bytes: one with anything run on after it is
+#     refused. So is a BinaryFormatter stream encoded in a text - a ProjectGCP, GUI Designer's
+#     licence settings - which starts as TrueType does; no text here holds one, and a project
+#     travels as its .gdl, which is read as a container.
+#
+# What is not checked:
+#   - A compressed or encrypted payload - zlib, gzip or Brotli, then any encoding: its bytes no
+#     longer start as a font's do, and nothing short of inflating every run could find it. That
+#     is why nothing generated is committed: a design system's bundle is built into a folder git
+#     ignores or one outside the repository (gdl.designsys refuses any other), and published
+#     only to the owner's private design system.
+#   - Other encodings: base85 and Ascii85, uuencode, quoted-printable, base32 in lower case or
+#     in its hex alphabet, decimal bytes with no commas, and a string literal of escapes mixed
+#     with characters (Python's bytes repr, a JSON-encoded binary string); a hex dump with
+#     offsets or a character column beside its bytes.
+#   - A font that does not begin its run (other bytes encoded before it in one piece), or whose
+#     first bytes are split by something other than the joints above.
+#   - A font inside another binary - a zip, a tar, appended to an image - which only BINARY_OK's
+#     look sees; and a face inside a project or template (.gdl, .glt, .tgz4), which is that
+#     project's own resource and publishes with it, as each seed's do.
+#   - A file made to begin as a BinaryFormatter stream does and then be a font (is_graph).
+FONT_OK = {
+    # Google Fonts' Latin subset of Open Sans 3.003, SIL OFL 1.1, its licence beside it: one
+    # variable font, which every design system's bundle carries as base64 (gdl.designsys.face_js)
+    "d8e4fe0452aa2076429a9bb5d8757d00a994dd95986cf950e9a1a371b9a072a0": "gdl/fonts/opensans-latin.woff2",
+    # Apache-2.0, as its own name table declares
+    "cf5f5184c1441a1660aa52526328e9d5c2793e77b6d8d3a3ad654bdb07ab8424": "gdl/fonts/opensans-light.ttf",
+    "e64e508b2aa2880f907e470c4550980ec4c0694d103a43f36150ac3f93189bee": "gdl/fonts/opensans-regular.ttf",
+}
+# Smaller than any face that draws a glyph: an sfnt's table directory for the tables a renderer
+# needs is more than this before any table, and a WOFF2's header alone is 48 bytes. The smallest
+# Extron face is 3,736 bytes.
+_FONT_MIN = 64
 # Forward slashes: these are named in messages, and os.path.join(repo, ...) accepts them.
 DENYLIST_FILE = "private/public-sync-denylist.txt"
 SETTINGS_FILE = "private/gui-designer/user-config/user.config"
@@ -486,11 +554,155 @@ def _mask(s):
 _GAP = re.compile(r"[\s#*>/|;\"'`-]+")
 
 
-def check_text(where, text, rules):
+def font_ok(data):
+    """Whether bytes are a font that may publish: not a font at all (FONT_MAGIC), or one whose
+    bytes are pinned in FONT_OK."""
+    return bytes(data[:4]) not in FONT_MAGIC or hashlib.sha256(data).hexdigest() in FONT_OK
+
+
+# A BinaryFormatter stream - a ProjectGCP - opens with MS-NRBF's SerializationHeaderRecord: record
+# type 0, a root id, a header id, then major version 1 and minor version 0. Its first four bytes are
+# TrueType's (00 01 00 00, the record type and root id 1), so by those alone every project graph is
+# a font: the eight ProjectGCP files under archive/job-9fe2c865/ read as eight unreviewed fonts. The
+# version that follows is no font's: in an sfnt's table directory it puts a first table tagged with
+# four NULs, which no face has.
+_GRAPH_VERSION = b"\x01\x00\x00\x00\x00\x00\x00\x00"
+
+
+def is_graph(data):
+    """Whether bytes begin as a BinaryFormatter stream does - a ProjectGCP."""
+    return len(data) >= 17 and data[0] == 0 and bytes(data[9:17]) == _GRAPH_VERSION
+
+
+def is_font(data):
+    """Whether bytes are a font file, as the check reads one: a font's first four bytes
+    (FONT_MAGIC), and not a project graph's (is_graph)."""
+    return bytes(data[:4]) in FONT_MAGIC and not is_graph(data)
+
+
+# The font scan's reading of a text (FONT_OK), done on its UTF-8 bytes: every joint between two
+# pieces of a run becomes a NUL - which no text holds, since one makes a file binary (is_binary) -
+# and every other byte keeps its place, so a hit's offset is its offset in the text. A non-ASCII
+# character is in no alphabet here, so it ends a run as punctuation does.
+_WHITESPACE = bytes.maketrans(b" \t\n\r\f\v", b"\0" * 6)
+_COMMA = bytes.maketrans(b",", b"\0")
+_URL_SAFE = bytes.maketrans(b"-_", b"+/")
+_BLANK_LINE = re.compile(rb"\n(?=[ \t\r\f\v]*\n)")       # its first break ends a run: \x01, no joint
+_JOINTS = [(re.compile(rb"\\[nrt]"), b"\0\0"),          # a literal \n, \r or \t
+           (re.compile(rb"\\(?=\r?\n)"), b"\0")]        # a backslash line continuation
+_QUOTE_JOINT = re.compile(rb"[\"'`]\x00*\+?\x00*[\"'`]")  # "..." + "...", "..." "..." (spaces are NULs)
+# Byte by byte hex: \x00, %00 and 0x00 read as 00, and a comma between bytes as a joint. Each
+# pattern starts with a literal, so the regex engine skips to it - a lookbehind first would have it
+# try every offset of every text.
+_HEX_PREFIXES = [(re.compile(rb"\\x(?=[0-9A-Fa-f]{2})"), b"\0\0"),
+                 (re.compile(rb"%(?=[0-9A-Fa-f]{2})"), b"\0"),
+                 (re.compile(rb"0(?<![0-9A-Za-z].)[xX](?=[0-9A-Fa-f])"), b"\0\0")]
+
+
+def _nuls(m):
+    return b"\0" * len(m.group(0))
+
+
+def _joined(data):
+    data = _BLANK_LINE.sub(b"\x01", data.replace(b"\\/", b"\0/"))
+    for rx, nuls in _JOINTS:
+        data = rx.sub(nuls, data)
+    return _QUOTE_JOINT.sub(_nuls, data.translate(_WHITESPACE))
+
+
+def _hexed(joined):
+    for rx, nuls in _HEX_PREFIXES:
+        joined = rx.sub(nuls, joined)
+    return joined.translate(_COMMA)
+
+
+def _starts(words, before, fold=False):
+    """A pattern for any of `words` where a run begins or resumes after a joint: no byte of
+    `before` (a character class) just ahead of it, and a joint allowed between any two of its
+    characters. The test of the byte ahead follows the first character, so the pattern starts
+    with a literal; `fold` matches either case."""
+    def ch(c):
+        return "[%s%s]" % (c.lower(), c.upper()) if fold and c.isalpha() else re.escape(c)
+    return "(?:%s)" % "|".join(ch(w[0]) + "(?<![%s].)" % before + "".join(r"\x00*" + ch(c) for c in w[1:])
+                               for w in words)
+
+
+def _b64(run):
+    run = run.translate(_URL_SAFE)
+    run = run[:len(run) - (len(run) % 4 == 1)]
+    return base64.b64decode(run + b"=" * (-len(run) % 4))
+
+
+def _b32(run):
+    run = run.upper()
+    while len(run) % 8 in (1, 3, 6):          # no whole byte ends there
+        run = run[:-1]
+    return base64.b32decode(run + b"=" * (-len(run) % 8))
+
+
+def _decimal(run):
+    out = bytearray()
+    for n in re.findall(rb"\d+", run):
+        if int(n) > 255:
+            break
+        out.append(int(n))
+    return bytes(out)
+
+
+_B64_CHARS = r"A-Za-z0-9+/_\-"
+# (name, which reading of the text it runs over, pattern, decode). A pattern matches a run from a
+# font's first four bytes, as its encoding writes them, to the run's end; the NULs are dropped
+# before decoding. Base64 writes 30 of the 32 bits in 5 characters and base32 in 6, so the decoded
+# run is held to all four bytes too (font_ok).
+_FONT_RUNS = [(name, reading, re.compile(pattern.encode("ascii")), decode)
+              for name, reading, pattern, decode in [
+    ("base64", "joined", _starts([base64.b64encode(m).decode()[:5] for m in FONT_MAGIC], _B64_CHARS)
+     + r"[%s\x00]*" % _B64_CHARS, _b64),
+    # Upper case, as RFC 4648 writes it: folded, its first letters would be every a and o of prose.
+    ("base32", "joined", _starts([base64.b32encode(m).decode()[:6] for m in FONT_MAGIC], _B64_CHARS)
+     + r"[A-Z2-7\x00]*", _b32),
+    ("hex", "hex", _starts([m.hex() for m in FONT_MAGIC], "0-9A-Za-z", True) + r"[0-9A-Fa-f\x00]*",
+     lambda run: binascii.unhexlify(run[:len(run) & ~1])),
+    ("decimal bytes", "joined", "(?:%s)(?!\\d)(?:\\x00*,\\x00*\\d{1,3}(?!\\d))*" % "|".join(
+        str(m[0]) + r"(?<![\d.].{%d})" % len(str(m[0])) + "".join(r"\x00*,\x00*%d" % b for b in m[1:])
+        for m in FONT_MAGIC), _decimal),
+]]
+_FONT_HITS = {}       # blob sha -> its hits, so check --history reads a blob once however often it recurs
+
+
+def fonts_in_text(text, key=None):
+    """(line, encoding) of each font encoded in a text (str or UTF-8 bytes) that FONT_OK does not
+    pin. `key`, a blob's sha, keeps the answer for the next commit that holds the same blob."""
+    if key is not None and key in _FONT_HITS:
+        return _FONT_HITS[key]
+    data = text.encode("utf-8") if isinstance(text, str) else text
+    joined = _joined(data)
+    readings = {"joined": joined}
+    hits = []
+    for name, reading, rx, decode in _FONT_RUNS:
+        if reading not in readings:
+            readings[reading] = _hexed(joined)
+        for m in rx.finditer(readings[reading]):
+            try:
+                font = decode(m.group(0).replace(b"\0", b""))
+            except ValueError:            # binascii.Error is one: a run that does not decode
+                continue
+            if len(font) >= _FONT_MIN and not font_ok(font):
+                hit = (data.count(b"\n", 0, m.start()) + 1, name)
+                if hit not in hits:
+                    hits.append(hit)
+    if key is not None:
+        _FONT_HITS[key] = hits
+    return hits
+
+
+def check_text(where, text, rules, key=None):
     """Problems in one text: the leak patterns and the private ones, line by line, and the
-    private ones again over each pair of lines, where a wrapped name is whole. A private hit is
-    reported by its kind alone - never any part of what matched."""
-    problems = []
+    private ones again over each pair of lines, where a wrapped name is whole; and any font
+    encoded in it that FONT_OK does not pin (fonts_in_text). A private hit is reported by its kind
+    alone - never any part of what matched; a font by its line and its encoding."""
+    problems = [(where, lineno, "font encoded as %s in a text, not reviewed (FONT_OK; Extron's "
+                 "faces never are)" % name, "") for lineno, name in fonts_in_text(text, key)]
     lines = text.splitlines()
     for lineno, line in enumerate(lines, 1):
         for kind, rx in LEAKS:
@@ -547,7 +759,10 @@ def check_tree(git, treeish, rules):
                 problems.append((shown, 0, "LFS content not in the local LFS store (git lfs pull)", ""))
                 continue
             data = content
-        if path.endswith(CONTAINERS) or path.endswith("ProjectGCP"):
+        # A file named as a project graph is read as one only where its bytes are one: a font
+        # so named was read for words and published, whatever FONT_OK said.
+        graph = os.path.basename(path).endswith("ProjectGCP") and is_graph(data)
+        if path.endswith(CONTAINERS) or graph:
             for where, inner in members(path, data):
                 if where != path:
                     problems += check_path(where[len(path):], rules)
@@ -556,13 +771,20 @@ def check_tree(git, treeish, rules):
                 else:
                     problems += check_bytes(rules.shown(where), inner, rules)
         elif is_binary(data):
+            # A font is binary whatever its format: every one holds a NUL in its first 16 bytes
+            # (an sfnt's version or table count, a WOFF's reserved field), so none reads as text.
             want = BINARY_OK.get(path)
-            if want is None:
+            if is_font(data):
+                # By its bytes alone, whatever BINARY_OK says or it is named (FONT_OK).
+                if not font_ok(data):
+                    problems.append((shown, 0, "font not reviewed (FONT_OK; Extron's faces never "
+                                     "are), whatever BINARY_OK says", ""))
+            elif want is None:
                 problems.append((shown, 0, "binary file not reviewed (BINARY_OK)", ""))
             elif hashlib.sha256(data).hexdigest() not in ((want,) if isinstance(want, str) else want):
                 problems.append((shown, 0, "binary changed since it was reviewed (re-pin in BINARY_OK)", ""))
         else:
-            problems += check_text(shown, data.decode("utf-8"), rules)
+            problems += check_text(shown, data.decode("utf-8"), rules, key=sha)
     return problems
 
 

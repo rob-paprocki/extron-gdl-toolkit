@@ -77,15 +77,22 @@ function Set-GdlStateOps {
             continue
         }
         $st = $states[$i]
+        # A baked caption - formatted text, or any caption of a flattened
+        # button, which Build bakes from ftextField alone - comes as
+        # fields.ftextField, the field whole: gdl.edit kept its layout (the
+        # tabs, spaces and line breaks are how it draws) and put the words in
+        # it, so it is written as it is, beside textField where the plan
+        # writes that too.
         if ($so.fields) {
             foreach ($f in $so.fields.PSObject.Properties) {
                 Set-GdlFieldIfPresent $st $f.Name $f.Value | Out-Null
             }
         }
-        if ($null -ne $so.ftext) {
-            # Formatted text keeps the original's leading layout markers - the
-            # tabs and CRLFs are how it draws, not decoration - so splice the
-            # new wording into the old scaffolding rather than replacing it.
+        $whole = $so.fields -and ($so.fields.PSObject.Properties.Name -contains 'ftextField')
+        if ($null -ne $so.ftext -and -not $whole) {
+            # A plan from before gdl.edit wrote the field whole carries the
+            # words alone: splice them into the old field's leading layout
+            # rather than drop it.
             $old = [string](Get-GdlField $st 'ftextField')
             $lead = ''
             if ($old -match '^([\t\r\n ]*)') { $lead = $Matches[1] }

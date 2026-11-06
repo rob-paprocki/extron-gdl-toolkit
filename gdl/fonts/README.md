@@ -37,9 +37,9 @@ rights reserved), the client's Extron-Afterburn under another file name
 `extron_guic_video_conference_1.ttf` (Extron, no license field) and
 `crestron_general.ttf` (an unedited font template's "Typeface © (your
 company). 2011"). Nothing needs them: no template, example or test names
-Forma or Crestron General - only builds in `archive/gdlwork/` made with the
-client's project do - and a spec that names a face no seed carries is refused
-before it builds (`gdl.spec donors`). `gdl.fonts.FILES`
+Forma or Crestron General - only builds made with the client's project as
+the donor did, and they went with it - and a spec that names a face no seed
+carries is refused before it builds (`gdl.spec donors`). `gdl.fonts.FILES`
 still maps Forma to its file, so a checkout that recovered it before keeps
 drawing it; one that did not draws it in a stand-in and says so.
 
@@ -53,8 +53,34 @@ measured in it from the first (`gdl.designsys.face_js`, `docs/claude-design.md`
 §2). The OFL lets it be bundled with software provided each copy carries the
 copyright and the license: `LICENSE-OpenSans-OFL.txt` is that text, from the
 Open Sans project, and `face_js` writes it above the bytes in every bundle.
-It is not the face a build draws - that is the seed's Open Sans 1.10, the
-Apache file above - and the renderer never reads it.
+The file is one variable font whose weight axis runs 300 to 800, so the same
+bytes are the systems' Open Sans Light too: `face_js` adds them at 300, 400
+and 700, and a caption the system sets Light (`font.light`) is Open Sans Light
+in its spec, which a build draws in the seed's own Light, the Apache
+`opensans-light.ttf` above. It is not the face a build draws - that is the
+seed's Open Sans 1.10 - and the renderer never reads it.
+
+## Extron's icon faces in the design systems
+
+The design systems draw the glyphs their templates set in Extron's icon faces
+- Extron-Lift, Extron-Shockwave, Extron GUI Configurator, Extron-Afterburn and
+the Video Conference faces (`docs/claude-design.md` §2) - in those faces. None
+carries a license grant, so none is tracked or recovered for them: each is
+read when a bundle is built (`gdl.designsys.glyph_faces`) out of a seed
+(`seed_face`, the build a panel is built in), else the copy recovered here,
+else the template's `Font/` folder in GUI Designer's install or the copy
+`GDL_EXTRON_RESOURCES` names, and goes into that bundle alone - the owner's
+private design system. A bundle built with `art=False` (the translator's
+tests) names the faces and carries none of their bytes. Nothing built from
+them goes into git: `python -m gdl.designsys build` refuses a folder git would
+track, and `tools/public_sync.py` publishes a font only where its bytes are
+pinned in `FONT_OK` - the three Open Sans files here - as a file of any font
+format, whatever `BINARY_OK` says, or encoded in a text file or a commit
+message (base64, base32, hex or decimal bytes, however wrapped or cut into
+strings). `FONT_OK`'s comment says exactly what it reads and what it does not:
+a compressed or encrypted payload among the second. A machine with neither
+the seeds nor the install builds a system whose looks draw what they did
+before the faces were carried: the kit's art, or the words.
 
 ## What the ignore does and does not do
 

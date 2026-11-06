@@ -84,6 +84,26 @@ class TestGlyphNameRules(unittest.TestCase):
         self.assertEqual(Advances(face([(0xE900, None)], post=3)).glyph_names(), {})
 
 
+class TestGlyphBounds(unittest.TestCase):
+    """A glyph's outline box, out of `glyf` (Advances.bounds), in the Open
+    Sans Light the repo carries - each checked against fontTools' reading of
+    the same file."""
+
+    def setUp(self):
+        self.face = Advances(os.path.join(os.path.dirname(HERE), 'gdl', 'fonts', 'opensans-light.ttf'))
+
+    def test_a_descender_and_an_ascender(self):
+        self.assertEqual(self.face.bounds('y'), (0, -492, 940, 1087))
+        self.assertEqual(self.face.bounds('l'), (182, 0, 281, 1556))
+
+    def test_a_space_draws_nothing_and_an_unmapped_character_its_notdef(self):
+        self.assertIsNone(self.face.bounds(' '))
+        self.assertEqual(self.face.bounds('\ue000'), (193, 0, 1034, 1462))
+
+    def test_a_face_without_glyf_has_none(self):
+        self.assertIsNone(Advances(face([(0x41, 'A')])).bounds('A'))
+
+
 class TestExtronAfterburn(unittest.TestCase):
     """Extron-Afterburn names its icons; the other Extron icon faces in the
     seeds name theirs uniE900, or not at all."""

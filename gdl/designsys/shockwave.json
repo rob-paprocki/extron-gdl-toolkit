@@ -244,20 +244,22 @@
     "_call": "What a call page (role=\"call\"), its dialer (role=\"dialer\") and the incoming call's question (topic=\"call\") draw, off seeds/Shockwave 1035.gdl's Main VC, VTC Dialer and Incoming Call: Call the green pill (960x440 green, lit with `go`), End Call the red and Privacy the yellow, lit with `alert` and `caution`; Share Content the seed's own 120x75 art with its words in it (712x440_share-content_nsel, lit 712x440_stop-sharing_sel, `share`), which no kit carries and `python -m gdl.designsys extract shockwave` takes from the seed; the dialer's digits the kit's dialpad art on its 440x440 square, Call and Flash the green and blue pills (lit with `go` and `text-secondary`) with their words past the glyph by the gap the template leaves, Contacts and Delete its 504x440 keys with theirs under it, Keyboard its 712x440 one, the number on white, the entry's own paint; the question's Accept Call and Ignore Call the kit's round call and end-call pills (1248x440 r_call_green, r_end-call_red), their words past the glyph by the gap it leaves. Shockwave's bar templates draw no Main Select Source.",
     "call": {"call": {"variant": "pill", "icon": "green", "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "end-call": {"variant": "pill", "icon": "red", "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}, "privacy": {"variant": "pill", "icon": "yellow", "states": [{"name": "Off"}, {"name": "On", "color": "caution"}]}},
     "share": {"variant": "share"},
-    "dialer": {"key": {"variant": "square", "icon": "dialpad_{key}", "text": ""}, "call": {"variant": "pill", "icon": "call_green", "__caption": "indent"}, "flash": {"variant": "pill", "icon": "flash_blue", "__caption": "indent"}, "contacts": {"variant": "key", "icon": "contacts-b_gray", "__caption": "below", "__breaks": 2}, "keyboard": {"variant": "button", "icon": "keyboard_gray", "text": ""}, "delete": {"variant": "key", "icon": "delete-b_gray", "__caption": "below", "__breaks": 1}, "entry": {"color": "ink", "align": "left"}},
+    "dialer": {"key": {"variant": "square", "icon": "dialpad_{key}", "text": ""}, "star": {"variant": "square", "icon": "dialpad_{key}", "text": "", "glyph": {"face": "Extron GUIC Video Conference 1a", "char": "U+0028", "pt": 26}}, "call": {"variant": "pill", "icon": "call_green", "__caption": "indent"}, "flash": {"variant": "pill", "icon": "flash_blue", "__caption": "indent"}, "contacts": {"variant": "key", "icon": "contacts-b_gray", "__caption": "below", "__breaks": 2}, "keyboard": {"variant": "button", "icon": "keyboard_gray", "text": ""}, "delete": {"variant": "key", "icon": "delete-b_gray", "__caption": "below", "__breaks": 1}, "entry": {"color": "ink", "align": "left"}},
     "_center": "What a source popup (role=\"source\") and a window draw (docs/claude-design.md section 4), off the 1035's and 725's seeds' Laptop, Doc Cam, Help, Confirmation, Powering Down and Lighting Control: the source's title Open Sans 40 white, centred across the popup's top; 'Please connect your laptop.' 22 pt white in the upper half of the empty state's box over a 16 pt Disconnected status centred at its foot, 30% of it each way; the popup's headings 18 pt white and its keys the 504x440 gray `key`; a window's title 40 pt #474747 (`text-secondary`) centred, its message 26 pt #474747, Close the kit's dark X (`close`), Power Down a green_round `wide` pill lighting in `go` and Cancel a red_round one lighting in `alert`, captioned 18 pt. Those sizes are the 1035's: a source popup and a window set what they say at each panel's own template's size, its frame's `pt` (Help's message 20 pt, the 725's titles 30).",
     "source": {"title": {"size": 40, "align": "center", "color": "text"}, "empty": {"size": 22, "align": "center", "color": "text"}, "status": {"size": 16, "align": "center", "color": "text"}, "label": {"color": "text"}, "button": {"variant": "key"}},
     "window": {"title": {"size": 40, "align": "center", "color": "text-secondary"}, "message": {"size": 26, "align": "center", "color": "text-secondary"}, "label": {"color": "text-secondary"}, "close": {"variant": "close"}, "power": {"variant": "wide", "icon": "green_round", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "cancel": {"variant": "wide", "icon": "red_round", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}, "accept": {"variant": "wide", "icon": "r_call_green", "__caption": "indent", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "go"}]}, "decline": {"variant": "wide", "icon": "r_end-call_red", "__caption": "indent", "size": 18, "states": [{"name": "Off"}, {"name": "On", "color": "alert"}]}},
-    "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Up, Down, Mute, Display Control and More on one art, the kit's 712x440 gray (`button`: the seed's image 15, 92x54, lit 712x440 gray sel), Mute lit red (the seed's image 17, 712x440 red sel); Power the kit's 440x440 power_red, a square power glyph in a crimson ring (image 18); every hub Close the white X at rest and the dark one pressed (images 44 and 45: white_close, black_close), where the card's Close is the other way about; Help the kit's help_yellow (image 34); the options' glyphs the kit's lightbulb_white and speaker_white. Chosen by eye: Up and Down Open Sans's Λ and V for the template's Extron-Shockwave chevrons, which its kit has no art for; a tile the source tab's glyph art on the `well` wash in a rounded `pressed` ring, for the template's own translucent rounded tile. Every standard popup stands on the page's photo, stretched to its 702x480 (`popup.photo`: the 525's 12 and the 535's, on '800x480 bkgd.png'). Known differences: its tile's glyph is the tab art's, about a third the size of the template's line art; the menu's words, set at 12 pt under the 525's 18 pt floor, grow their cells; the Volume Level strip's glyphs are Extron GUI Configurator characters and are not drawn.",
-    "hub": {"popup": {"photo": true}, "title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "device", "fill": "well", "border": "rounded", "stroke": "pressed", "glyph": "_white"}, "menu": {"variant": "button"}, "up": {"icon": null, "text": "Λ"}, "down": {"icon": null, "text": "V"}, "mute": {"variant": "button", "icon": "gray", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "icon": "red", "color": "alert"}]}, "power": {"variant": "square", "icon": "power_red", "text": ""}, "settings": {"variant": "button"}, "display": {"variant": "button"}, "close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}, "help": {"variant": "square", "icon": "help_yellow"}, "window": {"close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "source", "fill": "well", "border": "rounded", "stroke": "pressed"}, "blank": {"variant": "tile"}, "glyphs": {"light": "lightbulb_white", "audio": "speaker_white"}}},
+    "_hub": "What a hub's region page, source popups and windows draw (the 525's and 535's Main Page, Laptop, Display Control, More Options, Volume Level and Help). Measured off the 525 seed: titles Open Sans 30 white (the frame's pt) on a black 45% strip (`header`, #00000073) across the popup's top; a tile's name 14 pt white under it; the menu bar's Up, Down, Mute, Display Control and More on one art, the kit's 712x440 gray (`button`: the seed's image 15, 92x54, lit 712x440 gray sel), Mute lit red (the seed's image 17, 712x440 red sel); Power the kit's 440x440 power_red, a square power glyph in a crimson ring (image 18); every hub Close the white X at rest and the dark one pressed (images 44 and 45: white_close, black_close), where the card's Close is the other way about; Help the kit's help_yellow (image 34); the options' glyphs the kit's lightbulb_white and speaker_white. Up and Down the template's Extron-Shockwave chevrons (U+00BF and U+00B3, 26 pt on the 525, 30 on the 535) and the Volume Level strip's Volume Up Label and Volume Down Label its Extron GUI Configurator Q and P (18 and 28 pt), where the system carries the faces (`glyph`) - else Open Sans's Λ and V, which its kit has no art for, and no strip glyphs. Chosen by eye: a tile the source tab's glyph art on the `well` wash in a rounded `pressed` ring, for the template's own translucent rounded tile. Every standard popup stands on the page's photo, stretched to its 702x480 (`popup.photo`: the 525's 12 and the 535's, on '800x480 bkgd.png'). Known differences: its tile's glyph is the tab art's, about a third the size of the template's line art; the menu's words, set at 12 pt under the 525's 18 pt floor, grow their cells.",
+    "hub": {"popup": {"photo": true}, "title": {"size": 30, "align": "center", "color": "text"}, "label": {"size": 14, "align": "center", "color": "text"}, "tile": {"variant": "device", "fill": "well", "border": "rounded", "stroke": "pressed", "glyph": "_white"}, "menu": {"variant": "button"}, "up": {"icon": null, "text": "Λ", "glyph": {"face": "Extron-Shockwave", "char": "U+00BF", "pt": {"Shockwave 520 Series": 26, "Shockwave 535 Series": 30}}}, "down": {"icon": null, "text": "V", "glyph": {"face": "Extron-Shockwave", "char": "U+00B3", "pt": {"Shockwave 520 Series": 26, "Shockwave 535 Series": 30}}}, "level_up": {"color": "text", "__seed": 8122, "glyph": {"face": "Extron GUI Configurator", "char": "U+0051", "pt": {"Shockwave 520 Series": 18, "Shockwave 535 Series": 28}}}, "level_down": {"color": "text", "__seed": 8124, "glyph": {"face": "Extron GUI Configurator", "char": "U+0050", "pt": {"Shockwave 520 Series": 18, "Shockwave 535 Series": 28}}}, "mute": {"variant": "button", "icon": "gray", "text": "Mute", "states": [{"name": "Off"}, {"name": "On", "icon": "red", "color": "alert"}]}, "power": {"variant": "square", "icon": "power_red", "text": ""}, "settings": {"variant": "button"}, "display": {"variant": "button"}, "close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}, "help": {"variant": "square", "icon": "help_yellow"}, "window": {"close": {"variant": "close", "states": [{"name": "Off", "look": "sel"}, {"name": "On", "look": "off", "border": "none"}]}}, "options": {"title": {"color": "text"}, "label": {"color": "text"}, "tile": {"variant": "source", "fill": "well", "border": "rounded", "stroke": "pressed"}, "blank": {"variant": "tile"}, "glyphs": {"light": "lightbulb_white", "audio": "speaker_white"}}},
     "page": {
-      "_source": "The 320's pages (seeds/Shockwave 320.gdl): its strip's white words, its headings and empty state white on the photo, its gray keys (504x440, `key`), More the kit's ••• key and Back its gray key - the kit's return glyph, where the template sets a chevron in an icon face the system does not carry - and the transparent Cancel over its Volume (`clear`). The question and the waits say theirs white (`message`). A caption wider than a key's art at the row's depth takes the next wider art (`wider`).",
+      "_source": "The 320's pages (seeds/Shockwave 320.gdl): its strip's white words, its headings and empty state white on the photo, its gray keys (504x440, `key`), More the kit's ••• key and Back its gray key with the template's Extron-Shockwave chevron (DVD Back, U+00B5 at 22 pt; `glyph`) - the kit's return glyph where the face is not on the machine - the Volume modal's Volume Up Label and Volume Down Label its Extron GUI Configurator Q and P, and the transparent Cancel over its Volume (`clear`). The question and the waits say theirs white (`message`). A caption wider than a key's art at the row's depth takes the next wider art (`wider`).",
       "strip": {"align": "center", "color": "text"},
       "heading": {"align": "center", "color": "text"},
       "empty": {"align": "center", "color": "text"},
       "button": {"variant": "key"},
       "more": {"variant": "square", "icon": "more"},
-      "back": {"variant": "square", "icon": "return_gray"},
+      "back": {"variant": "square", "icon": "return_gray", "glyph": {"face": "Extron-Shockwave", "char": "U+00B5", "pt": 22}},
+      "volume_up": {"glyph": {"face": "Extron GUI Configurator", "char": "U+0051"}},
+      "volume_down": {"glyph": {"face": "Extron GUI Configurator", "char": "U+0050"}},
       "message": {"align": "center", "color": "text"},
       "wider": ["button", "pill", "wide"],
       "cancel": {"variant": "clear", "text": ""}
@@ -351,7 +353,7 @@
         "haze": {"image": "1280x800 bkgd.png", "file": "Shockwave/backgrounds/1280x800 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP1035M": "seeds/Shockwave 1035.gdl", "TLP1035T": "seeds/Shockwave 1035.gdl", "TLP1025M": "seeds/Shockwave 1025.gdl", "TLP1025T": "seeds/Shockwave TLP1025T.gdl", "TLP1220MG": "seeds/Shockwave 1220.gdl", "TLP1220TG": "seeds/Shockwave TLP1220TG.gdl", "TLP1225MG": "seeds/Shockwave 1225.gdl", "TLP1225TG": "seeds/Shockwave TLP1225TG.gdl", "TLP835C": "seeds/Shockwave TLP835C.gdl", "TLP835M": "seeds/Shockwave 835.gdl", "TLP835T": "seeds/Shockwave TLP835T.gdl"},
+      "seeds": {"TLP1035M": "seeds/Shockwave 1035.gdl", "TLP1035T": "seeds/Shockwave 1035.gdl", "TLP1025M": "seeds/Shockwave 1025.gdl", "TLP1025T": "seeds/Shockwave TLP1025T.gdl", "TLP1220MG": "seeds/Shockwave 1220.gdl", "TLP1220TG": "seeds/Shockwave TLP1220TG.gdl", "TLP1225MG": "seeds/Shockwave 1225.gdl", "TLP1225TG": "seeds/Shockwave TLP1225TG.gdl", "TLP835C": "seeds/Shockwave TLP835C.gdl", "TLP835M": "seeds/Shockwave 835.gdl", "TLP835T": "seeds/Shockwave TLP835T.gdl", "TLC1026M": "seeds/Shockwave 1026.gdl", "TLP835M-Portrait": "seeds/Shockwave 835 Portrait.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -1053,7 +1055,7 @@
         "haze": {"image": "1024x600_bkgd.png", "file": "Shockwave/backgrounds/1024x600_bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP725T": "seeds/Shockwave 725.gdl", "TLP1020M": "seeds/Shockwave 1020.gdl", "TLP1020T": "seeds/Shockwave TLP1020T.gdl", "TLP725C": "seeds/Shockwave TLP725C.gdl", "TLP725M": "seeds/Shockwave TLP725M.gdl"},
+      "seeds": {"TLP725T": "seeds/Shockwave 725.gdl", "TLP1020M": "seeds/Shockwave 1020.gdl", "TLP1020T": "seeds/Shockwave TLP1020T.gdl", "TLP725C": "seeds/Shockwave TLP725C.gdl", "TLP725M": "seeds/Shockwave TLP725M.gdl", "TLC726M": "seeds/Shockwave 726.gdl", "TLP1022M": "seeds/Shockwave 1022.gdl", "TLP1022T": "seeds/Shockwave TLP1022T.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -1806,7 +1808,7 @@
         "haze": {"image": "1366x768 bkgd.png", "file": "Shockwave/backgrounds/1366x768 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP1525TG": "seeds/Shockwave 1525.gdl", "TLP1525MG": "seeds/Shockwave TLP1525MG.gdl"},
+      "seeds": {"TLP1525TG": "seeds/Shockwave 1525.gdl", "TLP1525MG": "seeds/Shockwave TLP1525MG.gdl", "TLP1520MG": "seeds/Shockwave 1520.gdl", "TLP1520TG": "seeds/Shockwave TLP1520TG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -2474,7 +2476,7 @@
         "haze": {"image": "5464x3072_bkgd.png", "file": "Shockwave/backgrounds/5464x3072_bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP1535M": "seeds/Shockwave 1535.gdl", "TLP1535T": "seeds/Shockwave TLP1535T.gdl"},
+      "seeds": {"TLP1535M": "seeds/Shockwave 1535.gdl", "TLP1535T": "seeds/Shockwave TLP1535T.gdl", "TLP1720MG": "seeds/Shockwave 1720.gdl", "TLP1720TG": "seeds/Shockwave TLP1720TG.gdl", "TLP1725MG": "seeds/Shockwave 1725.gdl", "TLP1725TG": "seeds/Shockwave TLP1725TG.gdl"},
       "kinds": {"slider": true, "level": false, "datetime": true, "popup": true, "image": false},
       "frame": {
         "page": "Main SD",
@@ -3929,7 +3931,7 @@
         "haze": {"image": "800x480 bkgd.png", "file": "Shockwave/backgrounds/800x480 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP535T": "seeds/Shockwave 535.gdl"},
+      "seeds": {"TLP535T": "seeds/Shockwave 535.gdl", "TLP535M": "seeds/Shockwave TLP535M.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": false},
       "radii": {"rounded": 10},
       "frame": {
@@ -4293,7 +4295,7 @@
         "haze": {"image": "800x480 bkgd.png", "file": "Shockwave/backgrounds/800x480 bkgd.png"},
         "saturn": {"image": "5464x3072_Saturn.png", "file": "Shockwave/backgrounds/5464x3072_Saturn.png"}
       },
-      "seeds": {"TLP525T": "seeds/Shockwave 525.gdl", "TLP525C": "seeds/Shockwave TLP525C.gdl", "TLP525M": "seeds/Shockwave TLP525M.gdl"},
+      "seeds": {"TLP525T": "seeds/Shockwave 525.gdl", "TLP525C": "seeds/Shockwave TLP525C.gdl", "TLP525M": "seeds/Shockwave TLP525M.gdl", "TLP520M": "seeds/Shockwave 520.gdl", "TLC521M": "seeds/Shockwave 521.gdl", "TLC526M": "seeds/Shockwave 526.gdl"},
       "kinds": {"slider": false, "level": true, "datetime": true, "popup": true, "image": false},
       "radii": {"rounded": 10},
       "frame": {
@@ -4689,7 +4691,7 @@
             {"rect": [0, 123, 320, 35], "id": 6061},
             {"rect": [0, 153, 320, 29], "id": 6062}
           ],
-          "pt": {"title": 14.25, "heading": 12, "empty": 12},
+          "pt": {"title": 14.25, "heading": 12, "key": 10, "digit": 22, "empty": 12},
           "items": [{"role": "more", "name": "Doc Cam More", "kind": "button", "rect": [232, 179, 60, 60], "id": 8010}]
         },
         "home": {
@@ -4776,7 +4778,7 @@
             "title": null,
             "close": null,
             "art": true,
-            "pt": {"message": 15},
+            "pt": {"message": 15, "answer": 12},
             "message": [30, 39, 260, 60],
             "lines": 2,
             "buttons": [

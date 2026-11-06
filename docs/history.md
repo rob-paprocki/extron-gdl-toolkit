@@ -97,13 +97,156 @@ machine you are already working on.
   the synthetic build's own flattened captions (`tests/test_verify_built.py`),
   and what nothing covers now is in `docs/ROADMAP.md`. Earlier commits still
   hold the files; the public copy never did (`tools/public_sync.py` still
-  excludes the folder). The builds in `archive/gdlwork/` made with that project
-  as the donor were not part of the decision and stay.
+  excludes the folder). The builds made with that project as the donor were
+  not part of the decision; they went the next day (below).
+- **2026-11-04 — `archive/gdlwork/` deleted, on the owner's word.** It was the
+  build scratch of 2026-09-08/09 (`C:\gdlwork`, session `d41fdd7d`), and
+  several of its builds were made with the client's project as the donor, so
+  they carried what `fixtures/` did. With it went `examples/panel.json` on that
+  donor (`Boardroom/`, `out3/`, and `auto/` and `auto2/`, the first unattended
+  `New-GdlPanel.ps1` runs); `examples/huddle.json`'s builds (`Huddle/`, `out/`,
+  `out2/`), the panel that exposed the missing font application and the cp1252
+  spec read; `examples/multipage.json` on that donor (`mp/`, `mp2/`) and on the
+  835 seed (`seed1/`, `seed2/`, `Multipage/`), the first clean-room build;
+  `examples/clean-room.json` on the 835 seed (`clean/`, with the Project Create
+  Wizard's screenshots, and `CleanRoom/`); the run that re-verified color end to
+  end after the fix (`color/`); the `.glt` donor GUI Designer silently refused
+  to open (`tmpl/`); the authoring bridge's resume test (`ex1/`); the specs as
+  used on the box; and the UI Automation prototype that became
+  `powershell/Invoke-GdlMenu.ps1`, with its log (`uia-build.ps1`,
+  `uia-build.log`), where the Save As menu item carries the project's name. One
+  test read it, `tests/test_idmap.py`'s map off a build whose buttons left their
+  states to the clone, which never ran in CI (CI pulls no archive from Git
+  LFS); it reads the synthetic fixture's build now, whose `OneState` button
+  does the same. Earlier commits still hold the folder. `tools/public_sync.py`
+  still holds back what of it the public copy never had, subfolder by
+  subfolder rather than whole, since published commits hold the rest.
 
 ## Corrections worth remembering
 
 Each of these was believed, written down, and later found wrong. The current
 statement is in the live docs; this is the record that it changed.
+
+- **What GUI Designer does with a caption's ink past its box was taken to be
+  unknown, and Turbulence 720's two questions to run 2 px past theirs**
+  (until 2026-11-05). `gdl.compose.caption_fit` read a line's ink off
+  Pillow's `getbbox` of the glyphs drawn at 1.375 px a point - 20 pt Open
+  Sans Light's 'y' 7 rows deep, and a box that reaches the baseline whatever
+  the ink does - and put the second line of Turbulence 720's Confirmation and
+  Incoming Call questions 2 px past their 316x64 boxes' foot, so a clip was
+  said as a note (`compose.CONFIRMED`) until a snapshot showed one. GUI
+  Designer's snapshot of that seed showed both questions whole, ending on the
+  box's last row, and of a copy with the boxes shrunk the rows past them cut
+  off flat. The glyphs are 4/3 px a point tall as the lines are, and drawn so
+  (`compose.drawn`) the 'y' is 6 rows deep, as GUI Designer's is, and the
+  synthetic fixture scores 1.27% for 1.55%, every page better; a line's ink
+  is read off the line drawn (`compose.line_ink`); and a clip is refused
+  (`docs/render-fidelity.md` finding 7). The squash by resampling that had
+  scored worse, 1.61%, was taken as the reason to draw at 1.375 both ways.
+  Every built canvas translates again with no line past its box. With it
+  `compose.wrap` was found to break a word too wide for its box only at a
+  line's start, as `bundle.js` `gdiCut` did after it: a word that followed
+  another went whole onto its own line, past the box's padding or its
+  sides - round five's Turbulence 320M set 'Back: Laptop' at 14 pt in a
+  65 px label so (`docs/ROADMAP.md`).
+
+- **The publish check was taken to refuse a font whatever it is named** (until
+  2026-11-05). `FONT_OK`'s comment said so, and it read a font by its first
+  four bytes - but it read any file named `*ProjectGCP` as a project graph,
+  for words, first, so a face of that name published. And a project graph's
+  first four bytes are TrueType's, so the suite's own check of the checkout,
+  which read every tracked file by those four, failed with Git LFS pulled on
+  the eight `ProjectGCP` files under `archive/job-9fe2c865/`, which are neither
+  fonts nor under a path `EXCLUDE` holds back. Both now read a graph by
+  the version its stream header goes on to, and a font by its bytes, whatever
+  its name (`tools/public_sync.py` `is_graph`, `is_font`).
+
+- **A box the layout sized for its words was taken to hold them** (until
+  2026-11-05). The design systems gave a label no width of its own need and
+  allowed a kit key a fixed 8 px, where GDI+ lays a caption out in its box
+  less 1/6 em a side (`docs/render-fidelity.md` §9): GUI Designer's snapshot
+  of Shockwave's 525 region Main read "Volum" (a 91x37 label at 18 pt,
+  `archive/job-e823df9b/rebuild-1104/glyphs/`), and measured with
+  `gdl.compose.caption_fit` every built canvas held 105 live captions GUI
+  Designer cuts - 63 trimmed, 38 split mid-word, 4 past their box. Every box
+  the layout sizes now grows for its words where GDI+ would cut them, and
+  `gdl.spec check` and `verify_built` refuse a trimmed or split live
+  caption.
+
+- **A rename was taken to reach every caption wherever it lives** (until
+  2026-11-04). `docs/editing.md` said `rename` writes captions "wherever they
+  actually live", built on 12 controls of the client project, and the
+  ROADMAP held a flattened button's caption as an untested suspicion. Run on
+  a copy of the synthetic fixture and built twice in GUI Designer, it is the
+  exception: Build bakes a flattened caption from each state's `ftextField`
+  alone, an empty one bakes no words, and `rename` writes `textField`, so the
+  art kept the old words on every flattened button renamed - three plain
+  buttons made flattened and the fixture's own Flat1 - while `layout.json`
+  and `verify_built` read the new ones (`archive/job-e823df9b/rebuild-1104/item3/`;
+  `docs/editing.md`). Since #98 `rename` writes each state's `ftextField` on a
+  flattened button too, and `verify_built` looks for the words in the art;
+  built on 2026-11-05 the same way - Brect, Brounded, Bcapsule (its fifteen
+  leading spaces kept) and Flat1 renamed, applied, built - every state's art
+  carried the new words, GUI Designer's snapshot showed them, `verify_built`
+  passed the build (4 checks, 0 problems) and failed the pre-fix one on all 8
+  states; and the round-four Afterburn 320 build the rebuild stopped at one
+  check (its Privacy key, a colour difference under the old whole-image gate)
+  verifies at 587 checks, 0 problems.
+
+- **A turned panel's region page was to be drawn in its series' frame
+  transposed** (until 2026-11-04). The ROADMAP refused it "for now", as "a
+  turned frame's header-as-left-band ... not drawn yet", and the backlog plan
+  queued drawing it. Measured that day, Extron's one turned template,
+  Afterburn's 300 Landscape, transposes its Main alone - its other pages
+  stand their bar down the opposite side - and keeps what is in a page its
+  own shape; no bar or hub template is drawn turned, and the 1035 Portrait
+  seed is the 1035's retargeted, its header still across its top
+  (`tests/test_measure_series.py`). So the transposed frame is no template's,
+  and a turned panel's region page stays refused by name (region-frame spec
+  item 14; a grammar of ours is the owner's to ask for, `docs/ROADMAP.md`
+  *Yours* item 6).
+
+- **GUI Designer's snapshot was taken to composite with a binary alpha test**
+  (until 2026-11-04): any pixel with alpha above 0 written at full strength,
+  measured on the client project's renders over 3,296 partial-alpha pixels,
+  where it was off by 2.15 levels a channel and a plain blend by 97. The
+  synthetic fixture's translucent keys and panel showed what was under them,
+  so the rule was first thought to hold for antialiased edges only; measured
+  over all 27,127 of the fixture's partial-alpha pixels above opaque art,
+  edges included, a binary write is off by 85 levels and GDI+'s
+  gamma-corrected blend at 2.2 by 1.08 (`docs/render-fidelity.md` finding 2).
+  The client's pixels were not recorded with what lay under them, and its
+  project is gone, so whether they lay over nothing - where the snapshot does
+  write a pixel at full strength - cannot be checked.
+- **A point was taken to be 1.375 px both ways, and the vertical residual
+  left as a fit not to ship** (until 2026-11-04). `docs/gdl-format.md` §2
+  read its cap heights - 13 to 34 px at 14 to 36 pt - as 1.375 px a point,
+  where they are Open Sans's at 4/3; a sweep of one DPI for both directions
+  was flat between 98 and 99, which was put down to noise. On the client's
+  project the captions sat 2-3 px low in proportion to their size, an ascent
+  multiplier of 0.90 and a line-height multiplier of 0.97 took its mean from
+  2.19% to 1.72%, and the fit was not shipped because its optimum was flat and
+  degenerate. Measured line by line on the synthetic fixture, whose top-aligned
+  captions the client's project did not have, the 0.97 is 96/99 - GDI+ sets
+  lines down at 96 DPI where it lays them across at 99 - and the 0.90 stood in
+  for a foot below a centred or bottom-aligned block, which a centred caption
+  cannot tell from a short ascent (`docs/render-fidelity.md` finding 7). The
+  oblique that scored best moved with it, from 0.22 to 0.30, and the measured
+  0.34 stayed.
+- **A bold caption was drawn regular, the model of its emboldening held
+  back** (until 2026-11-04). The model - a 1 px rightward smear and 1/60 em
+  more advance a glyph, fitted on the client project's 44 bold Forma captions -
+  took that project's baseline from 2.19% to 2.13% but made two popups worse,
+  2210 Conference Volume +0.12% and 2220 CATV Volume +0.02%, whose two-line
+  captions kept the regular's advances; a rule fitted on two captions of one
+  design would have been fitting noise, so it waited for more ground truth in
+  `research/synthetic_bold.py`, which patched `gdl.compose` in memory. On the
+  synthetic fixture it first made 15 pages worse, nearly all by a bold
+  left-aligned title, until GDI+'s padding shipped (#89); then it made none
+  worse, and it ships in `gdl.compose` (`docs/render-fidelity.md` §8) - the
+  research script went with it, since run over the shipped model it would
+  embolden twice. The built-file verifier, which had been given a copy of its
+  own to find a bold baked caption (#93), draws compose's.
 
 - **A real-size build's time was taken to vary at random, with the donor's
   content in doubt** (until 2026-11-03). Six builds of
@@ -132,6 +275,46 @@ statement is in the live docs; this is the record that it changed.
   525. Both already failed with Extron's kit present at 901194b, the commit
   that added the repeat test.
 
+- **"Fonts stay out of the design systems"** (until 2026-11-04). The systems
+  drew no glyph of Extron's icon faces, which carry no license field, and no
+  Open Sans Light: the 320's More and Back, a hub's menu glyphs and Close
+  were the kit's art filling their keys, about twice the template's glyph,
+  Shockwave's Up and Down Open Sans's Λ and V, the Volume glyphs + and - or
+  none, and every Light caption of Mach's and Turbulence's bar panels
+  Regular - each a ledger deviation or a ROADMAP gap. On the owner's call of
+  2026-11-04 the private systems draw those glyphs in the faces, read from the
+  seeds when a bundle is built and kept out of git (`gdl/fonts/README.md`),
+  and Light from the Open Sans file they already carried, whose weight axis
+  reaches 300.
+
+- **A 320 key's caption stopped at 14 pt** (until 2026-11-04), the toolkit's
+  floor and Extron's documented minimum, where the 320 templates set their
+  keys' words at 10 to 12 - Turbulence's square key held no word past five
+  letters there. The ROADMAP left whether it may take the template's own size
+  to the owner, who called it on 2026-11-04: it may, and no further. The
+  owner's message gave the size as 11 to 12, which is the templates' headings;
+  their keys' words, measured off each seed's states, are 10, their keys of
+  digits 11 to 22 and their questions' answers 10 to 12, and each kind of
+  key takes its template's own (`docs/design-rules.md` §1).
+- **The 300 kept its 16 pt floor for every key** (until 2026-11-04, when
+  #91's 300 met the 320 rule). The owner's call covered the 320 only; we
+  carried it to the 300 by analogy, pending the owner (`docs/ROADMAP.md`
+  *Yours*). Afterburn's 300 Display Settings, which its columns are read off,
+  sets its keys' words at 13, under 14, as the 320s set theirs at 10: its
+  keys are drawn at 13 and its spec says `{"button": 13}`. Mach's 300 sets
+  its keys at 15, which is under its floor but not under 14, so it is
+  unchanged. At 13 pt Afterburn's bar words fit their 66 px keys where there
+  is no kit or face, and the Landscape's Settings fits its 88 px column,
+  where at 16 it said Setup.
+- **An incoming call's answers and Turbulence's Select a Source tiles took IDs
+  of their own** (until 2026-11-04): the answers from 50001, as a window's
+  derived controls, the tiles in their page's band, since the ID map held one
+  ID to one `nav` - each a ledger deviation (mach-51, shockwave-40,
+  turbulence-43 and -44) and a ROADMAP gap. On the owner's call of 2026-11-04
+  they take the template's - 9032 and 9033, and the tile its tab's - and the
+  map lists a tile with its tab, its page flip its own (`docs/idmap.md` §7).
+  On a fresh translate that moves every derived ID after the answers in name
+  order down by two; `--previous` keeps a built canvas's.
 - **A Group in a modal or a popup holds only what its box holds** - the
   README told designers to give its box room for every member on every large
   and mid-size panel, and the toolkit refused the rest by name. Round five
@@ -781,3 +964,70 @@ statement is in the live docs; this is the record that it changed.
   largest phase, found the checkout through Node's `process`, which a workflow
   script does not have, and counted a finding as surviving when one of its two
   verifying agents died.
+
+- **The rebuild after #90, #91 and #95** (2026-11-04,
+  `archive/job-e823df9b/rebuild-1104/`). The hub grammar's builds were made
+  at main bec62b5 and round five's at bffab82, before the design systems drew
+  their templates' glyphs in Extron's icon faces and Open Sans Light (#90), a
+  320 key's caption took its template's size by kind, call mode's answers the
+  template's 9032 and 9033 and Turbulence's tiles their tabs' IDs (#95), and
+  the region page stood on the 300 (#91). Every built canvas was translated at
+  the commit it was last built at and at main 0aeccf7, on the owner's Linux
+  box, and compared panel by panel: of the 96 panels of the canvases the
+  hub-grammar and round-five builds covered, 80 differ - a font or a glyph
+  alone on many, as Mach's Open Sans Light titles and Afterburn's window Close
+  - and so do all 16 of round four's own rooms, whose last builds are older.
+  Those, with the new `tests/data/design-300-afterburn`'s two panels, 98 in
+  all, were built unattended by `New-GdlPanels.ps1` on GUI Designer 1.28.0.7
+  in 8.1 hours of panel time, from the Linux box's translation of ten Mach and
+  Turbulence canvases and this host's own of the other 17, which came out
+  identical to the Linux box's spec for spec. 97 verified at 0 problems with
+  the ID map at 0 on the first build. The 98th, round four's
+  Afterburn region room on the TLP320M, stopped at one: its Privacy key, 132x45
+  at 14 pt at bec62b5 and 108x45 at 10 pt at main, draws two kit files that
+  differ in colour alone, which `verify_built`'s state-image check cannot tell
+  apart at that size (`docs/ROADMAP.md`). The ROADMAP had held that
+  Turbulence's keyboard key, typed 'B' in the seed and U+F042 in the spec,
+  might draw blank and want U+0042, and a symbol-range lookup in the donor
+  check: GUI Designer's own snapshot draws it, on all four panels, as it draws
+  the seed's.
+
+- **The rebuild after #99** (2026-11-05, `archive/job-e823df9b/rebuild2-1105/`).
+  Every canvas the rebuild of 2026-11-04 built, and `tests/data/design-panels`,
+  was translated at 0aeccf7 and at main ad2bbf3 on the owner's Linux box and
+  compared panel by panel (`spec-diff/`). The 0aeccf7 translations are, spec
+  for spec, the specs that rebuild built from, and this host's translation of
+  five canvases at ad2bbf3 came out identical to the Linux box's
+  (`crosscheck.txt`). Of the 114 panels of the 28 canvases, 33 differ - 21 on
+  the TLP525T, 8 on the 320M, 2 each on the 535T and 725T - 24 in rects alone,
+  7 in rects and font sizes and 2 in a leading space of the Afterburn 725's
+  rail captions; of `design-panels`' four, which that rebuild had not
+  translated, its TLP525T. The huddle and Mach slice canvases, one panel each,
+  translate the same, and the Groups test, the two hub tabs and the first-try
+  canvases of rounds four and five are refused by the translator at ad2bbf3,
+  round four's Mach and Turbulence excepted, which have no 0aeccf7
+  translation to compare with. Translated again at main c20ce1d, after #100
+  merged, one panel changes from ad2bbf3's: round five's Turbulence 320M, its
+  Monitor Status label widened from 65 px to 70.
+
+  The 33 panels were built unattended by `New-GdlPanels.ps1` on GUI Designer
+  1.28.0.7 at ad2bbf3 in 3.0 hours of panel time, each verified at 0 problems
+  with the ID map at 0 on the first build. `verify_built`'s check of live
+  captions refused none, and noted 13 captions whose ink ran 1 to 5 px past
+  their box's right side, on seven panels, as it said ink past a box then
+  (`compose.CONFIRMED`).
+
+  Before any of it, GUI Designer's own snapshot of the Turbulence 320M that
+  the rebuild of 2026-11-04 built (`item1/`) drew the Display Control's
+  Monitor Status - 'Back: Laptop' at 14 pt in a 65 px box - cut: 'Back:' over
+  'Lapto', the second line 48 px across where 'Laptop' is 60.
+
+  The 34th panel, round five's Turbulence 320M, was built at c20ce1d once #100
+  had merged: 643 s, 888 checks and 215 ID map references at 0 problems, and
+  GUI Designer's snapshot of it draws Monitor Status, now 70 px, whole -
+  'Back:' over 'Laptop', 60 px across (`monitor-status-rebuilt/`). A snapshot
+  of a copy of `seeds/Mach 720.gdl`, taken then, settled what the ROADMAP held
+  unconfirmed (`mach720-lighting-preset/`): its Start draws 'Lighting Preset
+  Label' with nothing on row 91, where `line_ink` puts the 'h' of 'Lighting'
+  a row above the 80x36 box, and the h begins on row 92 as the L does - cut
+  flat at the box's top edge, as Turbulence 720's 'Window' is.

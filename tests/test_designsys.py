@@ -10,6 +10,7 @@ import json
 import math
 import os
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -207,7 +208,7 @@ class TestProfile(unittest.TestCase):
     def test_a_level_is_as_wide_as_the_seeds_levels(self):
         """Build draws a Level over its whole box, so its `track` is its width
         across - and every Afterburn seed's Level is 15 px across but the
-        535's, which is 24 (its DPI is 294, the others' 113 to 188), with the
+        535s', which are 24 (their DPI is 294, the others' 113 to 188), with the
         scheme's secondary accent (#626ACF, scheme 1) as its fill."""
         import glob
         from gdl.project import Project
@@ -222,7 +223,7 @@ class TestProfile(unittest.TestCase):
             p = Project.open(f)
             for o in p.instances('PBLevel'):
                 w, h = p.field(o, 'widthField'), p.field(o, 'heightField')
-                (wide if os.path.basename(f) == 'Afterburn 535.gdl' else across).add(min(w, h))
+                (wide if os.path.basename(f) in ('Afterburn 535.gdl', 'Afterburn TLP535M.gdl') else across).add(min(w, h))
                 c = p.color(p.field(o, 'gaugeFillColorField'))
                 bars.add('#%02X%02X%02X' % (c['R'], c['G'], c['B']))
         self.assertTrue(across, 'no Level in any Afterburn seed')
@@ -251,6 +252,33 @@ class TestModels(unittest.TestCase):
                 self.assertEqual((row['touch'], row['gap']), touch_minimums(model))
                 self.assertEqual(row['floor'], type_floor(model))
                 self.assertEqual(len(row['main']), 4)
+
+    def test_a_320_keys_caption_goes_down_to_its_templates_size(self):
+        """The owner's call (2026-11-04): a 320 key's caption may take the size
+        its template sets its keys' words in - the 320 frame's `center.pt.key`,
+        10 pt on Mach's, Shockwave's and Afterburn's (Doc Cam's Freeze, Auto
+        and Normal) - and no less (`key_floor`). Turbulence's keys carry their
+        words in their art, so its 320 keeps the type floor. The 300 takes
+        the same rule where its template sets its keys' words under 14 pt -
+        ours, by analogy, pending the owner: Afterburn's 300 sets Display
+        Settings' Power and Mute, which its columns are read off, at 13, each
+        way up. Mach's sets its Lighting Settings' Presets at 15, under the
+        300's 16 pt floor but not under 14, and keeps the floor. No other
+        series has a key floor of its own."""
+        own = {'TLP320M': 10, 'TLP320C': 10}
+        for theme, want in (('mach', own), ('shockwave', own),
+                            ('afterburn', dict(own, **{'TLP300M': 13, 'TLP300M-Landscape': 13})),
+                            ('turbulence', {})):
+            rows = designsys.models(designsys.load(theme))
+            for pid, row in rows.items():
+                with self.subTest(theme=theme, panel=pid):
+                    self.assertEqual(row['key_floor'], want.get(pid))
+                    if row['key_floor'] is not None:
+                        self.assertLess(row['key_floor'], min(row['floor'], 14))
+        # Mach's 300 measures its keys' words at 15 pt: its frame says so,
+        # and its panels take no key floor from it.
+        mach = designsys.load('mach')['panels']['Mach 300 Series']['frame']
+        self.assertEqual(mach['center']['pt'].get('key'), 15)
 
     def test_a_panel_turned_from_its_models_canvas_is_a_row_of_its_own(self):
         """A canvas lists the 300M either way up, and Afterburn draws both: its
@@ -403,7 +431,9 @@ class TestATurnedPanelWithNoTemplate(unittest.TestCase):
         m = designsys.models(p)
         self.assertEqual(m['TLP1035M-Portrait']['seed'], 'seeds/X.gdl')
         self.assertEqual(m['TLP1035M']['seed'], 'seeds/Afterburn 1035.gdl')
-        self.assertIsNone(m['TLP835M-Portrait']['seed'])
+        # The 835M's turned seed is listed in the profile as made; the 535M's is not.
+        self.assertEqual(m['TLP835M-Portrait']['seed'], 'seeds/Afterburn 835 Portrait.gdl')
+        self.assertIsNone(m['TLP535M-Portrait']['seed'])
 
 
 # A frame's page records: the measured page's five bands, and the pages a
@@ -792,20 +822,26 @@ class TestTheFrame(unittest.TestCase):
 
     def test_the_320s_columns_sizes_volume_and_window_grounds(self):
         """The 320's page per source: the steps its columns stand at, the
-        sizes it sets its title, headings and empty state in, the Volume modal
-        the program shows - its strip, level and Cancel where the template
-        draws them (Mach's has no Cancel) - and whether the question and the
-        wait stand on the photo (Mach's on the page's own #303030)."""
-        want = {'mach': ([124, 60], {'title': 16, 'heading': 11, 'empty': 14}, [[278, 0, 42, 240]], [292, 32, 15, 175],
-                         None, False),
-                'shockwave': ([103, 61], {'title': 14.25, 'heading': 12, 'empty': 12}, [], [292, 32, 15, 175],
-                              ([0, 0, 277, 240], 8001), True),
-                'turbulence': ([103, 61], {'title': 14.25, 'heading': 12, 'empty': 12}, [], [292, 32, 12, 179],
+        sizes it sets its title, headings, empty state, keys' words (`key`,
+        the least: Doc Cam's Normal at 10 on Mach's and Shockwave's) and keys
+        of digits in (`digit`: its Inputs 1 to 3, 18 on Mach's, 22 on
+        Shockwave's) - none of either on Turbulence's, whose keys carry their
+        words in their art - and its question's answers' words (`answer`: 11,
+        12, and Turbulence's Cancel 16), the Volume modal the program shows -
+        its strip, level and Cancel where the template draws them (Mach's has
+        no Cancel) - and whether the question and the wait stand on the photo
+        (Mach's on the page's own #303030)."""
+        want = {'mach': ([124, 60], {'title': 16, 'heading': 11, 'key': 10, 'digit': 18, 'empty': 14}, 11,
+                         [[278, 0, 42, 240]], [292, 32, 15, 175], None, False),
+                'shockwave': ([103, 61], {'title': 14.25, 'heading': 12, 'key': 10, 'digit': 22, 'empty': 12}, 12,
+                              [], [292, 32, 15, 175], ([0, 0, 277, 240], 8001), True),
+                'turbulence': ([103, 61], {'title': 14.25, 'heading': 12, 'empty': 12}, 16, [], [292, 32, 12, 179],
                                ([0, 0, 277, 240], 8001), True)}
-        for theme, (pitch, pt, strips, level, cancel, art) in want.items():
+        for theme, (pitch, pt, answer, strips, level, cancel, art) in want.items():
             with self.subTest(theme=theme):
                 f = self.frame(theme, f'{theme.capitalize()} 320 Series')
                 self.assertEqual((f['center']['pitch'], f['center']['pt']), (pitch, pt))
+                self.assertEqual(f['windows']['confirm']['pt'].get('answer'), answer)
                 V = f['volume']
                 self.assertEqual((V['popup'], [s['rect'] for s in V['surfaces']], V['level']['rect']),
                                  ('Volume', strips, level))
@@ -843,7 +879,9 @@ class TestTheFrame(unittest.TestCase):
         self.assertEqual(f['home']['page'], 'Main')
         self.assertEqual([(it['role'], it['rect']) for it in f['home']['bottom']['items']],
                          [('settings', [8, 404, 96, 72]), ('help', [112, 404, 96, 72]), ('power', [216, 404, 96, 72])])
-        self.assertEqual(f['ids'], {'help': 9103, 'power': 8022, 'settings': 8040})
+        # And its volume's keys, on its home page.
+        self.assertEqual(f['ids'], {'help': 9103, 'power': 8022, 'settings': 8040, 'mute': 8021, 'volume-up': 8120,
+                                    'volume-down': 8121})
         # Afterburn's Landscape source page draws its own art: the column is
         # on the left, with Back and the title, and the home page's on the right.
         f = self.frame('afterburn', 'Afterburn 300 Landscape Series')
@@ -861,6 +899,64 @@ class TestTheFrame(unittest.TestCase):
         self.assertEqual(f['center']['empty'], [0, 79, 320, 138])
         self.assertEqual([(it['role'], it['rect']) for it in f['home']['bottom']['items']],
                          [('settings', [23, 402, 66, 66]), ('help', [130, 402, 66, 66]), ('power', [231, 402, 66, 66])])
+
+    def test_the_300s_select_a_source_and_its_volume(self):
+        """What a 300's home page draws between its title and its menu bar,
+        which its region page draws there: its title, its source keys (two,
+        the template's), and its volume - Mach's level in its Volume Level
+        popup over its Mute, Down and Up, Afterburn's on the page under a
+        Volume heading and a divider - each with its seed ID."""
+        f = self.frame('mach', 'Mach 300 Series')['home']
+        got = [(it['role'], it['rect'], it.get('id')) for it in f['center']['items']]
+        self.assertEqual(got, [('title', [0, 15, 320, 40], 6072), ('source', [40, 75, 240, 70], 8065),
+                               ('source', [40, 165, 240, 70], 8067), ('popup', [0, 253, 320, 42], None),
+                               ('mute', [40, 295, 70, 70], 8021), ('volume-down', [125, 295, 70, 70], 8121),
+                               ('volume-up', [210, 295, 70, 70], 8120)])
+        self.assertEqual((_items(f['center'], 'title')[0]['text'], _items(f['center'], 'title')[0]['pt']),
+                         ('Select a Source', 22))
+        v = f['volume']
+        self.assertEqual((v['popup'], v['rect'], v['level']['rect'], v['level']['id']),
+                         ('Volume Level', [0, 253, 320, 42], [47, 266, 230, 15], 8023))
+        self.assertEqual(v['labels'], [{'rect': [284, 253, 36, 42], 'id': 7023, 'pt': 18},
+                                       {'rect': [4, 253, 36, 42], 'id': 7026, 'pt': 18}])
+        f = self.frame('afterburn', 'Afterburn 300 Portrait Series')['home']
+        got = [(it['role'], it['rect'], it.get('id')) for it in f['center']['items']]
+        self.assertEqual(got, [('title', [25, 15, 269, 50], 6072), ('source', [40, 77, 100, 100], 8065),
+                               ('source', [179, 77, 100, 100], 8067), ('divider', [20, 170, 280, 15], None),
+                               ('heading', [25, 197, 269, 50], 4052), ('level', [35, 258, 249, 15], 8023),
+                               ('mute', [35, 288, 66, 66], 8021), ('volume-down', [137, 288, 66, 66], 8121),
+                               ('volume-up', [218, 288, 66, 66], 8120)])
+        self.assertEqual((f['volume']['popup'], f['volume']['rect'], f['volume']['level']['rect']),
+                         (None, None, [35, 258, 249, 15]))
+        self.assertEqual([(it['text'], it['pt']) for it in _items(f['center'], 'title') + _items(f['center'], 'heading')],
+                         [('Select a Source', 16), ('Volume', 16)])
+        f = self.frame('afterburn', 'Afterburn 300 Landscape Series')['home']
+        self.assertEqual([it['rect'] for it in _items(f['center'], 'source')], [[81, 51, 91, 90], [220, 51, 91, 90]])
+        self.assertEqual(_rects(f['center'], 'title'), [[69, 11, 269, 50]])
+
+    def test_the_300s_columns(self):
+        """A 300's source page draws no controls (its Computer), so the
+        columns a source's controls stand in are its settings windows': the
+        one its Settings page opens with the widest keys - Mach's Lighting
+        Settings, two columns of 110x70 under Lights and Blinds; Afterburn's
+        Display Settings, one column on the Portrait and two on the
+        Landscape - with the sizes its titles, headings and empty state take,
+        and its keys' words (`key`: the Presets' 15 pt, Power's and Mute's
+        13)."""
+        C = self.frame('mach', 'Mach 300 Series')['center']
+        self.assertEqual((C['row'], C['headings'], C['pitch'], C['grid_page']),
+                         ([[40, 110, 110, 70], [170, 110, 110, 70]], [[40, 70, 110, 40], [170, 70, 110, 40]],
+                          [130, 90], 'Lighting Settings'))
+        self.assertEqual(C['pt'], {'title': 22, 'heading': 15, 'key': 15, 'empty': 15})
+        C = self.frame('afterburn', 'Afterburn 300 Portrait Series')['center']
+        self.assertEqual((C['row'], C['headings'], C['pitch'], C['grid_page']),
+                         ([[13, 77, 178, 50]], [[27, 15, 152, 50]], [None, 58], 'Display Settings'))
+        self.assertEqual(C['pt'], {'title': 21, 'heading': 16, 'key': 13, 'empty': 13})
+        C = self.frame('afterburn', 'Afterburn 300 Landscape Series')['center']
+        self.assertEqual((C['row'], C['headings'], C['pitch']),
+                         ([[103, 87, 178, 50], [302, 87, 178, 50]], [[107, 15, 152, 50], [306, 15, 152, 50]],
+                          [199, 58]))
+        self.assertEqual(C['pt'].get('key'), 13)
 
     def test_a_hubs_menu_bar(self):
         f = self.frame('mach', 'Mach 520 Series')
@@ -1080,6 +1176,9 @@ class TestTheFrame(unittest.TestCase):
                 S = f['choose']
                 self.assertEqual(S['page'], 'Main Select Source')
                 self.assertEqual(S['text'].lower(), 'select a source')
+                # Turbulence's tiles carry their tabs' IDs; Mach's and
+                # Afterburn's IDs of their own (8100 to 8103).
+                self.assertEqual(S.get('tab_ids'), True if t == 'turbulence' else None)
                 self.assertTrue(_inside(S['title'], f['top']['rect'], tol=40), S['title'])
                 self.assertGreaterEqual(len(S['tiles']), 4)
                 for tile in S['tiles']:
@@ -1150,6 +1249,50 @@ class TestTheFrame(unittest.TestCase):
         # Turned, the slider is wide and short, and grows down to the touch minimum.
         slider = _items(m['TLP1035M-Portrait']['frame']['bottom'], 'volume')[0]
         self.assertEqual((slider['rect'], slider['legal']), ([178, 1198, 363, 30], [178, 1187, 363, 53]))
+
+
+class TestWhatTheReadmeSaysOfThe300AndTurnedPanels(unittest.TestCase):
+    """A theme with a 300 says what its pages make of a region page, off its
+    frame; every theme says a turned panel's region page, source popup and
+    window are refused, and why."""
+
+    def test_the_300s_grammar(self):
+        for theme in ('mach', 'afterburn'):
+            with self.subTest(theme=theme):
+                grammar = _section(designsys.readme(designsys.load(theme)), "The template's grammar")
+                line = next(ln for ln in grammar.splitlines() if ln.startswith('**What the 300 makes of your page.**'))
+                for said in ('menu bar along its foot', "'Select a Source'", 'Settings, Help and Power', 'More',
+                             'the rest on over a page of Main', 'ours', 'named and left', 'windows over the page',
+                             # What is ours, said so: the template's Settings
+                             # is a plain list of key pages, and it shortens
+                             # its own titles by hand.
+                             "pages of Main's own (ours: the template has no such page)",
+                             "says the page's name there, and one whose name does not fit either is refused by "
+                             'name (ours)'):
+                    self.assertIn(said, line)
+        # Its series in brackets only where they say more than 'The 300'.
+        self.assertIn('### The 300\n', _section(designsys.readme(designsys.load('mach')), "The template's grammar"))
+        self.assertNotIn('(the 300 Series)', designsys.readme(designsys.load('mach')))
+        self.assertIn('### The 300 (the 300 Portrait and 300 Landscape Series)\n',
+                      _section(designsys.readme(designsys.load('afterburn')), "The template's grammar"))
+        mach = _section(designsys.readme(designsys.load('mach')), "The template's grammar")
+        self.assertIn('#303030 sheet', mach)
+        ab = _section(designsys.readme(designsys.load('afterburn')), "The template's grammar")
+        line = next(ln for ln in ab.splitlines() if ln.startswith('**What the 300 makes of your page.**'))
+        for said in ('the column at the right', 'the column at the left', '79 px', 'Comp.'):
+            self.assertIn(said, line)
+        for theme in ('shockwave', 'turbulence'):
+            self.assertNotIn('What the 300 makes', designsys.readme(designsys.load(theme)))
+
+    def test_a_turned_panel_is_said_to_be_refused(self):
+        for theme in ('mach', 'shockwave', 'turbulence', 'afterburn'):
+            p = designsys.load(theme)
+            text = designsys.readme(p) + ''.join(designsys.component_docs(p).values())
+            with self.subTest(theme=theme):
+                self.assertNotIn('refused by name for now', text)
+                for what in ('a region page', 'a source popup', 'a window'):
+                    self.assertIn(f"On a turned panel {what} is refused by name: no {p['template']} template is drawn "
+                                  'that way up', text)
 
 
 class TestWhatTheRailSays(unittest.TestCase):
@@ -2024,10 +2167,24 @@ class TestTheRegionComponents(unittest.TestCase):
             # a Group taking its window's room, a plain modal re-spacing on its
             # card, a hub's options in rows, about 11 KB (Afterburn's about 611
             # KB), and the face it carries (face_js: Open Sans's Latin, 64 KB
-            # as base64, and its license, 4 KB; Mach's about 677 KB). The file
-            # a canvas loads is the art bundle, megabytes of kit art; this is
-            # the code, the frames and the face.
-            self.assertLess(len(js.encode('utf-8')), 690_000, t)
+            # as base64, and its license, 4 KB; Mach's about 677 KB), and the
+            # 300's grammar - planMenu and menuPart, about 21 KB of code, and
+            # its frame, about 4 KB a series (Mach's about 703 KB), and its
+            # bar in words where the kit lacks its glyphs, about 3 KB (Mach's
+            # about 705 KB), and the template's icon faces and Open Sans Light
+            # - glyphOf, lightIn and the looks' `glyph`s, about 9 KB with no
+            # face's bytes (art=False; Mach's about 714 KB), and the 300's
+            # bar, Back, More, Down and Up and Mach's level glyphs in them,
+            # about 3 KB (Mach's about 717 KB), and the owner's calls of
+            # 2026-11-04 - a 320 key's caption at its template's size for its
+            # kind, an incoming call's answers' and Turbulence's tiles'
+            # template IDs, and a plain modal's kit keys drawn alike coming out
+            # alike - about 13 KB of code (Mach's about 730 KB), and a box
+            # holding its words as GUI Designer lays them out - gdiWidth,
+            # holding and the rail's room, about 10 KB of code (Mach's about
+            # 748 KB). The file a canvas loads is the art bundle, megabytes
+            # of kit art; this is the code, the frames and the face.
+            self.assertLess(len(js.encode('utf-8')), 760_000, t)
             # And each series' frame, which grows with each part of the
             # template the regions draw: under 10 KB (Mach's 1720 the most,
             # 9.1 KB with its call mode), so a key the regions do not read
@@ -2039,14 +2196,27 @@ class TestTheRegionComponents(unittest.TestCase):
         # the Header's (`apart`, as wide as its Divider), its foot row as the
         # Footer's, its call's Share Content at the right rail's head.
         js = designsys.bundle(designsys.load('afterburn'), art=False)
+        # Out of the loop above for its frames' shape, not its size: the same
+        # backstop, its own cap. Without the kit it is Mach's size (about 701
+        # KB to 704); with it, about 751 KB, its kit's index twice Mach's -
+        # 49 KB of files to 26, its keys' 1059x440 and 1224x344 families in
+        # each of its accents, and the Icons/PNG drawings the profile adds
+        # (`kit.icons`) - and ten frames, each under 8 KB; about 769 KB with
+        # the code since (Mach's above).
+        self.assertLess(len(js.encode('utf-8')), 785_000)
         frames = json.loads(re.search(r'var P = (\{.*?\});\n', js).group(1))['frames']
-        # Its bar-class series, its 520 and 535, hubs, and its 320's pages.
+        for s, f in frames.items():
+            self.assertLess(len(json.dumps(f, separators=(',', ':'))), 10_000, s)
+        # Its bar-class series, its 520 and 535, hubs, its 320's pages and its
+        # 300's, each way up.
         self.assertEqual(sorted(frames), ['Afterburn 1020 Series', 'Afterburn 1220 Series', 'Afterburn 1230 Series',
-                                          'Afterburn 1520 Series', 'Afterburn 1720 Series', 'Afterburn 320 Series',
-                                          'Afterburn 520 Series', 'Afterburn 535 Series'])
+                                          'Afterburn 1520 Series', 'Afterburn 1720 Series',
+                                          'Afterburn 300 Landscape Series', 'Afterburn 300 Portrait Series',
+                                          'Afterburn 320 Series', 'Afterburn 520 Series', 'Afterburn 535 Series'])
         self.assertTrue(frames['Afterburn 520 Series']['hub'])
         self.assertTrue(frames['Afterburn 535 Series']['hub'])
         self.assertTrue(frames['Afterburn 320 Series']['pages'])
+        self.assertTrue(frames['Afterburn 300 Portrait Series']['menu'])
         F = frames['Afterburn 1220 Series']
         self.assertEqual((F['top']['rect'], F['top']['apart'], F['top']['surfaces']), ([260, 24, 760, 133], True, []))
         self.assertEqual([i['role'] for i in F['top']['items']], ['divider'])
@@ -2099,11 +2269,12 @@ class TestTheRegionComponents(unittest.TestCase):
         windows draw it (bundle.js planPages, pagePart): its strip, its home's
         and its second page's, the centre's row, headings, steps, sizes,
         empty state and More, its windows with their buttons' seed IDs, and
-        its Volume modal. Not a 300's, whose menu bar is not drawn yet."""
+        its Volume modal. A 300's is a page per source too, under its menu bar
+        (`menu`, below)."""
         for t in ('mach', 'shockwave', 'turbulence'):
             p = designsys.load(t)
             prof = json.loads(re.search(r'var P = (\{.*?\});\n', designsys.bundle(p, art=False)).group(1))
-            pages = {s for s, f in prof['frames'].items() if f.get('pages')}
+            pages = {s for s, f in prof['frames'].items() if f.get('pages') and not f.get('menu')}
             self.assertEqual(pages, {f'{t.title()} 320 Series'}, t)
             for s in pages:
                 f, own = prof['frames'][s], p['panels'][s]['frame']
@@ -2119,6 +2290,65 @@ class TestTheRegionComponents(unittest.TestCase):
                 self.assertEqual(f['windows'], designsys._slim_windows(own['windows'], ids=True), s)
                 self.assertEqual([b['id'] for b in f['windows']['confirm']['buttons']],
                                  [b['id'] for b in own['windows']['confirm']['buttons']], s)
+
+    def test_the_300s_frames_are_in_the_bundle(self):
+        """Each 300 series' frame, as its region page, source pages and windows
+        draw it (bundle.js planMenu, pagePart): its source pages' bar as the
+        strip, with More - ours, in the last of the home bar's slots clear of
+        Back and the title, else clear of Back - its home's bar, Select a
+        Source and volume, the second page's bar (on Mach's the #303030 sheet
+        its Settings and windows stand on, which a source's page has not), the
+        centre's row, headings, steps, sizes and empty state, and its windows."""
+        want = {'mach': {'Mach 300 Series': ([216, 404, 96, 72], True, 1)},
+                'afterburn': {'Afterburn 300 Portrait Series': ([231, 402, 66, 66], True, 0),
+                              'Afterburn 300 Landscape Series': ([10, 127, 66, 66], None, 0)}}
+        for t, series in want.items():
+            p = designsys.load(t)
+            prof = json.loads(re.search(r'var P = (\{.*?\});\n', designsys.bundle(p, art=False)).group(1))
+            menus = {s: f for s, f in prof['frames'].items() if f.get('menu')}
+            self.assertEqual(sorted(menus), sorted(series), t)
+            for s, (more, foot, sheet) in series.items():
+                f, own = menus[s], p['panels'][s]['frame']
+                with self.subTest(series=s):
+                    self.assertTrue(f['pages'])
+                    self.assertEqual(f.get('foot'), foot)
+                    bar = next(b for b in ('bottom', 'left') if own[b])
+                    self.assertEqual(f['top']['rect'], own[bar]['rect'])
+                    self.assertEqual([it for it in f['top']['items'] if it['role'] != 'more'], own[bar]['items'])
+                    self.assertEqual(_rects(f['top'], 'more'), [more])
+                    home = next(b for b in ('bottom', 'right') if own['home'][b])
+                    self.assertEqual(f['home']['top'], own['home'][home])
+                    self.assertEqual((f['home']['center'], f['home']['volume']),
+                                     ({'items': own['home']['center']['items']}, own['home']['volume']))
+                    self.assertEqual(f['plain']['top'], own[bar])
+                    self.assertEqual(len(f['second']['top']['surfaces']) - len(own[bar]['surfaces']), sheet)
+                    self.assertEqual(f['second']['center']['items'], own['center']['items'])
+                    self.assertEqual(f['center'], {k: own['center'].get(k) for k in
+                                                   ('rect', 'row', 'headings', 'pitch', 'pt', 'empty', 'empty_lines',
+                                                    'items')})
+                    self.assertEqual(f['windows'], designsys._slim_windows(own['windows'], ids=True))
+            # The 320's are not a 300's.
+            self.assertFalse(any(f.get('menu') for s, f in prof['frames'].items() if '320' in s), t)
+
+    def test_the_300s_menu_looks_exist(self):
+        """`regions.menu` names only the profile's own variants, colors and kit
+        icons."""
+        for t in ('mach', 'afterburn'):
+            p = designsys.load(t)
+            colors, menu = {c['name'] for c in p['colors']}, p['regions']['menu']
+            files = designsys.kit_index(p)['files']
+            looks = [(k, v) for k, v in menu.items() if isinstance(v, dict) and k != 'sheet']
+            looks += [('sheet ' + k, v) for k, v in menu.get('sheet', {}).items()]
+            for key, look in looks:
+                with self.subTest(theme=t, look=key):
+                    if 'variant' in look:
+                        self.assertIn(look['variant'], p['buttons'])
+                    if 'color' in look:
+                        self.assertIn(look['color'], colors)
+                    if look.get('icon') and files:
+                        V = p['buttons'][look['variant']]
+                        size = V.get('kit') or (V.get('with_icon') or {}).get('bare')
+                        self.assertIn(look['icon'], files[size], (key, size))
 
     def test_the_320s_page_looks_exist(self):
         """`regions.page` names only the profile's own variants, colors and
@@ -2615,7 +2845,7 @@ class TestBuild(unittest.TestCase):
 
     def test_turbulences_hub_room_is_read_with_its_own_source_tabs(self):
         """Turbulence's Layout puts six source tabs across its header, and on a
-        hub a band is as deep as a Group it holds - 118 px on the 525 with the
+        hub a band is as deep as a Group it holds - 119 px on the 525 with the
         seed's captions (`layout.hub_header`, measured) where the table took a
         button's 66, and promised a button beside the volume that the tabs
         leave no room for (review of #39)."""
@@ -3424,9 +3654,12 @@ class TestTheLedger(unittest.TestCase):
         hubs' Volume Level strip, shown on every working page (mach-54), the
         dialer's Call and Flash set their words the gap their template leaves
         past the glyph (mach-55), and the recording question's answers, whose
-        IDs are the layout's own (mach-56): one entry each, in its order."""
+        IDs are the layout's own (mach-56), and the two claims the faces the
+        system now carries retired - Open Sans Light, a face it did not offer
+        (mach-57), and Extron-Lift's glyphs, not drawn (mach-58): one entry
+        each, in its order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'mach-{i:02d}' for i in range(57)])
+        self.assertEqual(ids, [f'mach-{i:02d}' for i in range(59)])
 
     def test_mach_is_done(self):
         self.assertEqual(self.audit.audit('mach'), [])
@@ -3988,10 +4221,11 @@ class TestTheTemplateRenders(unittest.TestCase):
                     self.assertTrue(r['file'].startswith('templates/') and r['file'].endswith('.webp'), r)
                     self.assertLessEqual(r['size'][0], 640)
 
-    def test_the_panels_rule_blends_where_the_snapshots_does_not(self):
-        """compose.BINARY: GUI Designer's snapshots write any pixel with alpha
-        at full strength, and that stays paste()'s default; off, paste()
-        blends it, as the panel shows a translucent bar over its photo."""
+    def test_the_panels_rule_blends_otherwise_than_the_snapshots(self):
+        """compose.BINARY: GUI Designer's snapshots blend a translucent pixel
+        in light, GDI+'s gamma 2.2 (docs/render-fidelity.md finding 2), and
+        that stays paste()'s default; off, paste() blends it as Pillow does,
+        for the picture of the panel's translucent bar over its photo."""
         try:
             from PIL import Image
         except ImportError:
@@ -4011,7 +4245,9 @@ class TestTheTemplateRenders(unittest.TestCase):
                 compose.BINARY = was
             return c.getpixel((1, 1))[:3]
         self.assertIs(compose.BINARY, True)
-        self.assertEqual(pixel(True), (0, 0, 0))
+        # (200/255)^2.2 x (1 - 128/255), back up by 1/2.2: 146.
+        for v in pixel(True):
+            self.assertAlmostEqual(v, 146, delta=1)
         for v in pixel(False):
             self.assertAlmostEqual(v, 200 * (255 - 128) / 255, delta=2)
 
@@ -4384,6 +4620,211 @@ class TestWhatRoundFiveLeftToGuess(unittest.TestCase):
         for theme, px in (('shockwave', 125), ('turbulence', 117), ('mach', 146)):
             with self.subTest(theme=theme):
                 self.assertIn(f'{px} px under the strip', designsys.readme(designsys.load(theme)))
+
+
+def _glyph_looks(v, at=''):
+    """(where, look) of every look in a profile that sets a glyph (`glyph`)."""
+    if isinstance(v, dict):
+        if isinstance(v.get('glyph'), dict):
+            yield at, v
+        for k, x in v.items():
+            yield from _glyph_looks(x, f'{at}.{k}' if at else k)
+    elif isinstance(v, list):
+        for i, x in enumerate(v):
+            yield from _glyph_looks(x, f'{at}.{i}')
+
+
+class TestTheTemplatesFaces(unittest.TestCase):
+    """The small glyphs a template sets in Extron's icon faces are drawn in
+    those faces (a look's `glyph`), read when the bundle is built
+    (glyph_faces) and never tracked; and Open Sans Light where the panel's
+    own template sets it (`font.light`), from the Open Sans file the systems
+    carry."""
+
+    FACES = {'afterburn': ['Extron-Afterburn'], 'mach': ['Extron-Lift'],
+             'shockwave': ['Extron GUI Configurator', 'Extron GUIC Video Conference 1a', 'Extron-Shockwave'],
+             'turbulence': ['Extron GUI Configurator', 'Extron GUIC Video Conference 1']}
+
+    def test_each_profile_names_the_faces_its_template_sets_glyphs_in(self):
+        for theme, faces in self.FACES.items():
+            with self.subTest(theme=theme):
+                self.assertEqual(designsys.glyph_face_names(designsys.load(theme)), faces)
+
+    def test_every_glyph_is_one_its_face_draws(self):
+        """Each look's character is in the build of the face the system
+        found - the seed's, the one a panel builds in - at a size for every
+        series that names one."""
+        from gdl.sfnt import Advances
+        for theme in self.FACES:
+            p = designsys.load(theme)
+            found, series = designsys.glyph_faces(p), {r['series'] for r in designsys.models(p).values()}
+            for where, look in _glyph_looks({k: v for k, v in p.items() if k != 'panels'}):
+                g = look['glyph']
+                with self.subTest(theme=theme, look=where):
+                    self.assertRegex(g['char'], r'^U\+[0-9A-F]{4,5}$')
+                    pt = g.get('pt')
+                    if isinstance(pt, dict):
+                        self.assertTrue(set(pt) - {'_'} <= series, sorted(set(pt) - series))
+                    if g['face'] not in found:
+                        continue
+                    cmap = Advances(found[g['face']][0]).cmap
+                    self.assertIn(int(g['char'][2:], 16), cmap, g)
+
+    def test_the_bundle_carries_the_faces_only_with_its_art(self):
+        """With its art (the published, private system) a bundle carries
+        each face it found, with the words that keep it private; without
+        (the translator's tests) it names them and carries none."""
+        p = designsys.load('mach')
+        if 'Extron-Lift' not in designsys.glyph_faces(p):
+            self.skipTest('no copy of Extron-Lift here: the Mach seeds (git lfs pull) or the install')
+        js = designsys.face_js(p, art=True)
+        self.assertIn('add("Extron-Lift", "', js)
+        self.assertIn("this bundle is the owner's private design system only", js)
+        self.assertNotIn('add("Extron-Lift"', designsys.face_js(p, art=False))
+        bare = designsys.bundle(p, art=False)
+        self.assertNotIn('add("Extron-Lift"', bare)
+        prof = json.loads(re.search(r'var P = (\{.*?\});\n', bare).group(1))
+        self.assertEqual(prof['faces'], ['Extron-Lift'])
+
+    # The 300's looks (`regions.menu`) that set a template's glyph, each by
+    # the seed control it is read off - (page, name) on the 300 Portrait
+    # seeds - or None for More, ours: the 320's More, at its bar's size.
+    MENU_GLYPHS = {
+        'mach': {'settings': ('Main', 'Settings'), 'help': ('Main', 'Help'), 'power': ('Main', 'Power Down'),
+                 'back': ('Computer', 'Page Back'), 'up': ('Main', 'Volume Up'), 'down': ('Main', 'Volume Down'),
+                 'volume_up': ('Volume Level', 'Volume Up Label'), 'volume_down': ('Volume Level', 'Volume Down Label'),
+                 'more': None},
+        'afterburn': {'back': ('Computer', 'Page Back'), 'up': ('Main', 'Main Volume Up'),
+                      'down': ('Main', 'Main Volume Down'), 'more': None},
+    }
+
+    def test_the_300s_glyphs_are_its_seeds(self):
+        """Each glyph the 300's looks set is the one its seed's control sets,
+        in its face and at its size - a level glyph's size the frame's, which
+        the label is drawn at - and More, ours, the 320's More in the same
+        face at the size of the 300's Back beside it."""
+        from gdl import data, seeds
+        for theme, looks in self.MENU_GLYPHS.items():
+            p = designsys.load(theme)
+            M = p['regions']['menu']
+            self.assertEqual(sorted(k for k, v in M.items() if isinstance(v, dict) and v.get('glyph')), sorted(looks))
+            seed = f'seeds/{theme.title()} 300M Portrait.gdl'
+            if not seeds.usable(seed):
+                continue
+            j = json.loads(data.payload(seeds.path(seed)).read('layout.json'))
+            on = {(pg['Name'], c.get('Name')): c for pg in j['Pages'] + j['PopupPages'] for c in pg.get('Controls') or ()}
+            for key, at in looks.items():
+                g = M[key]['glyph']
+                with self.subTest(theme=theme, look=key):
+                    if at is None:
+                        more = p['regions']['page']['more']['glyph']
+                        self.assertEqual((g['face'], g['char']), (more['face'], more['char']))
+                        self.assertEqual(g['pt'], M['back']['glyph']['pt'])
+                        continue
+                    c = on[at]
+                    self.assertEqual((g['face'], g['char']), (c['Font']['Name'], f"U+{ord(c['Text']):04X}"))
+                    self.assertEqual(g.get('pt', c['Font']['PointSize']), c['Font']['PointSize'])
+
+    def test_light_is_where_each_template_sets_it(self):
+        """Mach's and Turbulence's bar series set Light, their hubs and 320s
+        Open Sans; Afterburn and Shockwave set none."""
+        for theme in self.FACES:
+            p = designsys.load(theme)
+            light = p['font'].get('light')
+            series = {r['series'] for r in designsys.models(p).values()}
+            with self.subTest(theme=theme):
+                if theme in ('afterburn', 'shockwave'):
+                    self.assertIsNone(light)
+                    self.assertFalse([t['name'] for t in p['type'] if t['weight'] < 400])
+                    continue
+                self.assertEqual(light['family'], 'Open Sans Light')
+                self.assertTrue(set(light['series']) <= series)
+                self.assertFalse([s for s in light['series'] if ' 52' in s or ' 53' in s or ' 3' in s])
+                self.assertEqual(bool(light.get('all')), theme == 'turbulence')
+        # And the face itself is the Open Sans file, at 300.
+        self.assertIn('["300", "400", "700"]', designsys.face_js())
+
+    def test_a_build_goes_only_where_git_will_not_take_it(self):
+        """A built system carries Extron's art and icon faces, which never go into git - and a
+        bundle committed compressed is past what tools/public_sync.py can read. So the build
+        refuses a folder git would track, before it writes a byte, and builds into one git
+        ignores or one in no repository."""
+        import contextlib
+        import io
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as repo, tempfile.TemporaryDirectory() as elsewhere:
+            subprocess.run(['git', 'init', '-q', repo], check=True)
+            with open(os.path.join(repo, '.gitignore'), 'w', encoding='utf-8') as fh:
+                fh.write('out/\n')
+            forced = os.path.join(repo, 'out', 'kept', 'project', 'components', 'bundle.js')
+            os.makedirs(os.path.dirname(forced))
+            with open(forced, 'w', encoding='utf-8') as fh:
+                fh.write('// committed by hand\n')
+            subprocess.run(['git', '-C', repo, 'add', '-f', forced], check=True)
+            built = []
+
+            def run(out):
+                said = io.StringIO()
+                with mock.patch.object(designsys, 'build', lambda t, o, *a: built.append(o) or []), \
+                        contextlib.redirect_stdout(said):
+                    return designsys.main(['gdl.designsys', 'build', 'afterburn', out]), said.getvalue()
+            for out in (os.path.join(repo, 'ds'), repo, os.path.join(repo, 'out', 'kept')):
+                with self.subTest(refused=os.path.relpath(out, repo)):
+                    code, said = run(out)
+                    self.assertEqual(code, 2, said)
+                    self.assertIn('git does not ignore it', said)
+            self.assertEqual(built, [])
+            self.assertFalse(os.path.exists(os.path.join(repo, 'ds')))
+            for out in (os.path.join(repo, 'out', 'ds'), os.path.join(elsewhere, 'ds')):
+                with self.subTest(built=out):
+                    self.assertEqual(run(out)[0], 0)
+            self.assertEqual(built, [os.path.join(repo, 'out', 'ds'), os.path.join(elsewhere, 'ds')])
+
+    def test_chrome_draws_light_narrower_from_the_one_variable_face(self):
+        """The string above proves the bundle asks for 300; this proves Chrome
+        draws it. face_js adds opensans-latin.woff2 - one variable font - at
+        300 and at 400, and a caption laid out at 300 comes out narrower, each
+        weight at the width its own static face gives (gdl/fonts/opensans-
+        light.ttf and -regular.ttf, read by gdl.sfnt): measured on the review's
+        'Presentation Settings Volume' at 32 px, 423.30 px against 439.59 px.
+        A fallback face, or one weight drawn for both, misses by tens of px."""
+        from gdl import design
+        from gdl.sfnt import Advances
+        chrome = design.find_chrome()
+        if not chrome:
+            self.skipTest('needs headless Chrome ($CHROME, or Chrome or Chromium installed)')
+        text, px = 'Presentation Settings Volume', 32
+        probe = ('<pre id="out"></pre><script>\n'
+                 '(async function () {\n'
+                 '  var c = document.createElement("canvas").getContext("2d"), out = {};\n'
+                 '  for (const w of ["300", "400"]) {\n'
+                 '    await document.fonts.load(w + " %dpx \\"Open Sans\\"");\n'
+                 '    c.font = w + " %dpx \\"Open Sans\\", monospace";\n'
+                 '    out[w] = c.measureText(%s).width;\n'
+                 '  }\n'
+                 '  document.getElementById("out").textContent = JSON.stringify(out);\n'
+                 '})();\n</script>' % (px, px, json.dumps(text)))
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'light.html')
+            with open(path, 'w', encoding='utf-8') as fh:
+                fh.write('<!doctype html><html><head><script>%s</script></head><body>%s</body></html>'
+                         % (designsys.face_js(), probe))
+            r = subprocess.run([chrome, '--headless=new', '--disable-gpu', *design.sandbox_flags(),
+                                '--allow-file-access-from-files', '--virtual-time-budget=5000', '--dump-dom',
+                                'file:///' + path.replace(os.sep, '/').lstrip('/')],
+                               capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=120)
+        if r.returncode != 0 and '<pre id="out">' not in r.stdout:
+            # Chrome did not start - on a CI runner, most likely its sandbox, which only the
+            # `chrome` job opts out of (GDL_CHROME_NO_SANDBOX). That says nothing of the face.
+            self.skipTest('Chrome did not start here: ' + (r.stderr.strip().splitlines() or ['no output'])[-1][:200])
+        m = re.search(r'<pre id="out">(.*?)</pre>', r.stdout, re.S)
+        self.assertTrue(m and m.group(1), r.stderr[-500:])
+        got = json.loads(m.group(1))
+        self.assertLess(got['300'], got['400'] - 10, got)
+        for weight, face in (('300', 'opensans-light.ttf'), ('400', 'opensans-regular.ttf')):
+            static = Advances(os.path.join(REPO, 'gdl', 'fonts', face)).length(text, px)
+            with self.subTest(weight=weight):
+                self.assertAlmostEqual(got[weight], static, delta=1.0, msg=got)
 
 
 if __name__ == '__main__':

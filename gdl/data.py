@@ -25,7 +25,9 @@ import sys
 
 from .container import open_payload
 
-PT_TO_PX = 1.375  # the panel rasterizes at 99 DPI, not the usual 96
+# A caption's advances lie at 99 DPI; GDI+ sets its lines down at 96
+# (gdl.compose.VERTICAL).
+PT_TO_PX = 1.375
 NO_POPUP = 0xFFFFFFFFFFFFFFFF
 STALE_ID = re.compile(r'_ID(\d+)$')
 

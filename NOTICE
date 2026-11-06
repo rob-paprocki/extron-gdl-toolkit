@@ -1,0 +1,14 @@
+extron-gdl-toolkit
+Copyright 2026 Rob Paprocki
+
+Licensed under the Apache License, Version 2.0 (LICENSE). The licence covers
+this project's own code and documentation. It does not cover, and does not
+relicense, material that is not the project's own:
+
+- seeds/ - projects made in Extron GUI Designer from Extron's templates; they
+  carry Extron's artwork and fonts, under Extron's terms.
+- gdl/fonts/ - Open Sans, under its own licence (gdl/fonts/README.md says
+  which file is under which).
+
+Not affiliated with or endorsed by Extron. "Extron" and "GUI Designer" are
+Extron's names, used here only to say what the toolkit reads and writes.

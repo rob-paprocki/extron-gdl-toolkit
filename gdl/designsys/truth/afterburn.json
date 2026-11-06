@@ -378,11 +378,11 @@
       "fix": [
         {
           "key": "iconography.intro",
-          "says": "which the design system does not carry"
+          "says": "which the system's own chrome draws them in"
         },
         {
           "key": "iconography.intro",
-          "says": "The kit draws most of them as images too, in Afterburn/Icons/PNG"
+          "says": "the kit draws most of them as images too, in Afterburn/Icons/PNG"
         },
         {
           "key": "iconography.intro",
@@ -390,7 +390,7 @@
         },
         {
           "key": "kit.icons_note",
-          "says": "the system draws the kit's drawing of each, fitted to its button"
+          "says": "a Button that names one draws the kit's drawing, fitted to it"
         },
         {
           "key": "layout.popups",
@@ -535,8 +535,8 @@
         "pages": ["Main Select Source", "Camera Settings", "TV", "VTC Dialer"]
       },
       "status": "deviation",
-      "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2), which each panel scales - 16 pt on the 725, 18 on the 525 (gdl.designsys.models' `floor`): a caption under it is refused, so the profile lifts the template's 13 pt to 14, and a region page lifts each panel's captions to its floor, growing the control that holds them. The README says the template's own go under it.",
-      "here": "Nothing is under each panel's type floor, the toolkit's - 14 pt on the 1035, 16 on the 725, 18 on the 525 - where the template's captions go down to 13 pt on the 1035, 10.5 on the 725 and 13 on the 525: a caption there grows its control, the 725's mode launcher 143 wide where the template's is 115.",
+      "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2), which each panel scales - 16 pt on the 725, 18 on the 525 (gdl.designsys.models' `floor`): a caption under it is refused, so the profile lifts the template's 13 pt to 14, and a region page lifts each panel's captions to its floor, growing the control that holds them. The README says the template's own go under it. A key's caption on a panel whose own template sets its keys' words under 14 pt - the TLP320M's, the TLP300M's - goes down to that size and no further (gdl.designsys.models' `key_floor`; docs/design-rules.md section 1).",
+      "here": "Nothing is under each panel's type floor, the toolkit's - 14 pt on the 1035, 16 on the 725, 18 on the 525 - where the template's captions go down to 13 pt on the 1035, 10.5 on the 725 and 13 on the 525: a caption there grows its control, the 725's mode launcher 143 wide where the template's is 115. The exception is a key's caption on the TLP320M and the TLP300M, which goes down to the size their own templates set their keys' words in, and no further (docs/design-rules.md section 1).",
       "fix": [
         {"readme": "Nothing under 14 pt: that is the toolkit's floor, and a template's own smallest captions can be under it"},
         {"key": "type.button.usage", "says": "Afterburn's own small buttons use 13 pt"}
@@ -829,9 +829,21 @@
           "Doc Cam 1"
         ]
       },
-      "status": "deviation",
-      "reason": "The kit carries the drawings as 440x440 art, not the font (which carries no license field, so a design system draws no glyph), and a kit image is drawn fitted to its button, as every other Afterburn icon button's art is: inset art would put the touch target and the drawing in two controls.",
-      "here": "Close, Back, More and the carets are the kit's drawings fitted to their buttons, larger than the template's glyphs: Close draws 41 px in its 64 px box where the template's X is 27, as large as the Help and Power icons beside it.",
+      "status": "fixed",
+      "fix": [
+        {"key": "regions.window.close.glyph.char", "says": "U+E95C"},
+        {"key": "regions.hub.up.glyph.char", "says": "U+E94E"},
+        {"key": "regions.hub.down.glyph.char", "says": "U+E91D"},
+        {"key": "regions.hub.close.glyph.char", "says": "U+E97B"},
+        {"key": "regions.page.more.glyph.char", "says": "U+E97C"},
+        {"key": "regions.page.back.glyph.char", "says": "U+E97B"},
+        {"key": "kit.icons_note", "says": "the system's own Close, Back, More and carets the font's glyphs"}
+      ],
+      "gone": [
+        "which the design system does not carry",
+        "since the font carries no license field."
+      ],
+      "builds": "A window's Close, a hub's Up, Down and Back and a 320 page's More and Back build the template's glyphs in Extron-Afterburn at its sizes and in #BABCCE (`text-secondary`) - Close 30 pt on the 1035, 25 on the 725, 36 on the 1535; the 525's carets 50 and its Back 70, the 535's 75 and 95; the 320's chevrons 70 - where they built the kit's drawings fitted to their buttons; on a machine whose seeds and install carry no copy of the face, as before.",
       "evidence": "Close Help (9057) on seeds/Afterburn 1035.gdl, caption U+E95C at 30 pt in 64x64, drawn 27x27 in Extron - Afterburn 1a.ttf; 440x440_close.png's X spans 279 of its 440 px, 41 of 64 fitted; the 525's Volume Up (8120) U+E94E at 50 pt in 66x66 and the 320's Doc Cam More (8010) U+E97C at 70 pt in 50x50."
     },
     {

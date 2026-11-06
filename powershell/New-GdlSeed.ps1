@@ -527,7 +527,9 @@ while (((Get-Date) - $t0).TotalSeconds -lt 180) {
 }
 Write-Output ("  menu bar after {0:N0} s" -f ((Get-Date) - $t0).TotalSeconds)
 # The item carries the project's name - "Save Afterburn All-inclusive 1220
-# As..." (archive/gdlwork/uia-build.log) - so match around it.
+# As..." in the UI Automation prototype's log, whose evidence was removed
+# with the client material on 2026-11-04 (docs/history.md) - so match
+# around it.
 for ($try = 1; $try -le 3; $try++) {
     & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass `
         -File (Join-Path $PSScriptRoot 'Invoke-GdlMenu.ps1') -Item 'Save * As...' | ForEach-Object { "  menu: $_" }

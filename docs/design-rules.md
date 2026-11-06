@@ -47,8 +47,9 @@ pixels alone cannot place a panel. Soft clients (ECP, the VTLP targets, TLI Pro)
 have no tier - their screen is the host's.
 
 **Type floor** - also ours, not Extron's. GUI Designer draws a point at the same
-1.375 px on every panel (`docs/gdl-format.md` §2), so the documented 14 pt body
-minimum (§2) is 2.2 mm of cap height on a 1035 and 1.1 mm on a 535. The toolkit
+pixels on every panel, 4/3 down and 1.375 across (`docs/gdl-format.md` §2), so
+the documented 14 pt body minimum (§2) is 2.2 mm of cap height on a 1035 and
+1.1 mm on a 535. The toolkit
 holds text to **14 pt × DPI / 149, rounded up, never under 14**
 (`gdl.spec.type_floor`), which is the 14 pt as it reads on the TLP Pro 1025/1035:
 16 pt on a 725, 18 on an 835 or 525, 28 on a 535. A caption with no size is
@@ -58,6 +59,63 @@ it on dense panels: their 520 series keep the 1035's sizes - most of Mach's 525
 text is 13 to 22 pt, as on its 1035 - and their 535s step up, but short of
 it - Mach's and Shockwave's from 18 pt, most of it 20 to 36 (each seed's built
 `layout.json`).
+
+**A 320 key's caption** - ours too, the owner's call (2026-11-04). It may go
+down to the size the panel's own 320 template sets that kind of key in, and
+no further; a label keeps 14 pt. Extron's documented minimum is still 14 pt
+(§2): what is measured is that Extron's own 320 templates break it - their
+Doc Cam pages set Freeze, Auto and Normal at 10 pt on Mach's, Shockwave's and
+Afterburn's seeds and their Inputs 1 to 3 at 18, 22 and 11, and their
+Confirmation's keys at 11, 12 and 10 (each seed's states' fonts) - so the 10
+is the template's, never a number to quote as Extron's rule. So a key of
+digits or signs and no words - a dialer's `*`, `#` and `.`, which Mach's 1035
+sets at its digits' size, and a level's `+` and `-` - is drawn at the Inputs'
+size, the question's answers at the Confirmation's, and any other key of
+words at 10. A key set above 10 - one of digits or signs, or an answer - is
+pushed down by half points only where its words do not fit its key, to 10
+and no further; a key of words is at 10 already, and goes on two lines or
+grows instead. That is for a key with no size of its own: the call lets a
+key go down to its template's size, it does not make it. A key the designer
+gave a `size` keeps it, as it reads on the 320 (scaled, and held at the
+panel's 14 pt type floor, as every caption was before the call), where its
+words fit its key. Where they do not, it goes down by half points until they
+do, never under its kind's size. A set of them - a Group's members, or keys
+drawn alike side by side - comes out one size, the least any of them took
+(bundle.js `keyPt`, `ownFit`, `oneSize`). Shockwave's room's Lighting
+presets, drawn at 18, come out at 12.5, where 'Presentation' fits its 112 px
+key, not the 10 they would take with no size of their own.
+Turbulence's 320 sets its keys' words in their art and no caption under
+16 pt, so a caption there keeps 14 and its question's answers, where they
+draw words, 16. The frame records the sizes (`center.pt.key` and
+`center.pt.digit`, `windows.confirm.pt.answer`; `tests/measure_series.py`),
+translate writes the least into the 320's spec as
+`"type_floor": {"button": 10}`, and `gdl.spec check` holds a button's caption
+to it (`gdl.spec.key_floor`), naming one under it by that size. Start's key,
+which its templates set at 16, 20 and 12 pt, is not drawn at that yet
+(`docs/ROADMAP.md`).
+
+**The 300 takes the same rule where its template sets its keys' words under
+14 pt** - ours, by analogy with the 320: the owner's call covered the 320
+only, and whether the 300 takes it is the owner's still (`docs/ROADMAP.md`
+*Yours*). The TLP300M's own floor is 16 pt (164.83 DPI). The frame records
+each 300's key size as `center.pt.key`, the least its `grid_page` - the
+settings window its columns are read from - sets a key's words in. On
+Afterburn's 300 that is Display Settings, whose Power and Mute are 13 pt on
+the Portrait and the Landscape seed alike, so a key of words there is drawn
+at 13 and its spec says `"type_floor": {"button": 13}`. 13 is the least over
+that one page, not over the template. The same two seeds (their states'
+fonts) set most of their other keys at 13 too - Settings' menu, the Lights
+and Blinds Settings presets, Video's OK and Menu, both Confirmations' answers
+and the Portrait's Main Computer and Video - but the Landscape's Main
+Computer and Video at 12, Recording Controls' Record, Stop, Pause and Mark at
+10.5 and Main Recording's REC at 10 on both, and Start's Press to begin at 14.
+Mach's 300 Portrait sets Lighting Settings' Presets at 15, as it does every
+key of words but its Confirmations' answers, at 13, and Start's, at 16 -
+under the 300's floor but not under 14. Its keys keep the floor, and its
+spec has no `type_floor`. The frame records no
+`digit`, since no 300 template has a key of digits, and no `pt.answer`, since
+the 300 asks its question in a modal. A panel takes a key floor only where
+`center.pt.key` is under 14 (`gdl.designsys.models`).
 
 **A panel's series** - the Extron template its layout and background art come
 from - is chosen by model (`gdl/templates.py`), never by resolution alone:

@@ -468,6 +468,11 @@ jobs:
         # the panel's own face against.
         run: python tests/test_signoff_blend.py
 
+      - name: the render rules each hold on their own
+        # Here rather than in `test`: it needs Pillow to draw anything. It
+        # draws in the Open Sans the repo carries, so it needs no recovery.
+        run: python tests/test_compose.py
+
       - name: an inert button is caught off its artwork
         # Here as well as in `test`, where the verifier's artwork tests skip
         # without Pillow: they are the only check that a button whose states

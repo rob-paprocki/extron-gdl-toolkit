@@ -46,6 +46,28 @@ class TestTheSpec(unittest.TestCase):
         for name, f in p.images.items():
             self.assertTrue(f.startswith(SYNTHETIC_DIR) and os.path.exists(f), (name, f))
 
+    def test_the_captions_it_cuts_are_the_two_its_snapshots_show_cut(self):
+        """Its Type Sizes and Wrapping pages set captions near their boxes'
+        edges - the bold ones on Wrapping a few px inside them, by design -
+        and GUI Designer cuts two: Italic40 to 'Type 40 Itali', and LongWord
+        split over three lines. With its `caption_fit` off taken away, the
+        check names those two and none of the rest."""
+        try:
+            import PIL  # noqa: F401
+        except ImportError:
+            self.skipTest('Pillow not installed; a caption is measured with gdl.compose')
+        from gdl.spec import Panel
+        with open(SYNTHETIC_SPEC, encoding='utf-8') as fh:
+            spec = json.load(fh)
+        self.assertEqual(spec.pop('caption_fit'), 'off')
+        p = Panel.load(SYNTHETIC_SPEC)
+        p = Panel(dict(spec, images=p.images))
+        said = p.check()
+        self.assertEqual(len(said), 2, said)
+        self.assertTrue(said[0].startswith("page 'Type Sizes' Italic40: GUI Designer shows 'Type 40 Itali'"), said)
+        self.assertTrue(said[1].startswith("page 'Wrapping' LongWord: GUI Designer breaks "
+                                           "'Abcdefghijklmnopqrstuvwxyz' across lines"), said)
+
     def test_its_words_are_generic(self):
         """No client name, room or job: the fixture exists to carry none."""
         from gdl.spec import Panel
@@ -96,6 +118,38 @@ class TestTheBuild(unittest.TestCase):
         r = subprocess.run([sys.executable, os.path.join(HERE, 'verify_built.py'), plan, SYNTHETIC],
                            cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout[-4000:] + r.stderr[-2000:])
+        # Its two cut captions, said as its spec's caption_fit off asks.
+        cut = [ln for ln in r.stdout.splitlines() if 'CAPTION CUT' in ln]
+        self.assertEqual(len(cut), 2, r.stdout[-4000:])
+
+    def test_the_build_cuts_the_captions_its_spec_check_names(self):
+        """verify_built reads the built layout.json in the faces the built
+        file carries, as the spec check reads the spec: the same two, refused
+        where the plan does not turn the rule off."""
+        try:
+            from PIL import Image  # noqa: F401
+        except ImportError:
+            self.skipTest('Pillow not installed; verify_built imports the compositor')
+        sys.path.insert(0, HERE)
+        try:
+            import verify_built
+        finally:
+            sys.path.remove(HERE)
+        from gdl.spec import Panel
+        plan = Panel.load(SYNTHETIC_SPEC).plan()
+        self.assertEqual(plan.pop('caption_fit'), 'off')
+        pages = {p['Name']: p for p in self.j['Pages']}
+        popups = {p['Name']: p for p in self.j['PopupPages']}
+        problems, notes, n = verify_built.check_captions(plan, plan['pages'], pages, 'page', SYNTHETIC)
+        self.assertEqual([m.split(':')[0] for m in problems], ["page 'Type Sizes' 'Italic40'", "page 'Wrapping' 'LongWord'"])
+        self.assertIn("shows 'Type 40 Itali'", problems[0])
+        self.assertGreater(n, 100)
+        problems, notes, n = verify_built.check_captions(plan, plan['popups'], popups, 'popup', SYNTHETIC)
+        self.assertEqual(problems, [])
+        plan['caption_fit'] = 'off'
+        problems, notes, _ = verify_built.check_captions(plan, plan['pages'], pages, 'page', SYNTHETIC)
+        self.assertEqual(problems, [])
+        self.assertEqual(len(notes), 2, notes)
 
 
 @needs_synthetic()

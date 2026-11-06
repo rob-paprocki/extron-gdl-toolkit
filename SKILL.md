@@ -197,7 +197,23 @@ made from it (`docs/claude-design.md` §1, *Build*). Neither replaces `tests/ver
    color and the popups' colors included, each color counted once whatever its
    transparency - and ≥14pt body text), plus the type
    floor for the named model (`docs/design-rules.md` §1; a measurement spec turns
-   it off with `"type_floor": "off"`).
+   it off with `"type_floor": "off"`, and a 320's spec from a canvas holds a
+   key's caption to the least its template sets a key in instead, `"type_floor": {"button": 10}` -
+   Afterburn's 300's to its 13, the 320's rule by analogy and pending the owner),
+   and every live caption - a label's, a button's and each state's, but one
+   Build bakes (`flatten`), of one character (a glyph) or in a color with no
+   alpha, which shows nothing - that GUI Designer would cut, laid out as it
+   lays one out (`gdl.compose.caption_fit`: in its box less a sixth of an em a
+   side, wrapped at the spaces, trimmed at a character to the lines its depth
+   holds): words it trims and a word it breaks across lines, each with the
+   room it needs, are refused, and so is a line a row or more of whose ink
+   runs past the box, which GUI Designer cuts off flat there. The Shockwave
+   525's 18 pt Volume heading in a 91 px box built as 'Volum' with every
+   other gate green. It needs Pillow and the face (`python -m gdl.fonts`);
+   without either it is a note, not a pass. A measurement spec that cuts
+   captions on purpose turns it off with `"caption_fit": "off"` (the synthetic
+   fixture), and `verify_built` then says the cut ones rather than refusing
+   them.
 5. **Preview it**: `python -m gdl.spec render <spec.json> out/preview.png`, then
    **look at the image**. The compositor is scored against GUI Designer's own
    output, so this is a real preview, not a sketch. Iterate here — it is fast
@@ -291,6 +307,8 @@ the real project, then apply:
 2. **Check it**: `python -m gdl.edit check <edits.json> <panel.gdl>`. Every
    selector resolves against the real file, so "matched nothing" is an error
    here rather than a silent no-op at apply time. Errors block; warnings do not.
+   A rename's live words that GUI Designer would cut in the control's box are
+   warned of, laid out as step 4 lays a spec's (`docs/editing.md`).
 3. **Emit the plan**: `python -m gdl.edit plan <edits.json> <panel.gdl>
    out/edits-plan.json`.
 4. **Apply**: `powershell\Apply-GdlEdits.ps1 <ProjectGCP> <plan> <out>`.
@@ -304,7 +322,11 @@ Three things about renaming and restyling that are not obvious:
   breaks. `gdl.edit` writes it back wherever it found it.
 - A **formatted** caption is baked into the artwork. Making one longer wraps it
   onto an unindented second line over the icon - `check` warns, and the only
-  real verification is looking at the rasterized asset.
+  real verification is looking at the rasterized asset. A *flattened* button's
+  caption (`flattenTextField`) is baked from `ftextField` alone, so `rename`
+  writes the new words there too, in the field's own layout, and `verify_built`
+  looks for them in the art (`docs/editing.md`) - not yet proven by a build
+  (`docs/ROADMAP.md`).
 - **A button is its states**, and they need not match: most keep their fill
   only on their states, and Off and On may say different things. `rename` and
   `restyle` write each state by index. A `rename` with one `text` is refused

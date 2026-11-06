@@ -235,11 +235,29 @@ def models(p):
     for series, s in (p.get('panels') or {}).items():
         if series.startswith('_'):
             continue
+        # The least a key's caption is set in on the series' panels, where its
+        # own template sets its keys' words under 14 pt, Extron's documented
+        # minimum (its frame's `center.pt.key`; gdl.spec.key_floor,
+        # docs/design-rules.md section 1). On the 320 that is the owner's call
+        # (2026-11-04): its 10 pt Freeze, Auto and Normal, which a key's
+        # caption there may take, and no less. On Afterburn's 300 it is ours,
+        # by analogy with the 320 and pending the owner (docs/ROADMAP.md
+        # *Yours*): the 13 pt its Display Settings sets Power and Mute in, the
+        # page the 300's columns are read off. None elsewhere: on Turbulence's
+        # 320, whose keys carry their words in their art, and on Mach's 300,
+        # which sets its keys' words at 15 - under the 300's 16 pt floor, not
+        # under 14 - a caption keeps the type floor.
+        key_pt = ((((s.get('frame') or {}).get('center') or {}).get('pt') or {}).get('key')
+                  if (s.get('frame') or {}).get('home') else None)
+        if key_pt is not None and key_pt >= spec.MIN_BODY_POINT_SIZE:
+            key_pt = None
         for m in s['models']:
             touch, gap = spec.touch_minimums(m)
+            floor = spec.type_floor(m)
             out[spec.panel_id(m, s['size'])] = {
                 'series': series, 'size': list(s['size']), 'dpi': spec.dpi(m),
-                'tier': spec.tier(m), 'touch': touch, 'gap': gap, 'floor': spec.type_floor(m),
+                'tier': spec.tier(m), 'touch': touch, 'gap': gap, 'floor': floor,
+                'key_floor': key_pt if key_pt is not None and floor is not None and key_pt < floor else None,
                 'main': s['main'], 'rail': s['rail'], 'rail_axis': s['rail_axis'],
                 'popup': s['popup'], 'fit': s['fit'], 'backgrounds': s['backgrounds'],
                 'seed': (s.get('seeds') or {}).get(m),
@@ -762,13 +780,17 @@ def thumb_art(p):
 def _slim_windows(windows, ids=False):
     """A frame's windows as the bundle draws them: each record's rects, its
     surfaces' shape, fill and border, its Close's and buttons' role and rect,
-    the sizes its title and message are set in and the lines its message
+    the sizes its title, message and - a 320's question - answers are set
+    in (`pt`, which the 320 draws its answers at) and the lines its message
     takes, whether a window that is a page stands on the photo (`art`) and
     the words a question that is a page says (`text`, the 320's own) -
     not the seed's names, IDs or art, which are the translator's and the
     reader's (about 16 KB of Mach's, which took its bundle past 260 KB). With
-    `ids`, its Close's and buttons' seed IDs, which a 320's pages keep."""
-    def item(it):
+    `ids`, its Close's and buttons' seed IDs, which a 320's pages keep - and
+    always the incoming call's (`incoming`: Accept Call 9032 and Decline or
+    Ignore Call 9033 on every bar seed), which its answers keep on every
+    panel, the 320's and the hubs' too (the owner's call, 2026-11-04)."""
+    def item(it, ids=ids):
         if not it:
             return None
         out = {'role': it['role'], 'rect': it['rect']}
@@ -783,20 +805,78 @@ def _slim_windows(windows, ids=False):
             out['gap'] = it['gap']
         return out
 
-    def slim(w):
+    def slim(w, ids=ids):
         if not w:
             return w
-        out = {'rect': w.get('rect'), 'title': w.get('title'), 'close': item(w.get('close')),
+        out = {'rect': w.get('rect'), 'title': w.get('title'), 'close': item(w.get('close'), ids),
                'surfaces': [{k: s.get(k) for k in ('kind', 'rect', 'fill', 'border')} for s in w.get('surfaces') or []]}
         for k in ('message', 'popups', 'pt', 'lines', 'art', 'text'):
             if k in w:
                 out[k] = w[k]
         if 'buttons' in w:
-            out['buttons'] = [item(b) for b in w['buttons']]
+            out['buttons'] = [item(b, ids) for b in w['buttons']]
         return out
     if not windows:
         return windows
-    return {k: [slim(w) for w in v] if isinstance(v, list) else slim(v) for k, v in windows.items()}
+    return {k: [slim(w) for w in v] if isinstance(v, list) else slim(v, ids or k == 'incoming')
+            for k, v in windows.items()}
+
+
+def _bar_of(rec, roles):
+    """The band of a page record holding one of `roles` - a 300's menu bar: its
+    source page's holds Back, its home's Settings - or None."""
+    return next((b for b in ('bottom', 'left', 'right', 'top') if rec.get(b)
+                 and any(it['role'] in roles for it in rec[b]['items'])), None)
+
+
+def _menu_more(home, bar):
+    """Where a 300's page that goes on stands its More. Ours, not Extron's: no
+    300 template pages anything, so it is the last of the home bar's slots -
+    the slot Power stands in on Main - set into the page's own bar, else the
+    one before it, clear of Back and of the title the bar holds (Afterburn's
+    Landscape, whose column holds its title at its foot: Help's slot), else
+    clear of Back alone (Afterburn's Portrait, whose title runs along its bar:
+    Power's, and the title ends short of it)."""
+    hr, br = home['rect'], bar['rect']
+    back = [it['rect'] for it in bar['items'] if it['role'] == 'back']
+    title = [it['rect'] for it in bar['items'] if it['role'] == 'title']
+
+    def hit(a, b):
+        return a[0] < b[0] + b[2] and b[0] < a[0] + a[2] and a[1] < b[1] + b[3] and b[1] < a[1] + a[3]
+    slots = [[br[0] + it['rect'][0] - hr[0], br[1] + it['rect'][1] - hr[1], it['rect'][2], it['rect'][3]]
+             for it in reversed(home['items'])]
+    clear = [r for r in slots if not any(hit(r, o) for o in back)]
+    r = next((r for r in clear if not any(hit(r, o) for o in title)), clear[0] if clear else None)
+    return {'role': 'more', 'name': 'More', 'kind': 'button', 'rect': r} if r else None
+
+
+def _menu_frame(f):
+    """A 300's frame as the bundle draws it (bundle() above), or None for one
+    that is not a 300's: a home page whose bar holds Settings, a volume and
+    the centre's columns (tests/measure_series.py _menu_home, _menu_grid)."""
+    home = f.get('home') or {}
+    hb, sb = _bar_of(home, ('settings',)), _bar_of(f, ('back',))
+    if not (hb and sb and home.get('volume') and (f.get('center') or {}).get('row')):
+        return None
+    bar = f[sb]
+    more = _menu_more(home[hb], bar)
+    # The sheet the template's Settings page stands its keys on (Mach's
+    # #303030 Background over the photo, under its bar), which its windows
+    # stand on too, and a source's page does not.
+    rec = next((w for w in ((f.get('windows') or {}).get('settings') or []) if 'Settings' in (w.get('popups') or [])),
+               {})
+    sheet = [s for s in rec.get('surfaces') or [] if s.get('kind') == 'shape']
+    out = {'pages': True, 'menu': True,
+           'top': dict(bar, items=bar['items'] + ([more] if more else [])),
+           'home': {'top': home[hb], 'center': {'items': home['center']['items']}, 'volume': home['volume']},
+           'second': {'top': dict(bar, surfaces=sheet + bar['surfaces']), 'center': {'items': f['center']['items']}},
+           'plain': {'top': bar, 'center': {'items': f['center']['items']}},
+           'center': {k: f['center'].get(k) for k in ('rect', 'row', 'headings', 'pitch', 'pt', 'empty', 'empty_lines',
+                                                      'items')},
+           'windows': _slim_windows(f.get('windows'), ids=True), 'volume': None}
+    if sb == 'bottom':
+        out['foot'] = True
+    return out
 
 
 def _slim_call(c):
@@ -872,38 +952,128 @@ def _squircle_bands(f):
 # room) is measured in whatever the host has for Arial.
 FACE = os.path.join(os.path.dirname(HERE), 'fonts', 'opensans-latin.woff2')
 FACE_LICENSE = os.path.join(os.path.dirname(HERE), 'fonts', 'LICENSE-OpenSans-OFL.txt')
-FACE_FAMILY, FACE_WEIGHTS = 'Open Sans', ('400', '700')
+# Light too, from the same bytes: the file is one variable font, its wght axis
+# 300 to 800, so a face of weight 300 made from it draws Open Sans Light - a
+# little narrower than the Regular (a caption at 32 px 371.6 px wide to its
+# 384, in headless Chrome) - with no file of its own. A Light caption is Open
+# Sans Light on the panel (font.light, `light`), the seed's own Apache face.
+FACE_FAMILY, FACE_WEIGHTS = 'Open Sans', ('300', '400', '700')
 
 
-def face_js():
+def glyph_face_names(p):
+    """Every icon face the profile's looks set a glyph in (`glyph.face`)."""
+    out = set()
+
+    def walk(v):
+        if isinstance(v, dict):
+            g = v.get('glyph')
+            if isinstance(g, dict) and isinstance(g.get('face'), str):
+                out.add(g['face'])
+            for x in v.values():
+                walk(x)
+        elif isinstance(v, list):
+            for x in v:
+                walk(x)
+    walk({k: v for k, v in p.items() if k != 'panels'})
+    return sorted(out)
+
+
+_GLYPH_FACES = {}
+
+
+def glyph_faces(p):
+    """{face: (bytes, where)} of each icon face the profile's glyphs are set
+    in (glyph_face_names), as this machine has it: the build a panel builds
+    in first, read out of a seed (gdl.fonts.seed_face: an icon face out of
+    its family's 1035 seed, Extron GUI Configurator and the Video Conference
+    faces out of the first seed that carries them) - a donor that lacks it is
+    given that seed's (gdl.spec check_donor) - else the copy recovered into
+    gdl/fonts/, else the template's own Font folder in GUI Designer's install
+    or the copy GDL_EXTRON_RESOURCES names (`<template>/Font/`, matched by the
+    family its name table gives). A face found nowhere is left out, and the
+    looks that name it draw what they drew before (the kit's art, the words).
+
+    Extron's faces carry no license grant: read here at build time, they go
+    into the generated bundle only - the owner's private design system - and
+    never into git (tools/public_sync.py refuses a commit that carries one)."""
+    from ..fonts import face_path, seed_face
+    from ..sfnt import names
+    from ..spec import RESOURCE_ROOTS
+    out = {}
+    for face in glyph_face_names(p):
+        if face not in _GLYPH_FACES:
+            data, where = seed_face(face)
+            if not data and face_path(face):
+                with open(face_path(face), 'rb') as fh:
+                    data, where = fh.read(), os.path.join('gdl', 'fonts', os.path.basename(face_path(face)))
+            for root in () if data else RESOURCE_ROOTS:
+                folder = os.path.join(root or '', p['template'], 'Font')
+                for fn in sorted(os.listdir(folder)) if root and os.path.isdir(folder) else ():
+                    with open(os.path.join(folder, fn), 'rb') as fh:
+                        got = fh.read()
+                    if (names(got) or {}).get(1) == face:
+                        data, where = got, f"{p['template']}/Font/{fn} (GUI Designer's install)"
+                        break
+                if data:
+                    break
+            _GLYPH_FACES[face] = (data, where) if data else None
+        if _GLYPH_FACES[face]:
+            out[face] = _GLYPH_FACES[face]
+    return out
+
+
+def face_js(p=None, art=True):
     """A classic script that adds FACE to the document as FACE_FAMILY, at each
-    of FACE_WEIGHTS, before anything is drawn: a FontFace made from bytes is
+    of FACE_WEIGHTS - and, given a profile, each of its icon faces
+    (glyph_faces) - before anything is drawn: a FontFace made from bytes is
     loaded the moment it is made (from a URL - a data: URL too - it loads
     later), so the first caption measured is measured in it, on any host, with
     or without a network. The bundle runs it as it loads, and gdl.design.render
     first in each artboard's head, so a canvas on an older install of its
-    system is measured in it too; whichever runs first adds it. A face Chrome
-    will not take is left out, and the probe then says it did not load. The
-    copyright and license go with the bytes, as the OFL asks of every copy."""
+    system is measured in it too; whichever runs first adds a face, once
+    (`__GDL_FACES`), so render's Open Sans does not keep the bundle's icon
+    faces out. A face Chrome will not take is left out, and the probe then
+    says it did not load. The copyright and license go with Open Sans's bytes,
+    as the OFL asks of every copy. `art=False` (the translator's tests) leaves
+    the icon faces' bytes out, as it leaves the kit's: the probe reads names,
+    never pixels, and the profile still names the faces (`faces`)."""
     import base64
     with open(FACE, 'rb') as fh:
-        data = base64.b64encode(fh.read()).decode('ascii')
+        each = [(FACE_FAMILY, fh.read(), list(FACE_WEIGHTS))]
     with open(FACE_LICENSE, encoding='utf-8') as fh:
         notice = fh.read().strip()
-    return ('/*\n * ' + os.path.basename(FACE) + ':\n *\n'
-            + '\n'.join((' * ' + ln).rstrip() for ln in notice.splitlines()) + '\n */\n'
+    head = ('/*\n * ' + os.path.basename(FACE) + ':\n *\n'
+            + '\n'.join((' * ' + ln).rstrip() for ln in notice.splitlines()) + '\n */\n')
+    if p is not None and p['font']['family'] != FACE_FAMILY:
+        each, head = [], ''
+    glyphs = glyph_faces(p) if p is not None and art else {}
+    if glyphs:
+        head += ('/*\n * Extron\'s icon faces, read at build time from what this machine has - '
+                 + '; '.join(f'{f} from {w}' for f, (_, w) in glyphs.items())
+                 + '. They carry no license grant: this bundle is the owner\'s private design system '
+                   'only, never committed or published (gdl.designsys.glyph_faces).\n */\n')
+        each += [(f, data, ['400']) for f, (data, _) in glyphs.items()]
+    if not each:
+        return ''
+    adds = ''.join(f'  add({json.dumps(f)}, "{base64.b64encode(data).decode("ascii")}", {json.dumps(w)});\n'
+                   for f, data, w in each)
+    return (head
             + '(function () {\n'
-            + '  if (typeof window === "undefined" || window.__GDL_FACE || typeof FontFace === "undefined"'
-              ' || !document.fonts) return;\n'
-            + '  window.__GDL_FACE = true;\n'
-            + '  try {\n'
-            + f'    var s = atob("{data}"), b = new Uint8Array(s.length);\n'
-            + '    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);\n'
-            + f'    {json.dumps(list(FACE_WEIGHTS))}.forEach(function (w) {{\n'
-            + f'      var f = new FontFace({json.dumps(FACE_FAMILY)}, b.buffer, {{ weight: w }});\n'
-            + '      if (f.status !== "error") document.fonts.add(f);\n'
-            + '    });\n'
-            + '  } catch (e) {}\n'
+            + '  if (typeof window === "undefined" || typeof FontFace === "undefined" || !document.fonts) return;\n'
+            + '  var done = window.__GDL_FACES = window.__GDL_FACES || {};\n'
+            + '  function add(family, data, weights) {\n'
+            + '    if (done[family]) return;\n'
+            + '    done[family] = true;\n'
+            + '    try {\n'
+            + '      var s = atob(data), b = new Uint8Array(s.length);\n'
+            + '      for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);\n'
+            + '      weights.forEach(function (w) {\n'
+            + '        var f = new FontFace(family, b.buffer, { weight: w });\n'
+            + '        if (f.status !== "error") document.fonts.add(f);\n'
+            + '      });\n'
+            + '    } catch (e) {}\n'
+            + '  }\n'
+            + adds
             + '})();\n')
 
 
@@ -1009,6 +1179,19 @@ def bundle(p, art=True):
         if (bars or framed) and f and series in paged and series not in profile['frames'] and strip(f)
         and f.get('home') and f.get('second') and (f.get('center') or {}).get('row')
         and not any(f.get(b) for b in ('left', 'right')) and not (f.get('top') and f.get('bottom'))})
+    # A 300's (tier C, a page per source under a menu bar - along its foot, or
+    # down a side on Afterburn's Landscape): its source pages' bar packed as
+    # the strip, `foot` where it runs along the foot; its home's bar, Select
+    # a Source and volume; its second page's bar for Main's later pages and
+    # its windows - on the sheet they stand on where the template's Settings
+    # draws one (Mach's #303030) - and `plain`, a source's page's, which has
+    # none; the centre's row, headings, steps, sizes and empty state; its
+    # windows. Its region page, source pages and windows draw it as pages of
+    # their own (bundle.js planMenu, pagePart).
+    profile['frames'].update({
+        series: _menu_frame(f) for series, f in ((s, v.get('frame')) for s, v in (p.get('panels') or {}).items()
+                                                 if not s.startswith('_'))
+        if (bars or framed) and f and series in paged and series not in profile['frames'] and _menu_frame(f)})
     # What the regions draw by default - Volume, Mute, Help, Power, the clock -
     # in the template's own looks and wording.
     profile['regions'] = {k: v for k, v in (p.get('regions') or {}).items() if not k.startswith('_')}
@@ -1041,9 +1224,13 @@ def bundle(p, art=True):
                               art=kit_art(p, index) if art and index['files'] else {},
                               thumb_art=thumb_art(p) if art else {},
                               rail_art=rail_art(p) if art else {})
+    # The icon faces the template sets its glyphs in that this machine has
+    # (glyph_faces): a look's `glyph` draws in one only where it is here, and
+    # draws what it did before - the kit's art, the words - where it is not.
+    profile['faces'] = sorted(glyph_faces(p))
     js = _read('bundle.js')
     for mark, value in (('__HEADER__', header),
-                        ('__FACE__', face_js() if p['font']['family'] == FACE_FAMILY else ''),
+                        ('__FACE__', face_js(p, art)),
                         ('__PROFILE__', json.dumps(profile, separators=(',', ':')))):
         if js.count(mark) != 1:
             raise ValueError(f'bundle.js must hold {mark} exactly once')
@@ -1351,13 +1538,22 @@ def _rail_room(p, T):
     w = left['rect'][2]
 
     def room(kit, frac, toggle):
+        # As bundle.js railRoom and railLines: a list caption sure of one
+        # line runs to 4 px from the key's right, past the fewest spaces
+        # that clear the icon as GUI Designer sets them, and no further than
+        # GDI+ lays it out uncut (gdiCut: the key less a sixth of the em a
+        # side, its words FACE_SLACK wide and its spaces not).
         kw, kh = (int(v) for v in kit.split('x'))
         s = min(w / kw, ht / kh)
         aw = kw * s
         x0 = (w - aw) / 2
         start = 8 if toggle else x0 + frac * aw + 4
         end = x0 + frac * aw - 4 if toggle else w - 4
-        return max(0, int(end - math.ceil(start / sp) * sp))
+        n = math.ceil(start / sp) if toggle else max(0, math.ceil((start - em / 6) / sp))
+        r = end - n * sp
+        if not toggle:
+            r = min(r, (w - em / 3 - n * sp) / 1.006)
+        return max(0, int(r))
     kit = p.get('kit') or {}
     lst = [room(k, f, False) for k, f in (kit.get('icon_right') or {}).items()]
     # A toggle draws the kit's switch art nearest its cell's shape.
@@ -1826,6 +2022,28 @@ def _the_series(names):
     return 'the ' + (names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' and ' + names[-1]) + ' Series'
 
 
+def _key_floor_line(p):
+    """The README's one exception to its 14 pt: a key's caption on a series
+    whose own template sets its keys' words under 14 pt goes down to that
+    size and no further (models' `key_floor`, docs/design-rules.md section
+    1) - the 320's 10, Afterburn 300's 13. '' where no series has one
+    (Turbulence's)."""
+    least = {}
+    for row in models(p).values():
+        if row.get('key_floor') is not None:
+            name = row['series'][len(p['template']):].strip().removesuffix(' Series')
+            least.setdefault(row['key_floor'], {})[name] = None
+    if not least:
+        return ''
+    said = [f"on {_the_series(list(names))} no further than {pt:g} pt" for pt, names in sorted(least.items())]
+    return (" The one exception is a key's caption, which goes down to the size the panel's own template sets"
+            " that kind of key in - "
+            + (said[0] if len(said) == 1 else ', '.join(said[:-1]) + ' and ' + said[-1])
+            + ". A key you give a `size` keeps it there, at the panel's floor at least, where its words fit the"
+            " key, and goes down only as far as they need - a set of keys drawn alike as one; a label keeps the"
+            " floor (`docs/design-rules.md` section 1).")
+
+
 def _panels_rail(p):
     if not models(p):
         return ' Give it a position and size with its own style.'
@@ -2245,11 +2463,13 @@ def _region_docs(p):
               "opens the seam to that panel's gap. A Page holding any region is a region "
               "page: one that lacks a Header, LeftRail, RightRail, Footer or Center is named on the canvas "
               "and in the translate report, and still builds; a Start or other splash page says "
-              "`splash=\"true\"` and is not. On a hub (the 520s and 535s) and on the 320 the same regions "
-              "are drawn in their own grammar - a menu bar beside popups that fill main, pages "
+              "`splash=\"true\"` and is not. On a hub (the 520s and 535s) and on the 320"
+              + (" and the 300" if _family_series(p, 'menu') else '')
+              + " the same regions are drawn in their own grammar - a menu bar beside popups that fill main, pages "
               + ("over a strip along their foot" if _foot_strip(p) else "under a title strip")
-              + " - which the system's README says region by region (*The template's grammar*). On a turned "
-              "panel a region page is refused by name for now.")
+              + (", pages under the 300's menu bar" if _family_series(p, 'menu') else '')
+              + " - which the system's README says region by region (*The template's grammar*). "
+              + _turned_words(p, 'a region page') + ".")
     together = _footer_together(p)
     # Afterburn's chrome is its art: its Header is the row over its Divider,
     # its Footer the foot row, and neither paints a bar.
@@ -2418,8 +2638,10 @@ def _roles_props(p):
             + f"On a 320 it is a page of its own {_strip_side(p)} titled with it, what you put in it in columns - a label at a column's top its "
             f"heading, a Group a column of its own under its title, a slider a level with Up and Down - two to a "
             f"page, the rest on a second page by More and Back; with nothing in it, the 320's "
-            f"three-line empty state; its Back goes back to the page whose key shows it. On a turned panel a source "
-            f"popup is refused by name for now.\n"
+            f"three-line empty state; its Back goes back to the page whose key shows it. "
+            + ("On the 300 too it is a page of its own, under its menu bar with Back in it, what you put in it in "
+               "its settings windows' columns, going on by a More in the bar. " if _family_series(p, 'menu') else '')
+            + _turned_words(p, 'a source popup') + ".\n"
             f"- `role` on a `kind=\"modal\"`: a window, drawn as {t} draws its windows. `settings` (or a `title` and "
             f"no role) draws the window with its `title` and a Close; `help` too, titled '{helped}' unless you give a "
             f"`title`, and with nothing put in it {t}'s own help message; `confirm` with `topic=\"power\"` asks "
@@ -2437,7 +2659,10 @@ def _roles_props(p):
                "Help over the strip with Back to the page that opened it. " if _foot_strip(p) else
                "On a 320 each is a page: the question and the wait on the template's rounded box, a settings window "
                "and Help under the strip with Back to the page that opened it. ")
-            + f"On a turned panel a window is refused by name for now.\n"
+            + ("On the 300 a settings window and Help are pages under its menu bar with Back in it, and the "
+               "question and the wait windows over the page, where its template asks them. "
+               if _family_series(p, 'menu') else '')
+            + _turned_words(p, 'a window') + ".\n"
             f"- `role=\"dialer\"` on a `kind=\"popup\"` in the Center's group: the call mode's dialer, which draws "
             f"{t}'s own whole - its title, the number's field, the keypad and its keys, each with the template's ID - "
             f"on every panel; put nothing in it. `confirm` with `topic=\"call\"` asks the incoming call's question, "
@@ -2970,8 +3195,18 @@ def readme(p, renders=None):
     ns, t = p['namespace'], p['template']
     w, ht = p['size']
     comps = ', '.join(f'`{n}`' for n, _, _ in components(p) if n not in ('Page', 'MainArea'))
+    light = (p['font'].get('light') or {})
     type_line = ', '.join(f"`{s['name']}` {s['pt']:g}{' bold' if s['weight'] >= 600 else ''}"
-                          for s in p['type'])
+                          f"{' Light' if light and s['weight'] < 400 else ''}" for s in p['type'])
+    # Where the template sets Open Sans Light (font.light): the series, and
+    # whether every caption or the looks that say so.
+    light_line = (f" {light['family']} where the panel's own template sets it - "
+                  + ('every label, caption and clock' if light.get('all') else
+                     'the type styles marked Light, and the titles, messages, empty states and clock the regions draw')
+                  + " on " + _the_series([n.replace(p['template'] + ' ', '').replace(' Series', '')
+                                          for n in light.get('series') or []])
+                  + f"; {p['font']['family']} on the rest, as theirs are."
+                  if light else '')
     border_line = ', '.join(f"`{k}` ({b['usage'].rstrip('.').lower()})" for k, b in p['borders'].items())
     # Where the type comes from: carried in the bundle (face_js), or linked.
     font_link = f"`<link rel=\"stylesheet\" href=\"{p['font']['google']}\">` in each artboard's `<helmet>`"
@@ -3000,7 +3235,7 @@ Start from what the panel has to do - the rooms, sources, calls and settings - a
 {_grammar_md(p, renders)}{_working_md(p)}{_center_md(p)}{_windows_md(p, renders)}{_writing_md(p)}{_handover_md(p)}{_free_pages_md(p)}{_differences_md(p)}{_layout_md(p)}{_panels_section(p)}{_themes_md(p)}## Visual foundations
 
 - **Color.** Use the tokens by name, each for what its note says. {p['examples']['color_rule']} Extron caps a project at **six colors** (Design Standards p.49), captions included. The tokens here are the template's own palette and do not count against the six; any color you add by hex does, so keep to the tokens.
-- **Type** is {p['font']['family']}.{(' ' + p['font']['note']) if p['font'].get('note') else ''} Sizes are points, drawn at {p['pt']} px per point as GUI Designer draws them: {type_line}. Nothing under 14 pt: that is the toolkit's floor, and a template's own smallest captions can be under it.
+- **Type** is {p['font']['family']}.{light_line}{(' ' + p['font']['note']) if p['font'].get('note') else ''} Sizes are points, drawn at {p['pt']} px per point as GUI Designer draws them: {type_line}. Nothing under 14 pt: that is the toolkit's floor, and a template's own smallest captions can be under it.{_key_floor_line(p)}
 - **Shapes** come from the template's border resources only: {border_line}. The panel cannot draw any other corner, a gradient or a shadow; a fill's transparency is its alpha (a token's `#RRGGBBAA`).
 - **Size and spacing** follow the panel's physical size: every button and slider at least {p['touch']} px each way (9 mm on a {p['model']}), at least {p['spacing']} px between touchable controls (2 mm), no more than nine buttons in one group, and place things on GUI Designer's 10 px nudge - Extron's Design Standards, which its own templates do not always keep{'; the region components keep a set the template stands together (a Header tab row, a Section) as one set, at the step the frame measures' if regions else ''}. {t}'s usual button is {p['defaults']['button']['height']} px tall.
 
@@ -3138,9 +3373,10 @@ def render_templates(p, plan=None):
         if not seeds.usable(r['seed']):
             missing.append(r['seed'])
             continue
-        # Translucent chrome as the panel shows it, the photo through it, not
-        # as GUI Designer's snapshot paints it (compose.BINARY) - and the rule
-        # put back as it was, so a caller's outlives the render.
+        # Translucent chrome as the picture of the panel blends it, the photo
+        # through it, not in light as GUI Designer's snapshot does
+        # (compose.BINARY) - and the rule put back as it was, so a caller's
+        # outlives the render.
         was = compose.BINARY
         compose.BINARY = False
         try:
@@ -3223,7 +3459,71 @@ def _family_series(p, family):
     if family == 'hub':
         return sorted(_series_named(p, lambda s: s.get('tier') == 'B'),
                       key=lambda n: int(n.split()[0]) if n.split()[0].isdigit() else 0)
+    if family == 'menu':
+        return _series_named(p, lambda s: bool(s.get('frame') and _menu_frame(s['frame'])))
     return [n for n in _series_named(p, lambda s: s.get('tier') == 'C') if n.startswith('320')]
+
+
+def _turned_words(p, what):
+    """Why `what` is refused on a turned panel: no template of the theme is
+    drawn that way up (tests/test_measure_series.py: Extron's one turned
+    template is Afterburn's 300 Landscape, a series of its own)."""
+    own = (f" (its 300 Landscape is a series of its own, drawn as the 300 is)"
+           if any('Landscape' in n for n in _family_series(p, 'menu')) else '')
+    return f"On a turned panel {what} is refused by name: no {p['template']} template is drawn that way up{own}"
+
+
+def _menu_md(p, renders):
+    """`### The 300`: what a 300 makes of a region page, off its frame - Main
+    the template's Select a Source with its volume and its menu bar, the rest
+    of the room on pages Settings leads to, each source and window a page
+    under the bar - or '' for a theme whose profile has no 300."""
+    menus = [(n, row['frame']) for n, row in (p.get('panels') or {}).items()
+             if not n.startswith('_') and row.get('frame') and _menu_frame(row['frame'])]
+    if not menus:
+        return ''
+    f = menus[0][1]
+    H = f['home']['center']['items']
+    title = next((i for i in H if i['role'] == 'title'), {})
+    places = sum(1 for i in H if i['role'] == 'source')
+    heading = next((i for i in H if i['role'] == 'heading'), None)
+    sheet = next((s['fill'][:7] for w in (f.get('windows') or {}).get('settings') or ()
+                  if 'Settings' in (w.get('popups') or ()) for s in w.get('surfaces') or ()
+                  if s.get('kind') == 'shape' and s.get('fill')), None)
+    in_bar = any(i['role'] == 'title' for i in (f.get('bottom') or {}).get('items') or ())
+    turned = next((g for _, g in menus if g.get('left') and (g['home'].get('right'))), None)
+    side = ''
+    if turned:
+        t = next(i for i in turned['left']['items'] if i['role'] == 'title')
+        side = (f" - and on the Landscape, the one template Extron draws turned, down a side: Main's the column at "
+                f"the right, every other page's the column at the left, Back at its head and the title at its "
+                f"foot, {t['rect'][2]} px across at {(turned['center'].get('pt') or {}).get('title')} pt there: about "
+                f"six letters, where the template shortens Computer to 'Comp.'")
+    # Named by its series where that says more than 'The 300' does: Mach's
+    # one series is the 300 itself, Afterburn's its Portrait and Landscape.
+    series = _family_series(p, 'menu')
+    head = '### The 300' + ('' if series == ['300'] else f' ({_the_series(series)})')
+    return (head + '\n\n' + _render_md(p, renders, 'menu')
+            + f"**What the 300 makes of your page.** No rails or footer: every page stands under a menu bar along "
+              f"its foot{side}. Main is '{title.get('text') or 'Select a Source'}': its title, the Header's source "
+              f"tabs at the {places} places the template stands its source keys - the same controls - the rest on "
+              f"over a page of Main's own by a More in the last place (ours: the template pages nothing); the volume "
+              f"where the "
+              f"template stands it - the slider its level, Mute, Down and Up"
+            + (f", under its '{heading['text']}' heading" if heading else '')
+            + "; and in the bar Settings, Help and Power. Settings goes on to pages of Main's own (ours: the "
+              "template has no such page) holding what the 300 keeps off Main - the Sections as columns under their "
+              "headings, the mode launcher, Audio Control and the Header's ends"
+            + (f", on the {sheet} sheet the template's Settings stands on, as its settings windows and Help do"
+               if sheet else '')
+            + ". A source, a settings window and Help are pages under the bar titled with them - "
+            + ("the title in the bar beside Back, ending short of More where a page goes on" if in_bar
+               else "the title at the page's top, the bar holding Back")
+            + " - Back going back to the page that showed it; past what a page's columns hold, a More in the bar's "
+              "last place - ours, too - goes on to a second. A title too long for its place at the template's size "
+              "says the page's name there, and one whose name does not fit either is refused by name (ours). The "
+              "question and the wait are windows over the page, where the template asks them. The clock, which the "
+              "template draws on its Start page alone, and the Center's popup region are named and left.\n\n")
 
 
 def _say(words):
@@ -3344,7 +3644,8 @@ def _grammar_md(p, renders):
            f"source.{squircle} Draw a working page in its regions (The working page) and every panel the room has "
            f"draws it in the grammar of its own template: the bar panels round the center, a hub as a menu bar beside "
            f"popups that fill main, the 320 as pages "
-           + ("over a strip along their foot" if _foot_strip(p) else "under a title strip") + ".\n\n"
+           + ("over a strip along their foot" if _foot_strip(p) else "under a title strip")
+           + (", the 300 as pages under a menu bar" if _family_series(p, 'menu') else '') + ".\n\n"
            f"### The bar panels ({_the_series(_family_series(p, 'bar'))})\n\n"
            + _render_md(p, renders, 'bar')
            + f"- **Header** (`{ns}.Header`): {tabs.get('count') or len(tabs.get('items') or ())} source tabs on the "
@@ -3445,6 +3746,7 @@ def _grammar_md(p, renders):
                   f"are pages of their own. The volume slider is the level in the Volume window the program shows; "
                   f"the clock and the Center's popup region are named and left.\n\n"
                 + _small_derived_md(p, small))
+    out += _menu_md(p, renders)
     # Help is the Footer's wherever the template stands it (planFooter).
     moved = any(i.get('role') == 'help' for i in right.get('items') or ())
     sel = hub.get('select') or {}
@@ -3454,10 +3756,13 @@ def _grammar_md(p, renders):
     out += (f"**Where Help goes.** In the Footer on the bar panels"
             + (", which stands it in the right rail where the template does" if moved else '')
             + f", drawn by default and opening the artboard its `help` names; on a hub, {hub_help}; on the 320, on "
-              f"a page of Main's own, reached by More. Draw it once, as an artboard of its own - a Page with "
+              f"a page of Main's own, reached by More"
+            + ("; on the 300, in Main's bar" if _family_series(p, 'menu') else '')
+            + f". Draw it once, as an artboard of its own - a Page with "
               f"`kind=\"modal\"` and `role=\"help\"` (Windows): a window over the page on the bar panels"
             + (", a popup in main on a hub" if _hub_column(p) else " and the hubs")
-            + f", and on the 320 a page {_strip_side(p)}, with Back.\n\n")
+            + f", and on the 320 a page {_strip_side(p)}"
+            + (", on the 300 one under its bar" if _family_series(p, 'menu') else '') + ", with Back.\n\n")
     return out
 
 
@@ -3534,13 +3839,20 @@ def _select_md(p):
     if not S:
         return ''
     look = (((p.get('regions') or {}).get('select') or {}).get('tile') or {}).get('variant')
+    # Turbulence's tiles are their tabs to the program (the frame's
+    # `tab_ids`: Laptop 8050 on both pages), Mach's and Afterburn's controls
+    # of their own (8100 to 8103) - the owner's call (2026-11-04).
+    ids = (f"its tab's name and its tab's `states`: as {p['template']}'s own tiles are, a tile is its tab to the "
+           f"program and takes its tab's ID - the ID map lists it with the tab, its `nav` its own - so give it no "
+           f"`id`" if S.get('tab_ids') else
+           f"and an `id` of its own - a tile shows the working page where its tab shows its popup, and one ID is "
+           f"one control with one `nav`")
     return (f"**Choosing among the sources.** {p['template']}'s Main Select Source chooses a source before one "
             f"is shown, and holds more than a Header does: a Page with `role=\"select\"` and the working page's "
             f"regions draws its Header as that page's title ('{S.get('text')}') and the Header's tabs as its "
             f"tiles in the Center" + (f" (`{look}`)" if look else '') + ", each with its name under it, in rows "
             f"where there are more than the template draws. It has no popup region: give each tile a `nav` to "
-            f"the working page, which shows that source, and an `id` of its own - a tile shows the working page "
-            f"where its tab shows its popup, and one ID is one control with one `nav`. On a hub and the 320 it is "
+            f"the working page, which shows that source, {ids}. On a hub and the 320 it is "
             f"drawn as any region page is.\n\n")
 
 
@@ -3588,6 +3900,11 @@ def _call_md(p):
                                   ('delete', 'Delete')) if r in dk])
     asked = ' '.join(((w.get('confirm') or {}).get('call')
                       or ((F.get('windows') or {}).get('incoming') or {}).get('text') or '').split())
+    # Its answers' seed IDs, which they keep on every panel (the owner's call,
+    # 2026-11-04): Accept Call 9032 and Decline Call 9033 on Mach's.
+    inc = {b['role']: b for b in ((F.get('windows') or {}).get('incoming') or {}).get('buttons') or ()
+           if b.get('id') is not None}
+    answer_ids = _say([f"{inc[r].get('name') or r} {inc[r]['id']}" for r in ('accept', 'decline') if r in inc])
     sv = ((p.get('regions') or {}).get('share') or {}).get('variant')
     art = (p['buttons'].get(sv) or {}).get('caption') == 'none'
     room = _tab_room(F, call=True)
@@ -3623,7 +3940,8 @@ def _call_md(p):
             + (f" - {dial_ids.replace(' 5', ' is 5', 1)} -" if dial_ids else '') + " and saying what it does.\n"
             f"- **An incoming call**: a modal with `role=\"confirm\"`, `topic=\"call\"` and "
             f"`reached-by=\"program\"` asks '{asked}' with {B.get('accept', 'Accept')} - its `does` is the "
-            f"Page's - and {B.get('decline', 'Decline')}, where the template stands its Incoming Call.\n"
+            f"Page's - and {B.get('decline', 'Decline')}, where the template stands its Incoming Call"
+            + (f", each with the template's ID on every panel ({answer_ids})" if answer_ids else '') + ".\n"
             f"- **Share Content** opens what the room shares: {shares}.\n\n"
             f"On a hub, whose template has no call mode, the call page's first Section and its Share Content are a "
             f"popup of their own in main, titled with the Section's heading, which the program shows first and an "
@@ -4699,6 +5017,36 @@ def build(template, out, at, existing=None):
     return written
 
 
+def tracked_output(out):
+    """Why `out` may not take a built system, or None. A system carries Extron's art and the icon
+    faces its template sets glyphs in (glyph_faces), which never go into git - and in a bundle
+    committed compressed, nothing tools/public_sync.py reads would find them (its FONT_OK says
+    what it does). So a system is built into a folder git ignores (out/) or one in no git work
+    tree at all, and the build refuses any other before it writes a byte. Where git itself cannot
+    be run, nothing can be committed from here either."""
+    import subprocess
+    # Real, as git reports its top: through a symlink the path would lie outside it.
+    target = os.path.join(os.path.realpath(out), 'project', 'components', 'bundle.js')
+    near = os.path.dirname(target)
+    while not os.path.isdir(near) and os.path.dirname(near) != near:
+        near = os.path.dirname(near)
+    try:
+        top = subprocess.run(['git', '-C', near, 'rev-parse', '--show-toplevel'], capture_output=True, text=True)
+        if top.returncode != 0:
+            return None                   # in no work tree
+        top = top.stdout.strip()
+        # Not --no-index: a path git already tracks is reported as not ignored, and is refused.
+        ignored = subprocess.run(['git', '-C', top, 'check-ignore', '-q', os.path.relpath(target, top)],
+                                 capture_output=True)
+    except OSError:
+        return None
+    if ignored.returncode == 0:
+        return None
+    return (f'not built: {out} is in the git work tree {top}, and git does not ignore it. A design '
+            f'system carries Extron\'s art and icon faces, which never go into git: build it into '
+            f'out/ (git-ignored) or a folder outside any repository.')
+
+
 def main(argv):
     if len(argv) >= 2 and argv[1] == 'audit':
         # Is what the system says about its template what the template does?
@@ -4737,6 +5085,10 @@ def main(argv):
     if '--index' in argv:
         with open(argv[argv.index('--index') + 1], encoding='utf-8') as fh:
             existing = json.load(fh)
+    refused = tracked_output(argv[3])
+    if refused:
+        print(refused)
+        return 2
     written = build(argv[2], argv[3], at, existing)
     print(f'{len(written)} files -> {os.path.join(argv[3], "project")}')
     return 0

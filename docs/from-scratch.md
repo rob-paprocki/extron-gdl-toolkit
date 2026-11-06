@@ -899,11 +899,18 @@ the default is not inside the repo.
   1,444 s in Afterburn, Mach and Shockwave and 1,160 to 2,674 s in
   Turbulence, whose 60 MB projects spend 8 to 12 minutes in Save and Build
   and 11 to 33 before it. The forms of one size (M, C, T) took about as long
-  as one another. A run now and then ends at exit 1 before the wizard is open, in a
+  as one another. The 51 made after them held to those ranges: the 520s, 521s,
+  526s and 535M took 254 to 675 s, and the 726s, 1022s, 1026s, 1520s, 1720s and
+  1725s 721 to 1,249 s in Afterburn, Mach and Shockwave and 1,591 to 1,638 s in
+  Turbulence. The 835M turned to portrait (`New-GdlTurnedSeed.ps1`, no wizard)
+  took 453 to 1,040 s. A run now and then ends at exit 1 before the wizard is open, in a
   UI Automation timeout while GUI Designer loads; the script waits through it
-  now, and a rerun makes the seed. Their Save and Build is the part that follows the processor's clock (§5c);
+  now, and a rerun makes the seed. One ended at exit 5 after 18 minutes - the
+  wizard had no Panel Type combo in its tree and no dialog was up - and the
+  rerun made the seed. Their Save and Build is the part that follows the processor's clock (§5c);
   Create was not timed against it. The runs' logs and timings are in
-  `archive/job-e823df9b/seeds-2.6/`; the 725 seeds' earlier logs, and the run that lost one to the hung
+  `archive/job-e823df9b/seeds-2.6/` and, for the seeds after them,
+  `archive/job-e823df9b/seeds-more/`; the 725 seeds' earlier logs, and the run that lost one to the hung
   window, are in `archive/job-2419a20b/seeds/`.
 - **A seed the wizard cannot make is turned by `New-GdlTurnedSeed.ps1`** - a
   panel turned where its theme draws no template that way up. No wizard: it

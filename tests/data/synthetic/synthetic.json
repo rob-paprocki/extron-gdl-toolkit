@@ -56,6 +56,7 @@
    "XXX.XXX.XXXX": "555.010.4567"
   }
  },
+ "caption_fit": "off",
  "images": {
   "backdrop.png": "./art/backdrop.png",
   "stripes.png": "./art/stripes.png",

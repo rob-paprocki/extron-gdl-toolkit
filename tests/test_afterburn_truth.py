@@ -63,15 +63,15 @@ class TestAfterburnsLedger(unittest.TestCase):
 
     def test_what_it_keeps_differing_in_is_said_with_its_reason(self):
         """The 14 pt floor, the spacing standards, the Group's paging, the
-        hubs' one background, the kit's drawings of the glyph font fitted to
-        their buttons, the 8120 a launcher keeps, and the gates' moves on the
+        hubs' one background, the 8120 a launcher keeps, and the gates' moves on the
         725's rail, its Help and Power and the 320's rows, the hub's Volume
         Level strip on every working page, the right column's flex and the
         recording question's answers' IDs - and only those. The
         right column, the hub's carets, the left rail, the clocks, a window's
-        card and the 320's pages are the frame's now."""
+        card and the 320's pages are the frame's now, and Close, Back, More and
+        the carets the icon font's own glyphs (afterburn-36, fixed)."""
         dev = {e['id']: e for e in self.ledger['entries'] if e['status'] == 'deviation'}
-        self.assertEqual(sorted(dev), [f'afterburn-{i:02d}' for i in (23, 24, 32, 34, 36, 38, 42, 43, 44, 45, 46, 48)])
+        self.assertEqual(sorted(dev), [f'afterburn-{i:02d}' for i in (23, 24, 32, 34, 38, 42, 43, 44, 45, 46, 48)])
         for i in ('afterburn-08', 'afterburn-09', 'afterburn-10', 'afterburn-11', 'afterburn-39', 'afterburn-40'):
             self.assertEqual(next(e for e in self.ledger['entries'] if e['id'] == i)['status'], 'frame')
         for e in dev.values():
@@ -81,10 +81,11 @@ class TestAfterburnsLedger(unittest.TestCase):
         """The right column and the foot row, the hub's carets, the 320's
         pages, a window's card drawn as the page's own art, a button naming a
         kit drawing of a glyph, which now resolves to Icons/PNG, the alert
-        variant, a Group's chevrons, the 520's hub, the left rail in Sections
-        and each panel's own clocks, and the Mute's muted glyph."""
+        variant, a Group's chevrons, Close, Back, More and the carets in the
+        icon font, the 520's hub, the left rail in Sections and each panel's
+        own clocks, and the Mute's muted glyph."""
         built = [e['id'] for e in self.ledger['entries'] if e.get('builds')]
-        self.assertEqual(built, [f'afterburn-{i:02d}' for i in (8, 9, 10, 11, 15, 25, 32, 37, 39, 40, 47)])
+        self.assertEqual(built, [f'afterburn-{i:02d}' for i in (8, 9, 10, 11, 15, 25, 32, 36, 37, 39, 40, 47)])
 
 
 class TestTheGlyphsTheKitDrawsAsImages(unittest.TestCase):

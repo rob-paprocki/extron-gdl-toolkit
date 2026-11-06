@@ -82,10 +82,11 @@ class TestShockwavesLedger(unittest.TestCase):
         do), and its review three (shockwave-39 to 41: the dialer's captions
         and the answers' art, the answers' IDs, and the 725's call page's
         launchers), and the call keys' words, which stand the gap past their
-        glyph their template leaves (shockwave-45): one entry each, in
-        order."""
+        glyph their template leaves (shockwave-45), and the glyphs of its icon
+        faces, which the hub and the 320 drew as Λ and V, the kit's return
+        glyph and none (shockwave-46): one entry each, in order."""
         ids = [e['id'] for e in self.ledger['entries']]
-        self.assertEqual(ids, [f'shockwave-{i:02d}' for i in range(46)])
+        self.assertEqual(ids, [f'shockwave-{i:02d}' for i in range(47)])
 
     def test_shockwave_is_done(self):
         self.assertEqual(audit.audit('shockwave'), [])
@@ -95,14 +96,17 @@ class TestShockwavesLedger(unittest.TestCase):
     def test_it_keeps_differing_where_it_says_and_says_why(self):
         """The gates: the slider and the overlapping tiles, the 14 pt floor
         and a designer's own 2 mm (the PR8 review: Differences lacked the last
-        two), and the incoming call's answers' IDs. The lit captions are the
+        two). The incoming call's answers keep the template's IDs
+        (shockwave-40, the frame's since the owner's call of 2026-11-04). The lit captions are the
         template's on every variant (shockwave-20, fixed). The tab captions are the twin the region
         page draws, as the template does (shockwave-03); the call keys rest
         ringed as the template's do (shockwave-38); and the hub's Volume Level
-        strip, which a group binding shows on every page (shockwave-44)."""
+        strip, which a group binding shows on every page (shockwave-44). The
+        dialer's star is the template's glyph in its own face (shockwave-42,
+        fixed)."""
         dev = {e['id']: e for e in self.ledger['entries'] if e['status'] == 'deviation'}
-        self.assertEqual(sorted(dev), ['shockwave-30', 'shockwave-31', 'shockwave-32', 'shockwave-40',
-                                     'shockwave-41', 'shockwave-42', 'shockwave-43', 'shockwave-44'])
+        self.assertEqual(sorted(dev), ['shockwave-30', 'shockwave-31', 'shockwave-32',
+                                     'shockwave-41', 'shockwave-43', 'shockwave-44'])
         for e in dev.values():
             self.assertTrue(e['reason'].strip(), e['id'])
 

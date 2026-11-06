@@ -76,6 +76,19 @@ def class_needs_kit(theme):
     return deco
 
 
+def carries(theme, face):
+    """Whether the system built here draws `face`'s glyphs (gdl.designsys.
+    glyph_faces): where neither the seeds nor GUI Designer's install has the
+    face, a look draws what it did before the faces were carried - the kit's
+    art, or its words."""
+    return face in designsys.glyph_faces(designsys.load(theme))
+
+
+def glyph_of(g):
+    """A control's glyph as the spec takes it - (face, character) - or None."""
+    return (g.get('font'), g['icon']) if g.get('icon') else None
+
+
 def page(name, kind='page', **kw):
     return json.dumps(dict({'kind': kind, 'name': name, 'template': 'Afterburn',
                             'scheme': 'orange', 'background': 'page'}, **kw))
@@ -1154,7 +1167,8 @@ class TestPanels(unittest.TestCase):
         laptop = dict(BTN16, name='Laptop', text='Laptop')
         prev = dict(BTN16, name='Sources Previous', text='Previous', derived=True, nav='Home')
         rendered = {'TLP1035T': {'Home.dc.html': self.home('TLP1035T', ctl([40, 40, 200, 64], **laptop))},
-                    'TLP725T': {'Home.dc.html': self.home('TLP725T', ctl([10, 10, 80, 60], **prev),
+                    # 'Previous' at 16 pt needs 96 px as GUI Designer lays it out.
+                    'TLP725T': {'Home.dc.html': self.home('TLP725T', ctl([10, 10, 100, 60], **prev),
                                                           ctl([40, 140, 200, 64], **laptop))}}
         specs, problems, _ = translate_panels(rendered)
         self.assertEqual(problems, {'TLP1035T': [], 'TLP725T': []})
@@ -1340,8 +1354,10 @@ class TestPanels(unittest.TestCase):
         about = dict(BTN16, name='Sources About', text='About', derived=True, nav='Home')
         rendered = {'TLP1035T': {'Home.dc.html': self.home('TLP1035T', ctl([40, 40, 200, 64], **camera),
                                                            ctl([40, 140, 200, 64], **laptop))},
+                    # Wide enough for 'Previous' at 16 pt as GUI Designer
+                    # lays it out (96 px), which the spec check holds it to.
                     'TLP725T': {'Home.dc.html': self.home('TLP725T', ctl([10, 10, 80, 60], **about),
-                                                          ctl([10, 100, 80, 60], **prev),
+                                                          ctl([10, 100, 100, 60], **prev),
                                                           ctl([300, 140, 200, 64], **camera),
                                                           ctl([300, 240, 200, 64], **laptop))}}
         old = {'controls': [
@@ -2422,7 +2438,24 @@ class TestSeeds(unittest.TestCase):
             ('Mach', 'TLP1025M', '1025'), ('Mach', 'TLP1020M', '1020'),
             ('Shockwave', 'TLP1025M', '1025'), ('Shockwave', 'TLP1020M', '1020'),
             ('Turbulence', 'TLP1025M', '1025'), ('Turbulence', 'TLP1020M', '1020'),
-            ('Afterburn', 'TLP1525MG', '1525'), ('Afterburn', 'TLP535T', '535')]
+            ('Afterburn', 'TLP1525MG', '1525'), ('Afterburn', 'TLP535T', '535'),
+            ('Afterburn', 'TLP520M', '520'), ('Mach', 'TLP520M', '520'),
+            ('Shockwave', 'TLP520M', '520'), ('Turbulence', 'TLP520M', '520'),
+            ('Afterburn', 'TLC521M', '521'), ('Mach', 'TLC521M', '521'),
+            ('Shockwave', 'TLC521M', '521'), ('Turbulence', 'TLC521M', '521'),
+            ('Afterburn', 'TLC526M', '526'), ('Mach', 'TLC526M', '526'),
+            ('Shockwave', 'TLC526M', '526'), ('Turbulence', 'TLC526M', '526'),
+            ('Afterburn', 'TLC726M', '726'), ('Afterburn', 'TLP1022M', '1022'),
+            ('Mach', 'TLC726M', '726'), ('Mach', 'TLP1022M', '1022'),
+            ('Shockwave', 'TLC726M', '726'), ('Shockwave', 'TLP1022M', '1022'),
+            ('Turbulence', 'TLC726M', '726'), ('Turbulence', 'TLP1022M', '1022'),
+            ('Afterburn', 'TLC1026M', '1026'), ('Afterburn', 'TLP1520MG', '1520'),
+            ('Mach', 'TLC1026M', '1026'), ('Mach', 'TLP1520MG', '1520'),
+            ('Shockwave', 'TLC1026M', '1026'), ('Shockwave', 'TLP1520MG', '1520'),
+            ('Turbulence', 'TLC1026M', '1026'), ('Turbulence', 'TLP1520MG', '1520'),
+            ('Afterburn', 'TLP1720MG', '1720'), ('Afterburn', 'TLP1725MG', '1725'),
+            ('Mach', 'TLP1720MG', '1720'), ('Mach', 'TLP1725MG', '1725'),
+            ('Shockwave', 'TLP1720MG', '1720'), ('Shockwave', 'TLP1725MG', '1725')]
 
     def test_a_new_seed_is_named_as_the_ones_here_are(self):
         """'Afterburn 725.gdl', not 'Afterburn TLP725T.gdl': the file a seed is
@@ -2455,7 +2488,20 @@ class TestSeeds(unittest.TestCase):
     ('Turbulence', 'TLP1525MG'), ('Mach', 'TLP720M'), ('Mach', 'TLP720C'),
     ('Shockwave', 'TLP720M'), ('Shockwave', 'TLP720C'), ('Turbulence', 'TLP720M'),
     ('Turbulence', 'TLP720C'), ('Afterburn', 'TLP1535T'), ('Mach', 'TLP1535T'),
-    ('Shockwave', 'TLP1535T'), ('Afterburn', 'TLP1525TG')]
+    ('Shockwave', 'TLP1535T'), ('Afterburn', 'TLP1525TG'), ('Afterburn', 'TLP535M'),
+    ('Mach', 'TLP535M'), ('Shockwave', 'TLP535M'),
+    ('Afterburn', 'TLP1022T'),
+    ('Mach', 'TLP1022T'),
+    ('Shockwave', 'TLP1022T'),
+    ('Turbulence', 'TLP1022T'),
+    ('Afterburn', 'TLP1520TG'),
+    ('Mach', 'TLP1520TG'),
+    ('Shockwave', 'TLP1520TG'),
+    ('Turbulence', 'TLP1520TG'),
+    ('Afterburn', 'TLP1720TG'), ('Afterburn', 'TLP1725TG'),
+    ('Mach', 'TLP1720TG'), ('Mach', 'TLP1725TG'),
+    ('Shockwave', 'TLP1720TG'),
+    ('Shockwave', 'TLP1725TG')]
 
     def test_a_second_form_of_a_size_is_named_for_its_whole_model(self):
         from gdl import seeds
@@ -2486,6 +2532,30 @@ class TestSeeds(unittest.TestCase):
             with self.subTest(seed=seed):
                 self.assertEqual(seeds.pick(theme, model), seed)
                 self.assertEqual(seeds.facts(seed)[1], spec.part_number(model))
+
+    # A panel turned where its theme draws no template that way up has no wizard
+    # seed: its own seed turned (New-GdlTurnedSeed.ps1), named for the way up.
+    MADE_TURNED = [('Afterburn', 'TLP1035M', (800, 1280), '1035 Portrait'),
+                   ('Afterburn', 'TLP835M', (800, 1280), '835 Portrait'),
+                   ('Mach', 'TLP835M', (800, 1280), '835 Portrait'),
+                   ('Shockwave', 'TLP835M', (800, 1280), '835 Portrait'),
+                   ('Turbulence', 'TLP835M', (800, 1280), '835 Portrait')]
+
+    def test_a_turned_seed_is_the_one_picked_for_its_panel_turned(self):
+        """Found by its own build - theme, part number and the canvas it was
+        turned to - not by the name, and apart from the panel's landscape seed."""
+        from gdl import seeds
+        for theme, model, size, name in self.MADE_TURNED:
+            seed = f'seeds/{theme} {name}.gdl'
+            self.assertTrue(os.path.isfile(os.path.join(HERE, '..', 'seeds', f'{theme} {name}.gdl')),
+                            f'{seed} is not in seeds/ - the list above has drifted')
+            self.assertEqual(seeds.default_path(theme, model, size), seed)
+            if not seeds.usable(seed):
+                continue
+            with self.subTest(seed=seed):
+                self.assertEqual(seeds.pick(theme, model, size), seed)
+                self.assertEqual(seeds.facts(seed)[2], size)
+                self.assertNotEqual(seeds.pick(theme, model), seed)
 
     def test_the_landscape_300m_seed_is_named_for_its_way_up(self):
         """The seed here, 'Afterburn 300M Landscape.gdl', was named by hand;
@@ -3090,6 +3160,48 @@ class TestInChrome(unittest.TestCase):
         for m, spec in specs.items():
             self.assertEqual(Panel(spec).check(), [], m)
 
+    # What each theme's template sets in an icon face where the regions draw
+    # it on this canvas - (panel or 'hub', page, control) -> (face, glyph).
+    GLYPHS = {
+        'mach': {('hub', 'Main', 'Volume Up'): ('Extron-Lift', 'U+E94E'),
+                 ('hub', 'Main', 'Settings'): ('Extron-Lift', 'U+E942'),
+                 ('hub', 'Laptop', 'Laptop Close'): ('Extron-Lift', 'U+E906'),
+                 ('hub', 'Volume Level', 'Volume Up Label'): ('Extron-Lift', 'U+E955'),
+                 ('TLP320M', 'Main', 'Main More'): ('Extron-Lift', 'U+E933'),
+                 ('TLP320M', 'Laptop', 'Laptop Back'): ('Extron-Lift', 'U+E906'),
+                 ('TLP320M', 'Volume', 'Volume Up Label'): ('Extron-Lift', 'U+E955')},
+        'shockwave': {('hub', 'Main', 'Volume Up'): ('Extron-Shockwave', 'U+00BF'),
+                      ('hub', 'Volume Level', 'Volume Down Label'): ('Extron GUI Configurator', 'U+0050'),
+                      ('TLP320M', 'Laptop', 'Laptop Back'): ('Extron-Shockwave', 'U+00B5'),
+                      ('TLP320M', 'Volume', 'Volume Up Label'): ('Extron GUI Configurator', 'U+0051')},
+        'turbulence': {('hub', 'Volume Level', 'Volume Up Label'): ('Extron GUI Configurator', 'U+0051'),
+                       ('TLP320M', 'Volume', 'Volume Down Label'): ('Extron GUI Configurator', 'U+0050')},
+    }
+
+    def _glyphs_and_light(self, theme, specs):
+        """The template's own glyphs, in its icon faces, where the regions
+        draw them and this machine carries the face (designsys.glyph_faces);
+        a glyph carries no words. And Open Sans Light where the panel's own
+        template sets it (font.light): Help's title Light on a bar panel of
+        Mach's and Turbulence's, Open Sans on their hubs and 320s."""
+        p = designsys.load(theme)
+        rows, light = designsys.models(p), (p['font'].get('light') or {})
+        for m, spec in specs.items():
+            hub = bool(rows[m]['frame'].get('select'))
+            on = {(q['name'], c['name']): c for q in spec['pages'] + spec['popups'] for c in q['controls']}
+            for (where, pg, n), want in self.GLYPHS.get(theme, {}).items():
+                if (where == 'hub' and hub or where == m) and carries(theme, want[0]):
+                    with self.subTest(theme=theme, panel=m, control=n):
+                        self.assertEqual(glyph_of(on[(pg, n)]), want)
+            for key, c in on.items():
+                if c.get('icon'):
+                    self.assertFalse(c.get('text'), (theme, m, key))
+                    self.assertTrue(carries(theme, c['font']), (theme, m, key))
+            title = on.get(('Help', 'Help Title'))
+            if title is not None:
+                self.assertEqual(title.get('font'), light.get('family') if rows[m]['series'] in light.get('series', ())
+                                 else None, (theme, m))
+
     def test_every_bar_themes_center_and_windows_translate_clean(self):
         """tests/data/design-regions-<theme>: the working page, its sources as
         role="source" popups, its settings, Help and power-down windows by
@@ -3108,6 +3220,7 @@ class TestInChrome(unittest.TestCase):
                 specs, problems, notes = self._translate_panels(theme, f'design-regions-{theme}')
                 self.assertEqual({m: q for m, q in problems.items() if q}, {})
                 self.assertEqual(sorted(specs), sorted(listed))
+                self._glyphs_and_light(theme, specs)
                 self.assertFalse([n for ns in notes.values() for n in ns if 'has no' in n])
                 rows = designsys.models(p)
                 self._the_chrome_keeps_its_seed_ids(specs, rows)
@@ -3439,6 +3552,101 @@ class TestInChrome(unittest.TestCase):
                         self.assertEqual(Panel(spec).check(), [], m)
                     if edit:
                         self.assertIn('Audio Control', {c['name'] for c in specs['TLP1035T']['pages'][0]['controls']})
+
+    def test_the_region_canvases_translate_clean_on_the_300(self):
+        """Mach's and Afterburn's region canvases, beside the 1035, translate
+        clean on their 300 - its pages under its menu bar - their ID maps
+        checked across both panels; Afterburn's on its Landscape too, the
+        one template Extron draws turned, once its titles are words its
+        column holds (79 px at the 300's 16 pt floor); and a turned panel no
+        template draws stays refused by name."""
+        cases = (('mach', ('TLP1035T', 'TLP300M'), {}),
+                 ('afterburn', ('TLP1035T', 'TLP300M'), {}),
+                 ('afterburn', ('TLP1035T', 'TLP300M-Landscape'),
+                  {'DocCam.dc.html': ('title="Document Camera"', 'title="Cam"'),
+                   'Lighting.dc.html': ('title="Lighting Settings"', 'title="Lights"'),
+                   'Streaming.dc.html': ('role="source"', 'role="source" title="Media"')}))
+        for theme, panels, edits in cases:
+            with self.subTest(theme=theme, panels=panels):
+                p = designsys.load(theme)
+                if not all(seeds.usable(designsys.models(p)[m]['seed']) for m in panels):
+                    self.skipTest(f'the {theme} seeds are not here (git lfs pull)')
+                skip_without_kit(self, theme)
+                d = tempfile.mkdtemp()
+                self.addCleanup(shutil.rmtree, d, True)
+                region_canvas(theme, d, panels)
+                for board, (old, new) in edits.items():
+                    path = os.path.join(d, board)
+                    with open(path, encoding='utf-8') as fh:
+                        src = fh.read()
+                    self.assertEqual(src.count(old), 1, (board, old))
+                    with open(path, 'w', encoding='utf-8') as fh:
+                        fh.write(src.replace(old, new))
+                _stage(d, theme)
+                specs, problems, _ = design.Canvas(d).translate_panels()
+                self.assertEqual({m: q for m, q in problems.items() if q}, {})
+                small = specs[panels[1]]
+                self.assertEqual(small['size'], designsys.models(p)[panels[1]]['size'])
+                self.assertIn('Main 2', [pg['name'] for pg in small['pages']])
+                self.assertEqual([pp['name'] for pp in small['popups'] if pp.get('modal')], ['ConfirmPower'])
+                # Afterburn's 300 sets its keys' words at 13 pt, under 14, and
+                # its spec holds a key's caption to that (gdl.spec.key_floor);
+                # Mach's sets them at 15 and keeps the type floor.
+                self.assertEqual(small.get('type_floor'), {'button': 13} if theme == 'afterburn' else None)
+                for m, spec in specs.items():
+                    self.assertEqual(Panel(spec).check(), [], m)
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        region_canvas('afterburn', d, ('TLP1035T', 'TLP1035M-Portrait'))
+        _stage(d, 'afterburn')
+        specs, problems, _ = design.Canvas(d).translate_panels()
+        self.assertIsNone(specs)
+        self.assertIn('TLP1035M-Portrait: Main.dc.html: Main uses the region frame, which the TLP1035M-Portrait does '
+                      'not draw: no '
+                      'Afterburn template is drawn that way up - draw its pages without regions',
+                      problems['TLP1035M-Portrait'])
+
+    def test_afterburns_300_canvas_translates_with_its_key_floor_and_its_ids(self):
+        """tests/data/design-300-afterburn, a canvas to build: Afterburn's
+        region canvas listing the TLP300M beside the 1035. Clean on both, its
+        ID map checked across them; on the 300 its spec holds a key's caption
+        to the 13 pt its Display Settings sets Power and Mute in (ours, the
+        320's rule by analogy, pending the owner), every key of words - the
+        designer's, Main's More, the question's answers - drawn at it; and
+        its menu bar's keys on its template's seed IDs: Settings 8040 and a
+        Back 8041, the 300's own, and Help 8117, Power 8022 and Mute 8021,
+        as on the 1035."""
+        listed = re.search(r'panels="([^"]+)"', open(os.path.join(HERE, 'data', 'design-300-afterburn', 'Main.dc.html'),
+                                                      encoding='utf-8').read()).group(1).split()
+        self.assertEqual(listed, ['TLP1035T', 'TLP300M'])
+        p = designsys.load('afterburn')
+        if not all(seeds.usable(designsys.models(p)[m]['seed']) for m in listed):
+            self.skipTest('the Afterburn seeds are not here (git lfs pull)')
+        skip_without_kit(self, 'afterburn')
+        specs, problems, _ = self._translate_panels('afterburn', 'design-300-afterburn')
+        self.assertEqual({m: q for m, q in problems.items() if q}, {})
+        self.assertEqual(sorted(specs), sorted(listed))
+        for m, spec in specs.items():
+            self.assertEqual(Panel(spec).check(), [], m)
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out, True)
+        design.write_panels(specs, out)
+        self.assertEqual(idmap.check_panels(idmap.load_panels(out)), [])
+        small = specs['TLP300M']
+        self.assertEqual(small.get('type_floor'), {'button': 13})
+        self.assertIsNone(specs['TLP1035T'].get('type_floor'))
+        keys = [c for it in small['pages'] + small['popups'] for c in it['controls'] if c['kind'] == 'button'
+                and re.search('[A-Za-z]', c.get('text') or '') and not str(c.get('font') or '').startswith('Extron')]
+        self.assertGreater(len(keys), 10)
+        self.assertEqual({c['size'] for c in keys}, {13}, [(c['name'], c['size']) for c in keys])
+        main = {c['name']: c.get('id') for c in small['pages'][0]['controls']}
+        self.assertEqual({n: main[n] for n in ('Settings', 'Help', 'Power', 'Volume Mute')},
+                         {'Settings': 8040, 'Help': 8117, 'Power': 8022, 'Volume Mute': 8021})
+        backs = [c for it in small['pages'] + small['popups'] for c in it['controls'] if c.get('id') == 8041]
+        self.assertEqual(len(backs), 1, backs)
+        big = {c['name']: c.get('id') for c in specs['TLP1035T']['pages'][0]['controls']}
+        self.assertEqual({n: big[n] for n in ('Help', 'Power', 'Volume Mute')},
+                         {'Help': 8117, 'Power': 8022, 'Volume Mute': 8021})
 
     @needs_kit('mach')
     def test_mach_source_tiles_carry_their_names(self):
@@ -4267,11 +4475,100 @@ class _RoundFive(_Probe):
         gx, gy = max(q[0] - (r[0] + r[2]), r[0] - (q[0] + q[2])), max(q[1] - (r[1] + r[3]), r[1] - (q[1] + q[3]))
         self.assertGreaterEqual(max(gx, gy), gap, (board, panel, a, r, b, q))
 
+    # The sizes its 320 template sets a key of digits, a key of words and
+    # its question's answers in (the frame's `center.pt` `digit` and `key`,
+    # its `windows.confirm.pt.answer`), which of them its dialer, its audio
+    # board (`AUDIO`) and its power-down question draw as type, and of what.
+    KEYS_320 = KINDS_320 = AUDIO = None
+    # The kinds of key whose words the kit draws as art and which, with no
+    # kit here (CI's), come out as words of their own: a level's Up and Down
+    # drawn as the kit's volume art, '+' and '-' without it.
+    UNKITTED_320 = frozenset()
+
+    def test_a_320_key_takes_its_templates_size_for_its_kind(self):
+        """The owner's call (2026-11-04) lets a 320 key's caption go down to
+        its template's own size, not every key to the least: a dialer's
+        digits, '*', '#' and '.' at the size its Doc Cam's Inputs are set in
+        (Mach's 18 pt, Afterburn's 11), and a level's '+' and '-' with them,
+        where they came out at the 10 pt its words go down to; the question's
+        answers at its own question's (Mach's 11, Shockwave's 12); a key of
+        words at its 10. A key whose art or glyph carries its words
+        (Shockwave's dialpad, Mach's Up and Down, Turbulence's every key)
+        keeps the size it had. A key drawn in words takes its kind's size
+        whether the words are the designer's or what a key the kit would
+        draw as art falls back to where the kit is not here, so the kinds
+        drawn as words follow what is drawn: with no kit, Turbulence's
+        level's '+' and '-' are words, at its 14."""
+        row = designsys.models(designsys.load(self.THEME))['TLP320M']
+        F = row['frame']
+        self.assertEqual((F['center']['pt'].get('digit'), F['center']['pt'].get('key'),
+                          F['windows']['confirm']['pt'].get('answer')), self.KEYS_320)
+        least = row['key_floor'] if row['key_floor'] is not None else row['floor']
+        want = dict(zip(('digit', 'key', 'answer'), (x if x is not None else least for x in self.KEYS_320)))
+        kinds = set()
+        for board in ('VTCDialer.dc.html', self.AUDIO, 'PowerDown.dc.html'):
+            _, ctl, out = self.probe(board, 'TLP320M')
+            self.assertEqual(out['problems'], [], board)
+            for name, (g, _, _) in ctl.items():
+                text = (g.get('text') or '').strip()
+                if g.get('kind') != 'button' or not text or str(g.get('font') or '').startswith('Extron'):
+                    continue
+                kind = ('answer' if board == 'PowerDown.dc.html' and g.get('derived')
+                        else 'key' if re.search('[A-Za-z]', text) else 'digit')
+                kinds.add('sign' if kind == 'digit' and not re.search('[0-9]', text) else kind)
+                self.assertEqual(g['size'], want[kind], (board, name, text))
+        kit = designsys.kit_root(designsys.load(self.THEME))
+        self.assertEqual(kinds, set(self.KINDS_320) | (set() if kit else set(self.UNKITTED_320)))
+
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
                      'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
 class TestRoundFiveMach(_RoundFive, unittest.TestCase):
     THEME = 'mach'
+    KEYS_320, KINDS_320, AUDIO = (18, 10, 11), {'digit', 'sign', 'key', 'answer'}, 'Audio.dc.html'
+    # Its Mic Volume Up and Down, the kit's volume-up and volume-down art,
+    # whose '+' and '-' are of a kind its dialer draws anyway.
+    UNKITTED_320 = frozenset({'sign'})
+
+    def test_a_320_keys_caption_takes_its_templates_size(self):
+        """The owner's call (2026-11-04): on the 320 a key's caption goes down
+        to the 10 pt Mach's 320 template sets its keys' words in (its Doc
+        Cam's Normal), where it stopped at the 14 pt floor; a label, the
+        question's words, keeps 14. Elsewhere the floor holds as before."""
+        _, ctl, out = self.probe('StopConfirm.dc.html', 'TLP320M')
+        self.assertEqual(out['problems'], [])
+        self.assertEqual((ctl['Stop Recording'][0]['size'], ctl['Stop Cancel'][0]['size']), (10, 10))
+        self.assertEqual(ctl['Stop Message'][0]['size'], 14)
+        _, ctl, _ = self.probe('StopConfirm.dc.html', 'TLP525T')
+        self.assertEqual(ctl['Stop Recording'][0]['size'], 18)
+
+    def test_a_320_key_keeps_a_size_of_its_own_where_its_words_fit(self):
+        """The owner's call lets a 320 key go down to its template's size; it
+        does not make it. Recording Controls' Stop, which the designer gave
+        no size, is drawn at the 10 pt the template sets its keys' words in,
+        85x50; given size="18", it keeps the 14 that size reads as on the 320
+        (scaled, at its type floor), in the same key, since 'Stop' fits it
+        there - and Record, beside it in its Group with no size of its own,
+        stays at 10. Where its words do not fit at its own size it goes down
+        to fit, no further than its kind's: 'Stop the Recording' to the 10
+        its words take, and a key of digits to its template's 18, never the
+        14 its size reads as."""
+        stop = ('name="Stop" nav=', 'name="Stop" size="18" nav=')
+        _, ctl, out = self.probe('Recording.dc.html', 'TLP320M')
+        self.assertEqual(out['problems'], [])
+        self.assertEqual(ctl['Stop'][0]['size'], 10)
+        _, own, out = self.probe('Recording.dc.html', 'TLP320M', edit=stop)
+        self.assertEqual(out['problems'], [])
+        self.assertEqual((own['Stop'][0]['size'], own['Stop'][1]), (14, ctl['Stop'][1]))
+        self.assertEqual(own['Record'][0]['size'], 10)
+        _, long_, _ = self.probe('Recording.dc.html', 'TLP320M',
+                                 edit=(stop, ('>Stop</x-import>', '>Stop the Recording</x-import>')))
+        self.assertEqual(long_['Stop'][0]['size'], 10)
+        _, digit, _ = self.probe('Recording.dc.html', 'TLP320M', edit=(stop, ('>Stop</x-import>', '>1</x-import>')))
+        self.assertEqual(digit['Stop'][0]['size'], 18)
+        # Elsewhere a size of its own reads as it did: scaled, at the floor.
+        _, wide, _ = self.probe('Recording.dc.html', 'TLP525T', edit=stop)
+        self.assertEqual(wide['Stop'][0]['size'], 18)
 
     def test_a_plain_modal_respaces_as_a_window_does(self):
         """The README has no question for stopping a recording, so the
@@ -4365,6 +4662,25 @@ class TestRoundFiveMach(_RoundFive, unittest.TestCase):
                      'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
 class TestRoundFiveShockwave(_RoundFive, unittest.TestCase):
     THEME = 'shockwave'
+    KEYS_320, KINDS_320, AUDIO = (22, 10, 12), {'sign', 'key', 'answer'}, 'AudioControl.dc.html'
+
+    def test_the_stop_questions_pills_come_out_alike_on_one_line(self):
+        """Its stop question's two 'wide' pills, drawn alike 272x110: grown
+        each on its own, Stop Recording came out 183x74 on the 525 beside a
+        smaller Cancel, and 145x59 beside 99x40 on the 320. They come out one
+        size (artRows), each caption on one line - a pill widens for its words;
+        two lines at the 320's 10 pt filled its 40 px pill (twoLineNeed takes
+        square art alone) - in the art the designer drew each in."""
+        skip_without_kit(self, 'shockwave')
+        for panel in ('TLP725T', 'TLP525T', 'TLP320M'):
+            with self.subTest(panel=panel):
+                _, ctl, out = self.probe('StopRecording.dc.html', panel)
+                self.assertEqual(out['problems'], [], panel)
+                (g, r, _), (h, q, _) = ctl['Stop Recording Confirm'], ctl['Cancel']
+                self.assertEqual((r[1:], g['text']), (q[1:], 'Stop Recording'), (r, q))
+                self.assertIn('green_round', g['states'][0]['image'])
+                self.assertIn('red_round', h['states'][0]['image'])
+                self.assertApart('StopRecording.dc.html', panel, 'Cancel', 'Stop Recording Confirm')
 
     def test_words_too_long_for_a_320_page_go_on_to_no_page(self):
         """Its Help is one Label of 146 px at the 320's floor, where a page
@@ -4391,6 +4707,7 @@ class TestRoundFiveShockwave(_RoundFive, unittest.TestCase):
                      'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
 class TestRoundFiveAfterburn(_RoundFive, unittest.TestCase):
     THEME = 'afterburn'
+    KEYS_320, KINDS_320, AUDIO = (11, 10, 10), {'digit', 'sign', 'key', 'answer'}, 'Audio.dc.html'
 
     def test_a_states_lit_look_is_drawn_in_a_key_of_another_look(self):
         """Its rail's Audio and Recording launchers light while the mics are
@@ -4431,6 +4748,48 @@ class TestRoundFiveAfterburn(_RoundFive, unittest.TestCase):
         translator rounded each edge apart: a row re-spaces a pixel past the
         gap it keeps."""
         self.assertApart('StopRecording.dc.html', 'TLP525T', 'Stop Recording Confirm', 'Stop Recording Cancel')
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestRoundFiveTurbulence(_RoundFive, unittest.TestCase):
+    THEME = 'turbulence'
+    KEYS_320, KINDS_320, AUDIO = (None, None, 16), {'key'}, 'AudioControl.dc.html'
+    # Its Mic Level Up and Down, the kit's volume_up and volume_down art.
+    UNKITTED_320 = frozenset({'sign'})
+
+    def test_the_stop_questions_two_keys_come_out_alike(self):
+        """Its plain modal's two kit keys, drawn alike 146x153 side by side:
+        Stop Recording its words over the square_red art, Cancel its word in
+        the cancel art. Each grown on its own, the first took the art's shape
+        round 'Stop Recording' on one line - 145x152 on the 320 beside a
+        40x42 Cancel, 183x192 on the 525 beside 88x92. Now its two words go
+        on two lines where one would grow it (twoLineNeed) and the two come
+        out one size, side by side and the panel's gap apart (artRows), each
+        in the art the designer drew it in."""
+        skip_without_kit(self, 'turbulence')
+        for panel in ('TLP725T', 'TLP525T', 'TLP320M'):
+            with self.subTest(panel=panel):
+                _, ctl, out = self.probe('StopRecording.dc.html', panel)
+                self.assertEqual(out['problems'], [], panel)
+                (g, r, _), (h, q, _) = ctl['Stop Recording Confirm'], ctl['Stop Recording Cancel']
+                self.assertEqual(r[1:], q[1:], (r, q))
+                self.assertLess(r[0] + r[2], q[0])
+                self.assertEqual(g['text'], 'Stop\r\nRecording')
+                self.assertEqual((g['states'][0]['image'], h['states'][0]['image']),
+                                 ('440x440_square_red_nsel.png', '440x440_cancel_nsel.png'))
+                self.assertApart('StopRecording.dc.html', panel, 'Stop Recording Confirm', 'Stop Recording Cancel')
+        # On the 320 no bigger than its template's own question's keys need
+        # for two lines at the floor: Turbulence's 320 Confirmation is two
+        # 102x102 keys.
+        self.assertLessEqual(self.probe('StopRecording.dc.html', 'TLP320M')[1]['Stop Recording Confirm'][1][2], 102)
+
+    def test_a_320_key_keeps_the_type_floor_where_its_template_draws_words_in_art(self):
+        """Turbulence's 320 template sets every key's words in its art
+        (vc_freeze, vc_auto, vc_normal), so no caption measures a size of its
+        own under the floor (the frame's `center.pt.key`): its keys keep 14."""
+        _, ctl, _ = self.probe('StopRecording.dc.html', 'TLP320M')
+        self.assertEqual(ctl['Stop Recording Confirm'][0]['size'], 14)
 
 
 def _words_past_glyph(profile, g, rect):
@@ -4915,12 +5274,35 @@ class TestTheCallModeOnEveryPanel(unittest.TestCase):
 
     def check(self, theme):
         specs = self.translate(theme, f'design-call-{theme}')
+        words = designsys.load(theme)['writing']['buttons']
+        tiles = (designsys.models(designsys.load(theme))['TLP1035T']['frame'].get('choose') or {}).get('tab_ids')
         for m, spec in specs.items():
             ids = {c['name']: c.get('id') for it in spec['pages'] + spec['popups'] for c in it['controls']}
+            at = {(it['name'], c['name']): c.get('id') for it in spec['pages'] + spec['popups']
+                  for c in it['controls'] if c.get('name')}
             with self.subTest(panel=m):
                 self.assertEqual((ids['Make Call'], ids['End Call'], ids['Privacy'], ids['Share Content']),
                                  (5014, 5215, 5217, 8090))
                 self.assertEqual((ids['Dialer Keypad 1'], ids['VC Call']), (5203, 5214))
+                # The incoming call's answers keep the template's IDs on every
+                # panel, a hub's and the 320's too (the owner's call,
+                # 2026-11-04), where they took IDs of their own from 50001.
+                self.assertEqual((ids[f"Incoming Call {words['accept']}"], ids[f"Incoming Call {words['decline']}"]),
+                                 (9032, 9033))
+                # Turbulence's tiles are their tabs to the program, as its
+                # template's are (the frame's `tab_ids`); Mach's keep their own
+                # (the tab's ID is the 1035's: one ID on every panel).
+                for src in ('Laptop', 'PC', 'Doc Cam'):
+                    tile = [v for (pg, n), v in at.items() if pg == 'Main Select Source'
+                            and n in (src, f'Select Source {src}')]
+                    tab = next((c['id'] for it in specs['TLP1035T']['pages'] if it['name'] == 'Main SD'
+                                for c in it['controls'] if c.get('name') == src), None)
+                    if tile:
+                        self.assertEqual(tile == [tab], bool(tiles), (src, tile, tab))
+                # A 320 key's caption goes down to its template's own size,
+                # which the spec check holds it to (gdl.spec.key_floor).
+                self.assertEqual(spec.get('type_floor'),
+                                 {'button': 10} if m == 'TLP320M' and theme != 'turbulence' else None)
                 self.assertEqual(_dialer_field(spec), [], m)
                 self.assertEqual(_blank_keys(spec), [], m)
         hub = {it['name']: it for it in specs['TLP525T']['popups']}
@@ -5039,6 +5421,9 @@ def _blank_keys(spec):
             if c['kind'] != 'button' or c.get('derived'):
                 continue
             art = [s.get('image') for s in c.get('states') or () if isinstance(s, dict)]
+            # A glyph in the template's icon face is what the key shows.
+            if c.get('icon'):
+                continue
             if not str(c.get('text') or '').strip() and not any(a and 'blank' not in a for a in art):
                 out.append(f"{it['name']}: {c['name']}")
     return out
@@ -5359,12 +5744,10 @@ class TestARegionPage(_Probe, unittest.TestCase):
         _, _, out = self.probe('Main.dc.html', edit=(NO_RIGHT_RAIL, (page, page + ' splash="true"')))
         self.assertEqual((out['problems'], out['warnings']), ([], []))
 
-    def test_the_300_is_refused_by_name_for_now(self):
-        """A hub draws the region page in its own grammar (_HubProbe), and the
-        320 in its own (_PagesProbe); the 300's menu bar is not drawn yet."""
-        _, _, out = self.probe('Main.dc.html', 'TLP300M')
-        self.assertIn('Main uses the region frame, which the TLP300M does not draw yet', out['problems'])
-        for m in ('TLP525T', 'TLP320M'):
+    def test_the_small_panels_draw_it_in_their_own_grammar(self):
+        """A hub draws the region page in its own grammar (_HubProbe), the 320
+        in its own (_PagesProbe) and the 300 under its menu bar (_MenuProbe)."""
+        for m in ('TLP525T', 'TLP320M', 'TLP300M'):
             _, _, out = self.probe('Main.dc.html', m)
             self.assertEqual(out['problems'], [], m)
 
@@ -5377,11 +5760,15 @@ class TestARegionPage(_Probe, unittest.TestCase):
         names = [json.loads(c['gdl']).get('name') for c in out['controls']]
         self.assertEqual(names.count('Volume'), 1)
 
-    def test_a_turned_panel_is_refused_by_name_for_now(self):
-        """A turned panel's frame turns the header into a left band: not drawn
-        yet, and said so rather than drawn upright."""
-        _, _, out = self.probe('Main.dc.html', 'TLP1035M-Portrait')
-        self.assertIn('Main uses the region frame, which the TLP1035M-Portrait does not draw yet', out['problems'])
+    def test_a_turned_panel_is_refused_by_name(self):
+        """No Mach template is drawn turned - Extron's one turned template is
+        Afterburn's 300 Landscape (tests/test_measure_series.py) - so a turned
+        panel's region page is refused by name, rather than drawn upright or
+        in a frame no template draws."""
+        for m in ('TLP1035M-Portrait', 'TLP835M-Portrait', 'TLP520M-Portrait', 'TLP300M-Landscape'):
+            _, _, out = self.probe('Main.dc.html', m)
+            self.assertIn(f'Main uses the region frame, which the {m} does not draw: no Mach template is drawn '
+                          'that way up - draw its pages without regions', out['problems'], m)
 
     def test_a_region_on_a_popup_is_refused(self):
         """The regions are a working page's: a popup or a modal holding one is
@@ -6109,6 +6496,9 @@ class _CenterProbe(_Probe):
     def frame(self, model):
         return self.row(model)['frame']
 
+    def theme_name(self):
+        return self.profile()['template']
+
     def writing(self):
         return self.profile()['writing']
 
@@ -6528,15 +6918,17 @@ class _CenterProbe(_Probe):
                 for r in (a, b):
                     self.assertTrue(_inside(r, frame), (board, model, r, frame))
 
-    def test_a_source_popup_on_a_turned_panel_is_refused_by_name_for_now(self):
-        """The 320 draws a source as a page of its own (_PagesProbe); a turned
-        panel's frame is not drawn yet."""
+    def test_a_source_popup_on_a_turned_panel_is_refused_by_name(self):
+        """The 320 and the 300 draw a source as a page of its own (_PagesProbe,
+        _MenuProbe); no template is drawn turned but Afterburn's 300."""
         _, _, out = self.probe('Laptop.dc.html', 'TLP1035M-Portrait')
-        self.assertIn('Laptop is a source popup, which the TLP1035M-Portrait does not draw yet', out['problems'])
+        self.assertIn(f'Laptop is a source popup, which the TLP1035M-Portrait does not draw: no {self.theme_name()} '
+                      'template is drawn that way up', out['problems'])
 
-    def test_a_window_on_a_turned_panel_is_refused_by_name_for_now(self):
+    def test_a_window_on_a_turned_panel_is_refused_by_name(self):
         _, _, out = self.probe('Lighting.dc.html', 'TLP1035M-Portrait')
-        self.assertIn('Lighting is a settings window, which the TLP1035M-Portrait does not draw yet', out['problems'])
+        self.assertIn(f'Lighting is a settings window, which the TLP1035M-Portrait does not draw: no '
+                      f'{self.theme_name()} template is drawn that way up', out['problems'])
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -6747,8 +7139,13 @@ class TestAfterburnsCenterAndWindows(_CenterProbe, unittest.TestCase):
                 self.assertAt(r, rec['title'], (model, name))
                 close, r, _ = ctl[f'{name} Close']
                 self.assertClose(close, r, rec, model)
-                self.assertEqual((close['variant'], [s['image'] for s in close['states']]),
-                                 ('icon', ['440x440_close.png', '440x440_close.png']), model)
+                # The template's X in its icon font, where the face is here.
+                if carries('afterburn', 'Extron-Afterburn'):
+                    self.assertEqual((close['variant'], glyph_of(close), [s.get('image') for s in close['states']]),
+                                     ('icon', ('Extron-Afterburn', 'U+E95C'), [None, None]), model)
+                else:
+                    self.assertEqual((close['variant'], [s['image'] for s in close['states']]),
+                                     ('icon', ['440x440_close.png', '440x440_close.png']), model)
                 self.assertNotIn('nav', close)
 
     def test_help_says_the_templates_words(self):
@@ -7070,6 +7467,56 @@ class TestAColumnOfArtKeysKeepsItsShape(_Probe, unittest.TestCase):
                 _, ctl, _ = self.probe('DocCam.dc.html', model)
                 self.assertEqual(ctl['Doc Cam Zoom In'][1][2:], ctl['Doc Cam Inputs 1'][1][2:])
                 self.assertEqual(ctl['Doc Cam Iris Open'][1][2:], ctl['Doc Cam Inputs 1'][1][2:])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAHeadingHoldsItsWordsAsGUIDesignerLaysThemOut(_Probe, unittest.TestCase):
+    """GUI Designer's own snapshot of this canvas's TLP525T Main, built at
+    main 0aeccf7, read 'Volum': the RightRail's heading stood in the 91x37
+    box the 525's template draws for its 14 pt, at the panel's 18 pt floor -
+    'Volume' needs 97 px there less GDI+'s sixth of an em a side. A label's
+    box now holds its words (bundle.js gdiWidth), and so do the rail's and
+    Doc Cam's keys of kit art, whose 8 px round a caption is under a third of
+    an em from 18 pt: each caption, laid out as GUI Designer lays it out
+    (gdl.compose.caption_fit), shows every word whole."""
+
+    CANVAS = os.path.join(HERE, 'data', 'design-regions-shockwave')
+    THEME = 'shockwave'
+    CUT = {'TLP525T': ('Volume Heading', 'Display Control', 'Doc Cam Iris Normal'),
+           'TLP535T': ('Volume Heading', 'Display Mute', 'Doc Cam Zoom Freeze', 'Doc Cam Iris Normal')}
+
+    def fit(self, g, rect):
+        from gdl import compose
+        from gdl.spec import ALIGN
+        text = g.get('text')
+        f = compose.face('Open Sans', int(bool(g.get('bold'))), 0, g['size'] * compose.PT)
+        return compose.caption_fit(tuple(rect), text, f, ALIGN.get(g.get('align') or 'center', 3))
+
+    @needs_kit()
+    def test_each_caption_the_build_cut_now_shows_whole(self):
+        try:
+            import PIL  # noqa: F401
+        except ImportError:
+            self.skipTest('Pillow not installed; a caption is measured with gdl.compose')
+        boards = {'Volume Heading': 'Main.dc.html', 'Display Control': 'Main.dc.html',
+                  'Display Mute': 'Main.dc.html', 'Doc Cam Iris Normal': 'DocCam.dc.html',
+                  'Doc Cam Zoom Freeze': 'DocCam.dc.html'}
+        for model, names in self.CUT.items():
+            for name in names:
+                with self.subTest(panel=model, control=name):
+                    _, ctl, _ = self.probe(boards[name], model)
+                    g, rect, _ = ctl[name]
+                    self.assertEqual(self.fit(g, rect), [], (model, name, rect, g.get('size')))
+
+    @needs_kit()
+    def test_the_525s_volume_heading_stays_in_its_rail(self):
+        """97 px about the template's own place, in the 100 px band."""
+        _, ctl, _ = self.probe('Main.dc.html', 'TLP525T')
+        r = ctl['Volume Heading'][1]
+        self.assertGreaterEqual(r[2], 97)
+        self.assertGreaterEqual(r[0], 700)
+        self.assertLessEqual(r[0] + r[2], 800)
 
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
@@ -7810,7 +8257,14 @@ class TestAfterburnsHub(_Probe, unittest.TestCase):
                                           ('Power', 'power', 'icon', 'power')):
             g, r, _ = mine[name]
             self.assertEqual(g['variant'], variant, name)
-            self.assertTrue(g['states'][0]['image'].startswith(f'440x440_{icon}'), (name, g['states']))
+            # Up and Down the template's carets in its icon font, where the
+            # face is here; else the kit's drawings of them.
+            caret = {'Volume Up': 'U+E94E', 'Volume Down': 'U+E91D'}.get(name)
+            if caret and carries('afterburn', 'Extron-Afterburn'):
+                self.assertEqual((glyph_of(g), g.get('color'), g['states'][0].get('image')),
+                                 (('Extron-Afterburn', caret), 'text-secondary', None), name)
+            else:
+                self.assertTrue(g['states'][0]['image'].startswith(f'440x440_{icon}'), (name, g['states']))
             self.assertGreaterEqual(min(r[2], r[3]), 66, name)
             self.assertTrue(_inside(r, F['right']['rect']), (name, r))
         # Up at the template's place; the rest down the bar as one stack, its
@@ -7897,8 +8351,10 @@ class TestAfterburnsHub(_Probe, unittest.TestCase):
         self.assertEqual(opt['Lighting Settings'][0]['variant'], 'list')
         # Its Back, the kit's chevron, back to Select a Source; its title after it.
         b, r, _ = opt[O['popup'] + ' Close']
-        self.assertEqual((b['variant'], b['states'][0]['image'], b['nav']),
-                         ('icon', '440x440_chevron-left.png', self.frame()['select']['popup']))
+        self.assertEqual((b['variant'], b['nav']), ('icon', self.frame()['select']['popup']))
+        self.assertEqual(glyph_of(b) or b['states'][0]['image'],
+                         ('Extron-Afterburn', 'U+E97B') if carries('afterburn', 'Extron-Afterburn')
+                         else '440x440_chevron-left.png')
         self.assertEqual(r, O['close']['rect'])
         # Its title its own, in the rail's Settings heading's words, where
         # the template titles its Settings; the heading is not drawn there.
@@ -7986,8 +8442,10 @@ class TestAfterburnsHub(_Probe, unittest.TestCase):
         g, r, _ = ctl['Laptop Title']
         self.assertEqual((g['text'], g['align'], r), ('Laptop', 'left', C['title']))
         b, r, _ = ctl['Laptop Close']
-        self.assertEqual((b['variant'], b['states'][0]['image'], r, b['nav']),
-                         ('icon', '440x440_chevron-left.png', C['close']['rect'], self.frame()['select']['popup']))
+        self.assertEqual((b['variant'], r, b['nav']), ('icon', C['close']['rect'], self.frame()['select']['popup']))
+        self.assertEqual(glyph_of(b) or b['states'][0]['image'],
+                         ('Extron-Afterburn', 'U+E97B') if carries('afterburn', 'Extron-Afterburn')
+                         else '440x440_chevron-left.png')
         g, r, _ = ctl['Laptop Empty']
         self.assertTrue(_inside(r, C['empty']), r)
 
@@ -8193,8 +8651,15 @@ class TestMachsHubs(_HubProbe, unittest.TestCase):
                 _, _, on, _ = self.split('Main.dc.html', m)
                 main = on[None]
                 self.assertEqual(main['Volume Heading'][0]['color'], 'text', m)
-                self.assertEqual([main[n][0]['states'][0]['image'] for n in ('Volume Up', 'Volume Down')],
-                                 ['440x440_up.png', '440x440_down.png'], m)
+                # The template's Extron-Lift chevrons, where the face is
+                # here; else the kit's.
+                if carries('mach', 'Extron-Lift'):
+                    self.assertEqual([glyph_of(main[n][0]) for n in ('Volume Up', 'Volume Down')],
+                                     [('Extron-Lift', 'U+E94E'), ('Extron-Lift', 'U+E91D')], m)
+                    self.assertEqual(main['Volume Up'][0]['size'], {'TLP525T': 20, 'TLP535T': 32}.get(m, 20), m)
+                else:
+                    self.assertEqual([main[n][0]['states'][0]['image'] for n in ('Volume Up', 'Volume Down')],
+                                     ['440x440_up.png', '440x440_down.png'], m)
                 g = main['Volume Mute'][0]
                 self.assertEqual((g['text'], g['states'][0].get('image')), ('Mute', None), m)
 
@@ -8206,8 +8671,9 @@ class TestMachsHubs(_HubProbe, unittest.TestCase):
                 _, _, on, _ = self.split('Help.dc.html', m)
                 self.assertEqual(on[None]['Help Title'][0]['align'], 'center', m)
                 g = on[None]['Help Close'][0]
-                self.assertEqual((g['variant'], g.get('text', ''), g['states'][0]['image']),
-                                 ('ghost', '', '440x440_back.png'), m)
+                self.assertEqual((g['variant'], g.get('text', '')), ('ghost', ''), m)
+                self.assertEqual(glyph_of(g) or g['states'][0]['image'],
+                                 ('Extron-Lift', 'U+E906') if carries('mach', 'Extron-Lift') else '440x440_back.png', m)
 
     def test_its_level_is_the_templates_white_bar(self):
         for m in self.HUBS:
@@ -8250,10 +8716,17 @@ class TestShockwavesHubs(_HubProbe, unittest.TestCase):
             with self.subTest(hub=m):
                 _, _, on, _ = self.split('Main.dc.html', m)
                 main = on[None]
-                for n, text in (('Volume Up', 'Λ'), ('Volume Down', 'V'), ('Volume Mute', 'Mute')):
+                # Up and Down the template's Extron-Shockwave chevrons on
+                # the gray art, where the face is here; else Open Sans's.
+                sw = carries('shockwave', 'Extron-Shockwave')
+                for n, text in (('Volume Up', '' if sw else 'Λ'), ('Volume Down', '' if sw else 'V'),
+                                ('Volume Mute', 'Mute')):
                     g = main[n][0]
                     self.assertEqual((g['variant'], g.get('text', ''), g['states'][0]['image']),
                                      ('button', text, '712x440_gray_nsel.png'), (m, n))
+                if sw:
+                    self.assertEqual([glyph_of(main[n][0]) for n in ('Volume Up', 'Volume Down')],
+                                     [('Extron-Shockwave', 'U+00BF'), ('Extron-Shockwave', 'U+00B3')], m)
                 self.assertEqual(main['Volume Mute'][0]['states'][1]['image'], '712x440_red_sel.png', m)
                 g = main['Power'][0]
                 self.assertEqual((g['variant'], g.get('text', ''), g['states'][0]['image']),
@@ -8604,14 +9077,25 @@ class TestTurbulencesBars(_Probe, unittest.TestCase):
 
     def test_a_hub_carves_the_header_and_rails_from_main(self):
         """On the 525 hub the header and the left rail get bands carved from
-        main at the page's scale (0.6), the right rail goes to the menu bar."""
+        main at the page's scale (0.6), the right rail goes to the menu bar -
+        the left rail as wide as its Display heading needs at the hub's 18 pt
+        floor (bundle.js gdiWidth): carved at 84 px, GUI Designer showed it
+        'Displa'."""
         _, ctl, out = self.probe('Home.dc.html', 'TLP525T')
         self.assertEqual(out['problems'], [])
         x, y, w, h = ctl['Header'][1]
         self.assertEqual((x, y, w), (0, 0, 800))
         self.assertAlmostEqual(h, 137 * 0.6, delta=2)
         self.assertEqual(ctl['LeftRail'][1][0], 0)
-        self.assertAlmostEqual(ctl['LeftRail'][1][2], 140 * 0.6, delta=1)
+        self.assertGreaterEqual(ctl['LeftRail'][1][2], 140 * 0.6 - 1)
+        self.assertEqual(ctl['LeftRail'][1][2], ctl['DisplayLabel'][1][2])
+        try:
+            from gdl import compose
+        except ImportError:
+            return
+        g, r, _ = ctl['DisplayLabel']
+        f = compose.face('Open Sans', int(bool(g.get('bold'))), 0, g['size'] * compose.PT)
+        self.assertEqual(compose.caption_fit(tuple(r), g['text'], f, 4 if g.get('align') == 'left' else 3), [])
 
     def test_a_hubs_level_runs_beside_its_up_and_down(self):
         ctl = _level_beside(self, 'turbulence', 'TLP525T', self.probe)
@@ -8817,9 +9301,13 @@ class TestAPlainContainerOnASmallPanel(_Probe, unittest.TestCase):
                             'name="Share Heading" type="heading" align="left">How to Share a Screen</x-import></div>')
 
     def test_a_window_on_the_320_refuses_it(self):
+        """By name. Its heading, kept in the container, is as wide as GUI
+        Designer lays its words out (gdiWidth), past its column, and the
+        columns are named too."""
         _, _, out = self.probe('Help.dc.html', 'TLP320M', self.edit())
-        self.assertEqual(out['problems'], ['a plain container in Help cannot reflow on a 320 - put its '
-                                           'controls in Help directly, or in a Group'])
+        self.assertEqual(out['problems'][0], 'a plain container in Help cannot reflow on a 320 - put its '
+                                             'controls in Help directly, or in a Group')
+        self.assertEqual(out['problems'][1:], ['its columns need more than the 320 px across a TLP320M has'])
 
     def test_a_wider_panel_keeps_it(self):
         for model in ('TLP1035T', 'TLP725T', 'TLP525T'):
@@ -9083,12 +9571,18 @@ class TestPanelsInChrome(_Probe, unittest.TestCase):
         self.assertEqual(ctl['EndCall'][1][2:], [154, 64])
 
     def test_text_never_falls_under_the_floor(self):
+        """A key's caption on the 320 goes down to its template's own size -
+        Afterburn's 10 pt (`key_floor`; the owner's call, 2026-11-04) - and no
+        further; everything else keeps the panel's floor."""
+        keys = designsys.models(self.profile_of())['TLP320M']['key_floor']
+        self.assertEqual(keys, 10)
         for panel, floor in (('TLP725T', 16), ('TLP525T', 18), ('TLP320M', 14)):
             for board in ('Home.dc.html', 'Help.dc.html'):
                 _, ctl, _ = self.probe(board, panel)
                 for name, (g, _, _) in ctl.items():
                     if g['kind'] in ('label', 'button', 'datetime') and g.get('size'):
-                        self.assertGreaterEqual(g['size'], floor, (panel, board, name))
+                        least = keys if panel == 'TLP320M' and g['kind'] == 'button' else floor
+                        self.assertGreaterEqual(g['size'], least, (panel, board, name))
 
     def test_the_rail_stacks_down_on_a_725_and_across_on_a_320(self):
         _, ctl, _ = self.probe('Home.dc.html', 'TLP725T')
@@ -9180,15 +9674,22 @@ class TestPanelsInChrome(_Probe, unittest.TestCase):
         self.assertEqual(ctl['Sources Region'][1][2:], parts[0]['size'])
 
     def test_one_extra_line_is_an_overflow(self):
-        """A label one line on the 1035 that wraps to two on the 525. A label
-        centres its text, so it overflows both ways and scrollHeight saw only
-        half of it: an extra line went unnamed and would build clipped."""
+        """A label whose words wrap to a line more than its box holds, as
+        drawn on the panel it was drawn for. A label centres its text, so it
+        overflows both ways and scrollHeight saw only half of it: an extra
+        line went unnamed and would build clipped. On another panel it takes
+        the room its words need there (bundle.js needs, gdiWidth): one line on
+        the 1035 that wrapped to two on the 525 once was this case."""
         edit = ('width: 916px; height: 40px">No call in progress',
                 'width: 300px; height: 60px">Plug in your laptop first')
         _, ctl, _ = self.probe('Home.dc.html', 'TLP1035T', edit=edit)
         self.assertFalse(ctl['CallState'][2], 'one line on the 1035')
         _, ctl, _ = self.probe('Home.dc.html', 'TLP525T', edit=edit)
-        self.assertTrue(ctl['CallState'][2], 'two lines in a one-line box on the 525')
+        self.assertFalse(ctl['CallState'][2], 'its room on the 525')
+        tight = ('width: 916px; height: 40px">No call in progress',
+                 'width: 160px; height: 30px">Plug in your laptop first')
+        _, ctl, _ = self.probe('Home.dc.html', 'TLP1035T', edit=tight)
+        self.assertTrue(ctl['CallState'][2], 'two lines in a one-line box as drawn on the 1035')
 
     def test_a_plain_container_scales_with_its_frame(self):
         """The runtime draws a plain div from its markup and ignores a style
@@ -9372,7 +9873,10 @@ class TestTheFace(_Probe, unittest.TestCase):
 
     def test_the_bundle_carries_the_face_with_its_license(self):
         js = designsys.bundle(designsys.load('afterburn'), art=False)
-        self.assertIn('new FontFace("Open Sans", b.buffer', js)
+        self.assertIn('new FontFace(family, b.buffer', js)
+        self.assertIn('add("Open Sans", "', js)
+        # Light from the same bytes: one variable file, its weight axis 300 up.
+        self.assertIn('["300", "400", "700"]', js)
         self.assertIn('Copyright 2020 The Open Sans Project Authors', js)
         self.assertIn('SIL OPEN FONT LICENSE Version 1.1', js)
         self.assertLess(js.index('FontFace'), js.index('var P = '))
@@ -9408,6 +9912,56 @@ class TestTheFace(_Probe, unittest.TestCase):
                       for w in (400, 700))
         out = self._unusable('Home.dc.html', edit=(('</head>', f'<style>{css}</style></head>'),))
         self.assertEqual(out['font'], {'family': 'Open Sans', 'loaded': True})
+
+
+class TestGlyphsAndFacesReachTheSpec(unittest.TestCase):
+    """A glyph the template sets in an icon face is the spec's `icon` - its
+    codepoint - and `font`, the face the build sets it in; a Light caption
+    names Open Sans Light. A face named only by the system's bundle would
+    build in the theme's face, as a caption that names none does."""
+
+    def test_a_glyph_is_an_icon_in_its_face(self):
+        back = dict(kind='button', name='Back', icon='U+E97B', font='Extron-Afterburn', size=70,
+                    color='text-secondary', states=[{'name': 'Off'}, {'name': 'On', 'fill': 'pressed'}])
+        spec, problems, _ = translate({'Home.dc.html': out(HOME, ctl([0, 190, 64, 64], **back))})
+        self.assertEqual(problems, [])
+        c = spec['pages'][0]['controls'][0]
+        self.assertEqual((c['icon'], c['font'], c['size']), ('U+E97B', 'Extron-Afterburn', 70))
+        self.assertNotIn('text', c)
+        # The spec draws the glyph's character in its face: icon expansion
+        # (Panel._icons) makes U+E97B the control's caption, and the translated
+        # spec checks clean. The character is written as an escape - typed
+        # as itself, a private-use character, it shows as nothing at all.
+        panel = Panel(spec)
+        drawn = panel.pages[0]['controls'][0]
+        self.assertEqual((drawn['text'], drawn['font']), ('\ue97b', 'Extron-Afterburn'))
+        self.assertEqual(drawn['text'], chr(int(c['icon'][2:], 16)))
+        self.assertEqual(panel.check(), [])
+
+    def test_a_light_caption_and_clock_name_their_face(self):
+        title = dict(kind='label', name='Help Title', text='Help', font='Open Sans Light', size=24, color='text')
+        clock = dict(kind='datetime', name='Date Time', font='Open Sans Light', size=16, format='time')
+        spec, problems, _ = translate({'Home.dc.html': out(HOME, ctl([20, 20, 400, 40], **title),
+                                                           ctl([20, 700, 400, 40], **clock))})
+        self.assertEqual(problems, [])
+        self.assertEqual([c.get('font') for c in spec['pages'][0]['controls']], ['Open Sans Light'] * 2)
+
+    def test_a_strip_shown_over_main_is_read_alone(self):
+        """A hub's Volume Level strip, which the program shows over main for
+        a moment (`over`): the template stands its Volume Up Label over the
+        corner of Select Source's Help, and that is not words run into it."""
+        def rendered(over, at):
+            part = {'kind': 'popup', 'name': 'Volume Level', 'group': 'Volume Level', 'size': [50, 480]}
+            if over:
+                part['over'] = True
+            label = ctl([0, 0, 50, 45], kind='label', name='Volume Up Label', icon='U+E955', font='Extron-Lift')
+            label.update(part=0, text_rect=[10, 2, 30, 40])
+            return {'controls': [ctl([626, 15, 61, 66], kind='button', name='Help'), label],
+                    'parts': [{'gdl': json.dumps(part), 'rect': [at, 0, 50, 480]}]}
+        for over in (True, False):
+            with self.subTest(over=over):
+                found = design._collisions(rendered(over, 900), rendered(over, 651))
+                self.assertEqual(found == [], over, found)
 
 
 class TestAFaceThatDidNotLoadIsNamed(unittest.TestCase):
@@ -10171,6 +10725,39 @@ class TestShockwaveOnThe320(TestABarThemeOnThe320):
     REFUSED = {}
     OVER = ('Help.dc.html', 306)
 
+    def test_a_sized_set_keeps_its_size_as_one_where_its_words_fit(self):
+        """Its designer drew the Lighting presets and the room-off question's
+        Cancel and Turn Off at 18 pt. On the 320 a key with a size of its own
+        keeps the 14 that reads as there where its words fit its key, down
+        to fit where they do not, never under the 10 its template sets its
+        keys' words in - and a set of them comes out one size, the least any
+        of them took: 'Presentation' does not fit at 14, so the four presets
+        are one size under it, and the question's two keys alike. In the
+        keys they had at 10: none grows for its size. (With no kit, a pill
+        draws no art and its words take 24 px about them, not 8: the sizes
+        differ, the rule does not.)"""
+        for board, keys, most in (
+                ('Lighting.dc.html', ('LightsFull', 'LightsMeeting', 'LightsPresentation', 'LightsOff'), 13.5),
+                ('ConfirmRoomOff.dc.html', ('Cancel', 'TurnOff'), 14)):
+            with self.subTest(board=board):
+                _, ctl, out = self.probe(board, 'TLP320M')
+                self.assertEqual(out['problems'], [])
+                _, plain, _ = self.probe(board, 'TLP320M', edit=(' size="18"', ''))
+                sizes = {ctl[k][0]['size'] for k in keys}
+                self.assertEqual(len(sizes), 1, {k: ctl[k][0]['size'] for k in keys})
+                self.assertTrue(10 <= min(sizes) <= most, sizes)
+                self.assertEqual({plain[k][0]['size'] for k in keys}, {10})
+                self.assertEqual([ctl[k][1] for k in keys], [plain[k][1] for k in keys])
+
+    @needs_kit()
+    def test_a_sized_set_takes_the_most_its_widest_holds(self):
+        """With the kit's pills, whose words have 8 px about them: 12.5 pt,
+        the most 'Presentation' and 'Turn Off' fit their 112 px keys at."""
+        for board, keys in (('Lighting.dc.html', ('LightsFull', 'LightsPresentation')),
+                            ('ConfirmRoomOff.dc.html', ('Cancel', 'TurnOff'))):
+            _, ctl, _ = self.probe(board, 'TLP320M')
+            self.assertEqual([ctl[k][0]['size'] for k in keys], [12.5, 12.5], board)
+
 
 @unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
                      'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
@@ -10354,17 +10941,24 @@ class _PagesProbe(_Probe):
 
     def test_the_volume_modal_draws_its_glyphs_over_and_under_the_level(self):
         """The template's Volume Up and Down glyphs - labels with its seed IDs,
-        white, at its rects - one over the level and one under it."""
+        white, at its rects - one over the level and one under it: in the
+        template's icon face where this machine carries it (`volume_up`,
+        `volume_down`), else + and -."""
         _, _, on, _ = self.split('Main.dc.html')
         V = self.frame()['volume']
         ctl = on[V['popup']]
-        for n, x in zip(('Volume Up Label', 'Volume Down Label'), V['labels']):
+        page = self.profile()['regions']['page']
+        for n, x, key in zip(('Volume Up Label', 'Volume Down Label'), V['labels'], ('volume_up', 'volume_down')):
             g, r, over = ctl[n]
             self.assertEqual((g['kind'], g['derived'], g['id']), ('label', True, x['id']), n)
             self.assertAt(r, x['rect'], n)
             self.assertTrue(_inside(r, [0, 0, 320, 240], 0), (n, r))
             self.assertEqual(g['color'], 'text', n)
-            self.assertTrue(g['text'], n)
+            want = page[key]['glyph']
+            if carries(self.THEME, want['face']):
+                self.assertEqual((glyph_of(g), g['size'], g.get('text')), ((want['face'], want['char']), x['pt'], None), n)
+            else:
+                self.assertTrue(g['text'], n)
             self.assertFalse(over, n)
         lv = ctl['Volume'][1]
         self.assertLessEqual(ctl['Volume Up Label'][1][1] + ctl['Volume Up Label'][1][3], lv[1])
@@ -10803,6 +11397,620 @@ class TestTurbulencesPages(_PagesProbe, unittest.TestCase):
         self.assertTrue(seen)
 
 
+class _MenuProbe(_Probe):
+    """A region canvas (tests/data/design-regions-<theme>) on a 300, drawn as
+    its own template draws its pages (docs/superpowers/specs/
+    2026-10-22-region-frame-design.md, item 14): a page per source, as the
+    320's, under the menu bar along its foot - down a side on Afterburn's
+    Landscape - and Main the template's Select a Source with the volume on it,
+    Settings, Help and Power in its bar; every other page holds Back there."""
+
+    PANEL = 'TLP300M'
+    # What the canvas's LeftRail and Footer hold, which Main's Settings
+    # leads on to, and its Doc Cam's column headings.
+    LATER = ('Display Mute', 'Lighting Settings', 'Audio Settings')
+    HEADINGS = ('Zoom Heading', 'Focus Heading')
+
+    @classmethod
+    def setUpClass(cls):
+        cls.CANVAS = os.path.join(HERE, 'data', f'design-regions-{cls.THEME}')
+        super().setUpClass()
+
+    def profile(self):
+        return designsys.load(self.THEME)
+
+    def row(self):
+        return designsys.models(self.profile())[self.PANEL]
+
+    def frame(self):
+        return self.row()['frame']
+
+    def bar(self, rec):
+        """A page record's menu bar: the band holding its Back or Settings."""
+        return next(rec[b] for b in ('bottom', 'left', 'right', 'top') if rec.get(b)
+                    and any(it['role'] in ('back', 'settings') for it in rec[b]['items']))
+
+    def item(self, band, role):
+        return next(it for it in band['items'] if it['role'] == role)
+
+    def split(self, board, edit=None):
+        page, _, out = self.probe(board, self.PANEL, edit)
+        parts = [json.loads(p['gdl']) for p in out['parts']]
+        on = {None: {}}
+        for c in out['controls']:
+            g = json.loads(c['gdl'])
+            where = parts[c['part']]['name'] if c.get('part') is not None else None
+            on.setdefault(where, {})[g.get('name')] = (g, [round(v) for v in c['rect']], c.get('overflow'))
+        return page, {p['name']: p for p in parts}, on, out
+
+    def assertAt(self, got, want, msg=None):
+        self.assertTrue(got == want or _inside(want, got), (got, want, msg))
+
+    def mine(self, on):
+        return {n: (w, g, r) for w, ctl in on.items() for n, (g, r, _) in ctl.items() if not g.get('derived')}
+
+    PAGED = True
+    # An edit the panel's bar needs of the canvas's Doc Cam and Lighting
+    # windows' titles (none but on Afterburn's Landscape), and what
+    # Lighting's says.
+    DOCCAM = None
+    LIGHTING = (None, 'Lighting Settings')
+
+    def screen(self):
+        return [0, 0] + self.row()['size']
+
+    def test_main_is_the_templates_select_a_source(self):
+        """Main the template's Select a Source - its title with its seed ID,
+        its bar's ground - and the Header's tabs its source keys, the same
+        controls as the 1035's, at the template's two places; the rest of
+        them on over a page of Main's own by a More in the last place (ours:
+        no 300 template pages); what the 300 has no place for (the clock, the
+        Center's popup region) named and left."""
+        page, parts, on, out = self.split('Main.dc.html')
+        self.assertEqual(out['problems'], [])
+        F, main = self.frame(), on[None]
+        H = F['home']
+        self.assertTrue(all(w.endswith(('its template draws a clock only on its Start page',
+                                        'its template shows each source as a page of its own',
+                                        'its template draws no heading over its volume'))
+                            for w in out['warnings']), out['warnings'])
+        self.assertIn('Controls', page['left'])
+        self.assertEqual((page['kind'], page['size']), ('page', self.row()['size']))
+        title = next(it for it in H['center']['items'] if it['role'] == 'title')
+        g, r, over = main['Main Title']
+        self.assertEqual((g['kind'], g['text'], g['id'], g['derived']), ('label', title['text'], title['id'], True))
+        self.assertAt(r, title['rect'])
+        self.assertFalse(over)
+        for i, s in enumerate(self.bar(H)['surfaces']):
+            self.assertEqual(main['Main Menu Bar' + (f' {i + 1}' if i else '')][1], s['rect'])
+        places = [it['rect'] for it in H['center']['items'] if it['role'] == 'source']
+        _, ctl1035, _ = self.probe('Main.dc.html', 'TLP1035T')
+        g, r, _ = main['PC']
+        self.assertEqual((g['nav'], g['does']), (ctl1035['PC'][0]['nav'], ctl1035['PC'][0]['does']))
+        self.assertAt(r, places[0])
+        g, r, _ = main['Main More']
+        self.assertEqual((g['derived'], g['nav']), (True, 'Main 2'))
+        self.assertAt(r, places[1])
+        self.assertEqual((parts['Main 2']['kind'], parts['Main 2']['host']), ('page', 'Main'))
+        later = on['Main 2']
+        for n in ('Laptop', 'Doc Cam', 'Streaming'):
+            g, r, over = later[n]
+            self.assertFalse(g.get('derived'), n)
+            self.assertEqual((g['nav'], g['does']), (ctl1035[n][0]['nav'], ctl1035[n][0]['does']), n)
+            self.assertTrue(_inside(r, self.screen(), 0), (n, r))
+            self.assertFalse(over, n)
+        back = self.item(self.bar(F), 'back')
+        g, r, _ = later['Main 2 Back']
+        self.assertEqual((g['derived'], g['nav'], g['id']), (True, 'Main', back['id']))
+        self.assertAt(r, back['rect'])
+        self.assertIn(later['Main 2 Title'][0]['text'], (title['text'], 'Main'))
+        for where in (None, 'Main 2'):
+            self.assertEqual(_gaps(on[where], self.PANEL.split('-')[0]), [], where)
+
+    def test_the_bar_holds_settings_help_and_power(self):
+        """Main's bar: Settings - derived, the template's seed ID - going on to
+        the pages of Main's own that hold what the 300 keeps off Main; the
+        Footer's Help and Power, the canvas's own, to the windows the Footer
+        names; each at the template's place."""
+        _, parts, on, out = self.split('Main.dc.html')
+        bar, main = self.bar(self.frame()['home']), on[None]
+        settings = self.item(bar, 'settings')
+        g, r, _ = main['Settings']
+        self.assertEqual((g['derived'], g['id']), (True, settings['id']))
+        self.assertIn(g['nav'], parts)
+        self.assertAt(r, settings['rect'])
+        for n, role, to in (('Help', 'help', 'Help'), ('Power', 'power', 'ConfirmPower')):
+            g, r, _ = main[n]
+            self.assertFalse(g.get('derived'), n)
+            self.assertEqual(g['nav'], to, n)
+            self.assertAt(r, self.item(bar, role)['rect'], n)
+
+    def test_the_volume_stands_where_the_template_stands_it(self):
+        """The RightRail's slider is the template's level - the 300's seed has
+        no slider - its Mute the canvas's, its Down and Up derived with the
+        template's seed IDs, each at the template's place; Afterburn's Volume
+        heading over them."""
+        _, _, on, out = self.split('Main.dc.html')
+        H, main = self.frame()['home'], on[None]
+        g, r, _ = main['Volume']
+        self.assertEqual(g['kind'], 'level')
+        self.assertNotIn('derived', g)
+        self.assertEqual(r, H['volume']['level']['rect'])
+        at = {it['role']: it for it in H['center']['items']}
+        g, r, _ = main['Volume Mute']
+        self.assertFalse(g.get('derived'))
+        self.assertAt(r, at['mute']['rect'])
+        for n, role in (('Volume Down', 'volume-down'), ('Volume Up', 'volume-up')):
+            g, r, _ = main[n]
+            self.assertEqual((g['derived'], g['id']), (True, at[role]['id']), n)
+            self.assertAt(r, at[role]['rect'], n)
+        if 'heading' in at:
+            g, r, _ = main['Volume Heading']
+            self.assertEqual((g['kind'], g['text']), ('label', 'Volume'))
+            self.assertAt(r, at['heading']['rect'])
+
+    def test_settings_leads_to_what_the_300_keeps_off_main(self):
+        """The template keeps no display, settings launcher or mode on Main:
+        its Settings leads on to pages of Main's own, each under the bar with
+        Back - the first's to Main - the Sections each a column under its
+        heading, and Room Mode; each the same control as the 1035's."""
+        _, parts, on, out = self.split('Main.dc.html')
+        F = self.frame()
+        first = on[None]['Settings'][0]['nav']
+        later = sorted((p for p in parts if p != 'Main 2'), key=lambda n: int(n.split()[-1]))
+        self.assertEqual(later[0], first)
+        back = self.item(self.bar(F), 'back')
+        for i, p in enumerate(later):
+            ctl = on[p]
+            g, r, _ = ctl[p + ' Back']
+            self.assertEqual((g['nav'], g['id']), ('Main' if i == 0 else later[i - 1], back['id']), p)
+            self.assertAt(r, back['rect'], p)
+            self.assertEqual(_gaps(ctl, self.PANEL.split('-')[0]), [], p)
+            for n, (g, r, over) in ctl.items():
+                self.assertTrue(_inside(r, self.screen(), 0), (p, n, r))
+                self.assertFalse(over, (p, n))
+        here = self.mine(on)
+        for n in self.LATER:
+            self.assertIn(here.get(n, (None,))[0], later, n)
+        self.assertEqual(here['Lighting Settings'][1]['nav'], 'Lighting')
+
+    def test_nothing_on_the_canvas_is_dropped(self):
+        """Every control the 1035 draws from the canvas is on the 300 - on
+        Main or a page it goes on over - but what its page names as left off,
+        which is the 1035's (Afterburn's clocks there are its own chrome)."""
+        _, ctl1035, _ = self.probe('Main.dc.html', 'TLP1035T')
+        mine = {n for n, (g, _, _) in ctl1035.items() if not g.get('derived')}
+        page, _, on, _ = self.split('Main.dc.html')
+        self.assertLessEqual(mine - set(self.mine(on)), set(page['left']))
+        self.assertLessEqual(set(page['left']), set(ctl1035))
+
+    def test_a_source_is_a_page_under_the_bar(self):
+        """A role="source" popup is a page of its own: its title where the
+        template titles a source's page, its empty state, Back in the bar to
+        the page that shows it (`back`) with its seed ID - on the photo, not
+        the sheet the Settings stand on."""
+        F = self.frame()
+        page, parts, on, out = self.split('Laptop.dc.html')
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        self.assertEqual((page['kind'], page.get('group'), page['size'], parts), ('page', None, self.row()['size'], {}))
+        self.assertTrue(page.get('background_image'))
+        ctl = on[None]
+        g, r, _ = ctl['Laptop Title']
+        self.assertEqual(g['text'], 'Laptop')
+        title = next(it for b in ('bottom', 'left', 'center') if F.get(b) for it in F[b]['items'] if it['role'] == 'title')
+        self.assertTrue(_overlaps(r, title['rect']), (r, title['rect']))
+        g, r, over = ctl['Laptop Empty']
+        self.assertIn('Laptop', g['text'])
+        self.assertFalse(over)
+        back = self.item(self.bar(F), 'back')
+        g, r, _ = ctl['Laptop Back']
+        self.assertEqual((g['derived'], g['back'], g['id'], g.get('nav')), (True, True, back['id'], None))
+        self.assertAt(r, back['rect'])
+        for n, (g, r, _) in ctl.items():
+            self.assertTrue(_inside(r, self.screen(), 0), (n, r))
+            self.assertFalse(g['kind'] == 'panel' and r[3] > 200, (n, r))
+
+    def test_a_source_with_more_than_a_page_goes_on_by_more_in_the_bar(self):
+        """Doc Cam's four columns, as many to a page as the template's columns
+        hold, the rest on 'DocCam 2' by a More in the bar - ours, at the last
+        of the home bar's places clear of Back - and back by Back."""
+        F = self.frame()
+        page, parts, on, out = self.split('DocCam.dc.html', self.DOCCAM)
+        self.assertEqual(out['problems'], [])
+        # Its title, where the bar beside More cannot hold it, says its
+        # name there, and says so.
+        self.assertTrue(all(w.startswith('DocCam') and "'s title 'Document Camera' does not fit" in w
+                            for w in out['warnings']), out['warnings'])
+        if self.PAGED:
+            more = next(it for it in self.designsys_frame()['top']['items'] if it['role'] == 'more')
+            g, r, _ = on[None]['DocCam More']
+            self.assertEqual((g['derived'], g['nav'], g.get('id')), (True, 'DocCam 2', None))
+            self.assertAt(r, more['rect'])
+            g, r, _ = on['DocCam 2']['DocCam 2 Back']
+            self.assertEqual(g['nav'], 'DocCam')
+            self.assertAt(r, self.item(self.bar(F), 'back')['rect'])
+        else:
+            self.assertEqual(parts, {})
+            self.assertNotIn('DocCam More', on[None])
+        here = self.mine(on)
+        for n in self.HEADINGS:
+            self.assertIn(n, here)
+        for where in [None] + list(parts):
+            self.assertEqual(_gaps(on[where], self.PANEL.split('-')[0]), [], where)
+            for n, (g, r, over) in on[where].items():
+                self.assertTrue(_inside(r, self.screen(), 0), (where, n, r))
+                self.assertFalse(over, (where, n))
+
+    def designsys_frame(self):
+        """The 300's frame as the bundle draws it (gdl.designsys _menu_frame)."""
+        return designsys._menu_frame(self.profile()['panels'][self.row()['series']]['frame'])
+
+    # Whether this class's bundle was built with no kit, whatever is here
+    # (_MenuProbeWithoutTheKit).
+    NO_KIT = False
+
+    def kit_here(self):
+        return not self.NO_KIT and bool(designsys.kit_root(self.profile()))
+
+    # Whether this class's bundle was built with no icon face either
+    # (_MenuProbeWithNeither), whatever seeds are here.
+    NO_FACE = False
+
+    def face_here(self, face):
+        return not self.NO_FACE and carries(self.THEME, face)
+
+    # The glyphs the template sets in an icon face where the 300 draws them -
+    # (board, control) -> (face, glyph, pt) - and the frame's IDs of those
+    # that are labels.
+    GLYPHS = {}
+
+    def test_the_templates_glyphs_are_in_its_face(self):
+        """The bar's keys, Back, More, Down and Up - and Mach's glyphs at its
+        level's ends - are the template's glyphs in its icon face where this
+        machine carries the face (a look's `glyph`), at the template's size
+        and with no words; where it does not, what they drew before: the
+        kit's drawing or the word, and no level glyph."""
+        self.assertTrue(self.GLYPHS)
+        boards = {}
+        for (board, n), (face, char, pt) in self.GLYPHS.items():
+            if board not in boards:
+                boards[board] = self.split(board + '.dc.html', self.DOCCAM if board == 'DocCam' else None)[2][None]
+            ctl = boards[board]
+            with self.subTest(control=n):
+                if not self.face_here(face):
+                    if n.endswith(' Label'):
+                        self.assertNotIn(n, ctl)
+                    else:
+                        self.assertIsNone(glyph_of(ctl[n][0]))
+                    continue
+                g, r, over = ctl[n]
+                self.assertEqual((glyph_of(g), g['size'], g.get('text')), ((face, char), pt, None))
+                self.assertFalse(over)
+                if g['kind'] == 'button':
+                    self.assertEqual([s.get('image') for s in g['states']], [None] * len(g['states']))
+
+    def test_the_bars_keys_hold_in_the_bar(self):
+        """Each key the bar holds - Main's Settings, Help and Power, a page's
+        Back and More - stands in the bar, apart from the others, holding
+        what it draws: the template's glyph in its face, else the kit's
+        drawing of it, or where neither is here its word (bundle.js barWord).
+        With neither each drew its missing-icon mark, '[440x440 back]', past
+        the key - CI's chrome job, which has no kit, before it read the faces
+        from the seeds. A title along the bar stays clear of Back and More as
+        they are drawn."""
+        words = {'Settings': ('Settings', 'Setup'), 'Help': ('Help',), 'Power': ('Power',)}
+        _, _, on, _ = self.split('Main.dc.html')
+        keys = [(None, n, w, self.bar(self.frame()['home'])['rect']) for n, w in words.items()]
+        page, parts, on2, _ = self.split('DocCam.dc.html', self.DOCCAM)
+        bar = self.bar(self.frame())['rect']
+        keys += [(None, 'DocCam Back', ('Back',), bar)]
+        if self.PAGED:
+            keys += [(None, 'DocCam More', ('More',), bar), ('DocCam 2', 'DocCam 2 Back', ('Back',), bar)]
+        drawn = {}
+        for where, n, said, band in keys:
+            g, r, over = (on if n in words else on2)[where][n]
+            drawn.setdefault((n in words, where), []).append(r)
+            self.assertIsNone(g.get('missing_icon'), n)
+            self.assertFalse(over, n)
+            self.assertTrue(_inside(r, band, 0), (n, r, band))
+            face = glyph_of(g)
+            if face:
+                self.assertTrue(self.face_here(face[0]), n)
+                self.assertFalse(g.get('text'), n)
+                continue
+            glyph = all(s.get('image') for s in g['states'])
+            if self.kit_here() and glyph:
+                continue
+            self.assertFalse(glyph and self.NO_KIT, n)
+            self.assertIn(g.get('text'), said, n)
+        for rects in drawn.values():
+            for i, a in enumerate(rects):
+                for b in rects[i + 1:]:
+                    self.assertFalse(_overlaps(a, b), (a, b))
+        title = on2[None].get('DocCam Title')
+        if title and _overlaps(title[1], bar):
+            for n in ('DocCam Back', 'DocCam More'):
+                if n in on2[None]:
+                    self.assertFalse(_overlaps(title[1], on2[None][n][1]), (n, title[1], on2[None][n][1]))
+
+    # The size its template sets its keys' words in (the frame's
+    # `center.pt.key`, off the settings window its columns are measured
+    # from) and the key floor the 300 takes from it (`key_floor`).
+    KEY_PT = None
+
+    def test_a_keys_words_are_at_its_templates_size_where_that_is_under_14(self):
+        """The owner's call (2026-11-04) lets a 320 key's caption take its
+        template's own size; the 300 takes the same rule where its template
+        sets its keys' words under 14 pt - ours, by analogy, pending the
+        owner. Afterburn's 300 sets Display Settings' Power and Mute at 13,
+        each way up (the page its columns are read off): a key of words
+        there, on Main, in a settings window and in the question, is drawn at
+        13, and its spec holds a button's caption to it. Mach's 300 sets its
+        Lighting Settings' Presets at 15 - under the 300's 16 pt floor, not
+        under 14 - and draws them as it did before, at the floor or over it,
+        with no key floor in its spec."""
+        key, least = self.KEY_PT
+        row = self.row()
+        self.assertEqual((self.frame()['center']['pt'].get('key'), row['key_floor']), self.KEY_PT)
+        seen = 0
+        for board, edit in (('Main.dc.html', None), ('Lighting.dc.html', self.LIGHTING[0]),
+                            ('ConfirmPower.dc.html', None)):
+            _, _, on, out = self.split(board, edit)
+            for where, ctl in on.items():
+                for n, (g, _, _) in ctl.items():
+                    text = g.get('text') or ''
+                    if g['kind'] != 'button' or glyph_of(g) or not re.search('[A-Za-z]', text):
+                        continue
+                    seen += 1
+                    with self.subTest(board=board, control=n):
+                        if least is None:
+                            self.assertGreaterEqual(g['size'], row['floor'])
+                        else:
+                            self.assertEqual(g['size'], least)
+        self.assertTrue(seen)
+
+    def test_the_question_is_a_modal_over_the_page(self):
+        """The 300 asks its power-down question in a modal over the page, as
+        its template does: its words, Power Down and Cancel at its places with
+        their seed IDs, Cancel back to the page that asked."""
+        W = self.frame()['windows']['confirm']
+        page, parts, on, out = self.split('ConfirmPower.dc.html')
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        self.assertEqual((page['kind'], page.get('modal'), page['size']), ('popup', True, self.row()['size']))
+        ctl = on[None]
+        self.assertTrue(ctl['ConfirmPower Message'][0]['text'])
+        for b in W['buttons']:
+            n = 'ConfirmPower ' + ('Power Down' if b['role'] == 'power' else 'Cancel')
+            g, r, over = ctl[n]
+            self.assertEqual(g['id'], b['id'], n)
+            self.assertAt(r, b['rect'], n)
+            self.assertFalse(over, n)
+        self.assertTrue(ctl['ConfirmPower Cancel'][0]['back'])
+
+    def test_help_and_a_settings_window_are_pages_under_the_bar(self):
+        w = self.profile()['writing']
+        page, _, on, out = self.split('Help.dc.html')
+        self.assertEqual((out['problems'], out['warnings']), ([], []))
+        self.assertEqual(page['kind'], 'page')
+        ctl = on[None]
+        self.assertEqual(ctl['Help Message'][0]['text'], w['help'])
+        self.assertFalse(ctl['Help Message'][2])
+        self.assertFalse(_overlaps(ctl['Help Message'][1], ctl['Help Title'][1]))
+        self.assertTrue(ctl['Help Back'][0]['back'])
+        page, parts, on, out = self.split('Lighting.dc.html', self.LIGHTING[0])
+        self.assertEqual(out['problems'], [])
+        self.assertTrue(all("title 'Lighting Settings' does not fit" in w for w in out['warnings']), out['warnings'])
+        ctl = on[None]
+        self.assertIn(ctl['Lighting Title'][0]['text'], (self.LIGHTING[1], 'Lighting'))
+        for n in ('Lights Preset 1', 'Lights Preset 2'):
+            self.assertTrue(_inside(self.mine(on)[n][2], self.screen(), 0), n)
+        self.assertEqual(_gaps(ctl, self.PANEL.split('-')[0]), [])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestMachs300(_MenuProbe, unittest.TestCase):
+    """Mach's 300: a black 70% bar along the foot, its keys the white wash;
+    its Settings, its windows and Help on a #303030 sheet over the photo."""
+
+    THEME = 'mach'
+    LATER = ('Display On', 'Display Off', 'Display Mute', 'Lighting Settings', 'Audio Settings', 'Room Mode')
+    HEADINGS = ('Inputs Heading', 'Zoom Heading', 'Focus Heading', 'Iris Heading')
+    # Its Lighting Settings' Presets at 15 pt, not under 14: no key floor.
+    KEY_PT = (15, None)
+    # seeds/Mach 300M Portrait.gdl: Main's Settings, Help and Power Down and
+    # a page's Page Back at 32 pt, Volume Down and Up 28, and the Volume Level
+    # popup's Volume Down Label and Volume Up Label 18; More is ours, the
+    # 320's three dots at the bar's size.
+    GLYPHS = {('Main', 'Settings'): ('Extron-Lift', 'U+E942', 32), ('Main', 'Help'): ('Extron-Lift', 'U+E931', 32),
+              ('Main', 'Power'): ('Extron-Lift', 'U+E93A', 32),
+              ('Main', 'Volume Down'): ('Extron-Lift', 'U+E954', 28), ('Main', 'Volume Up'): ('Extron-Lift', 'U+E955', 28),
+              ('Main', 'Volume Down Label'): ('Extron-Lift', 'U+E954', 18),
+              ('Main', 'Volume Up Label'): ('Extron-Lift', 'U+E955', 18),
+              ('Laptop', 'Laptop Back'): ('Extron-Lift', 'U+E906', 32),
+              ('DocCam', 'DocCam More'): ('Extron-Lift', 'U+E933', 32)}
+
+    def test_its_levels_glyphs_stand_at_its_ends(self):
+        """Volume Up Label and Volume Down Label, which the template sets at
+        its level's ends in the Volume Level popup: at the frame's places with
+        its seed IDs, clear of the level, where the face is here."""
+        if self.NO_FACE:
+            self.skipTest('drawn with no icon face: test_the_templates_glyphs_are_in_its_face finds no level glyph')
+        if not self.face_here('Extron-Lift'):
+            self.skipTest('no copy of Extron-Lift here: the Mach seeds (git lfs pull) or the install')
+        V = self.frame()['home']['volume']
+        _, _, on, _ = self.split('Main.dc.html')
+        main = on[None]
+        for n, x in zip(('Volume Up Label', 'Volume Down Label'), V['labels']):
+            g, r, _ = main[n]
+            self.assertEqual((g['kind'], g['derived'], g['id'], g['color']), ('label', True, x['id'], 'text'), n)
+            self.assertAt(r, x['rect'], n)
+            self.assertFalse(_overlaps(r, main['Volume'][1]), n)
+
+    def test_its_settings_and_windows_stand_on_the_sheet(self):
+        """Main's later pages, a settings window and Help stand on the sheet
+        the template's Settings page draws (#303030 over the photo, under the
+        bar); a source's page does not."""
+        sheet = [s['rect'] for s in self.designsys_frame()['second']['top']['surfaces']][0]
+        self.assertEqual(sheet, [0, 0, 320, 400])
+        _, parts, on, _ = self.split('Main.dc.html')
+        first = on[None]['Settings'][0]['nav']
+        panels = [(g.get('fill'), r) for g, r, _ in on[first].values() if g['kind'] == 'panel']
+        self.assertIn(('page', sheet), panels)
+        _, _, on, _ = self.split('Lighting.dc.html')
+        self.assertIn(('page', sheet), [(g.get('fill'), r) for g, r, _ in on[None].values() if g['kind'] == 'panel'])
+        _, _, on, _ = self.split('Laptop.dc.html')
+        self.assertNotIn(sheet, [r for g, r, _ in on[None].values() if g['kind'] == 'panel'])
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburns300(_MenuProbe, unittest.TestCase):
+    """Afterburn's 300 Portrait: its bar the art's own, Back and the title in
+    it on every page but Main."""
+
+    THEME = 'afterburn'
+    LATER = _MenuProbe.LATER + ('Video Conference',)
+    # Its Display Settings' Power and Mute at 13 pt, each way up.
+    KEY_PT = (13, 13)
+    # seeds/Afterburn 300M Portrait.gdl: a page's Page Back at 70 pt, Main
+    # Volume Down and Up - a minus and a plus - 60; More is ours, the 320's
+    # chevron at Back's size. Its Main bar's Settings, Help and Power are
+    # the kit's art in the template too.
+    GLYPHS = {('Main', 'Volume Down'): ('Extron-Afterburn', 'U+E912', 60),
+              ('Main', 'Volume Up'): ('Extron-Afterburn', 'U+E939', 60),
+              ('Laptop', 'Laptop Back'): ('Extron-Afterburn', 'U+E97B', 70),
+              ('DocCam', 'DocCam More'): ('Extron-Afterburn', 'U+E97C', 70)}
+
+    def test_a_pages_title_ends_short_of_more(self):
+        """The title runs along the bar beside Back; where the page goes on,
+        More stands at the bar's end and the title ends a gap short of it."""
+        _, _, on, out = self.split('DocCam.dc.html')
+        title, more = on[None]['DocCam Title'][1], on[None]['DocCam More'][1]
+        self.assertLessEqual(title[0] + title[2] + self.row()['gap'], more[0] + 1, (title, more))
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburns300Landscape(_MenuProbe, unittest.TestCase):
+    """Afterburn's 300 Landscape, the one template Extron draws turned: Main's
+    bar the column at the right; every other page's, with Back at its head
+    and the title at its foot, the column at the left."""
+
+    THEME = 'afterburn'
+    PANEL = 'TLP300M-Landscape'
+    LATER = _MenuProbe.LATER + ('Video Conference',)
+    KEY_PT = TestAfterburns300.KEY_PT
+    # seeds/Afterburn 300M Landscape.gdl: the Portrait's glyphs at its sizes;
+    # its Doc Cam goes on over no second page, so draws no More.
+    GLYPHS = {k: v for k, v in TestAfterburns300.GLYPHS.items() if k[0] != 'DocCam'}
+    # Its columns, two across and four down, hold the Doc Cam's whole; its
+    # titles stand in its column's foot, 79 px across at the 300's 16 pt
+    # floor - about six letters, as its template shortens Computer to Comp.
+    PAGED = False
+    DOCCAM = ('title="Document Camera"', 'title="Cam"')
+    LIGHTING = (('title="Lighting Settings"', 'title="Lights"'), 'Lights')
+
+    def test_a_title_its_column_cannot_hold_is_named(self):
+        _, _, on, out = self.split('Lighting.dc.html')
+        self.assertEqual(out['problems'], ["Lighting's title 'Lighting Settings' runs past its box on the "
+                                           "TLP300M-Landscape's bar - it holds 79 px there: shorten it"])
+
+    def test_mains_bar_is_at_the_right_and_a_pages_at_the_left(self):
+        _, _, on, _ = self.split('Main.dc.html')
+        self.assertGreaterEqual(on[None]['Settings'][1][0], 392)
+        _, _, on, _ = self.split('Laptop.dc.html')
+        self.assertLessEqual(on[None]['Laptop Back'][1][0] + on[None]['Laptop Back'][1][2], 88)
+
+
+class _MenuProbeWithoutTheKit:
+    """A 300's class with its bundle built as CI's chrome job builds it, with
+    no kit root whatever is installed here (designsys.kit_roots patched), so
+    a machine with Extron's kit draws the 300 as one without it does: its bar
+    keys passed here and overflowed there. CI pulls the seeds the icon faces
+    are read from, and so does this: the template's glyphs draw. Where the
+    kit is not here the base class already runs so, and this one is
+    skipped."""
+
+    NO_KIT = True
+
+    @classmethod
+    def setUpClass(cls):
+        from unittest import mock
+        if not designsys.kit_root(designsys.load(cls.THEME)):
+            base = next(c.__name__ for c in cls.__mro__[1:] if c.__name__.startswith('Test'))
+            raise unittest.SkipTest(f'no {cls.THEME} kit here: {base} runs without it already')
+        with mock.patch.object(designsys, 'kit_roots', lambda p, part='root': []):
+            super().setUpClass()
+
+
+class _MenuProbeWithNeither:
+    """A 300's class with neither the kit nor the icon faces
+    (designsys.kit_roots and glyph_faces patched): a machine with no seed to
+    read the faces from, no install and no extracted kit, where the bar's
+    keys, Back and More say their words and Down and Up - and +, as they did
+    before the faces were carried (bundle.js barWord). It runs where either
+    is here - CI has the faces and no kit - and is skipped where neither is,
+    the base class running so already."""
+
+    NO_KIT = True
+    NO_FACE = True
+
+    @classmethod
+    def setUpClass(cls):
+        from unittest import mock
+        p = designsys.load(cls.THEME)
+        if not designsys.kit_root(p) and not designsys.glyph_faces(p):
+            base = next(c.__name__ for c in cls.__mro__[1:] if c.__name__.startswith('Test'))
+            raise unittest.SkipTest(f'neither the {cls.THEME} kit nor its icon face here: {base} runs so already')
+        with mock.patch.object(designsys, 'kit_roots', lambda p, part='root': []), \
+                mock.patch.object(designsys, 'glyph_faces', lambda p: {}):
+            super().setUpClass()
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestMachs300WithoutTheKit(_MenuProbeWithoutTheKit, TestMachs300):
+    """Mach's 300 with no kit: its bar keys say their words."""
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburns300WithoutTheKit(_MenuProbeWithoutTheKit, TestAfterburns300):
+    """Afterburn's 300 Portrait with no kit: its 66 px icon keys say their
+    words as ghosts, grown to them, and the title clears them."""
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburns300LandscapeWithoutTheKit(_MenuProbeWithoutTheKit, TestAfterburns300Landscape):
+    """Afterburn's 300 Landscape with no kit: Settings says its word in its
+    88 px column, at the 13 pt its template sets its keys' words in (87 px,
+    where the 300's 16 pt floor takes 102 and says Setup)."""
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestMachs300WithNeither(_MenuProbeWithNeither, TestMachs300):
+    """Mach's 300 with neither the kit nor Extron-Lift: its bar keys, Back
+    and More say their words, Down and Up - and +, and no glyph stands at
+    its level's ends."""
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburns300WithNeither(_MenuProbeWithNeither, TestAfterburns300):
+    """Afterburn's 300 Portrait with neither the kit nor Extron-Afterburn:
+    Back and More say their words, as its Settings, Help and Power do."""
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestAfterburns300LandscapeWithNeither(_MenuProbeWithNeither, TestAfterburns300Landscape):
+    """Afterburn's 300 Landscape with neither the kit nor its face: Back says
+    its word at its column's head."""
+
+
 class TestRegionScore(unittest.TestCase):
     """A region page against its template's frame, region by region: each slot
     the frame records found on the page - fixed chrome by its seed ID, the rest
@@ -11165,8 +12373,10 @@ class TestAfterburnsPages(_Probe, unittest.TestCase):
         # More at the strip's right, the kit's chevron, with its label.
         more = self.item(F, 'more')
         g, r, _ = main['Main More']
-        self.assertEqual((g['variant'], g['states'][0]['image'], g['id'], r),
-                         ('icon', '440x440_chevron-right.png', 8010, more['rect']))
+        self.assertEqual((g['variant'], g['id'], r), ('icon', 8010, more['rect']))
+        self.assertEqual(glyph_of(g) or g['states'][0]['image'],
+                         ('Extron-Afterburn', 'U+E97C') if carries('afterburn', 'Extron-Afterburn')
+                         else '440x440_chevron-right.png')
         label = next(it for it in F['bottom']['items'] if it['role'] == 'heading')
         g, r, _ = main['Main More Label']
         self.assertEqual((g['text'], g['align'], g['id'], r), ('More', 'right', 6010, label['rect']))
@@ -11184,8 +12394,10 @@ class TestAfterburnsPages(_Probe, unittest.TestCase):
         m2 = on['Main 2']
         back = self.item(F['second'], 'back')
         g, r, _ = m2['Main 2 Back']
-        self.assertEqual((g['variant'], g['states'][0]['image'], g['id'], g['nav'], r),
-                         ('icon', '440x440_chevron-left.png', 8011, 'Main', back['rect']))
+        self.assertEqual((g['variant'], g['id'], g['nav'], r), ('icon', 8011, 'Main', back['rect']))
+        self.assertEqual(glyph_of(g) or g['states'][0]['image'],
+                         ('Extron-Afterburn', 'U+E97B') if carries('afterburn', 'Extron-Afterburn')
+                         else '440x440_chevron-left.png')
         g, t, _ = m2['Main 2 Title']
         self.assertEqual((g['text'], g['id']), ('Display', 6009))
         self.assertGreaterEqual(t[0], r[0] + r[2])
@@ -11306,8 +12518,14 @@ class TestAfterburnsRoundFourRoomInRegions(_Probe, unittest.TestCase):
     def test_a_title_wider_than_mores_label_leaves_it_off(self):
         """'Camera Presets' at the 320's 17.5 pt is wider than the 152 px the
         strip leaves it before More's label: the label gives way, the title
-        runs to More's chevron, which still says More."""
-        _, _, on, out = self.split('CameraSelect.dc.html')
+        runs to More's chevron, which still says More. With its keys' captions
+        at the 320 template's 10 pt its three presets fit one page, so two
+        more take it on to a second, where More is."""
+        presenter = ('<x-import component-from-global-scope="ExtronAfterburn.Button" name="Camera Presenter" '
+                     'variant="source" icon="ptz-camera" states="Off, On" does="Recalls the Presenter camera preset; '
+                     'On while it is the active preset.">Presenter</x-import>')
+        more = ''.join(presenter.replace('Presenter', n) for n in ('Audience', 'Whiteboard'))
+        _, _, on, out = self.split('CameraSelect.dc.html', edit=(presenter, presenter + more))
         self.assertEqual(out['problems'], [])
         mine = on[None]
         self.assertNotIn('Camera Select More Label', mine)
@@ -11362,3 +12580,28 @@ class TestAfterburnsRoundFourRoomInRegions(_Probe, unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
+
+@unittest.skipUnless(RUNTIME and os.path.exists(RUNTIME) and design.find_chrome(),
+                     'needs headless Chrome and $GDL_DC_RUNTIME (the Design type runtime)')
+class TestALabelWhoseSecondWordIsTooWide(_Probe, unittest.TestCase):
+    """bundle.js gdiCut breaks a word too wide for its box wherever it falls,
+    not only at a line's start (compose.wrap does the same): round five's
+    Turbulence 320M Monitor Status, 'Back: Laptop' at 14 pt, is cut at its
+    'Laptop' in the box its words alone make, so the label grows to hold the
+    line GDI+ sets whole. Held on the same label with a second word the box
+    cannot hold at all."""
+
+    THEME = 'turbulence'
+    CANVAS = os.path.join(HERE, 'data', 'round5-turbulence')
+
+    def width(self, words):
+        _, ctl, _ = self.probe('DisplayControl.dc.html', 'TLP320M', ('>Monitor: Laptop<', f'>{words}<'))
+        return ctl['Monitor Status'][1][2]
+
+    def test_it_grows_to_hold_a_second_word_gdi_would_break(self):
+        # gdiCut once broke a too-wide word only at a line's start, so it set
+        # 'Conference' whole after 'Back:', found it fit and left the label at
+        # 79 px - 'Back: Laptop''s - where GDI+ cuts 'Conference' in it.
+        self.assertEqual(self.width('Back: Laptop'), 79)
+        self.assertEqual(self.width('Back: Conference'), 111)

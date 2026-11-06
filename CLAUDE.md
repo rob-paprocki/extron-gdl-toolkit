@@ -105,7 +105,7 @@ The current baseline, differing pixels:
 
 | Project | Pages | Mean | Median | Worst | Baseline |
 |---|---|---|---|---|---|
-| synthetic fixture | 29 | **3.44%** | **2.68%** | **8.03%** | `tests/baseline-synthetic.json` |
+| synthetic fixture | 29 | **1.27%** | **1.08%** | **3.27%** | `tests/baseline-synthetic.json` |
 
 `docs/render-fidelity.md` §9 says where it differs, and records the client
 project the baseline used to be scored on. The snapshots are the project's
@@ -143,7 +143,10 @@ python tests/verify_built.py out/plan.json out/generated.gdl
 ```
 
 It diffs the built `layout.json` against the plan that produced it and exits
-non-zero on any authored control that moved, lost its caption, or came back on
+non-zero on any authored control that moved, lost its caption, came back with
+a live caption GUI Designer cuts - trims, breaks mid-word or cuts its ink off
+at the box, as `gdl.spec check` measures the spec (SKILL.md step 4), read here
+in the faces the built file carries - or came back on
 another ID than its plan's, at the donor's font size instead of the spec's, in
 another text color or text alignment, or - a slider or level - lying another
 way or with another track or thumb -
@@ -159,8 +162,11 @@ planned (the only place it is - `docs/gdl-format.md` §7), or a
 button whose states came back more, fewer, misnamed, drawn alike, or with a
 state built in another state's image. An edit plan's retarget is held to the
 build as well: the screen, the platform's resolution and part number, and each
-page's and popup's canvas - and a renamed formatted caption, which layout.json
-reads back as '', to the built project's words and to its art, line by line
+page's and popup's canvas - a renamed live caption to what GUI Designer cuts
+of its new words, as a generated panel's - and a renamed caption Build bakes
+into the art, a formatted one, which layout.json reads back as '', or a
+flattened button's, which it reads back as its textField whatever the art
+says, to the built project's words and to its art, line by line
 (`docs/editing.md`).
 
 It also checks **color, off the artwork rather than the model.** That
@@ -237,6 +243,7 @@ were updated. So:
   | Topic | Home |
   |---|---|
   | What is in the repo, install and setup | `README.md` |
+  | What each file in `gdl/`, `powershell/`, `tests/`, `docs/`, `examples/` or `tools/` is | that folder's `README.md` |
   | What needs GUI Designer, and why | `CLAUDE.md` *Environment* |
   | Format facts and what Build does | `docs/gdl-format.md` |
   | Driving GUI Designer from a script | `docs/from-scratch.md` §7 |
@@ -345,10 +352,18 @@ binary that should publish is looked at by a person and pinned in the tool's
 `BINARY_OK` by the SHA-256 of what was looked at; one whose bytes change is
 refused until someone looks again, and the version it replaced stays pinned
 beside it, since `check --history` still reads it in older published commits.
+A font is held to an allowlist instead: one publishes only where the tool's
+`FONT_OK` pins its bytes - as a file of any font format, whatever its name or
+`BINARY_OK` says, or encoded in a text - and Extron's faces never are. The design systems'
+bundles carry those faces, so a system is built only into a folder git ignores,
+and the build refuses any other: a bundle committed compressed is past what the
+check can read (`FONT_OK`'s comment says exactly what it reads;
+`gdl/fonts/README.md`).
 
 ## Where things live
 
-`README.md` *What is here* maps the repo. `seeds/` and `archive/` are Git LFS:
+`README.md` *What is here* maps the repo by folder, and each folder's own
+`README.md` lists its files. `seeds/` and `archive/` are Git LFS:
 without an LFS pull they are pointer files, and the seed tests skip rather than
 fail.
 

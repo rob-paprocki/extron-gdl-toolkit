@@ -625,6 +625,57 @@ class TestTheFrameOfEachSeries(unittest.TestCase):
         if not checked:
             self.skipTest('no seeds here (git lfs pull)')
 
+    @staticmethod
+    def _turned(v):
+        """Every rect transposed, as models() turns a frame (gdl.designsys)."""
+        if isinstance(v, list) and len(v) == 4 and all(type(x) is int for x in v):
+            return [v[1], v[0], v[3], v[2]]
+        if isinstance(v, list):
+            return [TestTheFrameOfEachSeries._turned(x) for x in v]
+        if isinstance(v, dict):
+            return {k: TestTheFrameOfEachSeries._turned(x) for k, x in v.items()}
+        return v
+
+    def test_the_one_turned_template_turns_its_home_and_not_its_pages(self):
+        # Extron draws one template turned, Afterburn's 300 Landscape, its
+        # Portrait the other way up. Its home page is its Portrait's
+        # transposed, as models() turns a frame: the menu bar along the foot
+        # is the column at the right, the same keys in the same order. Its
+        # other pages are not: their bar - Back and the title - is the column
+        # at the left, where the transpose says the right; and what stands in
+        # a page keeps its shape (the settings windows' 178x50 keys, the
+        # question's 136x66), re-laid rather than turned.
+        land = self.frame('afterburn', 'Afterburn 300 Landscape Series')
+        port = self.frame('afterburn', 'Afterburn 300 Portrait Series')
+        turned = self._turned(port)
+        self.assertEqual(land['home']['right']['rect'], turned['home']['bottom']['rect'])
+        self.assertEqual(land['home']['center']['rect'], turned['home']['center']['rect'])
+        self.assertEqual([it['role'] for it in land['home']['right']['items']],
+                         [it['role'] for it in port['home']['bottom']['items']])
+        self.assertEqual(turned['bottom']['rect'], [392, 0, 88, 320])
+        self.assertEqual((land['left']['rect'], land['right'], land['bottom']), ([0, 0, 88, 320], None, None))
+        self.assertEqual([it['role'] for it in land['left']['items']], [it['role'] for it in port['bottom']['items']])
+        self.assertEqual(land['center']['row'][0][2:], port['center']['row'][0][2:])
+        self.assertEqual([b['rect'][2:] for b in land['windows']['confirm']['buttons']],
+                         [b['rect'][2:] for b in port['windows']['confirm']['buttons']])
+
+    def test_no_bar_template_is_drawn_turned(self):
+        # A panel turned where no template is (the 1035M portrait) has a seed
+        # of its own: the 1035's retargeted, every rect scaled per axis - its
+        # header's tabs still across its top, 176 px across and 69 deep -
+        # which no page of a design draws; models() turns the series' frame
+        # instead, its header a band down the left.
+        from gdl import seeds
+        from gdl.project import Project
+        seed = _profile('afterburn')['panels']['Afterburn 1220 Series']['seeds']['TLP1035M-Portrait']
+        if not seeds.usable(seed):
+            self.skipTest('the 1035 Portrait seed is not here (git lfs pull)')
+        page = next(pg for pg in Project.open(seeds.path(seed)).pages() if pg['name'] == 'Main SD')
+        tabs = [list(c['rect']) for c in page['controls'] if c['type'] == 'PBButton' and c['name'] in
+                ('PC', 'Laptop', 'TV', 'Streaming')]
+        self.assertEqual(sorted({tuple(r[1:]) for r in tabs}), [(59, 69, 176)])
+        self.assertTrue(all(r[0] > 100 for r in tabs), tabs)
+
     def test_no_hub_draws_a_clock_but_on_its_start(self):
         # What a hub's region page names when it leaves a footer's clock off
         # (bundle.js planHub): every hub seed's clock is on its Start page -

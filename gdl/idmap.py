@@ -157,7 +157,10 @@ class IdMap:
                'kind': kind, 'id': c['id'], 'nav': None, 'does': None,
                'states': None, 'press': None,
                # Added by the panel's layout, not drawn on the canvas.
-               'derived': bool(c.get('derived'))}
+               'derived': bool(c.get('derived')),
+               # A Select a Source tile with its tab's ID (gdl.design pin_ids:
+               # Turbulence's) - that tab to the program, its page flip its own.
+               'tile': bool(c.get('_tile'))}
         # A program sets a button's feedback by state index, so the map lists
         # every state in order. A button that asked for none keeps whatever
         # states its donor had, which the spec never named - so none are listed.
@@ -294,7 +297,12 @@ class IdMap:
                 out.append(f"ID {uid} is shared by a {' and a '.join(sorted(kinds))} - a mirror "
                            f"must be the same kind: {', '.join(r['where'] for r in recs)}")
                 continue
-            if len({(r['nav'], r['does']) for r in recs}) > 1 and kinds & set(CLASS_OF):
+            # A Select a Source tile shares its tab's ID as its template's
+            # does (`tile`): a press there is the tab's to the program, and
+            # its page flip - the working page, where the tab shows its
+            # popup - and its words are its own. Its states are held alike.
+            held = [r for r in recs if not r.get('tile')] or recs
+            if len({(r['nav'], r['does']) for r in held}) > 1 and kinds & set(CLASS_OF):
                 out.append(f'ID {uid} is mirrored with different functions - a program sees one '
                            f"control per ID: {', '.join(r['where'] for r in recs)}")
             # Checked separately: a copy that differs in both must be told both.
@@ -395,7 +403,8 @@ class IdMap:
             shown_from[t].append(s)
         controls = []
         for uid, recs in self.addressed().items():
-            r = recs[0]
+            # A tile's function is its tab's (`tile`): the row says the tab's.
+            r = next((x for x in recs if not x.get('tile')), recs[0])
             # A copy a layout derived where another holds the ID (Shockwave's
             # tab twin, the caption under the 1035's tab) is the control's
             # mirror: one of its places, marked, and the row is the control's.
@@ -403,7 +412,8 @@ class IdMap:
             row = {
                 'id': uid, 'type': CLASS_OF[r['kind']],
                 'at': [dict({'container': x['container'], 'name': x['name'], 'caption': x['text']},
-                            **({'mirror': True} if own and x['derived'] else {}))
+                            **({'mirror': True} if own and x['derived'] else {}),
+                            **({'tile': self.function(x)} if x.get('tile') and x is not r else {}))
                        for x in recs],
                 'nav': {'kind': r['nav'][0], 'target': r['nav'][1]} if r['nav'] else None,
                 'does': r['does'],
@@ -508,7 +518,8 @@ class IdMap:
                 '| ID | Type | Where | Caption | States | Function |',
                 '|---|---|---|---|---|---|']
         for c in d['controls']:
-            where = '; '.join(f"{a['container']} / {a['name']}" for a in c['at'])
+            where = '; '.join(f"{a['container']} / {a['name']}" + (f" (tile: {a['tile']})" if a.get('tile') else '')
+                              for a in c['at'])
             st = cls.states(c)
             if st and c.get('press'):
                 st += f" (press: {c['press']})"
@@ -796,7 +807,9 @@ def across_panels(maps):
         # control one: the control is held to every panel, and is the ID's
         # name on each.
         derived = all(r['derived'] for recs in by.values() for r in recs)
-        first = {m: next((r for r in recs if not r['derived']), recs[0]) for m, recs in by.items()}
+        # A tile is its tab's (`tile`): the tab is the ID's name on each.
+        first = {m: next((r for r in recs if not r['derived'] and not r.get('tile')),
+                         next((r for r in recs if not r['derived']), recs[0])) for m, recs in by.items()}
         ref = next(iter(first.values()))
         for m, recs in by.items():
             r = first[m]
@@ -883,6 +896,7 @@ def _where(c, model, name):
     at = c['panels'].get(model)
     return '; '.join(a['container'] + (f" (mirror: {a['name']})" if a.get('mirror') else
                                        f" ({a['name']})" if a['name'] != name else '')
+                     + (f" (tile: {a['tile']})" if a.get('tile') else '')
                      for a in at) if at else '-'
 
 

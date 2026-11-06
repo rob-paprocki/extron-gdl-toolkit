@@ -1,23 +1,6 @@
 {
- "mach": {
-  "TLP320M: 'Call' Camera Presets Heading: its text does not fit its 108x26 box on this panel - give it room, or fewer words": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP320M: 'Call' Camera Presets Heading: its words run into Camera Wide on this panel - give them room": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ]
- },
+ "mach": {},
  "shockwave": {
-  "TLP320M: 'Teams' Camera Presets Heading: its text does not fit its 96x26 box on this panel - give it room, or fewer words": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP320M: 'Teams' Camera Presets Heading: its words run into Camera Wide on this panel - give them room": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
   "TLP725T: MainSD.dc.html: Mic Mute takes the RightRail's audio place, which the TLP725T's template does not draw - it keeps it in its LeftRail's second Section, at Audio Control's place, where with it the Left Rail 2 Section holds 3, more than the TLP725T's rail has room for - take a launcher out of that Section (a page flip such as a call page is the Footer's mode launcher)": [
    "readme",
    "the 725 keeps Audio Control in its left rail's second Section, which holds two there - the RightRail line now says so"
@@ -27,34 +10,9 @@
    "the 725 keeps Audio Control in its left rail's second Section, which holds two there - the RightRail line now says so"
   ]
  },
- "turbulence": {
-  "TLP320M: 'Camera Select' Camera Presets Heading: its text does not fit its 96x27 box on this panel - give it room, or fewer words": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP320M: 'Camera Select' Camera Presets Heading: its words run into Camera Wide on this panel - give them room": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP320M: 'Lighting Control' Lighting Control Title: its words run into the words of Lighting Presets Heading on this panel - give them room": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP320M: 'Lighting Control' Lighting Presets Heading: its text does not fit its 123x27 box on this panel - give it room, or fewer words": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ],
-  "TLP320M: 'Lighting Control' Lighting Presets Heading: its words run into Lighting Full on this panel - give them room": [
-   "readme",
-   "a Group's title is the 320's column heading alone, one short word - Words on the 320 gives its width"
-  ]
- },
+ "turbulence": {},
  "afterburn": {
-  "TLP320M: 'Call' Volume Heading: its words run into Make Call on this panel - give them room": [
-   "readme",
-   "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
-  ],
-  "TLP320M: Call.dc.html: Call's rows need 486 px of the 186 a TLP320M's main holds - it does not fit": [
+  "TLP320M: Call.dc.html: Call's rows need 464 px of the 186 a TLP320M's main holds - it does not fit": [
    "readme",
    "the date and time and the loose left rail on a working page the 320 cannot hold - a working page now draws them as its Footer's clocks and its LeftRail, which the 320 names as left and goes on over pages of its own"
   ],
@@ -62,7 +20,7 @@
    "readme",
    "a Volume heading in the Rail - a hub's rail and the 320's foot hold the volume and three buttons; a working page now draws the volume as its RightRail, the hub's menu bar and the 320's Volume Level window"
   ],
-  "TLP320M: MainSD.dc.html: Main SD's rows need 451 px of the 186 a TLP320M's main holds, one under another, and 423 with a side column's beside another's - it does not fit": [
+  "TLP320M: MainSD.dc.html: Main SD's rows need 443 px of the 186 a TLP320M's main holds, one under another, and 415 with a side column's beside another's - it does not fit": [
    "readme",
    "the date and time and the loose left rail on a working page the 320 cannot hold - a working page now draws them as its Footer's clocks and its LeftRail, which the 320 names as left and goes on over pages of its own"
   ],
@@ -70,11 +28,11 @@
    "readme",
    "a Volume heading in the Rail - a hub's rail and the 320's foot hold the volume and three buttons; a working page now draws the volume as its RightRail, the hub's menu bar and the 320's Volume Level window"
   ],
-  "TLP320M: page 4000 Audio Settings: rect [92, 335, 136, 41] leaves the (320, 240) canvas": [
+  "TLP320M: page 4000 Audio Settings: rect [93, 328, 135, 40] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 4000 Lighting Settings: rect [83, 279, 155, 47] leaves the (320, 240) canvas": [
+  "TLP320M: page 4000 Lighting Settings: rect [93, 279, 135, 40] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
@@ -90,7 +48,7 @@
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 4000 Video Conference: rect [69, 385, 183, 40] leaves the (320, 240) canvas": [
+  "TLP320M: page 4000 Video Conference: rect [91, 377, 138, 40] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
@@ -102,43 +60,39 @@
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 End Call: rect [83, 255, 155, 47] leaves the (320, 240) canvas": [
+  "TLP320M: page 6000 End Call: rect [93, 244, 135, 40] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 Make Call: rect [75, 195, 170, 51] leaves the (320, 240) canvas": [
+  "TLP320M: page 6000 Mic Heading: rect [140, 342, 40, 26] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 Mic Heading: rect [140, 364, 40, 26] leaves the (320, 240) canvas": [
+  "TLP320M: page 6000 Mic Mute: rect [93, 377, 135, 40] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 Mic Mute: rect [93, 399, 135, 40] leaves the (320, 240) canvas": [
+  "TLP320M: page 6000 Mute / Make Call: overlap - two touch targets cannot share pixels": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 Mute / Make Call: overlap - two touch targets cannot share pixels": [
+  "TLP320M: page 6000 Power: rect [320, 195, 40, 40] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 Power: rect [320, 195, 40, 40] leaves the (320, 240) canvas": [
+  "TLP320M: page 6000 Presentation: rect [107, 426, 106, 40] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 Presentation: rect [91, 448, 139, 40] leaves the (320, 240) canvas": [
+  "TLP320M: page 6000 Privacy: rect [93, 293, 135, 40] leaves the (320, 240) canvas": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 Privacy: rect [87, 311, 147, 44] leaves the (320, 240) canvas": [
+  "TLP320M: page 6000 Volume Down / Make Call: overlap - two touch targets cannot share pixels": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP320M: page 7000 Volume Down / Make Call: overlap - two touch targets cannot share pixels": [
-   "readme",
-   "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
-  ],
-  "TLP320M: page 7000 Volume Up / Make Call: overlap - two touch targets cannot share pixels": [
+  "TLP320M: page 6000 Volume Up / Make Call: overlap - two touch targets cannot share pixels": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
@@ -186,10 +140,6 @@
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP525T: 'Doc Cam' Doc Cam Title: its text does not fit its 103x32 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
-  ],
   "TLP525T: 'Main SD' Current Date: its text does not fit its 133x38 box on this panel - give it room, or fewer words": [
    "readme",
    "the date and time and the loose left rail on a working page the 320 cannot hold - a working page now draws them as its Footer's clocks and its LeftRail, which the 320 names as left and goes on over pages of its own"
@@ -202,15 +152,7 @@
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
-  "TLP525T: 'Main SD' Display Status: its text does not fit its 91x32 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
-  ],
   "TLP525T: 'Main SD' Display Status: its words run into Display Power on this panel - give them room": [
-   "readme",
-   "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
-  ],
-  "TLP525T: 'Main SD' Display Status: its words run into the words of Mic Heading on this panel - give them room": [
    "readme",
    "the left rail loose at the template's spacing, which only scales and grows into itself and its headings on the 725, the 525 and the 320 - a working page now draws it as a LeftRail of Sections, each panel's own rail, a hub's Settings column and the 320's later pages"
   ],
@@ -225,10 +167,6 @@
   "TLP525T: 'Main SD' Time: its text does not fit its 94x38 box on this panel - give it room, or fewer words": [
    "readme",
    "the date and time and the loose left rail on a working page the 320 cannot hold - a working page now draws them as its Footer's clocks and its LeftRail, which the 320 names as left and goes on over pages of its own"
-  ],
-  "TLP525T: 'ShareLink' ShareLink Title: its text does not fit its 103x32 box on this panel - give it room, or fewer words": [
-   "readme",
-   "words boxed at the 1035's width, where the 525 needs twice it (Words) - the README's own example did not leave it; it now does"
   ],
   "TLP525T: 'Start' Lights Heading: its words run into Start Lighting Full on this panel - give them room": [
    "readme",
@@ -250,7 +188,7 @@
    "readme",
    "a Volume heading in the Rail - a hub's rail and the 320's foot hold the volume and three buttons; a working page now draws the volume as its RightRail, the hub's menu bar and the 320's Volume Level window"
   ],
-  "TLP525T: Main.dc.html: Lights cannot fit a row of 252x76 cells and its Previous and Next in its 252x156 box on a TLP525T": [
+  "TLP525T: Main.dc.html: Lights cannot fit a row of 255x76 cells and its Previous and Next in its 255x156 box on a TLP525T": [
    "readme",
    "a set's box with no room for the 525's cells and arrows - the example's sets now have it"
   ],

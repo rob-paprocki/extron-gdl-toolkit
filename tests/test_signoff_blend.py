@@ -1,8 +1,9 @@
 """The sign-off draws the panel, the scoring path draws GUI Designer's snapshot.
 
 The two differ on purpose (docs/render-fidelity.md finding 2): the snapshots
-paint any pixel with alpha > 0 solid, so scoring against them keeps that rule,
-but a client signing a sheet should see Shockwave's 15% well as a well.
+blend a translucent pixel in light, GDI+'s gamma 2.2, so scoring against them
+keeps that rule, and a client signing a sheet sees Shockwave's 15% well
+blended as the picture of the panel blends it.
 """
 import io
 import os
@@ -56,12 +57,16 @@ class SignOffBlend(unittest.TestCase):
         self.assertAlmostEqual(fill[1], 128, delta=2)
         self.assertGreater(fill[0], 250)
 
-    def test_the_scoring_path_still_writes_them_solid(self):
+    def test_the_scoring_path_blends_them_in_light(self):
+        """Half black over red is (186, 0, 0) in light, where the sign-off's
+        plain blend is (127, 0, 0); half white, (255, 186, 186)."""
         b = _built()
         self.assertIs(compose.BINARY, True)
         img = compose.render_snapshot(b.j, 1, b.assets, (40, 40), fills=b.fills)
-        self.assertEqual(img.getpixel((5, 20))[:3], (0, 0, 0))
-        self.assertEqual(img.getpixel((30, 20))[:3], (255, 255, 255))
+        for got, want in ((img.getpixel((5, 20))[:3], (186, 0, 0)),
+                          (img.getpixel((30, 20))[:3], (255, 186, 186))):
+            for g, w in zip(got, want):
+                self.assertAlmostEqual(g, w, delta=1, msg=f'{got} is not {want}')
 
     def test_the_rule_goes_back(self):
         _built().image('Home', (40, 40))
@@ -76,6 +81,46 @@ class SignOffBlend(unittest.TestCase):
         px = p.render(0).getpixel((20, 20))
         self.assertGreater(px[1], 100)
         self.assertLess(px[1], 160)
+
+
+@unittest.skipIf(Image is None, 'Pillow not installed')
+class SignOffTextLayout(unittest.TestCase):
+    """draw_text ignores BINARY, so the caption rules reach the sign-off sheet:
+    pinned here as the picture of the panel draws them (render-fidelity 2)."""
+
+    def setUp(self):
+        from PIL import ImageFont
+        path = os.path.join(compose.FONTDIR, 'opensans-regular.ttf')
+        self.fnt = ImageFont.truetype(path, size=40 * compose.PT)
+
+    def _ink(self, text, box, align):
+        img = Image.new('RGBA', (box[0] + box[2], box[1] + box[3]), (0, 0, 0, 0))
+        with compose.as_the_panel():
+            self.assertIs(compose.BINARY, False)
+            compose.draw_text(img, box, text, self.fnt, (255, 255, 255, 255), align)
+        self.assertIs(compose.BINARY, True)
+        return img
+
+    def test_a_left_aligned_caption_starts_in_by_the_padding_on_the_sheet(self):
+        pad = compose.PAD_EM * self.fnt.size
+        left = self._ink('Hall', (0, 0, 400, 100), 4).getchannel('A').getbbox()[0]
+        self.assertGreater(left, pad - 2)
+
+    def test_a_caption_too_deep_for_its_box_is_cut_without_an_ellipsis(self):
+        text = 'Type 40 Italic Caption'
+        lh = sum(compose.layout_metrics(self.fnt))
+        box = (0, 0, int(compose.measure('Type 40 Itali', self.fnt) + 2 * compose.PAD_EM * self.fnt.size) + 2, int(lh) + 2)
+        lines = compose.fitted(text, self.fnt, box[2] - 2 * compose.PAD_EM * self.fnt.size, box[3], lh,
+                               lambda s, f: compose.measure(s, f))
+        self.assertEqual(len(lines), 1)
+        self.assertNotIn('\u2026', lines[0])
+        self.assertNotIn('...', lines[0])
+        self.assertTrue(text.startswith(lines[0]))
+        self.assertLess(len(lines[0]), len(text))
+        # and the sheet draws exactly those characters, no more
+        got = self._ink(text, box, 4)
+        want = self._ink(lines[0], box, 4)
+        self.assertEqual(got.tobytes(), want.tobytes())
 
 
 @unittest.skipIf(Image is None, 'Pillow not installed')

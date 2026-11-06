@@ -429,10 +429,12 @@ IsConfigurable, IsHardwareBased, HwID, Comments, WasGroupIdEntered, and anything
 beyond the handful the applier writes.
 
 Compare a BUILT generated panel against its plan to see which inherited fields survived.
-Built panels with their plans are kept in archive/gdlwork/ (Git LFS; usable() in
-tests/_corpus.py says whether they are pulled), for example CleanRoom/CleanRoom.gdl with
-CleanRoom/plan.json. They were built by earlier appliers, so a field that survived there
-may be handled since. Otherwise build the comparison from a seed plus the plan
+Built panels with their plans are kept in archive/job-2419a20b/ (Git LFS; usable() in
+tests/_corpus.py says whether they are pulled), for example item4/build6/BoardroomFull.gdl,
+built on seeds/Afterburn 1035.gdl, with the plan.json beside it; the synthetic fixture,
+tests/data/synthetic/synthetic.gdl, is the build of tests/data/synthetic/synthetic.json on
+that seed. They were built by earlier appliers, so a field that survived there may be
+handled since. Otherwise build the comparison from a seed plus the plan
 python -m gdl.spec plan gives for examples/panel.json.`,
   },
   {

@@ -342,9 +342,10 @@ build at a time.
    `here` (the audit wants one); the measured Layout and each panel's room
    follow. The renders are each family's frame page off its seed through
    `gdl.compose`, its region showing the frame's own popup (Main SD with
-   Laptop, a hub's Select a Source), composited with real alpha
-   (`compose.BINARY`, off for these alone, since GUI Designer's snapshot rule
-   paints Mach's #000000B4 wells and Shockwave's 15% white well solid),
+   Laptop, a hub's Select a Source), composited as the picture of the panel
+   blends Mach's #000000B4 wells and Shockwave's 15% white well
+   (`compose.BINARY`, off for these alone - GUI Designer's snapshot rule
+   blends in light, `docs/render-fidelity.md` §2),
    WebP at 640, 400 and 320 px, 3 to 15 KB each, in `templates/` and on a
    `Template` card. Each profile gains `writing.voice` - the template's rules
    for captions, headings, titles and messages, its launchers' words, the
@@ -603,3 +604,66 @@ build at a time.
     their ID maps 0 problems (`archive/job-e823df9b/round5/`: each room's
     brief, canvas as finally revised, notes, the translator's first, revised
     and final verdicts, build log and ID map).
+14. **The 300, and turned panels** (backlog plan 3.3, asked for 2026-11-04).
+    Measured first (2026-11-04): what the turned templates draw. Extron draws
+    one template turned, Afterburn's 300 Landscape, its 300 Portrait the
+    other way up. Its Main is its Portrait's transposed, as `models()` turns
+    a frame - the foot's menu bar the column at the right, the same keys in
+    the same order - but not its other pages, whose bar (Back at its head,
+    the title at its foot, 79 px across) is the column at the left, where the
+    transpose says the right; and what stands in a page keeps its shape (the
+    settings windows' 178x50 keys, the question's 136x66), re-laid rather
+    than turned. No bar or hub template is drawn turned: the 1035 Portrait
+    seed is the 1035's retargeted, every rect scaled per axis, its tabs still
+    across its top; `models()`' turned frame, its header a band down the
+    left and its footer one down the right, is ours. Both are
+    `tests/test_measure_series.py`'s. So a region page, a source popup and a
+    window on a turned panel stay refused by name - no template of the theme
+    is drawn that way up - and the 300 is drawn, in every theme whose profile
+    has one: Mach's 300 and Afterburn's 300 Portrait and 300 Landscape.
+    Decided in the making: `frame_of` measures a 300's home page between its
+    title and its menu bar - every control there by role (its title 6072, its
+    two source keys, Afterburn's Volume heading and divider) and its `volume`
+    (Mach's level in the Volume Level popup its Main shows, Afterburn's on the
+    page, Mute 8021, Down 8121 and Up 8120) - and its columns, off the
+    settings window its Settings page opens with the widest keys, since its
+    source pages draw none (`grid_page`: Mach's Lighting Settings, two 110x70
+    columns; Afterburn's Display Settings, one 178x50 column on the Portrait
+    and two on the Landscape, a toggle's switch over its key the key's). The
+    bundle packs a 300's frame as a page per source's (`menu`): its source
+    pages' bar as the strip, `foot` where it runs along the foot, Main's bar,
+    Select a Source and volume, the sheet Mach's Settings stands its keys on
+    (#303030, its windows' too, not a source's page), and a More of ours in
+    the last of Main's bar's slots set into the page's bar clear of Back and
+    the title - Power's on Mach's and the Portrait, Help's on the Landscape,
+    whose column's foot holds the title. The region page (bundle.js
+    `planMenu`) draws Main as the template's Select a Source: its title, the
+    Header's tabs at the template's two source places in its source look -
+    more on over pages of Main's own by a More in the last place - the
+    RightRail's volume where the template stands it, the slider its level
+    (the 300's seed builds none), Mach's heading named and left since its 300
+    heads its volume with nothing, and in the bar Settings (8040), the
+    Footer's Help and Power, one joined set as Mach stands them 8 px apart;
+    Settings goes on to pages of Main's own (ours: the template has no such
+    page - its Settings is a plain list of key pages) with the LeftRail's
+    Sections as columns, Room Mode, an Audio Control and the Header's ends,
+    the first's Back to Main. A source popup, a settings window and Help are
+    pages under the bar (`menuPart`, on the 320's `pagePart`), Back in the
+    bar (8041), a title the bar beside More or the Landscape's column cannot
+    hold saying the page's name and saying so, and one whose name does not
+    fit either refused by name (ours); the question and the wait are modals over the page, as
+    the template asks them, on its art on Afterburn's. The looks are the
+    profile's `regions.menu`, with `sheet` for a page on Mach's sheet; its
+    keys are the template's glyphs in its icon face where the system carries
+    it, as the 320's and the hubs' are (Mach's bar, Back, Down and Up and
+    the glyphs at its level's ends in Extron-Lift, Afterburn's Back, Down and
+    Up in Extron-Afterburn; More, ours, the face's mate to Back), else the
+    kit's drawings, else their words. The
+    clock - each 300 draws its own on Start alone - and the Center's popup
+    region are named and left. Translated (2026-11-04): Mach's and
+    Afterburn's region canvases clean on the TLP300M beside the 1035, their
+    ID maps too, and Afterburn's on its TLP300M-Landscape with its three long
+    titles shortened (Cam, Lights, Media); neither is built yet, and the
+    canvases do not list the 300, since a panel more renumbers the derived
+    IDs of every panel a canvas lists (`docs/ROADMAP.md` *Yours* item 6 says what else waits on
+    the owner).

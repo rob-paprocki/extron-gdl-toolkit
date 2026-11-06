@@ -10,6 +10,7 @@ import io
 import json
 import os
 import sys
+import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -174,6 +175,129 @@ class TestPressFeedback(unittest.TestCase):
                  'Height': 1, 'HidePressFeedback': hidden, 'HideVisualFeedback': False}]}}
             problems = vb.check_placed(plan, pages, {})[0]
             self.assertEqual(any('HidePressFeedback' in p for p in problems), bad, problems)
+
+
+class TestCaptionsCut(unittest.TestCase):
+    """A live caption the build cuts (check_captions, gdl.compose.caption_fit):
+    the Shockwave 525's region Main built its 18 pt Volume heading in its
+    91x37 box as 'Volum', and every other check here passed - its words,
+    size and box were all as planned."""
+
+    def _check(self, w=91, plan_top=None, **c):
+        vb = _vb(self)
+        plan = dict({'pages': [{'name': 'Main', 'controls': [
+            {'donor_type': 'PBLabel', 'fields': {'nameField': 'Volume Heading'}},
+            {'donor_type': 'PBButton', 'fields': {'nameField': 'Display Control'}},
+            {'donor_type': 'PBShape', 'fields': {'nameField': 'Side Bar'}}]}]}, **(plan_top or {}))
+        font = {'Name': 'Open Sans', 'PointSize': 18, 'Style': {'Bold': False, 'Italic': False}}
+        pages = {'Main': {'ID': 51, 'Name': 'Main', 'Width': 800, 'Height': 480, 'Controls': [
+            dict({'ID': 1, 'Type': 11, 'Name': 'Volume Heading', 'Left': 704, 'Top': 18, 'Width': w,
+                  'Height': 37, 'Text': 'Volume', 'Font': font, 'TextAlignment': 3}, **c),
+            {'ID': 2, 'Type': 7, 'Name': 'Display Control', 'Left': 705, 'Top': 254, 'Width': 120,
+             'Height': 66, 'TextAlignment': 3, 'Font': font,
+             'States': [{'Name': 'Off', 'Text': 'Display\r\nControl', 'Font': font, 'TextAlignment': 3},
+                        {'Name': 'On', 'Text': 'Display Controlled Here', 'Font': font, 'TextAlignment': 3}]},
+            {'ID': 3, 'Type': 13, 'Name': 'Side Bar', 'Left': 700, 'Top': 0, 'Width': 100, 'Height': 480,
+             'Text': 'Side Bar Words Too Long For It', 'Font': font}]}}
+        return vb.check_captions(plan, plan['pages'], pages, 'page')
+
+    def test_the_525s_volume_heading_is_refused(self):
+        problems, notes, n = self._check()
+        self.assertEqual(n, 3)
+        said = [p for p in problems if 'Volume Heading' in p]
+        self.assertEqual(len(said), 1, problems)
+        self.assertIn("page 'Main' 'Volume Heading': GUI Designer shows 'Volum' of 'Volume' in 91x37", said[0])
+        self.assertIn('at 18 pt in Open Sans', said[0])
+
+    def test_a_state_of_its_own_words_is_named_by_its_state(self):
+        problems, _, _ = self._check(w=97)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("page 'Main' 'Display Control' state 'On'", problems[0])
+
+    def test_what_build_baked_is_not_its_to_measure(self):
+        problems, _, _ = self._check(FlattenText=True)
+        self.assertFalse([p for p in problems if 'Volume Heading' in p], problems)
+
+    def test_a_measurement_specs_cut_captions_are_said_not_refused(self):
+        problems, notes, _ = self._check(plan_top={'caption_fit': 'off'})
+        self.assertEqual(problems, [])
+        self.assertEqual(len(notes), 2, notes)
+        self.assertTrue(all(n.startswith('CAPTION CUT, AS ITS MEASUREMENT SPEC ASKS') for n in notes), notes)
+
+    def test_ink_past_the_box_is_refused(self):
+        """GUI Designer cuts a line's ink off flat at its box (Turbulence
+        720's snapshots, gdl.compose.CLIP_PX): one line in a box too shallow
+        for it is refused, as 'Volum' is."""
+        problems, notes, _ = self._check(w=200, Height=12, Text='Hamburg')
+        said = [p for p in problems if 'Volume Heading' in p]
+        self.assertEqual(len(said), 1, problems)
+        self.assertIn("page 'Main' 'Volume Heading': its ink runs", said[0])
+        self.assertIn('GUI Designer cuts it there, at 18 pt in Open Sans', said[0])
+        self.assertFalse([n for n in notes if 'Volume Heading' in n], notes)
+
+    def test_words_in_a_color_with_no_alpha_are_passed_over(self):
+        problems, _, n = self._check(TextColor={'A': 0, 'R': 255, 'G': 255, 'B': 255})
+        self.assertFalse([p for p in problems if 'Volume Heading' in p], problems)
+        self.assertEqual(n, 2)
+
+
+class TestAnEditsCaptionsCut(unittest.TestCase):
+    """An edit plan's renamed and retexted controls held to what GUI Designer
+    cuts of their words (check_edit_captions): check() used to return
+    through check_edits, which asks only whether the field changed, so a
+    rename into a box too small for its new words verified clean."""
+
+    FONT = {'Name': 'Open Sans', 'PointSize': 18, 'Style': {'Bold': False, 'Italic': False}}
+
+    def built(self, *states, **c):
+        return {'Pages': [{'ID': 9203, 'Name': 'Main', 'Controls': [dict({
+            '__type': 'PBButton:#Extron', 'ID': 4, 'Name': 'Heading', 'Left': 0, 'Top': 0, 'Width': 91,
+            'Height': 37, 'Font': self.FONT, 'TextAlignment': 3,
+            'States': [{'Name': n, 'Text': t, 'Font': self.FONT, 'TextAlignment': 3} for n, t in states]}, **c)]}],
+            'PopupPages': []}
+
+    def rename(self, *per, **fields):
+        return {'generated_by': 'gdl.edit', 'controls': [{
+            'page': 9203, 'control': 4, 'why': 'rename', 'fields': fields,
+            'per_state': [dict({'index': i, 'fields': {'textField': t}}, **kw) for i, t, kw in per]}]}
+
+    def test_a_rename_too_long_for_its_box_is_refused(self):
+        vb = _vb(self)
+        problems, notes, n = vb.check_edit_captions(self.rename((0, 'Volume', {}), (1, 'Volume', {})),
+                                                    self.built(('Off', 'Volume'), ('On', 'Volume')))
+        self.assertEqual(n, 1)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("'Main' 'Heading': GUI Designer shows 'Volum' of 'Volume' in 91x37", problems[0])
+
+    def test_only_the_words_the_edit_wrote(self):
+        """A state the rename left alone is the client's, cut or not."""
+        vb = _vb(self)
+        problems, _, _ = vb.check_edit_captions(self.rename((0, 'Vol', {})),
+                                                self.built(('Off', 'Vol'), ('On', 'Volume')))
+        self.assertEqual(problems, [])
+
+    def test_a_baked_rename_is_the_artworks_to_check(self):
+        vb = _vb(self)
+        plan = self.rename((0, 'Volume', {'flattened': True, 'ftext': 'Volume'}))
+        self.assertEqual(vb.check_edit_captions(plan, self.built(('Off', 'Volume')))[:2], ([], []))
+
+    def test_check_runs_it_on_an_edit_plan(self):
+        """End to end on the synthetic fixture: its LongWord is split on
+        purpose, and an edit that writes it those words is refused."""
+        vb = _vb(self)
+        if not usable(SYNTHETIC):
+            self.skipTest('the synthetic fixture is not here')
+        plan = {'generated_by': 'gdl.edit', 'project': [], 'pages': [], 'controls': [{
+            'page': 9208, 'control': 6, 'why': "rename 'x' -> 'Abcdefghijklmnopqrstuvwxyz'",
+            'fields': {'textField': 'Abcdefghijklmnopqrstuvwxyz'}, 'per_state': []}]}
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'plan.json')
+            with open(path, 'w', encoding='utf-8') as fh:
+                json.dump(plan, fh)
+            problems, checked = vb.check(path, SYNTHETIC)
+        said = [p for p in problems if 'LongWord' in p]
+        self.assertEqual(len(said), 1, problems)
+        self.assertIn("breaks 'Abcdefghijklmnopqrstuvwxyz' across lines", said[0])
 
 
 class TestAlignment(unittest.TestCase):
@@ -1135,7 +1259,8 @@ class TestStateImage(unittest.TestCase):
         problems = self.vb._state_image('page Audio Vol', 3, bs, c, img[3], None,
                                         {7: buf.getvalue()}, [img[1], img[2]])
         self.assertEqual(len(problems), 1, problems)
-        self.assertIn("nearer 'vol2.png' (0% differs)", problems[0])
+        self.assertIn("nearer 'vol2.png' than its planned 'vol3.png' where the two files differ", problems[0])
+        self.assertIn('0 levels off it on average', problems[0])
 
     def test_the_planned_image_passes(self):
         self.assertEqual(self._check('two.png', 'two.png'), [])
@@ -1623,6 +1748,74 @@ class TestStateImage(unittest.TestCase):
         self.assertEqual(problems, [])
 
 
+class TestStateImagesApartInColourAlone(unittest.TestCase):
+    """Afterburn's Privacy key: two kit files that are one picture, a
+    microphone and an X, the X grey in 1059x440_privacy_nsel.png and light
+    blue in 1059x440_privacy-light-blue_sel.png, the same opaque pixels. At
+    the 320's 108x45 key the X is a few antialiased pixels, its colours under
+    IMAGE_PIXEL apart, and round four's Afterburn region room on the TLP320M
+    failed its On state - a right build - as nearer the Off file (0.00%
+    differs) than its own (0.74%) (archive/job-e823df9b/rebuild-1104/
+    privacy-320/). The art here is each file as Build draws it there, softer
+    than Pillow's resampling: bicubic and blurred half a pixel, which measures
+    as that build did, its own file a few per cent off and the other 0%. The
+    two are told apart where they differ, and nowhere else."""
+
+    SIZE = (108, 45)
+    RAISED, PRESSED = 0xFF37394E, 0xFF242634
+
+    def setUp(self):
+        self.vb = _vb(self)
+        import glob
+        from gdl.spec import RESOURCE_ROOTS
+        found = {}
+        for root in RESOURCE_ROOTS:
+            for f in glob.glob(os.path.join(root, 'Afterburn', '**', '1059x440_privacy*.png'), recursive=True):
+                found.setdefault(os.path.basename(f), f)
+        names = ('1059x440_privacy_nsel.png', '1059x440_privacy-light-blue_sel.png')
+        if any(n not in found for n in names):
+            self.skipTest("Extron's Afterburn kit is not here (vendor/README.md)")
+        self.off, self.on = ({'name': n, 'file': found[n]} for n in names)
+
+    def _art(self, img, fill):
+        import io
+        from PIL import Image, ImageFilter
+        w, h = self.SIZE
+        out = Image.new('RGBA', (w, h), ((fill >> 16) & 255, (fill >> 8) & 255, fill & 255, 255))
+        src = Image.open(img['file']).convert('RGBA')
+        k = min(w / src.width, h / src.height)
+        src = src.resize((round(src.width * k), round(src.height * k)), Image.Resampling.BICUBIC)
+        src = src.filter(ImageFilter.GaussianBlur(0.5))
+        out.alpha_composite(src, ((w - src.width) // 2, (h - src.height) // 2))
+        buf = io.BytesIO()
+        out.save(buf, 'PNG')
+        return {7: buf.getvalue()}
+
+    def _check(self, planned, built, fill):
+        c = {'Width': self.SIZE[0], 'Height': self.SIZE[1]}
+        other = self.off if planned is self.on else self.on
+        return self.vb._state_image("page 'Call 2' 'Privacy'", 1, {'Name': 'On', 'TLPImageID': 7}, c,
+                                    planned, fill, self._art(built, fill), [other])
+
+    def test_the_case_measures_as_the_build_did(self):
+        art = self._art(self.on, self.PRESSED)[7]
+        own = self.vb.image_mismatch(self.on['file'], art, *self.SIZE, self.PRESSED)
+        other = self.vb.image_mismatch(self.off['file'], art, *self.SIZE, self.PRESSED)
+        self.assertGreater(own, 0)
+        self.assertEqual(other, 0)
+
+    def test_each_state_built_right_passes(self):
+        self.assertEqual(self._check(self.on, self.on, self.PRESSED), [])
+        self.assertEqual(self._check(self.off, self.off, self.RAISED), [])
+
+    def test_each_built_in_the_others_place_is_caught(self):
+        for planned, built, fill in ((self.on, self.off, self.PRESSED), (self.off, self.on, self.RAISED)):
+            with self.subTest(planned=planned['name']):
+                problems = self._check(planned, built, fill)
+                self.assertEqual(len(problems), 1, problems)
+                self.assertIn(f"nearer {built['name']!r} than its planned {planned['name']!r}", problems[0])
+
+
 class TestStateImageOnTheSeed(unittest.TestCase):
     """The near-twin margin on real Build artwork: the Afterburn seed's 'Main
     Volume Mute' on Audio Settings, a mute image and volume levels a wave
@@ -2046,6 +2239,20 @@ class TestBakedCaption(unittest.TestCase):
         problems = self._check('\t\tCamera Control', self._baked('\t\tCamera\r\nControl'))
         self.assertTrue(any("wrapped after 'Camera'" in p for p in problems), problems)
 
+    def test_lines_break_at_lf_as_a_spec_writes_them(self):
+        """A spec breaks a line at LF, GUI Designer's own formatted text at CRLF;
+        Build bakes either as two lines, and either is checked as two."""
+        art = self._baked('\t\tDevice\nComms')
+        self.assertEqual(self._check('\t\tDevice\nComms', art), [])
+        self.assertEqual(self._check('\t\tDevice\rComms', art), [])
+        problems = self._check('\t\tDevice\nRouting', art)
+        self.assertTrue(any("'Routing' is not in the art" in p for p in problems), problems)
+        problems = self._check('\t\tDevice\nComms', self._baked('\t\tAudio'))
+        self.assertTrue(any("is not in the art" in p for p in problems), problems)
+
+    def test_words_across_an_lf_are_the_same_words(self):
+        self.assertEqual(self.vb._words('A\nB'), self.vb._words('A\r\nB'))
+
     def test_each_line_of_a_two_line_caption_is_found(self):
         self.assertEqual(self._check('\t\tDevice\r\n\t\tComms', self._baked('\t\tDevice\r\n\t\tComms')), [])
         problems = self._check('\t\tDevice\r\n\t\tRouting', self._baked('\t\tDevice\r\n\t\tComms'))
@@ -2078,14 +2285,15 @@ class TestBakedCaptionOnTheSyntheticFixture(unittest.TestCase):
     """Against GUI Designer's own baking: the synthetic fixture's flattened
     captions (Buttons' Flat1 to Flat4, each state's `ftextField` baked into its
     art by Build), every one found in its art in its own face, and none found
-    where another caption was baked. Open Sans at 16 and 20 pt, on one line and
-    on two, and Arial.
+    where another caption was baked. Open Sans at 16 and 20 pt and bold at 24,
+    on one line and on two, and Arial.
 
     The thresholds were measured on a client project's formatted captions in
     one retail face (CAPTION_FOUND); its icon-bearing formatted captions, which
     no spec writes, are covered by TestBakedCaption only, on art compose draws.
-    The bold one, Flat2, is left out: compose draws a bold caption regular, so
-    its art's bold ink is not found (docs/ROADMAP.md)."""
+    Flat2 is bold and Flat3 breaks its line at LF, as a spec's do: the first is
+    looked for in the emboldened regular GUI Designer baked, as compose draws
+    it (docs/render-fidelity.md section 8), the second as two lines."""
 
     def setUp(self):
         self.vb = _vb(self)
@@ -2113,30 +2321,41 @@ class TestBakedCaptionOnTheSyntheticFixture(unittest.TestCase):
                     for i, st in enumerate(P.states(co)):
                         ft = P.deref(st.get('ftextField'))
                         bs = c['States'][i]
-                        if ft and not ((bs.get('Font') or {}).get('Style') or {}).get('Bold'):
-                            # The spec breaks a line with LF, GUI Designer's own
-                            # formatted text with CRLF, which is what the check
-                            # splits a caption's lines at (docs/ROADMAP.md).
-                            crlf = ft.replace('\r\n', '\n').replace('\n', '\r\n')
-                            self.baked.append((bpg, c, i, crlf, bs))
+                        if ft:
+                            self.baked.append((bpg, c, i, ft, bs))
 
     def test_every_flattened_caption_is_found_in_its_own_art(self):
         self.assertEqual(sorted({c['Name'] for _, c, _, _, _ in self.baked}),
-                         ['Flat1', 'Flat3', 'Flat4'])
+                         ['Flat1', 'Flat2', 'Flat3', 'Flat4'])
         for _, c, i, ft, bs in self.baked:
             problem, note = self.vb.check_baked_caption('x', ft, bs, self.assets)
             self.assertEqual((problem, note), (None, None), (c['Name'], i, ft))
+
+    def test_a_caption_deleted_from_its_art_is_not_found(self):
+        """The converse of the above, for the bold caption and the LF one: the
+        art with the caption's ink painted over with its fill is a build that
+        lost it, and is reported."""
+        import io
+        from PIL import Image
+        for name in ('Flat2', 'Flat3'):
+            _, c, i, ft, bs = next(b for b in self.baked if b[1]['Name'] == name)
+            art = Image.open(io.BytesIO(self.assets[bs['TLPImageID']])).convert('RGBA')
+            blank = Image.new('RGBA', art.size, max(art.getcolors(art.width * art.height))[1])
+            buf = io.BytesIO()
+            blank.save(buf, 'PNG')
+            problem, _ = self.vb.check_baked_caption('x', ft, bs, {bs['TLPImageID']: buf.getvalue()})
+            self.assertIn('is not in the art', problem or '', name)
 
     def test_another_caption_is_never_found_in_it(self):
         """Not one a letter or a digit off ('Flattened 18' in 'Flattened 16'):
         the art cannot spell, so the words are read off the built project
         (test_words_that_did_not_take_are_read_off_the_built_project)."""
-        words = sorted({ln.strip() for _, _, _, ft, _ in self.baked for ln in ft.split('\r\n')}
+        words = sorted({ln.strip() for _, _, _, ft, _ in self.baked for ln in ft.splitlines()}
                        | {'Flattened 24'})
         for _, c, i, ft, bs in self.baked:
             if i:
                 continue
-            own = {ln.strip() for ln in ft.split('\r\n')}
+            own = {ln.strip() for ln in ft.splitlines()}
             for w in words:
                 if w in own:
                     continue
@@ -2164,6 +2383,65 @@ class TestBakedCaptionOnTheSyntheticFixture(unittest.TestCase):
         problems = check('Flattened 18')
         self.assertTrue(any("is 'Flattened 16' in the built project, the edit asked for 'Flattened 18'"
                             in p for p in problems), problems)
+
+    def _rename_plan(self, ops):
+        """An edit plan of `ops` (each a page id, control id and its
+        per_state), written where check() reads it."""
+        import tempfile
+        path = os.path.join(tempfile.mkdtemp(), 'plan.json')
+        plan = {'generated_by': 'gdl.edit', 'project': [], 'pages': [], 'controls': [
+            {'page': pg, 'control': co, 'why': 'test', 'per_state': per} for pg, co, per in ops]}
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(plan, fh)
+        return path
+
+    def test_a_rename_written_to_textfield_alone_fails_where_the_art_kept_the_old_words(self):
+        """The rebuild's finding (archive/job-e823df9b/rebuild-1104/item3/):
+        Flat1 renamed by a plan that wrote textField alone built with
+        'Flattened 16' still in its art and its ftextField - the fixture as it
+        is - and verify_built passed it, 4 checks and 0 problems, reading the
+        caption off layout.json. A flattened caption is the art's, so it is
+        looked for there, and its words in the built project's ftextField."""
+        pg, c, _, _, _ = next(b for b in self.baked if b[1]['Name'] == 'Flat1')
+
+        def check(new):
+            per = [{'index': i, 'was': 'Flattened 16', 'fields': {'textField': new}} for i in (0, 1)]
+            return self.vb.check(self._rename_plan([(pg['ID'], c['ID'], per)]), SYNTHETIC)[0]
+
+        problems = check('Renamed 16')
+        self.assertEqual(len([p for p in problems if "'Flat1'" in p]), 2, problems)
+        self.assertTrue(all("is 'Flattened 16' in the built project, the edit asked for 'Renamed 16'" in p
+                            for p in problems), problems)
+        self.assertEqual(check('Flattened 16'), [], 'the words the art carries pass')
+
+    def test_with_no_built_words_the_art_alone_says_so(self):
+        """Read without the built project's ftextField, the art is still asked."""
+        _, c, _, _, _ = next(b for b in self.baked if b[1]['Name'] == 'Flat1')
+        j = {'Pages': [{'ID': 51, 'Name': 'Buttons', 'Controls': [dict(c, ID=3)]}], 'PopupPages': []}
+        op = {'page': 51, 'control': 3, 'why': 'test',
+              'per_state': [{'index': 0, 'fields': {'textField': 'Renamed 16'}}]}
+        problems = self.vb.check_edits({'controls': [op]}, j, self.assets)[0]
+        self.assertTrue(any("'Renamed 16' is not in the art" in p for p in problems), problems)
+        op['per_state'][0]['fields']['textField'] = 'Flattened 16'
+        self.assertEqual(self.vb.check_edits({'controls': [op]}, j, self.assets)[0], [])
+
+    def test_gdl_edits_own_plan_is_held_to_the_art(self):
+        """The plan gdl.edit makes for that rename, checked against a build
+        that never had it - the fixture - fails, and a rename to the words it
+        has passes."""
+        from gdl.edit import Edits
+        sel = {'page': 'Buttons', 'name': 'Flat1'}
+        for new, ok in (('Renamed 16', False), ('Flattened 16', True)):
+            with self.subTest(new=new):
+                plan, errors = Edits({'edits': [{'op': 'rename', 'select': sel, 'text': new}]},
+                                     SYNTHETIC).plan()
+                self.assertEqual(errors, [])
+                import tempfile
+                path = os.path.join(tempfile.mkdtemp(), 'plan.json')
+                with open(path, 'w', encoding='utf-8') as fh:
+                    json.dump(plan, fh)
+                problems = self.vb.check(path, SYNTHETIC)[0]
+                self.assertEqual(problems == [], ok, problems)
 
 
 class TestOfflinePage(unittest.TestCase):

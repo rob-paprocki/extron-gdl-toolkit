@@ -76,13 +76,36 @@ only a font's `PointSize`, and live captions leave no pixels in the file, so
 `tests/type_probe.py` bakes them instead: a button with `flattenTextField` true
 has Build draw its caption into its artwork, from each state's **`ftextField`**
 (not `textField` - a clone carries the donor's, `'               Preset 1'` on
-the Afterburn seeds). "HHHH" at 14, 18, 24, 30 and 36 pt measured a cap height
+the Afterburn seeds - and an empty `ftextField` bakes no words at all: Build does
+not fall back to `textField`, which `layout.json` reads back as the caption
+whatever the art says; measured on plain buttons made flattened with their words
+in the states' `textField`, `archive/job-e823df9b/rebuild-1104/item3/`).
+"HHHH" at 14, 18, 24, 30 and 36 pt measured a cap height
 of 13, 17, 23, 29 and 34 px on the TLP Pro 1035T (149 DPI), 835M (188.68),
-1535M (127.7), 300M (164.83) and 1230WTG (166) alike - GUI Designer's own
-1.375 px per point, whatever the panel's DPI. So 14 pt captions are 2.2 mm tall
+1535M (127.7), 300M (164.83) and 1230WTG (166) alike - the same pixels a point
+whatever the panel's DPI. Down the panel that is 4/3 px a point, 96 DPI: those
+are Open Sans's cap height, 0.714 em, at 4/3 px a point, rounded. Across, a
+caption's advances lie at 1.375 px a point, 99 DPI (`docs/render-fidelity.md`
+finding 7). So 14 pt captions are 2.2 mm tall
 on a 1035, 1.8 mm on an 835 and 1.1 mm on a 535. The limit: this is Build's
 rasterizer; a panel is expected to draw live captions itself, which was not
 measured.
+
+**GUI Designer cuts a live caption that does not fit, and says nothing.** It
+lays one out in its box less a sixth of an em a side, breaks a word too wide
+for that at a character, and shows the lines the box's depth holds, the last
+cut at a character with no ellipsis (`docs/render-fidelity.md` §9, measured on
+the synthetic fixture). The Shockwave 525's region Main built its Volume
+heading - 'Volume' at 18 pt in a 91x37 box - as 'Volum' in GUI Designer's own
+snapshot, with 0 errors. `gdl.spec check` and `tests/verify_built.py` hold
+every live caption to that layout (`gdl.compose.caption_fit`), and `gdl.edit
+check` a rename's new words. GUI Designer cuts a line's ink off flat at the
+box, row by row, and draws the rest: Turbulence 720's Confirmation question, two lines
+of 20 pt Open Sans Light, ends on its 316x64 box's last row, and in a copy with
+the box shrunk to 316x60 about its middle GUI Designer's snapshot lost the 2
+rows of its descenders past the new foot (`docs/render-fidelity.md` finding
+7). `caption_fit` names a line a row of whose ink is past the box (`clips`),
+and the three checks refuse it.
 
 ## 3. Reading and writing `ProjectGCP`
 
@@ -625,7 +648,7 @@ read off 1.28.0.7's IL, they are `PopupID != UInt64.MaxValue` and `GroupID >
   755x440 call icon, but for the last column and row, past the fitted icon -
   as the Mach 1035 seed's own Initiate Call is built, byte for byte - and the
   seed's VC Call, #86D161 at 80 under its icon, green 210. GUI Designer's
-  snapshots, and the compositor, draw such a pixel at full strength
+  snapshots blend such a pixel in light, and the compositor as they do
   (`docs/render-fidelity.md` §2), but the theme is drawn for a panel that
   blends it - the Turbulence seed's own header and footer art is alpha 128
   throughout. `tests/verify_built.py` reads a translucent fill off the pixels
@@ -671,7 +694,8 @@ read off 1.28.0.7's IL, they are `PopupID != UInt64.MaxValue` and `GroupID >
 
 ## 8. Where the code is
 
-`README.md` *What is here* maps every module and script.
+`README.md` *What is here* maps the folders; `gdl/README.md` and
+`powershell/README.md` list every module and script.
 
 ## 9. What the corpus audit checks
 

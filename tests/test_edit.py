@@ -153,6 +153,41 @@ class TestRenameOnTheSyntheticFixture(unittest.TestCase):
         self.assertEqual(problems, [])
         self.assertEqual(len(plan['controls']), 2)
 
+    def test_a_flattened_buttons_rename_writes_the_field_build_bakes(self):
+        """Build bakes a flattened button's caption from each state's
+        ftextField and from nothing else (docs/gdl-format.md section 2): Flat1
+        renamed on a copy of this fixture kept 'Flattened 16' in its art while
+        its textField and layout.json said the new words. So each state takes
+        the new words in ftextField too - and in textField, where layout.json
+        reads them - and the plan marks it baked, for verify_built to look for
+        in the art."""
+        plan, problems = _on_synthetic([{'op': 'rename', 'select': {'page': 'Buttons', 'name': 'Flat1'},
+                                         'text': 'Renamed 16'}]).plan()
+        self.assertEqual(problems, [])
+        (op,) = plan['controls']
+        self.assertEqual(op['fields'], {'textField': 'Renamed 16'})
+        self.assertEqual([(ps['index'], ps['fields'], ps.get('ftext'), ps.get('flattened'))
+                          for ps in op['per_state']],
+                         [(i, {'textField': 'Renamed 16', 'ftextField': 'Renamed 16'}, 'Renamed 16', True)
+                          for i in (0, 1)])
+
+    def test_a_flattened_caption_keeps_its_own_line_break(self):
+        """Flat3 breaks at LF, as a spec writes it, and Build bakes it as two
+        lines: the new caption breaks where it asks, at the field's own LF."""
+        plan, _ = _on_synthetic([{'op': 'rename', 'select': {'page': 'Buttons', 'name': 'Flat3'},
+                                  'text': 'Three\r\nlines'}]).plan()
+        for ps in plan['controls'][0]['per_state']:
+            self.assertEqual(ps['fields']['ftextField'], 'Three\nlines')
+
+    def test_a_button_that_is_not_flattened_is_not_baked(self):
+        """Brect draws its caption live: its ftextField is the seed's clone's
+        '               Preset 1', which nothing draws, and is left alone."""
+        plan, _ = _on_synthetic([{'op': 'rename', 'select': {'page': 'Buttons', 'name': 'Brect'},
+                                  'text': 'square'}]).plan()
+        for ps in plan['controls'][0]['per_state']:
+            self.assertEqual(ps['fields'], {'textField': 'square'})
+            self.assertNotIn('flattened', ps)
+
 
 @needs_synthetic()
 class TestRenumberOnTheSyntheticFixture(unittest.TestCase):
@@ -393,9 +428,13 @@ class TestRetargetOrientation(unittest.TestCase):
 # those cases use a page shaped exactly like Project.pages() output - each as
 # the client project these rules were found on had it.
 
-def _st(name, caption=None, fill=None, where='state', text_color=None, stroke=None):
+def _st(name, caption=None, fill=None, where='state', text_color=None, stroke=None, ftext=None):
+    """A state as Project.state() reads one. `ftext` is its ftextField as
+    stored; a formatted caption's defaults to the caption itself."""
+    if ftext is None and where == 'fstate':
+        ftext = caption
     return {'name': name, 'caption': caption, 'caption_in': where if caption else None,
-            'fill': fill, 'stroke': stroke, 'text_color': text_color}
+            'ftext': ftext, 'fill': fill, 'stroke': stroke, 'text_color': text_color}
 
 
 def _button(name, states, **kw):
@@ -507,13 +546,13 @@ class TestFormattedCaptions(unittest.TestCase):
         for ps in op['per_state']:
             self.assertEqual(ps['ftext'], 'Camera Control')
             self.assertTrue(ps['flattened'])
-            self.assertNotIn('fields', ps)
+            self.assertEqual(ps['fields'], {'ftextField': 'Camera Control'}, 'not textField')
 
     def test_growing_a_formatted_caption_warns(self):
         """Measured against the real build: 'Cameras' -> 'Camera Control'
         rasterizes as two lines with the second unindented over the icon."""
         _, _, warnings = self._ed('Cameras', 'Camera Control').check()
-        self.assertEqual(len([w for w in warnings if 'FORMATTED text' in w]), 1, warnings)
+        self.assertEqual(len([w for w in warnings if 'baked into the artwork' in w]), 1, warnings)
 
     def test_a_same_length_formatted_rename_does_not_warn(self):
         """'Displays' -> 'Screens' built correctly, so warning on it would be
@@ -521,6 +560,87 @@ class TestFormattedCaptions(unittest.TestCase):
         _, errors, warnings = self._ed('Displays', 'Screens').check()
         self.assertEqual(errors, [])
         self.assertEqual(warnings, [])
+
+    def test_the_new_words_keep_the_fields_layout(self):
+        """Its tabs, line breaks and leading spaces are how a formatted caption
+        draws - two CRLFs put a source's label under its icon, leading spaces
+        put a list button's past it - so the new words go where the old ones
+        were, line by line, at the field's own line break, and a line it did
+        not have takes its last line's indent: unindented, it lies over the
+        icon (docs/editing.md). New words that bring a layout of their own - a
+        tab, or a leading space or break - are written as they are. The plan
+        carries the field whole: gdl.edit decides it, the applier writes it."""
+        for old, new, want in (('\t\tDevice\r\n\t\tComms', 'Device\nRouting', '\t\tDevice\r\n\t\tRouting'),
+                               ('\t\tDevice\r\n\t\tComms', 'Screens', '\t\tScreens'),
+                               ('\t\tCameras', 'Camera\nControl', '\t\tCamera\n\t\tControl'),
+                               ('\r\n\r\nLaptop', 'PC', '\r\n\r\nPC'),
+                               ('Laptop\r\n\r\n', 'PC', 'PC\r\n\r\n'),
+                               ('               Preset 1', 'Scene 1', '               Scene 1'),
+                               ('     Call', 'Dial\nNow', '     Dial\n     Now'),
+                               ('\t\tCameras', '\tCamera\r\n\tControl', '\tCamera\r\n\tControl')):
+            with self.subTest(old=old, new=new):
+                b = _button('F', [_st('Off', 'x', where='fstate', ftext=old)])
+                plan, _ = _hand_made([{'op': 'rename', 'select': {'name': 'F'}, 'text': new}], b).plan()
+                (ps,) = plan['controls'][0]['per_state']
+                self.assertEqual(ps['fields'], {'ftextField': want})
+                self.assertEqual((ps['ftext'], ps['flattened']), (new, True))
+
+
+class TestFlattenedCaptions(unittest.TestCase):
+    """A button whose flattenTextField is true has Build bake its caption from
+    each state's ftextField alone - not textField, and an empty one bakes no
+    words (docs/gdl-format.md section 2). Measured on a copy of the synthetic
+    fixture: three of its plain buttons made flattened and renamed, and its
+    own Flat1, built with the old words or none in their art
+    (archive/job-e823df9b/rebuild-1104/item3/)."""
+
+    def _plan(self, *states, **op):
+        b = _button('B', list(states), flatten=True)
+        edit = dict({'op': 'rename', 'select': {'name': 'B'}}, **op)
+        plan, problems = _hand_made([edit], b).plan()
+        self.assertEqual(problems, [])
+        return plan['controls'][0]['per_state']
+
+    def test_words_in_textfield_and_none_in_ftextfield_are_written_to_both(self):
+        """Brect made flattened: its words in its states' textField and an
+        empty ftextField, which built with no words in its art."""
+        for ps in self._plan(_st('Off', 'rect', ftext=''), _st('On', 'rect', ftext=''), text='square'):
+            self.assertEqual(ps['fields'], {'textField': 'square', 'ftextField': 'square'})
+            self.assertEqual((ps['ftext'], ps['flattened'], ps['was']), ('square', True, 'rect'))
+
+    def test_a_donors_ftextfield_keeps_its_layout_and_takes_the_words(self):
+        """Bcapsule made flattened kept its seed's clone's
+        '               Preset 1', and baked those words: its leading
+        spaces are the layout its art drew, so they stay."""
+        (ps,) = self._plan(_st('Off', 'capsule', ftext='               Preset 1'), text='pill')
+        self.assertEqual(ps['fields'], {'textField': 'pill', 'ftextField': '               pill'})
+
+    def test_growing_one_warns_as_a_formatted_one_does(self):
+        """Baked, it wraps where Build wraps it, which no one sees before the
+        build."""
+        b = _button('B', [_st('Off', 'Mic', ftext='Mic')], flatten=True)
+        _, _, warnings = _hand_made([{'op': 'rename', 'select': {'name': 'B'},
+                                      'text': 'Microphone Mute'}], b).check()
+        self.assertEqual(len([w for w in warnings if 'baked into the artwork' in w]), 1, warnings)
+
+    def test_a_map_reaches_only_the_state_that_says_it(self):
+        per = self._plan(_st('Off', 'Mic On', ftext='Mic On'), _st('On', 'Mic Off', ftext='Mic Off'),
+                         map={'Mic Off': 'Muted'})
+        self.assertEqual([(ps['index'], ps['fields']) for ps in per],
+                         [(1, {'textField': 'Muted', 'ftextField': 'Muted'})])
+
+    def test_a_states_op_writes_a_flattened_states_words_where_build_bakes_them(self):
+        """`states` gives a state its text as `rename` does, so it is baked the
+        same way."""
+        b = _button('B', [_st('Off', 'rect', ftext='rect'), _st('On', 'rect', ftext='rect')], flatten=True)
+        plan, problems = _hand_made([{'op': 'states', 'select': {'name': 'B'},
+                                      'states': [{'name': 'Off', 'text': 'Idle'},
+                                                 {'name': 'On', 'text': 'Live'}]}], b).plan()
+        self.assertEqual(problems, [])
+        per = plan['controls'][0]['per_state']
+        self.assertEqual([(ps['fields'].get('textField'), ps['fields'].get('ftextField'), ps.get('ftext'),
+                           ps.get('flattened')) for ps in per],
+                         [('Idle', 'Idle', 'Idle', True), ('Live', 'Live', 'Live', True)])
 
 
 class TestRenumberMirrors(unittest.TestCase):
@@ -724,6 +844,93 @@ class TestStatesOp(unittest.TestCase):
         self.assertEqual(op['expect_states'][1]['fill'], '#FFD69B61')
         self.assertEqual(op['expect_states'][2]['fill'], '#FF8B1E1E')
         self.assertEqual(op['expect_states'][2]['text'], 'Alpha')
+
+
+
+@needs_synthetic()
+class TestARenamesWordsInItsBox(unittest.TestCase):
+    """`gdl.edit check` warns where a rename's words would be cut in the
+    control's box (Edits._caption_warnings, gdl.compose.caption_cuts): a
+    rename writes words into a box sized for the old ones, and nothing
+    else measured them - the field changes, and the panel shows 'Volum'.
+    The synthetic fixture's NavAlpha is 317x62 at 20 pt."""
+
+    def setUp(self):
+        try:
+            import PIL  # noqa: F401
+        except ImportError:
+            self.skipTest('Pillow not installed; a caption is measured with gdl.compose')
+
+    def check(self, new, **e):
+        ed = _on_synthetic([dict({'op': 'rename', 'select': {'page': 'Main', 'name': 'NavAlpha'},
+                                  'text': new}, **e)])
+        plan, errors, warnings = ed.check()
+        return [w for w in warnings if 'GUI Designer' in w], ed.notes
+
+    def test_words_that_fit_say_nothing(self):
+        self.assertEqual(self.check('Omega'), ([], []))
+
+    def test_a_word_too_wide_for_the_box_is_warned_of(self):
+        warned, notes = self.check('Supercalifragilisticexpialidocious')
+        self.assertEqual(len(warned), 1, warned)
+        self.assertIn("rename 'Main' 'NavAlpha': GUI Designer breaks 'Supercalifragilisticexpialidocious'", warned[0])
+        self.assertIn('at 20 pt in Open Sans', warned[0])
+        self.assertIn('give it room, or fewer words', warned[0])
+
+    def test_words_whose_ink_the_box_cuts_are_warned_of(self):
+        """Two lines of 20 pt in 62 px: both shown, the second's descenders
+        a row past the box's foot, which GUI Designer cuts off there."""
+        warned, notes = self.check('Display Display Display Display')
+        self.assertEqual(len(warned), 1, warned)
+        self.assertIn("rename 'Main' 'NavAlpha': its ink runs 1 px past the box's foot in 317x62", warned[0])
+        self.assertIn('give it room, or fewer words', warned[0])
+        self.assertEqual(notes, [])
+
+    def test_a_retargets_box_is_the_one_measured(self):
+        """Scaled to a smaller panel, a caption that fitted may not."""
+        warned, _ = self.check('Omega Omega Omega')
+        self.assertEqual(warned, [])
+        ed = _on_synthetic([{'op': 'rename', 'select': {'page': 'Main', 'name': 'NavAlpha'},
+                             'text': 'Omega Omega Omega'},
+                            {'op': 'retarget', 'model': 'TLP725T', 'scale': True}])
+        _, _, warnings = ed.check()
+        self.assertTrue(any('NavAlpha' in w and 'GUI Designer' in w for w in warnings), warnings)
+
+    def test_a_project_never_built_is_a_note(self):
+        from unittest import mock
+        with mock.patch('gdl.container.open_payload', side_effect=ValueError('no built payload')):
+            warned, notes = self.check('Supercalifragilisticexpialidocious')
+        self.assertEqual(warned, [])
+        self.assertEqual(len(notes), 1, notes)
+        self.assertIn('not measured', notes[0])
+        self.assertIn('no built layout', notes[0])
+
+    def test_without_pillow_it_is_a_note_and_check_runs(self):
+        """PIL blocked at the import system, in a process of its own."""
+        import json
+        import subprocess
+        code = '\n'.join((
+            'import json, sys',
+            'class NoPIL:',
+            '    def find_spec(self, name, path=None, target=None):',
+            "        if name == 'PIL' or name.startswith('PIL.'):",
+            "            raise ImportError('no Pillow here')",
+            'sys.meta_path.insert(0, NoPIL())',
+            'from gdl.edit import Edits',
+            "ed = Edits({'edits': [{'op': 'rename', 'select': {'page': 'Main', 'name': 'NavAlpha'},",
+            "                       'text': 'Supercalifragilisticexpialidocious'}]}, sys.argv[1])",
+            'plan, errors, warnings = ed.check()',
+            "print(json.dumps({'errors': errors, 'warnings': warnings, 'notes': ed.notes,",
+            "                  'ops': len(plan['controls']), 'pil': 'PIL' in sys.modules}))"))
+        r = subprocess.run([sys.executable, '-c', code, SYNTHETIC], capture_output=True, text=True,
+                           cwd=HERE, timeout=300)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        got = json.loads(r.stdout.strip().splitlines()[-1])
+        self.assertFalse(got['pil'], got)
+        self.assertEqual((got['errors'], got['ops']), ([], 1), got)
+        self.assertFalse([w for w in got['warnings'] if 'GUI Designer' in w], got)
+        self.assertEqual(len(got['notes']), 1, got)
+        self.assertIn('Pillow', got['notes'][0])
 
 
 if __name__ == '__main__':

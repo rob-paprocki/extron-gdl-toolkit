@@ -8,6 +8,7 @@ metrics) against ground truth the application produced itself.
 import contextlib
 import io
 import json
+import math
 import os
 import re
 import struct
@@ -125,7 +126,8 @@ def as_the_panel(project=None):
     """Draw as the panel shows, not as GUI Designer's snapshot export does.
 
     Two rules differ, and a sheet a client signs wants the panel's: a
-    translucent control blends over what is under it (BINARY off), and a face
+    translucent control blends as Pillow blends, not in light as the snapshot
+    does, and the page goes on black by its alpha (BINARY off), and a face
     is the one the built file `project` embeds, not the build recovered into
     gdl/fonts/ (Afterburn's 320/525/725/300M seeds embed a different
     afterburn.ttf from the others; Mach, Shockwave and Turbulence embed Windows
@@ -147,22 +149,39 @@ def as_the_panel(project=None):
 
 
 def face(name, bold, italic, px):
+    """The Pillow font a caption in `name` is drawn in, `oblique` set where
+    an italic is asked of a file that is not one, and `emboldened` where a
+    bold is: GUI Designer obliques the regular (draw_text, OBLIQUE) and
+    emboldens it (embolden, BOLD_ADVANCE_EM) there, as no seed carries an Open
+    Sans Italic or Bold."""
     key = (name, bold, italic, round(px, 2), _carried_tag)
     if key in _cache:
         return _cache[key]
+    f, f_stand_in = _open_face(name, bold, italic, px)
+    _cache[key] = f
+    # The stand-in it is drawn in (FALLBACKS' words), or None: a caption
+    # measured in one says nothing of how the panel's face lays it out, and
+    # caption_fit's callers pass over it, saying so.
+    f.stand_in = f_stand_in
+    style = (f.getname()[1] or '').lower()
+    f.oblique = bool(italic) and 'italic' not in style and 'oblique' not in style
+    f.emboldened = bool(bold) and 'bold' not in style
+    return f
+
+
+def _open_face(name, bold, italic, px):
+    """(the Pillow font, the stand-in's words in FALLBACKS or None)."""
     if _carried:
         data = _carried_face(name, bold, italic)
         if data:
-            f = _cache[key] = ImageFont.truetype(io.BytesIO(data), size=px)
-            return f
+            return ImageFont.truetype(io.BytesIO(data), size=px), None
     primary = FILES.get((name, bold, italic)) or FILES.get((name, 0, 0))
     own = [c for c in [primary] + ALIASES.get(primary or '', []) if c]
     candidates = own + [c for c in ['arial.ttf'] if c not in own]
     for fn in own:
         p = os.path.join(FONTDIR, fn)
         if os.path.exists(p):
-            f = _cache[key] = ImageFont.truetype(p, size=px)
-            return f
+            return ImageFont.truetype(p, size=px), None
     if not face_path(name, fontdir=FONTDIR):
         # Before anything stands in: a face no recovery put here, read
         # straight out of a seed that carries it - an icon face out of its
@@ -173,19 +192,18 @@ def face(name, bold, italic, px):
         data, seed = seed_face(name)
         if data:
             FROM_SEED.add(f'{name} from {seed}')
-            f = _cache[key] = ImageFont.truetype(io.BytesIO(data), size=px)
-            return f
+            return ImageFont.truetype(io.BytesIO(data), size=px), None
     if 'arial.ttf' not in own and os.path.exists(os.path.join(FONTDIR, 'arial.ttf')):
-        FALLBACKS.add(f'{name} as arial.ttf')
-        f = _cache[key] = ImageFont.truetype(os.path.join(FONTDIR, 'arial.ttf'), size=px)
-        return f
+        why = f'{name} as arial.ttf'
+        FALLBACKS.add(why)
+        return ImageFont.truetype(os.path.join(FONTDIR, 'arial.ttf'), size=px), why
     index = _system_fonts()
     for fn in candidates:
         p = index.get(fn.lower())
         if p:
-            FALLBACKS.add(f"{name} as the host's {fn}")
-            f = _cache[key] = ImageFont.truetype(p, size=px)
-            return f
+            why = f"{name} as the host's {fn}"
+            FALLBACKS.add(why)
+            return ImageFont.truetype(p, size=px), why
     raise LookupError(
         f'no font file for {name!r} (bold={bold} italic={italic}). A built project '
         f'embeds the faces it declares, Arial included - run '
@@ -207,6 +225,38 @@ def metrics(f):
     return f.getmetrics()
 
 
+# GDI+ lays a caption out down its box at 96 DPI where it lays it out across
+# at 99 (PT): the ascent that sets a block's first baseline below its top, and
+# the pitch from one line to the next, are the face's usWinAscent and
+# usWinAscent + usWinDescent at 4/3 px a point. On the synthetic fixture a
+# top-aligned caption's lines, one to six of them, land within 0.8 px of it,
+# where at PT a sixth line falls 6.6 px low; 96/99 is a clean minimum of the
+# score (0.965 and 0.975 both worse); and docs/gdl-format.md section 2's cap
+# heights, 13 to 34 px at 14 to 36 pt, are the face's at 4/3. The glyphs are
+# drawn at 4/3 too (drawn()), both ways, and set along the line at PT's
+# advances: a 20 pt Open Sans Light 'y' goes 6 rows below its baseline in GUI
+# Designer's snapshot, where drawn at PT it goes 7, and drawn so the synthetic
+# fixture scores 1.27% for 1.55%, every page better (docs/render-fidelity.md
+# finding 7).
+VERTICAL = (4 / 3) / PT
+# And a centred or bottom-aligned block is aligned in its box less this many
+# px a point at its foot, where a top-aligned one is not. Measured, not
+# explained: 0.148 of the vertical em over the fixture's 454 centred Open Sans
+# lines, for one line to four alike, 0.15 over its bottom-aligned ones and
+# 0.15 to 0.16 in Arial, Arial Black and Open Sans Light. 0.2 px a point is
+# 0.15 of it; the score is flat from 0.135 to 0.15 and worse past 0.155 -
+# 0.18 to 0.2 px a point, so FOOT, the line-by-line measurement, is the
+# plateau's upper edge, not its middle (0.19 scores 1.54% against 1.55%).
+FOOT = 0.2
+
+
+def layout_metrics(f):
+    """(ascent, descent) as GDI+ lays a caption's lines out: metrics() at
+    VERTICAL of the em the glyphs are drawn at."""
+    asc, desc = metrics(f)
+    return asc * VERTICAL, desc * VERTICAL
+
+
 # Lay text out with the font's own fractional advances instead of Pillow's
 # grid-fitted integer ones, and place each glyph at its own fractional x.
 # See docs/render-fidelity.md finding 7 for what each is worth.
@@ -219,7 +269,32 @@ FRAC_PLACE = True
 # but on the same corpus and with its own metric preferring roughly -0.75, so
 # treat that as agreement about the convention, not independent evidence.
 DX = -0.5
+# GDI+ lays a caption out in its box less StringFormat's default padding, a
+# sixth of the font's em on the left and on the right (none above or below):
+# a left- or right-aligned line starts that far in from the box's edge, and
+# every line wraps in the box less both. The synthetic fixture shows it - 3 px
+# at 14 pt, 9 px at 40 pt on its Type Sizes page - where the client project the
+# first baseline was scored on centred all but 3 of its 490 captions, so never
+# did (docs/render-fidelity.md section 9).
+PAD_EM = 1 / 6
+# GDI+'s simulated bold: a face with no bold file of its own (no seed carries
+# an Open Sans Bold) drawn as the regular, each glyph's ink smeared this many
+# whole pixels to the right - GDI's overstrike - and each advance this much of
+# the em longer. Fitted on the client project's 44 bold Forma captions and
+# confirmed on the synthetic fixture's 50 bold Open Sans ones: a symmetric, a
+# vertical or a fractional smear (1.1 px already) all score worse, and so does
+# every growth in whole pixels (0.3 to 1 px); 0.016 to 0.0175 em score alike,
+# 0.015 and 0.02 worse (docs/render-fidelity.md section 8).
+BOLD_SMEAR = 1
+BOLD_ADVANCE_EM = 1 / 60
 _adv = {}
+
+
+def bold_advance(fnt):
+    """How much further than the regular's each glyph's advance takes the
+    pen in `fnt`: BOLD_ADVANCE_EM of its em where face() emboldens it, else
+    nothing."""
+    return BOLD_ADVANCE_EM * fnt.size if getattr(fnt, 'emboldened', False) else 0.0
 
 
 def advances(fnt):
@@ -237,12 +312,70 @@ def advances(fnt):
 
 
 def measure(s, fnt, draw=None):
-    """Text width in pixels, fractional where the font lets us read it."""
+    """Text width in pixels, fractional where the font lets us read it, each
+    glyph's advance grown where the face is emboldened (bold_advance)."""
+    grown = bold_advance(fnt) * len(s)
     if FRAC_MEASURE:
         a = advances(fnt)
         if a is not None:
-            return a.length(s, fnt.size)
-    return (draw or ImageDraw.Draw(Image.new('RGBA', (1, 1)))).textlength(s, font=fnt)
+            return a.length(s, fnt.size) + grown
+    return (draw or ImageDraw.Draw(Image.new('RGBA', (1, 1)))).textlength(s, font=fnt) + grown
+
+
+_drawn = {}  # (font path, size, index) -> the Pillow font drawn() returns
+
+
+def drawn(fnt):
+    """The Pillow font `fnt`'s glyphs are drawn in: the face at VERTICAL of
+    its em, the em GDI+ sets the lines down the box at - 4/3 px a point, where
+    `fnt` is at PT - so a glyph is as tall as GUI Designer's and FreeType
+    grid-fits it at the size GDI+ does (20 pt: 26.67 px, hinted at 27, a 'y'
+    six rows deep). Its advances stay `fnt`'s (draw_glyphs)."""
+    # Keyed by what makes the face, not id(fnt): a key of id() kept `fnt`
+    # alive for good, and an id is reused once its font is collected.
+    key = (getattr(fnt, 'path', None), fnt.size, getattr(fnt, 'index', 0))
+    got = _drawn.get(key)
+    if got is None:
+        got = _drawn[key] = fnt.font_variant(size=fnt.size * VERTICAL)
+    return got
+
+
+def draw_glyphs(d, x, y, line, fnt, fill, adv=None):
+    """`line` drawn with ImageDraw `d` from (x, y) on its baseline, glyph by
+    glyph so each lands on its own fractional x - Pillow advances by whole
+    pixels within a string, which drifts a line's interior apart from GDI+'s
+    layout even when the total width agrees - each glyph in drawn(fnt) and
+    each advance `adv`'s (the font's sfnt table at `fnt`'s em) or, without
+    one, Pillow's in `fnt`, grown where the face is emboldened
+    (bold_advance). Every line is drawn so, without `adv` too: an
+    unemboldened line used to be drawn whole in `fnt`, with Pillow's kerning
+    between its pairs, and cannot be now - a whole line in drawn(fnt) would
+    advance at the larger em, and in `fnt` would draw the smaller glyphs -
+    so Pillow's kerning between pairs is dropped on that path (the synthetic
+    baseline was recorded after the change). Anchored on the baseline: 'la'
+    would re-introduce Pillow's own rounded ascender, which metrics()
+    avoids."""
+    extra = bold_advance(fnt)
+    small = drawn(fnt)
+    for ch in line:
+        d.text((x, y), ch, font=small, fill=fill, anchor='ls')
+        x += (adv.advance(ch, fnt.size) if adv else d.textlength(ch, font=fnt)) + extra
+
+
+def embolden(mask, fnt):
+    """A coverage mask of text in `fnt` as GDI+ emboldens it where face()
+    says it does: each pixel the more of its own coverage and its
+    BOLD_SMEAR'th neighbour's to the left - the overstrike, drawn into the
+    mask before it is drawn through so the smear does not compound
+    antialiased edges. `mask` as it is otherwise."""
+    if not getattr(fnt, 'emboldened', False):
+        return mask
+    out = mask
+    for k in range(1, BOLD_SMEAR + 1):
+        right = Image.new('L', mask.size, 0)
+        right.paste(mask.crop((0, 0, mask.width - k, mask.height)), (k, 0))
+        out = ImageChops.lighter(out, right)
+    return out
 
 
 def rgba(c):
@@ -263,79 +396,412 @@ def wrap(text, fnt, width, measure):
             if not word:
                 continue
             trial = line + word
-            if measure(trial, fnt) <= width or not line.strip():
-                # the word itself may still be wider than the box
-                while measure(trial, fnt) > width and len(trial) > 1:
-                    cut = len(trial) - 1
-                    while cut > 1 and measure(trial[:cut], fnt) > width:
-                        cut -= 1
-                    out.append(trial[:cut])
-                    trial = trial[cut:]
-                line = trial
-            else:
+            if measure(trial, fnt) > width and line.strip():
                 out.append(line.rstrip())
-                line = word.lstrip()
+                trial = word.lstrip()
+            # The word itself may still be wider than the box, at a line's
+            # start or after a word: Afterburn 1035 Portrait's 13 pt 'Video
+            # Conference' in 90 px, whose 'Conference' is 96 px across.
+            while measure(trial, fnt) > width and len(trial) > 1:
+                cut = len(trial) - 1
+                while cut > 1 and measure(trial[:cut], fnt) > width:
+                    cut -= 1
+                out.append(trial[:cut])
+                trial = trial[cut:]
+            line = trial
         out.append(line.rstrip())
     return out
 
 
-def draw_text(img, box, text, fnt, color, alignv):
-    """Place a text block per AlignmentEnum: value = 3*vertical + horizontal."""
+# How much of a line must fit its box's height for GDI+ to show it. Measured
+# only as between 17% and 68%: on the synthetic fixture a 40 pt caption whose
+# second line would have 17% of its height in the box shows one line, and a
+# 14 pt one whose second line has 68% shows two. Half is the assumption.
+TRIM_LINE = 0.5
+
+
+def fitted(text, fnt, width, height, line, measure):
+    """The lines GDI+ shows of `text` wrapped to `width` in a box `height`
+    tall, each `line` high: as many as fit (TRIM_LINE), one at least, and
+    past that the last one shown holds the rest of its paragraph on one line,
+    cut to the characters that fit - GDI+'s default StringTrimming.Character,
+    no ellipsis. The synthetic fixture's 'Type 40 Italic', in a box one line
+    deep and too narrow for it, shows as 'Type 40 Itali'."""
+    lines = wrap(text, fnt, width, measure)
+    room = max(1, int(height / line + TRIM_LINE)) if line > 0 else len(lines)
+    if len(lines) <= room:
+        return lines
+    k = 0
+    for para in text.replace('\r\n', '\n').replace('\r', '\n').split('\n'):
+        mine = wrap(para, fnt, width, measure)
+        if k + len(mine) < room:
+            k += len(mine)
+            continue
+        # Where the last line shown starts in its paragraph: past the lines
+        # before it, each a run of the paragraph's own text.
+        pos = 0
+        for ln in mine[:room - 1 - k]:
+            pos = para.index(ln, pos) + len(ln)
+        rest = para[pos:].lstrip()
+        cut = len(rest)
+        while cut > 1 and measure(rest[:cut], fnt) > width:
+            cut -= 1
+        return lines[:room - 1] + [rest[:cut].rstrip()]
+    return lines[:room]
+
+
+# GDI+'s simulated italic: a face with no italic of its own drawn as the
+# regular sheared right by this much a pixel of height above its baseline,
+# its advances the regular's. Measured, not fitted: the stem of the I in each
+# of the synthetic fixture's italic captions leans 0.341 at 28 to 40 pt. A
+# slant fitted on the page's score comes out at 0.30 instead, because the
+# large captions there all sit 0.6-1.2 px right of the snapshot's, and a
+# shallower slant moves an italic's ink left; at 0.34 the italic ones sit as
+# far right as the regular and bold beside them (docs/render-fidelity.md
+# section 9).
+OBLIQUE = 0.34
+
+
+def layout(box, text, fnt, alignv):
+    """Where GDI+ sets the lines of `text` in `box` per AlignmentEnum (value =
+    3*vertical + horizontal): [(line, x, baseline)], x before DX and the
+    oblique's shear. The lines GDI+ shows of it (fitted) in the box less its
+    padding (PAD_EM) a side and, centred or at the bottom, less FOOT at its
+    foot, set down the box as GDI+ sets them (layout_metrics)."""
     x, y, w, h = box
+    pad = PAD_EM * fnt.size
+    x, w = x + pad, w - 2 * pad
     vert = alignv // 3          # 0 bottom, 1 middle, 2 top
     horz = alignv % 3           # 0 center, 1 left, 2 right
-    d0 = ImageDraw.Draw(img)
-    lines = wrap(text, fnt, w, lambda s, f: measure(s, f, d0))
-    asc, desc = metrics(fnt)
+    d0 = ImageDraw.Draw(Image.new('RGBA', (1, 1)))
+    asc, desc = layout_metrics(fnt)
     lh = asc + desc
+    lines = fitted(text, fnt, w, h, lh, lambda s, f: measure(s, f, d0))
     block = lh * len(lines)
+    foot = FOOT * fnt.size / PT
     if vert == 2:
         top = y
     elif vert == 1:
-        top = y + (h - block) / 2
+        top = y + (h - foot - block) / 2
     else:
-        top = y + h - block
-    d = ImageDraw.Draw(img)
-    adv = advances(fnt) if FRAC_PLACE else None
+        top = y + h - foot - block
+    out = []
     for i, ln in enumerate(lines):
-        tw = measure(ln, fnt, d)
+        tw = measure(ln, fnt, d0)
         if horz == 1:
             tx = x
         elif horz == 2:
             tx = x + w - tw
         else:
             tx = x + (w - tw) / 2
-        # Anchor on the baseline: 'la' would re-introduce Pillow's own rounded
-        # ascender, which is the thing metrics() exists to avoid.
-        tx += DX
-        ty = top + i * lh + asc
-        if adv is None:
-            d.text((tx, ty), ln, font=fnt, fill=color, anchor='ls')
+        out.append((ln, tx, top + i * lh + asc))
+    return out
+
+
+def _breaks(text, fnt, width, measure):
+    """Each place wrap() breaks a paragraph of `text` in a box `width` across:
+    (the line before the break, counted across the caption as wrap() counts
+    them; the paragraph; where in it that line ends; where the next starts)."""
+    out, g = [], 0
+    for para in text.replace('\r\n', '\n').replace('\r', '\n').split('\n'):
+        lines = wrap(para, fnt, width, measure)
+        pos, ends = 0, []
+        for ln in lines:
+            at = para.index(ln, pos) if ln else pos
+            ends.append((at, at + len(ln)))
+            pos = at + len(ln)
+        out += [(g + i, para, a[1], b[0]) for i, (a, b) in enumerate(zip(ends, ends[1:]))]
+        g += len(lines)
+    return out
+
+
+# How many whole rows or columns of a line's ink (line_ink) past its box make
+# caption_fit say GUI Designer cuts it. GUI Designer cuts a live caption's
+# ink flat at its box, row by row, with no tolerance: Turbulence 720's
+# Confirmation and Incoming Call questions, two lines of 20 pt Open Sans
+# Light in 316x64 boxes, end on the box's last row in its snapshot, and in a
+# copy with the boxes shrunk about their middles to 316x60 and 316x58 it cut
+# 2 rows off the first's foot and 2 off the second's top and 3 off its foot,
+# where line_ink puts exactly those rows past the box. On that seed's other 31
+# pages and the synthetic fixture's 29, every line whose ink comes within
+# 2.5 px of its box ends on the row the snapshot's does, and the one line
+# line_ink puts past it, Turbulence 720's 12 pt 'Window' in 92x15, has the
+# top row of its 'd' cut off in the snapshot (docs/render-fidelity.md
+# finding 7).
+CLIP_PX = 1
+
+
+def caption_fit(box, text, fnt, alignv):
+    """What GUI Designer does to a live caption that loses its words, laid out
+    as layout() lays it in `box` per AlignmentEnum `alignv`: [] where every
+    character shows, each word on one line, inside the box. Else each of
+
+      ('trims', words)  - fitted() shows fewer of its characters than it has:
+                          a line too many for the box's depth dropped, the
+                          last line shown cut at a character, no ellipsis
+                          (StringTrimming.Character) - the Shockwave 525's
+                          18 pt 'Volume' in its 91 px heading box built as
+                          'Volum';
+      ('splits', words) - a word too wide for the box less its padding
+                          (PAD_EM) broken across two lines (wrap);
+      ('clips', words)  - a line shown with CLIP_PX or more rows or columns
+                          of its ink (line_ink) past the box, which GUI
+                          Designer cuts off flat there: Turbulence 720's
+                          'Incoming call, do you wish to accept?' at 20 pt in
+                          316x58 lost 2 rows off its top and 3 off its foot.
+
+    `words` says it, with the room the caption needs where that is one
+    number: across for its longest line or word, at its padding, or down for
+    its lines."""
+    x, y, w, h = box
+    pad = PAD_EM * fnt.size
+    d0 = ImageDraw.Draw(Image.new('RGBA', (1, 1)))
+    m = lambda s, f: measure(s, f, d0)
+    placed = layout(box, text, fnt, alignv)
+    shown = [ln for ln, _, _ in placed]
+    lh = sum(layout_metrics(fnt))
+    out = []
+    full = [p for p in text.replace('\r\n', '\n').replace('\r', '\n').split('\n')]
+    if len(re.sub(r'\s+', '', ''.join(shown))) < len(re.sub(r'\s+', '', text)):
+        lines = wrap(text, fnt, w - 2 * pad, m)
+        across = int(-(-(max(m(p, fnt) for p in full) + 2 * pad) // 1))
+        down = int(-(-(len(full) * lh) // 1))
+        if len(lines) > len(full):
+            # Wrapped onto lines the box has no depth for: wider, each of its
+            # own lines on one - and deeper, where it has not the depth for
+            # those either.
+            holds = max(1, int(h / lh + TRIM_LINE)) >= len(full)
+            room = (f"its words need {across} px across{' on one line' if len(full) == 1 else ''}"
+                    + ('' if holds else f' and {down} px down'))
+        else:
+            room = f'its {len(full)} lines need {down} px down'
+        out.append(('trims', f"GUI Designer shows {' / '.join(shown)!r} of {' / '.join(full)!r} in "
+                             f'{w}x{h} - {room}'))
+    # A break shown on both sides: one into what is trimmed is the trim's.
+    split = []
+    for i, para, end, nxt in _breaks(text, fnt, w - 2 * pad, m):
+        if i + 1 >= len(shown):
+            break
+        if 0 < end < len(para) and nxt == end and not para[end - 1].isspace() and not para[end].isspace():
+            a = end
+            while a > 0 and not para[a - 1].isspace():
+                a -= 1
+            b = end
+            while b < len(para) and not para[b].isspace():
+                b += 1
+            if para[a:b] not in split:
+                split.append(para[a:b])
+    for word in split:
+        need = m(word, fnt) + 2 * pad
+        out.append(('splits', f'GUI Designer breaks {word!r} across lines in {w} px - it needs '
+                              f'{int(-(-need // 1))} px across'))
+    over = {}
+    for i, (ln, tx, base) in enumerate(placed):
+        ink = line_ink(ln, fnt, tx, base)
+        if ink is None:
             continue
-        # Draw glyph by glyph so each lands on its own fractional x. Pillow
-        # advances by whole pixels within a string, which drifts a line's
-        # interior apart from GDI+'s layout even when the total width agrees.
-        for ch in ln:
-            d.text((tx, ty), ch, font=fnt, fill=color, anchor='ls')
-            tx += adv.advance(ch, fnt.size)
+        for side, past in (('top', y - ink[1]), ('foot', ink[3] - (y + h)),
+                           ('left side', x - ink[0]), ('right side', ink[2] - (x + w))):
+            if past >= CLIP_PX:
+                over[side] = max(over.get(side, 0), past)
+    if over:
+        out.append(('clips', 'its ink runs ' + ', '.join(f'{int(v)} px past the box\'s {k}' for k, v in over.items())
+                    + f' in {w}x{h} - GUI Designer cuts it there'))
+    return out
 
 
-# Whether paste() composites as GUI Designer's own snapshots do (below). The
-# design systems' template renders (gdl.designsys.render_templates) turn it
-# off for a picture of the panel a designer reads: there a translucent bar or
-# well over the photo - Mach's #000000B4, Shockwave's white at 15% - shows the
-# photo through, where the snapshot rule paints it solid.
+# How much of a pixel a glyph's ink must cover for line_ink to count it:
+# half. A 20 pt Open Sans Light 'y' on Turbulence 720's Confirmation runs
+# 43% of a row past its box in GUI Designer's snapshot, which cuts it there,
+# and no one sees it; the hinted rows above and below a glyph are near whole.
+INK_SEEN = 128
+
+
+def line_ink(ln, fnt, tx, base):
+    """(left, top, right, foot) of the ink of `ln` - its pixels INK_SEEN
+    covered, the outer edges of the outermost - as draw_text draws it from
+    `tx` (layout()'s, before DX) on `base`, read off the line drawn alone so:
+    each glyph in drawn(fnt) on its baseline rounded to a whole pixel, as
+    Pillow sets one, emboldened (embolden) and leant by the oblique about
+    its own baseline (OBLIQUE). None where it draws none."""
+    if not ln.strip():
+        return None
+    shear = OBLIQUE if getattr(fnt, 'oblique', False) else 0.0
+    small = drawn(fnt)
+    pad = int(small.size * (1 + shear)) + 4
+    ox, oy = math.floor(tx) - pad, math.floor(base) - 2 * pad
+    mask = Image.new('L', (int(measure(ln, fnt)) + 2 * pad + BOLD_SMEAR, 3 * pad), 0)
+    # The page's own fractions, so Pillow rounds this baseline as it does there.
+    draw_glyphs(ImageDraw.Draw(mask), tx + DX - ox, base - oy, ln, fnt, 255,
+                advances(fnt) if FRAC_PLACE else None)
+    mask = embolden(mask, fnt)
+    if shear:
+        mask = mask.transform(mask.size, Image.AFFINE, (1, shear, -shear * (base - oy), 0, 1, 0),
+                              resample=Image.BILINEAR)
+    bb = mask.point(lambda v: 255 if v >= INK_SEEN else 0).getbbox()
+    return None if bb is None else (bb[0] + ox, bb[1] + oy, bb[2] + ox, bb[3] + oy)
+
+
+# No alignment: what GUI Designer writes on a built control whose states
+# disagree, each state carrying its own (tests/verify_built.py ALIGN_MIXED).
+_ALIGN_MIXED = 9
+
+
+def built_captions(c, texts=None):
+    """Each live caption a built control shows, once, as caption_fit takes
+    it: [(state, text, font, align)] for layout.json's PBLabel or PBButton
+    `c` - `font` the Font it is set in, `align` its AlignmentEnum, `state`
+    the state's Name where its words are not the control's own, else None.
+    `texts` is {index: words} to read in place of those states' own (an
+    edit's rename; None for the control's own, where it has no states).
+
+    None of a caption Build bakes (FlattenText; a formatted caption reads
+    back ''), of one character - a glyph, a key's letter, never trimmed or
+    split - or drawn in a color with no alpha, which shows nothing to cut:
+    the Zoom Rooms seeds keep space-padded words so behind their icons."""
+    if c.get('FlattenText'):
+        return []
+    sts = c.get('States') or []
+    rows = list(enumerate(sts)) if sts else [(None, c)]
+    texts = texts or {}
+
+    def words(i, st):
+        return texts[i] if i in texts else st.get('Text') or ''
+    first = words(*rows[0]) or c.get('Text') or ''
+    out, seen = [], set()
+    for i, st in rows:
+        text = words(i, st)
+        if len(text.strip()) <= 1 or text in seen:
+            continue
+        seen.add(text)
+        color = st.get('TextColor') or c.get('TextColor')
+        if isinstance(color, dict) and color.get('A') == 0:
+            continue
+        align = st.get('TextAlignment')
+        if align is None or align == _ALIGN_MIXED:
+            align = c.get('TextAlignment')
+        if align is None or align == _ALIGN_MIXED:
+            align = 3
+        out.append((st.get('Name') if sts and text != first else None, text,
+                    st.get('Font') or c.get('Font') or {}, align))
+    return out
+
+
+def caption_cuts(c, texts=None, box=None):
+    """caption_fit over each of built_captions(c, texts), in its own face -
+    the built file's, inside as_the_panel(project). (cuts, unmeasured,
+    measured): cuts [(state, text, kind, words, at)] - `at` the size and face
+    it is set in, as a problem says it - and unmeasured [(state, text,
+    why)], each caption whose face is drawn here in a stand-in (face()),
+    whose widths are not the panel's, or is not here at all. `box` is
+    [x, y, w, h] in place of the control's."""
+    box = tuple(box) if box else (c['Left'], c['Top'], c['Width'], c['Height'])
+    cuts, unmeasured, measured = [], [], 0
+    for state, text, f, align in built_captions(c, texts):
+        style = f.get('Style') or {}
+        name, pt = f.get('Name', 'Arial'), f.get('PointSize', 12)
+        try:
+            fnt = face(name, int(bool(style.get('Bold'))), int(bool(style.get('Italic'))), pt * PT)
+        except (LookupError, OSError) as e:
+            unmeasured.append((state, text, f'{name} has no face here to draw it in ({e})'))
+            continue
+        if getattr(fnt, 'stand_in', None):
+            unmeasured.append((state, text, f'{fnt.stand_in}, a stand-in'))
+            continue
+        measured += 1
+        at = (f"{pt:g} pt in {name}{' bold' if style.get('Bold') else ''}"
+              f"{' italic' if style.get('Italic') else ''}")
+        cuts += [(state, text, kind, words, at) for kind, words in caption_fit(box, text, fnt, align)]
+    return cuts, unmeasured, measured
+
+
+def draw_text(img, box, text, fnt, color, alignv):
+    """Draw `text` in `box` per AlignmentEnum where GDI+ sets its lines
+    (layout) - emboldened (embolden, BOLD_ADVANCE_EM) and obliqued (OBLIQUE)
+    where the face stands in for a bold or an italic it does not have
+    (face())."""
+    lines = layout(box, text, fnt, alignv)
+    lh = sum(layout_metrics(fnt))
+    shear = OBLIQUE if getattr(fnt, 'oblique', False) else 0.0
+    bold = getattr(fnt, 'emboldened', False)
+    # Emboldened or sheared, the glyphs are drawn into a coverage mask first,
+    # the mask smeared (embolden) and sheared about the first line's baseline -
+    # each line set right by as much as that moves its own baseline left - and
+    # drawn through, which blends as ImageDraw.text does.
+    mask = Image.new('L', img.size, 0) if shear or bold else None
+    d = ImageDraw.Draw(img if mask is None else mask)
+    ink = color if mask is None else 255
+    adv = advances(fnt) if FRAC_PLACE else None
+    for i, (ln, tx, base) in enumerate(lines):
+        draw_glyphs(d, tx + DX + shear * i * lh, base, ln, fnt, ink, adv)
+    if mask is None:
+        return
+    mask = embolden(mask, fnt)
+    if shear and lines:
+        y0 = lines[0][2]
+        mask = mask.transform(mask.size, Image.AFFINE, (1, shear, -shear * y0, 0, 1, 0),
+                              resample=Image.BILINEAR)
+    ImageDraw.Draw(img).bitmap((0, 0), mask, fill=color)
+
+
+# Whether paste() composites as GUI Designer's own snapshots do (snapshot_over).
+# as_the_panel() turns it off for a picture of the panel a person reads, which
+# blends as Pillow does (alpha_composite). The name is the rule's first
+# measurement's: over a transparent destination the snapshot rule still writes
+# a pixel at full strength, binary, as flatten() does.
 BINARY = True
+
+# GDI+'s gamma-corrected compositing: a translucent pixel is blended over what
+# is under it in light, each channel raised to 2.2 before and lowered after.
+# Measured on the synthetic fixture over every partial-alpha asset pixel above
+# opaque art - 27,127 of them, translucent fills and antialiased edges both:
+# mean error 1.08 levels a channel, where 2.1 is 3.10, 2.3 is 2.72, the sRGB
+# curve 1.80, a plain blend 29.04 and a binary write 85.43
+# (docs/render-fidelity.md finding 2).
+GAMMA = 2.2
+_LIN = [(v / 255) ** GAMMA for v in range(256)]
+
+
+def snapshot_over(canvas, im, x, y):
+    """Composite RGBA `im` onto `canvas` at (x, y) as GUI Designer's snapshot
+    does, GDI+'s source-over in light (GAMMA).
+
+    Over an opaque destination a pixel blends at its own alpha. Over a
+    transparent one it is written as it is, its alpha with it, and flatten()
+    then puts it on black at full strength - the rule finding 4's bilevel text
+    reads. A destination in between (a modal's scrim) takes the general form,
+    the destination's alpha weighting its color. Only the pixels that blend
+    are computed; the rest are a plain masked paste."""
+    x, y = int(x), int(y)
+    sa = im.getchannel('A')
+    under = canvas.crop((x, y, x + im.width, y + im.height))
+    canvas.paste(im, (x, y), sa.point(lambda a: 255 if a else 0))
+    blend = ImageChops.multiply(sa.point(lambda a: 255 if 0 < a < 255 else 0),
+                                under.getchannel('A').point(lambda a: 255 if a else 0))
+    box = blend.getbbox()
+    if box is None:
+        return
+    src, dst, m = im.crop(box).tobytes(), under.crop(box).tobytes(), blend.crop(box).tobytes()
+    out = bytearray(len(src))
+    inv = 1 / GAMMA
+    for i, on in enumerate(m):
+        if not on:
+            continue
+        j = 4 * i
+        a, d = src[j + 3] / 255, dst[j + 3] / 255
+        da = d * (1 - a)
+        oa = a + da
+        for k in range(3):
+            v = (_LIN[src[j + k]] * a + _LIN[dst[j + k]] * da) / oa
+            out[j + k] = round(255 * v ** inv)
+        out[j + 3] = round(255 * oa)
+    canvas.paste(Image.frombytes('RGBA', (box[2] - box[0], box[3] - box[1]), bytes(out)),
+                 (x + box[0], y + box[1]), blend.crop(box))
 
 
 def paste(canvas, assets, img_id, x, y, clip=None, binary=None):
-    """Blit an asset.
-
-    GUI Designer composites a control with a BINARY alpha test rather than
-    straight alpha: any source pixel with alpha > 0 is written at full
-    strength, alpha == 0 is skipped. Measured over 3,296 partial-alpha pixels,
-    straight alpha is off by a mean of 97 levels per channel; binary by 2.15.
-    """
+    """Blit an asset: as GUI Designer's snapshot composites it
+    (snapshot_over), or, with BINARY off, as Pillow blends it."""
     binary = BINARY if binary is None else binary
     if img_id is None or img_id not in assets:
         return
@@ -344,8 +810,7 @@ def paste(canvas, assets, img_id, x, y, clip=None, binary=None):
         im = im.crop(clip)
         x, y = x + clip[0], y + clip[1]
     if binary:
-        mask = im.getchannel('A').point(lambda a: 255 if a > 0 else 0)
-        canvas.paste(im, (int(x), int(y)), mask)
+        snapshot_over(canvas, im, x, y)
     else:
         canvas.alpha_composite(im, (int(x), int(y)))
 
@@ -420,18 +885,28 @@ def _draw_box(canvas, box, spec, fill, stroke):
     # rather than hand Pillow a radius larger than the box.
     radius = min(radius, min(box[2], box[3]) // 2)
     # ImageDraw writes an RGBA fill over the pixels under it, translucent or
-    # not. Off the snapshot rule, draw on a clear layer and composite it, so a
-    # fill at 85% shows what is under it, as the panel does.
-    layer = Image.new('RGBA', canvas.size, (0, 0, 0, 0)) if not BINARY else canvas
+    # not. So draw on a clear layer and composite it, so a fill at 85% shows
+    # what is under it: as the snapshot blends (snapshot_over), or as the
+    # panel picture does.
+    # The layer is the box's own bounds (less what lies off the canvas), not the
+    # canvas: snapshot_over walks every pixel of what it is given.
+    lx, ly = max(0, int(x0)), max(0, int(y0))
+    lw, lh = min(canvas.width, int(x1) + 1) - lx, min(canvas.height, int(y1) + 1) - ly
+    if lw <= 0 or lh <= 0:
+        return
+    layer = Image.new('RGBA', (lw, lh), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
+    r = [x0 - lx, y0 - ly, x1 - lx, y1 - ly]
     if radius > 0:
-        d.rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=fill,
+        d.rounded_rectangle(r, radius=radius, fill=fill,
                             outline=stroke, width=max(1, thickness) if stroke else 0)
     else:
-        d.rectangle([x0, y0, x1, y1], fill=fill,
+        d.rectangle(r, fill=fill,
                     outline=stroke, width=max(1, thickness) if stroke else 0)
-    if layer is not canvas:
-        canvas.alpha_composite(layer)
+    if BINARY:
+        snapshot_over(canvas, layer, lx, ly)
+    else:
+        canvas.alpha_composite(layer, (lx, ly))
 
 
 def group_members(layout):

@@ -64,21 +64,232 @@ __FACE__
   // laid out in, as Extron's own smaller series step their type down, and
   // never under that panel's floor - 14 pt as it reads on a 1025/1035
   // (gdl.spec.type_floor). Unchanged on the panel the canvas was drawn for.
-  function ptOn(pt, L) {
+  // `key`: a button's caption, which goes down to the size the panel's own
+  // template sets its keys' words in where that is under 14 pt (`key_floor`,
+  // off its frame's `center.pt.key`; gdl.spec.key_floor) and no further: the
+  // 320's 10 pt Freeze, Auto and Normal, the owner's call (2026-11-04); and,
+  // ours by analogy with the 320 and pending the owner, Afterburn 300's
+  // 13 pt Display Settings keys. At 14 pt Turbulence's square key held no
+  // word past five letters, and the template's own were smaller.
+  function ptOn(pt, L, key) {
     if (!L || !L.aware) return pt;
     var k = L.k == null ? 1 : L.k;
     var scaled = k === 1 ? pt : Math.round(pt * k * 2) / 2;
-    return Math.max(L.panel.floor || 0, scaled);
+    return Math.max(key ? keyLeast(L.panel) : L.panel.floor || 0, scaled);
   }
-  function font(props, fallbackType, L) {
+  // The least a key's caption takes on a panel: its `key_floor` where its
+  // template sets its keys' words under 14 pt, else the floor.
+  function keyLeast(T) {
+    return T.key_floor != null ? T.key_floor : T.floor || 0;
+  }
+  // What kind of key a caption makes on a 320 or a 300, by the size its
+  // template sets each in (its frame's `center.pt`): `key`, a key of words;
+  // `digit`, one of digits or signs and no words - a dialer's '*', '#' and
+  // '.', which Mach's 1035 sets at its digits' 20 pt, and a level's Up and
+  // Down, '+' and '-' where their look draws no volume icon from the kit
+  // (asLevel), which at its words' 10 pt stood small in their 40 px keys,
+  // where the template sets its own Up and Down glyphs at 16 to 22; null
+  // where it has no caption (its art carries its words).
+  function keyRole(props) {
+    var c = String(textOf(props.children, props.text) || '').trim();
+    return !c ? null : /\p{L}/u.test(c) ? 'key' : 'digit';
+  }
+  // A key's caption on a 320 the canvas was not drawn for, at the size its
+  // own template sets that kind of key in (keyRole): a digit at its `digit`
+  // (Doc Cam's Input 1 to 3, 18 pt on Mach's, 22 on Shockwave's, 11 on
+  // Afterburn's), a word at its `key` (Freeze, Auto and Normal, 10; on
+  // Afterburn's 300 its Display Settings' Power and Mute, 13, which a 300's
+  // question's answers are drawn at too, as its template sets them), as its
+  // glyphs are drawn at its own sizes (glyphOf). Scaled off the drawn panel
+  // and floored at the key's 10 pt, a dialer's digits came out at it, where
+  // the template sets them nearly twice as large: the owner's call
+  // (2026-11-04) lets a 320 key go down to its template's size, not every
+  // key to the least. `__pt`: the size the layout set a key at to fit its
+  // words (pushKey, a question's answers), never under keyLeast. Only on a
+  // panel whose template sets its keys' words under 14 pt (its `key_floor`):
+  // the 320's, and Afterburn's 300, whose Display Settings sets its keys of
+  // words at 13 pt - the 320's rule carried to the 300 by analogy, ours and
+  // pending the owner - not Mach's 300, whose 15 pt keys are under the
+  // 300's 16 pt floor but not under 14, and whose keys scale and floor as
+  // they do on every panel. Elsewhere, and a kind its template sets no size
+  // for (Turbulence's, whose keys' words are their art's), as ptOn scales
+  // and floors it.
+  // That size is what a key with no size of its own is drawn at. One the
+  // designer gave a `size` keeps it (ownPt) where its words fit the key -
+  // the owner's call lets a key go down to its template's size, it does not
+  // make it: Shockwave's room drew its Lighting presets and its question's
+  // Cancel and Turn Off at 18, and on the 320 they came out at 10 in keys
+  // that hold them at 12.5 - and never under its kind's (kindPt). Where
+  // they do not fit, the layout takes it down, a set of them as one
+  // (ownFit, oneSize, pushKey).
+  function keyPt(props, t, L) {
+    var T = L && L.aware ? L.panel : null;
+    if (T && props.__pt != null && !isNaN(Number(props.__pt))) return Math.max(keyLeast(T), Number(props.__pt));
+    var at = kindPt(props, L);
+    if (at == null) return ptOn(props.size != null ? Number(props.size) : t.pt, L, true);
+    var own = ownPt(props, L);
+    return own != null ? Math.max(at, own) : at;
+  }
+  // The size the panel's own template sets this kind of key in (keyRole, its
+  // frame's `center.pt`), never under keyLeast; null where the panel is the
+  // one drawn, sets its keys' words at 14 pt or more (no `key_floor`), or
+  // sets this kind no size (Turbulence's 320, whose keys' words are art).
+  function kindPt(props, L) {
+    var T = L && L.aware ? L.panel : null;
+    var K = T && T.key_floor != null && L.model !== L.designModel ? ((pagesFor(T) || {}).center || {}).pt : null;
+    var role = K ? keyRole(props) : null, at = role ? K[role] : null;
+    return at != null ? Math.max(keyLeast(T), at) : null;
+  }
+  // A designer's own `size` for a key, as it reads on this panel: scaled
+  // with the frame and held at the panel's type floor (ptOn), as every
+  // caption was before the owner's call - 14 pt on the 320. Null where the
+  // key has none, or is one the layout derived, whose look's size is the
+  // template's, not the designer's.
+  function ownPt(props, L) {
+    if (props.size == null || isNaN(Number(props.size)) || truthy(props.derived)) return null;
+    return ptOn(Number(props.size), L);
+  }
+  // A designer's sized key (ownPt) whose words, at that size, need more
+  // than `r` - its place on this panel, or the touch minimum where that is
+  // larger - gives: the size it goes down to by half points until they fit,
+  // to its kind's (kindPt) and no further. Null where it keeps its own, or
+  // has none.
+  function ownFit(it, r, L) {
+    var p = it.props || {};
+    if (it.kind !== 'button' || p.__pt != null || glyphOf(p, L)) return null;
+    var at = kindPt(p, L), own = at != null ? ownPt(p, L) : null;
+    if (own == null || !(own > at)) return null;
+    var touch = L.panel.touch || 0, rw = Math.max(r[2], touch) + 0.5, rh = Math.max(r[3], touch) + 0.5;
+    function over(n) { return n[0] > rw || n[1] > rh; }
+    var pt = own, n = needs(it, L, false, r, hasArt(it));
+    if (!over(n)) return null;
+    do {
+      pt = Math.max(at, pt - 0.5);
+      n = needs({ kind: it.kind, props: Object.assign({}, p, { __pt: pt }) }, L, false, r, hasArt(it));
+    } while (over(n) && pt > at);
+    return pt;
+  }
+  // Whether `it` is a designer's sized key on a panel whose template sets
+  // its keys smaller (ownPt, kindPt): a button, no glyph.
+  function sizedKey(it, L) {
+    var p = it.props || {};
+    return it.kind === 'button' && !glyphOf(p, L) && kindPt(p, L) != null && ownPt(p, L) != null;
+  }
+  // Sized keys drawn as one set - a Group's members, keys drawn alike side by
+  // side - come out at one size, as the designer drew them at one: the least
+  // any of them took (`__pt`, ownFit), never under a key's kind's (kindPt).
+  // `same(it)`: the set a key is of, null for none. Sets each one's `__pt`.
+  function oneSize(items, L, same) {
+    var least = {};
+    function natural(it) { return keyPt(it.props || {}, null, L); }
+    items.forEach(function (it) {
+      var s = same(it);
+      if (s == null) return;
+      var pt = it.__pt != null ? it.__pt : natural(it);
+      least[s] = least[s] != null ? Math.min(least[s], pt) : pt;
+    });
+    items.forEach(function (it) {
+      var s = same(it);
+      if (s == null) return;
+      var pt = Math.max(kindPt(it.props, L), least[s]);
+      it.__pt = pt < natural(it) ? pt : null;
+    });
+  }
+  // What a layout adds to a control it places (hostAt): its words on two
+  // lines (`__lines`, twoLineNeed), its size taken down to fit (`__pt`,
+  // ownFit, oneSize).
+  function laidExtra(it, extra) {
+    if (!it.__lines && it.__pt == null) return extra;
+    return Object.assign({}, it.__lines ? { __lines: it.__lines } : {}, it.__pt != null ? { __pt: it.__pt } : {},
+                         extra || {});
+  }
+  // `it` as ownFit took its size down, for measuring.
+  function laidAs(it) {
+    return it.__pt != null ? { kind: it.kind, props: Object.assign({}, it.props, { __pt: it.__pt }) } : it;
+  }
+  // A 320 page's key (`m`, paginate's member) whose words, at its template's
+  // size for them (keyPt), need more across than `room`: down by half points
+  // until they fit, to keyLeast and no further, where it then goes on two
+  // lines or grows as before. True where it moved. Only where the panel's
+  // template sets its keys' words under 14 pt (`key_floor`, as keyPt):
+  // the 300 lays its pages out as the 320 does (planMenu), and Mach's, and
+  // Turbulence's 320, keep their keys' sizes and go on two lines.
+  function pushKey(m, room, L) {
+    if (m.kind !== 'button' || L.panel.key_floor == null || !(m.need[0] > room)) return false;
+    var f = font(m.props, P.defaults.button.type, L, true), least = keyLeast(L.panel);
+    if (f.glyph || !(f.size > least)) return false;
+    var pt = f.size, q, n;
+    do {
+      pt = Math.max(least, pt - 0.5);
+      q = Object.assign({}, m.props, { __pt: pt });
+      n = needOf(m.kind, q, L);
+    } while (n[0] > room && pt > least);
+    m.props = q;
+    m.need = n;
+    if (m.extra) m.extra.__pt = pt;
+    return true;
+  }
+  function font(props, fallbackType, L, key) {
     var t = typeStyle(props.type) || typeStyle(fallbackType) || P.type[P.type.length - 1];
-    var size = ptOn(props.size != null ? Number(props.size) : t.pt, L);
-    var bold = props.bold != null ? truthy(props.bold) : t.weight >= 600;
+    // A glyph's own size, the template's on this panel's series (glyphOf):
+    // measured there, so never scaled again - only floored.
+    var g = glyphOf(props, L);
+    var size = g ? ptOn(g.pt, L ? Object.assign({}, L, { k: 1 }) : L)
+      : key ? keyPt(props, t, L) : ptOn(props.size != null ? Number(props.size) : t.pt, L);
+    var bold = g ? false : props.bold != null ? truthy(props.bold) : t.weight >= 600;
+    var light = !bold && !g && lightIn(props, t, L);
     // In a plain container scaled as a whole (L.css), drawn at size / scale so
     // it shows at `size` - the size the translator reads and the panel builds.
     var at = L && L.aware && L.css ? size / L.css : size;
-    return { size: size, bold: bold,
-             css: (bold ? 700 : 400) + ' ' + px(at) + '/1.2 ' + P.font.stack };
+    // `face`: the family the spec names where it is not the theme's - Open
+    // Sans Light (font.light), or the icon face a glyph is set in.
+    return { size: size, bold: bold, light: light, glyph: g,
+             face: g ? g.face : light ? LIGHT.family : null,
+             css: (bold ? 700 : light ? 300 : 400) + ' ' + px(at) + '/1.2 '
+               + (g ? JSON.stringify(g.face) + ', ' + P.font.stack : P.font.stack) };
+  }
+  // The series of the panel a look is drawn on: its Page's (L.panel), else
+  // the design panel's.
+  function seriesOf(L) {
+    return (L && L.panel && L.panel.series) || ((P.models || {})[P.model] || {}).series || null;
+  }
+  // Open Sans Light, where the panel's own template sets its captions in it
+  // (`font.light`: the series whose template does, and whether it sets every
+  // caption so - Turbulence's bar series - or only the looks and type styles
+  // that say so - Mach's titles, header title and clock, `light` or a type of
+  // weight 300). Another series' template sets the same look in Open Sans
+  // (Mach's and Turbulence's hubs and 320s), and so does it here. The face is
+  // the same bytes as the regular (designsys FACE_WEIGHTS), so it is always
+  // carried.
+  var LIGHT = P.font.light || null;
+  function lightIn(props, t, L) {
+    if (!LIGHT || (LIGHT.series || []).indexOf(seriesOf(L)) < 0) return false;
+    if (props.light != null) return truthy(props.light);
+    return !!LIGHT.all || !!(t && t.weight != null && t.weight < 400);
+  }
+  // A look's glyph, set in the template's icon face as its template sets it
+  // (`glyph`: the face, the character as U+XXXX, its size in points - one
+  // size, or one a series, `_` for the rest), where this system carries the
+  // face (P.faces, gdl.designsys.glyph_faces). Null where it does not: the
+  // look then draws what it says besides (the kit's art, its words), as every
+  // look did before the faces were carried.
+  var FACES = {};
+  (P.faces || []).forEach(function (f) { FACES[f] = true; });
+  function glyphOf(props, L) {
+    var g = props && props.glyph;
+    if (typeof g === 'string' && g.charAt(0) === '{') {
+      try { g = JSON.parse(g); } catch (e) { g = null; }
+    }
+    if (!g || typeof g !== 'object' || !FACES[g.face]) return null;
+    var cp = parseInt(String(g['char'] || '').replace(/^(U\+|uni)/i, ''), 16);
+    if (!(cp > 0)) return null;
+    var s = seriesOf(L), pt = g.pt;
+    if (pt && typeof pt === 'object') pt = pt[s] != null ? pt[s] : pt._;
+    if (pt == null) pt = props.size;
+    if (pt == null) return null;
+    var hex = cp.toString(16).toUpperCase();
+    return { face: g.face, 'char': 'U+' + (hex.length < 4 ? '0000'.slice(hex.length) + hex : hex),
+             text: String.fromCodePoint(cp), pt: Number(pt) };
   }
   // A caption's width at a font, from the font's own metrics. Not layout:
   // nothing on the page is measured.
@@ -95,6 +306,149 @@ __FACE__
     }
   }
   function lineHeight(size) { return Math.ceil(size * P.pt * 1.2); }
+  // GDI+ lays a caption out in its box less a sixth of its em a side
+  // (gdl/compose.py PAD_EM): a word wider than that leaves is broken at a
+  // character, and a line past what the box's depth holds is trimmed, the
+  // last one shown cut at a character with no ellipsis (compose.fitted).
+  // The Shockwave 525's 18 pt Volume heading, in the 91 px box its template
+  // draws for 14 pt, built as 'Volum'; at 18 pt and over a third of an em
+  // is more than the 8 px a key of kit art kept round its words, and
+  // Display Control's 'Control' came out 0.05 px short of its 94. Words are
+  // measured here in Chrome's Open Sans 3.003, and the build lays them out
+  // in its seed's 1.10: over all 261 words the built canvases caption that
+  // runs up to 0.52% wider (its Light 0.19%), so they are measured
+  // FACE_SLACK wide. gdl.spec check measures the result as GUI Designer
+  // lays it out (compose.caption_fit).
+  var FACE_SLACK = 1.006;
+  // A third of `f`'s em, in the px textWidth measures it in (`f.css`).
+  function padOf(f, L) { return (L && L.aware && L.css ? f.size / L.css : f.size) * P.pt / 3; }
+  // GDI+'s pitch from one line to the next, px a point: the face's
+  // usWinAscent + usWinDescent at 4/3 px a point (compose.VERTICAL) - 1.3618
+  // em of Open Sans (gdl/data.py LINE_FACTOR).
+  function gdiLine(f, L) { return (L && L.aware && L.css ? f.size / L.css : f.size) * 4 / 3 * 1.3618; }
+  // The least width a box `lines` deep holds `text` at `f` in as GDI+ lays it
+  // out: its paragraphs - its own breaks - wrapped at the spaces, no word
+  // broken, in no more lines than that. One line: its widest paragraph.
+  function gdiWidth(text, f, L, lines) {
+    var pad = padOf(f, L), paras = String(text).split(/\r?\n/);
+    // Bold as GDI+ draws it: no seed carries an Open Sans Bold, so it
+    // emboldens the regular, each advance a sixtieth of the em longer
+    // (compose.BOLD_ADVANCE_EM) - narrower than the real Bold Chrome
+    // measures, which grew Afterburn's bold Volume heading past a box that
+    // held it.
+    var css = f.bold && !f.glyph ? f.css.replace(/^700 /, '400 ') : f.css, grown = f.bold && !f.glyph ? padOf(f, L) * 3 / 60 : 0;
+    function w(t) { return textWidth(t, css) * FACE_SLACK + String(t).length * grown; }
+    var widest = Math.max.apply(null, paras.map(w));
+    var n = Math.max(1, lines || 1);
+    if (n <= paras.length) return Math.ceil(widest + pad);
+    var word = Math.max.apply(null, String(text).split(/\s+/).map(w));
+    function count(x) {
+      return paras.reduce(function (s, para) { return s + wrapWords(para, f.css, x / FACE_SLACK).length; }, 0);
+    }
+    var a = word, b = widest;
+    if (count(a) <= n) return Math.ceil(a + pad);
+    while (b - a > 0.5) { var mid = (a + b) / 2; if (count(mid) <= n) b = mid; else a = mid; }
+    return Math.ceil(b + pad);
+  }
+  // The lines GDI+ shows of a caption in a box `h` deep at `f`: one at
+  // least half in the box counts (compose.fitted, TRIM_LINE), and one at
+  // least, as gdl.spec check reads it. Counted whole, a question on two
+  // lines in its 60 px box at 18 pt, which GUI Designer shows whole, was
+  // widened to one.
+  function gdiLines(h, f, L) { return Math.max(1, Math.floor(h / gdiLine(f, L) + 0.5)); }
+  // Whether GDI+ cuts `text` set at `f` in a box `w` x `h`, as gdl.spec
+  // check reads it (compose.caption_fit), measured FACE_SLACK wide: wrapped
+  // in the box less a third of the em at its spaces, a word too wide for
+  // that broken at a character - and so one a line of spaces starts, which
+  // GDI+ breaks rather than leave the spaces alone (compose.wrap) - it is
+  // cut where a word is broken across two lines the box shows, or where
+  // there are more lines than its depth shows (gdiLines; `ink`: shows with
+  // none of their ink cut, inkLines) and what is past them is lost: the
+  // last line shown holds the rest of its paragraph, cut at a character
+  // (compose.fitted). Words wrapped at a space onto lines the depth shows
+  // lose nothing. Every rule that grows a box for GDI+ grows it only where
+  // this says its words are cut in the box it has: grown wherever GDI+
+  // would wrap them, Mach 535's source tiles took 5 px each, and their row
+  // re-spaced, for 'Room PC', which GDI+ sets on two lines in the 192 px
+  // tile and shows whole.
+  function gdiCut(text, f, L, w, h, ink) {
+    var room = w - padOf(f, L);
+    var css = f.bold && !f.glyph ? f.css.replace(/^700 /, '400 ') : f.css, grown = f.bold && !f.glyph ? padOf(f, L) * 3 / 60 : 0;
+    // Its glyphs FACE_SLACK wide, its spaces not: the two faces' space is one
+    // advance (85.72 px for fifteen at 16 pt in both), and slack on the
+    // spaces that indent a list key's caption grew round four's Afterburn
+    // 725 rail from 225 to 226 px for a 'Presentation' GDI+ sets whole in 225.
+    var sp = textWidth('          ', css) / 10;
+    function wd(t) {
+      var s = String(t), n = s.split(' ').length - 1;
+      return (textWidth(s, css) - n * sp) * FACE_SLACK + n * sp + s.length * grown;
+    }
+    var paras = String(text).split(/\r?\n/), lead = 0;
+    // A caption below its icon as the translator leaves it (gdl.design
+    // _fit_breaks): its leading breaks only as many as the box's depth holds
+    // with its own lines, each the face's ascent and descent at P.pt.
+    while (lead < paras.length - 1 && paras[lead] === '') lead++;
+    var keep = lead, fb = (L && L.aware && L.css ? f.size / L.css : f.size) * P.pt * 1.3618;
+    while (keep && (keep + paras.length - lead) * fb > h) keep--;
+    paras = paras.slice(lead - keep);
+    // Its lines as compose.wrap breaks them: where each starts in its
+    // paragraph, and whether the break after it is inside a word.
+    var lines = [];
+    paras.forEach(function (para, pi) {
+      var line = '', at = 0, pos = 0;
+      para.split(/(\s+)/).forEach(function (tok) {
+        if (!tok) return;
+        var trial = line + tok;
+        if (wd(trial) > room && line.trim()) {
+          lines.push({ p: pi, at: at, split: false });
+          trial = tok.replace(/^\s+/, '');
+          at = pos + tok.length - trial.length;
+        }
+        // Too wide, broken after a word too (compose.wrap).
+        while (wd(trial) > room && trial.length > 1) {
+          var cut = trial.length - 1;
+          while (cut > 1 && wd(trial.slice(0, cut)) > room) cut--;
+          lines.push({ p: pi, at: at, split: /\S/.test(trial.charAt(cut - 1)) && /\S/.test(trial.charAt(cut)) });
+          at += cut;
+          trial = trial.slice(cut);
+        }
+        line = trial;
+        pos += tok.length;
+      });
+      lines.push({ p: pi, at: at, split: false });
+    });
+    var shown = ink ? inkLines(h, f, L, text) : gdiLines(h, f, L);
+    // A word broken across two lines it shows.
+    for (var i = 0; i + 1 < Math.min(lines.length, shown); i++) if (lines[i].split) return true;
+    if (lines.length <= shown) return false;
+    // Trimmed: the last line shown holds the rest of its paragraph on one
+    // line, and nothing after it shows.
+    var last = lines[shown - 1];
+    if (wd(paras[last.p].slice(last.at).replace(/^\s+/, '').replace(/\s+$/, '')) > room) return true;
+    return paras.slice(last.p + 1).some(function (para) { return /\S/.test(para); });
+  }
+  // And how many of them it shows with none of their ink cut: GDI+ sets
+  // lines and draws glyphs 4/3 px a point (compose.drawn), so a block
+  // centred deeper than its box loses a row of descenders at the foot
+  // once over by about 0.34 px a point and 2 px (compose's metrics, FOOT,
+  // 'clips'), of ascenders at the top at about 0.62 and 2. Held to 0.25
+  // px a point and 1 px where `text` has a letter that descends, 0.55 and
+  // 1.5 where none does: round four's revised Afterburn ShareLink set three
+  // lines at 18 pt in 82 px and cut its first line's tops, where two lines of
+  // 'Screen Control' in 54 px, widened for one, ran into their neighbour's.
+  // A box sized or judged for its words (needs, wordsRoom) and a template's
+  // box deepened for them (holding) read it; a template's box is widened by
+  // the lines GDI+ shows (gdiLines).
+  function inkLines(h, f, L, text) {
+    var pt = L && L.aware && L.css ? f.size / L.css : f.size;
+    var tol = /[gjpqy,;()\[\]{}|_Q]/.test(String(text || 'g')) ? 0.25 * pt + 1 : 0.55 * pt + 1.5;
+    return Math.max(1, Math.floor((h + tol) / gdiLine(f, L)));
+  }
+  // The least depth that shows `n` lines so (inkLines).
+  function gdiDepth(n, f, L) {
+    var pt = L && L.aware && L.css ? f.size / L.css : f.size;
+    return Math.ceil(Math.max(n * gdiLine(f, L) - 0.25 * pt - 1, gdiLine(f, L) / 2));
+  }
   // Words in lines no wider than `width` at `css`, at the spaces between
   // them; a line break already in them stays one.
   function wrapWords(text, css, width) {
@@ -293,22 +647,94 @@ __FACE__
     var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
     return !!V.kit;
   }
+  // What a key of kit art needs with its words on two lines (`__lines`), where
+  // its caption of two words or more, set over its art, would grow it past
+  // `r` - its place here - on one, and two need less across: as the theme's
+  // own two-word keys break, and the 320's page keys ('Doc' over 'Cam'). Grown
+  // in its art's shape for 'Stop Recording' on one line, round five's
+  // Turbulence stop key came out 145x152 on the 320 beside its 40 px Cancel.
+  // Null where one line holds it, or two would grow it as far: kit art keeps
+  // its shape, so two lines' depth can grow it more than one line's width
+  // does (Turbulence's 320 Start, 136x46 on one line and 156x52 on two). Only
+  // on square art, which grows as deep as it widens: a wide pill widens for
+  // its words, as its template's one-line captions do - two lines at 10 pt
+  // filled Shockwave's 40 px pill on the 320, where one widened it 4 px.
+  function twoLineNeed(it, L, r) {
+    if (!hasArt(it)) return null;
+    var p = it.props || {}, V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
+    var c = textOf(p.children, p.text);
+    if (p.__lines || V.lines || !c || c.indexOf(' ') < 0 || /\n/.test(c) || glyphOf(p, L)) return null;
+    var img = imageOf(V, p, c), d = img ? String(img.kit).split('x').map(Number) : [];
+    if (!img || img.caption || !(d[0] > 0 && d[1] > 0) || d[0] > 1.25 * d[1]) return null;
+    var one = needs(it, L, false, r, true);
+    if (one[0] <= r[2] + 0.5 || !(r[2] > 0 && r[3] > 0)) return null;
+    var two = needs({ kind: it.kind, props: Object.assign({}, p, { __lines: 2 }) }, L, false, r, true);
+    function by(n) { return Math.max(n[0] / r[2], n[1] / r[3]); }
+    return by(two) < by(one) ? two : null;
+  }
+  // Keys of kit art drawn side by side at one size - a row, nothing drawn
+  // between two of them - come out one size: the largest any of them came out
+  // at, about its own middle; drawn alike, they share their art's shape.
+  // Grown each on its own, a key whose caption is set over its art and one
+  // whose word is its art parted: round five's Turbulence Stop Recording came
+  // out 183x192 on the 525 beside an 88x92 Cancel, which the other themes'
+  // plain keys never did. `es`: { it, m where it was mapped, r where it came
+  // out }. Only where `room` (the width a row of them has) holds them so.
+  function artRows(es, room, gap) {
+    var keys = es.filter(function (e) { return isTouch(e.it.kind) && hasArt(e.it); }), done = [];
+    function between(p, q) {
+      return es.some(function (o) {
+        return o !== p && o !== q && o.m[0] >= p.m[0] + p.m[2] && o.m[0] + o.m[2] <= q.m[0]
+          && o.m[1] < p.m[1] + p.m[3] && p.m[1] < o.m[1] + o.m[3];
+      });
+    }
+    keys.forEach(function (e) {
+      if (done.indexOf(e) >= 0) return;
+      var same = keys.filter(function (o) {
+        return Math.abs(o.m[1] - e.m[1]) <= 1 && Math.abs(o.m[2] - e.m[2]) <= 1 && Math.abs(o.m[3] - e.m[3]) <= 1;
+      }).sort(function (p, q) { return p.m[0] - q.m[0]; });
+      done = done.concat(same);
+      var runs = [];
+      same.forEach(function (o, i) {
+        var p = same[i - 1];
+        if (p && !between(p, o)) runs[runs.length - 1].push(o);
+        else runs.push([o]);
+      });
+      runs.forEach(function (set) {
+        if (set.length < 2) return;
+        var w = Math.max.apply(null, set.map(function (o) { return o.r[2]; }));
+        var ht = Math.max.apply(null, set.map(function (o) { return o.r[3]; }));
+        if (set.length * w + (set.length - 1) * gap > room) return;
+        set.forEach(function (o) {
+          o.r = [o.r[0] + (o.r[2] - w) / 2, o.r[1] + (o.r[3] - ht) / 2, w, ht];
+        });
+      });
+    });
+  }
   // The least a control can be on this panel: a button at the touch minimum
   // and as big as its caption at the panel's type; a slider that wide across
-  // its rail; a line of text at least one line tall. `filled`: a button that
+  // its rail; a line of text at least one line tall, and as wide as GDI+
+  // needs its words on the lines `box` (its place here, where the caller
+  // knows it) holds, else on one. `filled`: a button that
   // fills its box across, as a Rail's do, needs only its own padding round
   // its caption (10 px a side) and its border where a look strokes one, not
   // the 4 px more a loose one keeps - the round-three Mach room's Mute came
   // to 100 px with them, and was refused in the 525's 98 px rail.
-  function needs(it, L, filled) {
+  function needs(it, L, filled, box, keep) {
     var T = L.panel, p = it.props || {};
+    // A glyph in an icon face (glyphOf) is the caption, whatever words the
+    // look keeps for where the face is not carried: its ink sits well inside
+    // its em, as the template sets it in its own key, so the key needs the
+    // touch minimum and no more. Measured as the words, Turbulence's 28 pt
+    // keyboard glyph grew its key from 65 to 91 px on the 320, as 'Keys'.
+    if (it.kind === 'button' && glyphOf(p, L)) return [T.touch, T.touch];
     if (it.kind === 'button') {
       var V = P.buttons[p.variant] || P.buttons[P.defaults.button.variant];
       // A look that breaks its caption (`__lines`: Afterburn's mode launcher,
       // 'Video' over 'Conference' as its template sets it) is as wide as its
       // widest line.
       if (p.__lines) V = Object.assign({}, V, { lines: p.__lines });
-      var f = font(p, P.defaults.button.type, L);
+      var f = font(p, P.defaults.button.type, L, true);
       var words_ = [captionOf(V, p)];
       (list(p.states) || []).forEach(function (s) { if (s && s.text) words_.push(twoWords(V, s.text)); });
       var img = imageOf(V, p, words_[0]);
@@ -334,8 +760,23 @@ __FACE__
           var lk = Object.assign({}, base, s), bd = P.borders[lk.border];
           if (lk.stroke && bd && bd.thickness) edgeW = Math.max(edgeW, bd.thickness);
         });
-      return [Math.max(T.touch, Math.ceil(wide + (img ? 8 : filled ? 20 + 2 * edgeW : 24))),
-              Math.max(T.touch, tall)];
+      // And never less than GDI+ lays its words out in on one line where, in
+      // the box this gives it (or `box`, its place, where that is more), GDI+
+      // would cut them (gdiCut): over kit art 8 px is under a third of the em
+      // from 18 pt.
+      var room = wide + (img ? 8 : filled ? 20 + 2 * edgeW : 24);
+      var bw = Math.max(T.touch, Math.ceil(room), box ? box[2] : 0), bh = Math.max(T.touch, tall, box ? box[3] : 0);
+      // `keep`: its box grown in its art's shape (grow), as deep as that
+      // makes it - Afterburn 525's source tile in its 70 px cell came out
+      // 113x113 for 'Room PC', and judged 94 px deep it lost a break.
+      if (keep && box && box[2] > 0 && box[3] > 0) {
+        var fk = Math.max(bw / box[2], bh / box[3], 1);
+        bw = box[2] * fk; bh = box[3] * fk;
+      }
+      if (words_.some(function (t) { return t && gdiCut(img ? placed(img, t) : t, f, L, bw, bh); })) {
+        room = Math.max(room, wide * FACE_SLACK + padOf(f, L));
+      }
+      return [Math.max(T.touch, Math.ceil(room)), Math.max(T.touch, tall)];
     }
     if (it.kind === 'slider') return [T.touch, T.touch];
     if (it.kind === 'group' && joinedHere(p, L)) {
@@ -346,7 +787,7 @@ __FACE__
     // the room that takes - and, where the Group names an icon, what an icon
     // button of the theme needs, no less than the plain one had.
     if (it.kind === 'group' && L.tier === 'C' && L.model !== L.designModel) {
-      var o = font({}, P.defaults.button.type, L);
+      var o = font({}, P.defaults.button.type, L, true);
       var plain = [Math.max(T.touch, Math.ceil(textWidth(p.title || 'Group', o.css) + 24)), T.touch];
       if (!p.icon) return plain;
       var icon = needs({ kind: 'button', props: { text: p.title || 'Group', icon: p.icon } }, L);
@@ -354,7 +795,23 @@ __FACE__
     }
     if (it.kind === 'label' || it.kind === 'clock') {
       var g = font(p, it.kind === 'clock' ? P.defaults.clock.type : P.defaults.label.type, L);
-      return [0, lineHeight(g.size) + 2];
+      // A label's words, as wide as GDI+ needs them on the lines its box
+      // holds, where in its box (`box`, where the caller knows it) GDI+
+      // would cut them, their ink included (gdiCut) - a heading's, which a
+      // region stands in the template's box for its own type: the 525's
+      // Volume needed 97 px at its floor's 18 pt in the 91 its template
+      // draws for 14. With no box, nothing across: what a label is given
+      // holds it, and is judged where it is given (paginate). A clock's
+      // sample is not its words. No more than the screen less a gap a side:
+      // wider, its words wrap in that (and gdl.spec check says what they
+      // lose), where the 320's page columns took a sentence's whole line and
+      // were refused.
+      var said = it.kind === 'label' && !g.glyph ? textOf(p.children, p.text) : '';
+      var most = T.size ? T.size[0] - 2 * (T.gap || 0) : Infinity, across = 0;
+      if (said && box && gdiCut(said, g, L, box[2], box[3], true)) {
+        across = Math.min(gdiWidth(said, g, L, inkLines(box[3], g, L, said)), most);
+      }
+      return [across, lineHeight(g.size) + 2];
     }
     return [0, 0];
   }
@@ -614,7 +1071,7 @@ __FACE__
     // panel's type (as a Group's Previous and Next are), the touch minimum
     // deep; then the panel's gap; then the region, grown to hold each
     // Group's one cell, kept to the main area.
-    var Lk = Object.assign({}, L, { k: k }), nf = font({}, P.defaults.button.type, Lk), g = T.gap, bh = T.touch;
+    var Lk = Object.assign({}, L, { k: k }), nf = font({}, P.defaults.button.type, Lk, true), g = T.gap, bh = T.touch;
     var bw = Math.max.apply(null, titles.map(function (t) { return Math.max(T.touch, Math.ceil(textWidth(t, nf.css) + 24)); }));
     var cw = 0, ch = 0;
     at.forEach(function (i) {
@@ -709,10 +1166,42 @@ __FACE__
     // Grown past a bar shallower than the touch minimum (the 725's 57 px
     // footer), a page's own child stays on the page: Build moves a control
     // that crosses its page's edge.
+    // On a plain modal's card (`free.card`: a question a designer draws), a
+    // key of kit art takes two words on two lines where one would grow it
+    // (twoLineNeed).
+    // A designer's sized key whose words do not fit its place at that size
+    // goes down to fit it first (ownFit).
     function grownOf(it, r) {
-      var g = grow(r, needs(it, L), hasArt(it));
+      it.__pt = ownFit(it, r, L);
+      var as = laidAs(it);
+      var two = free && free.card ? twoLineNeed(as, L, r) : null;
+      it.__lines = two ? 2 : null;
+      // A Label on another panel than the one it was drawn on takes the room
+      // its words need there (needs), at that panel's scale and floor: the
+      // 535's 28 pt set 'Display' in 142 px as 'Displa'. On the panel drawn
+      // it stands as drawn, where the probe and gdl.spec check name words
+      // that do not fit, for the designer to give room. In a well or a
+      // window's body (`free`) wordsRoom gives a Label its room, inside the
+      // body: widened here first, a Help line ran out of the 525's window.
+      var lab = it.kind === 'label' && L.model !== L.designModel && !free;
+      // A key judged in its place for what GDI+ cuts of its words (needs).
+      var n = two || needs(as, L, false, lab || it.kind === 'button' ? r : null, hasArt(it));
+      if (it.kind === 'label' && !lab) n = [0, n[1]];
+      var g = grow(r, n, hasArt(it));
+      // A Label wider for its words grows from the edge they are set from,
+      // as wordsRoom widens one: a left-set heading keeps its left.
+      if (lab && g[2] > r[2]) {
+        var al = (it.props || {}).align || 'left';
+        g[0] = al === 'left' ? r[0] : al === 'right' ? r[0] + r[2] - g[2] : g[0];
+      }
       if (cut || L.keepIn) g = [Math.min(Math.max(g[0], 0), frame[2] - g[2]), Math.min(Math.max(g[1], 0), frame[3] - g[3]), g[2], g[3]];
       return g;
+    }
+    // A control's element at `r`, its words on two lines where it takes them
+    // so, at the size it went down to (grownOf).
+    function putAt(it, r, key, extra) {
+      var x = laidExtra(it, extra);
+      return x ? hostAt(it, r, key, x) : placeHost(it.host, r, key);
     }
     // Where a control comes out (below): a plain container in its mapped
     // place, a Group where its cells take it, the rest grown.
@@ -810,7 +1299,7 @@ __FACE__
       var g = grownOf(it, r);
       if (it.kind === 'panel' && c && c.hub) cards.push({ at: els.length, it: it, g: g, i: i });
       else out.push({ it: it, r: g, m: r, at: els.length, key: 'c' + i });
-      els.push(placeHost(it.host, g, 'c' + i));
+      els.push(putAt(it, g, 'c' + i));
     });
     if (S) {
       els.push(h(SharedGroups, { key: 'shared', S: S }));
@@ -831,7 +1320,7 @@ __FACE__
           return cx >= o.r[0] && cx <= o.r[0] + o.r[2] && cy >= o.r[1] && cy <= o.r[1] + o.r[3];
         })) card = o;
       });
-      free = { box: card ? card.r : [0, 0, frame[2], frame[3]] };
+      free = { box: card ? card.r : [0, 0, frame[2], frame[3]], card: true };
     }
     // A Group in a modal or a popup cannot page, and its cells grow on a
     // smaller panel for their words at its type floor: given the room the
@@ -850,9 +1339,9 @@ __FACE__
       });
     }
     if (free) {
-      freeLayout(out, free.box, L, f.s, free.pitch).forEach(function (o) {
-        els[o.at] = o.level ? o.level(o.r) : o.join ? hostAt(o.it, o.r, o.key, { joined: o.join })
-          : placeHost(o.it.host, o.r, o.key);
+      freeLayout(out, free.box, L, f.s, free.pitch, free.card).forEach(function (o) {
+        els[o.at] = o.level ? o.level(o.r) : o.join ? putAt(o.it, o.r, o.key, { joined: o.join })
+          : putAt(o.it, o.r, o.key);
       });
     }
     // On a hub a bar or a card among a page's own controls holds what was
@@ -939,13 +1428,15 @@ __FACE__
     y0 = Math.min(y0, r[1]); y1 = Math.max(y1, r[1] + r[3]);
     return [Math.floor(x0), Math.floor(y0), Math.ceil(x1) - Math.floor(x0), Math.ceil(y1) - Math.floor(y0)];
   }
-  function freeLayout(out, box, L, k, pitch) {
+  function freeLayout(out, box, L, k, pitch, card) {
     var T = L.panel, Lk = Object.assign({}, L, { k: k });
     var es = out.filter(function (o) { return o.m && FREE_KINDS[o.it.kind]; });
     es.forEach(function (e) { e.r = e.r.slice(); e.was = e.r.slice(); });
     es.forEach(function (e) { if (e.it.kind === 'label') wordsRoom(e, Lk, box, T); });
     alignStacks(es);
     asOne(es, box);
+    // A plain modal's keys of kit art drawn alike come out alike (artRows).
+    if (card) artRows(es, box[2] - 2 * (T.gap || 0), T.gap || 0);
     if (pitch) atPitch(es, pitch, box, k);
     respaceLines(es, 0, box, T);
     respaceLines(es, 1, box, T);
@@ -967,10 +1458,21 @@ __FACE__
     // ascent and descent, 1.36 em for Open Sans (gdl.design _ink).
     var f = font(p, P.defaults.label.type, L), em = f.size * P.pt, lh = em * 1.2, r = e.r;
     // As the probe reads a box (gdl.design overflows): too wide, or its words
-    // past its depth by more than half a line.
+    // past its depth by more than half a line - and as GUI Designer lays it
+    // out (gdiWidth), in the box less a third of an em, which the probe's
+    // box does not keep, on the lines its depth shows whole (inkLines):
+    // round four's revised Afterburn ShareLink set three lines in the 525's
+    // 82 px at 18 pt, which GDI+ shows, its first line's tops cut.
+    var pad = padOf(f, L);
+    function gdiN(w) {
+      return String(text).split(/\r?\n/).reduce(function (s, para) {
+        return s + wrapWords(para, f.css, (w - pad) / FACE_SLACK).length;
+      }, 0);
+    }
     function holds(w, ht) {
       var q = wrapped(text, f.css, w);
-      return q.wide <= w + 1 && (q.n - 1) * lh + 1.36 * em <= ht + lh / 2;
+      return q.wide <= w + 1 && (q.n - 1) * lh + 1.36 * em <= ht + lh / 2
+        && gdiWidth(text, f, L, inkLines(ht, f, L, text)) <= w;
     }
     if (holds(r[2], r[3])) return;
     var gap = T.gap || 0, lo = box[0] + gap, hi = box[0] + box[2] - gap, most = Math.max(r[2], hi - lo);
@@ -981,10 +1483,10 @@ __FACE__
       while (b - a > 1) { var mid = Math.floor((a + b) / 2); if (ok(mid)) b = mid; else a = mid; }
       return b;
     }
-    var w, fewest = wrapped(text, f.css, most).n;
+    var w, fewest = wrapped(text, f.css, most).n, gfewest = gdiN(most);
     if (holds(most, r[3])) w = least(function (x) { return holds(x, r[3]); });
-    else w = least(function (x) { var q = wrapped(text, f.css, x); return q.n <= fewest && q.wide <= x + 1; });
-    var ht = Math.max(r[3], Math.ceil(wrapped(text, f.css, w).n * lh));
+    else w = least(function (x) { var q = wrapped(text, f.css, x); return q.n <= fewest && q.wide <= x + 1 && gdiN(x) <= gfewest; });
+    var ht = Math.max(r[3], Math.ceil(wrapped(text, f.css, w).n * lh), gdiDepth(gdiN(w), f, L));
     // Wider from the edge its words are set from - a left-set line from its
     // left, a right-set one from its right, else about its middle - moving
     // that edge only as far as the body's side makes it (alignStacks keeps a
@@ -1186,7 +1688,7 @@ __FACE__
   // round-three rooms' Help modals needed 247 and 306 px of the 320's 240 and
   // were refused.
   function overModals(items, D, T, L, frame, name) {
-    var R = flowRows(items, D, T, L, frame, name);
+    var R = flowRows(items, D, T, L, frame, name, null, false, null, true);
     var room = frame[3] - 2 * R.tight, box = [0, 0, frame[2], frame[3]];
     if (R.total <= room) {
       var put0 = placeRows(R, R.laid, box, Math.round(Math.max(R.tight, (frame[3] - R.total) / 2)));
@@ -1218,7 +1720,7 @@ __FACE__
     });
     var shown = { set: null };
     function shower(p) { return function () { if (shown.set) shown.set(p); }; }
-    var navFont = font({}, P.defaults.button.type, Object.assign({}, L, { k: R.k }));
+    var navFont = font({}, P.defaults.button.type, Object.assign({}, L, { k: R.k }), true);
     function navW(word) {
       return pagingLook(word) ? T.touch : Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24));
     }
@@ -1258,7 +1760,10 @@ __FACE__
   // the row of the Group it heads, a Line between the rows it was drawn
   // between, and, where the rows need more than `room`, a row beside an
   // earlier one of another region that has room across for it.
-  function flowRows(items, D, T, L, frame, where, band, page, room) {
+  // `modal`: a plain modal's rows (overModals), whose keys of kit art take two
+  // words on two lines where one would grow them and, drawn alike, come out
+  // alike (twoLineNeed, artRows).
+  function flowRows(items, D, T, L, frame, where, band, page, room, modal) {
     var bandOf = band || function () { return 0; };
     var f = fit(D, frame), k = f.s;
     var pad = T.gap, gap = T.gap, tight = 2;
@@ -1338,23 +1843,34 @@ __FACE__
       });
       var first = laid.length;
       var line = [], width = 0;
-      row.items.forEach(function (it) {
+      var sized = row.items.map(function (it) {
         var n = needs(it, L);
         var w, ht;
         if (it.kind === 'label' || it.kind === 'clock') {
           var g = font(it.props || {}, it.kind === 'clock' ? P.defaults.clock.type : P.defaults.label.type, L);
           var text = it.kind === 'clock' ? clockSample(CLOCK_FORMATS[(it.props || {}).format || 'time'] || (it.props || {}).format)
                                          : textOf((it.props || {}).children, (it.props || {}).text);
-          w = Math.min(W, Math.max(it.rect[2] * k, textWidth(text, g.css) + 8));
+          // A label's on one line, as GDI+ lays it out (gdiWidth) where in
+          // that box GDI+ would cut it (gdiCut).
+          var one = textWidth(text, g.css) + 8;
+          if (it.kind === 'label' && gdiCut(text, g, L, Math.min(W, Math.max(it.rect[2] * k, one)), n[1])) {
+            one = Math.max(one, gdiWidth(text, g, L, 1));
+          }
+          w = Math.min(W, Math.max(it.rect[2] * k, one));
           ht = n[1];
           // Words wider than the screen break into lines, each as GUI Designer
           // lays one out (1.362 em of Open Sans, where the canvas's is 1.2):
           // the round-three Help modals' sentences, one 26 px line in a 302 px
-          // box on the 320, ran past it into the next.
+          // box on the 320, ran past it into the next. At the width GDI+
+          // wraps them in where at the screen's less 8 px it would cut them.
           it.lines = null;
-          if (it.kind === 'label' && textWidth(text, g.css) + 8 > W) {
+          if (it.kind === 'label' && one > W) {
+            var lineH = Math.ceil(g.size * P.pt * 1.37);
             it.lines = wrapWords(text, g.css, W - 8);
-            ht = it.lines.length * Math.ceil(g.size * P.pt * 1.37) + 2;
+            if (gdiCut(text, g, L, W, it.lines.length * lineH + 2)) {
+              it.lines = wrapWords(text, g.css, Math.min(W - 8, (W - padOf(g, L)) / FACE_SLACK));
+            }
+            ht = it.lines.length * lineH + 2;
           }
         } else if (it.kind === 'slider') {
           // As a level (asLevel), Down and Up at the touch minimum with 24 px
@@ -1367,9 +1883,34 @@ __FACE__
           // segmented control's one row: what it needs, not its drawn box.
           w = Math.min(W, n[0]); ht = n[1];
         } else {
-          var g2 = grow([0, 0, it.rect[2] * k, it.rect[3] * k], n, hasArt(it));
+          // A key of kit art takes two words on two lines where one would
+          // grow it (twoLineNeed); a designer's sized key whose words do not
+          // fit its place at that size goes down to fit it first (ownFit).
+          var at = [0, 0, it.rect[2] * k, it.rect[3] * k];
+          it.__pt = ownFit(it, at, L);
+          var as = laidAs(it), two = modal ? twoLineNeed(as, L, at) : null;
+          it.__lines = two ? 2 : null;
+          var g2 = grow(at, two || needs(as, L, false, it.kind === 'button' ? at : null, hasArt(it)), hasArt(it));
           w = Math.min(W, g2[2]); ht = g2[3];
         }
+        return { it: it, w: w, ht: ht };
+      });
+      // A row's sized keys drawn alike - one kind, one variant (its color
+      // its own), one size and the designer's one `size` - come out at one
+      // size (oneSize): Shockwave's room's question, Cancel at 14 beside Turn
+      // Off at 12.5. Each still fits the place it took, at the size it went
+      // down to or a less one.
+      oneSize(row.items, L, function (it) {
+        var p = it.props || {};
+        return sizedKey(it, L) ? [kindPt(p, L), p.size, p.variant || '',
+                                  Math.round(it.rect[2]), Math.round(it.rect[3])].join('|') : null;
+      });
+      // A plain modal's keys of kit art drawn alike side by side come out one
+      // size (artRows).
+      var es = sized.map(function (z) { return { it: z.it, m: z.it.rect, r: [0, 0, z.w, z.ht] }; });
+      if (modal) artRows(es, W, gap);
+      sized.forEach(function (z, i) {
+        var it = z.it, w = es[i].r[2], ht = es[i].r[3];
         if (line.length && width + gap + w > W) { laid.push(line); line = []; width = 0; }
         width += (line.length ? gap : 0) + w;
         // A popup region is rounded as its popups are scaled (panelPage), a
@@ -1488,6 +2029,8 @@ __FACE__
         } else if (c.it.lines) {
           els.push(React.cloneElement(c.it.host, { key: 'c' + c.it.i, style: cell(r) },
                      React.cloneElement(c.it.comp, { __text: c.it.lines.join('\r\n') })));
+        } else if (laidExtra(c.it)) {
+          els.push(hostAt(c.it, r, 'c' + c.it.i, laidExtra(c.it)));
         } else {
           els.push(placeHost(c.it.host, r, 'c' + c.it.i));
         }
@@ -1624,7 +2167,7 @@ __FACE__
   function popupPage(items, D, T, L, name, size) {
     var out = rowsPage(items, Object.assign({}, D, { main: [0, 0, size[0], size[1]] }), T, L, name, true);
     var M = T.main, foot = T.rail || [0, M[1] + M[3], T.size[0], T.size[1] - M[1] - M[3]];
-    var f = font({}, P.defaults.button.type, Object.assign({}, L, { k: out.k }));
+    var f = font({}, P.defaults.button.type, Object.assign({}, L, { k: out.k }), true);
     // In the Group's pages' look too: Afterburn's the kit's chevron
     // (`regions.group`), the touch minimum square.
     var look = pagingLook('Back');
@@ -1699,7 +2242,9 @@ __FACE__
         var g = font(it.props || {}, it.kind === 'clock' ? P.defaults.clock.type : P.defaults.label.type, Lk);
         var text = it.kind === 'clock' ? clockSample(CLOCK_FORMATS[(it.props || {}).format || 'time'] || (it.props || {}).format)
                                        : textOf((it.props || {}).children, (it.props || {}).text);
-        return Math.ceil(textWidth(text, g.css) + 8);
+        // As GDI+ lays it out on one line where in the strip GDI+ cuts it.
+        var one = Math.ceil(textWidth(text, g.css) + 8);
+        return it.kind === 'label' && gdiCut(text, g, Lk, one, strip[3]) ? Math.max(one, gdiWidth(text, g, Lk, 1)) : one;
       });
       var across = widths.reduce(function (s, w) { return s + w; }, 0) + T.gap * Math.max(0, titles.length - 1);
       var deep = titles.every(function (it) { return needs(it, Lk)[1] <= strip[3]; });
@@ -1748,7 +2293,7 @@ __FACE__
       });
     }
     function partName(p) { return p ? name + ' ' + (p + 1) : name; }
-    var navFont = font({}, P.defaults.button.type, Lk);
+    var navFont = font({}, P.defaults.button.type, Lk, true);
     function navW(word) {
       return pagingLook(word) ? T.touch : Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24));
     }
@@ -1998,7 +2543,8 @@ __FACE__
                       + " - the regions are a working page's");
       } else if (!F && !HF && !PF) {
         L.regionRefused = true;
-        problems.push(pname + ' uses the region frame, which the ' + model + ' does not draw yet');
+        problems.push(pname + ' uses the region frame, which the ' + model + (T.turned ? notTurned()
+                      + ' - draw its pages without regions' : ' does not draw yet'));
       } else {
         L.region = F ? { F: F } : HF ? { F: HF, hub: true } : { F: PF, pages: true };
         L.region.role = paged ? role : null;
@@ -2372,10 +2918,11 @@ __FACE__
   // The page plans its regions together (planRegions), once its own layout
   // has set the scale its type is drawn at: a seam between two regions'
   // controls is the page's to keep, not either region's (openSeams).
-  // Hubs (the 520s and 535s) and the 320s draw their working page in another
-  // grammar - a right menu bar and popups in main (planHub); a page per
-  // source (planPages) - and a turned panel's frame turns the header into a
-  // left band: a region page is refused there by name until it is drawn.
+  // Hubs (the 520s and 535s), the 320s and the 300s draw their working page
+  // in another grammar - a right menu bar and popups in main (planHub); a
+  // page per source (planPages), under a menu bar on the 300 (planMenu). A
+  // turned panel's is refused by name: no template of the theme is drawn
+  // that way up (notTurned).
   var FRAMES = P.frames || {};
   var RD = P.regions || {};
   // A theme whose template pages with glyphs draws Previous, Next and Back as
@@ -2515,8 +3062,10 @@ __FACE__
   }
   // What a control needs on this panel; a region's buttons fill their cell,
   // so need only their own padding round the caption.
-  function needOf(kind, props, L) {
-    return needs({ kind: kind, props: props }, L, true);
+  // `box`: its place, where the caller has it, in which needs() judges what
+  // GDI+ cuts of its words.
+  function needOf(kind, props, L, box) {
+    return needs({ kind: kind, props: props }, L, true, box);
   }
   function isTouch(kind) { return kind === 'button' || kind === 'slider'; }
   // An indented caption centred on kit art whose icon stands at its left
@@ -2538,7 +3087,7 @@ __FACE__
     var img = imageOf(V, Object.assign({}, p, { __indent: null }), caption);
     var reach = img && img.caption === 'indent' && KIT && KIT.icon_right ? KIT.icon_right[img.kit] : null;
     if (!reach || !caption || (p.align || V.align || 'left') !== 'center') return null;
-    var dims = String(img.kit).split('x').map(Number), f = font(p, P.defaults.button.type, L);
+    var dims = String(img.kit).split('x').map(Number), f = font(p, P.defaults.button.type, L, true);
     var tc = textWidth(caption, f.css), sp = textWidth('          ', f.css) / 10, base = img.indent || 0;
     var gap = p.__gap != null && !isNaN(Number(p.__gap)) ? Math.max(0, Number(p.__gap)) : null;
     function spaces(W) {
@@ -2553,8 +3102,12 @@ __FACE__
       var n = gap == null ? Math.ceil(at(4)) : Math.max(Math.round(at(gap)), Math.ceil(at(Math.min(gap, 4))));
       return Math.max(base, n);
     }
+    // 4 px in from its right, and where GDI+ does not cut the spaced caption
+    // (gdiCut): at Afterburn 525's 18 pt, 'Presentation' past its icon broke
+    // across lines in its 252 px key.
     for (var W = Math.ceil(w); W < w + 400; W++) {
-      if (tc + spaces(W) * sp + 8 <= W) return { n: spaces(W), w: W };
+      var n = spaces(W), cap = tc + n * sp;
+      if (cap + 8 <= W && !gdiCut(new Array(n + 1).join(' ') + caption, f, L, W, ht)) return { n: n, w: W };
     }
     return { n: spaces(w), w: Math.ceil(w) };
   }
@@ -2949,7 +3502,7 @@ __FACE__
       // and Turbulence's second group has none, and its title only names it.
       if (title && G.heading) {
         var hp = Object.assign({ name: title + ' Heading', text: title }, RD.heading || {});
-        heads.push({ props: hp, at: settle(G.heading.rect, needOf('label', hp, L), band, L.panel.size,
+        heads.push({ props: hp, at: settle(G.heading.rect, needOf('label', hp, L, G.heading.rect), band, L.panel.size,
                                            [false, false, false, false]), key: 'lh' + gi });
       }
       // The template's look for the group: its first is the display's
@@ -3067,13 +3620,21 @@ __FACE__
   function railRoom(p, w, ht, L) {
     var A = railArt(p);
     if (!A) return null;
-    var dims = String(A.kit).split('x').map(Number), f = font(p, P.defaults.button.type, L);
+    var dims = String(A.kit).split('x').map(Number), f = font(p, P.defaults.button.type, L, true);
     var sp = textWidth('          ', f.css) / 10;
     var s = Math.min(w / dims[0], ht / dims[1]), aw = dims[0] * s, x0 = (w - aw) / 2;
     var start = A.toggle ? 8 : x0 + A.frac * aw + 4;
     var n = Math.max(0, Math.ceil(start / sp));
+    // To 4 px from the key's right, or before its switch.
     var end = A.toggle ? x0 + A.frac * aw - 4 : w - 4;
-    return { n: n, room: end - n * sp, css: f.css, lh: lineHeight(f.size) };
+    // The fewest spaces that still start the words 4 px clear of the icon
+    // as GUI Designer sets them, a sixth of the em in from the key's left,
+    // for where GDI+ cuts the caption past the template's (railLines):
+    // round four's Afterburn 725 set '         Camera' at 16 pt in its 138 px
+    // rail, a space more than that, and GDI+ broke the word.
+    var least = A.toggle ? n : Math.max(0, Math.ceil((start - padOf(f, L) / 2) / sp));
+    return { n: n, room: end - n * sp, least: least, roomLeast: end - least * sp, css: f.css, lh: lineHeight(f.size),
+             f: f, w: w, ht: ht };
   }
   // A rail caption at a cell's width: one line where it fits, else two -
   // a caption of two words or more, broken where its longer line is least
@@ -3084,15 +3645,37 @@ __FACE__
     if (!R || !caption) return R ? { n: R.n, lines: [caption || ''] } : null;
     var said = [caption].concat((list(p.states) || []).filter(function (s) { return s && s.text; })
                                 .map(function (s) { return s.text; }));
-    function fits(t) { return textWidth(t, R.css) <= R.room; }
-    if (said.every(fits)) return { n: R.n, lines: [caption] };
-    var parts = String(caption).split(' '), best = null;
-    for (var i = 1; i < parts.length; i++) {
-      var two = [parts.slice(0, i).join(' '), parts.slice(i).join(' ')];
-      var wide = Math.max(textWidth(two[0], R.css), textWidth(two[1], R.css));
-      if (wide <= R.room && 2 * R.lh + 4 <= ht && (!best || wide < best.wide)) best = { wide: wide, lines: two };
+    // Whether GDI+ cuts none of `texts` set past `n` spaces, each of their
+    // lines so (gdiCut).
+    function whole(n, texts) {
+      var lead = new Array(n + 1).join(' ');
+      return texts.every(function (t) {
+        return !gdiCut(String(t).split(/\r?\n/).map(function (ln) { return lead + ln; }).join('\r\n'), R.f, L, R.w, R.ht);
+      });
     }
-    if (best && said.slice(1).every(fits)) return { n: R.n, lines: best.lines };
+    // One line at the template's spaces where it fits, and there GDI+ cuts
+    // nothing; where GDI+ would, at the fewest that clear the icon (railRoom's
+    // `least`). Then two lines, so.
+    function fitsIn(room) { return function (t) { return textWidth(t, R.css) <= room; }; }
+    if (said.every(fitsIn(R.room))) {
+      if (whole(R.n, said)) return { n: R.n, lines: [caption] };
+      if (R.least < R.n && said.every(fitsIn(R.roomLeast)) && whole(R.least, said)) return { n: R.least, lines: [caption] };
+    }
+    function twoIn(n, room) {
+      var parts = String(caption).split(' '), best = null;
+      for (var i = 1; i < parts.length; i++) {
+        var two = [parts.slice(0, i).join(' '), parts.slice(i).join(' ')];
+        var wide = Math.max(textWidth(two[0], R.css), textWidth(two[1], R.css));
+        if (wide <= room && 2 * R.lh + 4 <= ht && (!best || wide < best.wide)) best = { wide: wide, lines: two };
+      }
+      return best && said.slice(1).every(fitsIn(room)) ? best.lines : null;
+    }
+    var two = twoIn(R.n, R.room);
+    if (two) {
+      if (whole(R.n, [two.join('\r\n')].concat(said.slice(1)))) return { n: R.n, lines: two };
+      var twoLeast = R.least < R.n ? twoIn(R.least, R.roomLeast) : null;
+      if (twoLeast && whole(R.least, [twoLeast.join('\r\n')].concat(said.slice(1)))) return { n: R.least, lines: twoLeast };
+    }
     return null;
   }
 
@@ -3668,6 +4251,9 @@ __FACE__
       if (!sp) return;
       var p = propsOf(it), caption = textOf(p.children, p.text);
       var extra = Object.assign(unset(p, look), { joined: set });
+      // Turbulence's tiles are their tabs to the program, each with its tab's
+      // ID (the frame's `tab_ids`): the owner's call (2026-11-04).
+      if (S.tab_ids) extra.__tile = true;
       // A tab's own look is the header's: as a tile it takes the template's.
       ['size', 'align', '__indent'].forEach(function (k) { if (p[k] != null) extra[k] = undefined; });
       var icon = iconHere(Object.assign({}, p, extra), p.icon || extra.icon);
@@ -3691,6 +4277,8 @@ __FACE__
         els.push(hubHost(s.it, s.at, s.key, s.extra, s.label ? null : undefined));
         if (s.label) {
           var lr = [s.label[0], Math.max(s.label[1], s.at[1] + s.at[3]), s.label[2], s.label[3]];
+          // Its words held as GUI Designer lays them out (holding).
+          lr = holding(L, labelLook, s.caption, lr, (S.pt || {}).label, band);
           els.push(chromeLabel(L, labelLook, (propsOf(s.it).name || s.caption) + ' Label', s.caption, lr, s.key + 'l',
                                (S.pt || {}).label));
         }
@@ -3877,6 +4465,21 @@ __FACE__
   // The questions a template asks in a window of its own, by `topic`: the
   // frame's record of it (`windows.incoming`, `windows.recording`).
   var OWN_QUESTION = { call: 'incoming', recording: 'recording' };
+  // An incoming call's answers keep the template's IDs on every panel -
+  // Accept Call 9032 and Decline (Ignore) Call 9033 on every bar seed, off a
+  // frame's `windows.incoming` - in its own window or where it stands in the
+  // power-down question's places (a hub, the 320, the 300): the owner's call
+  // (2026-11-04), as the call page's keys and the dialer keep their seed's. A
+  // recording's and the power-down question's answers keep IDs of their own.
+  function callAnswerId(yes) {
+    var role = yes ? 'accept' : 'decline', fs = P.frames || {};
+    for (var s in fs) {
+      var inc = ((fs[s] || {}).windows || {}).incoming;
+      var b = inc && (inc.buttons || []).filter(function (x) { return x.role === role && x.id != null; })[0];
+      if (b) return b.id;
+    }
+    return null;
+  }
   // A working page's roles (a Page with regions): the call mode and the
   // page its sources are chosen on.
   var PAGE_ROLES = { call: true, select: true };
@@ -4106,7 +4709,7 @@ __FACE__
     var img = imageOf(V, p, caption);
     if (p.text == null && caption != null && !(img && img.caption === 'none')) p.text = caption;
     if (does) p.does = does;
-    var at = settle(r, needOf('button', p, L), band, L.panel.size, [false, false, false, false]);
+    var at = settle(r, needOf('button', p, L, r), band, L.panel.size, [false, false, false, false]);
     return drawnAt(Button, p, at, key);
   }
   // A derived label at `r`, at `pt` - this panel's own template's size,
@@ -4170,11 +4773,46 @@ __FACE__
   function widened(L, look, text, r, width, pt) {
     var f = font(Object.assign({}, look || {}, { size: pt != null ? pt : (look || {}).size }), P.defaults.label.type,
                  Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+    // And as GDI+ lays them out on one line where, so widened, GDI+ would
+    // cut them (gdiCut).
     var w = Math.ceil(textWidth(text, f.css) * 1.06) + 8;
+    if (gdiCut(text, f, L, Math.max(w, r[2]), r[3])) w = Math.max(w, gdiWidth(text, f, L, 1));
     if (w <= r[2]) return r;
     w = Math.min(w, width);
     var x = Math.min(Math.max(Math.round(r[0] + (r[2] - w) / 2), 0), width - w);
     return [x, r[1], w, r[3]];
+  }
+  // A chrome label's box `r` grown to hold `text` at `pt` as GUI Designer
+  // lays it out (gdiWidth, gdiLines) inside `room` ([x, y, w, h], what it
+  // stands in), less the panel's gap a side across: wider about its middle
+  // where the lines its depth holds need it, then deeper about its middle
+  // for the lines its words take at that width, each a GDI+ line. A
+  // template's box is set for the template's own words at its own size, and
+  // at this panel's floor the system's may not fit it: Afterburn 525's Help
+  // sets one paragraph at 16 pt in 550x80, where the system's three lines at
+  // 18 pt need 99 px, and the number on the third was cut. Where `room`
+  // cannot hold them either, gdl.spec check names what is cut.
+  function holding(L, look, text, r, pt, room) {
+    var f = font(Object.assign({}, look || {}, { size: pt != null ? pt : (look || {}).size }), P.defaults.label.type,
+                 Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+    var gap = L.panel.gap || 0, lo = room[0] + gap, hi = room[0] + room[2] - gap, out = r.slice();
+    // Wider only where GDI+ cuts them in it (gdiCut).
+    var w = gdiCut(text, f, L, r[2], r[3]) ? gdiWidth(text, f, L, gdiLines(r[3], f, L)) : 0;
+    if (w > out[2] && hi > lo) {
+      var ww = Math.min(w, hi - lo);
+      out[0] = Math.min(Math.max(Math.round(r[0] + (r[2] - ww) / 2), lo), hi - ww);
+      out[2] = ww;
+    }
+    var pad = padOf(f, L);
+    var n = String(text).split(/\r?\n/).reduce(function (s, para) {
+      return s + wrapWords(para, f.css, (out[2] - pad) / FACE_SLACK).length;
+    }, 0);
+    var deep = Math.min(gdiDepth(n, f, L), room[3]);
+    if (n > inkLines(out[3], f, L, text) && deep > out[3]) {
+      out[1] = Math.min(Math.max(Math.round(r[1] - (deep - r[3]) / 2), room[1]), room[1] + room[3] - deep);
+      out[3] = deep;
+    }
+    return out;
   }
   // A left-set label's box widened rightward to hold its words on one line,
   // to `right` at most: Afterburn 520's popup titles, 162 px where its
@@ -4182,7 +4820,9 @@ __FACE__
   function rightward(L, look, text, r, right, pt) {
     var f = font(Object.assign({}, look || {}, { size: pt != null ? pt : (look || {}).size }), P.defaults.label.type,
                  Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+    // As GDI+ lays them out where, so widened, GDI+ would cut them (gdiCut).
     var w = Math.ceil(textWidth(text, f.css) * 1.06) + 8;
+    if (gdiCut(text, f, L, Math.max(w, r[2]), r[3])) w = Math.max(w, gdiWidth(text, f, L, 1));
     return w <= r[2] ? r : [r[0], r[1], Math.max(r[2], Math.min(w, right - r[0])), r[3]];
   }
   // A window's art surfaces (Afterburn's Background, the template's own
@@ -4215,11 +4855,12 @@ __FACE__
     var PT = !FT && !HT ? pagesFor(T) : null;
     if (PT) {
       var named = props.title != null && String(props.title) !== '';
-      return pagePart(props, role, name, named ? String(props.title) : role === 'help' && WD.help_title || name,
+      return menuPart(props, role, name, named ? String(props.title) : role === 'help' && WD.help_title || name,
                       PT, D, T);
     }
     if (!FT && !HT || !FD) {
-      return { problem: name + ' is ' + what + ', which the ' + (FT || HT ? D.model : T.model) + ' does not draw yet' };
+      return { problem: name + ' is ' + what + ', which the ' + (FT || HT ? D.model : T.model)
+                        + (!FT && !HT && T.turned ? notTurned() : ' does not draw yet') };
     }
     var given = props.title != null && String(props.title) !== '';
     // Help with no title says the template's own: Shockwave's and
@@ -4259,12 +4900,19 @@ __FACE__
                      // the box's foot, 30% of it each way.
                      var sw = Math.round(e[2] * 0.3), sh = Math.round(e[3] * 0.3);
                      s = s || [e[0] + Math.round((e[2] - sw) / 2), e[1] + e[3] - sh, sw, sh];
+                     // Each held as GUI Designer lays it out, in the popup
+                     // (holding): Shockwave 720's 'Disconnected' at 14 pt in
+                     // its 119 px status broke across lines.
+                     var room = [0, 0, ST.size[0], ST.size[1]], spt = pt.status != null ? pt.status : pt.empty;
                      els.push(chromeLabel(L, RS.empty, name + ' Empty', said(WD.empty, title),
-                                          [e[0], e[1], e[2], Math.round(e[3] / 2)], 'empty', pt.empty));
-                     els.push(chromeLabel(L, RS.status || RS.empty, name + ' Status', WD.status, s, 'status',
-                                          pt.status != null ? pt.status : pt.empty));
+                                          holding(L, RS.empty, said(WD.empty, title), [e[0], e[1], e[2], Math.round(e[3] / 2)],
+                                                  pt.empty, room), 'empty', pt.empty));
+                     els.push(chromeLabel(L, RS.status || RS.empty, name + ' Status', WD.status,
+                                          holding(L, RS.status || RS.empty, WD.status, s, spt, room), 'status', spt));
                    } else {
-                     els.push(chromeLabel(L, RS.empty, name + ' Empty', said(WD.empty, title), e, 'empty', pt.empty));
+                     els.push(chromeLabel(L, RS.empty, name + ' Empty', said(WD.empty, title),
+                                          holding(L, RS.empty, said(WD.empty, title), e, pt.empty, [0, 0, ST.size[0], ST.size[1]]),
+                                          'empty', pt.empty));
                    }
                  }
                  return { els: els, problems: pic.problem ? [pic.problem] : [], title: at || null,
@@ -4340,15 +4988,19 @@ __FACE__
                }
                if (words_ != null && rt.message) {
                  var mb = messageBox(L, RW.message, words_, rt.message, rt.rect, rt.lines, pt.message);
+                 // And as deep as GUI Designer lays its lines out, in the
+                 // window (holding): Turbulence 720's power-down question cut
+                 // its second line's descenders in its 64 px at 20 pt.
+                 mb = holding(L, RW.message, words_, mb, pt.message, rt.rect);
                  var no = borrowedBox(L, RW.message, words_, mb, pt.message, topic, ownRec, name, T.model);
                  if (no) probs.push(no);
                  els.push(chromeLabel(L, RW.message, name + ' Message', words_, mb, 'message', pt.message));
                }
                if (role === 'confirm' && words_ != null) {
                  (rt.buttons || []).forEach(function (b, i) {
-                   var a = answerOf(b, topic, B, RW);
-                   els.push(chromeButton(L, name + ' ' + a.word, a.look, a.word, a.yes ? props.does : a.does,
-                                         b.rect, rt.rect, 'answer' + i));
+                   var a = answerOf(b, topic, B, RW), cid = topic === 'call' ? callAnswerId(a.yes) : null;
+                   els.push(chromeButton(L, name + ' ' + a.word, cid != null ? Object.assign({}, a.look, { id: cid }) : a.look,
+                                         a.word, a.yes ? props.does : a.does, b.rect, rt.rect, 'answer' + i));
                  });
                }
                return { els: els, problems: probs, title: plain && rt.title || null };
@@ -4455,9 +5107,10 @@ __FACE__
     if (!DT) {
       // The drawn panel's keys, as a source's controls there.
       var hosts = dialHosts(DD, FD.center.region.slice(0, 2));
-      var part = PT ? pagePart(props, 'source', name, title, PT, D, T)
+      var part = PT ? menuPart(props, 'source', name, title, PT, D, T)
         : HT ? hubPart('source', FD, HT, name, title, D.model, props.group, props)
-        : { problem: name + " is the call mode's dialer, which the " + T.model + ' does not draw yet' };
+        : { problem: name + " is the call mode's dialer, which the " + T.model + (T.turned ? notTurned()
+                          : ' does not draw yet') };
       if (!part.problem) part.items = hosts;
       return part;
     }
@@ -4511,8 +5164,15 @@ __FACE__
                  if (c.close) els.push(hubClose(L, F, name, at, c.close.rect, names.select, does));
                  var words_ = WD.hub_empty || WD.empty;
                  if (!content && words_ && c.empty) {
-                   els.push(chromeLabel(L, Object.assign({}, RS.empty || {}, { color: label.color }), name + ' Empty',
-                                        said(words_, title), [c.empty[0] - at[0], c.empty[1] - at[1], c.empty[2], c.empty[3]],
+                   // Its words held as GUI Designer lays them out, under the
+                   // title (holding): round four's revised Afterburn ShareLink
+                   // set three lines in the 525's 82 px box, its first line's
+                   // tops cut.
+                   var elook = Object.assign({}, RS.empty || {}, { color: label.color }), etext = said(words_, title);
+                   var etop = tat ? tat[1] + tat[3] : 0;
+                   els.push(chromeLabel(L, elook, name + ' Empty', etext,
+                                        holding(L, elook, etext, [c.empty[0] - at[0], c.empty[1] - at[1], c.empty[2], c.empty[3]],
+                                                pt.empty, [0, etop, g[2], g[3] - etop]),
                                         'empty', pt.empty));
                  }
                  return { els: els, problems: pic.problem ? [pic.problem] : [], title: tat,
@@ -4542,9 +5202,12 @@ __FACE__
                // Afterburn's Help is a popup in main: with nothing put in it,
                // the template's message where it sets it.
                if (role === 'help' && !content && WD.help && rec.message) {
-                 var m = rec.message;
-                 els.push(chromeLabel(L, Object.assign({}, (RD.window || {}).message || {}, HD.message || {}), name + ' Message',
-                                      WD.help, [m[0] - at[0], m[1] - at[1], m[2], m[3]], 'message', pt.message));
+                 var m = rec.message, mlook = Object.assign({}, (RD.window || {}).message || {}, HD.message || {});
+                 var mtop = tat ? tat[1] + tat[3] : 0;
+                 els.push(chromeLabel(L, mlook, name + ' Message', WD.help,
+                                      holding(L, mlook, WD.help, [m[0] - at[0], m[1] - at[1], m[2], m[3]], pt.message,
+                                              [0, mtop, g[2], g[3] - mtop]),
+                                      'message', pt.message));
                }
                return { els: els, problems: pic.problem ? [pic.problem] : [], title: tat };
              } };
@@ -4709,11 +5372,17 @@ __FACE__
   // button then carries no caption: an icon look on a hub draws its glyph
   // alone, its name in a label under it or in its `does`.
   // The region's own default in the hub's look for its role, where the hub
-  // draws one its kit has: Mach's menu bar draws Mute and Power as glyphs.
-  function hubLook(props, look) {
+  // draws one: Mach's menu bar draws Mute and Power as glyphs - the
+  // template's in its icon face where this machine carries the face
+  // (glyphOf, at the size its template sets on the panel's series, `L`),
+  // else the kit's where the kit has it. A look that draws neither leaves
+  // the default as it is - and only that: with the face carried and no kit
+  // (a CI runner), Mach's hub's Power and the 300's Help would otherwise
+  // drop their glyph with the art and say their words.
+  function hubLook(props, look, L) {
     if (!look) return props;
     var out = Object.assign({}, props, look);
-    if (look.icon && !iconHere(out, look.icon)) return props;
+    if (look.icon && !glyphOf(look, L) && !iconHere(out, look.icon)) return props;
     return out;
   }
   function iconHere(look, icon) {
@@ -4775,7 +5444,7 @@ __FACE__
     if (icon || look.icon) p.text = '';
     else if (!(img && img.caption === 'none')) p.text = (WD.buttons || {}).close || 'Close';
     var g = F.center.region;
-    var at2 = settle(r, needOf('button', p, L), [0, 0, g[2], g[3]], [g[2], g[3]], [false, false, false, false]);
+    var at2 = settle(r, needOf('button', p, L, r), [0, 0, g[2], g[3]], [g[2], g[3]], [false, false, false, false]);
     return drawnAt(Button, p, at2, 'close');
   }
   // A designer's control drawn anew at `r` with `extra` props, and with
@@ -5155,8 +5824,11 @@ __FACE__
         var lr = [sp.label[0] - at[0], sp.inside ? sp.label[1] - at[1] : Math.max(sp.label[1] - at[1], tile[1] + tile[3]),
                   sp.label[2], sp.label[3]];
         // Inside its tile, wider words widen it about its middle into the
-        // gaps beside: Streaming at the 525's 18 pt is 118 px of 110.
+        // gaps beside: Streaming at the 525's 18 pt is 118 px of 110. Under
+        // it, as GUI Designer lays them out (holding): Mach 525's
+        // 'Presentation', 156 px at its 18 pt in the template's 153.
         if (sp.inside) lr = widened(L, labelLook, caption, lr, g[2], pt);
+        else lr = holding(L, labelLook, caption, lr, pt, [0, 0, g[2], g[3]]);
         els.push(chromeLabel(L, sp.inside ? Object.assign({}, labelLook, { __caption_of: p.name || caption }) : labelLook,
                              (p.name || caption) + ' Label', caption, lr, where + 'l' + i, pt));
       }
@@ -5228,6 +5900,10 @@ __FACE__
     return props.parts.map(function (q) {
       var look = { kind: 'popup', name: q.name, group: q.group, size: q.size };
       if (q.background) look.background = q.background;
+      // Shown over main for a moment, as a modal is (the translator reads it
+      // alone): the template's own strip stands over the corner of main's
+      // popups - its Volume Up Label over Select Source's Help on Mach's 525.
+      if (q.alone) look.over = true;
       // The grid main's popup region shows first: the group a hub's settings
       // popups go in, wherever their boards stand on the canvas.
       if (q.main) look.main = true;
@@ -5513,7 +6189,7 @@ __FACE__
           var hlook = Object.assign({}, RD.heading || {}, HD.heading || {});
           var hp = hd ? hd.props || {} : Object.assign({}, hdef[1], HD.heading || {});
           var hr = R.heading ? R.heading.rect : [band[0], band[1], band[2], 40];
-          var hat = settle(hr, needOf('label', hp, L), band, T.size, [false, false, false, false]);
+          var hat = settle(hr, needOf('label', hp, L, hr), band, T.size, [false, false, false, false]);
           els.push(hd ? hubHost(hd, hat, 'menu-heading', unset(hd.props, hlook)) : drawnAt(Label, hp, hat, 'menu-heading'));
         }
         vol = rr.over.volume ? Object.assign({}, rr.over.volume.props || {}) : chrome('volume', {}, L)[1];
@@ -5549,7 +6225,7 @@ __FACE__
                                 icon ? { icon: icon, text: '' } : { text: said });
         } else if (role === 'mute' && by.rightrail) {
           it = rr.over.mute || null;
-          props = it ? null : hubLook(chrome('mute', x, L)[1], HD.mute);
+          props = it ? null : hubLook(chrome('mute', x, L)[1], HD.mute, L);
         } else if (role === 'display' && display) {
           props = openerProps(x, Object.assign({}, look, HD.display || {}), names.display, 'Opens ' + names.display + '.');
         } else if (role === 'settings' && options.length) {
@@ -5558,10 +6234,10 @@ __FACE__
         } else if (role === 'help' && by.footer && HUB_COLUMN) {
           // Afterburn's menu bar stands Help, between Mute and Settings.
           it = ft.over.help || null;
-          props = it ? null : hubLook(chrome('help', x, L, by.footer.help)[1], HD.help);
+          props = it ? null : hubLook(chrome('help', x, L, by.footer.help)[1], HD.help, L);
         } else if (role === 'power' && by.footer) {
           it = ft.over.power || null;
-          props = it ? null : hubLook(chrome('power', x, L, by.footer.power)[1], HD.power);
+          props = it ? null : hubLook(chrome('power', x, L, by.footer.power)[1], HD.power, L);
         } else {
           return;
         }
@@ -5584,8 +6260,11 @@ __FACE__
       // its level where and as the template draws it (`level`, measured):
       // Mach's 16 px white bar on its shade track, Shockwave's and
       // Turbulence's from the kit's art, which the panel's level - a clone
-      // of the seed's own - keeps. The glyphs over and under it are in icon
-      // faces the system does not carry, and are not drawn.
+      // of the seed's own - keeps. The glyphs over and under it - Volume Up
+      // Label and Volume Down Label, in the frame's `labels` rects - are in
+      // icon faces (Mach's Extron-Lift, Shockwave's and Turbulence's Extron
+      // GUI Configurator), drawn where the system carries the face and the
+      // hub's look names the glyph (`level_up`, `level_down`), else not.
       if (vol && C.strip) {
         var S = C.strip, SL = C.level || null, tw = Number(vol.track) || P.defaults.level.track;
         var inset = Math.round(S[3] * 0.1);
@@ -5603,9 +6282,19 @@ __FACE__
           if (SL.bar) lv.bar = (HD.level || {}).bar || tokenClose(L.colors, SL.bar) || null;
           if (SL.art) lv.art = SL.art;
         }
+        var lels = [drawnAt(Level, lv, lr, 'level')];
+        ((SL && SL.labels) || []).forEach(function (r, i) {
+          var gk = HD[i ? 'level_down' : 'level_up'], g = r && gk ? glyphOf(gk, L) : null;
+          if (!g) return;
+          // Grown about its middle to a line at its size, as the 320's are.
+          var gline = lineHeight(ptOn(g.pt, Object.assign({}, L, { k: 1 }))) + 2;
+          lels.push(chromeLabel(L, Object.assign({ align: 'center' }, gk), 'Volume ' + (i ? 'Down' : 'Up') + ' Label', '',
+                                settle(r, [0, gline], [0, 0, S[2], S[3]], [S[2], S[3]], [false, false, false, false]),
+                                'lglyph' + i));
+        });
         parts.push({ name: names.level, group: names.level, size: [S[2], S[3]], at: [S[0], S[1]], alone: true,
                      background: SL && SL.fill ? tokenClose(L.colors, SL.fill) : null,
-                     els: [drawnAt(Level, lv, lr, 'level')] });
+                     els: lels });
         els.push(h('div', { key: 'level-ref', style: cell(S),
                             'data-gdl': gdl({ kind: 'popup_ref', name: 'Volume', group: names.level, derived: true }) }));
       }
@@ -5823,6 +6512,8 @@ __FACE__
   // the layout adds is derived, and keeps the template's seed ID where the
   // frame has one (More 8010, Back 8011, the title strips', the question's).
   var PD = RD.page || {};
+  // A 320's frame, or a 300's (`menu`, planMenu below); none for a turned
+  // panel.
   function pagesFor(T) {
     var F = FRAMES[T.series];
     return F && F.pages && !T.turned ? F : null;
@@ -5893,13 +6584,26 @@ __FACE__
     var p = Object.assign({}, PD.strip || {}, id != null ? { id: id } : {});
     var pt = (F.center.pt || {}).title, r = taller(t ? t.rect : rec.top.rect), tries = [].concat(title);
     var ml = F.foot && more ? moreItem(F) : null, mk = more ? roleIn(F, 'more') : null;
-    if (F.foot && t) {
+    if (F.menu) {
+      // A 300's title along its bar (Afterburn's, beside Back) ends a gap
+      // short of More, which stands at the bar's end where a page goes on,
+      // and starts past Back - each where it is drawn: a key in words where
+      // the kit lacks its glyph (barWord) grows to them where they need it -
+      // at the 13 pt Afterburn's 300 sets its keys' words in, its More and
+      // Back hold their 66 px, and its Settings grows to 87.
+      var mr = mk ? settle(mk.rect, needOf('button', Object.assign({}, PD.more || {}), L, mk.rect), [0, 0].concat(L.panel.size),
+                           L.panel.size, [false, false, false, false]) : null;
+      if (t && mr && overlaps(r, mr)) r = [r[0], r[1], Math.max(0, mr[0] - gap - r[0]), r[3]];
+      if (t && back && overlaps(r, back)) r = [back[0] + back[2], r[1], Math.max(0, r[0] + r[2] - back[0] - back[2]), r[3]];
+      ml = null;
+    } else if (F.foot && t) {
       var end = ml ? ml.rect[0] : mk ? mk.rect[0] : L.panel.size[0] - gap;
       r = [r[0], r[1], Math.max(r[2], end - r[0]), r[3]];
       if (ml && mk) {
         var fm = font(Object.assign({}, p, pt != null ? { size: pt } : {}), P.defaults.label.type,
                       Object.assign({}, L, { k: pt != null ? 1 : L.k }));
-        if (textWidth(tries[title && title.said ? 0 : tries.length - 1], fm.css) * 1.06 + 8 > r[2]) {
+        if (textWidth(tries[title && title.said ? 0 : tries.length - 1], fm.css) * 1.06 + 8 > r[2]
+            || gdiWidth(tries[title && title.said ? 0 : tries.length - 1], fm, L, 1) > r[2]) {
           r = [r[0], r[1], Math.max(r[2], mk.rect[0] - r[0]), r[3]];
           ml = null;
         }
@@ -5932,6 +6636,37 @@ __FACE__
                      + Math.floor(lean[2] - 2 * gap) + ' px beside Back: shorten it');
         }
       }
+    } else if (F.menu && t) {
+      // A 300's bar: the first of the words that fits its box at the
+      // template's size - Afterburn's Landscape sets its titles in its
+      // column's foot, 79 px across, as its template shortens Computer to
+      // Comp. - a window's own name standing in for its title, and saying
+      // so, as beside the 320's Back; words that fit none are named.
+      var fmn = font(Object.assign({}, p, pt != null ? { size: pt } : {}), P.defaults.label.type,
+                     Object.assign({}, L, { k: pt != null ? 1 : L.k }));
+      // And as GUI Designer lays them out (gdiWidth), the box widened about
+      // its middle in its bar where they need it: 'Laptop' needs 80 px of
+      // the 79 at the 300's 16 pt, in an 88 px column.
+      var bar = rec.top.rect, bw = bar ? bar[2] : r[2];
+      var pick = tries.filter(function (s) {
+        return textWidth(s, fmn.css) * 1.06 <= r[2] && gdiWidth(s, fmn, L, 1) <= bw;
+      })[0];
+      if (pick != null && gdiWidth(pick, fmn, L, 1) > r[2] && bar) {
+        var tw = gdiWidth(pick, fmn, L, 1);
+        at = [Math.min(Math.max(Math.round(r[0] + (r[2] - tw) / 2), bar[0]), bar[0] + bar[2] - tw), r[1], tw, r[3]];
+      }
+      if (pick == null) {
+        words_ = tries[tries.length - 1];
+        if (probs) {
+          probs.push(name + "'s title '" + tries[0] + "' runs past its box on the " + L.model + "'s bar - it holds "
+                     + Math.floor(r[2]) + ' px there: shorten it');
+        }
+      } else {
+        words_ = pick;
+        var mnote = title && title.said && pick !== tries[0] ? name + "'s title '" + tries[0] + "' does not fit "
+          + 'the ' + L.model + "'s bar: it says '" + pick + "', the window's name, there" : null;
+        if (mnote && title.said.indexOf(mnote) < 0) title.said.push(mnote);
+      }
     } else if (F.foot && tries.length > 1) {
       // Afterburn's strip at the foot: the first of the words that fits its
       // box (past Back on a later page), else the last.
@@ -5951,7 +6686,7 @@ __FACE__
   }
   function navButton(L, look, name, r, id, extra, key) {
     var p = Object.assign({ name: name, derived: true }, look || {}, id != null ? { id: id } : {}, extra || {});
-    var at = settle(r, needOf('button', p, L), [0, 0, L.panel.size[0], L.panel.size[1]], L.panel.size,
+    var at = settle(r, needOf('button', p, L, r), [0, 0, L.panel.size[0], L.panel.size[1]], L.panel.size,
                     [false, false, false, false]);
     return drawnAt(Button, p, at, key);
   }
@@ -6185,6 +6920,15 @@ __FACE__
       return d && d[1] ? d[0] / d[1] : 0;
     }
     var pitchX = G.xs.length > 1 ? G.xs[1] - G.xs[0] : G.W;
+    // A key at its template's size for its kind (keyPt: a digit's 18 pt on
+    // Mach's) whose words need more than its column's step goes down until
+    // they fit, to the least a key takes there and no further (pushKey) -
+    // then on two lines or onto wider art, as below.
+    blocks.forEach(function (b) {
+      var moved = false;
+      b.members.forEach(function (m) { moved = pushKey(m, pitchX - gap, L) || moved; });
+      if (moved) b.w = Math.max.apply(null, b.members.map(function (m) { return m.need[0]; }));
+    });
     blocks.forEach(function (b) {
       var auto = b.members.filter(function (m) { return m.auto; });
       var a0 = auto.length ? aspect(auto[0].props.variant || P.defaults.button.variant) : 0;
@@ -6229,7 +6973,7 @@ __FACE__
           }
           var two = c.slice(0, at) + '\n' + c.slice(at + 1);
           var q = Object.assign({}, m.props, { children: two, text: two });
-          var n2 = needOf(m.kind, q, L), f = font(q, P.defaults.button.type, L);
+          var n2 = needOf(m.kind, q, L), f = font(q, P.defaults.button.type, L, true);
           if (n2[0] <= artW && 2 * lineHeight(f.size) + 4 <= G.h) { m.caption = two; m.need = n2; }
         });
         b.w = Math.max.apply(null, b.members.map(function (m) { return m.need[0]; }));
@@ -6243,6 +6987,17 @@ __FACE__
         m.need = needOf(m.kind, m.props, L);
       });
       b.w = Math.max.apply(null, b.members.map(function (m) { return m.need[0]; }).concat([across(pick)]));
+    });
+    // A Label takes the room its words need in the cell it gets - its
+    // column's width, the row's depth - where GDI+ would cut them there
+    // (needs): round five's Afterburn 320 set 'Not Recording' at 14 pt in a
+    // 108x45 cell on two lines, its descenders past the cell's foot.
+    blocks.forEach(function (b) {
+      b.members.forEach(function (m) {
+        if (m.kind !== 'label') return;
+        m.need = needOf('label', m.props, L, [0, 0, Math.max(G.w, Math.ceil(b.w)), G.h]);
+        b.w = Math.max(b.w, m.need[0]);
+      });
     });
     var queue = [];
     blocks.forEach(function (b, bi) { b.members.forEach(function (m, mi) { queue.push({ b: bi, m: mi }); }); });
@@ -6406,7 +7161,7 @@ __FACE__
   // return key - its Back key has the word in its art, 5 px tall at 40).
   function backAt(L, nav) {
     var look = nav.strip ? PD.strip_back || PD.back : PD.back;
-    return { look: look, rect: settle(nav.back.rect, needOf('button', Object.assign({}, look || {}), L),
+    return { look: look, rect: settle(nav.back.rect, needOf('button', Object.assign({}, look || {}), L, nav.back.rect),
                                       [0, 0, L.panel.size[0], L.panel.size[1]], L.panel.size,
                                       [false, false, false, false]) };
   }
@@ -6417,8 +7172,15 @@ __FACE__
   // Back, as the template's own pages go on, where they do not all fit. A
   // Label too long for a page of its own is named: a Label is one control,
   // and does not break across pages.
+  // Where what a page holds starts: under its strip, and under a title in
+  // its centre (Mach's 300 titles its pages at their top, with no strip).
+  function bodyTop(F, gap) {
+    var ct = F.menu ? ((F.center || {}).items || []).filter(function (x) { return x.role === 'title'; })[0] : null;
+    return Math.max(F.center.rect[1], ct ? ct.rect[1] + ct.rect[3] : 0) + gap;
+  }
   function prosePages(L, F, prose, name, title, back0, probs) {
-    var gap = L.panel.gap, W = L.panel.size[0], w = W - 2 * gap, top = F.center.rect[1] + gap, step = Math.round(gap / 2);
+    var gap = L.panel.gap, x0 = F.center.rect[0] + gap, w = F.center.rect[2] - 2 * gap, top = bodyTop(F, gap);
+    var step = Math.round(gap / 2);
     var items = prose.slice().sort(function (a, b) { return a.rect[1] - b.rect[1] || a.rect[0] - b.rect[0]; })
       .map(function (it) {
         var p = propsOf(it), f = font(p, P.defaults.label.type, L);
@@ -6468,7 +7230,7 @@ __FACE__
                          nav.strip ? bk.rect : null, probs, !!nav.more);
       var y = top;
       pg.items.forEach(function (x, j) {
-        els.push(hostAt(x.it, [gap, y, w, x.h], 'prose' + p + '-' + j));
+        els.push(hostAt(x.it, [x0, y, w, x.h], 'prose' + p + '-' + j));
         y += x.h + step;
       });
       if (nav.more) {
@@ -6490,13 +7252,18 @@ __FACE__
   // try in turn, stripEls), `back0` the first page's Back (null for none),
   // `ids` the strip's seed IDs; what does not fit is named in `probs`. Its
   // later pages go over it as pages of their own (PageParts).
-  function drawPages(L, F, blocks, laid, name, title, back0, firstRec, probs) {
-    var G = laid.G, shown = { set: null }, gap = L.panel.gap;
+  // `opts`, a run of pages later in its page's chain (a 300's Main's, after
+  // its own pages of sources): `from`, the first one's place in the chain,
+  // `shown`, the chain's, and `backTo`, where the first one's Back goes;
+  // drawn as parts of the chain, returned as `parts`.
+  function drawPages(L, F, blocks, laid, name, title, back0, firstRec, probs, opts) {
+    var G = laid.G, gap = L.panel.gap, from = (opts && opts.from) || 0;
+    var shown = (opts && opts.shown) || { set: null };
     function partName(p) { return p ? name + ' ' + (p + 1) : name; }
     function shower(p) { return function () { if (shown.set) shown.set(p); }; }
     var homeT = titleRole(firstRec), secondT = roleIn(F.second, 'title');
-    var pages = laid.pages.map(function (pg, p) {
-      var els = [], nav = pg.nav;
+    var pages = laid.pages.map(function (pg, p0) {
+      var els = [], nav = pg.nav, p = p0 + from;
       var rec = nav.back && nav.strip ? F.second : p === 0 ? firstRec : F;
       var tid = p === 0 ? (homeT || {}).id : (secondT || {}).id;
       var bk = nav.back && (p || back0) ? backAt(L, nav) : null;
@@ -6506,7 +7273,12 @@ __FACE__
         var b = blocks[s.b != null ? s.b : s.cells[0].c.b];
         if (s.head && b.head && G.head) {
           var cx = s.cells.length ? s.cells[0].r[0] + s.cells[0].r[2] / 2 : G.xs[s.i] + (s.dx || 0);
-          var hw = Math.max(G.head[2], s.w), hr = [Math.round(cx - hw / 2), G.head[1], hw, G.head[3]];
+          // As wide as its words need as GUI Designer lays them out where
+          // GDI+ would cut them in the heading's place (needs): Mach's 320
+          // set 'Settings' at 14 pt in its 74 px column as 'Setting'.
+          var hw0 = Math.max(G.head[2], s.w);
+          var hw = Math.max(hw0, Math.ceil(needOf('label', b.head.props, L, [0, 0, hw0, G.head[3]])[0]));
+          var hr = [Math.min(Math.max(Math.round(cx - hw / 2), 0), L.panel.size[0] - hw), G.head[1], hw, G.head[3]];
           var hp = b.head.props;
           els.push(b.head.it ? hubHost(b.head.it, hr, 'h' + p + '-' + si, b.head.extra)
                              : drawnAt(Label, hp, hr, 'h' + p + '-' + si));
@@ -6535,12 +7307,14 @@ __FACE__
                            'more' + p));
       }
       if (bk) {
-        var bx = p ? { nav: partName(p - 1), does: 'Goes back to ' + partName(p - 1) + '.', onPress: shower(p - 1) }
+        var to = p === from && opts && opts.backTo != null ? opts.backTo : p - 1;
+        var bx = p ? { nav: partName(to), does: 'Goes back to ' + partName(to) + '.', onPress: shower(to) }
                    : back0;
         els.push(navButton(L, bk.look, partName(p) + ' Back', bk.rect, nav.back.id, bx, 'back' + p));
       }
       return { name: partName(p), els: els };
     });
+    if (from) return { parts: pages };
     var els = pages[0].els;
     if (pages.length > 1) els = els.concat([h(PageParts, { key: 'pages', parts: pages.slice(1), shown: shown })]);
     return els;
@@ -6569,6 +7343,7 @@ __FACE__
   // and the Volume modal - `els` - with what it named (`probs`, `warns`) and
   // what it has no place for (`left`).
   function planPages(regs, L, pname) {
+    if (L.region.F.menu) return withLooks(menuLooks(false), function () { return planMenu(regs, L, pname); });
     var F = L.region.F, probs = [], warns = [], left = [], by = {};
     regs.forEach(function (it) { if (!by[it.kind]) by[it.kind] = propsOf(it); });
     // What the drawn panel's own regions draw by default, by role.
@@ -6721,14 +7496,16 @@ __FACE__
       vels.push(drawnAt(Level, lv, SL.rect, 'vlevel'));
       // Its glyphs over and under the level - Volume Up Label and Volume
       // Down Label, labels with the template's seed IDs, white at its size.
-      // The template sets them in an icon face the system does not carry
-      // (Extron-Lift, Extron GUI Configurator), so they say + and - (an en
-      // dash: Windows-1252 has it, so every theme's face draws it).
+      // The template sets them in an icon face (Extron-Lift's speaker glyphs,
+      // Extron GUI Configurator's Q and P), and so does the system where it
+      // carries the face (`volume_up`, `volume_down`: glyphOf), at the
+      // frame's size; where it does not, they say + and - (an en dash:
+      // Windows-1252 has it, so every theme's face draws it).
       // Grown about its middle to a line at that size, on the screen: Mach's
       // 29 px Down glyph at 18 pt ran 3 px off its foot.
       (V.labels || []).forEach(function (x, i) {
         if (!x || !x.rect) return;
-        var up = i === 0, lk = Object.assign({}, PD.glyph || PD.message || {});
+        var up = i === 0, lk = Object.assign({}, PD.glyph || PD.message || {}, PD[up ? 'volume_up' : 'volume_down'] || {});
         var line = x.pt != null ? lineHeight(ptOn(x.pt, Object.assign({}, L, { k: 1 }))) + 2 : 0;
         var gr = settle(x.rect, [0, line], [0, 0, L.panel.size[0], L.panel.size[1]], L.panel.size,
                         [false, false, false, false]);
@@ -6776,7 +7553,7 @@ __FACE__
     var at = -1, mid = word.length / 2;
     for (var i = 0; i < word.length; i++) if (word[i] === ' ' && (at < 0 || Math.abs(i - mid) < Math.abs(at - mid))) at = i;
     var two = word.slice(0, at) + '\n' + word.slice(at + 1);
-    var f = font(p, P.defaults.button.type, L);
+    var f = font(p, P.defaults.button.type, L, true);
     var fits = needOf('button', Object.assign({}, p, { text: two }), L)[0] <= r[2] && 2 * lineHeight(f.size) + 4 <= r[3];
     return fits ? two : word;
   }
@@ -6792,9 +7569,13 @@ __FACE__
         return { problem: name + ' is a ' + role + ' window, which the ' + T.model + "'s template does not draw" };
       }
       var WR = W.rect || [0, 0, T.size[0], T.size[1]];
-      return { page: true, art: !!W.art, size: T.size.slice(), dsize: null, lay: function (kids, L) {
+      // A 300 asks its question and says its waits in modals over the page,
+      // on its theme's art where its template's are (Afterburn's): a page
+      // the 320's.
+      return { page: !F.menu, art: !!W.art, size: T.size.slice(), dsize: null, lay: function (kids, L) {
         var B = WD.buttons || {}, els = [], probs = [], RW = RD.window || {};
-        (W.surfaces || []).forEach(function (s, i) {
+        if (F.menu) els = els.concat(windowArt(L, W.surfaces, name, props.theme, T));
+        (W.surfaces || []).filter(function (s) { return !F.menu || s.kind === 'shape'; }).forEach(function (s, i) {
           els.push(drawnAt(Panel, { name: name + ' Window' + (i ? ' ' + (i + 1) : ''),
                                     fill: s.fill ? tokenNear(L.colors, s.fill) || 'none' : 'none',
                                     border: borderOf(s.border), derived: true }, s.rect, 'win' + i));
@@ -6824,12 +7605,32 @@ __FACE__
             // carries it) - on two lines where one does not fit the template's
             // button, as Turbulence's own Power Down: at the 14 pt floor
             // Mach's grew from the template's 103 to 135, unlike its Cancel.
-            if (lk.text == null && !(img && img.caption === 'none')) extra.text = twoLines(L, lk, word, b.rect);
+            // At the size the template sets its own answers' words in (its
+            // question's `pt.answer`: 11 pt on Mach's, 12 on Shockwave's, 10
+            // on Afterburn's, 16 on Turbulence's) - down by half points where
+            // they fit its button on neither one line nor two, to the least a
+            // key takes there (keyLeast), as a page's keys go (pushKey).
+            if (lk.text == null && !(img && img.caption === 'none')) {
+              var apt = (W.pt || {}).answer;
+              if (apt != null) {
+                var least = keyLeast(L.panel), at = Math.max(least, apt), q = lk, t = word;
+                for (;;) {
+                  q = Object.assign({}, lk, { __pt: at });
+                  t = twoLines(L, q, word, b.rect);
+                  if (at <= least || needOf('button', Object.assign({}, q, { text: t }), L)[0] <= b.rect[2]) break;
+                  at = Math.max(least, at - 0.5);
+                }
+                extra.__pt = at;
+                extra.text = t;
+              } else {
+                extra.text = twoLines(L, lk, word, b.rect);
+              }
+            }
             // The seed IDs are the power-down question's (9028, 9029): a
-            // call's or a recording's answers standing in its places keep
-            // IDs of their own.
-            els.push(navButton(L, lk, name + ' ' + word, b.rect, OWN_QUESTION[topic] && !own ? null : b.id, extra,
-                               'answer' + i));
+            // call's answers standing in its places keep the incoming call's
+            // (callAnswerId), a recording's IDs of their own.
+            var aid = topic === 'call' ? callAnswerId(a.yes) : OWN_QUESTION[topic] && !own ? null : b.id;
+            els.push(navButton(L, lk, name + ' ' + word, b.rect, aid, extra, 'answer' + i));
           });
         }
         if (kids.length) probs.push(name + ' is a ' + role + ' window: the template draws its words and its buttons');
@@ -6875,8 +7676,9 @@ __FACE__
                        bk && nav.strip ? bk.rect : null, probs, !!nav.more);
         var said_ = role === 'source' ? WD.page_empty || WD.hub_empty || WD.empty : role === 'help' ? WD.help : null;
         var lines_ = said_ != null ? said(said_, title).split('\n') : [], EL = C.empty_lines || [];
-        // Help's message under the strip, clear of Back.
-        var gap = L.panel.gap, top = C.rect[1] + gap;
+        // Help's message under the strip, clear of Back - and of the title
+        // Mach's 300 stands at its page's top.
+        var gap = L.panel.gap, top = bodyTop(F, gap);
         var foot = nav.back && !nav.strip ? nav.back.rect[1] - gap : (F.foot ? F.top.rect[1] : L.panel.size[1]) - gap;
         if (role === 'source' && EL.length > 1 && lines_.length === EL.length) {
           // A label a line, where the template sets its empty state so (the
@@ -6903,7 +7705,8 @@ __FACE__
           });
         } else if (said_ != null) {
           var e = C.empty;
-          if (role === 'help') e = [gap, top, L.panel.size[0] - 2 * gap, foot - top];
+          // Across the centre: the 300 Landscape's column holds Back.
+          if (role === 'help') e = [C.rect[0] + gap, top, C.rect[2] - 2 * gap, foot - top];
           else if (F.foot && e) {
             // Afterburn's: set at 12 pt in the template, at the floor its
             // lines are wider and deeper than its box. Wider first - 'Laptop
@@ -6944,6 +7747,373 @@ __FACE__
     } };
   }
 
+  // -- The 300: a page per source, under its menu bar ------------------------
+  // (docs/superpowers/specs/2026-10-22-region-frame-design.md, item 14.) The
+  // 300 gives each source a page of its own, as the 320 does, but under a
+  // menu bar along its foot - down a side on Afterburn's Landscape - and its
+  // Main is a Select a Source with the volume on it: its title, two source
+  // keys, its level, Mute, Down and Up, and in the bar Settings, Help and
+  // Power; every other page holds Back there, and Mach's Settings, settings
+  // windows and Help stand on a #303030 sheet over the photo. So the region
+  // page derives to it from the 300's own frame (P.frames, `menu`): Main the
+  // template's Select a Source, the Header's tabs its source keys - the same
+  // controls - at the template's places, the rest of them on over pages of
+  // Main's own by a More in the last place (ours: no 300 template pages, so
+  // that pager, as the More in the bar a page that goes on stands, is the
+  // toolkit's); the RightRail's volume where the template stands it, the
+  // slider its level; the Footer's Help and Power in the bar; and Settings
+  // going on to pages of Main's own with what the 300 keeps off Main - the
+  // LeftRail's Sections, each a column under its heading, Room Mode, the
+  // RightRail's audio control and the Header's ends - as the 320's More
+  // does. The clock - the 300 draws its own on Start alone - and the
+  // Center's popup region are named and left. A source popup, a settings
+  // window and Help are pages under the bar (pagePart, menuPart); the
+  // question and the waits are modals over the page, as the template asks
+  // them. What the layout adds keeps the template's seed ID where the frame
+  // has one (Settings 8040, Back 8041, Volume Down 8121 and Up 8120, the
+  // title 6072, Mach's level's glyphs 7023 and 7026); its More has none.
+  var MD = RD.menu || {};
+  // A key of the 300's in its look where that draws: the template's glyph in
+  // its icon face where this machine carries the face (glyphOf - Mach's bar
+  // and Back, Afterburn's Back and More), else the kit's drawing of it; else
+  // its word. The bar's keys are glyphs alone - Mach's Extron-Lift keys,
+  // Afterburn's icon keys and its main bar's kit art - and where neither the
+  // face nor the kit is here (a machine with no seed to read the face from,
+  // and neither the install, GDL_EXTRON_RESOURCES nor an extracted vendor/),
+  // a glyph the kit lacks drew its missing-icon mark, '[440x440 back]', past
+  // the key: every page's Back and More overflowed the bar. So the key says
+  // its word, as Volume Down and Up say - and + there: in its look where that
+  // draws words, else a ghost's - Afterburn's icon keys draw none (`caption:
+  // none`), and a ghost is its word key on a dark ground. A word wider than
+  // the key grows it as any caption does (navButton's settle): Afterburn's
+  // Settings, its key 66 px across. `icon` is unset, so the word stands over
+  // a default's own glyph too (the region's Power). With the face or the kit
+  // here nothing changes.
+  function barWord(look, word, L) {
+    if (!look || glyphOf(look, L) || !look.icon || iconHere(look, look.icon)) return look;
+    var o = Object.assign({}, look, { text: word, icon: undefined });
+    var V = P.buttons[o.variant] || P.buttons[P.defaults.button.variant];
+    if (V.kit) o.variant = P.buttons.ghost && !P.buttons.ghost.kit ? 'ghost' : P.defaults.button.variant;
+    return o;
+  }
+  // The 300's looks (`regions.menu`) as the 320's code reads its own: on a
+  // page on the sheet its Settings and windows stand on, the sheet's; More
+  // and Back in words where neither their face nor the kit is here (barWord).
+  function menuLooks(sheet) {
+    var out = Object.assign({}, MD);
+    if (sheet && MD.sheet) {
+      Object.keys(MD.sheet).forEach(function (k) { out[k] = Object.assign({}, out[k] || {}, MD.sheet[k]); });
+    }
+    if (out.more) out.more = barWord(out.more, 'More');
+    if (out.back) out.back = barWord(out.back, 'Back');
+    return out;
+  }
+  // `fn` drawn in `looks` where the 320's code reads its page looks (PD).
+  function withLooks(looks, fn) {
+    var was = PD;
+    PD = looks;
+    try { return fn(); } finally { PD = was; }
+  }
+  // A source popup, a settings window, Help, the question or a wait on a
+  // page per source's panel (pagePart): on the 300 in its looks, a source on
+  // the photo (`plain`, its bar alone), a window on the sheet.
+  function menuPart(props, role, name, title, F, D, T) {
+    if (!F.menu) return pagePart(props, role, name, title, F, D, T);
+    var src = role === 'source', looks = menuLooks(!src);
+    var part = withLooks(looks, function () {
+      return pagePart(props, role, name, title, src ? Object.assign({}, F, { second: F.plain }) : F, D, T);
+    });
+    if (part.lay) {
+      var lay = part.lay;
+      part.lay = function (kids, L) { return withLooks(looks, function () { return lay(kids, L); }); };
+    }
+    return part;
+  }
+  // Why a turned panel draws no region page, source popup or window: no
+  // template of the theme is drawn that way up (Extron's one turned template
+  // is Afterburn's 300 Landscape, a series of its own).
+  function notTurned() {
+    return ' does not draw: no ' + P.template + ' template is drawn that way up';
+  }
+  // The region page on the 300 (see above): Main, the pages it goes on over,
+  // with what it named (`probs`, `warns`) and what it has no place for (`left`).
+  function planMenu(regs, L, pname) {
+    var F = L.region.F, T = L.panel, gap = T.gap, W = T.size[0], H = T.size[1];
+    var probs = [], warns = [], left = [], by = {}, els = [];
+    regs.forEach(function (it) { if (!by[it.kind]) by[it.kind] = propsOf(it); });
+    // What the drawn panel's own regions draw by default, by role, and its
+    // seed IDs, which a control keeps on every panel.
+    var FD = frameFor(L.design), RR = byRole(FD ? FD.right.items : []), RB = byRole(FD ? FD.bottom.items : []);
+    var HC = F.home.center.items || [], HI = byRole(HC), bar = F.home.top;
+    var tabs = [], ends = [];
+    if (by.header) {
+      itemsOf(by.header.children).forEach(function (it) { (slotOf(it) === 'source' ? tabs : ends).push(it); });
+    }
+    var rr = by.rightrail ? slotted(by.rightrail.children, ['heading', 'volume', 'mute', 'audio'], 'RightRail', 'right', L)
+      : { over: {}, probs: [] };
+    var ft = by.footer ? slotted(by.footer.children, ['mode', 'clock', 'help', 'power'], 'Footer', 'bottom', L)
+      : { over: {}, probs: [] };
+    probs = probs.concat(rr.probs, ft.probs);
+    var shown = { set: null };
+    function shower(p) { return function () { if (shown.set) shown.set(p); }; }
+    function partName(p) { return p ? pname + ' ' + (p + 1) : pname; }
+    function at(r, p, kind) {
+      return settle(r, needOf(kind || 'button', p, L, r), [0, 0, W, H], T.size, [false, false, false, false]);
+    }
+    // A designer's control in a look of the 300's, or the region's own -
+    // which, where it draws neither the look's glyph in its face nor the
+    // kit's art of it or its own, says `word` (barWord).
+    function put(it, props, look, r, key, word) {
+      if (it) return hubHost(it, at(r, Object.assign({}, it.props || {}, unset(it.props, look)), it.kind), key,
+                             unset(it.props, look));
+      var p = hubLook(props, look, L);
+      if (word && p.icon && !glyphOf(p, L) && !iconHere(p, p.icon)) {
+        p = barWord(Object.assign({}, p, look, { icon: p.icon }), word, L);
+      }
+      return drawnAt(Button, p, at(r, p), key);
+    }
+    // The clock: the 300 draws its own on Start alone. The Center's popup
+    // region: each source is a page of its own.
+    if (by.footer && (ft.over.clock || !FD || RB.clock)) {
+      var cns = ft.over.clock ? [nameOf(ft.over.clock)] : ['Date Time'];
+      if (!ft.over.clock && RD.clocks && FD) {
+        var own = (FD.bottom.items || []).filter(function (x) { return x.role === 'clock'; }).map(function (x) { return x.name; });
+        if (own.length) cns = own;
+      }
+      cns.forEach(function (cn) {
+        left.push(cn);
+        warns.push(pname + "'s " + cn + ' is left off the ' + L.model + ' - its template draws a clock only on its Start page');
+      });
+    }
+    if (by.center) {
+      itemsOf(by.center.children).forEach(function (it) {
+        probs.push(nameOf(it) + ' in the Center: it is the popup region its sources fill - put a source\'s controls in '
+                   + 'its popup');
+      });
+      var cname = by.center.name || 'Controls';
+      left.push(cname);
+      warns.push(pname + "'s " + cname + ' is left off the ' + L.model + ' - its template shows each source as a page '
+                 + 'of its own');
+    }
+    // Main's bar's ground and its title.
+    (bar.surfaces || []).forEach(function (s, i) {
+      els.push(drawnAt(Panel, { name: pname + ' Menu Bar' + (i ? ' ' + (i + 1) : ''),
+                                fill: tokenClose(L.colors, s.fill) || 'none', border: borderOf(s.border),
+                                stroke: 'none', derived: true }, s.rect, 'bar' + i));
+    });
+    var title = HI.title, words = (title || {}).text || 'Select a Source';
+    els.push(chromeLabel(L, Object.assign({}, MD.title || {}, title && title.id != null ? { id: title.id } : {}),
+                         pname + ' Title', words, title ? title.rect : [0, 0, W, 50], 'title', title ? title.pt : null));
+    // The source keys: at the template's places, on at its step while they
+    // keep clear of the volume, the bar and the screen's edges.
+    var places = HC.filter(function (x) { return x.role === 'source'; }).map(function (x) { return x.rect.slice(); });
+    var below = HC.filter(function (x) { return x.role !== 'title' && x.role !== 'source'; })
+      .map(function (x) { return x.rect[1]; }).concat([bar.rect[1] > 0 ? bar.rect[1] : H]);
+    var stop = Math.min.apply(null, below) - gap;
+    if (places.length > 1) {
+      var dx = places[1][0] - places[0][0], dy = places[1][1] - places[0][1];
+      for (;;) {
+        var q = places[places.length - 1], r = [q[0] + dx, q[1] + dy, q[2], q[3]];
+        if (r[0] < 0 || r[0] + r[2] > W || r[1] + r[3] > stop || overlaps(r, bar.rect)) break;
+        places.push(r);
+      }
+    }
+    // In the template's source look (Mach's shade keys, Afterburn's tiles),
+    // its own icon kept where that look's kit draws it.
+    var srcLook = Object.assign({}, MD.source || {}), sset = setName('menu-sources');
+    function sourceKey(it, r, key) {
+      var p = it.props || {}, extra = {};
+      ['size', 'align', 'fill', 'border', 'stroke', '__indent', 'variant'].forEach(function (k) {
+        if (p[k] != null && srcLook[k] == null) extra[k] = undefined;
+      });
+      Object.assign(extra, srcLook);
+      if (p.icon && !iconHere(Object.assign({}, p, extra), p.icon)) { extra.icon = undefined; extra.__indent = undefined; }
+      extra.joined = sset;
+      return hubHost(it, at(r, Object.assign({}, p, extra), it.kind), key, extra);
+    }
+    // Main holds as many as its places, the last a More where there are
+    // more; the rest go on over pages of Main's own in the 300's columns.
+    var onMain = tabs.length > places.length ? Math.max(0, places.length - 1) : tabs.length;
+    tabs.slice(0, onMain).forEach(function (it, i) { els.push(sourceKey(it, places[i], 'src' + i)); });
+    var srcPages = 0, rest = tabs.slice(onMain);
+    if (rest.length && !places[onMain]) {
+      probs.push(pname + "'s Header holds " + tabs.length + ' sources, and the ' + L.model + "'s Select a Source "
+                 + 'has no place for them');
+      rest = [];
+    }
+    if (rest.length) {
+      // In the page's key look, its word on it: a source's look is its
+      // device's art (Afterburn's 756x756 tiles), which no More has.
+      var mlook = Object.assign({}, MD.button || {}, { text: 'More' });
+      els.push(drawnAt(Button, Object.assign({ name: pname + ' More', derived: true, nav: partName(1),
+                                               does: 'Shows more sources.', onPress: shower(1), joined: sset }, mlook),
+                       at(places[onMain], mlook), 'srcmore'));
+    }
+    var parts = [];
+    if (rest.length) {
+      // On the photo, as a source's page is (`plain`: its bar alone).
+      var Fs = Object.assign({}, F, { second: F.plain });
+      var sel = { head: null, title: null, members: rest.map(function (it) { return pageMember(it, null, it.kind, true); }) };
+      var laid = paginate(L, Fs, [sel], true, true, false);
+      probs = probs.concat(laid.probs);
+      // Titled as Main, or - where its bar cannot hold that, Afterburn's
+      // Landscape column - with the page's name.
+      var drawnSrc = drawPages(L, Fs, [sel], laid, pname, function () { return [words, pname]; }, null, F.home, probs,
+                               { from: 1, shown: shown });
+      srcPages = drawnSrc.parts.length;
+      parts = parts.concat(drawnSrc.parts);
+    }
+    // The volume, where the template stands it: its level - the slider -
+    // its Mute, Down and Up, Afterburn's heading and divider.
+    var V = F.home.volume || {};
+    if (by.rightrail) {
+      var vol = rr.over.volume ? Object.assign({}, rr.over.volume.props || {}) : chrome('volume', RR.volume || {}, L)[1];
+      var vname = vol.name || 'Volume';
+      if (V.level) {
+        var SL = V.level, lv = Object.assign({}, vol, { orientation: SL.rect[2] >= SL.rect[3] ? 'right' : 'up',
+                                                        fromSlider: true });
+        delete lv.joined;
+        lv.track = Math.min(SL.rect[2], SL.rect[3]);
+        lv.border = SL.border ? borderOf(SL.border) : 'none';
+        if (SL.track) lv.fill = asMeasured(L.colors, SL.track) || lv.fill;
+        if (SL.bar) lv.bar = (MD.level || {}).bar || asMeasured(L.colors, SL.bar) || null;
+        if (SL.art) lv.art = SL.art;
+        els.push(drawnAt(Level, lv, SL.rect, 'level'));
+      }
+      if (!HI.heading && (rr.over.heading || RR.heading)) {
+        // Mach's 300 heads its volume with nothing.
+        var hn = rr.over.heading ? nameOf(rr.over.heading) : chrome('heading', RR.heading, L)[1].name;
+        left.push(hn);
+        warns.push(pname + "'s " + hn + ' is left off the ' + L.model + ' - its template draws no heading over its volume');
+      }
+      if (HI.heading) {
+        var hd = rr.over.heading, hlook = Object.assign({}, MD.volume_heading || MD.heading || {});
+        if (hd) {
+          els.push(hubHost(hd, HI.heading.rect, 'vheading', unset(hd.props, hlook)));
+        } else {
+          var hp = Object.assign({}, chrome('heading', RR.heading || { text: HI.heading.text }, L)[1], hlook);
+          els.push(chromeLabel(L, hp, hp.name, hp.text, HI.heading.rect, 'vheading', HI.heading.pt, true));
+        }
+      }
+      if (HI.divider) {
+        els.push(drawnAt(Line, { name: pname + ' Divider', derived: true, color: P.defaults.line.color },
+                         lineBand(HI.divider.rect, P.defaults.line.thickness), 'divider'));
+      }
+      if (HI.mute) {
+        els.push(put(rr.over.mute || null, rr.over.mute ? null : chrome('mute', RR.mute || HI.mute, L)[1], MD.mute,
+                     HI.mute.rect, 'mute', 'Mute'));
+      }
+      // Down and Up: the template's glyphs in its icon face where this
+      // machine carries it (glyphOf: Mach's Extron-Lift speakers, 28 pt;
+      // Afterburn's minus and plus, 60 pt), else the kit's drawings, else -
+      // and +.
+      ['volume-down', 'volume-up'].forEach(function (role) {
+        var x = HI[role];
+        if (!x) return;
+        var up = role === 'volume-up', look = Object.assign({}, MD[up ? 'up' : 'down'] || {});
+        var g = glyphOf(look, L), icon = g ? null : iconHere(look, look.icon);
+        delete look.icon;
+        els.push(navButton(L, Object.assign(look, g ? { text: '' } : icon ? { icon: icon, text: '' } : { text: up ? '+' : '-' }),
+                           vname + (up ? ' Up' : ' Down'), x.rect, x.id,
+                           { does: (up ? 'Raises ' : 'Lowers ') + vname + ' one step.' }, role));
+      });
+      // The glyphs at the level's ends where the template sets them - Mach's
+      // Volume Up Label and Volume Down Label, labels with its seed IDs in
+      // the Volume Level popup its level shows in, Extron-Lift's speakers at
+      // the frame's size - where this machine carries the face (`volume_up`,
+      // `volume_down`: glyphOf), and as the hubs' strip, nothing where it
+      // does not: the level and its keys say it, and + and - at its ends
+      // would be ours. Grown about its middle to a line at that size, as the
+      // 320's are.
+      (V.labels || []).forEach(function (x, i) {
+        var up = i === 0, lk = Object.assign({ align: 'center' }, MD.message || {}, MD[up ? 'volume_up' : 'volume_down'] || {});
+        if (!x || !x.rect || !glyphOf(Object.assign({}, lk, { size: x.pt }), L)) return;
+        var line = x.pt != null ? lineHeight(ptOn(x.pt, Object.assign({}, L, { k: 1 }))) + 2 : 0;
+        var gr = settle(x.rect, [0, line], [0, 0, W, H], T.size, [false, false, false, false]);
+        els.push(chromeLabel(L, Object.assign(lk, { id: x.id }), vname + (up ? ' Up' : ' Down') + ' Label', '',
+                             gr, 'vglyph' + i, x.pt));
+      });
+    }
+    // What the 300 keeps off Main: the LeftRail's Sections, each a column
+    // under its heading, the RightRail's audio control, Room Mode and the
+    // Header's ends - on pages of Main's own its Settings opens, on the
+    // sheet its template's Settings stands on.
+    var later = withLooks(menuLooks(true), function () {
+      var blocks = [];
+      if (by.leftrail) {
+        var FDL = FD ? FD.left : null, secs = 0;
+        itemsOf(by.leftrail.children).forEach(function (sec) {
+          if (sec.kind !== 'section') {
+            probs.push(nameOf(sec) + ' in the LeftRail is not in a Section - put the rail\'s controls in titled Sections');
+            return;
+          }
+          var sp = propsOf(sec), G = FDL && FDL.groups ? FDL.groups[secs] : null;
+          secs += 1;
+          var head = sp.title && (!FDL || G && G.heading || FDL.seam != null && !G)
+            ? pageMember(null, Object.assign({ name: sp.title + ' Heading',
+                                               text: PD.heading_caps ? String(sp.title).toUpperCase() : sp.title },
+                                             RD.heading || {}, PD.heading || {}), 'label')
+            : null;
+          var mem = [], lv = [];
+          itemsOf(sp.children).forEach(function (it) {
+            (it.kind === 'group' ? groupMembers(it, sp.title || 'the LeftRail', probs) : [it]).forEach(function (x) {
+              if (asLevelHere(x, L)) lv.push({ head: null, title: null, level: true, members: [pageMember(x, null, 'slider')] });
+              else mem.push(pageMember(x, null, x.kind));
+            });
+          });
+          blocks.push({ head: head, title: sp.title || null, members: mem });
+          blocks = blocks.concat(lv);
+        });
+      }
+      var more = [];
+      if (rr.over.audio) more.push(pageMember(rr.over.audio, null, rr.over.audio.kind));
+      if (ft.over.mode) more.push(pageMember(ft.over.mode, null, ft.over.mode.kind));
+      ends.forEach(function (it) { more.push(pageMember(it, null, it.kind)); });
+      if (more.length) blocks.push({ head: null, title: null, members: more });
+      blocks = blocks.filter(function (b) { return b.members.length; });
+      if (!blocks.length) return { parts: [], first: null };
+      var laid = paginate(L, F, blocks, false, true, false);
+      probs = probs.concat(laid.probs);
+      var from = 1 + srcPages;
+      var drawn = drawPages(L, F, blocks, laid, pname, function (p, pg) {
+        var said_ = [];
+        pg.slots.forEach(function (s) {
+          var t = blocks[s.b != null ? s.b : s.cells[0].c.b].title;
+          if (t && said_.indexOf(t) < 0) said_.push(t);
+        });
+        return (said_.length > 1 ? [said_.join(' and ')] : []).concat(said_.slice(0, 1), [pname]);
+      }, null, F, probs, { from: from, shown: shown, backTo: 0 });
+      return { parts: drawn.parts, first: from };
+    });
+    parts = parts.concat(later.parts);
+    // The bar: Settings on to those pages, the Footer's Help and Power - one
+    // set, as the template stands them 8 px apart on Mach's.
+    var bset = setName('menu-bar');
+    (bar.items || []).forEach(function (x) {
+      if (x.role === 'settings') {
+        if (later.first == null) return;
+        var to = partName(later.first);
+        // In words where neither its glyph's face nor the kit's gear is here
+        // (barWord) - and where the bar is too narrow for 'Settings', a
+        // shorter word, as Afterburn's Landscape template's own titles
+        // shorten Computer to Comp. Its column is 88 px across: 'Settings'
+        // needs 102 there at the 300's 16 pt floor and 87 at the 13 pt its
+        // template sets its keys' words in (keyPt), which it is drawn at.
+        var sk = barWord(MD.settings, 'Settings', L);
+        if (sk !== MD.settings && needOf('button', sk, L)[0] > bar.rect[2]) sk = barWord(MD.settings, 'Setup', L);
+        els.push(navButton(L, sk, 'Settings', x.rect, x.id,
+                           { nav: to, does: 'Shows ' + to + '.', onPress: shower(later.first), joined: bset }, 'settings'));
+      } else if ((x.role === 'help' || x.role === 'power') && by.footer) {
+        var it = ft.over[x.role] || null, d = RB[x.role] || RR[x.role] || x;
+        els.push(put(it, it ? null : Object.assign(chrome(x.role, d, L, by.footer[x.role])[1], { joined: bset }),
+                     Object.assign({}, MD[x.role] || {}, { joined: bset }), x.rect, x.role,
+                     x.role === 'help' ? 'Help' : 'Power'));
+      }
+    });
+    if (parts.length) els.push(h(PageParts, { key: 'pages', parts: parts, shown: shown }));
+    return { els: els, probs: probs, warns: warns, left: left };
+  }
+
   // -- Group: a set of like controls, laid out and paged for each panel ------
   // A wrapping grid of equal cells, `cap` to a row, in the Group's own box.
   // On each panel every cell is as big as its largest member needs (touch
@@ -6972,16 +8142,39 @@ __FACE__
     return out;
   }
   // The cell a Group's members share on this panel: the designed cell at the
-  // frame's scale, grown to what its largest member needs.
+  // frame's scale, grown to what its largest member needs. A designer's
+  // sized member (ownPt) is measured at its kind's size for that (kindPt),
+  // then keeps its own where its words fit the cell so grown and goes down
+  // to fit it where they do not (ownFit): fitted to the cell as drawn,
+  // Shockwave's room's 'Meeting' came out at 13 pt in a 112 px key that
+  // holds it at 14. A set stays one size, as the designer drew it: its sized
+  // members of a kind come out at the least any of them took - Shockwave's
+  // room's Lighting presets all at 12.5, where 'Presentation' fits, not
+  // 14, 14, 12.5 and 14. `pts`: each member's size so taken, by its place,
+  // else null.
   function segments(props, L) {
     var items = itemsOf(props.children);
     var cellD = cellsOf(props, items), k = L.k == null ? 1 : L.k;
     var cw = cellD[0] * k, ch = cellD[1] * k;
-    items.forEach(function (it) {
-      var gr = grow([0, 0, cellD[0] * k, cellD[1] * k], needs(it, L), hasArt(it));
+    function grown(it, as) {
+      // Judged in the designed cell for what GDI+ cuts of its words (needs):
+      // judged in no box, Afterburn 525's 113 px source tile set 'Room PC'
+      // as 'Room P'.
+      var cell0 = [0, 0, cellD[0] * k, cellD[1] * k];
+      var gr = grow(cell0, needs(as, L, false, cell0, hasArt(it)), hasArt(it));
       cw = Math.max(cw, gr[2]); ch = Math.max(ch, gr[3]);
+    }
+    items.forEach(function (it) {
+      var at = sizedKey(it, L) ? kindPt(it.props, L) : null;
+      grown(it, at != null ? { kind: it.kind, props: Object.assign({}, it.props, { __pt: at }) } : it);
     });
-    return { n: items.length, cw: Math.ceil(cw), ch: Math.ceil(ch), cell: cellD };
+    items.forEach(function (it) { it.__pt = ownFit(it, [0, 0, cw, ch], L); });
+    oneSize(items, L, function (it) { return sizedKey(it, L) ? String(kindPt(it.props, L)) : null; });
+    var pts = items.map(function (it) {
+      grown(it, laidAs(it));
+      return it.__pt;
+    });
+    return { n: items.length, cw: Math.ceil(cw), ch: Math.ceil(ch), cell: cellD, pts: pts };
   }
   // A segmented control (a joined Group) is one row of touching segments -
   // but not across more than a tier C panel's screen: Shockwave's four
@@ -7006,10 +8199,11 @@ __FACE__
     // makes too (hostsOf). Anything else - a wrapper div - keeps what it holds
     // and is named: cloned with no children, it had them replaced with
     // nothing, and its buttons vanished unremarked.
+    // At the size its cell took it down to (segments' `pts`), where it did.
     function member(it, r, key) {
+      var extra = Object.assign(joined ? { joined: title } : {}, it.__pt != null ? { __pt: it.__pt } : {});
       return it.comp
-        ? React.cloneElement(it.host, { key: key, style: cell(r) },
-                             React.cloneElement(it.comp, joined ? { joined: title } : {}))
+        ? React.cloneElement(it.host, { key: key, style: cell(r) }, React.cloneElement(it.comp, extra))
         : React.cloneElement(it.host, { key: key, style: cell(r) });
     }
     var loose = items.filter(function (it) { return !it.comp; }).map(function (it) {
@@ -7040,12 +8234,13 @@ __FACE__
     var T = L.panel, k = props.__k || L.k || 1;
     var Lk = Object.assign({}, L, { k: k });
     var seg = segments(props, Lk), cw = seg.cw, ch = seg.ch;
+    items.forEach(function (it, i) { it.__pt = seg.pts[i]; });
     var g = joined ? 0 : Math.ceil(Math.max(gapD * k, T.gap));
     var nav = T.touch, n = items.length;
     var groupName = (L.pageName || 'Page') + ' ' + title;
     function partName(i) { return i ? groupName + ' ' + (i + 1) : groupName; }
     var forced = typeof window !== 'undefined' && window.__GDL_SHOW ? String(window.__GDL_SHOW) : null;
-    var navFont = font({}, P.defaults.button.type, Lk);
+    var navFont = font({}, P.defaults.button.type, Lk, true);
     function navW(word) {
       return pagingLook(word) ? T.touch : Math.max(T.touch, Math.ceil(textWidth(word, navFont.css) + 24));
     }
@@ -7385,8 +8580,17 @@ __FACE__
     var L = useLook();
     var variant = P.buttons[props.variant] ? props.variant : P.defaults.button.variant;
     var V = P.buttons[variant];
+    // A glyph in the template's icon face (glyphOf) is the caption, in place
+    // of the words and of a kit icon; a variant that draws its key from art
+    // (a `kit` look: Shockwave's gray key) keeps the art under it, as the
+    // template sets its glyph over the key's own image.
+    var gl = glyphOf(props, L);
+    if (gl) props = Object.assign({}, props, { icon: undefined, children: undefined, text: '' });
     var caption = captionOf(V, props);
     var img = imageOf(V, props, caption);
+    // A variant whose art is the icon alone (Afterburn's `icon`) has none
+    // left to draw under a glyph.
+    if (gl && img && !img.icon) img = null;
     // A caption beside its icon in a key a region sizes (`__fit`, its [w, h]
     // there) and gives no indent: the leading spaces that start it clear of
     // the icon, centred (indentFit), as the template sets the dialer's Call
@@ -7397,7 +8601,7 @@ __FACE__
     if (fitted) {
       // Where the words and that room are wider than the key (Mach's
       // Contacts at 14 pt), as far past the glyph as the key holds them.
-      var f0 = font(props, P.defaults.button.type, L), tc0 = textWidth(caption, f0.css);
+      var f0 = font(props, P.defaults.button.type, L, true), tc0 = textWidth(caption, f0.css);
       var room = Math.floor((props.__fit[0] - 8 - tc0) / (textWidth('          ', f0.css) / 10));
       img.indent = Math.max(0, fitted.w <= props.__fit[0] + 1 ? fitted.n : Math.min(fitted.n, room));
     }
@@ -7423,6 +8627,9 @@ __FACE__
         if (mate) mate = Object.assign({}, mate, { name: s.name });
       }
       s = Object.assign({}, mate || {}, s);
+      // A glyph is every state's caption: a state's words would be set in the
+      // icon face, which has no letters (gdl.spec refuses them).
+      if (gl) delete s.text;
       if (img) {
         var icon = s.icon || img.icon;
         var want = s.look || (i === 0 ? 'off' : 'on');
@@ -7446,7 +8653,7 @@ __FACE__
     var pressState = find(states, props.press) || states[1] || states[0] || {};
     var shown = held[0] ? pressState : (find(states, props.show) || states[0] || {});
     var now = Object.assign({}, look, shown);
-    var f = font(props, P.defaults.button.type, L);
+    var f = font(props, P.defaults.button.type, L, true);
     var b = borderOn(L, now.border);
     // An indented caption reads from the left unless the variant says
     // otherwise: Shockwave's centers it, pushed right past the icon.
@@ -7472,11 +8679,17 @@ __FACE__
     var text = img ? placed(img, caption) : caption;
     var attrs = {
       className: 'xgdl xgdl-button', style: style,
-      'aria-label': props['aria-label'] || props.ariaLabel || (img && !caption ? img.icon : null),
+      'aria-label': props['aria-label'] || props.ariaLabel || (gl ? props.name : null)
+        || (img && !caption ? img.icon : null),
       'data-gdl': gdl({
         kind: 'button', name: props.name, id: idOf(props.id),
-        variant: variant, text: text, fill: look.fill, stroke: look.stroke,
+        variant: variant, text: gl ? null : text, fill: look.fill, stroke: look.stroke,
         color: look.color, border: look.border, size: f.size, bold: f.bold,
+        // A glyph, by its codepoint in its face (gdl.spec's `icon`, which the
+        // spec check finds in the donor's own build of the face), and the
+        // face a caption is set in where it is not the theme's (Light).
+        icon: gl ? gl['char'] : null,
+        font: gl || text || states.some(function (st) { return st.text; }) ? f.face : null,
         align: align === 'center' ? null : align,
         states: states, press: props.press, nav: props.nav || props.goes, does: props.does,
         // Navigation a panel's layout added (Up and Down beside a level, a
@@ -7493,6 +8706,10 @@ __FACE__
         // the translator's, which pins them (gdl.design pin_ids).
         seed_id: props.__seed != null ? Number(props.__seed) : null,
         mirror: props.__mirror || null,
+        // A Select a Source tile whose template gives it its tab's ID
+        // (planTiles): the translator gives it the ID of the tab of its name
+        // on the page it shows.
+        tile: props.__tile ? true : null,
         missing_icon: missing.length ? missing : null
       })
     };
@@ -7502,7 +8719,7 @@ __FACE__
     if (typeof props.onPress === 'function') attrs.onClick = props.onPress;
     attrs.onPointerDown = function () { held[1](true); };
     attrs.onPointerUp = attrs.onPointerLeave = attrs.onPointerCancel = function () { held[1](false); };
-    var label = shown.text != null ? shown.text : text;
+    var label = gl ? gl.text : shown.text != null ? shown.text : text;
     if (missing.length && !label) label = '[' + missing[0] + ']';
     return h(props.nav ? 'a' : 'button', attrs, label);
   }
@@ -7512,7 +8729,8 @@ __FACE__
     var L = useLook();
     var f = font(props, P.defaults.label.type, L);
     // `__text`: its words as a tier C layout broke them into lines (flowRows).
-    var words_ = props.__text != null ? props.__text : textOf(props.children, props.text);
+    // A glyph (glyphOf) in place of any: the 320's Volume Up Label.
+    var words_ = f.glyph ? f.glyph.text : props.__text != null ? props.__text : textOf(props.children, props.text);
     var color = props.color || P.defaults.label.color;
     var align = props.align || 'left';
     // A field: the ground a template's label paints itself - Shockwave's and
@@ -7532,10 +8750,14 @@ __FACE__
         minHeight: L.aware ? (lineHeight(f.size) + 2) / (L.css || 1) + 'px' : undefined
       },
       'data-gdl': gdl({ kind: 'label', name: props.name, id: idOf(props.id),
-                        text: words_, color: color, size: f.size,
+                        text: f.glyph ? null : words_, color: color, size: f.size,
+                        icon: f.glyph ? f.glyph['char'] : null, font: f.glyph || words_ ? f.face : null,
                         bold: f.bold, align: align, does: props.does, fill: fill, border: border,
                         // A copy a panel's layout repeats (overPages' title strip).
                         derived: truthy(props.derived) || null,
+                        // The template's seed ID it keeps where it is free (a
+                        // hub's Volume Up Label, 8122), as a Button's.
+                        seed_id: props.__seed != null ? Number(props.__seed) : null,
                         // The tile it captions, inside it (Afterburn's hub).
                         caption_of: props.__caption_of || null })
     }, words_);
@@ -7777,7 +8999,7 @@ __FACE__
       'data-gdl': gdl({ kind: 'datetime', name: props.name, color: color, size: f.size,
                         // Always: the spec's own default is center, so a
                         // left clock that said nothing built centered.
-                        bold: f.bold, align: align, format: fmt,
+                        bold: f.bold, align: align, format: fmt, font: f.face,
                         // One a region draws as the panel's template does
                         // (Afterburn's Footer: the 1035's date and time apart,
                         // the 725's one): chrome of that panel, not a control

@@ -445,13 +445,14 @@ TYPE_FLOOR_DPI = 149.0
 def type_floor(target):
     """The smallest point size text may take on a panel, or None with no DPI.
 
-    GUI Designer draws a point at 1.375 px whatever the panel (Phase 0's probe,
-    docs/gdl-format.md section 2), so Extron's documented 14 pt minimum is 2.2 mm
-    of cap height on a 1035 and 1.1 mm on a 535. The floor keeps the 14 pt as it
-    reads on a 1025/1035: 14 x DPI / 149, rounded up - a minimum is never
-    rounded down - and never under 14. Ours, not Extron's: Extron's own templates
-    break it on dense panels - their 520s keep the 1035's points, their 535s
-    step up short of it (docs/design-rules.md section 1).
+    GUI Designer draws a point at the same pixels whatever the panel - 4/3 down,
+    1.375 across (Phase 0's probe, docs/gdl-format.md section 2) - so Extron's
+    documented 14 pt minimum is 2.2 mm of cap height on a 1035 and 1.1 mm on a
+    535. The floor keeps the 14 pt as it reads on a 1025/1035: 14 x DPI / 149,
+    rounded up - a minimum is never rounded down - and never under 14. Ours,
+    not Extron's: Extron's own templates break it on dense panels - their 520s
+    keep the 1035's points, their 535s step up short of it
+    (docs/design-rules.md section 1).
     """
     if isinstance(target, str):
         d = dpi(target)
@@ -463,6 +464,22 @@ def type_floor(target):
     if not d:
         return None
     return max(MIN_BODY_POINT_SIZE, math.ceil(MIN_BODY_POINT_SIZE * d / TYPE_FLOOR_DPI - 1e-9))
+
+
+def key_floor(spec):
+    """The least a button's caption may be set in on this spec's panel, where
+    its own template sets its keys' words under 14 pt - `"type_floor":
+    {"button": N}`, which gdl.design translate writes off the panel's frame's
+    `center.pt.key`: 10 pt on Mach's, Shockwave's and Afterburn's 320, 13 on
+    Afterburn's 300 - else None, and a caption is held to 14 pt and the type
+    floor. On the 320 it is the owner's call (2026-11-04): a key's caption may
+    take its template's own size, and no less. On the 300 it is ours, the
+    320's rule carried over by analogy where its template's keys are under
+    14, and pending the owner (docs/design-rules.md section 1,
+    docs/ROADMAP.md *Yours*)."""
+    tf = (spec or {}).get('type_floor')
+    n = tf.get('button') if isinstance(tf, dict) else None
+    return n if isinstance(n, (int, float)) and not isinstance(n, bool) and n > 0 else None
 
 
 KIND_TYPE = {'panel': 'PBShape', 'shape': 'PBShape', 'button': 'PBButton',
@@ -501,6 +518,9 @@ CONTROL_KEYS = frozenset((
 SPEC_KEYS = frozenset((
     'name', 'model', 'size', 'family', 'theme', 'images', 'pages', 'popups', 'start_page',
     'keep_donor_pages', 'type_floor',
+    # "off" in a measurement spec, which cuts captions on purpose
+    # (_caption_rules): the synthetic fixture's.
+    'caption_fit',
     # What the panel does, for the ID map (gdl/idmap.py).
     'does',
     # GUI Designer's Offline Page: whether the panel shows it, and its words
@@ -1451,6 +1471,11 @@ class Panel:
             'type_donors': [{'type': t, 'seed': s, 'path': _seed_path(s)}
                             for t, s in sorted((controls or {}).items())],
         }
+        if self.spec.get('caption_fit') == 'off':
+            # For verify_built, which holds the built captions to the same
+            # rule: a measurement spec's cut ones are said, not refused. The
+            # applier reads none of it.
+            plan['caption_fit'] = 'off'
         if swaps:
             for item in plan['pages'] + plan['popups']:
                 for op in item['controls']:
@@ -1520,6 +1545,8 @@ class Panel:
         out += self._number_rules()
         out += self._key_rules()
         out += self._offline_rules()
+        out += self._type_floor_rules()
+        out += self._caption_rules()[0]
         for name, f in self.images.items():
             if not resolve_image(f):
                 out.append(f'image {name!r}: {f!r} is not a file here or under '
@@ -1670,6 +1697,124 @@ class Panel:
                            f'number from 0 to 4294967295 - PBPopupPage.timeoutField is a UInt32')
         return out
 
+    def _type_floor_rules(self):
+        """`type_floor` is "off" or {"button": <points>}: a typo in either
+        would hold every caption to 14 pt in silence, or let none be held."""
+        tf = self.spec.get('type_floor')
+        if tf is None or tf == 'off':
+            return []
+        if not isinstance(tf, dict):
+            return [f'type_floor {tf!r} is neither "off" nor {{"button": <points>}} - the size a key\'s '
+                    "caption may go down to where the panel's own template sets its keys' words smaller"]
+        out = []
+        odd = _odd_keys(tf, {'button'})
+        if odd:
+            out.append(f"type_floor: {', '.join(map(repr, odd))} is not a key it takes - it takes 'button'; "
+                       'a typo here is silently ignored')
+        if 'button' in tf and key_floor(self.spec) is None:
+            out.append(f"type_floor: button {tf['button']!r} is not a point size")
+        return out
+
+    def _caption_rules(self):
+        """(problems, notes): each live caption - a label's, or a button's
+        whose caption Build does not bake (`flatten`) - that GUI Designer
+        would cut, laid out as gdl.compose lays it (compose.caption_fit: its
+        box less a sixth of an em a side, wrapped, trimmed at a character
+        to the lines its depth holds, its ink inside the box). The Shockwave
+        525's Volume heading, 'Volume' at 18 pt in a 91 px box, built as
+        'Volum', and every gate passed: the preview drew it, and nothing
+        measured it. One character - a glyph (`icon`), a key's letter - is
+        never trimmed or split, and is passed over; so does verify_built,
+        which holds the built captions to the same rule.
+
+        Words trimmed, a word split and ink past the box (`clips`) are each
+        refused: GUI Designer's own snapshots show all three, the last cut
+        off flat at the box. A caption drawn in a
+        transparent color (alpha 0) shows nothing to cut, and is passed over:
+        the Zoom Rooms seeds keep words, space-padded, behind their icons so.
+
+        Measured with Pillow, which gdl.compose needs and this module does
+        not: without it, or in a face drawn here in a stand-in (whose widths
+        are not the panel's), a note says what was not measured. A
+        measurement spec that cuts captions on purpose turns it off,
+        `"caption_fit": "off"` - the synthetic fixture, whose snapshots show
+        GUI Designer trimming one and splitting one."""
+        if getattr(self, '_captions', None) is not None:
+            return self._captions
+        problems, notes = [], []
+        self._captions = problems, notes
+        fit = self.spec.get('caption_fit')
+        if fit == 'off':
+            return self._captions
+        if fit is not None:
+            problems.append(f'caption_fit {fit!r} is not "off" - leave it out, and every live caption '
+                            'is measured for what GUI Designer would cut of it')
+        live = []
+        for kind, items in (('page', self.pages), ('popup', self.popups)):
+            for item in items:
+                for c in item['controls']:
+                    if c.get('kind') not in ('label', 'button') or c.get('flatten') \
+                            or not isinstance(c.get('rect'), (list, tuple)) or len(c['rect']) != 4:
+                        continue
+                    # Each caption it shows, once, by the first state that
+                    # shows it where that is not the control's own - and
+                    # none in a transparent color, which shows nothing.
+                    texts = {}
+                    for s in self._feedback(c) or [{}]:
+                        if 'icon' in s or ('text' not in s and 'icon' in c):
+                            continue
+                        t = s['text'] if 'text' in s else c.get('text')
+                        if isinstance(t, str) and len(t.strip()) > 1 and t not in texts \
+                                and not self._unseen_text(c, s):
+                            texts[t] = s.get('name') if t != c.get('text') else None
+                    if texts:
+                        live.append((f"{kind} {item['name']!r} {c.get('name') or c.get('text') or '?'}", c,
+                                     list(texts.items())))
+        if not live:
+            return self._captions
+        try:
+            from . import compose
+        except ImportError:
+            notes.append(f'{len(live)} live caption(s) not measured for what GUI Designer would cut of them - '
+                         'that needs Pillow (gdl.compose); `pip install -r requirements.txt`')
+            return self._captions
+        unmeasured = {}
+        for where, c, texts in live:
+            name = c.get('font') or self.theme.get('font') or 'Arial'
+            size = c.get('size') or self.theme.get('size') or DEFAULT_POINT_SIZE
+            try:
+                fnt = compose.face(name, int(bool(c.get('bold'))), int(bool(c.get('italic'))),
+                                   float(size) * compose.PT)
+            except (LookupError, OSError, TypeError, ValueError):
+                unmeasured.setdefault(name, []).append(where)
+                continue
+            if getattr(fnt, 'stand_in', None):
+                unmeasured.setdefault(f'{name} (drawn here as {fnt.stand_in.split(" as ", 1)[1]})', []).append(where)
+                continue
+            box = tuple(int(v) for v in c['rect'])
+            for text, state in texts:
+                for _, words in compose.caption_fit(box, text, fnt, ALIGN.get(c.get('align', 'center'), 3)):
+                    problems.append(f"{where}{f' state {state!r}' if state else ''}: {words}, at "
+                                    f"{size:g} pt in {name}{' bold' if c.get('bold') else ''}"
+                                    f"{' italic' if c.get('italic') else ''}")
+        for name, wheres in unmeasured.items():
+            notes.append(f'{len(wheres)} live caption(s) in {name} not measured for what GUI Designer '
+                         f'would cut of them - the face is not here (`python -m gdl.fonts`, '
+                         f'gdl/fonts/README.md): {", ".join(wheres[:3])}{" ..." if len(wheres) > 3 else ""}')
+        return self._captions
+
+    def _unseen_text(self, c, s):
+        """Whether control `c` draws state `s`'s words in a color with no
+        alpha - the state's own, else the control's, else the theme's, as
+        the applier writes it (_states). A color that will not parse counts
+        as seen: building the plan names it."""
+        v = s.get('color') or s.get('text_color') or c.get('color') or self.theme.get('text') or '#FFFFFF'
+        try:
+            got = color(v, self.theme)
+        except (TypeError, ValueError):
+            return False
+        return bool(got) and got.get('A') == 0
+
     def _offline_rules(self):
         """`offline` is {enabled, replace}: enabled a bool, replace words on
         the donor's Offline Page mapped to the panel's (check_donor says
@@ -1706,7 +1851,8 @@ class Panel:
         """What `check` says aloud and does not refuse: a key that is written
         and reaches nothing the panel loads."""
         return [f"popup {pu['name']!r}: timeout {pu['timeout']} {POPUP_TIMEOUT_NOTE}"
-                for pu in self.popups if is_uint32(pu['timeout']) and pu['timeout']]
+                for pu in self.popups if is_uint32(pu['timeout']) and pu['timeout']] \
+            + self._caption_rules()[1]
 
     def _key_rules(self):
         """Every key above a control's that nothing reads (SPEC_KEYS and the
@@ -1770,6 +1916,16 @@ class Panel:
         # A measurement spec - the type probe draws 14 pt on every panel on
         # purpose - turns it off: `"type_floor": "off"`.
         floor = type_floor(self.model) if self.model and self.spec.get('type_floor') != 'off' else None
+        # A key's caption on a panel whose own template sets its keys' words
+        # smaller than 14 pt is held to that size instead (`"type_floor":
+        # {"button": 10}`, which translate writes off the panel's frame, its
+        # `center.pt.key`). On the 320 the owner's call (2026-11-04) - Extron's
+        # own 320 templates set Freeze, Auto and Normal at 10 pt. On
+        # Afterburn's 300 (`{"button": 13}`, its Display Settings' Power and
+        # Mute) ours, by analogy with the 320 and pending the owner. Neither is
+        # Extron's: its standards say 14 pt (docs/design-rules.md section 1).
+        # A label is held as before.
+        keys = key_floor(self.spec)
         if target is None and label.startswith('page'):
             out.append(f"page {pg['number']}: no touch minimum for "
                        f"{self.model or '%dx%d' % tuple(self.size)} - name the panel's "
@@ -1795,7 +1951,12 @@ class Panel:
             given = c.get('size') or self.theme.get('size')
             size = given or DEFAULT_POINT_SIZE
             said = f'{size:g}pt' + ('' if given else ', the size a control with none builds at,')
-            if c.get('kind') in ('button', 'label') and size < MIN_BODY_POINT_SIZE:
+            if c.get('kind') == 'button' and keys is not None:
+                if size < keys:
+                    out.append(f"{where}: {said} is under the {keys:g}pt this panel's own template sets its "
+                               f"keys' words in - the least a key's caption takes on a {self.model} "
+                               f'(docs/design-rules.md section 1)')
+            elif c.get('kind') in ('button', 'label') and size < MIN_BODY_POINT_SIZE:
                 out.append(f'{where}: {said} is below the {MIN_BODY_POINT_SIZE}pt '
                            f'body-text minimum (p.65)')
             elif c.get('kind') in ('button', 'label', 'datetime') and floor and size < floor:

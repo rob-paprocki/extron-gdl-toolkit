@@ -765,7 +765,16 @@ class TestAClockAnotherSeedOfTheThemeCarries(unittest.TestCase):
     (PBDateTime) to clone. Another seed of the theme does - the smallest that
     carries one, its 525 - and the applier clones the clock from there
     (Apply-GdlPlan.ps1 -TypeDonors), so a clock on those 320s is planned, not
-    refused. Built and verified on each (archive/job-e823df9b/small-panels/)."""
+    refused. Built and verified on each (archive/job-e823df9b/small-panels/).
+
+    The 520, 521, 525 and 526 Series seeds are one project to a few hundred
+    bytes, so which of a theme's is the smallest depends on the bytes of its
+    builds: any of them is the 525's equal as a clone source, and the carrier
+    is the smallest one pulled here."""
+
+    @staticmethod
+    def _carriers(theme):
+        return {f'seeds/{theme} {n}.gdl' for n in ('520', '521', '525', '526', 'TLP525C', 'TLP525M')}
 
     def _spec(self, family, kind='datetime'):
         c = {'kind': kind, 'name': 'Clock', 'rect': [16, 60, 288, 40]}
@@ -786,7 +795,9 @@ class TestAClockAnotherSeedOfTheThemeCarries(unittest.TestCase):
                 controls = {}
                 problems = Panel(self._spec(theme)).check_donor(donor, controls=controls)
                 self.assertFalse(any('PBDateTime' in m for m in problems), problems)
-                self.assertEqual(controls, {'PBDateTime': f'seeds/{theme} 525.gdl'})
+                from gdl import seeds
+                self.assertEqual(controls, {'PBDateTime': seeds.carrier('PBDateTime', theme)})
+                self.assertIn(controls['PBDateTime'], self._carriers(theme))
 
     def test_a_seed_that_has_one_clones_its_own(self):
         controls = {}
@@ -819,8 +830,10 @@ class TestAClockAnotherSeedOfTheThemeCarries(unittest.TestCase):
             self.assertEqual(main(['spec', 'plan', path, out_path, '--donor', donor]), 0)
         with open(out_path, encoding='utf-8') as fh:
             plan = json.load(fh)
+        from gdl import seeds
         self.assertEqual([(t['type'], t['seed']) for t in plan['type_donors']],
-                         [('PBDateTime', 'seeds/Shockwave 525.gdl')])
+                         [('PBDateTime', seeds.carrier('PBDateTime', 'Shockwave'))])
+        self.assertIn(plan['type_donors'][0]['seed'], self._carriers('Shockwave'))
         self.assertTrue(os.path.isfile(plan['type_donors'][0]['path']))
 
     def test_the_applier_takes_them(self):

@@ -41,7 +41,7 @@ in the same commit.
 | 2.3 | **The small panels' last refusals** | a modal that shows another modal (so a plain modal goes on past the 320's screen); a Clock on Shockwave's and Turbulence's 320 cloned from another seed of the theme; the recording and room-mode questions' words measured, and Mach's Recording tile; Shockwave's 725 call page's third launcher | M each |
 | 2.4 | **Where a build spends its time** | a build timed per page, control, state and resource on a quiet host, with feature-flag mode on as the owner keeps it and scanning as it is - done, `docs/from-scratch.md` §5c; left: the same with scanning excluded, on the owner's word (`docs/ROADMAP.md` *Mine*, item 1) | M |
 | 2.5 | **A synthetic fixture** | a many-page project of every renderer-scored control type, GUI Designer's snapshots of it, a new render baseline, the fixture-gated tests moved onto it - so the client fixtures can go, on the owner's word, and the text findings get ground truth beyond one typeface. **Done** (`tests/data/synthetic/`, `tests/baseline-synthetic.json`), and the client fixtures deleted on the owner's word on 2026-11-03 (`docs/history.md`); what that took with it is in `docs/ROADMAP.md`'s backlog | L |
-| 2.6 | **Seeds ahead of jobs** | the forms a client most often lists - 725M/C, 525M/C, 320C, 835, 1220/1225, 1025/1020, 1525MG, 720M/C, 1535T, Afterburn's 1520 and 535 - made in one session while the owner keeps the desktop connected. Made (`seeds/README.md`): every one in each theme that draws it, 78 seeds, and listed in the profiles. Left: the forms `seeds/README.md` *Gaps* lists | M |
+| 2.6 | **Seeds ahead of jobs** | the forms a client most often lists - 725M/C, 525M/C, 320C, 835, 1220/1225, 1025/1020, 1525MG, 720M/C, 1535T, Afterburn's 1520 and 535 - made in one session while the owner keeps the desktop connected. Made (`seeds/README.md`): every one in each theme that draws it, 78 seeds, and then the forms its *Gaps* listed after them - the 520M, 521M, 526M, 535M, 726M, 1022s, 1026M, 1520s, 1720s and 1725s, and the 835M turned to portrait: 55 more - all listed in the profiles. Left: the turned panels and Rooms seeds `seeds/README.md` *Gaps* lists | M |
 
 ## Phase 3 - proof
 
@@ -49,7 +49,7 @@ in the same commit.
 |---|---|---|
 | 3.1 | **Round five** | Fresh designers against the READMEs as they then stand, translated unchanged, refusals counted, then built - after Afterburn's regions and Phase 1.2-1.4, so it measures them. **Done**: first try Mach 31, Shockwave 35, Turbulence 68, Afterburn 26 refusals; the toolkit's share fixed (#80, #82); revised, all four rooms clean and built and verified on the 1035, 725, 525 and 320 (region-frame spec item 13, `archive/job-e823df9b/round5/`) |
 | 3.2 | **The bug hunt again** | Over everything since its first run (#62's fixes, the call mode, Afterburn's regions, Phase 1), with its second verification in the same session |
-| 3.3 | **The region frame on turned panels and the 300** | The turned frame's header as a left band and the 300's menu bar measured and drawn - when a job lists one, or once Phases 1-2 are done |
+| 3.3 | **The region frame on turned panels and the 300** | The turned frame's header as a left band and the 300's menu bar measured and drawn - when a job lists one, or once Phases 1-2 are done. **Done for the 300** (region-frame spec item 14): Mach's 300 and Afterburn's 300 Portrait and Landscape draw a region page under their menu bar, translated clean on the TLP300M and not yet built. Turned panels stay refused by name: measured, no bar or hub template is drawn turned - Extron's one turned template, Afterburn's 300 Landscape, turns its Main alone - so a turned grammar is ours to design, the owner's to ask for (`docs/ROADMAP.md` *Yours* item 6) |
 | 3.4 | **Research** | The size-dependent vertical text residual in the preview |
 
 ## What waits on the owner
@@ -64,4 +64,4 @@ None of these blocks the phases above; each is in the ROADMAP's *Yours*.
 
 ## What waits on a job
 
-Seeds for the forms `seeds/README.md` *Gaps* lists, turned panels' seeds, Zoom and Teams Rooms seeds, and a fifteen-input room on Shockwave (whose bar templates have no Select Source page).
+Seeds for the turned panels `seeds/README.md` *Gaps* lists, Zoom and Teams Rooms seeds, and a fifteen-input room on Shockwave (whose bar templates have no Select Source page).

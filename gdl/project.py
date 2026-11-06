@@ -244,6 +244,10 @@ class Project:
             'name': self.field(st, 'nameField'),
             'caption': caption,
             'caption_in': where,
+            # The formatted text as it is stored, layout and all: what Build
+            # bakes a flattened button's caption from, and what an edit
+            # keeps the layout of when it writes new words there.
+            'ftext': ftext,
             'fill': self.color(self.field(st, 'borderFillColorField')),
             'stroke': self.color(self.field(st, 'borderColorField')),
             'text_color': self.color(self.field(st, 'textColorField')),
@@ -266,6 +270,10 @@ class Project:
             # and anything CHANGING it wants caption_in as well.
             'caption': caption,
             'caption_in': caption_in,
+            # Build bakes a flattened button's caption into its art from each
+            # state's ftextField alone (docs/gdl-format.md section 2), so an
+            # edit of its words has to write that field too.
+            'flatten': bool(self.field(obj, 'flattenTextField')),
             'tlp_image': self.field(obj, '<TLPImageID>k__BackingField'),
             # the two the built payload throws away
             'fill': self.color(self.field(obj, 'borderFillColorField')),

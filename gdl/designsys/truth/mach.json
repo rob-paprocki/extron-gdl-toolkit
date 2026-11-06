@@ -61,7 +61,7 @@
         {"readme": "The default `time` is this component's: Mach's footer draws the date and time, `MMMM dd, yyyy - h:mm tt`"}
       ],
       "builds": "A Clock's default colour, the region Footer's among them, is #808080 where it was #919191 (a new token, text-muted, which the six-colour cap exempts as the template's own).",
-      "evidence": "Main SD's SD Date/Time: PBDateTime, pattern 'MMMM dd, yyyy - h:mm tt', Open Sans Light 16, #808080; the system offers Open Sans, so it draws 16 pt Open Sans."
+      "evidence": "Main SD's SD Date/Time: PBDateTime, pattern 'MMMM dd, yyyy - h:mm tt', Open Sans Light 16, #808080, as the system draws the footer's (regions.clock.light) on the bar panels."
     },
     {
       "id": "mach-04",
@@ -309,7 +309,7 @@
       "status": "fixed",
       "fix": [
         {"key": "iconography.icon_prop", "says": "give that state its own `icon`"},
-        {"key": "iconography.intro", "says": "as Extron-Lift glyph captions, which this system does not draw"},
+        {"key": "iconography.intro", "says": "as Extron-Lift glyph captions. The system draws its own chrome's in that face"},
         {"key": "kit.note", "says": "a state that swaps its icon names its own"}
       ],
       "gone": ["so the icon never shows state", "Mach shows state by the button's fill, not by swapping its icon"],
@@ -431,8 +431,8 @@
         "pages": ["Main SD", "Camera Settings"]
       },
       "status": "deviation",
-      "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 12 pt to 14. The README now says the floor is the toolkit's.",
-      "here": "Nothing is under 14 pt, the toolkit's floor: the template's rail and footer captions are 12 pt, and here they are 14.",
+      "reason": "The 14 pt floor the toolkit checks (gdl.spec MIN_BODY_POINT_SIZE; docs/design-rules.md section 2): a caption under it is refused, so the profile lifts the template's 12 pt to 14. The README now says the floor is the toolkit's. A key's caption on the TLP320M, whose own template sets its keys' words under 14 pt, goes down to that size and no further (gdl.designsys.models' `key_floor`; docs/design-rules.md section 1).",
+      "here": "Nothing is under 14 pt, the toolkit's floor: the template's rail and footer captions are 12 pt, and here they are 14. The exception is a key's caption on the TLP320M, which goes down to the size its own template sets its keys' words in, and no further (docs/design-rules.md section 1).",
       "fix": [{"readme": "Nothing under 14 pt: that is the toolkit's floor, and a template's own smallest captions can be under it."}],
       "bounds": [
         {"region": "left", "what": "group 0 heading", "px": 2, "panels": ["TLP725T"]},
@@ -981,9 +981,14 @@
           "Incoming Call"
         ]
       },
-      "status": "deviation",
-      "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
-      "here": "An incoming call's Accept and Decline take IDs of their own, from 50001, where the template's are 9032 and 9033: a program written for the template's needs them told.",
+      "status": "frame",
+      "frame": [
+        {"series": "Mach 1220 Series", "key": "windows.incoming"}
+      ],
+      "fix": [
+        {"readme": "each with the template's ID on every panel (Accept Call 9032 and Decline Call 9033)"}
+      ],
+      "builds": "An incoming call's Accept and Decline build as 9032 and 9033 on every panel - a hub's and the 320's, where the question stands in the power-down question's places, too - where they built at IDs of their own from 50001 (tests/data/design-call-mach). The owner's call (2026-11-04).",
       "evidence": "Incoming Call's Accept Call (9032) and Decline Call (9033) on seeds/Mach 1035.gdl, and on its 725, 720, 1525 and 1535; docs/idmap.md, the call mode's dialer."
     },
     {
@@ -1139,6 +1144,77 @@
       "reason": "A window's answers are its layout's own controls, derived, keyed by the page they are on and numbered from 50001 (docs/idmap.md), as the power-down question's are.",
       "here": "A recording's question asks Record and Cancel with IDs of their own, from 50001, where the template's are 9244 and 9245: a program written for the template's needs them told.",
       "evidence": "Confirmation - Recording's Record (9244) and Record Cancel (9245) on seeds/Mach 1035.gdl, and on its 725, 1525, 1535, 535 and 525 (archive/job-e823df9b/small-panels/recording/questions.json)."
+    },
+    {
+      "id": "mach-57",
+      "claim": "The type scale and the region notes said Open Sans Light is a face this system does not offer: its titles, header title and footer clock drawn in Open Sans at the template's size.",
+      "where": [
+        "type.title.usage",
+        "type.header.usage",
+        "type.heading.usage",
+        "regions._center"
+      ],
+      "template": {
+        "does": "The bar series set a popup's and a window's title in Open Sans Light 24, Main Select Source's header title Light 26 and its tiles' names Light 16, a window's message Light 20, a source's empty state Light 16 and every footer clock Light 16. The hubs and the 320 set the same in Open Sans.",
+        "seed": "seeds/Mach 1035.gdl",
+        "pages": [
+          "Help",
+          "Main Select Source",
+          "Main SD",
+          "Laptop",
+          "Confirmation"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "font.light.family", "says": "Open Sans Light"},
+        {"key": "font.light.series", "says": "Mach 1220 Series"},
+        {"key": "type.heading.usage", "says": "Light where the panel's template sets it so (font.light), Open Sans on a hub and the 320"},
+        {"key": "type.header.usage", "says": "Light where the panel's template sets it so (font.light), Open Sans on a hub and the 320"}
+      ],
+      "gone": [
+        "a face this system does not offer",
+        "this system draws Open Sans, not Light",
+        "This system offers Open Sans, so 24 pt Open Sans",
+        "(the system offers Open Sans, so 24 pt Open Sans)"
+      ],
+      "builds": "On the bar panels a popup's or a window's title, Main Select Source's title and its tiles' names, a window's message, a source's empty state and the footer's clock build in Open Sans Light, where they built in Open Sans; a Label of type `header` or `heading` there too. A hub's and the 320's build as before.",
+      "evidence": "seeds/Mach 1035.gdl's Help Label (4008) and Doc Cam Label (6008) Open Sans Light 24; Select Source Label (6072) Light 26 and Laptop Label (8078) Light 16; Power Down Confirmation Label (4056) Light 20; Laptop is currently... Label (6060) Light 16; Main SD's SD Date/Time Light 16; the same on seeds/Mach 725.gdl, 720, 1525 and 1535. seeds/Mach 525.gdl's and 320's titles, messages and clocks Open Sans, the 525's Recording Controls alone in Light."
+    },
+    {
+      "id": "mach-58",
+      "claim": "The hub notes said the template's Extron-Lift glyphs are not drawn: Up and Down the kit's chevrons, Settings, Power and Help its glyph art, the Volume Level strip's speaker glyphs not drawn; the 320's More the kit's ••• and the Volume modal's glyphs + and -.",
+      "where": [
+        "regions._hub",
+        "regions.page._source"
+      ],
+      "template": {
+        "does": "The hubs set their menu bar's Volume Up (U+E94E), Volume Down (U+E91D), Settings (U+E942) and Power Down (U+E93A) in Extron-Lift at 20 pt on the 525 and 32 on the 535, every popup's Close as its back glyph (U+E906, 22 and 36 pt), Select Source's Help (U+E931, 24 and 36 pt) and the Volume Level strip's Volume Up Label and Volume Down Label (U+E955, U+E954, 26 and 38 pt). The 320 sets Doc Cam More (U+E933, 20 pt), Doc Cam Back (U+E906, 18 pt) and its Volume modal's Volume Up Label and Volume Down Label (U+E955, U+E954, 18 pt) in it.",
+        "seed": "seeds/Mach 525.gdl",
+        "pages": [
+          "Main Page",
+          "Select Source",
+          "Volume Level",
+          "Help"
+        ]
+      },
+      "status": "fixed",
+      "fix": [
+        {"key": "regions.hub.up.glyph.char", "says": "U+E94E"},
+        {"key": "regions.hub.settings.glyph.char", "says": "U+E942"},
+        {"key": "regions.hub.close.glyph.char", "says": "U+E906"},
+        {"key": "regions.hub.level_up.glyph.char", "says": "U+E955"},
+        {"key": "regions.page.more.glyph.char", "says": "U+E933"},
+        {"key": "regions.page.back.glyph.char", "says": "U+E906"},
+        {"key": "regions.page.volume_up.glyph.char", "says": "U+E955"}
+      ],
+      "gone": [
+        "Chosen by eye from the renders: Up and Down the kit's",
+        "the Volume Level strip's speaker glyphs are Extron-Lift characters and are not drawn",
+        "More the kit's ••• (more-options) and Back its back glyph on the shade"
+      ],
+      "builds": "A hub's menu bar builds its Up, Down, Settings and Power, every popup's Close and Select Source's Help as the template's Extron-Lift glyphs at its sizes, and its Volume Level strip draws the template's speaker glyphs, where they built the kit's art filling their keys and no strip glyphs; the 320's More and Back build the glyphs on the shade, and its Volume modal's glyphs the speakers where they said + and -. Where the machine that built the system carries no copy of the face (gdl.designsys.glyph_faces), as before.",
+      "evidence": "seeds/Mach 525.gdl's Main Page Volume Up (8120) and Volume Down (8121) U+E94E and U+E91D, Settings (8040) U+E942, Power Down (8022) U+E93A, Extron-Lift 20; Close Laptop (9102) U+E906 at 22; Select Source's Help (9103) U+E931 at 24; Volume Level's Volume Up Label (8122) and Volume Down Label (8124) U+E955 and U+E954 at 26; the same on seeds/Mach 535.gdl at 32, 36, 36 and 38. seeds/Mach 320.gdl's Doc Cam More (8010) U+E933 at 20, Doc Cam Back (8011) U+E906 at 18, Volume Up Label (7023) and Volume Down Label (7026) U+E955 and U+E954 at 18."
     }
   ]
 }

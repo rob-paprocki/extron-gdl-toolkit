@@ -65,15 +65,26 @@ first build failed `tests/verify_built.py` on are out of it, each said where
 it was in `make_synthetic.py` and in `docs/ROADMAP.md`'s backlog: a 3D
 Gradient border, a slider's rail of art, a 1 px line.
 
+Two of its captions GUI Designer cuts, and its snapshots show it: Type Sizes'
+Italic40 trimmed to 'Type 40 Itali', Wrapping's LongWord split over three
+lines - what `gdl.compose.fitted` is measured on. So its spec says
+`"caption_fit": "off"`, as a measurement spec does (SKILL.md step 4):
+`gdl.spec check` passes over its captions and `tests/verify_built.py` says the
+two rather than refusing them. With the key taken away the check names those
+two and nothing else (`tests/test_synthetic.py`). The key reaches no op of the
+plan, so the build is the one it always was.
+
 ## As built
 
 Built on GUI Designer 1.28.0.7: 531 controls, 2,836 checks of the build
 against its plan and none failed, Save and Build 1,315 s (the first build of
 it, before the three above came out, 836 s). Exported: 29 PNGs, the 28 pages
-and popups and the Offline Page. Scored: **mean 3.44%, median 2.68%, worst
-8.03%** (`tests/baseline-synthetic.json`), the same to the last digit
-whether its faces were recovered from it or from the client's project;
-`docs/render-fidelity.md` §9 says where the pixels differ.
+and popups and the Offline Page. Scored at its first recording: **mean 3.44%,
+median 2.68%, worst 8.03%**, the same to the last digit whether its faces were
+recovered from it or from the client's project; the baseline the renderer is
+scored against now (`tests/baseline-synthetic.json`) is in `CLAUDE.md`
+*Verifying a change*, and `docs/render-fidelity.md` §9 says where the pixels
+differ.
 
 ## Making it again
 
